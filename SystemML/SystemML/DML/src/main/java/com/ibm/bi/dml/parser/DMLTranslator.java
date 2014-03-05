@@ -1503,8 +1503,7 @@ public class DMLTranslator
 		VariableSet gen 	= sb._gen;
 		VariableSet updatedLiveOut = new VariableSet();
 
-		// handle liveout variables that are updated --> target identifiers for 
-		//	Assignment, MultiAssignment, RandStatement, InputStatement
+		// handle liveout variables that are updated --> target identifiers for Assignment
 		HashMap<String, Integer> liveOutToTemp = new HashMap<String, Integer>();
 		for (int i = 0; i < sb.getNumStatements(); i++) {
 			Statement current = sb.getStatement(i);
@@ -1523,21 +1522,6 @@ public class DMLTranslator
 					if (liveOut.containsVariable(target.getName())) {
 						liveOutToTemp.put(target.getName(), new Integer(i));
 					}
-				}
-			}
-			
-			if (current instanceof RandStatement) {
-				RandStatement rs = (RandStatement) current;
-				DataIdentifier target = rs.getIdentifier();
-				if (liveOut.containsVariable(target.getName())) {
-					liveOutToTemp.put(target.getName(), new Integer(i));
-				}
-			}
-			if (current instanceof InputStatement) {
-				InputStatement is = (InputStatement) current;
-				DataIdentifier target = is.getIdentifier();
-				if (liveOut.containsVariable(target.getName())) {
-					liveOutToTemp.put(target.getName(), new Integer(i));
 				}
 			}
 		}
@@ -1564,30 +1548,6 @@ public class DMLTranslator
 		for (int i = 0; i < sb.getNumStatements(); i++) {
 			Statement current = sb.getStatement(i);
 
-			if (current instanceof InputStatement) {
-				InputStatement is = (InputStatement) current;
-				
-				DataExpression source = is.getSource();
-				DataIdentifier target = is.getIdentifier();
-
-				DataOp ae = (DataOp)processExpression(source, target, ids);
-				String formatName = is.getFormatName();
-				ae.setFormatType(Expression.convertFormatType(formatName));
-				ids.put(target.getName(), ae);
-
-
-				Integer statementId = liveOutToTemp.get(target.getName());
-				if ((statementId != null) && (statementId.intValue() == i)) {
-					
-					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
-					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
-					transientwrite.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-					updatedLiveOut.addVariable(target.getName(), target);
-					output.add(transientwrite);
-				}
-
-			}
-
 			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement) current;
 
@@ -1595,7 +1555,7 @@ public class DMLTranslator
 				DataIdentifier target = os.getIdentifier();
 
 				DataOp ae = (DataOp)processExpression(source, target, ids);
-				String formatName = os.getFormatName();
+				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
 				ae.setFormatType(Expression.convertFormatType(formatName));
 
 				if (ae.get_dataType() == DataType.SCALAR ) {
@@ -1631,7 +1591,7 @@ public class DMLTranslator
 				DataIdentifier target = createTarget();
 				target.setDataType(DataType.SCALAR);
 				target.setValueType(ValueType.STRING);
-				target.setAllPositions(current.getBeginLine(), target.getBeginColumn(), current.getEndLine(),  current.getEndColumn());
+				target.setAllPositions(current.getFilename(), current.getBeginLine(), target.getBeginColumn(), current.getEndLine(),  current.getEndColumn());
 				
 				Hop ae = processExpression(source, target, ids);
 			
@@ -1643,13 +1603,14 @@ public class DMLTranslator
 					e.printStackTrace();
 				}
 			}
-
+	
 			if (current instanceof AssignmentStatement) {
-							
+	
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
 				Expression source = as.getSource();
-				
+
+			
 				// CASE: regular assignment statement -- source is DML expression that is NOT user-defined or external function 
 				if (!(source instanceof FunctionCallIdentifier)){
 				
@@ -1714,8 +1675,8 @@ public class DMLTranslator
 					}
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();
-					for (Expression paramName : fci.getParamExpressions()){
-						Hop in = processExpression(paramName, null, ids);						
+					for (ParameterExpression paramName : fci.getParamExprs()){
+						Hop in = processExpression(paramName.getExpr(), null, ids);						
 						finputs.add(in);
 					}
 
@@ -1745,8 +1706,8 @@ public class DMLTranslator
 					}
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();
-					for (Expression paramName : fci.getParamExpressions()){
-						Hop in = processExpression(paramName, null, ids);						
+					for (ParameterExpression paramName : fci.getParamExprs()){
+						Hop in = processExpression(paramName.getExpr(), null, ids);						
 						finputs.add(in);
 					}
 
@@ -1777,41 +1738,6 @@ public class DMLTranslator
 					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
 			}
 			
-			if (current instanceof RandStatement) {
-				RandStatement rs = (RandStatement) current;
-				
-				DataExpression source = rs.getSource();
-				DataIdentifier target = rs.getIdentifier();
-				
-				// CASE: rand statement -- result of validate reset due to not propogating sizes for loops / if-statements.  Need to re-update here 
-				Expression rowsExpr = rs.getSource().getVarParam(RandStatement.RAND_ROWS);
-				if ( rowsExpr instanceof IntIdentifier && ((IntIdentifier)rowsExpr).getValue() > 0){
-					rs.getSource().getOutput()._dim1 = ((IntIdentifier)rowsExpr).getValue();
-					rs.getIdentifier()._dim1 = ((IntIdentifier)rowsExpr).getValue();
-				}
-				
-				Expression colsExpr = rs.getSource().getVarParam(RandStatement.RAND_COLS);
-				if ( colsExpr instanceof IntIdentifier && ((IntIdentifier)colsExpr).getValue() > 0){
-					rs.getSource().getOutput()._dim2 = ((IntIdentifier)colsExpr).getValue();
-					rs.getIdentifier()._dim2 = ((IntIdentifier)colsExpr).getValue();
-				}
-				
-				Hop rand = processExpression(source, target, ids);
-				rand.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				
-				ids.put(target.getName(), rand);
-				
-				// TODO: Leo What does this piece of code do?
-				Integer statementId = liveOutToTemp.get(target.getName());
-				if ((statementId != null) && (statementId.intValue() == i)) {
-					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), rand, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(rand.get_dim1(), rand.get_dim2(), rand.getNnz(), rand.get_rows_in_block(), rand.get_cols_in_block());
-					transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
-					updatedLiveOut.addVariable(target.getName(), target);
-					output.add(transientwrite);
-				}
-				
-			}
 		}
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.set_hops(output);
@@ -1928,7 +1854,7 @@ public class DMLTranslator
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		target.setDataType(DataType.SCALAR);
 		target.setValueType(ValueType.BOOLEAN);
-		target.setAllPositions(passedSB.getBeginLine(), passedSB.getBeginColumn(), passedSB.getEndLine(), passedSB.getEndColumn());
+		target.setAllPositions(passedSB.getFilename(), passedSB.getBeginLine(), passedSB.getBeginColumn(), passedSB.getEndLine(), passedSB.getEndColumn());
 		Hop predicateHops = null;
 		Expression predicate = cp.getPredicate();
 		
@@ -2114,9 +2040,16 @@ public class DMLTranslator
 				e.printStackTrace();
 			}
 		} else if (source.getKind() == Expression.Kind.DataOp ) {
-			try {
-				return processDataExpression((DataExpression)source, target, hops);
-			} catch ( HopsException e ) {
+			try {	
+				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
+				
+				if (ae instanceof DataOp){
+					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
+					((DataOp)ae).setFormatType(Expression.convertFormatType(formatName));
+				}
+				//hops.put(target.getName(), ae);
+				return ae;
+			} catch ( Exception e ) {
 				e.printStackTrace();
 			}
 		}
@@ -2125,7 +2058,7 @@ public class DMLTranslator
 
 	private DataIdentifier createTarget(Expression source) {
 		Identifier id = source.getOutput();
-		if (id instanceof DataIdentifier)
+		if (id instanceof DataIdentifier && !(id instanceof DataExpression))
 			return (DataIdentifier) id;
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		target.setProperties(id);
@@ -2525,7 +2458,7 @@ public class DMLTranslator
 		
 		// -- construct hops for all input parameters
 		// -- store them in hashmap so that their "name"s are maintained
-		Hop pHop = null;
+		Hop pHop = null; 
 		for ( String paramName : source.getVarParams().keySet() ) {
 			pHop = processExpression(source.getVarParam(paramName), null, hops);
 			paramHops.put(paramName, pHop);
@@ -2541,14 +2474,14 @@ public class DMLTranslator
 		switch(source.getOpCode()) {
 		case READ:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTREAD, paramHops);
-			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
+			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
 			break;
 			
 		case WRITE:
 			String name = target.getName();
 			currBuiltinOp = new DataOp(
 					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTWRITE, hops.get(name), paramHops);
-			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
+			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
 			break;
 			
 		case RAND:
@@ -2558,10 +2491,10 @@ public class DMLTranslator
 		
 		case MATRIX:
 			ArrayList<Hop> tmp = new ArrayList<Hop>();
-			tmp.add( 0, paramHops.get(Statement.RAND_DATA) );
-			tmp.add( 1, paramHops.get(Statement.RAND_ROWS) );
-			tmp.add( 2, paramHops.get(Statement.RAND_COLS) );
-			tmp.add( 3, paramHops.get(Statement.RAND_BY_ROW) );
+			tmp.add( 0, paramHops.get(DataExpression.RAND_DATA) );
+			tmp.add( 1, paramHops.get(DataExpression.RAND_ROWS) );
+			tmp.add( 2, paramHops.get(DataExpression.RAND_COLS) );
+			tmp.add( 3, paramHops.get(DataExpression.RAND_BY_ROW) );
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.RESHAPE, tmp);
 			break;
 			
@@ -2906,7 +2839,6 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
-			
 		case ABS:
 		case SIN:
 		case COS:

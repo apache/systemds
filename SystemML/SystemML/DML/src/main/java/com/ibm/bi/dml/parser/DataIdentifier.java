@@ -26,10 +26,11 @@ public class DataIdentifier extends Identifier
 		_defaultValue = passed.getDefaultValue();
 		
 		// set location information
-		_beginLine 		= passed.getBeginLine();
-		_beginColumn	= passed.getBeginColumn();
-		_endLine		= passed.getEndLine();
-		_endColumn		= passed.getEndColumn();
+		setFilename(passed.getFilename());
+		setBeginLine(passed.getBeginLine());
+		setBeginColumn(passed.getBeginColumn());
+		setEndLine(passed.getEndLine());
+		setEndColumn(passed.getEndColumn());
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

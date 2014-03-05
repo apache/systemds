@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -19,10 +20,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private ParameterizedBuiltinFunctionOp _opcode;
 	private HashMap<String,Expression> _varParams;
 	
+	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed){
 	
-	
-	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, HashMap<String,Expression> varParams){
-	
+		if (functionName == null || paramExprsPassed == null)
+			return null;
+		
 		// check if the function name is built-in function
 		//	 (assign built-in function op if function is built-in
 		Expression.ParameterizedBuiltinFunctionOp pbifop = null;	
@@ -36,6 +38,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.REPLACE;
 		else
 			return null;
+		
+		HashMap<String,Expression> varParams = new HashMap<String,Expression>();
+		for (ParameterExpression pexpr : paramExprsPassed)
+			varParams.put(pexpr.getName(), pexpr.getExpr());
 		
 		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(pbifop,varParams);
 		return retVal;
@@ -62,10 +68,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}	
 		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams);
 	
-		retVal._beginLine 	= this._beginLine;
-		retVal._beginColumn = this._beginColumn;
-		retVal._endLine 	= this._endLine;
-		retVal._endColumn	= this._endColumn;
+		retVal.setBeginLine(this.getBeginLine());
+		retVal.setBeginColumn(this.getBeginColumn());
+		retVal.setEndLine(this.getEndLine());
+		retVal.setEndColumn(this.getEndColumn());
 	
 		return retVal;
 	}

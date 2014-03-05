@@ -32,6 +32,12 @@ public abstract class DMLQLParserBase
 	/** Encoding of the file currently being parsed. */
 	private String fileEncoding = DEFAULT_ENCODING;
 
+	/** filename of DML script being processed **/
+	private String _filename = null;
+	
+	/** DML program (needs to be global) **/
+	private DMLProgram _dmlp = null;
+	
 	/**
 	 * Hook for use by generated Java code, since the generated constructor will
 	 * expect the base class's constructor not to take any arguments.
@@ -42,7 +48,15 @@ public abstract class DMLQLParserBase
 	public void setFileEncoding(String fileEncoding) {
 		this.fileEncoding = fileEncoding;
 	}
+	
+	public void setFilename (String fname){
+		_filename = fname;
+	}
 
+	public String getFilename(){
+		return _filename;
+	}
+	
 	/**
 	 * Generate a ParseException with a token pointer and a message.
 	 * 
@@ -169,21 +183,13 @@ public abstract class DMLQLParserBase
 	 * No return value; parse tree nodes go into the parser's catalog.
 	 */
 	public DMLProgram parse() throws ParseException {
-
-		try {
-			return __inputInternal();
-		} catch (ParseException e) {
-			LOG.error("Failed in DMLProgram parsing: " + e.getMessage());
-			return null;
-		} catch (TokenMgrError e) {
-			LOG.error("Error: " + e.getMessage());
-		}
-		tearDown();
-		return null;
+		_dmlp = new DMLProgram();
+		_dmlp = __inputInternal();
+		return _dmlp;
 	}
-
 	
-
-
-
+	public DMLProgram getDmlp(){
+		return _dmlp;
+	}
 }
+

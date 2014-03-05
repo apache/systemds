@@ -5,16 +5,52 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-//package com.ibm.bi.dml.parser;
-//
+package com.ibm.bi.dml.parser;
+
 //import java.util.ArrayList;
 //import java.util.HashMap;
-//
 //import com.ibm.bi.dml.meta.PartitionParams;
-//import com.ibm.bi.dml.utils.LanguageException;
-//
-//public class ELStatement extends Statement {
-//	
+
+public class ELStatement extends Statement {
+
+	@Override
+	public boolean controlStatement() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public VariableSet initializebackwardLV(VariableSet lo)
+			throws LanguageException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void initializeforwardLV(VariableSet activeIn)
+			throws LanguageException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Statement rewriteStatement(String prefix) throws LanguageException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VariableSet variablesRead() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VariableSet variablesUpdated() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 //	// variable name of the ensemble that is created
 //	private String _ensembleName;
 //	
@@ -141,4 +177,4 @@
 //		set.addVariable(_ensembleName, new DataIdentifier(_ensembleName));
 //		return set;
 //	}
-//}
+}

@@ -14,6 +14,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
@@ -110,8 +111,8 @@ public class Data extends Lop
 				this.addInput(lop);
 				lop.addOutput(this);
 			}
-			if (inputParametersLops.get(Statement.IO_FILENAME)!= null){
-				OutputParameters outParams = ((Data)inputParametersLops.get(Statement.IO_FILENAME)).getOutputParameters();
+			if (inputParametersLops.get(DataExpression.IO_FILENAME)!= null){
+				OutputParameters outParams = ((Data)inputParametersLops.get(DataExpression.IO_FILENAME)).getOutputParameters();
 				String fName = outParams.getLabel();
 				this.getOutputParameters().setFile_name(fName);
 			}
@@ -304,21 +305,21 @@ public class Data extends Lop
 
 		// Attach format-specific properties
 		if(oparams.getFormat() == Format.CSV) {
-			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
-			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
-			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
+			Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
+			Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
 				
 			if (headerLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+						+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
 						+ " must be a literal for a seq operation.");
 			if (delimLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_DELIMITER
+						+ "Parameter " + DataExpression.DELIM_DELIMITER
 						+ " must be a literal for a seq operation.");
 			if (sparseLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_SPARSE
+						+ "Parameter " + DataExpression.DELIM_SPARSE
 						+ " must be a literal for a seq operation.");
 
 			sb.append(OPERAND_DELIMITOR);
@@ -397,21 +398,21 @@ public class Data extends Lop
 				sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
 				
 				if(oparams.getFormat() == Format.CSV) {
-					Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
-					Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
-					Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
+					Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+					Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
+					Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
 					
 					if (headerLop.isVariable())
 						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+								+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
 								+ " must be a literal for a seq operation.");
 					if (delimLop.isVariable())
 						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + Statement.DELIM_DELIMITER
+								+ "Parameter " + DataExpression.DELIM_DELIMITER
 								+ " must be a literal for a seq operation.");
 					if (sparseLop.isVariable())
 						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + Statement.DELIM_SPARSE
+								+ "Parameter " + DataExpression.DELIM_SPARSE
 								+ " must be a literal for a seq operation.");
 					
 					sb.append(OPERAND_DELIMITOR);
@@ -507,10 +508,10 @@ public class Data extends Lop
 	private String createVarCSVHelper() throws LopsException {
 		StringBuilder sb = new StringBuilder();
 		if ( operation == OperationTypes.READ ) {
-			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
-			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
-			Data fillLop = (Data) getNamedInputLop(Statement.DELIM_FILL); 
-			Data fillValueLop = (Data) getNamedInputLop(Statement.DELIM_FILL_VALUE);
+			Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
+			Data fillLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL); 
+			Data fillValueLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
 			
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
@@ -521,21 +522,21 @@ public class Data extends Lop
 			sb.append(fillValueLop.getDoubleValue());
 		}
 		else { // (operation == OperationTypes.WRITE) 
-			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
-			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
-			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE); 
+			Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
+			Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE); 
 			
 			if (headerLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+						+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
 						+ " must be a literal for a seq operation.");
 			if (delimLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_DELIMITER
+						+ "Parameter " + DataExpression.DELIM_DELIMITER
 						+ " must be a literal for a seq operation.");
 			if (sparseLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + Statement.DELIM_SPARSE
+						+ "Parameter " + DataExpression.DELIM_SPARSE
 						+ " must be a literal for a seq operation.");
 			
 			sb.append(headerLop.getBooleanValue());

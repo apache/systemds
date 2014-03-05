@@ -30,6 +30,7 @@ import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.DMLParseException;
 import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +51,16 @@ public class DMLQLParser extends DMLQLParserBase{
 
 	/** stores working directory to DML packages (directory to look for source files) **/
  	private String dmlWorkingDir = ".";
+
+ 	private String _filename = "MAIN SCRIPT";
+
+	public String getFilename() {
+		return _filename;
+	}
+	
+	public void setFilename(String fname){
+		_filename = fname;
+	}	  
 
  	/** Convenience constructor for reading from a string. */
  	public DMLQLParser(String s)throws IOException, ParseException {
@@ -74,6 +85,7 @@ public class DMLQLParser extends DMLQLParserBase{
 		      
 		// initialize working dir to current working directory
 		dmlWorkingDir = new String(".");
+		setFilename(f.getName());
 	}
 
 	private void setCommandArgs(HashMap<String,String> ca){
@@ -81,11 +93,11 @@ public class DMLQLParser extends DMLQLParserBase{
 	}
 
 	private String printErrorLocation(int line, int col){
-		return "ERROR: line " + line + ", col " + col + " -- "; 
+		return "ERROR: " + _filename + " -- line " + line + ", col " + col + " -- "; 
 	}
 
-	private String printWarningLocation(int line, int col){
-		return "WARNING: line " + line + ", col " + col + " -- "; 
+	private String printWarningLocation(int line, int col){		
+		return "WARNING: " + _filename + " -- line " + line + ", col " + col + " -- "; 
 	}	  
    
 	public DMLQLParser(File f, HashMap<String,String> commandArgs)throws IOException, ParseException {
@@ -182,15 +194,10 @@ TOKEN :
 	| <EXTERNALFUNCTION 	: "externalFunction" >
 	| <IMPLEMENTED_IN 		: "implemented in" >
 	| <PARFOR 		: "parfor">
-	| <RAND     	: "Rand">
 	| <PRINT 		: "print">
-	| <READMATRIX 	: "read">
 	| <WRITEMATRIX 	: "write">
-	| <READMM		: "readMM" >
 	| <WRITEMM		: "writeMM" >
-	| <READ_CSV		: "read.csv" >
 	| <WRITE_CSV	: "write.csv" >
-	| < MATRIX		: "matrix" >
 
 	// RESERVED KEYWORDS -- required for meta-learning
  	| <BUILD_ENSEMBLE	: "build ensemble" >
@@ -202,22 +209,9 @@ TOKEN :
 	| <PARTITION	: "partition" >
 
 	// RESERVED KEYWORDS -- required to support import / packages -- NOT common to R
-	//| <IMPORT 		: "import"> 
-	//| <DMLPATH 		: "dml-path">  
 	| <SOURCE		: "source">
 	| <SETWD		: "setwd" >
 	| <AS  			: "as">
-
-	// RESERVED KEYWORDS -- could be eliminated, may cause issue with lookahead
-	//| <SEQ 		: "seq">  
-
-	//|<NEXT  	: "next">
-	//|<BREAK  	: "break">
-
-	//| <INF  	: "Inf">
-	//| <NAN  	: "NaN">
-	//| <NA  	: "NA">
-
  	
 	/////////////////////////////////////////////////////////
 	// Operators
@@ -260,7 +254,7 @@ TOKEN :
  
  	// The name of an optree or an existing annotation type.
  	| <ID : ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_","."])* >
- 	| <DOLLAR_ID : "$"["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <DOLLAR_ID : "$"["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_","."])* >
  	| <DOLLAR_ID_POS : "$"(["0"-"9"])+ >
 
  	// A number with no decimal point -- minus sign is a separate token
@@ -304,308 +298,631 @@ TOKEN :
 
 DMLProgram __inputInternal() :
 {
-	DMLProgram dmlp = new DMLProgram();
 	Statement current = null;
+	ArrayList<StatementBlock> groupedStmts = null;
 	Token reserved = null;
+
+	DMLParseException runningList = new DMLParseException(this.getFilename());
+	boolean skipStatement = false;
+}
+{  
+	try {
+		(
+			(	
+				{					skipStatement = false;
+					groupedStmts  = null;
+					current = null;
+				}
+				try {
+				  	groupedStmts = GroupedStatements()
+					| current = PathStatement() 
+					| current = ImportStatement()
+					| current = OutputStatement()
+					| current = WhileStatement()
+					| current = ForStatement()
+					| current = IfStatement()
+					| current = MetaLearningStatement()
+					| current = AssignValueStatements()
+				} catch (DMLParseException e){					runningList.add(e);
+					skipStatement = true;
+				}	 
+			)
+			{
+				
+				if (!skipStatement) {
+					if (groupedStmts != null){						for (StatementBlock currSb : groupedStmts)
+							this.getDmlp().addStatementBlock(currSb);
+							
+					} else {					  
+						StatementBlock sb = null;
+						if (current instanceof WhileStatement) 
+							sb = new WhileStatementBlock();
+						else if (current instanceof ParForStatement) 
+							sb = new ParForStatementBlock();
+						else if (current instanceof ForStatement) 
+							sb = new ForStatementBlock();
+						else if (current instanceof IfStatement)
+							sb = new IfStatementBlock(); 
+						else if (current instanceof CVStatement){
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML"));
+							//sb = new CVStatementBlock();
+						}
+						else if (current instanceof ELStatement || current instanceof ELUseStatement)
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+						else if (current instanceof FunctionStatement) 
+							sb = new FunctionStatementBlock();
+						else 
+							sb = new StatementBlock();
+						sb.addStatement(current);
+
+						if (current instanceof PathStatement){							this.dmlWorkingDir = ((PathStatement)current).getPathValue();
+							// add path statement to DML program
+	    					this.getDmlp().addStatementBlock(sb);
+						}
+					
+						// handle import statements
+						else if (current instanceof ImportStatement) {
+		
+							// if the path verifies, parse the file to create a DMLProgram
+							ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
+		
+							if (importStmt.verify(dmlWorkingDir)) {
+		
+								try {
+									DMLProgram importedProg = null;
+									File moduleFile = new File(importStmt.getCompletePath());
+									LOG.info("INFO: line " + importStmt.getBeginLine() + ", column " + importStmt.getBeginColumn() + " -- importing module file: " + ((ImportStatement)current).getCompletePath());
+		
+									try {										DMLQLParser parser = new DMLQLParser(moduleFile,null);
+										parser.setFilename(importStmt.getFilePath());
+										importedProg = parser.parse();
+									} catch (DMLParseException e){										runningList.add(e);
+									}
+									       	
+									// set the key to be the name of the module or the alias      
+									String namespaceKey = (importStmt.getNamespace() == null) ? DMLProgram.DEFAULT_NAMESPACE : importStmt.getNamespace();
+			
+									if (!this.getDmlp().getNamespaces().containsKey(namespaceKey))
+											this.getDmlp().getNamespaces().put(namespaceKey,importedProg);
+				  
+									else {
+										// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
+										for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){	  
+											if (this.getDmlp().getFunctionStatementBlock(namespaceKey,fname) != null)  
+												runningList.add(new DMLParseException(this.getFilename(), importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey));
+											else 
+				          						this.getDmlp().getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
+				       					}
+				       				}
+								}
+								catch(Exception e){
+								  	if (e != runningList)
+										runningList.add(e);
+									throw runningList;
+								}
+							} 
+		    
+		    				else {
+								runningList.add(new DMLParseException(this.getFilename(), importStmt.printErrorLocation() + "failed to import " + importStmt.toString()));
+								throw runningList;
+		    				}
+		
+		    				// add import statement to DML program
+		    				this.getDmlp().addStatementBlock(sb);
+		
+						} // if (current instanceof ImportStatement)
+		
+						// handle function declarations
+						else if (sb instanceof FunctionStatementBlock) {
+							FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
+							try {
+								// check if the function is defined in the current namespace
+								if (this.getDmlp().getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName())){								    runningList.add(new DMLParseException(this.getFilename(), first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace "));
+								}
+								this.getDmlp().getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
+							} catch (Exception e) {
+								runningList.add(e);
+							}
+						} 
+						else {
+							this.getDmlp().addStatementBlock(sb);
+						}
+					}
+				}
+			}
+		[<SEMICOLON>]
+	 	)* <EOF>
+	
+	 	{
+	  		this.getDmlp().mergeStatementBlocks();
+	  		if (runningList.size() > 0)
+	  			throw runningList;
+	  		return this.getDmlp();
+	 	}
+
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
+}
+
+
+ArrayList<StatementBlock> GroupedStatements() :
+{	Statement current = null;
+	ForStatement fs = null;
+	boolean skipStatement = false;
+	ArrayList<StatementBlock> retVal = new ArrayList<StatementBlock>();
+	ArrayList<StatementBlock> groupedStmts = new ArrayList<StatementBlock>();
+
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	(
-		(	
-			LOOKAHEAD(3) 	current = FunctionStatement()
-			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-			| current = PathStatement() 
-			| current = ImportStatement()
-			| current = PrintStatement()
-			| current = WhileStatement()
-			| current = ForStatement()
-			| current = ParForStatement()
-			| current = IfStatement()
-			| current = OutputStatement() 
-			| current = CVStatement()
-			| current = AssignValueStatements()
-			//| current = ELStatement()
-			//| current = ELUseStatement()				 
+	try {
+		<LEFTCURLYPAREN>
+		(
+			(
+				{
+					skipStatement = false;
+					groupedStmts  = null;
+					current = null;
+				}
+				try {
+		  			groupedStmts = GroupedStatements()
+					| current = PathStatement() 
+					| current = ImportStatement()
+					| current = OutputStatement()
+					| current = WhileStatement()
+					| current = ForStatement()
+					| current = IfStatement()
+					| current = MetaLearningStatement()
+					| current = AssignValueStatements()
+				} catch (DMLParseException e){
+					runningList.add(e);
+					skipStatement = true;
+				}
+			)
+			{
+				if (!skipStatement) {
+
+					if (groupedStmts != null){
+						for (StatementBlock currSb : groupedStmts)
+							retVal.add(currSb);		
+					} else {					 
+						StatementBlock sb = null;
+						if (current instanceof WhileStatement) 
+							sb = new WhileStatementBlock();
+						else if (current instanceof IfStatement) 
+							sb = new IfStatementBlock();
+						else if (current instanceof ParForStatement) 
+							sb = new ParForStatementBlock();
+						else if (current instanceof ForStatement) 
+							sb = new ForStatementBlock();
+						else if (current instanceof FunctionStatement)
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + " Nested function definitions are not supported "));
+						else if (current instanceof CVStatement) {
+						  	runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML"));
+							//sb = new CVStatementBlock();
+						}
+						else if (current instanceof ELStatement || current instanceof ELUseStatement) 
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+						else 
+							sb = new StatementBlock();						
+						sb.addStatement(current);
+
+						if (current instanceof PathStatement){
+							
+							this.dmlWorkingDir = ((PathStatement)current).getPathValue();
+							// add path statement to DML program
+	    					this.getDmlp().addStatementBlock(sb);
+						}
+	
+						// handle import statements
+						else if (current instanceof ImportStatement) {
+		
+							// if the path verifies, parse the file to create a DMLProgram
+							ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
+		
+							if (importStmt.verify(dmlWorkingDir)) {
+		
+								try {
+									DMLProgram importedProg = null;
+									File moduleFile = new File(importStmt.getCompletePath());
+									LOG.info("INFO: line " + importStmt.getBeginLine() + ", column " + importStmt.getBeginColumn() + " -- importing module file: " + ((ImportStatement)current).getCompletePath());
+		
+									try {
+										DMLQLParser parser = new DMLQLParser(moduleFile,null);
+										parser.setFilename(importStmt.getFilePath());
+										importedProg = parser.parse();
+										
+									} catch (DMLParseException e){
+										runningList.add(e);
+									}
+									       	
+									// set the key to be the name of the module or the alias      
+									String namespaceKey = (importStmt.getNamespace() == null) ? DMLProgram.DEFAULT_NAMESPACE : importStmt.getNamespace();
+			
+									if (!this.getDmlp().getNamespaces().containsKey(namespaceKey)) {
+										this.getDmlp().getNamespaces().put(namespaceKey,importedProg);
+				  
+									} else {
+										// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
+										for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){	  
+											if (this.getDmlp().getFunctionStatementBlock(namespaceKey,fname) != null)  
+												runningList.add(new DMLParseException(this.getFilename(), importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey));
+											else 
+				          						this.getDmlp().getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
+				       					}
+				       				}
+								}
+								catch(Exception e){
+								  	if (e != runningList)
+										runningList.add(e);
+									throw runningList;
+								}
+							} 
+		    
+		    				else {
+								runningList.add(new DMLParseException(this.getFilename(), importStmt.printErrorLocation() + "failed to import " + importStmt.toString()));
+								throw runningList;
+		    				}
+		
+		    				// add import statement to DML program
+		    				retVal.add(sb);
+		
+						} // if (current instanceof ImportStatement)
+		
+						// handle function declarations
+						else if (sb instanceof FunctionStatementBlock) {
+							FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
+							try {
+								// check if the function is defined in the current namespace
+								if (this.getDmlp().getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName())){
+								    runningList.add(new DMLParseException(this.getFilename(), first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace "));
+								}
+								this.getDmlp().getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
+							} catch (Exception e) {
+								runningList.add(e);
+							}
+						} 
+						else {
+							retVal.add(sb);
+						}
+					}
+				}
+			}
+		[<SEMICOLON>]
+		)*
+	   	<RIGHTCURLYPAREN>
+	  
+	 	{
+			if (runningList.size() > 0){
+				throw runningList;
+			} else {
+				return retVal;
+	 		}
+	 	}
+
+ 	} catch (Exception e){
+	  	if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
+}
+
+
+ForStatement ForStatement() :
+{
+	Statement current = null;
+	ArrayList<StatementBlock> groupedStmts = null;
+	IterablePredicate ip = null;
+	Token tStart = null;
+	ForStatement fs = null;
+	boolean skipStatement = false;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
+}
+{	try {	  
+		(tStart = <FOR> | tStart = < PARFOR >)
+		{	   
+			if (tStart.image.equals("for"))
+				fs = new ForStatement();
+			else
+				fs = new ParForStatement();
+		}
+		try {
+			ip = IterablePredicate()
+			{ fs.setPredicate(ip); }
+		} catch (DMLParseException e){			runningList.add(e);
+		}		
+		
+		(
+			{
+				skipStatement = false;
+				groupedStmts = null;
+				current = null;
+			}
+			try {
+				groupedStmts = GroupedStatements()
+	  			| current = OutputStatement()
+				| current = WhileStatement()
+				| current = ForStatement()
+				| current = IfStatement()
+				| current = MetaLearningStatement()
+				| current = AssignValueStatements()
+			} catch (DMLParseException e){				runningList.add(e);
+				skipStatement = true;
+			}
 		)
 		{
-			StatementBlock sb = null;
-			
-			if (current instanceof WhileStatement) {
-				sb = new WhileStatementBlock();
-			}
-			else if (current instanceof ParForStatement) {
-				sb = new ParForStatementBlock();
-			}
-			else if (current instanceof ForStatement) {
-				sb = new ForStatementBlock();
-			}
-			else if (current instanceof IfStatement){
-				sb = new IfStatementBlock(); 
-			} 
-			else if (current instanceof CVStatement) {
-			  	//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//			  	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//sb = new ELUseStatementBlock();
-//			}   
-			else if (current instanceof FunctionStatement) {
-				sb = new FunctionStatementBlock();
-			}
-			else {
-				sb = new StatementBlock();
-			}
-			sb.addStatement(current);
-			
-			// handle import statements
-			if (current instanceof ImportStatement) {
-
-				// if the path verifies, parse the file to create a DMLProgram
-				ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
-
-				if (importStmt.verify(dmlWorkingDir)) {
-
-					try {
-						DMLProgram importedProg = null;
-						File moduleFile = new File(importStmt.getCompletePath());
-						System.out.println("INFO: line " + importStmt.getBeginLine() + ", column " + importStmt.getBeginColumn() + " -- importing module file: " + ((ImportStatement)current).getCompletePath());
-
-						//if (DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath()) == null){  
-						DMLQLParser parser = new DMLQLParser(moduleFile,null);
-						importedProg = parser.parse();
-						       	
-						// set the key to be the name of the module or the alias      
-						String namespaceKey = (importStmt.getNamespace() == null) ? DMLProgram.DEFAULT_NAMESPACE : importStmt.getNamespace();
-
-						if (!dmlp.getNamespaces().containsKey(namespaceKey))
-								dmlp.getNamespaces().put(namespaceKey,importedProg);
-	  
-						else {
-							// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
-							for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
-								if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null){  
-									LOG.error(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
-									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
-								}
-								else 
-	          						dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
-	        				}
-	       				}
+		  
+			if (!skipStatement) {
+				if (groupedStmts != null){					fs.setBody(groupedStmts);
+				} else {
+					StatementBlock sb = null;
+					if (current instanceof WhileStatement) 
+						sb = new WhileStatementBlock();
+					else if (current instanceof IfStatement) 
+						sb = new IfStatementBlock();
+					else if (current instanceof ParForStatement) 
+						sb = new ParForStatementBlock();
+					else if (current instanceof ForStatement) 
+						sb = new ForStatementBlock();
+					else if (current instanceof FunctionStatement)
+						runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + " Nested function definitions are not supported "));
+					else if (current instanceof CVStatement) {
+					  	runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML"));
+						//sb = new CVStatementBlock();
 					}
-					catch(Exception e){
-					  	LOG.error(e.getMessage());
-						throw new ParseException(e.getMessage());
-					}
-				} 
-    
-    			else {
-    			    LOG.error(importStmt.printErrorLocation() + "failed to import " + importStmt.toString());
-     				throw new ParseException(importStmt.printErrorLocation() + "failed to import " + importStmt.toString());
-    			}
-
-    			// add import statement to DML program
-    			dmlp.addStatementBlock(sb);
-
-			} // if (current instanceof ImportStatement)
-
-			// handle function declarations
-			else if (sb instanceof FunctionStatementBlock) {
-				FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
-				try {
-
-					// check if the function is defined in the current namespace
-					if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName())){
-					    LOG.error(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
-						throw new LanguageException(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
-					}
-					dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
-				} catch (LanguageException e) {
-				  	LOG.error(e.getMessage());
-					throw new ParseException(e.getMessage());
+					else if (current instanceof ELStatement || current instanceof ELUseStatement) 
+						runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+					else 
+						sb = new StatementBlock();
+					
+					sb.addStatement(current);
+					fs.addStatementBlock(sb);
 				}
-			} 
-			else {
-				dmlp.addStatementBlock(sb);
 			}
 		}
- 	)* <EOF>
 
- 	{
-  		dmlp.mergeStatementBlocks();
-  		return dmlp;
- 	}
+	 	{
+			if (runningList.size() > 0){
+				throw runningList;
+			} else {				fs.mergeStatementBlocks();
+				if (tStart != null && fs.getBody() != null && fs.getBody().size() > 0){					StatementBlock lastSb = fs.getBody().get(fs.getBody().size()-1); 
+					fs.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, lastSb.getEndLine(), lastSb.getEndColumn());
+				}
+				return fs;
+	 		}
+	 	}
+
+ 	} catch (Exception e){
+	  	if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
 Statement AssignValueStatements() :
-{
-	DataIdentifier id = null;
+{	DataIdentifier id = null;
+	ConstIdentifier constId = null;
 	ArrayList<ArrayList<Expression>> targetListList = null;
 	Expression source = null;
-	Token t = null, t1 = null, commaToken = null, tEnd = null;
-	Expression expr = null;
-	Statement retVal = null;
+	Token t = null, commaToken = null, tEnd = null;
+	
+	Vector <DataIdentifier> functionInputs  = new Vector<DataIdentifier>();
+	Vector<DataIdentifier > functionOutputs = new Vector<DataIdentifier>() ;
+	FunctionStatement fstmt = new FunctionStatement();
+	ExternalFunctionStatement efstmt = null;
+	Statement current = null;
 
-	ArrayList<Expression> unnamedParams = new ArrayList<Expression>();	  
-	HashMap<String,Expression> namedParams = new HashMap<String,Expression>();
+	HashMap<String,String> map = null;
 
-	InputStatement is = null;
+	ArrayList<StatementBlock> groupedStmts = null;
+	boolean skipStatement = false;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	
-	(
-	 	id = Identifier() | targetListList = ReadIndexList() )
-		{
-			if (id != null && id.getName().startsWith("$")) {
-	    		LOG.error(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
-				throw new ParseException(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
-			}
-		}
-		
-		t = <ASSIGN >
-
-    	(
-	  		(
-	  	   		(t = <RAND> | t = <MATRIX> )
-	  	   	
-				<LEFTPAREN>
-				(
-					{commaToken = null;}
-					( commaToken = <COMMA>)? (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() 
-						{
-
-							if (t1 != null){
-								namedParams.put(t1.image, expr);
-							}	
-							else {
-		   						unnamedParams.add(expr);
-							}
-							t1 = null;	
-	
-							int exprCount = namedParams.size() + unnamedParams.size();
-					
-							if (exprCount == 1 && commaToken != null) {
-					  			LOG.error(expr.printErrorLocation() + "should not have comma before first function call parameter");
-								throw new ParseException(expr.printErrorLocation() + "should not have comma before first function call parameter");
-							}
-							if (exprCount != 1 && commaToken == null){
-					  			LOG.error(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
-								throw new ParseException(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
-							}
-						}
-				)*
-				tEnd = <RIGHTPAREN>[<SEMICOLON>]  
-					{
-						RandStatement rs = new RandStatement(id,t.image,unnamedParams,namedParams, t.beginLine, t.beginColumn);
-						rs.setAllPositions(t.beginLine, t.beginColumn, tEnd.beginLine, tEnd.beginColumn);
-						return rs;
-					}
-	  		)
-		
-			| 	
-
-			(  
-	  	 		( t = <READMATRIX> | t = <READMM> | t = <READ_CSV> )
-					{
-						is = new InputStatement(Expression.DataOp.READ);
-
-						if (id == null){
-							LOG.error(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");
-							throw new ParseException(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");	
-						}
-					}
-				
-					<LEFTPAREN> expr = Expression()
-						{is.addExprParam(Statement.IO_FILENAME,expr,false);}
-					( <COMMA>
-						(  {t1 = null;}
-							t1 = <ID> < ASSIGN > expr = Expression()
-								{is.addExprParam(t1.image, expr,false);}
-						)
-					)*
-					tEnd = <RIGHTPAREN> [ <SEMICOLON> ]
-
-					{
-						if (t.image.equals("readMM")){
-			    			StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-							is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
-						}
-			
-						else if (t.image.equals("read.csv")){
-						  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
-							is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
-						}
-					
-				 		is.setIdentifier(id);
-				 		id.setDimensions(is);
-				 		id.computeDataType();
-						is.setAllPositions(id.getBeginLine(), id.getBeginColumn(), tEnd.beginLine, tEnd.beginColumn);
-				 		return is;
-					}
-		)
-	  	
-		|
-
+	try {
+	  
 		(
-		  source = Expression() [ <SEMICOLON> ]
-			{
-				if (t.image.equals("=")){
-				  
-					if (id != null) {
-						AssignmentStatement astmt = new AssignmentStatement(id, source);
-						astmt.setAllPositions(t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
-						return astmt;
+			try {			  id = Identifier()
+			  |			  targetListList = ReadIndexList()
+			} catch (DMLParseException e) {
+				runningList.add(e);
+			}		)	  
+		
+		( t = <ASSIGN> | t = <LEFTASSIGN>)
+		(	  
+			(	    
+				<FUNCTION>
+					try {						functionInputs = ReadTypedArgList()
+					} catch (DMLParseException e) {						runningList.add(e);
 					}
-					else { 	
-						MultiAssignmentStatement mastmt =  new MultiAssignmentStatement(targetListList, source, 0);
-						mastmt.setAllPositions(t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
-						return mastmt;
+	
+				(
+			  		<RETURN>
+	
+					try {
+						functionOutputs = ReadTypedArgList()
+					} catch (DMLParseException e) {						runningList.add(e);
+					} 
+				)?
+
+				try {				  groupedStmts = GroupedStatements()
+				} catch (DMLParseException e){					runningList.add(e);
+				}	
+
+				{
+					if (runningList.size() > 0){
+						throw runningList;
+					} else {
+						fstmt.setBody(groupedStmts);
+					  	fstmt.mergeStatementBlocks(); 
+						fstmt._inputParams = functionInputs ;
+						if (functionOutputs != null)
+							fstmt._outputParams = functionOutputs ;
+						
+						// set the function name
+						if (id == null || (id != null && id instanceof IndexedIdentifier)){
+							runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t.beginLine, t.beginColumn) + "function can only be assigned to single non-indexed identifier"));
+						} else {							fstmt.setName(id.getName());
+						}
+				
+						// track position for start / end token tStart
+						if (fstmt.getBody() != null && fstmt.getBody().size() > 0){
+						  	StatementBlock firstSb = fstmt.getBody().get(0);
+						  	StatementBlock lastSb  = fstmt.getBody().get(fstmt.getBody().size()-1);
+							fstmt.setAllPositions(this.getFilename(), firstSb.getBeginLine(), firstSb.getBeginColumn(), lastSb.getEndLine(), lastSb.getEndColumn());
+						}
+						if (runningList.size() > 0)								
+							throw runningList;
+						return fstmt;
 					}
 				}
-			}
-		)	
-	)
+			)
+		 
+			|
+				
+			( 				<EXTERNALFUNCTION>
+	
+					try {						functionInputs = ReadTypedArgList()
+					} catch (DMLParseException e) {						runningList.add(e);
+					}
+				(
+				  	<RETURN>
+					try {						functionOutputs = ReadTypedArgList()
+					} catch (DMLParseException e) {
+						runningList.add(e);
+					}
+				)?
+				
+				tEnd = <IMPLEMENTED_IN>
+					try {						map = ReadGenericParamList()
+					} catch (DMLParseException e) {
+						runningList.add(e);
+					}
+		 
+				{
+					if (runningList.size() > 0){
+						throw runningList;
+					} else {			  
+						efstmt = new ExternalFunctionStatement(functionInputs, functionOutputs, map);
+		
+						// set the function name
+						if (id == null || (id != null && id instanceof IndexedIdentifier))
+							throw new DMLParseException(this.getFilename(), printErrorLocation(t.beginLine, t.beginColumn) + "function can only be assigned to single non-indexed identifier");
+						else
+							efstmt.setName(id.getName());
+							
+						if (t != null && tEnd != null)
+							efstmt.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn, tEnd.beginLine, tEnd.beginColumn);	
+				     	return efstmt;
+			    	}
+			  	}
+			)
+	
+			| 
+	
+			( 
+				try {				  source = Expression()
+				} catch (DMLParseException e) {
+					runningList.add(e);
+				}
+	
+				{
+					if (runningList.size() > 0){					  throw runningList;
+					} else {
+						if (id != null) {
+
+							if (id.getName() != null && id.getName().startsWith("$")){
+
+								// check if the parameter variable has passed in value.
+								// If value passed in, then change source to use passed in value.
+
+								String argVal = commandArgs.get(id.getName());
+	
+								if (argVal != null) {								  	
+									try { 
+									 	// try to assign to long value
+										Long longVal = new Long(argVal);
+										constId = new IntIdentifier(longVal);
+										constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+										
+									} catch(Exception e1){
+									  	try {
+									  	  	// try to assign to double value
+									  	  	Double doubleVal = new Double(argVal);
+									  	  	constId = new DoubleIdentifier(doubleVal);
+									  	  	constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+									  	  
+									  	} catch (Exception e2) {
+						
+											// try to assign to boolean value
+											if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+												Boolean boolVal = new Boolean(argVal);
+									  	  		constId = new BooleanIdentifier(boolVal);
+									  	  		constId.setAllPositions(this.getFilename(),id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+											}
+											else {
+											  	// try to assign to string value
+												constId = new StringIdentifier(argVal);
+												constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+											}	
+						
+									  	} // end catch e2
+										  						  	 
+									} // end catch e1
+									source = constId;
+							   	} else {									// add the dollar param value to the passed arg list
+									// check that dollar param is a constant
+									if (!(source instanceof ConstIdentifier)){
+										runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(id.getBeginLine() , id.getBeginColumn()) + "Can only assign dollar-param variable a constant value"));
+										throw runningList;
+									} else if (source == null) {										runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(id.getBeginLine() , id.getBeginColumn()) + "For dollar param " + id.getName() + " value is undefined"));										throw runningList;
+									} else {										commandArgs.put(id.getName(), source.toString()); 
+									}
+						  		}
+							}
+								    
+							AssignmentStatement astmt = new AssignmentStatement(id, source);
+							if (t != null && source != null)
+								astmt.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
+							return astmt;
+						} else { 	
+							MultiAssignmentStatement mastmt =  new MultiAssignmentStatement(targetListList, source, 0);
+							if (t != null && source != null)
+								mastmt.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
+							return mastmt;
+						}
+					}
+				}
+			)
+		)
+		
+		
+	} catch (Exception e){		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }	
 
 
 PathStatement PathStatement():
 {
 	// track start / end token positions
-	Token tStart = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
-	Token t1 = null;
-	PathStatement pstmt = new PathStatement();
+	Token tStart = null, t1 = null;
+	PathStatement pstmt = null;
 }
 {
-	  
-	tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>
-	{
-		String dequotedString = dequoteStr('\"',t1.image);
-		pstmt.setPathValue(dequotedString);
-		dmlWorkingDir = pstmt.getPathValue();
-	}
-
-	[<SEMICOLON>]
-	
-	
-	
-	{
-		// track position for start token tStart, end token t1
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = t1.endLine;
-		ecp = t1.endColumn;
-		pstmt.setAllPositions(blp, bcp, elp, ecp);
-
-		return pstmt;
+	try {	  
+		tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>		{
+			String dequotedString = dequoteStr('\"',t1.image);
+			pstmt = new PathStatement(dequotedString);
+			pstmt.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, t1.endLine, t1.endColumn);
+			return pstmt;
+		}
+	} catch (Exception e){		throw new DMLParseException(getFilename(), e);
 	}
 }
 
@@ -613,175 +930,33 @@ PathStatement PathStatement():
 ImportStatement ImportStatement() :
 {
 	// track start / end token positions
-	Token tStart = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-
-	Token t1 = null, t2 = null, t3 = null, t4 = null;
+	Token tStart = null, t1 = null, t4 = null;
 	ImportStatement importStmt = new ImportStatement();
-
 }
 {
-	tStart = <SOURCE><LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>
-	{
-		String dequotedString = dequoteStr('\"',t1.image);
-		importStmt.setFilePath(dequotedString);
-	}
-
-		["as" t4 = <ID> {importStmt.setNamespace(t4.image);}] [<SEMICOLON>]
-
-	{ 
-		// track position for start / end token tStart
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-
-		if (t4 != null){
-			elp = t4.endLine;
-			ecp = t4.endColumn;
-		}
-		else {
-			elp = t1.endLine;
-			ecp = t1.endColumn;
-		}
-
-		importStmt.setAllPositions(blp, bcp, elp, ecp);
-
-		return importStmt;
-	}
-}
-
-
-FunctionStatement FunctionStatement() :
-{
-	Vector <DataIdentifier> functionInputs  = new Vector<DataIdentifier>();
-	Vector<DataIdentifier > functionOutputs = new Vector<DataIdentifier>() ;
-	FunctionStatement fstmt = new FunctionStatement();
-	Token t = null;
-	Statement current = null;
-
-	// track start / end token positions
-	Token tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
-	t = <ID> <ASSIGN> <FUNCTION> functionInputs = ReadTypedArgList()
-		(<RETURN> functionOutputs = ReadTypedArgList())?
-	<LEFTCURLYPAREN>
-	(
-		(
-			LOOKAHEAD(3) 	current = FunctionStatement()
-	  			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-	   			| current = OutputStatement()
-				| current = PrintStatement()
-				| current = WhileStatement()
-				| current = ForStatement()
-				| current = ParForStatement()
-				| current = IfStatement()
-				| current = CVStatement()
-				| current = AssignValueStatements()
-			//	| current = ELStatement()
-			//	| current = ELUseStatement()
-		)
-
+	try {	  
+		tStart = <SOURCE><LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>
 		{
-   			StatementBlock sb = null;
-			if (current instanceof WhileStatement) {
-				sb = new WhileStatementBlock();
-			}
-			else if (current instanceof ParForStatement) {
-				sb = new ParForStatementBlock();
-			}
-			else if (current instanceof ForStatement) {
-				sb = new ForStatementBlock();
-			}
-			else if (current instanceof IfStatement){
-				sb = new IfStatementBlock(); 
-			}
-			else if (current instanceof CVStatement) {
-			  	//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//			    LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//sb = new ELUseStatementBlock();
-//			}   
-			else if (current instanceof FunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + "Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + "Nested function definitions are not supported ");
-			}
-			else if (current instanceof ExternalFunctionStatement) {
-				LOG.error(current.printErrorLocation() + "Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + "Nested function definitions are not supported ");
-			}	
-		   
-			else {
-				sb = new StatementBlock();
-			}
-			sb.addStatement(current);
-			fstmt.addStatementBlock(sb);
+			String dequotedString = dequoteStr('\"',t1.image);
+			importStmt.setFilePath(dequotedString);
 		}
- 	)*
- 	{
-  		fstmt.mergeStatementBlocks(); 
- 	}
-	tEnd = <RIGHTCURLYPAREN>
-	
-	{
-		fstmt._inputParams = functionInputs ;
-		if (functionOutputs != null){
-			fstmt._outputParams = functionOutputs ;
+
+			[
+				"as" t4 = <ID>
+				{
+					importStmt.setNamespace(t4.image);
+				}
+			] 
+
+		{ 
+			// track position for start / end token tStart
+			int elp = (t4 != null) ? t4.endLine   : t1.endLine;
+			int ecp = (t4 != null) ? t4.endColumn : t1.endColumn;
+			importStmt.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, elp, ecp);
+			return importStmt;
 		}
-		fstmt.setName(t.image);
-
-		// track position for start / end token tStart
-		fstmt.setAllPositions(t.beginLine, t.beginColumn, tEnd.beginLine, tEnd.beginColumn);
-
-		return fstmt;
+	} catch (Exception e){		throw new DMLParseException(getFilename(), e);
 	}
-}
-
-
-ExternalFunctionStatement ExternalFunctionStatement() :
-{
-	Vector <DataIdentifier> functionInputs = null, functionOutputs = null ;
-	ExternalFunctionStatement fstmt = new ExternalFunctionStatement();
-	Token t = null;
-	Statement current = null;
-	HashMap<String,String> map = null;
-
-	// track start / end token positions
-	Token tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
-}
-{
-	t = <ID> <ASSIGN> <EXTERNALFUNCTION> functionInputs = ReadTypedArgList()
-	(<RETURN> functionOutputs = ReadTypedArgList())?
-	tEnd = <IMPLEMENTED_IN> map = ReadGenericParamList()[ tEnd = <SEMICOLON>]
- 
-	{
-		fstmt.setOtherParams(map);
-		fstmt._inputParams = functionInputs ;
-		if (functionOutputs != null) {
-			fstmt._outputParams = functionOutputs ;
-		}
-		fstmt.setName(t.image);
-
-		// track position for start / end token tStart
-		blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		fstmt.setAllPositions(blp, bcp, elp, ecp);
-
-     	return fstmt;
-  	}
 }
 
 
@@ -793,42 +968,42 @@ HashMap <String,String > ReadGenericParamList() :
 	DoubleIdentifier doubleid = null;
 	BooleanIdentifier boolid = null;
 
-	// track start / end token positions
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-		
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	
-	tStart = <LEFTPAREN>
-	(
-		{t4 = null;}
-		(t4 = <COMMA>)? t1 = <ID> <ASSIGN>
+	try {
+		<LEFTPAREN>
 		(
-			LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
-			| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
-			| boolid = BooleanConstant()  { map.put(t1.image, boolid.toString());     }
-			| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
-			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
-		)
-		{
-			if (map.size() == 1 && t4 != null){
-				LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma before first parameter");
-				throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma before first parameter");
-			}
-			if (map.size() > 1 && t4 == null){
-				LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "missing comma before parameter " + map.size() + 1);
-				throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "missing comma before parameter " + map.size() + 1);
-			}
-			t4 = null;
-		}
-		
-	)*
-
-	tEnd = <RIGHTPAREN>
+			{t4 = null;}
+			(t4 = <COMMA>)? t1 = <ID> <ASSIGN>
 	
-	{
-	  	return map ;
+			(
+				LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
+				| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
+				| boolid = BooleanConstant()  { map.put(t1.image, boolid.toString());     }
+				| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
+				| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
+			)
+			
+			{
+				if (map.size() == 1 && t4 != null)
+					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma before first parameter"));
+				if (map.size() > 1 && t4 == null)
+					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t4.beginLine, t4.beginColumn) + "missing comma before parameter " + map.size() + 1));
+				t4 = null;
+			}
+			
+		)*
+		<RIGHTPAREN>
+		{
+			if (runningList.size() > 0)
+				throw runningList;
+	  		return map ;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
 	}
 }
 
@@ -843,62 +1018,65 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	String dataType = null;
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
-	BooleanIdentifier boolid = null;  
+	BooleanIdentifier boolid = null;
+
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 } 
 {
+
+	try {	  
+		<LEFTPAREN>
+		(
+			{ commaToken = null; }
+			( commaToken = <COMMA>)?  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier() 
 	
-	<LEFTPAREN>
-	(
-		{ commaToken = null; }
-		( commaToken = <COMMA>)?  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier() 
-
-  		(
-			<ASSIGN> intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
-	    		| doubleid = DoubleConstant() { d2.setDefaultValue(doubleid.toString()); }
-	    		| boolid = BooleanConstant()  { d2.setDefaultValue(boolid.toString()); }
-	    		| t3 = <SQL_STRING_LITERAL>   { d2.setDefaultValue(dequoteStr('\'',t3.image)); }
-	    		| t3 = <DBLQUOTE_STRING_LITERAL> {d2.setDefaultValue(dequoteStr('\"',t3.image));}
-	  	)?
-
-		{
-			if (commaToken != null && params.size() == 0)
+	  		(
+				<ASSIGN> intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
+		    		| doubleid = DoubleConstant() { d2.setDefaultValue(doubleid.toString()); }
+		    		| boolid = BooleanConstant()  { d2.setDefaultValue(boolid.toString()); }
+		    		| t3 = <SQL_STRING_LITERAL>   { d2.setDefaultValue(dequoteStr('\'',t3.image)); }
+		    		| t3 = <DBLQUOTE_STRING_LITERAL> {d2.setDefaultValue(dequoteStr('\"',t3.image));}
+		  	)?
+	
 			{
-				LOG.error(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
-				throw new ParseException(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
-			}
-			if (commaToken == null && params.size() > 0)
-			{  
-				LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
-				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
-			}
-			
-			if (t1.image.equalsIgnoreCase("matrix")){
-				if (t2 == null){
-					LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);
-	     			LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-				  	System.out.println(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);
-	     			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-	    		}
-	    		else {
-	     			dataType = "matrix";
-	    	 		valueType = t2.image;
-	    		}
-	     	}
-			else if (t1.image.equalsIgnoreCase("object")){
-	    		dataType = "object";
-	    		valueType = "object";
-	   		}
-	     	else {
-	        	dataType = "scalar";
-	         	valueType = t1.image;
-	   		}  
-	     	d2.setTypeInfo(valueType, dataType);        
-	       	params.add(d2);
-	  	}
- 	)*
-	<RIGHTPAREN>
-  
+				if (commaToken != null && params.size() == 0)
+					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter"));
+	
+				if (commaToken == null && params.size() > 0)
+					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size()));
+	
+				if (t1.image.equalsIgnoreCase("matrix")){
+					if (t2 == null){
+						runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t1.beginLine, t1.beginColumn)
+								+ " cannot process argument " + (params.size() + 1) + " for UDF " + t1.image
+								+ ". Valuetype (int, double, boolean, String) must be defined for Matrix datatype "
+								+ " -- e.g., Matrix(Double) "));
+		    		}
+		    		else {
+		     			dataType = "matrix";
+		    	 		valueType = t2.image;
+		    		}
+		     	}
+				else if (t1.image.equalsIgnoreCase("object")){
+		    		dataType = "object";
+		    		valueType = "object";
+		   		}
+		     	else {
+		        	dataType = "scalar";
+		         	valueType = t1.image;
+		   		}  
+		     	d2.setTypeInfo(valueType, dataType);        
+		       	params.add(d2);
+		  	}
+	 	)*
+		<RIGHTPAREN>
+		
+	} catch (DMLParseException e){		runningList.add(e);
+		throw runningList;
+	}
 	{
+		if (runningList.size() > 0)
+			throw runningList;
 		return params;
 	}
 }
@@ -909,50 +1087,67 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 	ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
 	ArrayList<Expression> targetList = null;
 	Expression target = null;
-
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 { 
-	<LEFTSQUARE>
-	(
-		LOOKAHEAD(ColonDelimitedExpression())
-     	targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
-     	| target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
-	)?
-	{
-	  	// CASE: no indexing dimensions given
-		if (targetList == null){
-			targetList = new ArrayList<Expression>();
-			targetList.add(null);
-			targetList.add(null);
-			targetListList.add(targetList);
-		}
-		targetList = null;
-	}
-    
-	(
-		<COMMA>
+	try {	  
+		<LEFTSQUARE>
 		(
-			LOOKAHEAD( ColonDelimitedExpression())
-			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
-			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
-   		)?
-   		{
-   	  	
-			// CASE: no indexing dimesnions given
-			if (targetList == null)
-			{
+			try {			  
+				LOOKAHEAD(ColonDelimitedExpression())
+				targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+	     		|
+	     		target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
+			} catch (DMLParseException e) {
+				runningList.add(e);
+			}
+		)?
+		{
+		  	// CASE: no indexing dimensions given
+			if (targetList == null){
 				targetList = new ArrayList<Expression>();
 				targetList.add(null);
 				targetList.add(null);
 				targetListList.add(targetList);
 			}
 			targetList = null;
-
-   		}
-  	)* 
-  	<RIGHTSQUARE> 
-
-  	{return targetListList; }
+		}
+    
+		(
+			<COMMA>
+			(
+				try {	
+					LOOKAHEAD( ColonDelimitedExpression())
+					targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+					|
+					target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
+				} catch (DMLParseException e) {
+					runningList.add(e);
+				}				  
+	   		)?
+	   		{	   	  	
+				// CASE: no indexing dimesnions given
+				if (targetList == null)
+				{
+					targetList = new ArrayList<Expression>();
+					targetList.add(null);
+					targetList.add(null);
+					targetListList.add(targetList);
+				}
+				targetList = null;
+	   		}
+	  	)* 
+	  	<RIGHTSQUARE>
+	  	
+	} catch (Exception e){		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
+	{
+		if (runningList.size() > 0)
+			throw runningList;
+		return targetListList;
+	}
 }
 
 
@@ -961,16 +1156,40 @@ ArrayList<Expression> ColonDelimitedExpression() :
 	ArrayList<Expression> exprsList = new ArrayList<Expression>();
 	Expression left = null, right = null;
 	Token tStart = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
- 	[left = Expression()] tStart = <COLON> [right = Expression()] 
+	try {	  
+	 	[
+			try {
+	 			left = Expression()
+	 		} catch (DMLParseException e){
+				runningList.add(e);
+	 		}
+	 	]
+	 	
+	 	tStart = <COLON>
+	
+	 	[
+	 		try {
+	 			right = Expression()
+	 		} catch (DMLParseException e){
+				runningList.add(e);
+	 		}
+	 	]
+	 	
+	} catch(Exception e){
+		if (e != runningList)			runningList.add(e);
+		throw runningList;
+	}
  	{
-		if (left == null && right == null){
-			LOG.error(printErrorLocation(tStart.beginLine, tStart.beginColumn) + " colon delimiter cannot be specified when no indexing expressions used");
-			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + " colon delimiter cannot be specified when no indexing expressions used");
-		}
+		if (left == null && right == null)
+			runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tStart.beginLine, tStart.beginColumn) + " colon delimiter cannot be specified when no indexing expressions used"));
+
   		exprsList.add(left);
   		exprsList.add(right); 
+		if (runningList.size() > 0)
+			throw runningList;
   		return exprsList;
 	}
 }
@@ -981,359 +1200,157 @@ IfStatement IfStatement() :
 	IfStatement is = new IfStatement();
 	Statement current = null;
 	ConditionalPredicate cp = null;
-
-	// track start / end token positions
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
+	Token tStart = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
+	boolean skipStatement = false;
+	ArrayList<StatementBlock> groupedStmts = null;
 }
 {
+	try {	  
+		tStart = <IF>
 	
-	tStart = <IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
-	  	
- 	<LEFTCURLYPAREN>
- 	(
-		(
-			
-			LOOKAHEAD(3) 	current = FunctionStatement()
-			|  LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-			| current = OutputStatement()
-			| current = PrintStatement()
-			| current = WhileStatement()
-			| current = ForStatement()
-			| current = ParForStatement()
-			| current = IfStatement()
-			| current = CVStatement()
-			| current = AssignValueStatements()
-			//	| current = ELStatement()
-			//	| current = ELUseStatement()
-	   	)
-		{
-			StatementBlock sb = null;
-			if (current instanceof WhileStatement) {
-	 			sb = new WhileStatementBlock();
-			}
-			else if (current instanceof IfStatement) {
-				sb = new IfStatementBlock();
-			}
-			else if (current instanceof ParForStatement) {
-				sb = new ParForStatementBlock();
-			}
-			else if (current instanceof ForStatement) {
-				sb = new ForStatementBlock();
-			}
-			else if (current instanceof FunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " nested function definitions are not supported ");
-			}
-			else if (current instanceof ExternalFunctionStatement) {
-			    LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-			else if (current instanceof CVStatement) {
-				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//			  	//LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//			    //LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				sb = new ELUseStatementBlock();
-//			}   
-			else {
-				sb = new StatementBlock();
-			}
-			sb.addStatement(current);
-			is.addStatementBlockIfBody(sb);
+		try {			cp = ConditionalPredicate()
+			{ is.setConditionalPredicate(cp); }
 		}
-	)*
- 	tEnd = <RIGHTCURLYPAREN>
-
- 	{
-		is.mergeStatementBlocksIfBody();
- 	}
-
- 	(
-		LOOKAHEAD(1) <ELSE>
-		(
+		catch (DMLParseException e){
+			runningList.add(e);
+		}		  
+	 	(
 			(
-			  
-		  		<LEFTCURLYPAREN>
+				{
+					skipStatement = false;
+					groupedStmts = null;
+					current = null;
+				}		 
+				try {
+				  	groupedStmts = GroupedStatements()
+					| current = OutputStatement()
+					| current = WhileStatement()
+					| current = ForStatement()
+					| current = IfStatement()
+					| current = MetaLearningStatement()
+					| current = AssignValueStatements()
+				} catch (DMLParseException e){					runningList.add(e);
+					skipStatement = true;
+				}
+		   	)
+			{				if (!skipStatement) {
+
+					if (groupedStmts != null && is != null){
+						is.setIfBody(groupedStmts);
+					} else {			
+						StatementBlock sb = null;
+						if (current instanceof WhileStatement) 
+				 			sb = new WhileStatementBlock();
+						else if (current instanceof IfStatement) 
+							sb = new IfStatementBlock();
+						else if (current instanceof ParForStatement) 
+							sb = new ParForStatementBlock();
+						else if (current instanceof ForStatement) 
+							sb = new ForStatementBlock();
+						else if (current instanceof FunctionStatement)
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + " Nested function definitions are not supported "));
+						else if (current instanceof CVStatement) {
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML"));
+							//sb = new CVStatementBlock();
+						}
+						else if (current instanceof ELStatement || current instanceof ELUseStatement) 
+						  	runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+						else 
+							sb = new StatementBlock();
+						
+						sb.addStatement(current);
+						is.addStatementBlockIfBody(sb);
+					}
+				}
+			}
+		)
+	 	{
+			if (is != null)
+				is.mergeStatementBlocksIfBody();
+	 	}
+	
+	 	(
+			LOOKAHEAD(1) <ELSE>
+			(
 		   		(
 					(
-						
-						LOOKAHEAD(3) 	current = FunctionStatement()
-						| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-						| current = OutputStatement()
-						| current = PrintStatement()
-						| current = WhileStatement()
-						| current = ForStatement()
-						| current = ParForStatement()
-						| current = IfStatement()
-						| current = CVStatement()
-						| current = AssignValueStatements()
-						//	| LOOKAHEAD(ELStatement())					current = ELStatement()
-						//	| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
-		 				
-		   			)
-		   			{
-					    StatementBlock sb = null;
-					    if (current instanceof WhileStatement) {
-					    	sb = new WhileStatementBlock();
-					    }
-					    else if (current instanceof IfStatement) {
-					    	sb = new IfStatementBlock();
-					    }
-					    else if (current instanceof ParForStatement) {
-					    	sb = new ParForStatementBlock();
-					    }
-					    else if (current instanceof ForStatement) {
-					    	sb = new ForStatementBlock();
-					    }
-						else if (current instanceof FunctionStatement) {
-							LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-					    	throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-					  	}
-					  	else if (current instanceof ExternalFunctionStatement) {
-							LOG.error(current.printErrorLocation()+ " Nested function definitions are not supported ");
-					  		throw new ParseException(current.printErrorLocation()+ " Nested function definitions are not supported ");
-					  	}
-					  	
-					    else if (current instanceof CVStatement) {
-							//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-							//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in function definition");
-							sb = new CVStatementBlock();
+						{
+							skipStatement = false;
+							groupedStmts = null;
+							current = null;
 						}
-						//else if (current instanceof ELStatement) {
-						//	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-						//	throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in function definition");
-						//	//sb = new ELStatementBlock();
-						//}
-						//else if (current instanceof ELUseStatement) {
-						//	LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-						//	throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in function definition");
-						//	//sb = new ELUseStatementBlock();
-						//}   
-					    else {
-					    	sb = new StatementBlock();
-					    }
-					    sb.addStatement(current);
-					    is.addStatementBlockElseBody(sb);
+						try {
+							groupedStmts = GroupedStatements()
+							|  current = OutputStatement()
+							| current = WhileStatement()
+							| current = ForStatement()
+							| current = IfStatement()
+							| current = MetaLearningStatement()
+							| current = AssignValueStatements()
+						} catch (DMLParseException e){							runningList.add(e);
+							skipStatement = true;
+						}
+		   			)
+		   			{  
+		   				if (!skipStatement) {
+
+							if (groupedStmts != null){
+								is.setElseBody(groupedStmts);
+
+							} else {	  			   				  
+							    StatementBlock sb = null;
+							    if (current instanceof WhileStatement) 
+							    	sb = new WhileStatementBlock();
+							    else if (current instanceof IfStatement) 
+							    	sb = new IfStatementBlock();
+							    else if (current instanceof ParForStatement) 
+							    	sb = new ParForStatementBlock(); 
+							    else if (current instanceof ForStatement) 
+							    	sb = new ForStatementBlock();
+								else if (current instanceof FunctionStatement)
+									runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + " Nested function definitions are not supported "));
+							  	else if (current instanceof CVStatement) {
+									runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML"));
+									//sb = new CVStatementBlock();
+								}
+								else if (current instanceof ELStatement || current instanceof ELUseStatement)
+								  	runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+							    else 
+							    	sb = new StatementBlock();
+							    
+							    sb.addStatement(current);
+							    is.addStatementBlockElseBody(sb);
+							}
+						}
 					}
-		   		)*
-		 		tEnd = <RIGHTCURLYPAREN>
+		   		)
 		  		{
-		    		is.mergeStatementBlocksElseBody();
+					if (is != null)
+		    			is.mergeStatementBlocksElseBody();
 		  		}
-	  		)
+	  		) 
+		)? 
+	 	{
+			if (runningList.size() > 0) {
+				throw runningList;
+			} else {
+			  	StatementBlock lastSb = null;
+			  	if (is.getElseBody() != null && is.getElseBody().size() > 0)
+			  		lastSb = is.getElseBody().get(is.getElseBody().size()-1);
+				else if (is.getIfBody() != null && is.getIfBody().size() > 0)
+					lastSb = is.getIfBody().get(is.getIfBody().size()-1);
 
-			| current = IfStatement()
-
-	  			{
-					StatementBlock sb = new IfStatementBlock();
-					sb.addStatement(current);
-					is.addStatementBlockElseBody(sb);
-					is.mergeStatementBlocksElseBody();
-				}			 
-		)
-	)? [<SEMICOLON>]
- 	{
-		// track position for statement
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		is.setAllPositions(blp, bcp, elp, ecp);
-
-		return is;
- 	}
-}
-
-
-ForStatement ForStatement() :
-{
-	ForStatement fs = new ForStatement();
-	Statement current = null;
-	IterablePredicate ip = null;
-	
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
- 
-	tStart = <FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
-	<LEFTCURLYPAREN>
-	(
-		(
-	   			LOOKAHEAD(3) 	current = FunctionStatement()
-	   			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-	   			| current = OutputStatement()
-	   			| current = PrintStatement()
-	   			| current = WhileStatement()
-	   			| current = ForStatement()
-	   			| current = ParForStatement()
-	   			| current = IfStatement()
-				| current = CVStatement()
-				| current = AssignValueStatements()
-			//	| current = ELStatement()
-			//	| current = ELUseStatement()	
-		)
-		{
-			StatementBlock sb = null;
-			if (current instanceof WhileStatement) {
-				sb = new WhileStatementBlock();
-			}
-			else if (current instanceof IfStatement) {
-				sb = new IfStatementBlock();
-			}
-			else if (current instanceof ParForStatement) {
-				sb = new ParForStatementBlock();
-			} 
-			else if (current instanceof ForStatement) {
-				sb = new ForStatementBlock();
-			}
-			else if (current instanceof FunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-			else if (current instanceof ExternalFunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-
-			else if (current instanceof CVStatement) {
-				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//sb = new ELUseStatementBlock();
-//			}   
-			else {
-				sb = new StatementBlock();
-			}
-			sb.addStatement(current);
-			fs.addStatementBlock(sb);
-		}
-	)*
-   	tEnd = <RIGHTCURLYPAREN> [<SEMICOLON>]
-   
- 	{
-		fs.mergeStatementBlocks();
-
-		// track position for statement
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		fs.setAllPositions(blp, bcp, elp, ecp);
-		
-		return fs;
- 	}
-}
-
-
-ParForStatement ParForStatement() :
-{
-	ParForStatement fs = new ParForStatement();
-	Statement current = null;
-	IterablePredicate ip = null;
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
- 
-	tStart = <PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
-	<LEFTCURLYPAREN>
-  	(
-		(
-
-			LOOKAHEAD(3) 			current = FunctionStatement()
-			| LOOKAHEAD(3)	current = ExternalFunctionStatement()
-			| current = OutputStatement()
-			| current = PrintStatement()
-			| current = WhileStatement()
-			| current = ForStatement()
-			| current = ParForStatement()
-			| current = IfStatement()
-			| current = CVStatement()
-			| current = AssignValueStatements()
-			//	| current = ELStatement()
-			//	| current = ELUseStatement()
- 				
- 		)
- 		{
-			StatementBlock sb = null;
-			if (current instanceof WhileStatement) {
-				sb = new WhileStatementBlock();
-			}
-			else if (current instanceof IfStatement) {
-				sb = new IfStatementBlock();
-			}
-			else if (current instanceof ParForStatement) {
-				sb = new ParForStatementBlock();
-			}
-			else if (current instanceof ForStatement) {
-				sb = new ForStatementBlock();
-			}
-			else if (current instanceof FunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-			else if (current instanceof ExternalFunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-
-			else if (current instanceof CVStatement) {
-				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//sb = new ELUseStatementBlock();
-//			}   
-			
-			else {
-				sb = new StatementBlock();
-			}
-			sb.addStatement(current);
-			fs.addStatementBlock(sb);
-		}
-	)*
-  	tEnd = <RIGHTCURLYPAREN>
-   
- 	{
-  		fs.mergeStatementBlocks();
-
-		// track position for statement
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		fs.setAllPositions(blp, bcp, elp, ecp);
-
-		return fs;
- 	}
+				if (tStart != null && lastSb != null)
+					is.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, lastSb.getEndLine(), lastSb.getEndColumn());
+				return is;
+	 		}
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
@@ -1343,87 +1360,87 @@ WhileStatement WhileStatement() :
 	Statement current = null;
 	ConditionalPredicate cp = null;
 	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
+	boolean skipStatement = false;
+	ArrayList<StatementBlock> groupedStmts = null;
 }
-{
-	tStart = <WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
-  	<LEFTCURLYPAREN>
-  	(
-		(
-			
-		    LOOKAHEAD(3) 			current = FunctionStatement()
-			| LOOKAHEAD(3)	current = ExternalFunctionStatement()
-			| current = OutputStatement()
-			| current = PrintStatement()
-			| current = WhileStatement()
-			| current = ForStatement()
-			| current = ParForStatement()
-			| current = IfStatement()
-			| current = CVStatement()
-			| current = AssignValueStatements()
-			//	| current = ELStatement()
-			//	| current = ELUseStatement()
-		)
-		{
-			StatementBlock sb = null;
-			if (current instanceof WhileStatement) {
-		   		sb = new WhileStatementBlock();
-		  	}
-		  	else if (current instanceof IfStatement) {
-		   		sb = new IfStatementBlock();
-		  	}
-		  	else if (current instanceof ParForStatement) {
-		   		sb = new ParForStatementBlock();
-		  	}
-		  	else if (current instanceof ForStatement) {
-		   		sb = new ForStatementBlock();
-		  	}
-		 	else if (current instanceof FunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-			else if (current instanceof ExternalFunctionStatement) {
-			  	LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			}
-
-			else if (current instanceof CVStatement) {
-				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				sb = new CVStatementBlock();
-			}
-//			else if (current instanceof ELStatement) {
-//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//				//sb = new ELStatementBlock();
-//			}
-//			else if (current instanceof ELUseStatement) {
-//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//				//sb = new ELUseStatementBlock();
-//			}   
-		  	else {
-	   			sb = new StatementBlock();
-	  		}
-	  		sb.addStatement(current);
-	  		ws.addStatementBlock(sb);
+{	try {
+		tStart = <WHILE>
+	
+		try {
+			cp = ConditionalPredicate()
+			{ ws.setPredicate(cp); }
+		} catch (DMLParseException e){			runningList.add(e);
 		}
-	)*
-  	tEnd = <RIGHTCURLYPAREN>
-   
- {
-	ws.mergeStatementBlocks();
 
-	// track position for statement
-	blp = tStart.beginLine;
-	bcp = tStart.beginColumn;
-	elp = tEnd.beginLine;
-	ecp = tEnd.beginColumn;
-	ws.setAllPositions(blp, bcp, elp, ecp);
+	  	(
+			(
+				{
+					skipStatement = false;
+					groupedStmts = null;
+					current = null;
+				}		 
+				try {
+					groupedStmts = GroupedStatements()				  
+					| current = OutputStatement()
+					| current = WhileStatement()
+					| current = ForStatement()
+					| current = IfStatement()
+					| current = MetaLearningStatement()
+					| current = AssignValueStatements()
+				} catch (DMLParseException e) {					runningList.add(e);
+					skipStatement = true; 
+				} 
+			)
+			{			  	if (!skipStatement) {
 
-	return ws;
- }
+					if (groupedStmts != null){
+						ws.setBody(groupedStmts);
+				
+					} else {  
+						StatementBlock sb = null;
+						if (current instanceof WhileStatement)
+					   		sb = new WhileStatementBlock();
+					  	else if (current instanceof IfStatement) 
+					   		sb = new IfStatementBlock();
+					  	else if (current instanceof ParForStatement) 
+					   		sb = new ParForStatementBlock();
+					  	else if (current instanceof ForStatement) 
+					   		sb = new ForStatementBlock();
+					 	else if (current instanceof FunctionStatement)
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + " Nested function definitions are not supported "));
+						else if (current instanceof CVStatement) {
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"crossval\" not supported in DML")); 
+							//sb = new CVStatementBlock();
+						}
+						else if (current instanceof ELStatement || current instanceof ELUseStatement)
+							runningList.add(new DMLParseException(this.getFilename(), current.printErrorLocation() + "\"ensemble\" not supported in DML"));
+					  	else 
+				   			sb = new StatementBlock();
+				  		
+				  		sb.addStatement(current);
+				  		ws.addStatementBlock(sb);
+					}
+				}
+			}
+		)
 
+	 	{
+			if (runningList.size() > 0){
+				throw runningList;
+			} else {
+				ws.mergeStatementBlocks();
+				if (tStart != null && ws.getBody() != null && ws.getBody().size() > 0){
+					StatementBlock lastSb = ws.getBody().get(ws.getBody().size()-1); 
+					ws.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, lastSb.getEndLine(), lastSb.getEndColumn());
+				}
+				return ws;
+	 		}
+		}
+	} catch (DMLParseException e) {		if (e != runningList)
+			runningList.add(e);
+			throw runningList;
+	}
 }
 
 
@@ -1435,70 +1452,88 @@ IterablePredicate IterablePredicate() :
 	 Token paramName = null, paramVal = null;
 	 HashMap<String,String> parforParamValues = new HashMap<String,String>();
 	 ArrayList<Expression> exprParams = new ArrayList<Expression>();
-
 	 Token tStart = null, tEnd = null, tSeq = null, tIn = null;
-	 int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
+	 DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	tStart = <LEFTPAREN>
+{  
+	try {
+	  
+		tStart = <LEFTPAREN>
+	
+		try {
+		 	iterVar = Identifier()
+		} catch (DMLParseException e){
+			runningList.add(e);
+		}		  
+		tIn = <ID>
+	
+		(
+			try {			  
+				LOOKAHEAD(ColonDelimitedExpression()) exprParams = ColonDelimitedExpression()
+				|
+				(tSeq = <ID> fci = FunctionCall())
 
- 	iterVar = Identifier() tIn = <ID> (   LOOKAHEAD(ColonDelimitedExpression()) exprParams = ColonDelimitedExpression() | (tSeq = <ID> fci = FunctionCall()) )
-   	(<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
-	{
-
-		if (tIn != null && !tIn.image.equals("in")){
-            LOG.error(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\""); 
-			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\""); 
-		}
-		if (tSeq != null && !tSeq.image.equals("seq")){
-			LOG.error(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 
-			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 
-		} 
-   		if (fci == null && exprParams == null){
-   		    LOG.error(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
-  			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
-		}
-		if (fci != null) {
-    		ArrayList<Expression> seqExprs = fci.getParamExpressions();
-
-    		if (seqExprs.size() <  2){
-    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
-    			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
+			} catch (DMLParseException e){				runningList.add(e);
 			}
-    		if (seqExprs.size() > 3) {
-    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
-    			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
-  			}
-    		else {
-     			fromExpr = seqExprs.get(0);
-     			toExpr   = seqExprs.get(1);
-     			IntIdentifier oneExpr = new IntIdentifier(1);
-     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : oneExpr;  
-    		} 
-    
-   		}
-   		else {
-    		// use exprParams
-    		fromExpr = exprParams.get(0);
-    		toExpr   = exprParams.get(1);
-    		incrementExpr = new IntIdentifier(1);
-   		}
-    	// if (params.size() > 2)
-  	}
-  
- 	tEnd = <RIGHTPAREN>
- 	{
- 		IterablePredicate retVal = new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
-
-		// track position for statement
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		retVal.setAllPositions(blp, bcp, elp, ecp);
-		
-		return retVal;
-	}
+			
+		)
+	
+		(
+			<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>)
+			{
+				if (paramName != null && paramVal != null)
+					parforParamValues.put(paramName.image, paramVal.image);
+			}
+		)*
+	
+		{
+			if (tIn != null && !tIn.image.equals("in"))
+			    runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\"")); 
+	          
+			if (tSeq != null && !tSeq.image.equals("seq"))
+			  	runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq")); 
+				 
+	   		if (fci == null && exprParams == null)				runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters")); 
+	   		    
+			if (fci != null) {
+	    		ArrayList<ParameterExpression> seqExprs = fci.getParamExprs();
+	
+	    		if (seqExprs.size() <  2)					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value"));
+	    	    	
+	    		else if (seqExprs.size() > 3) 					runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment"));
+	
+	    		else {
+	     			fromExpr = seqExprs.get(0).getExpr();
+	     			toExpr   = seqExprs.get(1).getExpr();
+	     			IntIdentifier oneExpr = new IntIdentifier(1);
+	     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2).getExpr() : oneExpr;  
+	    		} 
+	   		}
+	   		else {
+	    		// use exprParams
+	    		if (exprParams.size() >= 2){
+					fromExpr = exprParams.get(0);
+	    			toExpr   = exprParams.get(1);
+	    			incrementExpr = new IntIdentifier(1);
+	   			}
+	   		}
+	    	
+	  	}
+		  
+		tEnd = <RIGHTPAREN>
+		{
+			if (runningList.size() > 0) {
+				throw runningList;
+			} else {				IterablePredicate retVal = new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
+				retVal.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);	
+				return retVal;
+			}
+		}
+	} catch (Exception e) {		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}	  
 }
 
 
@@ -1506,20 +1541,27 @@ ConditionalPredicate ConditionalPredicate() :
 {
 	Expression expr = null;
 	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	tStart = <LEFTPAREN> expr = BooleanOrExpression() tEnd = <RIGHTPAREN>
-	{
-		ConditionalPredicate retVal = new ConditionalPredicate(expr);
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		retVal.setAllPositions(blp, bcp, elp, ecp);
-
-		return retVal;
+	try {
+		tStart = <LEFTPAREN>
+		try {			expr = Expression()
+		} catch (DMLParseException e) {			runningList.add(e);
+		}
+		tEnd = <RIGHTPAREN>
+		{
+			if (runningList.size() > 0) {  
+				throw runningList;
+			} else {
+				ConditionalPredicate retVal = new ConditionalPredicate(expr);
+				retVal.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);
+				return retVal;
+			}
+		}
+	} catch (Exception e){
+	  	if (e != runningList)
+	  		runningList.add(e);		throw runningList; 
 	}
 }
 
@@ -1527,261 +1569,388 @@ ConditionalPredicate ConditionalPredicate() :
 Expression Expression() : 
 {
 	Expression expr = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	(expr = BooleanOrExpression())
-	{
-		return expr;
+	try {
+		(			try {				expr = BooleanOrExpression()
+			} catch (DMLParseException e){				runningList.add(e);
+			}
+		)
+
+		{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+	  	if (e != runningList)
+	  		runningList.add(e);
+		throw runningList; 
 	}
 }
 
 
 Expression BooleanOrExpression() :  
 {
-	Expression expr = null;
+	Expression expr = null, left = null, right = null;
 	Token t = null;
+	Expression.BooleanOp bop = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	expr = BooleanAndExpression() 
-	(
-		{
-			Expression left = null, right = null;
-		  	Expression.BooleanOp bop = null;
-		  	
-		}
+{	try {
+	  	try {			expr = BooleanAndExpression()
+		} catch (DMLParseException e){			runningList.add(e);
+		} 
 		(
-			t = <CONDITIONALOR> | t = <LOGICALOR>
-		) 
-		{
-			bop = Expression.getBooleanOp(t.image);
+			(
+				t = <CONDITIONALOR> | t = <LOGICALOR>
+			) 
+			{
+				bop = Expression.getBooleanOp(t.image);
+			}
+			try {
+		     	right = BooleanAndExpression() 
+		     	{
+		        	left = expr;
+					BooleanExpression exprb = new BooleanExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn );
+					exprb.setLeft(left);
+					exprb.setRight(right);
+					expr = exprb;
+				}
+			} catch (DMLParseException e) {
+				runningList.add(e);
+			}
+		)*
+	 	{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
 		}
-     	right = BooleanAndExpression() 
-     	{
-        	left = expr;
-			BooleanExpression exprb = new BooleanExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn );
-			exprb.setLeft(left);
-			exprb.setRight(right);
-			expr = exprb;
-		}
-	)*
- 	{
-		return expr;
-	}
+	} catch (Exception e) {
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}	
 }
 
  
 Expression BooleanAndExpression() : 
 {
-	Expression expr = null;
+	Expression expr = null, left = null, right = null;
+	Expression.BooleanOp bop = null;
 	Token t = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	expr = BooleanNotExpression() 
- 	(
-    	{
-   			Expression left = null, right = null;
-   			Expression.BooleanOp bop = null;
-   			
-   		}
-    
-     	(t = <CONDITIONALAND> | t = <LOGICALAND>) 
-     	{bop = Expression.getBooleanOp(t.image); }
-     	right = BooleanNotExpression() 
-      	{
-			left = expr;
-       		BooleanExpression exprb = new BooleanExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
-       		exprb.setLeft(left);
-       		exprb.setRight(right);
-       		expr = exprb;
-      	}
-    )*
-	{	
-		return expr;
+	try {
+		expr = BooleanNotExpression() 
+	 	(
+			try {
+		     	(t = <CONDITIONALAND> | t = <LOGICALAND>) {bop = Expression.getBooleanOp(t.image); }
+		     	right = BooleanNotExpression() 
+		      	{
+					left = expr;
+		       		BooleanExpression exprb = new BooleanExpression(bop, this.getFilename(), t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
+		       		exprb.setLeft(left);
+		       		exprb.setRight(right);
+		       		expr = exprb;
+		      	}
+		     } catch (DMLParseException e){				runningList.add(e);
+		     }
+	    )*
+		{	
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
 	}
 }
 
 
 Expression BooleanNotExpression() : 
 {
-	Expression expr = null; Token t = null;
+	Expression expr = null;
+	Token t = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	[ t = <NOT> ] expr = RelationalExpression() 
-     
-    {
-      	if (t == null)
-     		return expr;
-     
-   		Expression.BooleanOp bop = Expression.getBooleanOp(t.image); 
-   		Expression left = expr;
-   		BooleanExpression notexpr = new BooleanExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
-   		notexpr.setLeft(left);
-   		return notexpr;
-  	}
+{	  
+	try {
+	  
+		[ t = <NOT> ]
+
+		try {			expr = RelationalExpression() 
+		} catch (DMLParseException e){			runningList.add(e);	
+		}
+	     
+	    {
+	      	if (t == null) {	 			if (runningList.size() > 0)
+					throw runningList;
+	     		return expr;
+			} else {
+	   			Expression.BooleanOp bop = Expression.getBooleanOp(t.image); 
+	   			Expression left = expr;
+	   			BooleanExpression notexpr = new BooleanExpression(bop, this.getFilename(), t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
+	   			notexpr.setLeft(left);
+				if (runningList.size() > 0)
+					throw runningList;
+	   			return notexpr;
+	   		}
+	  	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
+	}
 }
 
 
 Expression RelationalExpression() :
 {
-	Expression expr = null;
+	Expression expr = null,left = null, right = null; 
+	Expression.RelationalOp bop = null;
 	Token t = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	expr = PlusMinusExpression() 
-	(
-    	{Expression left = null, right = null; Expression.RelationalOp bop = null;}
-   		(t=<LESSEQUAL> | t=<LESS> | t=<GREATEREQUAL> | t=<GREATER> | t=<EQUAL> | t=<NOTEQUAL>) 
-   		{bop = Expression.getRelationalOp(t.image); }
+{	try {
+	  	try {			expr = PlusMinusExpression()
+		} catch (DMLParseException e) {			runningList.add(e);
+		} 
+		(
+	   		(t=<LESSEQUAL> | t=<LESS> | t=<GREATEREQUAL> | t=<GREATER> | t=<EQUAL> | t=<NOTEQUAL>) 
+	   		{bop = Expression.getRelationalOp(t.image); }
 
-     	right =  PlusMinusExpression() 
-       	{
-        	left = expr;
-			RelationalExpression exprb = new RelationalExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
-       		exprb.setLeft(left);
-      	 	exprb.setRight(right);
-       		expr = exprb;
-      	}
-	)*
- 	{
-   		return expr;
-   	}
+			try {  
+		     	right =  PlusMinusExpression()
+		    } catch (DMLParseException e) {
+				runningList.add(e);
+			}
+	       	{
+	        	left = expr;
+				if (t != null){					RelationalExpression exprb = new RelationalExpression(bop, this.getFilename(), t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
+	       			exprb.setLeft(left);
+	      	 		exprb.setRight(right);
+	       			expr = exprb;
+	      		}
+	      	}	  
+		)*
+	 	{
+			if (runningList.size() > 0)
+				throw runningList;
+	   		return expr;
+	   	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
+	}
 }
 
 
 Expression PlusMinusExpression() : 
 {
-	Expression expr = null;
+	Expression expr = null, left = null, right = null;
+	Expression.BinaryOp bop = null;
 	Token t = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	expr = MultDivExpression() 
- 	(
-   		{Expression left, right; Expression.BinaryOp bop = null;}
-    	(t = <PLUS> | t = <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
-   		right = MultDivExpression() 
-    	{
-     		left = expr;
-    		BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-    		exprb.setLeft(left);
-    		exprb.setRight(right);
-    		expr = exprb;
-   		}
-	)*
- 	{ 
-		return expr;
+	try {
+	  	try {			expr = MultDivExpression()
+		} catch (DMLParseException e) {
+			runningList.add(e);
+		}  
+	 	(LOOKAHEAD(2)
+	   		
+	    	(t = <PLUS> | t = <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
+			try {			  	right = MultDivExpression()
+			} catch (DMLParseException e) {				runningList.add(e);
+			} 
+	    	{
+	     		left = expr;
+	    		BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
+	    		exprb.setLeft(left);
+	    		exprb.setRight(right);
+	    		expr = exprb;
+	   		}
+		)*
+	 	{ 
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
 	}
 }
 
 
 Expression MultDivExpression() : 
 {
-	Expression expr = null;
+	Expression expr = null, left = null, right = null;
+	Expression.BinaryOp bop = null;
 	Token t = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	expr = MatrixMultExpression() 
- 	(
-   		{Expression left, right; Expression.BinaryOp bop = null;}
-   		(t = <MULT> | t = <DIV> | t = <MODULUS> | t = <INTDIV>)  {bop = Expression.getBinaryOp(t.image); }
-   		right = MatrixMultExpression() 
-   		{
-		    left = expr;
-		    BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-		    exprb.setLeft(left);
-		    exprb.setRight(right);
-		    expr = exprb;
-   		}
-    )*
- 	{
-		return expr;
+	try {
+		try {		  	expr = MatrixMultExpression()
+		} catch (DMLParseException e) {			runningList.add(e);
+		} 
+	 	(
+	   		
+	   		(t = <MULT> | t = <DIV> | t = <MODULUS> | t = <INTDIV>)  {bop = Expression.getBinaryOp(t.image); }
+			try {			  	right = MatrixMultExpression()
+			} catch (DMLParseException e){				runningList.add(e);
+			} 
+	   		{
+			    left = expr;
+			    BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
+			    exprb.setLeft(left);
+			    exprb.setRight(right);
+			    expr = exprb;
+	   		}
+	    )*
+	 	{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
 	}
-}
+}	
 
 
 Expression MatrixMultExpression() : 
 {
-	Expression expr = null;
+	Expression expr = null, left = null, right = null;
+	Expression.BinaryOp bop = null;
 	Token t = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	expr = UnaryExpression() 
- 	(
- 		{Expression left, right; Expression.BinaryOp bop = null; }
-  		t = <MATRIXMULT>  {bop = Expression.getBinaryOp(t.image); }
- 	 	right =  UnaryExpression() 
- 		{
-			left = expr;
-			BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-			exprb.setLeft(left);
-			exprb.setRight(right);
-			expr = exprb;
-   		}
-    )*
-	{
-		return expr;
+
+{	try {
+	  	try {	  	  	expr = UnaryExpression()
+	  	} catch (DMLParseException e){			runningList.add(e);
+	  	} 
+	 	(
+	  		t = <MATRIXMULT>  {bop = Expression.getBinaryOp(t.image); }
+
+			try {			  	right =  UnaryExpression()
+			} catch (DMLParseException e){				runningList.add(e);
+			} 
+	 		{
+				left = expr;
+				if (t != null) {  
+					BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
+					exprb.setLeft(left);
+					exprb.setRight(right);
+					expr = exprb;
+				}
+	   		}
+	    )*
+		{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
 	}
 }
 
 
 Expression UnaryExpression() : 
 {
-	Expression expr = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Expression expr = null, right = null;
+	BinaryOp bop = null;
 	Token t = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	(
-	  	LOOKAHEAD(3) expr = PowerExpression() |
-	  	(
-   			{Expression right = null; BinaryOp bop = null;}
-   			(t = <PLUS> | t =  <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
-   			right = PowerExpression() 
-
-     		{
-				BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-     			IntIdentifier id = new IntIdentifier(0);
-				exprb.setLeft(id);
-				exprb.setRight(right);
-				expr = exprb;
-     		}
-     	)
-	)
-	{
-		return expr;
+	try {
+		(
+			try {			  
+			  	LOOKAHEAD(3) expr = PowerExpression()
+			  	|
+			  	(  			
+		   			(t = <PLUS> | t =  <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
+					try {					  	right = PowerExpression() 
+					} catch (DMLParseException e){						runningList.add(e);
+					}  
+		     		{
+						if (t != null){							BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
+		     				IntIdentifier id = new IntIdentifier(0);
+							exprb.setLeft(id);
+							exprb.setRight(right);
+							expr = exprb;
+						}
+		     		}
+		     	)
+		    } catch (DMLParseException e){				runningList.add(e);
+		    }
+		)
+		{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList; 
 	}
 }
 
 
 Expression PowerExpression() : 
 {
-	Expression expr = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Expression expr = null, left = null, right = null;
+	Expression.BinaryOp bop = null;
 	Token t = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	expr = PrimaryExpression() 
-  	[ 
-   		{
-   			Expression left = null, right = null;
-   			Expression.BinaryOp bop = null;
-   		}
-    	t = <POWER>  {bop = Expression.getBinaryOp(t.image); }
+	try {
+		try {			expr = PrimaryExpression()
+		} catch (DMLParseException e) {			runningList.add(e);
+		}
 
-   		right = PowerExpression() 
-    	{
-     		left = expr;
-			BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-    		exprb.setLeft(left);
-    		exprb.setRight(right);
-    		expr = exprb;
-   		}
-    ]
-	{
-		return expr;
+	  	[ 				t = <POWER>  {bop = Expression.getBinaryOp(t.image); }
+			try {			  	right = PowerExpression() 
+			} catch (DMLParseException e) {
+				runningList.add(e);
+			}			  
+    		{
+     			left = expr;
+				if (t != null){					BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
+    				exprb.setLeft(left);
+    				exprb.setRight(right);
+					expr = exprb;
+    			}
+    			
+   			}
+	    ]
+		{
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		}
+	} catch (Exception e) {
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
 	}
 }
 
@@ -1789,15 +1958,29 @@ Expression PowerExpression() :
 Expression PrimaryExpression() : 
 {
 	Expression expr = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	( LOOKAHEAD(2) expr = IdentifierOrConstant()
-  		| <LEFTPAREN> expr = Expression() <RIGHTPAREN>
-   	)
-	{
-		// position info for expression already set
-		return expr;
-	} 
+	try {
+		(
+			try {			  
+		  		LOOKAHEAD(2) expr = IdentifierOrConstant()
+	  			|
+	  			<LEFTPAREN> expr = Expression() <RIGHTPAREN>
+	  		} catch (DMLParseException e) {				runningList.add(e);
+	  		}
+	   	)
+		{
+			// position info for expression already set
+			if (runningList.size() > 0)
+				throw runningList;
+			return expr;
+		} 
+	} catch (Exception e) {
+		if (e != runningList)
+			runningList.add(e);
+			throw runningList;
+	}
 }
 
 
@@ -1805,63 +1988,77 @@ Identifier IdentifierOrConstant() :
 {
  	Identifier id = null;
  	Token t1 = null;
+ 	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	(
+{	try {
+	  
+		(
 
-		(t1 = <DOLLAR_ID> | t1 = <DOLLAR_ID_POS>)
-		{
-	
-			///////// BEGIN handle variable param /////////////////////////////
-
-			String argVal = commandArgs.get(t1.image);
-
-			if (argVal == null)
+			(t1 = <DOLLAR_ID> | t1 = <DOLLAR_ID_POS>)
 			{
-			    LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
-				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
-			}				
-			try {
-			  	// try to assign to long value
-				Long longVal = new Long(argVal);
-				id = new IntIdentifier(longVal);
-				
-			} catch(Exception e1){
-			  	try {
-			  	  	// try to assign to double value
-			  	  	Double doubleVal = new Double(argVal);
-			  	  	id = new DoubleIdentifier(doubleVal);
-			  	  
-			  	} catch (Exception e2) {
-
-					// try to assign to boolean value
-					if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-						Boolean boolVal = new Boolean(argVal);
-			  	  		id = new BooleanIdentifier(boolVal);
-					}
-					else {
-					  	// try to assign to string value
-						id = new StringIdentifier(argVal);
-					}	
-
-			  	} // end catch e2
-				  						  	 
-			} // end catch e1
-	
-	   	}
-		///////// END handle variable param ///////////////
-				
-		|	id = Identifier()
-		| 	id = Constant()
-
-	)
-	{ 
-		// only set positions for command-line parameters (which are not initialized)
-		if (t1 != null) {
-			id.setAllPositions(t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
-		}
 		
-		return id; 
+				///////// BEGIN handle variable param /////////////////////////////
+	
+				String argVal = commandArgs.get(t1.image);
+	
+				if (argVal == null){				  	runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined "));
+					throw runningList;
+				}				
+				try {
+				  	// try to assign to long value
+					Long longVal = new Long(argVal);
+					id = new IntIdentifier(longVal);
+					id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+					
+				} catch(Exception e1){
+				  	try {
+				  	  	// try to assign to double value
+				  	  	Double doubleVal = new Double(argVal);
+				  	  	id = new DoubleIdentifier(doubleVal);
+				  	  	id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+				  	  
+				  	} catch (Exception e2) {
+	
+						// try to assign to boolean value
+						if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+							Boolean boolVal = new Boolean(argVal);
+				  	  		id = new BooleanIdentifier(boolVal);
+				  	  		id.setAllPositions(this.getFilename(),t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+						}
+						else {
+						  	// try to assign to string value
+							id = new StringIdentifier(argVal);
+							id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+						}	
+	
+				  	} // end catch e2
+					  						  	 
+				} // end catch e1
+		
+		   	}
+			///////// END handle variable param ///////////////
+					
+			|
+
+			try {
+				id = Identifier()
+				|
+				id = Constant()
+			} catch (DMLParseException e) {				runningList.add(e);
+			}
+	
+		)
+		{ 
+			if (runningList.size() > 0) {
+				throw runningList;
+			} else {
+				return id;
+			} 
+		}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
 	}
 }
 
@@ -1871,18 +2068,25 @@ ConstIdentifier Constant() :
 	Token t = null;
 	Boolean minus = false;
 	ConstIdentifier id = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-   (
-      LOOKAHEAD(2) id = IntConstant()
-      | id = DoubleConstant()
-      | id = BooleanConstant()
-      | id = StringConstant()
-    )
- 	{
- 	  	// position for id already set
-  		return id; 
- 	}
+{  
+	try {
+	   (
+	      LOOKAHEAD(2) id = IntConstant()
+	      | id = DoubleConstant()
+	      | id = BooleanConstant()
+	      | id = StringConstant()
+	    )
+	 	{
+	 	  	// position for id already set
+	  		return id; 
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
@@ -1891,30 +2095,29 @@ IntIdentifier IntConstant() :
 	Token t = null;
 	Boolean minus = false;
 	IntIdentifier id = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-	(<MINUS > {minus = true;})?
- 	(
-  		t = <INTEGER>
-  		{
-     		long intval = Long.parseLong(t.image);
-     		if (minus)
-     		{
-     			intval = -intval;
-     		}
-
-   			id = new IntIdentifier(intval);
-  		}
- 	)
- 	{
- 	  	blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = t.endLine;
-		ecp = t.endColumn;
-		id.setAllPositions(blp, bcp, elp, ecp);
- 		return id; 
- 	}
+	try {
+		(<MINUS > {minus = true;})?
+	 	(
+	  		t = <INTEGER>
+	  		{
+	     		long intval = Long.parseLong(t.image);
+	     		if (minus)
+	     			intval = -intval;
+	   			id = new IntIdentifier(intval);
+	  		}
+	 	)
+	 	{
+			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn, t.endLine, t.endColumn);
+	 		return id; 
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
@@ -1923,29 +2126,30 @@ DoubleIdentifier DoubleConstant() :
 	Token t;
 	Boolean minus = false;
 	DoubleIdentifier id = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	(<MINUS > {minus = true;})?
- 	(
-		t = <DOUBLE>
-		{
-      		Double doubleval = Double.parseDouble(t.image);
-      		if (minus)
-      		{
-        		doubleval = -doubleval;
-      		}
-   			id = new DoubleIdentifier(doubleval);
-  		}
- 	)
- 	{ 
-		blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = t.endLine;
-		ecp = t.endColumn;
-		id.setAllPositions(blp, bcp, elp, ecp);
- 		return id; 
- 	}
+{	try	{
+		(<MINUS > {minus = true;})?
+	 	(
+			t = <DOUBLE>
+			{
+	      		Double doubleval = Double.parseDouble(t.image);
+	      		if (minus)
+	      		{
+	        		doubleval = -doubleval;
+	      		}
+	   			id = new DoubleIdentifier(doubleval);
+	  		}
+	 	)
+	 	{ 
+			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
+	 		return id; 
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
@@ -1953,355 +2157,309 @@ BooleanIdentifier BooleanConstant() :
 {
 	Token t;
 	BooleanIdentifier id = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-    (
-  		((t = <TRUE>) | (t =<FALSE>) | t= <TRUE_C> | t= <FALSE_C>)
-  		{
-   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
-   			id.setDimensions(0,0);
-			id.computeDataType();
-			id.setValueType(ValueType.BOOLEAN);
-  		}
- 	)
- 	{
- 	  	blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = t.endLine;
-		ecp = t.endColumn;
-		id.setAllPositions(blp, bcp, elp, ecp);
- 		return id; 
- 	}
+	try {
+	    (
+	  		((t = <TRUE>) | (t =<FALSE>) | t= <TRUE_C> | t= <FALSE_C>)
+	  		{
+	   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
+	   			id.setDimensions(0,0);
+				id.computeDataType();
+				id.setValueType(ValueType.BOOLEAN);
+	  		}
+	 	)
+	 	{
+			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
+	 		return id; 
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
-
+	
 
 StringIdentifier StringConstant() :
 {
 	Token t = null;
 	StringIdentifier id = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
 {
-    (
-  		(t =<DBLQUOTE_STRING_LITERAL>){
-			id = new StringIdentifier(dequoteStr('\"',t.image));
-  		}
- 	)
- 	{ 
-		blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = t.endLine;
-		ecp = t.endColumn;
-		id.setAllPositions(blp, bcp, elp, ecp);
- 		return id; 
- 	}
+	try {
+	    (
+	  		(t =<DBLQUOTE_STRING_LITERAL>){ id = new StringIdentifier(dequoteStr('\"',t.image)); }
+	 	)
+	 	{ 
+			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
+	 		return id; 
+	 	}
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(e);
+		throw runningList;
+	}
 }
 
 
 DataIdentifier Identifier() :
 {
-	Token t = null;
+	Token t = null, tD = null;
+	String idNameStr = null;
 	Token tNamespace = null;
 	DataIdentifier id = null;
 	FunctionCallIdentifier functCall = null;
 	ArrayList<ArrayList<Expression>> exprListList = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	
-	  
-		[LOOKAHEAD(4)tNamespace = <ID>{ blp=tNamespace.beginLine; bcp=tNamespace.beginColumn; elp =tNamespace.endLine; ecp = tNamespace.endColumn;} <COLON><COLON>]
-			t = <ID> { if (tNamespace == null ) { blp=t.beginLine; bcp=t.beginColumn;} elp= t.endLine; ecp =t.endColumn; }
-			(LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList())?
-	
-	
-  	{
-		id = new DataIdentifier(t.image);
-  
-		if (functCall != null) {
-
-			// CASE: no namespace handle built-in functions
-			if ( tNamespace == null )
+{	try {   	
+		[
+			LOOKAHEAD(4)tNamespace = <ID>
 			{
-				// verify passed function name is a (non-parameterized) built-in function.
-				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(t.image, functCall.getParamExpressions());
-				if (bife != null){
-					bife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
-					return bife;
-				}
-				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(t.image, functCall.getNamedParamExpressions());
-				if (pbife != null){
-					pbife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
-					return pbife;
-				}
+				blp=tNamespace.beginLine;
+				bcp=tNamespace.beginColumn;
+				elp =tNamespace.endLine;
+				ecp = tNamespace.endColumn;
 			}
-
-			// handle UDF function call
-			String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
-		    functCall.setFunctionNamespace(namespaceName);
-		    functCall.setFunctionName(t.image);
-
-			// set position information
-			functCall.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
-		   	return functCall;
-		}
-		else if (exprListList != null){
-			IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
-			try {
-				iid.setIndices(exprListList);
-			} catch (ParseException e) {
-				LOG.error(printErrorLocation(blp,bcp) + "matrix indices must be specified for 2 dimensions -- currently specified indices for " + exprListList.size() + " dimensions ");
-				throw new ParseException(printErrorLocation(blp,bcp) + "matrix indices must be specified for 2 dimensions -- currently specified indices for " + exprListList.size() + " dimensions ");
-			}
-			
-			// set position information
-			iid.setAllPositions(blp, bcp, exprListList);
-						
-		   	return iid;
-		} else{
-
-			// set position information
-			id.setAllPositions(blp, bcp, elp, ecp);
-			return id;
-		}
- 	}
-}
-
-
-
-/*
-
-RandStatement RandStatement() :
-{
-	RandStatement rs = null;
-	DataIdentifier id = null;
-	Token t1 = null, t2 = null, tName = null;
-	Expression expr = null;
-	String tNameStr = null;
-	HashMap<String,Expression > namedParams = new HashMap<String,Expression>();
-	ArrayList<Expression > unnamedParams = new ArrayList<Expression>();
-	
-	Token tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
-}
-{
-	id = Identifier() <ASSIGN> (tName = <RAND> | tName = <MATRIX>) <LEFTPAREN>
-	
-	(
-		{t2 = null;}
-		(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
+			<COLON><COLON>
+		]
+		
+		(t = <ID> | tD = <DOLLAR_ID> | tD = <DOLLAR_ID_POS>)
+		
 		{
-			if (t1 != null){
-				namedParams.put(t1.image, expr);
-			}	
-			else {
-			   unnamedParams.add(expr);
+			if (tD != null && tNamespace != null){
+				runningList.add(new DMLParseException(this.getFilename(), printErrorLocation(tNamespace.beginLine, tNamespace.beginColumn) + "cannot use namespaces with passed arguments"));
+				throw runningList;
 			}
-			t1 = null;	
-		}
-	)*
-	tEnd = <RIGHTPAREN>[<SEMICOLON>]  
 
-	{
-		if (t2 != null){
-			LOG.error(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
-			throw new ParseException(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
-		}
-	}
-	
-	
-	{
-		blp = tName.beginLine;
-		bcp = tName.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-
-		
-		rs = new RandStatement(id,nameString,unnamedParams,namedParams, beginLine, beginColumn);
-		rs.setAllPositions(blp, bcp, elp, ecp);
-		return rs;
-	}
-}
-
-InputStatement InputStatement() :
-{
-	DataIdentifier id = null;
-	InputStatement is = new InputStatement(Expression.DataOp.READ);
-	Expression t2 = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	Token tEnd = null;
-	
-}
-{
-	  	id = Identifier()
-	
-	  	{
-			if (id.getName().startsWith("$")){
-				LOG.error(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
-				throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
-			}
-  	  	}
-	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_CSV> )
-
-	  	<LEFTPAREN>
-			t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
-		(
-			<COMMA>
-			(
-				{Token t1 = null;}
-				t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}
-			)
-		)*
-		tEnd = <RIGHTPAREN> [<SEMICOLON>]
-	{
-
-		if (tRead.image.equals("readMM")){
-		    StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
-		}
-		
-		else if (tRead.image.equals("read.csv")){
-		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
-			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
-		}
-	
- 		is.setIdentifier(id);
- 		id.setDimensions(is);
- 		id.computeDataType();
-	
-		blp = id.getBeginLine();
-		bcp = id.getBeginColumn();
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		is.setAllPositions(blp, bcp, elp, ecp);
- 		
- 		return is;
-	}
-}
-*/
-
-OutputStatement OutputStatement() :
-{
-	DataIdentifier fn = null;
-	Token t1 = null;
-	Expression t2 = null;
-	OutputStatement os = null;
-
-	Token tStart = null, tEnd = null;
-	Token tWrite = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
-	(tStart = <WRITEMATRIX> | tStart = <WRITEMM> | tStart = <WRITE_CSV> ) <LEFTPAREN>
-		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
-    	t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
-     	(
-			<COMMA>
-			(
-				t1 = <ID> <ASSIGN> t2 = Expression()
-				{
-					os.addExprParam(t1.image, t2,false);
+			if (tNamespace == null ){
+			  	if (t != null){			  		blp=t.beginLine;
+					bcp=t.beginColumn;
+					elp=t.endLine;
+					ecp=t.endColumn;
+				} else {
+				  	blp=tD.beginLine;
+					bcp=tD.beginColumn;
+					elp=tD.endLine;
+					ecp=tD.endColumn;
 				}
-			)
-		)*
-		tEnd = <RIGHTPAREN>  [<SEMICOLON>]
-	{
-		tWrite = tStart;
-		if (tWrite.image.equals("writeMM")){
+			}
 
-			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
+		  	if (t != null)
+				idNameStr = t.image;
+			else 
+				idNameStr = tD.image;			
 		}
-		else if (tWrite.image.equals("write.csv")){
-			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
-			os.addExprParam(Statement.FORMAT_TYPE, delimitedExpr, false);
-		}
+		
+		(LOOKAHEAD(2)
+			try {
+			  				functCall = FunctionCall()
+				| 				exprListList = ReadIndexList()
+
+			} catch (DMLParseException e){
+				runningList.add(e);
+			}
+		)?
+			
+		{
+			id = new DataIdentifier(idNameStr);
+  
+			if (functCall != null) {
+
+				// CASE: no namespace -- check if built-in functions
+				if ( tNamespace == null) {
+  
+					// check if passed function name is a (non-parameterized) built-in function.
+					BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(t.image, functCall.getParamExprs());
+					if (bife != null){
+						if (runningList.size() > 0){
+							throw runningList;
+						} else {
+						  	bife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());							return bife;
+						}
+					}
 	
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		os.setAllPositions(blp, bcp, elp, ecp);
-		return os;
+					// check if passed function name is a parameterized built-in function.
+					ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(t.image, functCall.getParamExprs());
+					if (pbife != null){
+						
+						if (runningList.size() > 0)
+							throw runningList;
+						else {
+							pbife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());						  	return pbife;
+						}
+					}
+					
+					// check if passed function name is a data operation built-in function.
+					DataExpression dbife = null;
+
+					try {					  dbife = DataExpression.getDataExpression(t.image, functCall.getParamExprs(), t.beginLine, t.beginColumn);
+					} catch (DMLParseException e){						runningList.add(e);
+					}
+				
+					if (dbife != null){						
+						if (runningList.size() > 0)
+							throw runningList;
+						else {							dbife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+							return dbife;
+						}
+					}
+				}
+
+				// handle UDF function call
+				if (runningList.size() > 0) {
+					throw runningList;
+				} else {				  
+					String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
+	    			functCall.setFunctionNamespace(namespaceName);						
+	    			functCall.setFunctionName(idNameStr);
+
+					// set position information
+					functCall.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+				
+	   				return functCall;
+	   			}
+			}
+		
+			else if (exprListList != null){
+
+				IndexedIdentifier iid = null;
+				try {
+				  	if (id != null) {
+				  		iid = new IndexedIdentifier(id.getName(), false, false);
+						iid.setIndices(exprListList);
+					}
+				} catch (DMLParseException e) {
+		  			runningList.add(e);
+				}
+		
+				// set position information
+				if (iid != null && exprListList != null)
+					iid.setAllPositions(this.getFilename(), blp, bcp, exprListList);
+
+				if (runningList.size() > 0)
+					throw runningList;
+		   		return iid;
+
+			} else {
+				// set position information
+				if (id != null)
+					id.setAllPositions(this.getFilename(), blp, bcp, elp, ecp);
+
+				if (runningList.size() > 0)
+					throw runningList;
+				return id;
+			}
+ 		}
+
+	} catch (Exception e){		if (e != runningList)
+			runningList.add(new DMLParseException(getFilename(), e));
+		throw runningList;  	}
+}
+
+
+Statement OutputStatement() :
+{
+	Expression fn = null;
+	Expression t2 = null;
+	Statement os = null;
+	Token t1 = null, tStart = null, tEnd = null;
+	FunctionCallIdentifier fci = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
+}
+{
+	try {
+		(			tStart = <PRINT> <LEFTPAREN>
+			try {				t2 = Expression()
+			} catch (DMLParseException e){				runningList.add(e);
+			}
+			tEnd = <RIGHTPAREN>  
+			{				if (runningList.size() > 0) {
+					throw runningList;
+				} else {					os  = new PrintStatement(t2);
+					os.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);
+					return os;
+				}
+			}
+		)
+		
+		|
+			
+		( 
+			(tStart = <WRITEMATRIX> | tStart = <WRITEMM> | tStart = <WRITE_CSV>)
+			fci = FunctionCall()		
+			{
+				try {
+					os = new OutputStatement(tStart.image, fci);
+					os.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, fci.getEndLine(), fci.getEndColumn());
+				} catch (DMLParseException e) {					runningList.add(e);
+				}
+				if (runningList.size() > 0)
+					throw runningList;
+		
+				return os;
+			}
+		)
+		
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(new DMLParseException(getFilename(), e));
+		throw runningList;  
 	}
 }
-
-
-PrintStatement PrintStatement() :
-{
-	Expression source;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	Token tStart = null, tEnd = null;
-}
-{
-	tStart = <PRINT> <LEFTPAREN> source = Expression()  tEnd = <RIGHTPAREN>  [<SEMICOLON>]
-	{	
-		PrintStatement retVal = new PrintStatement(source);
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		retVal.setAllPositions(blp, bcp, elp, ecp);
-
-		return retVal;
-	}
-}
-
 
 FunctionCallIdentifier FunctionCall():
 {
 	Expression expr = null;
 	FunctionCallIdentifier functCall = null;
-	ArrayList<Expression> exprs = new ArrayList<Expression>();
-	HashMap<String, Expression> namedExprs = new HashMap<String,Expression>(); 
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	ArrayList<ParameterExpression> paramExprs = new ArrayList<ParameterExpression>();
 	Token tStart = null, tEnd = null, t1 = null, commaToken = null;
+	DMLParseException runningList = new DMLParseException(this.getFilename());
 }
-{
-	tStart = <LEFTPAREN>
 
+{
+	try {
+	  
+		tStart = <LEFTPAREN>	  
 		(
 			{ commaToken = null; }
-			( commaToken = <COMMA>)? (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression()
+			( commaToken = <COMMA>)? (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?
+	
+				try {				  expr = Expression()
+				} catch(DMLParseException e) {
+				  	runningList.add(e);
+				}				  
+	
 			{
-				if (t1 != null){
-					namedExprs.put(t1.image, expr);
-				}	
-				else {
-				   exprs.add(expr);
-				}
+				String paramName = (t1 != null) ? t1.image : null;
+				paramExprs.add(new ParameterExpression(paramName, expr));
 				t1 = null;
-
-				int exprCount = namedExprs.size() + exprs.size();
-				if (exprCount == 1 && commaToken != null) {
-				  	LOG.error(expr.printErrorLocation() + "should not have comma before first function call parameter");
-					throw new ParseException(expr.printErrorLocation() + "should not have comma before first function call parameter");
-				}
-				if (exprCount != 1 && commaToken == null){
-				  	LOG.error(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
-					throw new ParseException(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
-				}
-					
+	
+				int exprCount = paramExprs.size();
+				if (exprCount == 1 && commaToken != null)
+				  	runningList.add(new DMLParseException(this.getFilename(), expr.printErrorLocation() + "should not have comma before first function call parameter"));  
+				if (exprCount != 1 && commaToken == null)
+					runningList.add(new DMLParseException(this.getFilename(), expr.printErrorLocation() + "missing comma before function call parameter " + exprCount));
 			}
 		)*
-
 		tEnd = <RIGHTPAREN>
-		
-	
-		{
-			functCall = new FunctionCallIdentifier(exprs, namedExprs);
-	
-			blp = tStart.beginLine;
-			bcp = tStart.beginColumn;
-			elp = tEnd.beginLine;
-			ecp = tEnd.beginColumn;
-			functCall.setAllPositions(blp, bcp, elp, ecp);
 			
+		{
+			functCall = new FunctionCallIdentifier(paramExprs);
+			functCall.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);
+			if (runningList.size() > 0)
+				throw runningList;
 			return functCall;
 		}     
+	} catch (Exception e){
+		if (e != runningList)
+			runningList.add(new DMLParseException(getFilename(), e));
+		throw runningList;  
+	}
 }
 
 void RelationalOp() :
@@ -2311,7 +2469,47 @@ void RelationalOp() :
 }
 
 
+Statement MetaLearningStatement() :
+{
+	FunctionCallIdentifier 	inputs 					= null;
+	HashMap<String,String>	partitionParams			= null; 
+	FunctionCallIdentifier 	partitionOutputs 		= null;
+	DataIdentifier 			trainFunctionCall 		= null;
+	FunctionCallIdentifier 	trainFunctionOutputs 	= null;
+	DataIdentifier 			testFunctionCall		= null;
+	FunctionCallIdentifier 	testFunctionOutputs 	= null;
+	DataIdentifier 			aggFunctionCall 		= null;
+	DataIdentifier 			aggFunctionOutputs 		= null;
 
+	Token 	aggfunc 	= null;
+	Token	tPartition 	= null, tAs_1 = null;
+	Token	tTrain 		= null, tAs_2 = null;
+	Token   tTest 		= null, tAs_3 = null;
+	Token	tAgg 		= null, tAs_4 = null;
+	
+}
+{
+	"crossval"  inputs = FunctionCall()
+ 	"partition" partitionParams = ReadGenericParamList() "as" partitionOutputs		= FunctionCall()
+	"train"		trainFunctionCall = Identifier() 		 "as" trainFunctionOutputs 	= FunctionCall()
+ 	"test"		testFunctionCall  = Identifier() 		 "as" testFunctionOutputs  	= FunctionCall()
+ 	"aggregate" aggFunctionCall   = Identifier()  		 "as" aggFunctionOutputs 	= FunctionCall()
+
+ 	{
+ 	  	CVStatement cvs = new CVStatement();
+ 	  	cvs.set_inputs(inputs);
+		cvs.set_partitionParams(partitionParams);
+		cvs.set_partitionOutputs(partitionOutputs);
+		cvs.set_trainFunctionCall((FunctionCallIdentifier)trainFunctionCall);
+		cvs.set_trainFunctionOutputs(trainFunctionOutputs);
+		cvs.set_testFunctionCall((FunctionCallIdentifier) testFunctionCall);
+		cvs.set_testFunctionOutputs(testFunctionOutputs);
+		cvs.set_aggFunctionCall((Identifier)aggFunctionCall);
+		cvs.set_aggFunctionOutputs((FunctionCallIdentifier)aggFunctionOutputs); 
+		return cvs;
+ 	}
+ 
+}
 
 /*
 ELStatement ELStatement() :
@@ -2334,7 +2532,7 @@ ELStatement ELStatement() :
 {
 	<BUILD_ENSEMBLE> //t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
  	//tPartition = <ID> partitionParams = ReadGenericParamList() 												  tAs_1	= <ID> partitionOutputs = ReadList()
-	//tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  			  tAs_2 = <ID> trainFunctionOutputs = ReadList()
+	//tTrain = <ID> t =  {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  			  tAs_2 = <ID> trainFunctionOutputs = ReadList()
 	//[LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   tAs_3 = <ID> testFunctionOutputs  = ReadList()]
 
  	{
@@ -2349,11 +2547,11 @@ ELStatement ELStatement() :
 //				testFunctionName,  testFunctionParams,  testFunctionOutputs, 
 //				partitionOutputs, 
 //				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-		return null; //new ELStatement(eNameStr, dataList, partitionParams, params) ;
-	}
-}
-*/
+//
+//		return null; //new ELStatement(eNameStr, dataList, partitionParams, params) ;
+//	}
+//}
+//*/
 /*
 ELUseStatement ELUseStatement() :
 {
@@ -2397,45 +2595,3 @@ ELUseStatement ELUseStatement() :
 
 }
 */
-
-CVStatement CVStatement() :
-{
-	FunctionCallIdentifier 	inputs 					= null;
-	HashMap<String,String>	partitionParams			= null; 
-	FunctionCallIdentifier 	partitionOutputs 		= null;
-	DataIdentifier 			trainFunctionCall 		= null;
-	FunctionCallIdentifier 	trainFunctionOutputs 	= null;
-	DataIdentifier 			testFunctionCall		= null;
-	FunctionCallIdentifier 	testFunctionOutputs 	= null;
-	DataIdentifier 			aggFunctionCall 		= null;
-	DataIdentifier 			aggFunctionOutputs 		= null;
-
-	Token 	aggfunc 	= null;
-	Token	tPartition 	= null, tAs_1 = null;
-	Token	tTrain 		= null, tAs_2 = null;
-	Token   tTest 		= null, tAs_3 = null;
-	Token	tAgg 		= null, tAs_4 = null;
-	
-}
-{
-	"crossval"  inputs = FunctionCall()
- 	"partition" partitionParams = ReadGenericParamList() "as" partitionOutputs		= FunctionCall()
-	"train"		trainFunctionCall = Identifier() 		 "as" trainFunctionOutputs 	= FunctionCall()
- 	"test"		testFunctionCall  = Identifier() 		 "as" testFunctionOutputs  	= FunctionCall()
- 	"aggregate" aggFunctionCall   = Identifier()  		 "as" aggFunctionOutputs 	= FunctionCall()[<SEMICOLON>]
-
- 	{
- 	  	CVStatement cvs = new CVStatement();
- 	  	cvs.set_inputs(inputs);
-		cvs.set_partitionParams(partitionParams);
-		cvs.set_partitionOutputs(partitionOutputs);
-		cvs.set_trainFunctionCall((FunctionCallIdentifier)trainFunctionCall);
-		cvs.set_trainFunctionOutputs(trainFunctionOutputs);
-		cvs.set_testFunctionCall((FunctionCallIdentifier) testFunctionCall);
-		cvs.set_testFunctionOutputs(testFunctionOutputs);
-		cvs.set_aggFunctionCall((Identifier)aggFunctionCall);
-		cvs.set_aggFunctionOutputs((FunctionCallIdentifier)aggFunctionOutputs); 
-		return cvs;
- 	}
- 	
-}

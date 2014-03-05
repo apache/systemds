@@ -52,25 +52,11 @@ public class AssignmentStatement extends Statement
 		_targetList.add(t);
 		_source = s;
 	
-		_beginLine   = beginLine;
-		_beginColumn = beginCol;
-		_endLine     = endLine;
-		_endColumn   = endCol;
+		setBeginLine(beginLine);
+		setBeginColumn(beginCol);
+		setEndLine(endLine);
+		setEndColumn(endCol);
 		
-	}
-	
-	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine) throws ParseException{
-		
-		if (t.getName().startsWith("$"))
-		{
-		    LOG.error(t.printErrorLocation() + " cannot use variable assigned from command-line " + t.getName() + " on left-hand side of assignment statement");
-			throw new ParseException(t.printErrorLocation() + " cannot use variable assigned from command-line " + t.getName() + " on left-hand side of assignment statement");
-		}
-		
-		_targetList = new ArrayList<DataIdentifier>();
-		_targetList.add(t);
-		_source = s;
-
 	}
 	
 	public DataIdentifier getTarget(){
@@ -93,6 +79,10 @@ public class AssignmentStatement extends Statement
 	public boolean controlStatement() {
 		// for now, ensure that function call ends up in different statement block
 		if (_source instanceof FunctionCallIdentifier)
+			return true;
+		
+		// for now, ensure that an assignment statement containing a read from csv ends up in own statement block
+		if(_source != null && _source.toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && _source.toString().contains("read"))
 			return true;
 		
 		// ensure that specific ops end up in different statement block
@@ -122,7 +112,7 @@ public class AssignmentStatement extends Statement
 			
 			//recompilation hook after ctable because worst estimates usually too conservative 
 			//(despite propagating worst-case estimates, especially if we not able to propagate sparsity)
-			if( _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
+			if(_source != null && _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
 				ret = true;
 		}
 		//System.out.println(_source +": "+ret);

@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
-import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -15,9 +15,9 @@ public class CSVWriteInstruction extends UnaryMRInstructionBase{
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public String delim= Statement.DEFAULT_DELIM_DELIMITER;
+	public String delim= DataExpression.DEFAULT_DELIM_DELIMITER;
 	public String header=null;//if null or empty string, then no header
-	public boolean sparse=Statement.DEFAULT_DELIM_SPARSE;
+	public boolean sparse=DataExpression.DEFAULT_DELIM_SPARSE;
 	
 	public CSVWriteInstruction(Operator op, byte in, byte out, String del, String hdr, boolean sps, String istr) {
 		super(op, in, out);

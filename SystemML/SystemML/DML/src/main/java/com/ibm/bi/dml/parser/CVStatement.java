@@ -67,8 +67,8 @@ public class CVStatement extends Statement
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet set = new VariableSet();
-		for (Expression input : _inputs.getParamExpressions()){
-			set.addVariables(input.variablesRead());
+		for (ParameterExpression input : _inputs.getParamExprs()){
+			set.addVariables(input.getExpr().variablesRead());
 		}
 		return set;
 	}
@@ -77,8 +77,8 @@ public class CVStatement extends Statement
 	// only update 
 	public VariableSet variablesUpdated() {
 		VariableSet set = new VariableSet();
-		for (Expression output : _aggFunctionOutputs.getParamExpressions())
-			set.addVariables(output.variablesUpdated());
+		for (ParameterExpression output : _aggFunctionOutputs.getParamExprs())
+			set.addVariables(output.getExpr().variablesUpdated());
 		return set;
 	}
 

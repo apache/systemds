@@ -88,8 +88,9 @@ public class WhileStatementBlock extends StatementBlock
 				//handle data type change (reject) 
 				if (!startVersion.getOutput().getDataType().equals(endVersion.getOutput().getDataType())){
 					String error = printErrorLocation() + "WhileStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.";
-					LOG.error(error); throw new LanguageException(error);
-				}	
+					LOG.error(error); 
+					throw new LanguageException(error);
+				}
 				
 				//handle size change
 				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 

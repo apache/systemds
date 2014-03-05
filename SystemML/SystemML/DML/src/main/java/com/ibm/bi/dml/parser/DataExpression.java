@@ -10,6 +10,7 @@ package com.ibm.bi.dml.parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -21,36 +22,294 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.json.java.JSONObject;
 
 
-public class DataExpression extends Expression 
+public class DataExpression extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static final String RAND_ROWS 	=  "rows";	 
+	public static final String RAND_COLS 	=  "cols";
+	public static final String RAND_MIN  	=  "min";
+	public static final String RAND_MAX  	=  "max";
+	public static final String RAND_SPARSITY = "sparsity"; 
+	public static final String RAND_SEED    =  "seed";
+	public static final String RAND_PDF		=  "pdf";
+	
+	public static final String RAND_PDF_UNIFORM = "uniform";
+	
+	public static final String RAND_BY_ROW 	 =  "byrow";	 
+	public static final String RAND_DIMNAMES =  "dimnames";
+	public static final String RAND_DATA 	 =  "data";
+	
+	public static final String IO_FILENAME = "iofilename";
+	public static final String READROWPARAM = "rows";
+	public static final String READCOLPARAM = "cols";
+	public static final String READNUMNONZEROPARAM = "nnz";
+	
+	public static final String FORMAT_TYPE 						= "format";
+	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
+	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
+	public static final String FORMAT_TYPE_VALUE_CSV			= "csv";
+	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
+	
+	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
+	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
+	public static final String DATATYPEPARAM = "data_type";
+	public static final String VALUETYPEPARAM = "value_type";
+	public static final String DESCRIPTIONPARAM = "description"; 
+	
+	public static final String DELIM_DELIMITER = "sep";
+	public static final String DELIM_HAS_HEADER_ROW = "header";
+	public static final String DELIM_FILL = "fill";
+	public static final String DELIM_FILL_VALUE = "default";
+	public static final String DELIM_SPARSE = "sparse";
+	
+	public static final String[] RAND_VALID_PARAM_NAMES = 
+		{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF}; 
+	
+	public static final String[] MATRIX_VALID_PARAM_NAMES = 
+		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS};
+	
+	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
+		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE, 
+			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM }; 
+
+	public static final String[] READ_VALID_PARAM_NAMES = 
+	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM,
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW }; 
+		
+	/* Default Values for delimited (CSV) files */
+	public static final String  DEFAULT_DELIM_DELIMITER = ",";
+	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;
+	public static final boolean DEFAULT_DELIM_FILL = true;
+	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
+	public static final boolean DEFAULT_DELIM_SPARSE = true;
+	
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
 	
+		
+	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, int beginLine, int beginColumn) throws DMLParseException {
+		
+		if (functionName == null || passedParamExprs == null)
+			return null;
+		
+		// check if the function name is built-in function
+		//	 (assign built-in function op if function is built-in)
+		Expression.DataOp dop = null;
+		DataExpression dataExpr = null;
+		if (functionName.equals("read") || functionName.equals("readMM") || functionName.equals("read.csv")){
+			dop = Expression.DataOp.READ;
+			dataExpr = new DataExpression(dop, new HashMap<String,Expression>());
+			
+			if (functionName.equals("readMM"))
+				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,  new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET));
+			
+			if (functionName.equals("read.csv"))
+				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,  new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV));
+			
+			// validate the filename is the first parameter
+			if (passedParamExprs.size() < 1){
+				// throw exception -- must be filename as first parameter
+				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "read method must have at least filename parameter");
+			}
+			
+			ParameterExpression pexpr = (passedParamExprs.size() == 0) ? null : passedParamExprs.get(0);
+			
+			if ( (pexpr != null) &&  (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName().equalsIgnoreCase(DataExpression.IO_FILENAME)))){
+				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "first parameter to read statement must be filename");
+			} else {
+				dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
+			}
+			
+			// validate all parameters are added only once and valid name
+			for (int i = 1; i < passedParamExprs.size(); i++){
+				String currName = passedParamExprs.get(i).getName();
+				Expression currExpr = passedParamExprs.get(i).getExpr();
+				
+				if (dataExpr.getVarParam(currName) != null){
+					throw new DMLParseException(dataExpr.getFilename(), currExpr.printErrorLocation() + "attempted to add IOStatement parameter " + currName + " more than once");
+				}
+				// verify parameter names for read function
+				boolean isValidName = false;
+				for (String paramName : READ_VALID_PARAM_NAMES){
+					if (paramName.equals(currName))
+						isValidName = true;
+				}
+				if (!isValidName){
+					throw new DMLParseException(dataExpr.getFilename(), currExpr.printErrorLocation() + "attempted to add invalid read statement parameter " + currName);
+				}	
+				dataExpr.addVarParam(currName, currExpr);
+			}				
+		}
+		
+		else if (functionName.equalsIgnoreCase("rand")){
+			
+			dop = Expression.DataOp.RAND;
+			dataExpr = new DataExpression(dop, new HashMap<String,Expression>());
+			
+			for (ParameterExpression currExpr : passedParamExprs){
+				String pname = currExpr.getName();
+				Expression pexpr = currExpr.getExpr();
+				if (pname == null){
+					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
+					//LOG.error(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");
+					//throw new ParseException(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
+				}
+				dataExpr.addRandExprParam(pname, pexpr); 
+			}
+			dataExpr.setRandDefault();
+		}
+		
+		else if (functionName.equals("matrix")){
+			dop = Expression.DataOp.MATRIX;
+			dataExpr = new DataExpression(dop, new HashMap<String,Expression>());
+		
+			int namedParamCount = 0, unnamedParamCount = 0;
+			for (ParameterExpression currExpr : passedParamExprs) {
+				if (currExpr.getName() == null)
+					unnamedParamCount++;
+				else
+					namedParamCount++;
+			}
+
+			// check whether named or unnamed parameters are used
+			if (passedParamExprs.size() < 3){
+				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+			}
+			if (unnamedParamCount > 1){
+				
+				if (namedParamCount > 0)
+					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
+				
+				if (unnamedParamCount < 3)
+					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+				
+
+				// assume: data, rows, cols, [byRow], [dimNames]
+				dataExpr.addMatrixExprParam(DataExpression.RAND_DATA,passedParamExprs.get(0).getExpr());
+				dataExpr.addMatrixExprParam(DataExpression.RAND_ROWS,passedParamExprs.get(1).getExpr());
+				dataExpr.addMatrixExprParam(DataExpression.RAND_COLS,passedParamExprs.get(2).getExpr());
+				
+				if (unnamedParamCount >= 4)
+					dataExpr.addMatrixExprParam(DataExpression.RAND_BY_ROW,passedParamExprs.get(3).getExpr());
+				
+				if (unnamedParamCount == 5)
+					dataExpr.addMatrixExprParam(DataExpression.RAND_DIMNAMES,passedParamExprs.get(4).getExpr());
+				
+				if (unnamedParamCount > 5)
+					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+								   
+				
+			} else {
+				// handle first parameter, which is data and may be unnamed
+				ParameterExpression firstParam = passedParamExprs.get(0);
+				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
+					// throw exception -- must be filename as first parameter
+					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "matrix method must have data parameter as first parameter or unnamed parameter");
+				} else {
+					dataExpr.addMatrixExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
+				}
+				
+				for (int i=1; i<passedParamExprs.size(); i++){
+					if (passedParamExprs.get(i).getName() == null){
+						// throw exception -- cannot mix named and unnamed parameters
+						throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(beginLine, beginColumn) + "for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+					} else {
+						dataExpr.addMatrixExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr()); 	
+					}
+				}
+			}
+			dataExpr.setMatrixDefault();
+		} // else if (functionName.equals("matrix")){
+		
+		return dataExpr;
+	
+	} // end method getBuiltinFunctionExpression
+	
+	public void addRandExprParam(String paramName, Expression paramValue) throws DMLParseException
+	{
+		// check name is valid
+		boolean found = false;
+		if (paramName != null ){
+			for (String name : RAND_VALID_PARAM_NAMES){
+				if (name.equals(paramName)) {
+					found = true;
+					break;
+				}			
+			}
+		}
+		if (!found){
+			
+			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for Rand statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
+					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
+		}
+		if (getVarParam(paramName) != null){
+			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
+		}
+		// Process the case where user provides double values to rows or cols
+		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+			
+		// add the parameter to expression list
+		paramValue.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		addVarParam(paramName,paramValue);
+		
+	}
+	
+	public void addMatrixExprParam(String paramName, Expression paramValue) throws DMLParseException
+	{
+		// check name is valid
+		boolean found = false;
+		if (paramName != null ){
+			for (String name : MATRIX_VALID_PARAM_NAMES){
+				if (name.equals(paramName)) {
+					found = true;
+				}			
+			}
+		}
+		
+		if (!found){
+			
+			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for  matrix statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_DATA + ", " + RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_BY_ROW);
+		}
+		if (getVarParam(paramName) != null){
+			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "attempted to add matrix statement parameter " + paramValue + " more than once");
+		}
+		// Process the case where user provides double values to rows or cols
+		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+			
+		// add the parameter to expression list
+		paramValue.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		addVarParam(paramName,paramValue);
+	}
 	
 	public DataExpression(DataOp op, HashMap<String,Expression> varParams) {
 		_kind = Kind.DataOp;
 		_opcode = op;
 		_varParams = varParams;
 	}
-	
-	public DataExpression(DataOp op) {
-		_kind = Kind.DataOp;
-		_opcode = op;
-		_varParams = new HashMap<String,Expression>();
-	}
 
-	public DataExpression() {
-		_kind = Kind.DataOp;
-		_opcode = DataOp.INVALID;
-		_varParams = new HashMap<String,Expression>();
-	}
-	 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
@@ -59,10 +318,11 @@ public class DataExpression extends Expression
 			newVarParams.put(key, newExpr);
 		}	
 		DataExpression retVal = new DataExpression(_opcode, newVarParams);
-		retVal._beginLine 	= this._beginLine;
-		retVal._beginColumn = this._beginColumn;
-		retVal._endLine 	= this._endLine;
-		retVal._endColumn 	= this._endColumn;
+		retVal.setFilename(this.getFilename());
+		retVal.setBeginLine(this.getBeginLine());
+		retVal.setBeginColumn(this.getBeginColumn());
+		retVal.setEndLine(this.getEndLine());
+		retVal.setEndColumn(this.getEndColumn());
 			
 		return retVal;
 	}
@@ -73,41 +333,39 @@ public class DataExpression extends Expression
 	 * always read by-column and the default for byRow is by-column as well.
 	 */
 	public void setMatrixDefault(){
-		if (getVarParam(Statement.RAND_BY_ROW) == null){
-			addVarParam(Statement.RAND_BY_ROW, new BooleanIdentifier(true));
-		}
+		if (getVarParam(RAND_BY_ROW) == null)
+			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true));
 	}
 	
 	public void setRandDefault(){
-		if (getVarParam(Statement.RAND_ROWS)== null){
+		if (getVarParam(RAND_ROWS)== null){
 			IntIdentifier id = new IntIdentifier(1L);
-			addVarParam(Statement.RAND_ROWS, 	id);
+			addVarParam(RAND_ROWS, 	id);
 		}
-		if (getVarParam(Statement.RAND_COLS)== null){
+		if (getVarParam(RAND_COLS)== null){
 			IntIdentifier id = new IntIdentifier(1L);
-            addVarParam(Statement.RAND_COLS, 	id);
+            addVarParam(RAND_COLS, 	id);
 		}
-		if (getVarParam(Statement.RAND_MIN)== null){
+		if (getVarParam(RAND_MIN)== null){
 			DoubleIdentifier id = new DoubleIdentifier(0.0);
-			addVarParam(Statement.RAND_MIN, id);
+			addVarParam(RAND_MIN, id);
 		}
-		if (getVarParam(Statement.RAND_MAX)== null){
+		if (getVarParam(RAND_MAX)== null){
 			DoubleIdentifier id = new DoubleIdentifier(1.0);
-			addVarParam(Statement.RAND_MAX, id);
+			addVarParam(RAND_MAX, id);
 		}
-		if (getVarParam(Statement.RAND_SPARSITY)== null){
+		if (getVarParam(RAND_SPARSITY)== null){
 			DoubleIdentifier id = new DoubleIdentifier(1.0);
-			addVarParam(Statement.RAND_SPARSITY,	id);
+			addVarParam(RAND_SPARSITY,	id);
 		}
-		if (getVarParam(Statement.RAND_SEED)== null){
+		if (getVarParam(RAND_SEED)== null){
 			IntIdentifier id = new IntIdentifier(DataGenOp.UNSPECIFIED_SEED);
-			addVarParam(Statement.RAND_SEED, id);
+			addVarParam(RAND_SEED, id);
 		}
-		if (getVarParam(Statement.RAND_PDF)== null){
-			StringIdentifier id = new StringIdentifier(RandStatement.RAND_PDF_UNIFORM);
-			addVarParam(Statement.RAND_PDF, id);
+		if (getVarParam(RAND_PDF)== null){
+			StringIdentifier id = new StringIdentifier(RAND_PDF_UNIFORM);
+			addVarParam(RAND_PDF, id);
 		}
-		//setIdentifierProperties();
 	}
 	
 	
@@ -131,30 +389,33 @@ public class DataExpression extends Expression
 		return _varParams.get(name);
 	}
 
+	
+	
 	public void addVarParam(String name, Expression value){
 		_varParams.put(name, value);
 		
 		// if required, initialize values
-		if (_beginLine == 0) 	_beginLine 	 = value.getBeginLine();
-		if (_beginColumn == 0) 	_beginColumn = value.getBeginColumn();
-		if (_endLine == 0) 		_endLine 	 = value.getEndLine();
-		if (_endColumn == 0) 	_endColumn 	 = value.getEndColumn();
+		setFilename(value.getFilename());
+		if (getBeginLine() == 0) 	setBeginLine(value.getBeginLine());
+		if (getBeginColumn() == 0) 	setBeginColumn(value.getBeginColumn());
+		if (getEndLine() == 0) 		setEndLine(value.getEndLine());
+		if (getEndColumn() == 0) 	setEndColumn(value.getEndColumn());
 		
 		// update values	
-		if (_beginLine > value.getBeginLine()){
-			_beginLine = value.getBeginLine();
-			_beginColumn = value.getBeginColumn();
+		if (getBeginLine() > value.getBeginLine()){
+			setBeginLine(value.getBeginLine());
+			setBeginColumn(value.getBeginColumn());
 		}
-		else if (_beginLine == value.getBeginLine() &&_beginColumn > value.getBeginColumn()){
-			_beginColumn = value.getBeginColumn();
+		else if (getBeginLine() == value.getBeginLine() && getBeginColumn() > value.getBeginColumn()){
+			setBeginColumn(value.getBeginColumn());
 		}
 
-		if (_endLine < value.getEndLine()){
-			_endLine = value.getEndLine();
-			_endColumn = value.getEndColumn();
+		if (getEndLine() < value.getEndLine()){
+			setEndLine(value.getEndLine());
+			setEndColumn(value.getEndColumn());
 		}
-		else if (_endLine == value.getEndLine() && _endColumn < value.getEndColumn()){
-			_endColumn = value.getEndColumn();
+		else if (getEndLine() == value.getEndLine() && getEndColumn() < value.getEndColumn()){
+			setEndColumn(value.getEndColumn());
 		}		
 	}
 	
@@ -177,13 +438,21 @@ public class DataExpression extends Expression
 		Set<String> varParamKeySet = getVarParams().keySet();
 		for ( String s : varParamKeySet ) {
 			getVarParam(s).validateExpression(ids, currConstVars);
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(Statement.RAND_DATA)) {
+			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA)) {
 				LOG.error(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.");
 				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
-			Expression dataParam = getVarParam(Statement.RAND_DATA);
+			Expression dataParam = getVarParam(RAND_DATA);
+			
+			// attempt to perform constant replacement on data param
+			if (dataParam != null && dataParam instanceof DataIdentifier && !(dataParam instanceof IndexedIdentifier) 
+					&& currConstVars.containsKey(((DataIdentifier) dataParam).getName()))
+			{
+				addVarParam(RAND_DATA, currConstVars.get(((DataIdentifier)dataParam).getName()));
+			}
+			
 			if (dataParam == null && getOpCode().equals(DataOp.MATRIX)){
 				LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
 				throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -203,34 +472,34 @@ public class DataExpression extends Expression
 		
 		case READ:
 					
-			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier)){
+			if (getVarParam(DATATYPEPARAM) != null && !(getVarParam(DATATYPEPARAM) instanceof StringIdentifier)){
 				
-				LOG.error(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
+				LOG.error(this.printErrorLocation() + "for read statement, parameter " + DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 				
-				throw new LanguageException(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
+				throw new LanguageException(this.printErrorLocation() + "for read statement, parameter " + DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 			}
 			
-			String dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
+			String dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			// disallow certain parameters while reading a scalar
 			if (dataTypeString != null && dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)){
-				if ( getVarParam(Statement.READROWPARAM) != null
-						|| getVarParam(Statement.READCOLPARAM) != null
-						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
-						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
-						|| getVarParam(Statement.FORMAT_TYPE) != null
-						|| getVarParam(Statement.DELIM_DELIMITER) != null	
-						|| getVarParam(Statement.DELIM_HAS_HEADER_ROW) != null
-						|| getVarParam(Statement.DELIM_FILL) != null
-						|| getVarParam(Statement.DELIM_FILL_VALUE) != null){
+				if ( getVarParam(READROWPARAM) != null
+						|| getVarParam(READCOLPARAM) != null
+						|| getVarParam(ROWBLOCKCOUNTPARAM) != null
+						|| getVarParam(COLUMNBLOCKCOUNTPARAM) != null
+						|| getVarParam(FORMAT_TYPE) != null
+						|| getVarParam(DELIM_DELIMITER) != null	
+						|| getVarParam(DELIM_HAS_HEADER_ROW) != null
+						|| getVarParam(DELIM_FILL) != null
+						|| getVarParam(DELIM_FILL_VALUE) != null){
 					
 					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
-							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.");
+							toString() + ". Only " + VALUETYPEPARAM + " is allowed.");
 					
 					throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
-							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+							toString() + ". Only " + VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 			
@@ -239,12 +508,12 @@ public class DataExpression extends Expression
 			// read the configuration file
 			String filename = null;
 			
-			if (getVarParam(Statement.IO_FILENAME) instanceof ConstIdentifier){
-				filename = getVarParam(Statement.IO_FILENAME).toString() +".mtd";
+			if (getVarParam(IO_FILENAME) instanceof ConstIdentifier){
+				filename = getVarParam(IO_FILENAME).toString() +".mtd";
 				
 			}
-			else if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
-				BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
+			else if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
+				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
 								
 				if (expr.getKind()== Expression.Kind.BinaryOp){
 					Expression.BinaryOp op = expr.getOpCode();
@@ -255,21 +524,21 @@ public class DataExpression extends Expression
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value
 							StringIdentifier fileString = new StringIdentifier(filename);
-							fileString.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							removeVarParam(Statement.IO_FILENAME);
-							addVarParam(Statement.IO_FILENAME, fileString);
+							fileString.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							removeVarParam(IO_FILENAME);
+							addVarParam(IO_FILENAME, fileString);
 							filename = filename + ".mtd";
 												
 						break;
 					default:
-						LOG.error(this.printErrorLocation()  + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
-						throw new LanguageException(this.printErrorLocation()  + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
+						LOG.error(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
+						throw new LanguageException(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
 					}
 				}
 			}
 			else {
-				LOG.error(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
-				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+				LOG.error(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+				throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
 			
 			// track whether should attempt to read MTD file or not
@@ -282,16 +551,16 @@ public class DataExpression extends Expression
 			boolean inferredFormatType = false;
 			
 			// get format type string
-			String formatTypeString = (getVarParam(Statement.FORMAT_TYPE) == null) ? null : getVarParam(Statement.FORMAT_TYPE).toString();
+			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ? null : getVarParam(FORMAT_TYPE).toString();
 			
 			// check if file is matrix market format
 			if (formatTypeString == null){
-				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
+				String origFilename = getVarParam(IO_FILENAME).toString();
 				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(origFilename); 
 				if (isMatrixMarketFormat){
 					
-					formatTypeString = Statement.FORMAT_TYPE_VALUE_MATRIXMARKET;
-					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET));
+					formatTypeString = FORMAT_TYPE_VALUE_MATRIXMARKET;
+					addVarParam(FORMAT_TYPE,new StringIdentifier(FORMAT_TYPE_VALUE_MATRIXMARKET));
 					inferredFormatType = true;
 					shouldReadMTD = false;
 				}
@@ -300,21 +569,21 @@ public class DataExpression extends Expression
 			// check if file is delimited format
 			if (formatTypeString == null) {
 					
-				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
+				String origFilename = getVarParam(IO_FILENAME).toString();
 				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
 				
 				if (isDelimitedFormat){
-					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV));
-					formatTypeString = Statement.FORMAT_TYPE_VALUE_CSV;
+					addVarParam(FORMAT_TYPE,new StringIdentifier(FORMAT_TYPE_VALUE_CSV));
+					formatTypeString = FORMAT_TYPE_VALUE_CSV;
 					inferredFormatType = true;
 					//shouldReadMTD = false;
 				}	
 			}
 			
 				
-			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
+			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET)){
 				/*
-				 *  handle Statement.MATRIXMARKET_FORMAT_TYPE format
+				 *  handle MATRIXMARKET_FORMAT_TYPE format
 				 *
 				 * 1) only allow IO_FILENAME as ONLY valid parameter
 				 * 
@@ -325,13 +594,13 @@ public class DataExpression extends Expression
 				 */
 				
 				for (String key : _varParams.keySet()){
-					if ( !(key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) ) ){
+					if ( !(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) ) ){
 						
 						LOG.error(this.printErrorLocation() + "Invalid parameters in readMM statement: " +
-								toString() + ". Only " + Statement.IO_FILENAME + " is allowed.");
+								toString() + ". Only " + IO_FILENAME + " is allowed.");
 						
 						throw new LanguageException(this.printErrorLocation() + "Invalid parameters in readMM statement: " +
-								toString() + ". Only " + Statement.IO_FILENAME + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+								toString() + ". Only " + IO_FILENAME + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 				}
 				
@@ -340,7 +609,7 @@ public class DataExpression extends Expression
 				shouldReadMTD = false;
 				
 				// get metadata from MatrixMarket format file
-				String[] headerLines = readMatrixMarketFile(getVarParam(Statement.IO_FILENAME).toString());
+				String[] headerLines = readMatrixMarketFile(getVarParam(IO_FILENAME).toString());
 				
 				// process 1st line of MatrixMarket format -- must be identical to legal header
 				String legalHeaderMM = "%%MatrixMarket matrix coordinate real general";
@@ -375,14 +644,14 @@ public class DataExpression extends Expression
 						rowsCount = Long.parseLong(sizeInfo[0]);
 						if (rowsCount < 1)
 							throw new Exception("invalid rows count");
-						addVarParam(Statement.READROWPARAM, new IntIdentifier(rowsCount));
+						addVarParam(READROWPARAM, new IntIdentifier(rowsCount));
 					}
 					catch(Exception e){
 						
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
 						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
 								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
@@ -391,14 +660,14 @@ public class DataExpression extends Expression
 						colsCount = Long.parseLong(sizeInfo[1]);
 						if (colsCount < 1)
 							throw new Exception("invalid cols count");
-						addVarParam(Statement.READCOLPARAM, new IntIdentifier(colsCount));
+						addVarParam(READCOLPARAM, new IntIdentifier(colsCount));
 					}
 					catch(Exception e){
 						
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
 						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
 								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
@@ -411,10 +680,10 @@ public class DataExpression extends Expression
 					}
 					catch(Exception e){
 					
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
 						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
 								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
 								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
 					}	
@@ -431,12 +700,18 @@ public class DataExpression extends Expression
 		        		    
 		        	for (Object key : configObject.keySet()){
 						
-						if (!InputStatement.isValidParamName(key.toString(),true)){
+		        		boolean isValidName = false;
+		        		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
+		    				if (paramName.equals(key))
+		    					isValidName = true;
+		    			}
+		        		
+						if (!isValidName){
 							LOG.error(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 							throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 						}
 						
-						// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
+						// if the read method parameter is a constant, then verify value matches MTD metadata file
 						if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
 								&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
 							
@@ -447,11 +722,11 @@ public class DataExpression extends Expression
 									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
 						}
 						else {
-							// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
+							// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 							if (getVarParam(key.toString()) == null){
-								if ( !key.toString().equalsIgnoreCase(Statement.DESCRIPTIONPARAM) ) {
+								if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
 									StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
-									strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+									strId.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 									addVarParam(key.toString(), strId);
 								}
 							}
@@ -464,7 +739,7 @@ public class DataExpression extends Expression
 			} 
 	        
 			boolean isCSV = false;
-			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV));
+			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV));
 			if (isCSV){
 				
 				 // Handle delimited file format
@@ -481,116 +756,105 @@ public class DataExpression extends Expression
 				//		as ONLY valid parameters
 				if (inferredFormatType == false){
 					for (String key : _varParams.keySet()){
-						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) 
-								|| key.equals(Statement.DELIM_HAS_HEADER_ROW) || key.equals(Statement.DELIM_DELIMITER) 
-								|| key.equals(Statement.DELIM_FILL) || key.equals(Statement.DELIM_FILL_VALUE)
-								|| key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM)
-								|| key.equals(Statement.READNUMNONZEROPARAM) || key.equals(Statement.DATATYPEPARAM) || key.equals(Statement.VALUETYPEPARAM)
+						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
+								|| key.equals(DELIM_HAS_HEADER_ROW) || key.equals(DELIM_DELIMITER) 
+								|| key.equals(DELIM_FILL) || key.equals(DELIM_FILL_VALUE)
+								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
+								|| key.equals(READNUMNONZEROPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
 								)){
 							
 							LOG.error(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME     + "," 
-																				   + Statement.DELIM_HAS_HEADER_ROW   + "," 
-																				   + Statement.DELIM_DELIMITER 	+ ","
-																				   + Statement.DELIM_FILL 		+ ","
-																				   + Statement.DELIM_FILL_VALUE 	+ ","
-																				   + Statement.READROWPARAM     + "," 
-																				   + Statement.READCOLPARAM);
+									toString() + ". Only parameters allowed are: " + IO_FILENAME     + "," 
+																				   + DELIM_HAS_HEADER_ROW   + "," 
+																				   + DELIM_DELIMITER 	+ ","
+																				   + DELIM_FILL 		+ ","
+																				   + DELIM_FILL_VALUE 	+ ","
+																				   + READROWPARAM     + "," 
+																				   + READCOLPARAM);
 							
 							throw new LanguageException(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																				   + Statement.DELIM_HAS_HEADER_ROW   + ","
-																				   + Statement.DELIM_DELIMITER + "," 
-																				   + Statement.DELIM_FILL 		+ ","
-																				   + Statement.DELIM_FILL_VALUE 	+ ","
-																				   + Statement.READROWPARAM     + "," 
-																				   + Statement.READCOLPARAM,
+									toString() + ". Only parameters allowed are: " + IO_FILENAME      + "," 
+																				   + DELIM_HAS_HEADER_ROW   + ","
+																				   + DELIM_DELIMITER + "," 
+																				   + DELIM_FILL 		+ ","
+																				   + DELIM_FILL_VALUE 	+ ","
+																				   + READROWPARAM     + "," 
+																				   + READCOLPARAM,
 																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
 				
 				// DEFAULT for "sep" : ","
-				if (getVarParam(Statement.DELIM_DELIMITER) == null){
-					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(Statement.DEFAULT_DELIM_DELIMITER));
+				if (getVarParam(DELIM_DELIMITER) == null){
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER));
 				}
 				else {
-					if ( (getVarParam(Statement.DELIM_DELIMITER) instanceof ConstIdentifier)
-						&& (! (getVarParam(Statement.DELIM_DELIMITER) instanceof StringIdentifier)))
+					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
+						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
 
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_DELIMITER) 
 								+  " must be a string value ");
 						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_DELIMITER) 
 								+  " must be a string value ");
 					}
 				} 
 				
 				// DEFAULT for "default": 0
-				if (getVarParam(Statement.DELIM_FILL_VALUE) == null){
-					addVarParam(Statement.DELIM_FILL_VALUE, new DoubleIdentifier(Statement.DEFAULT_DELIM_FILL_VALUE));
+				if (getVarParam(DELIM_FILL_VALUE) == null){
+					addVarParam(DELIM_FILL_VALUE, new DoubleIdentifier(DEFAULT_DELIM_FILL_VALUE));
 				}
 				else {
-					if ( (getVarParam(Statement.DELIM_FILL_VALUE) instanceof ConstIdentifier)
-							&& (! (getVarParam(Statement.DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(Statement.DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
+					if ( (getVarParam(DELIM_FILL_VALUE) instanceof ConstIdentifier)
+							&& (! (getVarParam(DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
 					{
 
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
 								+  " must be a boolean value ");
 						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
 								+  " must be a boolean value ");
 					}
 				} 
 				
 				// DEFAULT for "header": boolean false
-				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
-					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(Statement.DEFAULT_DELIM_HAS_HEADER_ROW));
+				if (getVarParam(DELIM_HAS_HEADER_ROW) == null){
+					addVarParam(DELIM_HAS_HEADER_ROW, new BooleanIdentifier(DEFAULT_DELIM_HAS_HEADER_ROW));
 				}
 				else {
-					if ((getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
-						&& (! (getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
+					if ((getVarParam(DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
+						&& (! (getVarParam(DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
 					{
 	
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
 								+  " must be a boolean value ");
 						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
 								+  " must be a boolean value ");
 					}
 				}
 				
 				// DEFAULT for "fill": boolean false
-				if (getVarParam(Statement.DELIM_FILL) == null){
-					addVarParam(Statement.DELIM_FILL,new BooleanIdentifier(Statement.DEFAULT_DELIM_FILL));
+				if (getVarParam(DELIM_FILL) == null){
+					addVarParam(DELIM_FILL,new BooleanIdentifier(DEFAULT_DELIM_FILL));
 				}
 				else {
 					
-					if ((getVarParam(Statement.DELIM_FILL) instanceof ConstIdentifier)
-							&& (! (getVarParam(Statement.DELIM_FILL) instanceof BooleanIdentifier)))
+					if ((getVarParam(DELIM_FILL) instanceof ConstIdentifier)
+							&& (! (getVarParam(DELIM_FILL) instanceof BooleanIdentifier)))
 					{
 
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_FILL) 
 								+  " must be a boolean value ");
 						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_FILL) 
 								+  " must be a boolean value ");
 					}
-				}
-				
-				
-				/*if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
-					
-					LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
-							+  " must specify both row and column dimensions ");
-					
-					throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
-							+  " must specify both row and column dimensions ");
-				}*/
-				
+				}		
 			} 
-	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
+	        dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
 				
@@ -610,16 +874,16 @@ public class DataExpression extends Expression
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if ( !isCSV && (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null)){
+				if ( !isCSV && (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null)){
 					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
 					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + filename, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
 				}
-				if (getVarParam(Statement.READROWPARAM) instanceof ConstIdentifier && getVarParam(Statement.READCOLPARAM) instanceof ConstIdentifier)  {
+				if (getVarParam(READROWPARAM) instanceof ConstIdentifier && getVarParam(READCOLPARAM) instanceof ConstIdentifier)  {
 				
 					// these are strings that are long values
-					Long dim1 = (getVarParam(Statement.READROWPARAM) == null) ? null : new Long (getVarParam(Statement.READROWPARAM).toString());
-					Long dim2 = (getVarParam(Statement.READCOLPARAM) == null) ? null : new Long(getVarParam(Statement.READCOLPARAM).toString());
+					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : new Long (getVarParam(READROWPARAM).toString());
+					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : new Long(getVarParam(READCOLPARAM).toString());
 					
 					if ( dim1 <= 0 || dim2 <= 0 ) {
 						LOG.error(this.printErrorLocation() + "Invalid dimension information in read statement");
@@ -639,23 +903,23 @@ public class DataExpression extends Expression
 				
 				// find "format": 1=text, 2=binary
 				int format = 1; // default is "text"
-				if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("text")){
+				if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text")){
 					format = 1;
-				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
+				} else if ( getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
 					format = 2;
-				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) 
-							|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)) 
+				} else if ( getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) 
+							|| getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
 				{
 					format = 1;
 				} else {
 					LOG.error(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
-					throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(Statement.FORMAT_TYPE)+ " in statement: " + this.toString());
+					throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE)+ " in statement: " + this.toString());
 				}
 				
-				if (getVarParam(Statement.ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
+				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
 				
-					Long rowBlockCount = (getVarParam(Statement.ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getVarParam(Statement.ROWBLOCKCOUNTPARAM).toString());
-					Long columnBlockCount = (getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long (getVarParam(Statement.COLUMNBLOCKCOUNTPARAM).toString());
+					Long rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getVarParam(ROWBLOCKCOUNTPARAM).toString());
+					Long columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long (getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
 		
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
@@ -672,8 +936,8 @@ public class DataExpression extends Expression
 				// because we automatically introduce reblocks if blocksizes don't match
 				if ( (format == 1 && (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1))	){
 					
-					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
-					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 				}
 			
 			}
@@ -689,17 +953,17 @@ public class DataExpression extends Expression
 			}
 			
 			// handle value type parameter
-			if (getVarParam(Statement.VALUETYPEPARAM) != null && !(getVarParam(Statement.VALUETYPEPARAM) instanceof StringIdentifier)){
+			if (getVarParam(VALUETYPEPARAM) != null && !(getVarParam(VALUETYPEPARAM) instanceof StringIdentifier)){
 				
-				LOG.error(this.printErrorLocation() + "for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
+				LOG.error(this.printErrorLocation() + "for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE);
 				
-				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
+				throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			// Identify the value type (used only for InputStatement)
-			String valueTypeString = getVarParam(Statement.VALUETYPEPARAM) == null ? null :  getVarParam(Statement.VALUETYPEPARAM).toString();
+			// Identify the value type (used only for read method)
+			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
 			if (valueTypeString != null) {
 				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE)) {
 					getOutput().setValueType(ValueType.DOUBLE);
@@ -727,20 +991,20 @@ public class DataExpression extends Expression
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
-				if (getVarParam(Statement.DELIM_DELIMITER) == null){
-					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(Statement.DEFAULT_DELIM_DELIMITER));
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)){
+				if (getVarParam(DELIM_DELIMITER) == null){
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER));
 				}
-				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
-					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(Statement.DEFAULT_DELIM_HAS_HEADER_ROW));
+				if (getVarParam(DELIM_HAS_HEADER_ROW) == null){
+					addVarParam(DELIM_HAS_HEADER_ROW, new BooleanIdentifier(DEFAULT_DELIM_HAS_HEADER_ROW));
 				}
-				if (getVarParam(Statement.DELIM_SPARSE) == null){
-					addVarParam(Statement.DELIM_SPARSE, new BooleanIdentifier(Statement.DEFAULT_DELIM_SPARSE));
+				if (getVarParam(DELIM_SPARSE) == null){
+					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE));
 				}
 			}
 			
-			if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
-				BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
+			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
+				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
 								
 				if (expr.getKind()== Expression.Kind.BinaryOp){
 					Expression.BinaryOp op = expr.getOpCode();
@@ -751,34 +1015,34 @@ public class DataExpression extends Expression
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value
 							StringIdentifier fileString = new StringIdentifier(filename);
-							fileString.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							removeVarParam(Statement.IO_FILENAME);
-							addVarParam(Statement.IO_FILENAME, fileString);
+							fileString.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							removeVarParam(IO_FILENAME);
+							addVarParam(IO_FILENAME, fileString);
 												
 							break;
 						default:
-							LOG.error(this.printErrorLocation() + "for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
-							throw new LanguageException(this.printErrorLocation() + "for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+							LOG.error(this.printErrorLocation() + "for OutputStatement, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+							throw new LanguageException(this.printErrorLocation() + "for OutputStatement, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
 					}
 				}
 			}
 			
-			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("text"))
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);
-			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				getOutput().setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)))
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)))
 				getOutput().setBlockDimensions(-1, -1);
 			
 			else{
-				LOG.error(this.printErrorLocation() + "Invalid format " + getVarParam(Statement.FORMAT_TYPE) +  " in statement: " + this.toString());
-				throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(Statement.FORMAT_TYPE) + " in statement: " + this.toString());
+				LOG.error(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString());
+				throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE) + " in statement: " + this.toString());
 			}
 			break;
 
 			case RAND: 
 			
-			Expression dataParam = getVarParam(Statement.RAND_DATA);
+			Expression dataParam = getVarParam(RAND_DATA);
 			if (dataParam != null){
 			
 				
@@ -788,9 +1052,9 @@ public class DataExpression extends Expression
 					// update min expr with new IntIdentifier 
 					long roundedValue = ((IntIdentifier)dataParam).getValue();
 					Expression minExpr = new DoubleIdentifier(roundedValue);
-					minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					addVarParam(RandStatement.RAND_MIN, minExpr);
-					addVarParam(RandStatement.RAND_MAX, minExpr);
+					minExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					addVarParam(RAND_MIN, minExpr);
+					addVarParam(RAND_MAX, minExpr);
 				}
 				// handle double constant 
 				else if (dataParam instanceof DoubleIdentifier){
@@ -798,20 +1062,20 @@ public class DataExpression extends Expression
 					// update col expr with new IntIdentifier (rounded down)
 					double roundedValue = ((DoubleIdentifier)dataParam).getValue();
 					Expression minExpr = new DoubleIdentifier(roundedValue);
-					minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					addVarParam(RandStatement.RAND_MIN, minExpr);
-					addVarParam(RandStatement.RAND_MAX, minExpr);				
+					minExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					addVarParam(RAND_MIN, minExpr);
+					addVarParam(RAND_MAX, minExpr);				
 				}
 				else {
 					LOG.error(this.printErrorLocation() + "for matrix statement, parameter " 
-							+ Statement.RAND_DATA + " cannot have value type String or Boolean. ");
+							+ RAND_DATA + " cannot have value type String or Boolean. ");
 							
 					 
 					throw new LanguageException(this.printErrorLocation() + "for matrix statement, parameter " 
-							+ Statement.RAND_DATA + " cannot have value type String or Boolean. ");
+							+ RAND_DATA + " cannot have value type String or Boolean. ");
 				}
-				removeVarParam(Statement.RAND_DATA);
-				removeVarParam(Statement.RAND_BY_ROW);
+				removeVarParam(RAND_DATA);
+				removeVarParam(RAND_BY_ROW);
 				this.setRandDefault();
 			}
 			
@@ -819,7 +1083,7 @@ public class DataExpression extends Expression
 				
 			for (String key : _varParams.keySet()){
 				boolean found = false;
-				for (String name : RandStatement.RAND_VALID_PARAM_NAMES){
+				for (String name : RAND_VALID_PARAM_NAMES){
 					if (name.equals(key))
 					found = true;
 				}
@@ -827,53 +1091,53 @@ public class DataExpression extends Expression
 					
 					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
 							"\". Legal parameters for Rand statement are " 
-							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_ROWS 	
-							+ ", " + RandStatement.RAND_COLS		+ ", " + RandStatement.RAND_MIN + ", " + RandStatement.RAND_MAX  	
-							+ ", " + RandStatement.RAND_SPARSITY + ", " + RandStatement.RAND_SEED     + ", " + RandStatement.RAND_PDF);
+							+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
+							+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
+							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
 					
 					
 					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
 						"\". Legal parameters for Rand statement are " 
-						+ "(capitalization-sensitive): " 	+ RandStatement.RAND_ROWS 	
-						+ ", " + RandStatement.RAND_COLS		+ ", " + RandStatement.RAND_MIN + ", " + RandStatement.RAND_MAX  	
-						+ ", " + RandStatement.RAND_SPARSITY + ", " + RandStatement.RAND_SEED     + ", " + RandStatement.RAND_PDF);
+						+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
+						+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
+						+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
 				}
 			}
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
-			if (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier){
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");
+			if (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier){
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_ROWS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_ROWS + " has incorrect data type");
 			}
 				
-			if (getVarParam(RandStatement.RAND_COLS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BooleanIdentifier){
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_COLS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_COLS + " has incorrect data type");
+			if (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier){
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_COLS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_COLS + " has incorrect data type");
 			}
 				
-			if (getVarParam(RandStatement.RAND_MAX) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MAX) instanceof BooleanIdentifier) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MAX + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MAX + " has incorrect data type");
+			if (getVarParam(RAND_MAX) instanceof StringIdentifier || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_MAX + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_MAX + " has incorrect data type");
 			}
 			
-			if (getVarParam(RandStatement.RAND_MIN) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MIN) instanceof BooleanIdentifier) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MIN + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MIN + " has incorrect data type");
+			if (getVarParam(RAND_MIN) instanceof StringIdentifier || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_MIN + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_MIN + " has incorrect data type");
 			}
 			
-			if (!(getVarParam(RandStatement.RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_SPARSITY) instanceof IntIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SPARSITY + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SPARSITY + " has incorrect data type");
+			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type");
 			}
 			
-			if (!(getVarParam(RandStatement.RAND_SEED) instanceof IntIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SEED + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SEED + " has incorrect data type");
+			if (!(getVarParam(RAND_SEED) instanceof IntIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SEED + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_SEED + " has incorrect data type");
 			}
 			
-			if (!(getVarParam(RandStatement.RAND_PDF) instanceof StringIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_PDF + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_PDF + " has incorrect data type");
+			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_PDF + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_PDF + " has incorrect data type");
 			}
 	
 			long rowsLong = -1L, colsLong = -1L;
@@ -881,7 +1145,7 @@ public class DataExpression extends Expression
 			///////////////////////////////////////////////////////////////////
 			// HANDLE ROWS
 			///////////////////////////////////////////////////////////////////
-			Expression rowsExpr = getVarParam(RandStatement.RAND_ROWS);
+			Expression rowsExpr = getVarParam(RAND_ROWS);
 			if (rowsExpr instanceof IntIdentifier) {
 				if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
 					rowsLong = ((IntIdentifier)rowsExpr).getValue();
@@ -929,8 +1193,8 @@ public class DataExpression extends Expression
 						// update row expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						rowsExpr = new IntIdentifier(roundedValue);
-						rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+						rowsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_ROWS, rowsExpr);
 						rowsLong = roundedValue; 
 					}
 					// handle double constant 
@@ -946,8 +1210,8 @@ public class DataExpression extends Expression
 						// update row expr with new IntIdentifier (rounded down)
 						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						rowsExpr = new IntIdentifier(roundedValue);
-						rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+						rowsExpr.setAllPositions(this.getFilename(),this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_ROWS, rowsExpr);
 						rowsLong = roundedValue; 
 						
 					}
@@ -975,7 +1239,7 @@ public class DataExpression extends Expression
 			// HANDLE COLUMNS
 			///////////////////////////////////////////////////////////////////
 			
-			Expression colsExpr = getVarParam(RandStatement.RAND_COLS);
+			Expression colsExpr = getVarParam(RAND_COLS);
 			if (colsExpr instanceof IntIdentifier) {
 				if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
 					colsLong = ((IntIdentifier)colsExpr).getValue();
@@ -1020,8 +1284,8 @@ public class DataExpression extends Expression
 						// update col expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						colsExpr = new IntIdentifier(roundedValue);
-						colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_COLS, colsExpr);
+						colsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_COLS, colsExpr);
 						colsLong = roundedValue; 
 					}
 					// handle double constant 
@@ -1037,8 +1301,8 @@ public class DataExpression extends Expression
 						// update col expr with new IntIdentifier (rounded down)
 						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						colsExpr = new IntIdentifier(roundedValue);
-						colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_COLS, colsExpr);
+						colsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_COLS, colsExpr);
 						colsLong = roundedValue; 
 						
 					}
@@ -1065,7 +1329,7 @@ public class DataExpression extends Expression
 			///////////////////////////////////////////////////////////////////
 			// HANDLE MIN
 			///////////////////////////////////////////////////////////////////	
-			Expression minExpr = getVarParam(RandStatement.RAND_MIN);
+			Expression minExpr = getVarParam(RAND_MIN);
 			
 			// perform constant propogation
 			if (minExpr instanceof DataIdentifier && !(minExpr instanceof IndexedIdentifier)) {
@@ -1081,8 +1345,8 @@ public class DataExpression extends Expression
 						// update min expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						minExpr = new DoubleIdentifier(roundedValue);
-						minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_MIN, minExpr);
+						minExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_MIN, minExpr);
 					}
 					// handle double constant 
 					else if (constValue instanceof DoubleIdentifier){
@@ -1090,8 +1354,8 @@ public class DataExpression extends Expression
 						// update col expr with new IntIdentifier (rounded down)
 						double roundedValue = ((DoubleIdentifier)constValue).getValue();
 						minExpr = new DoubleIdentifier(roundedValue);
-						minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_MIN, minExpr);
+						minExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_MIN, minExpr);
 						
 					}
 					else {
@@ -1118,7 +1382,7 @@ public class DataExpression extends Expression
 			///////////////////////////////////////////////////////////////////
 			// HANDLE MAX
 			///////////////////////////////////////////////////////////////////
-			Expression maxExpr = getVarParam(RandStatement.RAND_MAX);
+			Expression maxExpr = getVarParam(RAND_MAX);
 			
 			// perform constant propogation
 			if (maxExpr instanceof DataIdentifier && !(maxExpr instanceof IndexedIdentifier)) {
@@ -1134,8 +1398,8 @@ public class DataExpression extends Expression
 						// update min expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
 						maxExpr = new DoubleIdentifier(roundedValue);
-						maxExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_MAX, maxExpr);
+						maxExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_MAX, maxExpr);
 					}
 					// handle double constant 
 					else if (constValue instanceof DoubleIdentifier){
@@ -1143,8 +1407,8 @@ public class DataExpression extends Expression
 						// update col expr with new IntIdentifier (rounded down)
 						double roundedValue = ((DoubleIdentifier)constValue).getValue();
 						maxExpr = new DoubleIdentifier(roundedValue);
-						maxExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						addVarParam(RandStatement.RAND_MAX, maxExpr);
+						maxExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RAND_MAX, maxExpr);
 						
 					}
 					else {
@@ -1196,7 +1460,7 @@ public class DataExpression extends Expression
 				
 			for (String key : _varParams.keySet()){
 				boolean found = false;
-				for (String name : RandStatement.MATRIX_VALID_PARAM_NAMES){
+				for (String name : MATRIX_VALID_PARAM_NAMES){
 					if (name.equals(key))
 					found = true;
 				}
@@ -1204,37 +1468,37 @@ public class DataExpression extends Expression
 					
 					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
 							"\". Legal parameters for matrix statement are " 
-							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_DATA 	
-							+ ", " + RandStatement.RAND_ROWS		+ ", " + RandStatement.RAND_COLS
-							+ ", " + RandStatement.RAND_BY_ROW ); //  + ", " + RandStatement.RAND_DIMNAMES);
+							+ "(capitalization-sensitive): " 	+ RAND_DATA 	
+							+ ", " + RAND_ROWS		+ ", " + RAND_COLS
+							+ ", " + RAND_BY_ROW ); //  + ", " + RAND_DIMNAMES);
 					
 					
 					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
 							"\". Legal parameters for matrix statement are " 
-							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_DATA 	
-							+ ", " + RandStatement.RAND_ROWS		+ ", " + RandStatement.RAND_COLS
-							+ ", " + RandStatement.RAND_BY_ROW );//   + ", " + RandStatement.RAND_DIMNAMES);
+							+ "(capitalization-sensitive): " 	+ RAND_DATA 	
+							+ ", " + RAND_ROWS		+ ", " + RAND_COLS
+							+ ", " + RAND_BY_ROW );//   + ", " + RAND_DIMNAMES);
 				}
 			}
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
-			if (!(getVarParam(Statement.RAND_DATA) instanceof DataIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_DATA + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_DATA + " has incorrect data type");
+			if (!(getVarParam(RAND_DATA) instanceof DataIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_DATA + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_DATA + " has incorrect data type");
 			}
-			if (getVarParam(RandStatement.RAND_ROWS) != null && (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_ROWS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_ROWS + " has incorrect data type");
-			}
-				
-			if (getVarParam(RandStatement.RAND_COLS) != null && (getVarParam(RandStatement.RAND_COLS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BooleanIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_COLS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_COLS + " has incorrect data type");
+			if (getVarParam(RAND_ROWS) != null && (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_ROWS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_ROWS + " has incorrect data type");
 			}
 				
-			if ( !(getVarParam(RandStatement.RAND_BY_ROW) instanceof BooleanIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_BY_ROW + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_BY_ROW + " has incorrect data type");
+			if (getVarParam(RAND_COLS) != null && (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_COLS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_COLS + " has incorrect data type");
+			}
+				
+			if ( !(getVarParam(RAND_BY_ROW) instanceof BooleanIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_BY_ROW + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_BY_ROW + " has incorrect data type");
 			}
 			
 			rowsLong = -1L; 
@@ -1243,7 +1507,7 @@ public class DataExpression extends Expression
 			///////////////////////////////////////////////////////////////////
 			// HANDLE ROWS
 			///////////////////////////////////////////////////////////////////
-			rowsExpr = getVarParam(RandStatement.RAND_ROWS);
+			rowsExpr = getVarParam(RAND_ROWS);
 			if (rowsExpr != null){
 				if (rowsExpr instanceof IntIdentifier) {
 					if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
@@ -1292,8 +1556,8 @@ public class DataExpression extends Expression
 							// update row expr with new IntIdentifier 
 							long roundedValue = ((IntIdentifier)constValue).getValue();
 							rowsExpr = new IntIdentifier(roundedValue);
-							rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+							rowsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RAND_ROWS, rowsExpr);
 							rowsLong = roundedValue; 
 						}
 						// handle double constant 
@@ -1309,8 +1573,8 @@ public class DataExpression extends Expression
 							// update row expr with new IntIdentifier (rounded down)
 							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 							rowsExpr = new IntIdentifier(roundedValue);
-							rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+							rowsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RAND_ROWS, rowsExpr);
 							rowsLong = roundedValue; 
 							
 						}
@@ -1338,7 +1602,7 @@ public class DataExpression extends Expression
 			// HANDLE COLUMNS
 			///////////////////////////////////////////////////////////////////
 			
-			colsExpr = getVarParam(RandStatement.RAND_COLS);
+			colsExpr = getVarParam(RAND_COLS);
 			if (colsExpr != null){
 				if (colsExpr instanceof IntIdentifier) {
 					if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
@@ -1384,8 +1648,8 @@ public class DataExpression extends Expression
 							// update col expr with new IntIdentifier 
 							long roundedValue = ((IntIdentifier)constValue).getValue();
 							colsExpr = new IntIdentifier(roundedValue);
-							colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							addVarParam(RandStatement.RAND_COLS, colsExpr);
+							colsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RAND_COLS, colsExpr);
 							colsLong = roundedValue; 
 						}
 						// handle double constant 
@@ -1401,8 +1665,8 @@ public class DataExpression extends Expression
 							// update col expr with new IntIdentifier (rounded down)
 							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 							colsExpr = new IntIdentifier(roundedValue);
-							colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							addVarParam(RandStatement.RAND_COLS, colsExpr);
+							colsExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RAND_COLS, colsExpr);
 							colsLong = roundedValue; 
 							
 						}
@@ -1473,8 +1737,8 @@ public class DataExpression extends Expression
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
 		else {
-			LOG.error(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
-			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
+			LOG.error(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
+			throw new LanguageException(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		// Now process the right node
 		if (expr.getRight()instanceof BinaryExpression 
@@ -1493,8 +1757,8 @@ public class DataExpression extends Expression
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}
 		else {
-			LOG.error(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
-			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
+			LOG.error(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
+			throw new LanguageException(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		return filename;
 			
@@ -1636,13 +1900,7 @@ public class DataExpression extends Expression
 			
 		return retVal;
 	}
-	
-	/**
-	 * 
-	 * @param filename
-	 * @return
-	 * @throws LanguageException
-	 */
+
 	public String[] readMatrixMarketFile(String filename) 
 		throws LanguageException 
 	{
@@ -1689,8 +1947,6 @@ public class DataExpression extends Expression
 
 		return retVal;
 	}
-	
-	
 	
 	public boolean checkHasMatrixMarketFormat(String filename) throws LanguageException {
 		
@@ -1757,15 +2013,14 @@ public class DataExpression extends Expression
 		}
 	}
 	
-	
 	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
 	 
 
         // if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd");
         if (mtdObject != null){
-        	String formatTypeString = (String)mtdObject.get(Statement.FORMAT_TYPE);
-        	if (formatTypeString == null || formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY) ){
+        	String formatTypeString = (String)mtdObject.get(FORMAT_TYPE);
+        	if (formatTypeString == null || formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_BINARY) ){
         		return false;
         	}
         }
@@ -1810,7 +2065,7 @@ public class DataExpression extends Expression
 				in.close();
 			
 				// check if there are delimited values "
-				if (getVarParam(Statement.DELIM_DELIMITER) != null)
+				if (getVarParam(DELIM_DELIMITER) != null)
 					return true;
 				else {
 					String defaultDelimiter = ",";

@@ -23,10 +23,10 @@ public class PrintStatement extends Statement
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		Expression newExpr = _expr.rewriteExpression(prefix);
 		PrintStatement retVal = new PrintStatement(newExpr);
-		retVal._beginLine 	= 	this.getBeginLine();
-		retVal._beginColumn	=	this.getBeginColumn();
-		retVal._endLine		=	this.getEndLine();
-		retVal._endColumn   =	this.getEndColumn();
+		retVal.setBeginLine(this.getBeginLine());
+		retVal.setBeginColumn(this.getBeginColumn());
+		retVal.setEndLine(this.getEndLine());
+		retVal.setEndColumn(this.getEndColumn());
 		
 		return retVal;
 	}

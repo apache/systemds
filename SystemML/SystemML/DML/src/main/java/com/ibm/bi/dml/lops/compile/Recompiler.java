@@ -36,9 +36,10 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.RandStatement;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
@@ -821,17 +822,17 @@ public class Recompiler
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
 			if ( d.getDataGenMethod() == DataGenMethod.RAND ) {
-				int ix1 = params.get(RandStatement.RAND_ROWS);
-				int ix2 = params.get(RandStatement.RAND_COLS);
+				int ix1 = params.get(DataExpression.RAND_ROWS);
+				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
 				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
 			} 
 			else if ( d.getDataGenMethod() == DataGenMethod.SEQ ) {
 				
-				int ix1 = params.get(RandStatement.SEQ_FROM);
-				int ix2 = params.get(RandStatement.SEQ_TO);
-				int ix3 = params.get(RandStatement.SEQ_INCR);
+				int ix1 = params.get(Statement.SEQ_FROM);
+				int ix2 = params.get(Statement.SEQ_TO);
+				int ix3 = params.get(Statement.SEQ_INCR);
 				
 				Hop from_hop = d.getInput().get(ix1);
 				Hop to_hop   = d.getInput().get(ix2);

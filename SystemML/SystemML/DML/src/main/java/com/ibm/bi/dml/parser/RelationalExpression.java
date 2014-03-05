@@ -25,25 +25,27 @@ public class RelationalExpression extends Expression
 		_kind = Kind.RelationalOp;
 		_opcode = bop;
 		
-		_beginLine		= 0;
-		_beginColumn	= 0;
-		_endLine		= 0;
-		_endColumn		= 0;
+		setFilename("MAIN SCRIPT");
+		setBeginLine(0);
+		setBeginColumn(0);
+		setEndLine(0);
+		setEndColumn(0);
 	}
 	
-	public RelationalExpression(RelationalOp bop, int beginLine, int beginColumn, int endLine, int endColumn) {
+	public RelationalExpression(RelationalOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn) {
 		_kind = Kind.RelationalOp;
 		_opcode = bop;
 		
-		_beginLine		= beginLine;
-		_beginColumn	= beginColumn;
-		_endLine		= endLine;
-		_endColumn		= endColumn;
+		setFilename(filename);
+		setBeginLine(beginLine);
+		setBeginColumn(beginColumn);
+		setEndLine(endLine);
+		setEndColumn(endColumn);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		
-		RelationalExpression newExpr = new RelationalExpression(this._opcode, this._beginLine, this._beginColumn, this._endLine, this._endColumn);
+		RelationalExpression newExpr = new RelationalExpression(this._opcode, getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -58,8 +60,9 @@ public class RelationalExpression extends Expression
 		
 		// update script location information --> left expression is BEFORE in script
 		if (_left != null){
-			this._beginLine   = _left.getBeginLine();
-			this._beginColumn = _left.getBeginColumn();
+			setFilename(_left.getFilename());
+			setBeginLine(_left.getBeginLine());
+			setBeginColumn(_left.getBeginColumn());
 		}
 		
 	}
@@ -69,8 +72,9 @@ public class RelationalExpression extends Expression
 		
 		// update script location information --> right expression is AFTER in script
 		if (_right != null){
-			this._beginLine = _right.getEndLine();
-			this._beginColumn = _right.getEndColumn();
+			setFilename(_right.getFilename());
+			setBeginLine(_right.getEndLine());
+			setBeginColumn(_right.getEndColumn());
 		}
 	}
 	
@@ -114,7 +118,7 @@ public class RelationalExpression extends Expression
 				
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		output.setBooleanProperties();
 		this.setOutput(output);
 	}		

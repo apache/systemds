@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
@@ -58,8 +59,8 @@ public class ExpressionTest
     @Test
     public void testConvertFormatType() {
         assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(null));
-        assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(Statement.FORMAT_TYPE_VALUE_TEXT));
-        assertEquals(FileFormatTypes.BINARY, Expression.convertFormatType(Statement.FORMAT_TYPE_VALUE_BINARY));
+        assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(DataExpression.FORMAT_TYPE_VALUE_TEXT));
+        assertEquals(FileFormatTypes.BINARY, Expression.convertFormatType(DataExpression.FORMAT_TYPE_VALUE_BINARY));
         assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType("wrong"));
     }
 

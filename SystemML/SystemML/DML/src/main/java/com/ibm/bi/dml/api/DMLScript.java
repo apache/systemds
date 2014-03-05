@@ -43,6 +43,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.parser.DMLParseException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -182,6 +183,7 @@ public class DMLScript
 			System.err.println( USAGE );
 			return true;
 		}
+		
 		//check for clean
 		else if( args.length==1 && args[0].equalsIgnoreCase("-clean") ){
 			cleanSystemMLWorkspace();
@@ -462,7 +464,7 @@ public class DMLScript
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
-	private static void execute( String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
+	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				
 		//print basic time and environment info
@@ -476,9 +478,18 @@ public class DMLScript
 		//Step 2: parse dml script
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-		prog = parser.parse();
-		if (prog == null){
-			throw new ParseException("DMLQLParser parsing returns a NULL object");
+		
+		try {
+			prog = parser.parse();
+		} catch (Exception e){
+			if (e instanceof DMLParseException){
+				for ( DMLParseException dmlpe : ((DMLParseException)e).getExceptionList()){
+					LOG.error(dmlpe.getExceptionList().get(0).getMessage());
+					System.out.println(dmlpe.getExceptionList().get(0).getMessage());
+				}
+			}
+			prog = null;
+			throw new ParseException("DMLQLParser encountered 1 or more errors during parsing.");
 		}
 		
 		//Step 3: construct HOP DAGs (incl LVA and validate)
@@ -868,7 +879,7 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	/**
+/**
 	 * 
 	 * @throws DMLException
 	 */

@@ -15,16 +15,13 @@ import java.io.IOException;
 public class FunctionCallIdentifier extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private ArrayList<Expression> _inputParamExpressions;
-	private HashMap<String,Expression> _namedInputParamExpressions;
-	//private ArrayList<DataIdentifier> _outputs;
+	private ArrayList<ParameterExpression> _paramExprs;
 	private FunctCallOp _opcode;	// stores whether internal or external
 	private String _namespace;		// namespace of the function being called (null if current namespace is to be used)
 
-	
 	/**
 	 * setFunctionName: sets the function namespace (if specified) and name
 	 * @param functionName the (optional) namespace information and name of function.  If both namespace and name are specified, they are concatinated with "::"
@@ -42,65 +39,47 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return _namespace;
 	}
 	
+	public ArrayList<ParameterExpression> getParamExprs(){
+		return _paramExprs;
+	}
+	
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-		
-		// rewrite each input expression
-		ArrayList<Expression> newInputParamExpressions = new ArrayList<Expression>(); 
-		for (Expression expr : _inputParamExpressions){
-			Expression newExpr = expr.rewriteExpression(prefix);
-			newInputParamExpressions.add(newExpr);
-		}
 			
-		// rewrite each named input expression
-		HashMap<String,Expression> newNamedInputParamExpressions = new HashMap<String,Expression>(); 
-		for (String exprName : _namedInputParamExpressions.keySet()){
-			Expression expr = _namedInputParamExpressions.get(exprName);
-			Expression newExpr = expr.rewriteExpression(prefix);
-			newNamedInputParamExpressions.put(exprName,newExpr);
-		}
-		
+		ArrayList<ParameterExpression> newParameterExpressions = new ArrayList<ParameterExpression>();
+		for (ParameterExpression paramExpr : _paramExprs)
+			newParameterExpressions.add(new ParameterExpression(paramExpr.getName(), paramExpr.getExpr().rewriteExpression(prefix)));
 		
 		// rewrite each output expression
-		FunctionCallIdentifier fci = new FunctionCallIdentifier(newInputParamExpressions, newNamedInputParamExpressions);
+		FunctionCallIdentifier fci = new FunctionCallIdentifier(newParameterExpressions);
 		
-		fci._beginLine 		= this._beginLine;
-		fci._beginColumn 	= this._beginColumn;
-		fci._endLine		= this._endLine;
-		fci._endColumn		= this._endColumn;
+		fci.setBeginLine(this.getBeginLine());
+		fci.setBeginColumn(this.getBeginColumn());
+		fci.setEndLine(this.getEndLine());
+		fci.setEndColumn(this.getEndColumn());
 			
 		fci._name = this._name;
 		fci._namespace = this._namespace;
 		fci._opcode = this._opcode;
 		fci._kind = Kind.FunctionCallOp;	 
+		
 		return fci;
 	}
 	
+	
+	
 	public FunctionCallIdentifier(){}
 	
-	public FunctionCallIdentifier(ArrayList<Expression> paramExpressions, HashMap<String, Expression> namedParamExpresssions) {
+	public FunctionCallIdentifier(ArrayList<ParameterExpression> paramExpressions) {
 		
-		if (paramExpressions == null)
-			_inputParamExpressions = new ArrayList<Expression>();
-		_inputParamExpressions = paramExpressions;
-		
-		if (namedParamExpresssions == null)
-			_namedInputParamExpressions = new HashMap<String, Expression>();
-		_namedInputParamExpressions = namedParamExpresssions;
-		
+		_paramExprs = paramExpressions;
 		_opcode = null;
 		_kind = Kind.FunctionCallOp;	 
 	}
 	
+	
+	
 	public FunctCallOp getOpCode() {
 		return _opcode;
-	}
-
-	public ArrayList<Expression> getParamExpressions(){
-		return _inputParamExpressions;
-	}
-	
-	public HashMap<String,Expression> getNamedParamExpressions(){
-		return _namedInputParamExpressions;
 	}
 	
 	/**
@@ -128,8 +107,16 @@ public class FunctionCallIdentifier extends DataIdentifier
 		else
 			_opcode = Expression.FunctCallOp.INTERNAL;
 		
-		// force all parameters to be either unnammed or named
-		if (_inputParamExpressions.size() > 0 && _namedInputParamExpressions.size() > 0){
+		// force all parameters to be either unnammed or named for functions other than
+		boolean hasNamed = false, hasUnnamed = false;
+		for (ParameterExpression paramExpr : _paramExprs){
+			if (paramExpr.getName() == null)
+				hasUnnamed = true;
+			else
+				hasNamed = true;
+		}
+		
+		if (hasNamed && hasUnnamed){
 			
 			LOG.error(this.printErrorLocation() + " In DML, functions can only have named parameters " +
 					"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
@@ -140,35 +127,30 @@ public class FunctionCallIdentifier extends DataIdentifier
 						_name + " has both parameter types.");
 		}
 		// validate expressions for each passed parameter
-		for (Expression curr : _inputParamExpressions) {
-			curr.validateExpression(ids, constVars);
+		for (ParameterExpression paramExpr : _paramExprs) {
+			paramExpr.getExpr().validateExpression(ids, constVars);
 		}
-
-		// validate expressions for each named passed parameter
-		for (String key : _namedInputParamExpressions.keySet()){
-			Expression curr = _namedInputParamExpressions.get(key);
-			curr.validateExpression(ids, constVars);
-		}
-		
+	
 		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 		
 		// TODO: DRB: FIX THIS
 		// check correctness of number of arguments and their types 
-		if (fstmt.getInputParams().size() < _inputParamExpressions.size()){ 
+		if (fstmt.getInputParams().size() < _paramExprs.size()){ 
 			
 			LOG.error(this.printErrorLocation() + "function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
-					+ fstmt.getInputParams().size() + " but was called with " + _inputParamExpressions.size());
+					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size());
 			
 			throw new LanguageException(this.printErrorLocation() + "function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
-					+ fstmt.getInputParams().size() + " but was called with " + _inputParamExpressions.size());
+					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size());
 		}
 		
+		/*
 		// check the types of the input to see they match OR has default values
 		for (int i = 0; i < fstmt.getInputParams().size(); i++) {
 					
-			if (i >= _inputParamExpressions.size()){
+			if (i >= _paramExprs.size()){
 				// check a default value is provided for this variable
 				if (fstmt.getInputParams().get(i).getDefaultValue() == null){
 					LOG.error(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
@@ -177,23 +159,22 @@ public class FunctionCallIdentifier extends DataIdentifier
 			}
 			
 			else {
-				Expression param = _inputParamExpressions.get(i);
+				Expression param = fstmt.getInputParams().get(i);
 				boolean sameDataType = param.getOutput().getDataType().equals(fstmt.getInputParams().get(i).getDataType());
 				if (!sameDataType){
 					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 				}
-				
 				boolean sameValueType = param.getOutput().getValueType().equals(fstmt.getInputParams().get(i).getValueType());
 				if (!sameValueType){
-					LOG.warn(this.printErrorLocation() + "parameter #" + i + " does not have correct valueType - subject to auto casting.");
-					//note: auto casting, do not force same value type 
-					//LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
-					//throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
+					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
+					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
 				}
 			}
 		}
-	
+		*/
+		
+		
 		// set the outputs for the function
 		_outputs = new Identifier[fstmt.getOutputParams().size()];
 		for(int i=0; i < fstmt.getOutputParams().size(); i++) {
@@ -202,32 +183,6 @@ public class FunctionCallIdentifier extends DataIdentifier
 		
 		return;
 	}
-
-	/*@Override
-	public DataIdentifier getOutput() {
-			
-		if (_outputs.size() == 0)
-			return null;
-		
-		 {
-			try{
-				LOG.error(this.printErrorLocation() + "function " + this._name + " must return a value");
-				throw new LanguageException(this.printErrorLocation() + "function " + this._name + " must return a value");
-			}
-			catch(Exception e){
-				e.printStackTrace();
-			}
-			return null;
-		}
-		
-		else
-			return _outputs.get(0);
-	}*/
-	
-	/*public ArrayList<DataIdentifier> getOutputs() {
-		
-		return _outputs;
-	}*/
 	
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -236,9 +191,10 @@ public class FunctionCallIdentifier extends DataIdentifier
 		sb.append(_name);
 		sb.append(" ( ");		
 				
-		for (int i=0; i<_inputParamExpressions.size(); i++){
-			sb.append(_inputParamExpressions.get(i).toString());
-			if (i<_inputParamExpressions.size() - 1) sb.append(",");
+		for (int i = 0; i < _paramExprs.size(); i++){
+			sb.append(_paramExprs.get(i).toString());
+			if (i<_paramExprs.size() - 1) 
+				sb.append(",");
 		}
 		sb.append(" )");
 		return sb.toString();
@@ -247,8 +203,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		for (int i=0; i<_inputParamExpressions.size(); i++)
-			result.addVariables(_inputParamExpressions.get(i).variablesRead());
+		for (int i = 0; i < _paramExprs.size(); i++)
+			result.addVariables(_paramExprs.get(i).getExpr().variablesRead());
 		return result;
 	}
 
@@ -265,3 +221,31 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return true;
 	}
 }
+
+class ParameterExpression {
+	private Expression 	_expr;
+	private String 		_name;
+
+	ParameterExpression(String name, Expression val){
+		_name 		= name;
+		_expr 		= val;
+	}
+	
+	public String getName(){
+		return _name;
+	}
+	
+	public Expression getExpr(){
+		return _expr;
+	}
+	public String toString(){
+		String retVal = new String();
+		if (_name != null)
+			retVal += _name + "=";
+		retVal +=_expr;
+		
+		return retVal;
+	}
+	
+}
+

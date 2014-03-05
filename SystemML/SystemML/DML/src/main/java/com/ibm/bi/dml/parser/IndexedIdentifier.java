@@ -89,9 +89,11 @@ public class IndexedIdentifier extends DataIdentifier
 				rowLB_1_1 = Math.round(((DoubleIdentifier)_rowLowerBound).getValue());
 				
 			if (rowLB_1_1 < 1){
+				LOG.error(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 			}
 			if ((this.getOrigDim1() > 0)  && (rowLB_1_1 > this.getOrigDim1())) {
+				LOG.error(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 			}
 			// valid lower row bound value
@@ -99,6 +101,7 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 		
 		else if (_rowLowerBound instanceof ConstIdentifier) {
+			LOG.error(this.printErrorLocation() + " assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString());
 			throw new LanguageException(this.printErrorLocation() + " assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString());
 		}
 	
@@ -135,11 +138,11 @@ public class IndexedIdentifier extends DataIdentifier
 					if (validRowLB) {
 						if (constValue instanceof IntIdentifier){
 							_rowLowerBound = new IntIdentifier((IntIdentifier)constValue);
-							_rowLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_rowLowerBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						else{
 							_rowLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue);
-							_rowLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_rowLowerBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						isConst_rowLowerBound = true;
 					}
@@ -176,9 +179,11 @@ public class IndexedIdentifier extends DataIdentifier
 				rowUB_1_1 = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
 				
 			if (rowUB_1_1 < 1){
+				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
 				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
 			}
 			if ((this.getOrigDim1() > 0)  && (rowUB_1_1 > this.getOrigDim1())) {
+				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 			}
 			if (isConst_rowLowerBound && rowUB_1_1 < rowLB_1){
@@ -187,6 +192,7 @@ public class IndexedIdentifier extends DataIdentifier
 			isConst_rowUpperBound = true;
 		}	
 		else if (_rowUpperBound instanceof ConstIdentifier){
+			LOG.error(this.printErrorLocation() + " assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString());
 			throw new LanguageException(this.printErrorLocation() + " assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString());
 		}
 		
@@ -226,11 +232,11 @@ public class IndexedIdentifier extends DataIdentifier
 					if (validRowUB) {
 						if (constValue instanceof IntIdentifier){
 							_rowUpperBound = new IntIdentifier((IntIdentifier)constValue);
-							_rowUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_rowUpperBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						else{
 							_rowUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue);
-							_rowUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_rowUpperBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						isConst_rowUpperBound = true;
 					}
@@ -263,9 +269,11 @@ public class IndexedIdentifier extends DataIdentifier
 				colLB_1_1 = Math.round(((DoubleIdentifier)_colLowerBound).getValue());
 				
 			if (colLB_1_1 < 1){
+				LOG.error(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 			}
 			if ((this.getOrigDim2() > 0)  && (colLB_1_1 > this.getOrigDim2())){ 
+				LOG.error(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 			}
 			// valid lower row bound value
@@ -273,6 +281,7 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 			
 		else if (_colLowerBound instanceof ConstIdentifier) {
+			LOG.error(this.printErrorLocation() + " assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString());
 			throw new LanguageException(this.printErrorLocation() + " assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString());
 		}
 		
@@ -307,11 +316,11 @@ public class IndexedIdentifier extends DataIdentifier
 					if (validColLB) {
 						if (constValue instanceof IntIdentifier){
 							_colLowerBound = new IntIdentifier((IntIdentifier)constValue);
-							_colLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_colLowerBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						else{
 							_colLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue);
-							_colLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_colLowerBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						isConst_colLowerBound = true;
 					}
@@ -345,9 +354,11 @@ public class IndexedIdentifier extends DataIdentifier
 				colUB_1_1 = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
 				
 			if (colUB_1_1 < 1){
+				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
 				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
 			}
 			if ((this.getOrigDim2() > 0)  && (colUB_1_1 > this.getOrigDim2())) {
+				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 			}
 			if (isConst_rowLowerBound && colUB_1_1 < colLB_1)
@@ -356,6 +367,7 @@ public class IndexedIdentifier extends DataIdentifier
 			isConst_colUpperBound = true;
 		}	
 		else if (_colUpperBound instanceof ConstIdentifier){	
+			LOG.error(this.printErrorLocation() + " assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString());
 			throw new LanguageException(this.printErrorLocation() + " assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString());
 		}
 		
@@ -395,11 +407,11 @@ public class IndexedIdentifier extends DataIdentifier
 					if (validColUB) {
 						if (constValue instanceof IntIdentifier){
 							_colUpperBound = new IntIdentifier((IntIdentifier)constValue);
-							_colUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_colUpperBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						else{
 							_colUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue);
-							_colUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+							_colUpperBound.setAllPositions(constValue.getFilename(), constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 						}
 						isConst_colUpperBound = true;
 					}
@@ -525,10 +537,11 @@ public class IndexedIdentifier extends DataIdentifier
 		
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
 		
-		newIndexedIdentifier._beginLine 	= this._beginLine;
-		newIndexedIdentifier._beginColumn 	= this._beginColumn;
-		newIndexedIdentifier._endLine 		= this._endLine;
-		newIndexedIdentifier._endColumn 	= this._endColumn;
+		newIndexedIdentifier.setFilename(getFilename());
+		newIndexedIdentifier.setBeginLine(this.getBeginLine());
+		newIndexedIdentifier.setBeginColumn(this.getBeginColumn());
+		newIndexedIdentifier.setEndLine(this.getEndLine());
+		newIndexedIdentifier.setEndColumn(this.getEndColumn());
 			
 		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);
@@ -549,9 +562,9 @@ public class IndexedIdentifier extends DataIdentifier
 		return newIndexedIdentifier;
 	}
 		
-	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
+	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws DMLParseException {
 		if (passed.size() != 2){
-			throw new ParseException(this.printErrorLocation() + "matrix indeices must be specified for 2 dimensions") ; //"[E] matrix indices must be specified for 2 dimensions -- currently specified indices for " + passed.size() + " dimensions ");
+			throw new DMLParseException(this.getFilename(), this.printErrorLocation() + "matrix indeices must be specified for 2 dimensions");
 		}
 		ArrayList<Expression> rowIndices = passed.get(0);
 		ArrayList<Expression> colIndices = passed.get(1);
@@ -570,7 +583,7 @@ public class IndexedIdentifier extends DataIdentifier
 			_rowLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException(this.printErrorLocation() + "row indices are length " + rowIndices.size() + " -- should be either 1 or 2");
+			throw new DMLParseException(this.getFilename(), this.printErrorLocation() + "row indices are length " + rowIndices.size() + " -- should be either 1 or 2");
 		}
 		
 		// case: both upper and lower are defined
@@ -585,7 +598,7 @@ public class IndexedIdentifier extends DataIdentifier
 			_colLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException(this.printErrorLocation() + "column indices are length " + + colIndices.size() + " -- should be either 1 or 2");
+			throw new DMLParseException(this.getFilename(), this.printErrorLocation() + "column indices are length " + + colIndices.size() + " -- should be either 1 or 2");
 		}
 		//System.out.println(this);
 	}
@@ -673,9 +686,10 @@ public class IndexedIdentifier extends DataIdentifier
 		return result;
 	}
 	
-	public void setAllPositions (int blp, int bcp, ArrayList<ArrayList<Expression>> exprListList){
-		this._beginLine = blp;
-		this._beginColumn = bcp;
+	public void setAllPositions (String filename, int blp, int bcp, ArrayList<ArrayList<Expression>> exprListList){
+		setFilename(filename);
+		setBeginLine(blp);
+		setBeginColumn(bcp);
 		
 		Expression rightMostIndexExpr = null;
 		if (exprListList != null){
@@ -691,12 +705,12 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 		
 		if (rightMostIndexExpr != null){
-			this._endLine 	= rightMostIndexExpr.getEndLine();
-			this._endColumn = rightMostIndexExpr.getEndColumn();
+			setEndLine(rightMostIndexExpr.getEndLine());
+			setEndColumn(rightMostIndexExpr.getEndColumn());
 		}
 		else {
-			this._endLine = blp;
-			this._endColumn = bcp;
+			setEndLine(blp);
+			setEndColumn(bcp);
 		}
 	}
 	

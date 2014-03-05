@@ -16,12 +16,10 @@ public class PathStatement extends Statement
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	// Set of file system paths to packages
-	String _pathValue;
+	private String _pathValue;
 	
-	public PathStatement(){}
-	
-	public void setPathValue(String pathSet){
-		_pathValue = pathSet;
+	public PathStatement(String pv){
+		_pathValue = pv;
 	}
 	
 	public String getPathValue(){

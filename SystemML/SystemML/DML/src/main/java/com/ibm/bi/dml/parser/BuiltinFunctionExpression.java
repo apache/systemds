@@ -22,8 +22,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	protected Expression 	  _third;
 	private BuiltinFunctionOp _opcode;
 
-	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression first,
-			Expression second, Expression third) {
+	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression first, Expression second, Expression third) {
 		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		_first = first;
@@ -38,10 +37,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		Expression newThird = (this._third == null) ? null : this._third.rewriteExpression(prefix);
 		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(this._opcode, newFirst, newSecond, newThird);
 	
-		retVal._beginLine 	= this._beginLine;
-		retVal._beginColumn = this._beginColumn;
-		retVal._endLine		= this._endLine;
-		retVal._endColumn	= this._endColumn;
+		retVal.setFilename(this.getFilename());
+		retVal.setBeginLine(this.getBeginLine());
+		retVal.setBeginColumn(this.getBeginColumn());
+		retVal.setEndLine(this.getEndLine());
+		retVal.setEndColumn(this.getEndColumn());
 		
 		return retVal;
 	
@@ -87,7 +87,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		int count = 0;
 		for (DataIdentifier outParam: stmt.getTargetList()){
 			DataIdentifier tmp = new DataIdentifier(outParam);
-			tmp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			tmp.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			_outputs[count++] = tmp;
 		}
 		
@@ -201,7 +201,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		// checkIdentifierParams();
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 		Identifier id = this.getFirstExpr().getOutput();
 		output.setProperties(this.getFirstExpr().getOutput());
@@ -288,7 +288,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkNumParameters(1);
 			checkMatrixParam(_first);
 			if (( _first.getOutput().getDim1() != -1 && _first.getOutput().getDim1() !=1) || ( _first.getOutput().getDim2() != -1 && _first.getOutput().getDim2() !=1)) {
-				throw new LanguageException(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2: " + _first.getOutput().getDim2(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2 " + _first.getOutput().getDim2(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
@@ -911,7 +911,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	public static BuiltinFunctionExpression getBuiltinFunctionExpression(String functionName, ArrayList<Expression> exprs) {
+	public static BuiltinFunctionExpression getBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed) {
+		
+		if (functionName == null || paramExprsPassed == null)
+			return null;
 		
 		// check if the function name is built-in function
 		//	(assign built-in function op if function is built-in
@@ -1026,9 +1029,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else
 			return null;
 		
-		Expression expr1 = exprs.size() >= 1 ? expr1 = exprs.get(0) : null;
-		Expression expr2 = exprs.size() >= 2 ? expr2 = exprs.get(1) : null;
-		Expression expr3 = exprs.size() >= 3 ? expr3 = exprs.get(2) : null;
+		Expression expr1 = paramExprsPassed.size() >= 1 ? expr1 = paramExprsPassed.get(0).getExpr() : null;
+		Expression expr2 = paramExprsPassed.size() >= 2 ? expr2 = paramExprsPassed.get(1).getExpr() : null;
+		Expression expr3 = paramExprsPassed.size() >= 3 ? expr3 = paramExprsPassed.get(2).getExpr() : null;
 		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(bifop,expr1, expr2, expr3);
 	
 		return retVal;
@@ -1055,4 +1058,5 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				throw new LanguageException("No cast for value type "+vt);
 		}
 	}
+
 }

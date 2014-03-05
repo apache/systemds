@@ -230,25 +230,26 @@ public abstract class Expression
 	/**
 	 * Convert format types from parser to Hops enum : default is text
 	 */
+	
 	public static FileFormatTypes convertFormatType(String fn) {
 		if (fn == null)
 			return FileFormatTypes.TEXT;
-		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_TEXT)) {
+		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)) {
 			return FileFormatTypes.TEXT;
 		}
-		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY)) {
+		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)) {
 			return FileFormatTypes.BINARY;
 		}
-		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
+		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
 			return FileFormatTypes.MM;
 		}
-		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV))  {
+		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
 			return FileFormatTypes.CSV;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type
 		return FileFormatTypes.TEXT;
 	}
-
+    
 	/**
 	 * Construct Hops from parse tree : Create temporary views in expressions
 	 */
@@ -270,7 +271,7 @@ public abstract class Expression
 
 		if (d1 == d2)
 			return d1;
-		
+
 		if (cast) {
 			if (d1 == DataType.MATRIX && d2 == DataType.SCALAR)
 				return DataType.MATRIX;
@@ -313,23 +314,27 @@ public abstract class Expression
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for expressions
 	///////////////////////////////////////////////////////////////////////////
-	public int _beginLine, _beginColumn;
-	public int _endLine, _endColumn;
+	private String _filename;
+	private int _beginLine, _beginColumn;
+	private int _endLine, _endColumn;
 	private ArrayList<String> _parseExceptionList = new ArrayList<String>();
 	
+	public void setFilename(String passed)  { _filename = passed;   }
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 	public void setParseExceptionList(ArrayList<String> passed) { _parseExceptionList = passed;}
 	
-	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
+		_filename    = filename;
 		_beginLine	 = blp; 
 		_beginColumn = bcp; 
 		_endLine 	 = elp;
 		_endColumn 	 = ecp;
 	}
 
+	public String getFilename()	{ return _filename;   }
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
@@ -337,15 +342,18 @@ public abstract class Expression
 	public ArrayList<String> getParseExceptionList() { return _parseExceptionList; }
 	
 	public String printErrorLocation(){
-		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	public String printErrorLocation(int beginLine, int beginColumn){
+		return "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
 	}
 	
 	public String printWarningLocation(){
-		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+		return "WARNING: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
 	public String printInfoLocation(){
-		return "INFO: line " + _beginLine + ", column " + _beginColumn + " -- ";
+		return "INFO: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
-	
 }

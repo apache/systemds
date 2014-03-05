@@ -871,8 +871,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if( e instanceof FunctionCallIdentifier )
 		{
 			FunctionCallIdentifier fci = (FunctionCallIdentifier)e;
-			for( Expression ee : fci.getParamExpressions() )
-				ret.addAll(rGetDataIdentifiers( ee ));
+			for( ParameterExpression ee : fci.getParamExprs() )
+				ret.addAll(rGetDataIdentifiers( ee.getExpr() ));
 		}
 		else if(e instanceof BinaryExpression)
 		{

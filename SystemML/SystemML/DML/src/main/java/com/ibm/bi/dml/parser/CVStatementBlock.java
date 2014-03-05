@@ -41,14 +41,15 @@ public class CVStatementBlock extends StatementBlock
 		CVStatement cvs = (CVStatement) this.getStatement(0);
 		
 		// check the input datasets are available
-		for (Expression inputExpr : cvs.get_inputs().getParamExpressions()){
-			inputExpr.validateExpression(ids.getVariables(),constVars);
+		for (ParameterExpression inputExpr : cvs.get_inputs().getParamExprs()){
+			inputExpr.getExpr().validateExpression(ids.getVariables(),constVars);
 		}	
 		
 		// build list of partition outputs
 		// NOTE: assume each partition output is DataIdentifier with datatype matrix (and valuetype double)
 		VariableSet partitionOutputList = new VariableSet();
-		for (Expression output : cvs.get_partitionOutputs().getParamExpressions()){
+		for (ParameterExpression outputParamExpr : cvs.get_partitionOutputs().getParamExprs()){
+			Expression output = outputParamExpr.getExpr();
 			try {
 				((DataIdentifier)output).setTypeInfo("double", "matrix");
 			} catch (ParseException e){
@@ -87,7 +88,8 @@ public class CVStatementBlock extends StatementBlock
 		// build list of training function outputs
 		// check training function call has correct number of parameters		
 		FunctionStatement trainFS = (FunctionStatement)trainFSB.getStatement(0);
-		if (cvs.get_trainFunctionOutputs().getParamExpressions().size() != trainFS.getOutputParams().size()){
+		if (cvs.get_trainFunctionOutputs().getParamExprs().size() != trainFS.getOutputParams().size()){
+			
 			LOG.error(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " has wrong number parameters ");
 			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " has wrong number parameters ");
 
@@ -95,8 +97,9 @@ public class CVStatementBlock extends StatementBlock
 		
 		// for each train function parameter, set datatype and valuetype
 		VariableSet trainOutputList = new VariableSet();
-		for (int i = 0; i< cvs.get_trainFunctionOutputs().getParamExpressions().size(); i++){
-			DataIdentifier output = (DataIdentifier)cvs.get_trainFunctionOutputs().getParamExpressions().get(i);
+		for (int i = 0; i< cvs.get_trainFunctionOutputs().getParamExprs().size(); i++){
+			
+			DataIdentifier output = (DataIdentifier)cvs.get_trainFunctionOutputs().getParamExprs().get(i).getExpr();
 			try {
 				output.setTypeInfo(trainFS.getOutputParams().get(i).getValueType().toString(), trainFS.getOutputParams().get(i).getDataType().toString());
 			} catch (ParseException e) {
@@ -140,7 +143,7 @@ public class CVStatementBlock extends StatementBlock
 		// build list of test function outputs
 		// check test function call has correct number of parameters		
 		FunctionStatement testFS = (FunctionStatement)testFSB.getStatement(0);
-		if (cvs.get_testFunctionOutputs().getParamExpressions().size() != testFS.getOutputParams().size()){
+		if (cvs.get_testFunctionOutputs().getParamExprs().size() != testFS.getOutputParams().size()){
 			LOG.error(this.printBlockErrorLocation() + "CV test function " + testFCI.getNamespace() + "::" + testFCI.getName() + " has wrong number parameters ");
 			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + testFCI.getNamespace() + "::" + testFCI.getName() + " has wrong number parameters ");
 
@@ -148,8 +151,8 @@ public class CVStatementBlock extends StatementBlock
 		
 		// for each test function parameter, set datatype and valuetype
 		VariableSet testOutputList = new VariableSet();
-		for (int i = 0; i< cvs.get_testFunctionOutputs().getParamExpressions().size(); i++){
-			DataIdentifier output = (DataIdentifier)cvs.get_testFunctionOutputs().getParamExpressions().get(i);
+		for (int i = 0; i< cvs.get_testFunctionOutputs().getParamExprs().size(); i++){
+			DataIdentifier output = (DataIdentifier)cvs.get_testFunctionOutputs().getParamExprs().get(i).getExpr();
 			try {
 				output.setTypeInfo(testFS.getOutputParams().get(i).getValueType().toString(), testFS.getOutputParams().get(i).getDataType().toString());
 			} catch (ParseException e) {
@@ -201,14 +204,14 @@ public class CVStatementBlock extends StatementBlock
 				aggFCI_fci.validateExpression(dmlProg,tempIds.getVariables(), constVars);
 				FunctionStatementBlock aggFSB = dmlProg.getFunctionStatementBlock(aggFCI_fci.getNamespace(), aggFCI_fci.getName());
 				FunctionStatement aggFS = (FunctionStatement)aggFSB.getStatement(0);
-				if (cvs.get_aggFunctionOutputs().getParamExpressions().size() != aggFS.getOutputParams().size()){
+				if (cvs.get_aggFunctionOutputs().getParamExprs().size() != aggFS.getOutputParams().size()){
 					LOG.error(this.printBlockErrorLocation() + "CV aggregate function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " has wrong number parameters ");
 					throw new LanguageException(this.printBlockErrorLocation() + "CV aggregate function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getNamespace()  + " has wrong number parameters ");
 			
 				}
 				
-				for (int i = 0; i < cvs.get_aggFunctionOutputs().getParamExpressions().size(); i++){
-					DataIdentifier output = (DataIdentifier)cvs.get_aggFunctionOutputs().getParamExpressions().get(i);
+				for (int i = 0; i < cvs.get_aggFunctionOutputs().getParamExprs().size(); i++){
+					DataIdentifier output = (DataIdentifier)cvs.get_aggFunctionOutputs().getParamExprs().get(i).getExpr();
 					try {
 						output.setTypeInfo(aggFS.getOutputParams().get(i).getValueType().toString(), aggFS.getOutputParams().get(i).getDataType().toString());
 					} catch (ParseException e) {
@@ -220,7 +223,7 @@ public class CVStatementBlock extends StatementBlock
 			else {
 				BuiltinFunctionExpression aggBFE = (BuiltinFunctionExpression)aggFCI;
 				aggBFE.validateExpression(tempIds.getVariables(), constVars);
-				DataIdentifier output = (DataIdentifier)cvs.get_aggFunctionOutputs().getParamExpressions().get(0);
+				DataIdentifier output = (DataIdentifier)cvs.get_aggFunctionOutputs().getParamExprs().get(0).getExpr();
 				try {
 					output.setTypeInfo(aggBFE.getOutput().getValueType().toString(), aggBFE.getOutput().getDataType().toString());
 				} catch (ParseException e) {
@@ -237,7 +240,7 @@ public class CVStatementBlock extends StatementBlock
 		
 		// add error aggregate output to returned variables 
 		
-		for (Expression aggOutput : cvs.get_aggFunctionOutputs().getParamExpressions()){
+		for (ParameterExpression aggOutput : cvs.get_aggFunctionOutputs().getParamExprs()){
 			
 		}
 		

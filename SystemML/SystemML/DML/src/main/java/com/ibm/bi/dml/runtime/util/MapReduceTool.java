@@ -34,7 +34,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
@@ -449,8 +449,8 @@ public class MapReduceTool
         
         try {
           line += "{ \n" +
-          "    \"" +  Statement.DATATYPEPARAM         +  "\": \"matrix\"\n" +
-          "    ,\"" +  Statement.VALUETYPEPARAM        +  "\": ";
+          "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"matrix\"\n" +
+          "    ,\"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
         
           switch (v) {
           case DOUBLE:
@@ -468,16 +468,16 @@ public class MapReduceTool
           };
         
           line += 
-          "    ,\"" +  Statement.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
-		  "    ,\"" + Statement.READCOLPARAM 			+  "\": " + mc.numColumns + "\n";
+          "    ,\"" +  DataExpression.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
+		  "    ,\"" + DataExpression.READCOLPARAM 			+  "\": " + mc.numColumns + "\n";
           // only output rows_in_block and cols_in_block for binary format 
           if ( outinfo == OutputInfo.BinaryBlockOutputInfo)  {
-         	 line += "    ,\"" + Statement.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
-		            "    ,\"" + Statement.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n";
+         	 line += "    ,\"" + DataExpression.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
+		            "    ,\"" + DataExpression.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n";
           }
         
-          line += "    ,\"" +	Statement.READNUMNONZEROPARAM	+  "\": " + mc.nonZero + "\n" +
-		          "    ,\"" + Statement.FORMAT_TYPE	+  "\": "; 
+          line += "    ,\"" +	DataExpression.READNUMNONZEROPARAM	+  "\": " + mc.nonZero + "\n" +
+		          "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": "; 
         
           if ( outinfo == OutputInfo.TextCellOutputInfo ) {
         	line += "\"text\"\n";
@@ -509,8 +509,8 @@ public class MapReduceTool
         try {
           String line = "";
           line += "{ \n" +
-                  "    \"" +  Statement.DATATYPEPARAM         +  "\": \"scalar\"\n" +
-        		  "    ,\"" +  Statement.VALUETYPEPARAM        +  "\": ";
+                  "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"scalar\"\n" +
+        		  "    ,\"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
         		        
           switch (v) {
         	case DOUBLE:
@@ -527,7 +527,7 @@ public class MapReduceTool
         		break;
           };
           
-          line += "    ,\"" + Statement.FORMAT_TYPE	+  "\": \"text\"\n" + 
+          line += "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": \"text\"\n" + 
                   "    ,\"description\": { \"author\": \"SystemML\" } \n" +" }" ;
         
         br.write(line);

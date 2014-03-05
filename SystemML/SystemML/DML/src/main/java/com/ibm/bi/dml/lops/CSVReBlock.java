@@ -10,6 +10,7 @@ package com.ibm.bi.dml.lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
@@ -73,26 +74,26 @@ public class CSVReBlock extends Lop
 		sb.append( cols_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		
-		Lop headerLop = ((Data)input).getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
-		Lop delimLop = ((Data)input).getNamedInputLop(Statement.DELIM_DELIMITER);
-		Lop fillLop = ((Data)input).getNamedInputLop(Statement.DELIM_FILL); 
-		Lop fillValueLop = ((Data)input).getNamedInputLop(Statement.DELIM_FILL_VALUE);
+		Lop headerLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+		Lop delimLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_DELIMITER);
+		Lop fillLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL); 
+		Lop fillValueLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
 		
 		if (headerLop.isVariable())
 			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+					+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
 					+ " must be a literal for a seq operation.");
 		if (delimLop.isVariable())
 			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + Statement.DELIM_DELIMITER
+					+ "Parameter " + DataExpression.DELIM_DELIMITER
 					+ " must be a literal for a seq operation.");
 		if (fillLop.isVariable())
 			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + Statement.DELIM_FILL
+					+ "Parameter " + DataExpression.DELIM_FILL
 					+ " must be a literal for a seq operation.");
 		if (fillValueLop.isVariable())
 			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + Statement.DELIM_FILL_VALUE
+					+ "Parameter " + DataExpression.DELIM_FILL_VALUE
 					+ " must be a literal for a seq operation.");
 
 		sb.append( ((Data)headerLop).getBooleanValue() );

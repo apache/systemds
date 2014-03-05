@@ -159,17 +159,14 @@ public class StatementBlock extends LiveVariableAnalysis
 		{
 			return false;
 		}
-		
-		// for regular stmt block, check if this is a function call stmt block
-		if (stmt instanceof InputStatement) {
-			Expression fmt = ((InputStatement)stmt).getExprParam(Statement.FORMAT_TYPE);
-			if ( fmt != null && fmt.toString().equalsIgnoreCase("csv") ) 
-				return false;
-		}
+				
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
 			Expression sourceExpr = null;
 			if (stmt instanceof AssignmentStatement) {
 				AssignmentStatement astmt = (AssignmentStatement)stmt;
+				// for now, ensure that an assignment statement containing a read from csv ends up in own statement block
+				if(astmt.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && astmt.getSource().toString().contains("read"))
+					return false;
 				if( astmt.containsIndividualStatementBlockOperations() )
 					return false;
 				sourceExpr = astmt.getSource();
@@ -352,7 +349,7 @@ public class StatementBlock extends LiveVariableAnalysis
 
 		ArrayList<StatementBlock> result = new ArrayList<StatementBlock>();
 
-		if (sb.size() == 0) {
+		if (sb == null || sb.size() == 0) {
 			return new ArrayList<StatementBlock>();
 		}
 
@@ -424,9 +421,9 @@ public class StatementBlock extends LiveVariableAnalysis
 					newTarget.setName(newFormalParameterName);
 					
 					Expression currCallParam = null;
-					if (fcall.getParamExpressions().size() > i){
+					if (fcall.getParamExprs().size() > i){
 						// function call has value for parameter
-						currCallParam = fcall.getParamExpressions().get(i);
+						currCallParam = fcall.getParamExprs().get(i).getExpr();
 					}
 					else {
 						// use default value for parameter
@@ -435,7 +432,8 @@ public class StatementBlock extends LiveVariableAnalysis
 							throw new LanguageException(currFormalParam.printErrorLocation() + "default parameter for " + currFormalParam + " is undefined");
 						}
 						currCallParam = new DataIdentifier(fstmt.getInputParams().get(i).getDefaultValue());
-						currCallParam.setAllPositions( fstmt.getInputParams().get(i).getBeginLine(), 
+						currCallParam.setAllPositions( 	fstmt.getInputParams().get(i).getFilename(),
+														fstmt.getInputParams().get(i).getBeginLine(), 
 														fstmt.getInputParams().get(i).getBeginColumn(),
 														fstmt.getInputParams().get(i).getEndLine(),
 														fstmt.getInputParams().get(i).getEndColumn());
@@ -446,9 +444,9 @@ public class StatementBlock extends LiveVariableAnalysis
 					if( newTarget.getDataType()==DataType.SCALAR && targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING ){
 						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),currCallParam, null, null);
 					}
-
+					
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
+					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
 					newStatements.add(binding);
 				}
 				
@@ -487,8 +485,8 @@ public class StatementBlock extends LiveVariableAnalysis
 						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),newSource, null, null);
 					}
 					
-					// create the assignment statement to bind the return parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
+					// create the assignment statement to bind the call parameter to formal parameter
+					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
 					
 					newStatements.add(binding);
 				}
@@ -513,38 +511,13 @@ public class StatementBlock extends LiveVariableAnalysis
 		_dmlProg = dmlProg;
 		
 		for (Statement current : _statements){
-			
-			if (current instanceof InputStatement){
-				InputStatement is = (InputStatement)current;	
-				DataIdentifier target = is.getIdentifier(); 
-				
-				Expression source = is.getSource();
-				source.setOutput(target);
-				source.validateExpression(ids.getVariables(), currConstVars);
-				
-				setStatementFormatType(is);
-				
-				// use existing size and properties information for LHS IndexedIdentifier
-				if (target instanceof IndexedIdentifier){
-					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
-					if (targetAsSeen == null){
-						LOG.error(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without initializing " + is.getIdentifier().getName());
-						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without initializing " + is.getIdentifier().getName());
-					}
-					target.setProperties(targetAsSeen);
-				}
-							
-				ids.addVariable(target.getName(),target);
-			}
-			
-			else if (current instanceof OutputStatement){
+						
+			if (current instanceof OutputStatement){
 				OutputStatement os = (OutputStatement)current;
 				
 				// validate variable being written by output statement exists
 				DataIdentifier target = (DataIdentifier)os.getIdentifier();
 				if (ids.getVariable(target.getName()) == null){
-					//throwUndefinedVar ( target.getName(), os );
-					
 					LOG.error(os.printErrorLocation() + "Undefined Variable (" + target.getName() + ") used in statement");
 					throw new LanguageException(os.printErrorLocation() + "Undefined Variable (" + target.getName() + ") used in statement",
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -552,8 +525,8 @@ public class StatementBlock extends LiveVariableAnalysis
 				
 				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
 					boolean paramsOkay = true;
-					for (String key : os._paramsExpr.getVarParams().keySet()){
-						if (! (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE))) 
+					for (String key : os.getSource().getVarParams().keySet()){
+						if (! (key.equals(DataExpression.IO_FILENAME) || key.equals(DataExpression.FORMAT_TYPE))) 
 							paramsOkay = false;
 					}
 					if (paramsOkay == false){
@@ -576,12 +549,12 @@ public class StatementBlock extends LiveVariableAnalysis
 			 	Expression source = as.getSource();
 				
 				if (source instanceof FunctionCallIdentifier)			
-				{
-					FunctionCallIdentifier fcall = (FunctionCallIdentifier) source;
-					fcall.validateExpression(dmlProg, ids.getVariables(),currConstVars);
-				}
+					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars);
 				else
 					source.validateExpression(ids.getVariables(), currConstVars);
+		
+				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ)
+					setStatementFormatType(as);
 				
 				// Handle const vars: Basic Constant propagation 
 				currConstVars.remove(target.getName());
@@ -616,7 +589,6 @@ public class StatementBlock extends LiveVariableAnalysis
 					}
 				}
 				// CASE: target NOT indexed identifier
-				
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
 					if (source.getOutput() instanceof IndexedIdentifier){
@@ -682,6 +654,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				}
 				
 				ids.addVariable(target.getName(), target);
+				
 			}
 			
 			else if (current instanceof MultiAssignmentStatement){
@@ -745,94 +718,6 @@ public class StatementBlock extends LiveVariableAnalysis
 					}
 				}
 			}
-			else if(current instanceof RandStatement)
-			{
-				RandStatement rs = (RandStatement) current;
-				
-				DataIdentifier target = rs.getIdentifier(); 
-				Expression source = rs.getSource();
-				source.setOutput(target);
-				
-				// validate Rand Statement
-				source.validateExpression(ids.getVariables(), currConstVars);
-				
-				
-				
-				// use existing size and properties information for LHS IndexedIdentifier
-				// Do we want to support this? if not, throw an exception, if yes, copy from Assignment part 
-				// CASE: target NOT indexed identifier
-				if (!(target instanceof IndexedIdentifier)){
-					target.setProperties(source.getOutput());
-					
-					if (source.getOutput() instanceof IndexedIdentifier){
-						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
-						rs.getIdentifier().setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
-					}
-					
-				}
-				// CASE: target is indexed identifier
-				else {
-					// process the "target" being indexed
-					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
-					if (targetAsSeen == null){
-						LOG.error(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
-						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
-					}
-					
-					//target.setProperties(targetAsSeen);
-					
-					// process the expressions for the indexing
-					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables(), currConstVars);
-					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
-						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables(), currConstVars);
-					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
-						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables(), currConstVars);
-					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
-						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars);
-					
-					// validate that LHS indexed identifier is being assigned a matrix value
-					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
-						LOG.error(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-					}
-					
-					// validate that size of LHS index ranges is being assigned:
-					//	(a) a matrix value of same size as LHS
-					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
-					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars);
-							
-					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
-						
-						LOG.error(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
-								+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
-								+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
-						
-						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
-										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
-										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
-					}
-					
-					if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
-					
-						LOG.error(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
-								+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
-								+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
-						
-						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
-										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
-										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
-					}
-					
-					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
-					
-						
-				}
-				
-				// add RandStatement target to available variables list
-				ids.addVariable(target.getName(),target);
-			
-			}
 				
 			else if(current instanceof CVStatement /*|| current instanceof ELStatement*/ 
 					|| current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
@@ -868,42 +753,85 @@ public class StatementBlock extends LiveVariableAnalysis
 
 	}
 	
-	public void setStatementFormatType(IOStatement s) throws LanguageException, ParseException{
-		if (s.getExprParam(Statement.FORMAT_TYPE)!= null ){
+	public void setStatementFormatType(OutputStatement s) throws LanguageException, ParseException{
+		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null ){
 		 	
-	 		Expression formatTypeExpr = s.getExprParam(Statement.FORMAT_TYPE);  
+	 		Expression formatTypeExpr = s.getExprParam(DataExpression.FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier)){
 				
-				LOG.error(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
+				LOG.error(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text");
 				
-				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
+				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text", 
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			String ft = formatTypeExpr.toString();
-			if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY)){
-				s._id.setFormatType(FormatType.BINARY);
-			} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_TEXT)){
-				s._id.setFormatType(FormatType.TEXT);
-			} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
-				s._id.setFormatType(FormatType.MM);
-			} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
-				s._id.setFormatType(FormatType.CSV);
+			if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)){
+				s.getIdentifier().setFormatType(FormatType.BINARY);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)){
+				s.getIdentifier().setFormatType(FormatType.TEXT);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET)){
+				s.getIdentifier().setFormatType(FormatType.MM);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
+				s.getIdentifier().setFormatType(FormatType.CSV);
 			} else{ 
 				
-				LOG.error(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
+				LOG.error(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text, mm, csv");
 				
-				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
+				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
 					+ " can only be a string with one of following values: binary, text, mm, csv", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
-			s.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()),true);
-			s._id.setFormatType(FormatType.TEXT);
+			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()),true);
+			s.getIdentifier().setFormatType(FormatType.TEXT);
 		}
 	}
+	
+	public void setStatementFormatType(AssignmentStatement s) throws LanguageException, ParseException{
+		
+		if (!(s.getSource() instanceof DataExpression))
+			return;
+		DataExpression dataExpr = (DataExpression)s.getSource();
+		
+		if (dataExpr.getVarParam(DataExpression.FORMAT_TYPE)!= null ){
+		 	
+	 		Expression formatTypeExpr = dataExpr.getVarParam(DataExpression.FORMAT_TYPE);  
+			if (!(formatTypeExpr instanceof StringIdentifier)){
+				
+				LOG.error(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
+						+ " can only be a string with one of following values: binary, text");
+				
+				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
+						+ " can only be a string with one of following values: binary, text", 
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			String ft = formatTypeExpr.toString();
+			if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)){
+				s.getTarget().setFormatType(FormatType.BINARY);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)){
+				s.getTarget().setFormatType(FormatType.TEXT);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET)){
+				s.getTarget().setFormatType(FormatType.MM);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
+				s.getTarget().setFormatType(FormatType.CSV);
+			} else{ 
+				
+				LOG.error(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
+						+ " can only be a string with one of following values: binary, text, mm, csv");
+				
+				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + DataExpression.FORMAT_TYPE 
+					+ " can only be a string with one of following values: binary, text, mm, csv", 
+					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+		} else {
+			dataExpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
+			s.getTarget().setFormatType(FormatType.TEXT);
+		}
+	}
+
 	
 	/**
 	 * For each statement:
@@ -1013,99 +941,42 @@ public class StatementBlock extends LiveVariableAnalysis
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for statement blocks
 	///////////////////////////////////////////////////////////////////////////
-	public int _beginLine = 0, _beginColumn = 0;
-	public int _endLine = 0, _endColumn = 0;
+	private String _filename = "MAIN SCRIPT";
+	private int _beginLine = 0, _beginColumn = 0;
+	private int _endLine = 0, _endColumn = 0;
 	
-	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	public void setFilename (String fname)  { _filename = fname;	}
+	public void setBeginLine(int passed)    { _beginLine = passed;  }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 	
-	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+	public void setAllPositions(String fname, int blp, int bcp, int elp, int ecp){
+		_filename    = fname;
 		_beginLine	 = blp; 
 		_beginColumn = bcp; 
 		_endLine 	 = elp;
 		_endColumn 	 = ecp;
 	}
 
+	public String getFilename() { return _filename;	   }
 	public int getBeginLine()	{ return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
 	
 	public String printErrorLocation(){
-		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
 	public String printBlockErrorLocation(){
-		return "ERROR: statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+		return "ERROR: "  + _filename + " -- statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 	
 	public String printWarningLocation(){
-		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+		return "WARNING: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
-	/**
-	 * MB: This method was used to remove updated vars from constant propagation when
-	 * live-variable-analysis was executed AFTER validate. Since now, we execute
-	 * live-variable-analysis BEFORE validate, this is redundant and should not be used anymore.
-	 * 
-	 * @param asb
-	 * @param upVars
-	 */
-	@Deprecated
-	public void rFindUpdatedVariables( ArrayList<StatementBlock> asb, HashSet<String> upVars )
-	{
-		for(StatementBlock sb : asb ) // foreach statementblock
-			for( Statement s : sb._statements ) // foreach statement in statement block
-			{
-				if( s instanceof ForStatement || s instanceof ParForStatement )
-				{
-					rFindUpdatedVariables(((ForStatement)s).getBody(), upVars);
-				}
-				else if( s instanceof WhileStatement ) 
-				{
-					rFindUpdatedVariables(((WhileStatement)s).getBody(), upVars);
-				}
-				else if( s instanceof IfStatement ) 
-				{
-					rFindUpdatedVariables(((IfStatement)s).getIfBody(), upVars);
-					rFindUpdatedVariables(((IfStatement)s).getElseBody(), upVars);
-				}
-				else if( s instanceof FunctionStatement ) 
-				{
-					rFindUpdatedVariables(((FunctionStatement)s).getBody(), upVars);
-				}
-				else
-				{
-					//evaluate assignment statements
-					Collection<DataIdentifier> tmp = null; 
-					if( s instanceof AssignmentStatement )
-					{
-						tmp = ((AssignmentStatement)s).getTargetList();	
-					}
-					else if (s instanceof FunctionStatement)
-					{
-						tmp = ((FunctionStatement)s).getOutputParams();
-					}
-					else if (s instanceof MultiAssignmentStatement)
-					{
-						tmp = ((MultiAssignmentStatement)s).getTargetList();
-					}
-					/* FIXME at Doug
-					else if (s instanceof RandStatement)
-					{
-						tmp = new ArrayList<DataIdentifier>();
-						tmp.add(((RandStatement)s).getIdentifier());
-					}*/
-					
-					//add names of updated data identifiers to results
-					if( tmp!=null )
-						for( DataIdentifier di : tmp )
-							upVars.add( di.getName() );
-				}
-			}
-	}
 
 	/////////
 	// materialized hops recompilation flags

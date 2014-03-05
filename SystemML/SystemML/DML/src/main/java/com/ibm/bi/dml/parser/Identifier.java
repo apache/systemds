@@ -43,10 +43,10 @@ public abstract class Identifier extends Expression
 		_formatType = i.getFormatType();
 		
 		// copy position information
-		_beginLine 	 = i.getBeginLine();
-		_beginColumn = i.getBeginColumn();
-		_endLine 	 = i.getEndLine();
-		_endColumn 	 = i.getEndColumn();
+		setBeginLine(i.getBeginLine());
+		setBeginColumn(i.getBeginColumn());
+		setEndLine(i.getEndLine());
+		setEndColumn(i.getEndColumn());
 	}
 	
 	public Identifier()
@@ -116,16 +116,7 @@ public abstract class Identifier extends Expression
 		_dim1 = dim1;
 		_dim2 = dim2;
 	}
-	
-	public void setDimensions(InputStatement is){
 		
-		// check if 
-		if (is.getExprParam("rows") != null && is.getExprParam("rows") instanceof IntIdentifier) 
-			_dim1 = new Long(((IntIdentifier)is.getExprParam("rows")).getValue());
-		if (is.getExprParam("cols") != null && is.getExprParam("cols") instanceof IntIdentifier) 
-			_dim2 = new Long(((IntIdentifier)is.getExprParam("cols")).getValue());
-	}
-	
 	public void setBlockDimensions(long dim1, long dim2){
 		 _rows_in_block = dim1;
 		 _columns_in_block = dim2;

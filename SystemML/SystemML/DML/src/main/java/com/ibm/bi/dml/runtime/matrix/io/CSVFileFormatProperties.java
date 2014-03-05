@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.runtime.matrix.io;
 
-import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.parser.DataExpression;
 
 public class CSVFileFormatProperties extends FileFormatProperties {
 	private boolean hasHeader;
@@ -21,11 +21,11 @@ public class CSVFileFormatProperties extends FileFormatProperties {
 		super(FileFormat.CSV);
 		
 		// get the default values for CSV properties from the language layer
-		this.hasHeader = Statement.DEFAULT_DELIM_HAS_HEADER_ROW;
-		this.delim = Statement.DEFAULT_DELIM_DELIMITER;
-		this.fill = Statement.DEFAULT_DELIM_FILL;
-		this.fillValue = Statement.DEFAULT_DELIM_FILL_VALUE;
-		this.sparse = Statement.DEFAULT_DELIM_SPARSE;
+		this.hasHeader = DataExpression.DEFAULT_DELIM_HAS_HEADER_ROW;
+		this.delim = DataExpression.DEFAULT_DELIM_DELIMITER;
+		this.fill = DataExpression.DEFAULT_DELIM_FILL;
+		this.fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
+		this.sparse = DataExpression.DEFAULT_DELIM_SPARSE;
 	}
 	
 	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean fill, double fillValue) {

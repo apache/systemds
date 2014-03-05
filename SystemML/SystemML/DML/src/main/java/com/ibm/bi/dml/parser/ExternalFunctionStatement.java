@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
+import java.util.Vector;
 
 
 
@@ -37,18 +38,26 @@ public class ExternalFunctionStatement extends FunctionStatement
 	private HashMap<String,String> _otherParams;
 	
 	
-	public ExternalFunctionStatement()
-	{
+	public ExternalFunctionStatement(){
 		super();
 	}
 	
-	public void setOtherParams(HashMap<String,String> params)
+	
+	
+	public ExternalFunctionStatement( Vector<DataIdentifier> functionInputs, Vector<DataIdentifier> functionOutputs, HashMap<String,String> map)
 	{
+		super();
+		_inputParams = functionInputs; 
+		_outputParams = (functionOutputs == null) ? new Vector<DataIdentifier>() : functionOutputs;
+		setOtherParams(map);
+	}
+	
+	
+	public void setOtherParams(HashMap<String,String> params){
 		_otherParams = params;
 	}
 	
-	public HashMap<String,String> getOtherParams()
-	{
+	public HashMap<String,String> getOtherParams(){
 		return _otherParams;
 	}
 	
@@ -57,9 +66,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateParameters()
-		throws LanguageException
-	{
+	public void validateParameters() throws LanguageException {
+		
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
 			if( !(   varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) || varName.equals(EXEC_LOCATION) 

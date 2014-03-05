@@ -25,11 +25,7 @@ public class BinaryExpression extends Expression
 		
 		
 		BinaryExpression newExpr = new BinaryExpression(this._opcode);
-		newExpr._beginLine 		 = this._beginLine; 
-		newExpr._beginColumn	 = this._beginColumn;
-		newExpr._endLine		 = this._endLine;
-		newExpr._endColumn 		 = this._endColumn;	
-		
+		newExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -39,20 +35,22 @@ public class BinaryExpression extends Expression
 		_kind = Kind.BinaryOp;
 		_opcode = bop;
 		
-		_beginLine 	 = 0;
-		_beginColumn = 0;
-		_endLine	 = 0;
-		_endColumn 	 = 0;
+		setFilename("MAIN SCRIPT");
+		setBeginLine(0);
+		setBeginColumn(0);
+		setEndLine(0);
+		setEndColumn(0);
 	}
 	
-	public BinaryExpression(BinaryOp bop, int beginLine, int beginColumn, int endLine, int endColumn) {
+	public BinaryExpression(BinaryOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn) {
 		_kind = Kind.BinaryOp;
 		_opcode = bop;
 		
-		_beginLine 	 = beginLine;
-		_beginColumn = beginColumn;
-		_endLine	 = endLine;
-		_endColumn 	 = endColumn;
+		setFilename(filename);
+		setBeginLine(beginLine);
+		setBeginColumn(beginColumn);
+		setEndLine(endLine);
+		setEndColumn(endColumn);
 	}
 	
 
@@ -65,8 +63,9 @@ public class BinaryExpression extends Expression
 		
 		// update script location information --> left expression is BEFORE in script
 		if (_left != null){
-			this._beginLine   = _left.getBeginLine();
-			this._beginColumn = _left.getBeginColumn();
+			setFilename(_left.getFilename());
+			setBeginLine(_left.getBeginLine());
+			setBeginColumn(_left.getBeginColumn());
 		}
 		
 	}
@@ -76,8 +75,9 @@ public class BinaryExpression extends Expression
 		
 		// update script location information --> right expression is AFTER in script
 		if (_right != null){
-			this._beginLine = _right.getEndLine();
-			this._beginColumn = _right.getEndColumn();
+			setFilename(_right.getFilename());
+			setBeginLine(_right.getEndLine());
+			setBeginColumn(_right.getEndColumn());
 		}
 	}
 
@@ -111,7 +111,7 @@ public class BinaryExpression extends Expression
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());		
+		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());		
 		output.setDataType(computeDataType(this.getLeft(), this.getRight(), true));
 		ValueType resultVT = computeValueType(this.getLeft(), this.getRight(), true);
 

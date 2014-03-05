@@ -59,10 +59,6 @@ public class FunctionStatement extends Statement
 		return _body;
 	}
 	
-	public void getBody(ArrayList<StatementBlock> body){
-		_body = body;
-	}
-	
 	public void setBody(ArrayList<StatementBlock> body){
 		_body = body;
 	}

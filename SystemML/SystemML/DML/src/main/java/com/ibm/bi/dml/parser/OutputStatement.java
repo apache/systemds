@@ -1,53 +1,127 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.Expression.DataOp;
 
  
-public class OutputStatement extends IOStatement
+public class OutputStatement extends Statement
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE, DELIM_DELIMITER, DELIM_HAS_HEADER_ROW, DELIM_SPARSE};
+	private DataIdentifier _id;
+	private DataExpression _paramsExpr;
+	
+	public static final String[] WRITE_VALID_PARAM_NAMES = { 	DataExpression.IO_FILENAME, 
+																DataExpression.FORMAT_TYPE, 
+																DataExpression.DELIM_DELIMITER, 
+																DataExpression.DELIM_HAS_HEADER_ROW, 
+																DataExpression.DELIM_SPARSE};
 
-	public static boolean isValidParamName(String key){
-	for (String paramName : WRITE_VALID_PARAM_NAMES)
-		if (paramName.equals(key)){
-			return true;
-		}
-
-		return false;
+	public DataIdentifier getIdentifier(){
+		return _id;
 	}
 	
-	public OutputStatement(){
-		super();
+	public DataExpression getSource(){
+		return _paramsExpr;
 	}
 	
-	public OutputStatement(DataIdentifier t, DataOp op){
-		super(t, op);
+	public void setIdentifier(DataIdentifier t) {
+		_id = t;
 	}
+	
+	OutputStatement(DataIdentifier t, DataOp op){
+		_id = t;
+		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
+	}
+	
+	OutputStatement(String fname, FunctionCallIdentifier fci) throws DMLParseException {
 		
+		DataOp op = Expression.DataOp.WRITE;
+		ArrayList<ParameterExpression> passedExprs = fci.getParamExprs();
+		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
+		DMLParseException runningList = new DMLParseException(fname);
+		
+		if (passedExprs.size() < 2)
+			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "write method must specify both variable to write to file, and filename to write variable to"));
+	
+		ParameterExpression firstParam = passedExprs.get(0);
+		if (firstParam.getName() != null || (!(firstParam.getExpr() instanceof DataIdentifier)))
+			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "first argument to write method must be name of variable to be written out"));
+		else
+			_id = (DataIdentifier)firstParam.getExpr();
+		
+		ParameterExpression secondParam = passedExprs.get(1);
+		if (secondParam.getName() != null || (secondParam.getName() != null && secondParam.getName().equals(DataExpression.IO_FILENAME)))
+			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "second argument to write method must be filename of file variable written to"));
+		else
+			addExprParam(DataExpression.IO_FILENAME, secondParam.getExpr(), false);
+			
+		for (int i = 2; i< passedExprs.size(); i++){
+			ParameterExpression currParam = passedExprs.get(i);
+			try {
+				addExprParam(currParam.getName(), currParam.getExpr(), false);
+			} catch (DMLParseException e){
+				runningList.add(e);
+			}
+		}
+		if (fname.equals("writeMM")){
+			StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET);
+			addExprParam(DataExpression.FORMAT_TYPE, writeMMExpr, false);
+		}
+		else if (fname.equals("write.csv")){
+			StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV);
+			addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
+		}
+		
+		if (runningList.size() > 0)
+			throw runningList;
+	}
+	
+	public void setExprParam(String name, Expression value) {
+		_paramsExpr.addVarParam(name, value);
+	}
+	
+	public static boolean isValidParamName(String key){
+		for (String paramName : WRITE_VALID_PARAM_NAMES)
+			if (paramName.equals(key))
+				return true;
+			return false;
+	}
+	
+	public void addExprParam(String name, Expression value, boolean fromMTDFile) throws DMLParseException
+	{
+		DMLParseException runningList = new DMLParseException(value.getFilename());
+		
+		if (_paramsExpr.getVarParam(name) != null)
+			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once"));
+		
+		if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
+			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add invalid write statement parameter: " + name));
+		
+		_paramsExpr.addVarParam(name, value);
+		
+		if (runningList.size() > 0)
+			throw runningList;
+	}
+	
 	// rewrites statement to support function inlining (create deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
-		OutputStatement newStatement = new OutputStatement();
-
+		OutputStatement newStatement = new OutputStatement(null,Expression.DataOp.WRITE);
+		
 		// rewrite outputStatement variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
-		
-		// rewrite output filename expression (creates deep copy)
-		//Expression newFilenameExpr = _filenameExpr.rewriteExpression(prefix);
-		//newStatement.setFilenameExpr(newFilenameExpr);
 		
 		// rewrite parameter expressions (creates deep copy)
 		DataOp op = _paramsExpr.getOpCode();
@@ -57,11 +131,17 @@ public class OutputStatement extends IOStatement
 			newExprParams.put(key, newExpr);
 		}
 		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams);
-		newParamerizedExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		newParamerizedExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}
-	
+		
+	public void setExprParams(DataExpression newParamerizedExpr) {
+		_paramsExpr = newParamerizedExpr;
+	}
+	public Expression getExprParam(String key){
+		return _paramsExpr.getVarParam(key);
+	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}
 	public VariableSet initializebackwardLV(VariableSet lo){
@@ -71,9 +151,9 @@ public class OutputStatement extends IOStatement
 	public String toString(){
 		StringBuffer sb = new StringBuffer();
 		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
-		 sb.append( _id.toString() + ", " +  _paramsExpr.getVarParam(IO_FILENAME).toString());
+		 sb.append( _id.toString() + ", " +  _paramsExpr.getVarParam(DataExpression.IO_FILENAME).toString());
 		 for (String key : _paramsExpr.getVarParams().keySet()){
-			 if (!key.equals(IO_FILENAME))
+			 if (!key.equals(DataExpression.IO_FILENAME))
 				 sb.append(", " + key + "=" + _paramsExpr.getVarParam(key));
 		 }
 		 sb.append(" );");
@@ -100,5 +180,14 @@ public class OutputStatement extends IOStatement
 	@Override
 	public VariableSet variablesUpdated() {
 	  	return null;
+	}
+	
+	@Override
+	public boolean controlStatement() {
+		Expression fmt = _paramsExpr.getVarParam(DataExpression.FORMAT_TYPE);
+		if ( fmt != null && fmt.toString().equalsIgnoreCase("csv")) {
+			return true;
+		}
+		return false;
 	}
 }

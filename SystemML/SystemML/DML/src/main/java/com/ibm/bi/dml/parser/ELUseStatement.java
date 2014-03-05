@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-//package com.ibm.bi.dml.parser;
+package com.ibm.bi.dml.parser;
 //
 //import java.util.ArrayList;
 //import java.util.HashMap;
@@ -14,7 +14,45 @@
 //import com.ibm.bi.dml.utils.LanguageException;
 //
 //
-//public class ELUseStatement extends Statement {
+public class ELUseStatement extends Statement {
+
+	@Override
+	public boolean controlStatement() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public VariableSet initializebackwardLV(VariableSet lo)
+			throws LanguageException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void initializeforwardLV(VariableSet activeIn)
+			throws LanguageException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Statement rewriteStatement(String prefix) throws LanguageException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VariableSet variablesRead() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VariableSet variablesUpdated() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 //	
 //	private String _ensembleName;
 //	private ArrayList<String> _inputNames;	
@@ -180,4 +218,4 @@
 //	public MetaLearningFunctionParameters getFunctionParameters() {
 //		return _params;
 //	}
-//}
+}

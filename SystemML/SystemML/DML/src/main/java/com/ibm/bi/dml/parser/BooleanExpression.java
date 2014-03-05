@@ -24,20 +24,22 @@ public class BooleanExpression extends Expression
 		_kind = Kind.BooleanOp;
 		_opcode = bop;
 		
-		_beginLine		= 0;
-		_beginColumn	= 0;
-		_endLine		= 0;
-		_endColumn		= 0;
+		setFilename("MAIN SCRIPT");
+		setBeginLine(0);
+		setBeginColumn(0);
+		setEndLine(0);
+		setEndColumn(0);
 	}
 	
-	public BooleanExpression(BooleanOp bop, int beginLine, int beginColumn, int endLine, int endColumn){
+	public BooleanExpression(BooleanOp bop, String filename, int beginLine, int beginColumn, int endLine, int endColumn){
 		_kind = Kind.BooleanOp;
 		_opcode = bop;
 		
-		_beginLine		= beginLine;
-		_beginColumn	= beginColumn;
-		_endLine		= endLine;
-		_endColumn		= endColumn;
+		setFilename(filename);
+		setBeginLine(beginLine);
+		setBeginColumn(beginColumn);
+		setEndLine(endLine);
+		setEndColumn(endColumn);
 	}
 	
 	public BooleanOp getOpCode(){
@@ -49,8 +51,9 @@ public class BooleanExpression extends Expression
 		
 		// update script location information --> left expression is BEFORE in script
 		if (_left != null){
-			this._beginLine   = _left.getBeginLine();
-			this._beginColumn = _left.getBeginColumn();
+			this.setFilename(_left.getFilename());
+			this.setBeginLine(_left.getBeginLine());
+			this.setBeginColumn(_left.getBeginColumn());
 		}
 	}
 	
@@ -59,8 +62,9 @@ public class BooleanExpression extends Expression
 		
 		// update script location information --> right expression is AFTER in script
 		if (_right != null){
-			this._beginLine = _right.getEndLine();
-			this._beginColumn = _right.getEndColumn();
+			this.setFilename(_right.getFilename());
+			this.setBeginLine(_right.getBeginLine());
+			this.setBeginColumn(_right.getBeginColumn());
 		}
 	}
 	
@@ -75,7 +79,7 @@ public class BooleanExpression extends Expression
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		
 		
-		BooleanExpression newExpr = new BooleanExpression(this._opcode, this._beginLine, this._beginColumn, this._endLine, this._endColumn);
+		BooleanExpression newExpr = new BooleanExpression(this._opcode, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -93,7 +97,7 @@ public class BooleanExpression extends Expression
 			
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 		output.setBooleanProperties();
 		this.setOutput(output);

@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
-import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -17,10 +17,10 @@ public class CSVReblockInstruction extends ReblockInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public String  delim     = Statement.DEFAULT_DELIM_DELIMITER;
-	public boolean hasHeader = Statement.DEFAULT_DELIM_HAS_HEADER_ROW;
-	public boolean fill      = Statement.DEFAULT_DELIM_FILL;
-	public double  fillValue = Statement.DEFAULT_DELIM_FILL_VALUE;
+	public String  delim     = DataExpression.DEFAULT_DELIM_DELIMITER;
+	public boolean hasHeader = DataExpression.DEFAULT_DELIM_HAS_HEADER_ROW;
+	public boolean fill      = DataExpression.DEFAULT_DELIM_FILL;
+	public double  fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 
 	public CSVReblockInstruction(Operator op, byte in, byte out, int br,
 			int bc, boolean hasHeader, String delim, boolean fll, double mv, String istr) {

@@ -19,9 +19,10 @@ import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.RandStatement;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -87,7 +88,7 @@ public class DataGenOp extends Hop
 			index++;
 		}
 		if ( mthd == DataGenMethod.RAND )
-			sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
+			sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).get_name());
 
 		//generate base dir
 		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
@@ -262,8 +263,8 @@ public class DataGenOp extends Hop
 
 		if ( method == DataGenMethod.RAND ) 
 		{
-			input1 = getInput().get(_paramIndexMap.get(RandStatement.RAND_ROWS)); //rows
-			input2 = getInput().get(_paramIndexMap.get(RandStatement.RAND_COLS)); //cols
+			input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
+			input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
 			
 			//refresh rows information
 			refreshRowsParameterInformation(input1);
@@ -273,9 +274,9 @@ public class DataGenOp extends Hop
 		}
 		else if (method == DataGenMethod.SEQ ) 
 		{
-			input1 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_FROM));
-			input2 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_TO)); 
-			input3 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_INCR)); 
+			input1 = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
+			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
+			input3 = getInput().get(_paramIndexMap.get(Statement.SEQ_INCR)); 
 
 			HashMap<Long,Long> memo = new HashMap<Long, Long>();
 			long from = rEvalSimpleBinarySizeExpression(input1, memo);
@@ -360,7 +361,7 @@ public class DataGenOp extends Hop
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
 			if( method == DataGenMethod.RAND ){
-				Hop seed = getInput().get(_paramIndexMap.get(RandStatement.RAND_SEED));
+				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				if( seed.get_name().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) )
 					ret = false;
 			}

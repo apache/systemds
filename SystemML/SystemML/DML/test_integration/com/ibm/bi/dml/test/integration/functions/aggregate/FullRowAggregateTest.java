@@ -304,6 +304,68 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR);
 	}
 	
+	@Test
+	public void testRowIndexMaxDenseMatrixNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMaxDenseVectorNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMaxSparseMatrixNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMaxSparseVectorNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMaxDenseMatrixNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.MR, true);
+	}
+	
+	@Test
+	public void testRowIndexMaxDenseVectorNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR, true);
+	}
+	
+	
+	@Test
+	public void testRowIndexMaxSparseMatrixNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.MR, true);
+	}
+	
+	
+	@Test
+	public void testRowIndexMaxSparseVectorNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR, true);
+	}
+	
+	
+	/**
+	 * 
+	 * @param type
+	 * @param sparse
+	 * @param vector
+	 * @param instType
+	 */
+	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
+	{
+		runRowAggregateOperationTest(type, sparse, vector, instType, false);
+	}
 	
 	/**
 	 * 
@@ -311,7 +373,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
+	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean negativeData)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -348,7 +410,10 @@ public class FullRowAggregateTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 	
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
+			double min = negativeData ? -1 : -0.05;
+			double max = negativeData ? -0.05 : 1;
+					
+			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
 			boolean exceptionExpected = false;

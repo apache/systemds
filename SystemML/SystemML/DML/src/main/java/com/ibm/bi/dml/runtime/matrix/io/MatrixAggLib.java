@@ -81,6 +81,8 @@ public class MatrixAggLib
 	public static void aggregateBinaryMatrix(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
 		throws DMLRuntimeException
 	{	
+		//Timing time = new Timing(true);
+		
 		if(!in.sparse && !aggVal.sparse && !aggCorr.sparse)
 			aggregateBinaryMatrixDense(in, aggVal, aggCorr);
 		else if(in.sparse && !aggVal.sparse && !aggCorr.sparse)
@@ -88,6 +90,7 @@ public class MatrixAggLib
 		else
 			aggregateBinaryMatrixGeneric(in, aggVal, aggCorr);
 		
+		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -109,7 +112,7 @@ public class MatrixAggLib
 		else
 			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn);
 		
-		//System.out.println("uak+ ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+		//System.out.println("uagg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -908,15 +911,24 @@ public class MatrixAggLib
 				int maxindex = indexmax(avals, 0, init, alen, builtin);
 				c[cix+0] = (double)aix[maxindex] + 1;
 				c[cix+1] = avals[maxindex]; //max value
-			}
-			
-			//correction (not sparse-safe)
-			if( arow==null || arow.size()<n )
-				if( builtin.execute2( 0, c[cix+1] ) == 1 )
+				
+				//correction (not sparse-safe)	
+				if(alen < n && (builtin.execute2( 0, c[cix+1] ) == 1))
 				{
-					c[cix+0] = n; //max index (last)
+					int ix = n-1; //find last 0 value
+					for( int j=alen-1; j>=0; j--, ix-- )
+						if( aix[j]!=ix )
+							break;
+					c[cix+0] = ix + 1; //max index (last)
 					c[cix+1] = 0; //max value
-				} 
+				}
+			}
+			else //if( arow==null )
+			{
+				//correction (not sparse-safe)	
+				c[cix+0] = n; //max index (last)
+				c[cix+1] = 0; //max value
+			}
 		}
 	}
 	

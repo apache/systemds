@@ -15,17 +15,17 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.EqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.Equals;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
-import com.ibm.bi.dml.runtime.functionobjects.NotEqualsReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.Power2;
@@ -117,22 +117,22 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("min"), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
-			return new ScalarInstruction(new RightScalarOperator(GreaterThanReturnDouble.getGreaterThanReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
-			return new ScalarInstruction(new RightScalarOperator(GreaterThanEqualsReturnDouble.getGreaterThanEqualsReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
-			return new ScalarInstruction(new RightScalarOperator(LessThanReturnDouble.getLessThanReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(LessThan.getLessThanFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
-			return new ScalarInstruction(new RightScalarOperator(LessThanEqualsReturnDouble.getLessThanEqualsReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
-			return new ScalarInstruction(new RightScalarOperator(EqualsReturnDouble.getEqualsReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(Equals.getEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
-			return new ScalarInstruction(new RightScalarOperator(NotEqualsReturnDouble.getNotEqualsReturnDoubleFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(NotEquals.getNotEqualsFnObject(), cst), in, out, str);
 		}
 		
 		

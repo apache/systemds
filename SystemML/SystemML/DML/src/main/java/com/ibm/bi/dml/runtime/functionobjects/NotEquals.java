@@ -30,6 +30,20 @@ public class NotEquals extends ValueFunction
 		throw new CloneNotSupportedException();
 	}
 
+	/*
+	 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
+	 * <code>Double.compare()</code> due to the inconsistencies in the way
+	 * NaN and -0.0 are handled. The behavior of methods in
+	 * <code>Double</code> class are designed mainly to make Java
+	 * collections work properly. For more details, see the help for
+	 * <code>Double.equals()</codE> and <code>Double.comapreTo()</code>.
+	 */
+	
+	/**
+	 * execute() method that returns double is required since current map-reduce
+	 * runtime can only produce matrices of doubles. This method is used on MR
+	 * side to perform comparisons on matrices like A!=B and A!=2.5
+	 */
 	@Override
 	public double execute(double in1, double in2) {
 		return (in1 != in2 ? 1.0 : 0.0);
@@ -41,7 +55,7 @@ public class NotEquals extends ValueFunction
 	}
 	@Override
 	public boolean compare(double in1, double in2) {
-		return (Double.compare(in1, in2) != 0);
+		return (in1 != in2);
 	}
 
 	@Override
@@ -51,11 +65,11 @@ public class NotEquals extends ValueFunction
 
 	@Override
 	public boolean compare(double in1, int in2) {
-		return (Double.compare(in1, in2) != 0);
+		return (in1 != in2);
 	}
 
 	@Override
 	public boolean compare(int in1, double in2) {
-		return (Double.compare(in1, in2) != 0);
+		return (in1 != in2);
 	}
 }

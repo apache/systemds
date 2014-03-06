@@ -234,7 +234,7 @@ public class Builtin extends ValueFunction
 			return Math.sqrt(in); //faster in Math
 		
 		case PLOGP:
-			if (Double.compare(in, 0.0) == 0)
+			if (in == 0.0)
 				return 0.0;
 			else if (in < 0)
 				return Double.NaN;
@@ -263,10 +263,20 @@ public class Builtin extends ValueFunction
 	public double execute (double in1, double in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
+		/*
+		 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
+		 * <code>Double.compare()</code> due to the inconsistencies in the way
+		 * NaN and -0.0 are handled. The behavior of methods in
+		 * <code>Double</code> class are designed mainly to make Java
+		 * collections work properly. For more details, see the help for
+		 * <code>Double.equals()</code> and <code>Double.comapreTo()</code>.
+		 */
 		case MAX:
-			return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
+			//return (Double.compare(in1, in2) >= 0 ? in1 : in2);
+			return (in1 >= in2 ? in1 : in2);
 		case MIN:
-			return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
+			//return (Double.compare(in1, in2) <= 0 ? in1 : in2);
+			return (in1 <= in2 ? in1 : in2);
 		case MAXINDEX: 
 			return (in1 >= in2) ? 1 : 0;
 		case LOG:

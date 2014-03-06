@@ -11,16 +11,16 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.EqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.Equals;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.NotEqualsReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -80,22 +80,22 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
-			return new BinaryInstruction(new BinaryOperator(GreaterThanReturnDouble.getGreaterThanReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(GreaterThan.getGreaterThanFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
-			return new BinaryInstruction(new BinaryOperator(GreaterThanEqualsReturnDouble.getGreaterThanEqualsReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
-			return new BinaryInstruction(new BinaryOperator(LessThanReturnDouble.getLessThanReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(LessThan.getLessThanFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
-			return new BinaryInstruction(new BinaryOperator(LessThanEqualsReturnDouble.getLessThanEqualsReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
-			return new BinaryInstruction(new BinaryOperator(EqualsReturnDouble.getEqualsReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(Equals.getEqualsFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
-			return new BinaryInstruction(new BinaryOperator(NotEqualsReturnDouble.getNotEqualsReturnDoubleFnObject()), in1, in2, out, str);
+			return new BinaryInstruction(new BinaryOperator(NotEquals.getNotEqualsFnObject()), in1, in2, out, str);
 		}
 		return null;
 	}

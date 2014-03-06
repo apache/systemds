@@ -75,5 +75,13 @@ public class PartialMVMult extends Lop
 		return sb.toString();
 	}
 
+	public boolean usesDistributedCache() {
+		return true;
+	}
+	
+	public int distributedCacheInputIndex() {
+		return 2;  // second input is from distributed cache
+	}
+
 
 }

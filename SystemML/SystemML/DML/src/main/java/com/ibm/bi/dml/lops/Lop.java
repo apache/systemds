@@ -672,4 +672,17 @@ public abstract class Lop
 		}
 	}
 	
+	/**
+	 * Method to check if a LOP expects an input from the Distributed Cache.
+	 * The method in parent class always returns <code>false</code> (default).
+	 * It must be overridden by individual LOPs that use the cache.
+	 */
+	public boolean usesDistributedCache() {
+		return false;
+	}
+	
+	public int distributedCacheInputIndex() {
+		return -1;
+	}
+
 }

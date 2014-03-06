@@ -1,0 +1,8 @@
+
+A = read($1); #Rand(rows=100, cols=100, seed=10);
+x = read($2); #Rand(rows=100, cols=1, seed=10);
+
+y = A %*% x;
+z = A %*% y;
+
+write(z, $3);

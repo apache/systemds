@@ -1028,7 +1028,16 @@ public class Dag<N extends Lop>
 
 				// map node, add, if no parent needs reduce, else queue
 				if (node.getExecLocation() == ExecLocation.Map) {
-					if (!hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
+					boolean queueThisNode = false;
+					if ( node.usesDistributedCache() ) {
+						// if an input to <code>node</code> must come from distributed cache
+						// then that input must get executed in one of previous jobs.
+						int dcInputIndex = node.distributedCacheInputIndex();
+						N dcInput = (N) node.getInputs().get(dcInputIndex-1);
+						if ( dcInput.getType() != Lop.Type.Data &&  execNodes.contains(dcInput) )
+							queueThisNode = true;
+					}
+					if (!queueThisNode && !hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
 						LOG.trace(indent + "Adding -"
 									+ node.toString());
 						execNodes.add(node);

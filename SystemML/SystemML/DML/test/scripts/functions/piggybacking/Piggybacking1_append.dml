@@ -1,0 +1,10 @@
+A = matrix(1,10,10);
+v = matrix(2,10,1);
+
+v = v+sum(A);
+B = append(A,v);
+
+s = sum(B);
+
+write(s, $1);
+

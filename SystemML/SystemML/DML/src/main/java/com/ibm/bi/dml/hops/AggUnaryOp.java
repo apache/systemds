@@ -286,7 +286,37 @@ public class AggUnaryOp extends Hop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		return 0;
+		 //default: no additional memory required
+		double val = 0;
+		
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		
+		switch( _op ) //see MatrixAggLib for runtime operations
+		{
+			case MAX:
+			case MIN:
+				//worst-case: column-wise, sparse (temp int count arrays)
+				if( _direction == Direction.Col )
+					val = dim2 * OptimizerUtils.INT_SIZE;
+				break;
+			case SUM:
+				//worst-case correction LASTROW / LASTCOLUMN 
+				if( _direction == Direction.Col ) //(potentially sparse)
+					val = OptimizerUtils.estimateSizeExactSparsity(1, dim2, sparsity);
+				else if( _direction == Direction.Row ) //(always dense)
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
+				break;
+			case MEAN:
+				System.out.println(_direction);
+				//worst-case correction LASTTWOROWS / LASTTWOCOLUMNS 
+				if( _direction == Direction.Col ) //(potentially sparse)
+					val = OptimizerUtils.estimateSizeExactSparsity(2, dim2, sparsity);
+				else if( _direction == Direction.Row ) //(always dense)
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
+				break;
+		}
+		
+		return val;
 	}
 	
 	@Override

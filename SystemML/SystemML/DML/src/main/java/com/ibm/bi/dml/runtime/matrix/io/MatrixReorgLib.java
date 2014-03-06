@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,14 +9,16 @@
 package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 /**
  * MB:
@@ -24,20 +26,60 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
  * and all combinations of dense and sparse representations.
  * 
  * Current list of supported operations:
- *  - reshape
+ *  - reshape, r' (transpose)
  * 
  */
 public class MatrixReorgLib 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
 	/////////////////////////
-	// public CP interface //
+	// public interface    //
 	/////////////////////////
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static boolean isSupportedReorgOperator( ReorgOperator op )
+	{
+		//transpose operation
+		if( op.fn.equals(SwapIndex.getSwapIndexFnObject()) )
+			return true;
+		
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlockDSM transpose( MatrixBlockDSM in, MatrixBlockDSM out ) 
+		throws DMLRuntimeException
+	{
+		//Timing time = new Timing(true);
+		
+		if( !in.sparse && !out.sparse )
+			transposeDenseToDense( in, out );
+		else if( in.sparse && out.sparse )
+			transposeSparseToSparse( in, out );
+		else if( in.sparse )
+			transposeSparseToDense( in, out );
+		else
+			transposeDenseToSparse( in, out );
+		
+		//System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		
+		return out;
+	}
 	
 	/**
 	 * CP reshape operation (single input, single output matrix) 
@@ -69,8 +111,6 @@ public class MatrixReorgLib
 	    double sp = ((double)in.nonZeros/rlen)/clen;
 	    out.sparse = (sp<MatrixBlockDSM.SPARCITY_TURN_POINT && cols>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
 		
-	    //in.print();
-	    
 		//core reshape (sparse or dense)	
 		if(!in.sparse && !out.sparse)
 			reshapeDense(in, out, rows, cols, rowwise);		
@@ -93,12 +133,10 @@ public class MatrixReorgLib
 	}
 
 
-	/////////////////////////
-	// public MR interface //
-	/////////////////////////
-	
 	/**
-	 * 
+	 * MR interface - for reshape we cannot view blocks independently, and hence,
+	 * there are different CP and MR interfaces.
+	 *  
 	 * @param in
 	 * @param rows1
 	 * @param cols1
@@ -146,6 +184,248 @@ public class MatrixReorgLib
 	///////////////////////////////
 	// private CP implementation //
 	///////////////////////////////
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void transposeDenseToDense(MatrixBlockDSM in, MatrixBlockDSM out)
+	{
+		if( in.denseBlock == null )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
+		double[] a = in.getDenseArray();
+		double[] c = out.getDenseArray();
+		
+		//blocking according to typical L2 cache sizes 
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128; 
+		
+		//blocked execution
+		for( int bi = 0; bi<m; bi+=blocksizeI )
+			for( int bj = 0; bj<n; bj+=blocksizeJ )
+			{
+				int bimin = Math.min(bi+blocksizeI, m);
+				int bjmin = Math.min(bj+blocksizeJ, n);
+				//core transpose operation
+				for( int i=bi; i<bimin; i++ )
+				{
+					int aix = i * n + bj;
+					int cix = bj * n2 + i;
+					transposeRow(a, c, aix, cix, n2, bjmin-bj);
+				}
+			}
+		
+		out.nonZeros = in.nonZeros;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void transposeDenseToSparse(MatrixBlockDSM in, MatrixBlockDSM out)
+	{
+		if( in.denseBlock == null )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		final int ennz2 = in.nonZeros/m2; 
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, true); //always sparse
+		out.adjustSparseRows(m2);
+				
+		double[] a = in.getDenseArray();
+		SparseRow[] c = out.getSparseRows();
+		
+		//blocking according to typical L2 cache sizes 
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128; 
+		
+		//blocked execution
+		for( int bi = 0; bi<m; bi+=blocksizeI )
+			for( int bj = 0; bj<n; bj+=blocksizeJ )
+			{
+				int bimin = Math.min(bi+blocksizeI, m);
+				int bjmin = Math.min(bj+blocksizeJ, n);
+				//core transpose operation
+				for( int i=bi; i<bimin; i++ )				
+					for( int j=bj, aix=i*n+bj; j<bjmin; j++, aix++ )
+					{
+						if( c[j] == null )
+							 c[j] = new SparseRow(ennz2,n2);
+						c[j].append(i, a[aix]);
+					}
+			}
+		
+		out.nonZeros = in.nonZeros;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void transposeSparseToSparse(MatrixBlockDSM in, MatrixBlockDSM out)
+	{
+		if( in.sparseRows == null )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		final int ennz2 = in.nonZeros/m2; 
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, true); //always sparse
+		out.adjustSparseRows(m2);
+		
+		SparseRow[] a = in.getSparseRows();
+		SparseRow[] c = out.getSparseRows();
+		
+		//blocking according to typical L2 cache sizes 
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128; 
+	
+		//temporary array for block boundaries (for preventing binary search) 
+		int[] ix = new int[blocksizeI];
+		
+		//blocked execution
+		for( int bi = 0; bi<m; bi+=blocksizeI )
+		{
+			Arrays.fill(ix, 0);
+			for( int bj = 0; bj<n; bj+=blocksizeJ )
+			{
+				int bimin = Math.min(bi+blocksizeI, m);
+				int bjmin = Math.min(bj+blocksizeJ, n);
+
+				//core transpose operation
+				for( int i=bi, iix=0; i<bimin; i++, iix++ )
+				{
+					SparseRow arow = a[i];
+					if( arow!=null && arow.size()>0 )
+					{
+						int alen = arow.size();
+						double[] avals = arow.getValueContainer();
+						int[] aix = arow.getIndexContainer();
+						int j = ix[iix]; //last block boundary
+						for( ; j<alen && aix[j]<bjmin; j++ )
+						{
+							if( c[aix[j]] == null )
+								 c[aix[j]] = new SparseRow(ennz2,n2);
+							c[aix[j]].append(i, avals[j]);
+						}
+						ix[iix] = j; //keep block boundary
+					}
+				}
+			}
+		}
+		out.nonZeros = in.nonZeros;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void transposeSparseToDense(MatrixBlockDSM in, MatrixBlockDSM out)
+	{
+		if( in.sparseRows == null )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
+		SparseRow[] a = in.getSparseRows();
+		double[] c = out.getDenseArray();
+		
+		//blocking according to typical L2 cache sizes 
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128; 
+	
+		//temporary array for block boundaries (for preventing binary search) 
+		int[] ix = new int[blocksizeI];
+		
+		//blocked execution
+		for( int bi = 0; bi<m; bi+=blocksizeI )
+		{
+			Arrays.fill(ix, 0);
+			for( int bj = 0; bj<n; bj+=blocksizeJ )
+			{
+				int bimin = Math.min(bi+blocksizeI, m);
+				int bjmin = Math.min(bj+blocksizeJ, n);
+
+				//core transpose operation
+				for( int i=bi, iix=0; i<bimin; i++, iix++ )
+				{
+					SparseRow arow = a[i];
+					if( arow!=null && arow.size()>0 )
+					{
+						int alen = arow.size();
+						double[] avals = arow.getValueContainer();
+						int[] aix = arow.getIndexContainer();
+						int j = ix[iix]; //last block boundary
+						for( ; j<alen && aix[j]<bjmin; j++ )
+							c[ aix[j]*n2+i ] = avals[ j ];
+						ix[iix] = j; //keep block boundary						
+					}
+				}
+			}
+		}
+		out.nonZeros = in.nonZeros;
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param aix
+	 * @param cix
+	 * @param n2
+	 * @param len
+	 */
+	private static void transposeRow( double[] a, double[] c, int aix, int cix, int n2, int len )
+	{
+		final int bn = len%8;
+		
+		//compute rest (not aligned to 8-blocks)
+		for( int j=0; j<bn; j++, aix++, cix+=n2 )
+			c[ cix ] = a[ aix+0 ];	
+		
+		//unrolled 8-blocks
+		for( int j=bn; j<len; j+=8, aix+=8, cix+=8*n2 )
+		{
+			c[ cix + 0*n2 ] = a[ aix+0 ];
+			c[ cix + 1*n2 ] = a[ aix+1 ];
+			c[ cix + 2*n2 ] = a[ aix+2 ];
+			c[ cix + 3*n2 ] = a[ aix+3 ];
+			c[ cix + 4*n2 ] = a[ aix+4 ];
+			c[ cix + 5*n2 ] = a[ aix+5 ];
+			c[ cix + 6*n2 ] = a[ aix+6 ];
+			c[ cix + 7*n2 ] = a[ aix+7 ];	
+		}
+	}
 	
 	/**
 	 * 
@@ -521,7 +801,7 @@ public class MatrixReorgLib
 	 * @param rowwise
 	 * @return
 	 */
-	public static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
+	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
             long rows1, long cols1, int brlen1, int bclen1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
 	{
@@ -606,7 +886,7 @@ public class MatrixReorgLib
 	 * @param reuse 
 	 * @return
 	 */
-	public static HashMap<MatrixIndexes, MatrixBlockDSM> createAllResultBlocks( Collection<MatrixIndexes> rix,
+	private static HashMap<MatrixIndexes, MatrixBlockDSM> createAllResultBlocks( Collection<MatrixIndexes> rix,
             long nnz, long rows1, long cols1, int brlen1, int bclen1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise, ArrayList<IndexedMatrixValue> reuse )
 	{
@@ -709,7 +989,7 @@ public class MatrixReorgLib
 	 * @param bclen2
 	 * @param rowwise
 	 */
-	public static void reshapeSparse( MatrixBlockDSM in, long row_offset, long col_offset, 
+	private static void reshapeSparse( MatrixBlockDSM in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlockDSM> rix,
             long rows1, long cols1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
@@ -762,7 +1042,7 @@ public class MatrixReorgLib
 	 * @param rowwise
 	 * @return
 	 */
-	public static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
+	private static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
 			            long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
 	{
 		long ci, cj, tempc;
@@ -807,7 +1087,7 @@ public class MatrixReorgLib
 	 * @param rowwise
 	 * @return
 	 */
-	public static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
+	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
             long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
 	{
 		long ci, cj, tempc;
@@ -827,32 +1107,5 @@ public class MatrixReorgLib
 
 		ixout.setIndexes(ci, cj);	
 		return ixout;
-	}
-	
-	
-	public static void main(String[] args)
-	{
-		try 
-		{
-			//create input matrix
-			MatrixBlockDSM mb = new MatrixBlock();
-			mb = mb.getNormalRandomSparseMatrixOLD(5000, 5000, 1.0, 7);
-			mb.examSparsity();
-			//mb.print();
-			
-			Timing time = new Timing();
-			time.start();
-	
-			MatrixBlockDSM out = new MatrixBlockDSM();
-			MatrixReorgLib.reshape(mb, out, 10000, 2500, false);
-
-			System.out.println("Matrix reshape> "+time.stop());
-			
-			//out.print();
-		} 
-		catch (DMLRuntimeException e) 
-		{
-			e.printStackTrace();
-		}
 	}
 }

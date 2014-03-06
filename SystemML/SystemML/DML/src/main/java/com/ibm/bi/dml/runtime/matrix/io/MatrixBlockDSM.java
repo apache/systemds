@@ -336,14 +336,23 @@ public class MatrixBlockDSM extends MatrixValue
 		return est;
 	}
 	
-	private static boolean checkRealSparcity(MatrixBlockDSM m)
+	private static boolean checkRealSparsity(MatrixBlockDSM m)
 	{
+		return checkRealSparsity( m, false );
+	}
+	
+	private static boolean checkRealSparsity(MatrixBlockDSM m, boolean transpose)
+	{
+		int lrlen = (transpose) ? m.clen : m.rlen;
+		int lclen = (transpose) ? m.rlen : m.clen;
+		int lnnz = m.getNonZeros();
+		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(m.getNumColumns()<=SKINNY_MATRIX_TURN_POINT)
+		if(lclen<=SKINNY_MATRIX_TURN_POINT)
 			return false;
 		else
-			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
+			return (((double)lnnz)/lrlen/lclen < SPARCITY_TURN_POINT);
 	}
 	
 	/**
@@ -725,7 +734,7 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		this.rlen=that.rlen;
 		this.clen=that.clen;
-		this.sparse=checkRealSparcity(that);
+		this.sparse=checkRealSparsity(that);
 		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
@@ -2556,77 +2565,69 @@ public class MatrixBlockDSM extends MatrixValue
 			sps=true;
 		}
 		else
-			sps=checkRealSparcity(this);
+			sps = checkRealSparsity(this, true);
 			
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
-		CellIndex temp = new CellIndex(0, 0);
-		if(sparse)
+		if( MatrixReorgLib.isSupportedReorgOperator(op) )
+			MatrixReorgLib.transpose(this, result);
+		else
 		{
-			if(sparseRows!=null)
+			CellIndex temp = new CellIndex(0, 0);
+			if(sparse)
 			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
+				if(sparseRows!=null)
 				{
-					if(sparseRows[r]==null) continue;
-					int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
+					for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 					{
-						result.tempCellIndex.set(r, cols[i]);
-						op.fn.execute(result.tempCellIndex, temp);
-						result.appendValue(temp.row, temp.column, values[i]);
+						if(sparseRows[r]==null) continue;
+						int[] cols=sparseRows[r].getIndexContainer();
+						double[] values=sparseRows[r].getValueContainer();
+						for(int i=0; i<sparseRows[r].size(); i++)
+						{
+							result.tempCellIndex.set(r, cols[i]);
+							op.fn.execute(result.tempCellIndex, temp);
+							result.appendValue(temp.row, temp.column, values[i]);
+						}
 					}
 				}
 			}
-		}
-		else
-		{
-			if( denseBlock != null ) 
+			else
 			{
-				if( result.isInSparseFormat() ) //SPARSE<-DENSE
+				if( denseBlock != null ) 
 				{
-					double[] a = denseBlock;
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ )
-						{
-							temp.set(i, j);
-							op.fn.execute(temp, temp);
-							result.appendValue(temp.row, temp.column, a[aix]);	
-						}
+					if( result.isInSparseFormat() ) //SPARSE<-DENSE
+					{
+						double[] a = denseBlock;
+						for( int i=0, aix=0; i<rlen; i++ )
+							for( int j=0; j<clen; j++, aix++ )
+							{
+								temp.set(i, j);
+								op.fn.execute(temp, temp);
+								result.appendValue(temp.row, temp.column, a[aix]);	
+							}
+					}
+					else //DENSE<-DENSE
+					{
+						result.allocateDenseBlock();
+						Arrays.fill(result.denseBlock, 0);
+						double[] a = denseBlock;
+						double[] c = result.denseBlock;
+						int n = result.clen;
+						
+						for( int i=0, aix=0; i<rlen; i++ )
+							for( int j=0; j<clen; j++, aix++ )
+							{
+								temp.set(i, j);
+								op.fn.execute(temp, temp);
+								c[temp.row*n+temp.column] = a[aix];	
+							}
+						result.nonZeros = nonZeros;
+					}
 				}
-				else //DENSE<-DENSE
-				{
-					result.allocateDenseBlock();
-					Arrays.fill(result.denseBlock, 0);
-					double[] a = denseBlock;
-					double[] c = result.denseBlock;
-					int n = result.clen;
-					
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ )
-						{
-							temp.set(i, j);
-							op.fn.execute(temp, temp);
-							c[temp.row*n+temp.column] = a[aix];	
-						}
-					result.nonZeros = nonZeros;
-				}
-				
-				/*
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					temp.set(r, c);
-					op.fn.execute(temp, temp);
-					result.appendValue(temp.row, temp.column, denseBlock[i]);
-				}
-				*/
 			}
 		}
 		
@@ -2665,7 +2666,7 @@ public class MatrixBlockDSM extends MatrixValue
 		if(reducedDim)
 			sps=false;
 		else
-			sps=checkRealSparcity(this);
+			sps=checkRealSparsity(this);
 			
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);

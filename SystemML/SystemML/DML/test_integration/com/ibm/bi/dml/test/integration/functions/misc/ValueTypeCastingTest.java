@@ -151,6 +151,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 				MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "V.mtd", vtIn, mc, OutputInfo.TextCellOutputInfo);
 			}
 			else{
+				MapReduceTool.deleteFileIfExistOnHDFS(HOME + INPUT_DIR + "V");
 				switch( vtIn ) 
 				{
 					case DOUBLE: 

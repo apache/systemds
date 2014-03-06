@@ -249,14 +249,19 @@ public class FunctionOp extends Hop
 		throws HopsException 
 	{
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
-			System.out.println(getFunctionName() + " " + (getMemEstimate()/1024/1024) + " " + (OptimizerUtils.getMemBudget(true)/1024/1024));
+			// Since the memory estimate is only conservative, do not throw
+			// exception if the estimated memory is larger than the budget
+			// Nevertheless, memory estimates these functions are useful for 
+			// other purposes, such as compiling parfor
+			return ExecType.CP;
+			
 			// check if there is sufficient memory to execute this function
-			if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
+			/*if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
 				return ExecType.CP;
 			}
 			else {
 				throw new HopsException("Insufficient memory to execute function: " + getFunctionName());
-			}
+			}*/
 		}
 		// the actual function call is always CP
 		return ExecType.CP;

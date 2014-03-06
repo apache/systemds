@@ -303,9 +303,11 @@ public class Builtin extends ValueFunction
 	{
 		switch(bFunc) {		
 			case MAX:
-				return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
+				//return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
+				return (in1 >= in2 ? in1 : in2);
 			case MIN:
-				return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
+				//return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
+				return (in1 <= in2 ? in1 : in2);
 			case MAXINDEX: 
 				return (in1 >= in2) ? 1 : 0;	
 		}

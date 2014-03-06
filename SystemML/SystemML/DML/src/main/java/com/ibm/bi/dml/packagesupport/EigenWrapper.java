@@ -100,13 +100,13 @@ public class EigenWrapper extends PackageFunction
 					org.netlib.lapack.DSYEVR.DSYEVR("V", (numComponents==arr.length) ? "A":"I" , "U", arr.length, arr, -1, -1, 1, numComponents, 0.0, numValues, e_values, e_vectors, i_suppz, work, 26*arr.length, iwork, 10*arr.length, info);
 			}
 			
-			double[][] tmp = new double[e_values.length][e_values.length];
+			/*double[][] tmp = new double[e_values.length][e_values.length];
 			for(int i=0; i < e_values.length; i++)
-				tmp[i][i] = e_values[i];
+				tmp[i][i] = e_values[i];*/
 			
 			//create output matrices
 			return_e_values = new Matrix( e_values.length, e_values.length, ValueType.Double );
-			return_e_values.setMatrixDoubleArray(tmp);			
+			return_e_values.setMatrixDoubleArray(e_values);			
 			return_e_vectors = new Matrix( e_vectors.length, e_vectors.length, ValueType.Double );
 			return_e_vectors.setMatrixDoubleArray(e_vectors);
 			if (this.getNumFunctionInputs() == 2)

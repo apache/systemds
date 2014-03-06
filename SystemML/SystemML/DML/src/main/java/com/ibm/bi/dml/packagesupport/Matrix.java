@@ -222,6 +222,22 @@ public class Matrix extends FIO
 	 * 
 	 * @return
 	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 */
+	public void setMatrixDoubleArray(double[] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
+		throws IOException, DMLRuntimeException 
+	{
+		MatrixBlock mb = DataConverter.convertToMatrixBlock(data, true);
+		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+	}
+	
+	/**
+	 * Method to set matrix as double array. This should only be used if the
+	 * user knows the matrix fits in memory. We are using the dense
+	 * representation.
+	 * 
+	 * @return
+	 * @throws IOException 
 	 */
 	public void setMatrixDoubleArray(MatrixBlock mb, OutputInfo oinfo, InputInfo iinfo) 
 		throws IOException 

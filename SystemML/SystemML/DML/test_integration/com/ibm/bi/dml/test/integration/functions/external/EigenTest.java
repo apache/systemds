@@ -43,7 +43,7 @@ public class EigenTest extends AutomatedTestBase
 
 		runTest();
 		
-		double [][] val = {{-1, 0, 0}, {0, 1, 0}, {0, 0, 2}};
+		double [][] val = {{-1}, {1}, {2}};
 		double [][] vec = {
 				{0.81649, 0, -0.57735},
 				{-0.4082, 0.7071, -0.57735},

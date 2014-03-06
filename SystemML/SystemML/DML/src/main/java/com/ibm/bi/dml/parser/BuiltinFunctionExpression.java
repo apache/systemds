@@ -165,16 +165,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				throw new LanguageException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + _first.getOutput().getDim1() + ", cols="+ _first.getOutput().getDim2() +")");
 			}
 			
-			// Output1 - Eigen Vectors
+			// Output1 - Eigen Values
 			eigenOut1.setDataType(DataType.MATRIX);
 			eigenOut1.setValueType(ValueType.DOUBLE);
-			eigenOut1.setDimensions(_first.getOutput().getDim1(), _first.getOutput().getDim2());
+			eigenOut1.setDimensions(_first.getOutput().getDim1(), 1);
 			eigenOut1.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
 			
-			// Output2 - Eigen Values
+			// Output2 - Eigen Vectors
 			eigenOut2.setDataType(DataType.MATRIX);
 			eigenOut2.setValueType(ValueType.DOUBLE);
-			eigenOut2.setDimensions(_first.getOutput().getDim1(), 1);
+			eigenOut2.setDimensions(_first.getOutput().getDim1(), _first.getOutput().getDim2());
 			eigenOut2.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
 			
 			break;

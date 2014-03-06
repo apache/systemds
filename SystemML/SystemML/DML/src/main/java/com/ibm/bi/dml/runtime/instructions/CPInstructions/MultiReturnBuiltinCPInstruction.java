@@ -132,74 +132,44 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 
 	private void performLU(ExecutionContext ec) throws DMLRuntimeException {
 		// Prepare input to commons math function
-		long start = System.nanoTime();
-		long begin = start;
-		
 		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.get_name());
 		if ( mobjInput.getNumRows() != mobjInput.getNumColumns() ) {
 			throw new DMLRuntimeException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + mobjInput.getNumRows() + ", cols="+ mobjInput.getNumColumns() +")");
 		}
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
-		long prep = System.nanoTime() - begin;
 		
 		// Perform LUP decomposition
-		begin = System.nanoTime();
 		LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
-		long decompose = System.nanoTime() - begin;
-		begin = System.nanoTime();
 		RealMatrix P = ludecompose.getP();
 		RealMatrix L = ludecompose.getL();
 		RealMatrix U = ludecompose.getU();
-		long extract = System.nanoTime() - begin;
 		
 		// Read the results into native format
-		begin = System.nanoTime();
 		MatrixBlock mbP = DataConverter.convertToMatrixBlock(P.getData());
 		MatrixBlock mbL = DataConverter.convertToMatrixBlock(L.getData());
 		MatrixBlock mbU = DataConverter.convertToMatrixBlock(U.getData());
-		long prepResults = System.nanoTime() - begin;
 		
 		ec.setMatrixOutput(_outputs.get(0).get_name(), mbP);
 		ec.setMatrixOutput(_outputs.get(1).get_name(), mbL);
 		ec.setMatrixOutput(_outputs.get(2).get_name(), mbU);
 		//ec.releaseMatrixInput(input1.get_name());
-		long stop = System.nanoTime() - start;
-		System.out.println("LUPTime " + (stop*1e-9) + ", " + (prep*1e-9) + ", " + (decompose*1e-9) + ", " + (extract*1e-9) + ", " + (prepResults*1e-9));
 	}
 	
 	private void performQR(ExecutionContext ec) throws DMLRuntimeException {
 		// Prepare input to commons math function
-		//long start = System.nanoTime();
-		//long begin = start;
-		System.out.println("Processing QR...");
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
-		System.out.println("  Setup input");
-		//long prep = System.nanoTime() - begin;
 		
 		// Perform QR decomposition
-		//begin = System.nanoTime();
 		QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
-		System.out.println("  Called constructor");
-		//long decompose = System.nanoTime() - begin;
-		//begin = System.nanoTime();
 		RealMatrix H = qrdecompose.getH();
 		RealMatrix R = qrdecompose.getR();
-		System.out.println("  Got H and R");
-		//long extract = System.nanoTime() - begin;
 		
 		// Read the results into native format
-		//begin = System.nanoTime();
 		MatrixBlock mbH = DataConverter.convertToMatrixBlock(H.getData());
 		MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
-		System.out.println("  Converted H and R into MatrixBlock");
-		//long prepResults = System.nanoTime() - begin;
 		
 		ec.setMatrixOutput(_outputs.get(0).get_name(), mbH);
 		ec.setMatrixOutput(_outputs.get(1).get_name(), mbR);
-		System.out.println("QR Done!");
-		//ec.releaseMatrixInput(input1.get_name());
-		//long stop = System.nanoTime() - start;
-		//System.out.println("QRTime" + (stop*1e-9) + ", " + (prep*1e-9) + ", " + (decompose*1e-9) + ", " + (extract*1e-9) + ", " + (prepResults*1e-9));
 	}
 	
 	/**
@@ -217,30 +187,37 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		
 		EigenDecompositionImpl eigendecompose = new EigenDecompositionImpl(matrixInput, 0.0);
-		RealMatrix eVectors = eigendecompose.getV();
+		RealMatrix eVectorsMatrix = eigendecompose.getV();
+		double[][] eVectors = eVectorsMatrix.getData();
 		double[] eValues = eigendecompose.getRealEigenvalues();
 		
-		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors.getData());
-		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
-		
-		/*RealMatrix Vt = eigendecompose.getVT();
-		RealMatrix D = eigendecompose.getD();
-		
-		double[][] diff = eVectors.multiply(D).multiply(Vt).subtract(matrixInput).getData();
-		double sum=0, count=0;
-		for(int i=0; i < diff.length; i++) {
-			for(int j=0; j< diff[i].length; j++) {
-				sum += diff[i][j];
-				if(diff[i][j] > 0) {
-					System.out.println("    " + diff[i][j]);
-					count++;
-				}
-			}
+		//Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
+		int n = eValues.length;
+		for (int i = 0; i < n; i++) {
+		    int k = i;
+		    double p = eValues[i];
+		    for (int j = i + 1; j < n; j++) {
+		        if (eValues[j] < p) {
+		            k = j;
+		            p = eValues[j];
+		        }
+		    }
+		    if (k != i) {
+		        eValues[k] = eValues[i];
+		        eValues[i] = p;
+		        for (int j = 0; j < n; j++) {
+		            p = eVectors[j][i];
+		            eVectors[j][i] = eVectors[j][k];
+		            eVectors[j][k] = p;
+		        }
+		    }
 		}
-		System.out.println("  --> " + sum + "  " + count);*/
+
+		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
+		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
 		
-		ec.setMatrixOutput(_outputs.get(0).get_name(), mbVectors);
-		ec.setMatrixOutput(_outputs.get(1).get_name(), mbValues);
+		ec.setMatrixOutput(_outputs.get(0).get_name(), mbValues);
+		ec.setMatrixOutput(_outputs.get(1).get_name(), mbVectors);
 	}
 
 }

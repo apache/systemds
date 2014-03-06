@@ -26,6 +26,7 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	private final static int rows1 = 500;
 	private final static int rows2 = 1000;
 	private final static double sparsity = 0.9;
+	private final static int numEigenValuesToEvaluate = 15;
 	
 	@Override
 	public void setUp() 
@@ -86,6 +87,7 @@ public class EigenFactorizeTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
+											Integer.toString(numEigenValuesToEvaluate),
 											HOME + OUTPUT_DIR + "D" };
 
 		loadTestConfiguration(config);
@@ -95,15 +97,15 @@ public class EigenFactorizeTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("A", A, false, mc);
 		
 		// Expected matrix = 1x1 zero matrix 
-		double[][] D  = new double[1][1];
-		D[0][0] = 0.0;
-		//for(int i=0; i < rows; i++)
-		//	D[i][0] = 0.0;
+		double[][] D  = new double[numEigenValuesToEvaluate][1];
+		//D[0][0] = 0.0;
+		for(int i=0; i < numEigenValuesToEvaluate; i++)
+			D[i][0] = 0.0;
 		writeExpectedMatrix("D", D);		
 		
 		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, -1);
-		compareResults(1e-7);
+		compareResults(1e-8);
 		
 		rtplatform = rtold;
 	}

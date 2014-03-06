@@ -2018,9 +2018,9 @@ public class DataExpression extends DataIdentifier
         // if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd");
         if (mtdObject != null){
-        	String formatTypeString = (String)mtdObject.get(Statement.FORMAT_TYPE);
+        	String formatTypeString = (String)mtdObject.get(FORMAT_TYPE);
             if (formatTypeString != null ) {
-            	if ( formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV) )
+            	if ( formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV) )
             		return true;
             	else
             		return false;

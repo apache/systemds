@@ -2015,71 +2015,21 @@ public class DataExpression extends DataIdentifier
 	
 	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
 	 
-
         // if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd");
         if (mtdObject != null){
-        	String formatTypeString = (String)mtdObject.get(FORMAT_TYPE);
-        	if (formatTypeString == null || formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_BINARY) ){
-        		return false;
+        	String formatTypeString = (String)mtdObject.get(Statement.FORMAT_TYPE);
+            if (formatTypeString != null ) {
+            	if ( formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV) )
+            		return true;
+            	else
+            		return false;
         	}
         }
-           
-		boolean exists = false;
-		FileSystem fs = null;
-		
-		try {
-			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-		} catch (Exception e){
-			e.printStackTrace();
-			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
-		}
-		
-		Path pt = new Path(filename);
-		try {
-			if (fs.exists(pt)){
-				exists = true;
-			}
-		} catch (Exception e){
-			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
-			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
-		}
-	
-		try {
-				
-			// currently only support actual file, and do not support directory for delimited file
-			if (exists && fs.getFileStatus(pt).isDir()){
-				return false;
-			}
-			
-			// CASE: filename points to a file
-			else if (exists){
-				
-				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
-				
-				String headerLine = new String("");
-			
-				if (in.ready())
-					headerLine = in.readLine();
-				in.close();
-			
-				// check if there are delimited values "
-				if (getVarParam(DELIM_DELIMITER) != null)
-					return true;
-				else {
-					String defaultDelimiter = ",";
-					boolean lineHasDelimiters = headerLine.contains(defaultDelimiter);
-					return lineHasDelimiters;
-				}
-			}
-			else {
-				return false;
-			}
-			
-		} catch (Exception e){
-			return false;
-		}
+        return false;
+
+        // The file format must be specified either in .mtd file or in read() statement
+        // Therefore, one need not actually read the data to infer the format.
 	}
 	
 	

@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -54,6 +55,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	
 	//MR ParWorker attributes  
 	protected String  _stringID       = null; 
+	protected HashMap<String, String> _rvarFnames = null; 
 	
 	static
 	{
@@ -64,7 +66,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	
 	public RemoteParWorkerMapper( ) 
 	{
-		
+		//only used if JVM reuse is enabled in order to ensure consistent output 
+		//filenames across tasks of one reused worker (preaggregation)
+		_rvarFnames = new HashMap<String, String>();
 	}
 	
 	/**
@@ -86,23 +90,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			executeTask( lTask );
 		
 			//write output if required (matrix indexed write)
-			LongWritable okey = new LongWritable( _workerID ); //created once
-			Text ovalue = new Text();
-			for( String rvar : _resultVars )
-			{
-				Data dat = _ec.getVariable( rvar );
-				
-				//export output variable to HDFS (see RunMRJobs)
-				if ( dat.getDataType() == DataType.MATRIX ) {
-					MatrixObject inputObj = (MatrixObject) dat;
-					inputObj.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
-				}
-				
-				//pass output vars (scalars by value, matrix by ref) to result
-				String datStr = ProgramConverter.serializeDataObject(rvar, dat);
-				ovalue.set( datStr );
-				out.collect( okey, ovalue );	
-			}
+			exportResultVariables( out );
 		}
 		catch(Exception ex)
 		{
@@ -156,6 +144,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 					_numIters       = tmp._numIters;
 					_numTasks       = tmp._numTasks;
 										
+					_rvarFnames     = tmp._rvarFnames;
+					
 					requiresConfigure = false;
 				}
 			}
@@ -226,19 +216,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			Statistics.resetJITCompileTime();
 		}
 	}
-	
-	private void pinResultVariables()
-	{
-		for( String var : _resultVars )
-		{
-			Data dat = _ec.getVariable(var);
-			if( dat instanceof MatrixObject )
-			{
-				MatrixObject mo = (MatrixObject)dat;
-				mo.enableCleanup(false); 
-			}
-		}
-	}
 
 	/**
 	 * 
@@ -275,4 +252,69 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		}
 	}
 	
+	/**
+	 * 
+	 */
+	private void pinResultVariables()
+	{
+		for( String var : _resultVars )
+		{
+			Data dat = _ec.getVariable(var);
+			if( dat instanceof MatrixObject )
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				mo.enableCleanup(false); 
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @throws DMLRuntimeException 
+	 * @throws IOException 
+	 */
+	private void exportResultVariables( OutputCollector<Writable, Writable> out ) 
+		throws DMLRuntimeException, IOException
+	{
+		//create key and value for reuse
+		LongWritable okey = new LongWritable( _workerID ); 
+		Text ovalue = new Text();
+		
+		//foreach result variables probe if export necessary
+		for( String rvar : _resultVars )
+		{
+			Data dat = _ec.getVariable( rvar );
+			
+			//export output variable to HDFS (see RunMRJobs)
+			if ( dat.getDataType() == DataType.MATRIX ) 
+			{
+				MatrixObject mo = (MatrixObject) dat;
+				if( mo.isDirty() )
+				{
+					if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
+					{
+						String fname = _rvarFnames.get( rvar );
+						if( fname!=null )
+							mo.setFileName( fname );
+							
+						//export result var (iff actually modified in parfor)
+						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)		
+						_rvarFnames.put(rvar, mo.getFileName());	
+					}
+					else
+					{
+						//export result var (iff actually modified in parfor)
+						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
+					}
+					
+					//pass output vars (scalars by value, matrix by ref) to result
+					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
+					String datStr = ProgramConverter.serializeDataObject(rvar, mo);
+					ovalue.set( datStr );
+					out.collect( okey, ovalue );
+				}
+			}	
+		}
+	}
 }

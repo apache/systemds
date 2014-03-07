@@ -233,6 +233,12 @@ public class RemoteParForMR
 	
 
 	/**
+	 * Result file contains hierarchy of workerID-resultvar(incl filename). We deduplicate
+	 * on the workerID. Without JVM reuse each task refers to a unique workerID, so we
+	 * will not find any duplicates. With JVM reuse, however, each slot refers to a workerID, 
+	 * and there are duplicate filenames due to partial aggregation and overwrite of fname 
+	 * (the RemoteParWorkerMapper ensures uniqueness of those files independent of the 
+	 * runtime implementation). 
 	 * 
 	 * @param job 
 	 * @param fname
@@ -246,9 +252,10 @@ public class RemoteParForMR
 
 		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
-		LongWritable key = new LongWritable();
-		Text value = new Text();
+		LongWritable key = new LongWritable(); //workerID
+		Text value = new Text();               //serialized var header (incl filename)
 		
+		int countAll = 0;
 		for( Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(job),lpath,job);
@@ -256,10 +263,12 @@ public class RemoteParForMR
 			{
 				while( reader.next(key, value) )
 				{
+					//System.out.println("key="+key.get()+", value="+value.toString());
 					if( !tmp.containsKey( key.get() ) )
 		        		tmp.put(key.get(), new LocalVariableMap ());	   
 					Object[] dat = ProgramConverter.parseDataObject( value.toString() );
 		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
+		        	countAll++;
 				}
 			}	
 			finally
@@ -268,6 +277,9 @@ public class RemoteParForMR
 					reader.close();
 			}
 		}		
+
+		LOG.debug("Num remote worker results (before deduplication): "+countAll);
+		LOG.debug("Num remote worker results: "+tmp.size());
 
 		//create return array
 		return tmp.values().toArray(new LocalVariableMap[0]);	

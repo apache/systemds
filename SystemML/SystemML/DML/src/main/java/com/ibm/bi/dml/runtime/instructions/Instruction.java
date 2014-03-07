@@ -51,7 +51,6 @@ public abstract class Instruction
 	
 	public void printMe() {
 		LOG.debug(instString);
-		System.out.println(instString);
 	}
 	public String toString() {
 		return instString;

@@ -273,7 +273,7 @@ public class MatrixAggLib
 		for( int i=0, cix=0; i<rlen; i++, cix+=n )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()<0 );
+			if( arow!=null && arow.size()<0 )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();

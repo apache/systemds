@@ -85,6 +85,7 @@ public class Dag<N extends Lop>
 
 	private static int total_reducers = -1;
 	private static String scratch = "";
+	private static String scratchFilePath = "";
 	
 	private static IDSequence job_id = null;
 	private static IDSequence var_index = null;
@@ -173,6 +174,16 @@ public class Dag<N extends Lop>
 			lastInstructions.add(inst);
 		}
 		
+	}
+	
+	private static String getFilePath() {
+		if ( scratchFilePath.equalsIgnoreCase("") ) {
+			scratchFilePath = scratch + Lop.FILE_SEPARATOR
+								+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
+								+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
+								+ ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
+		}
+		return scratchFilePath;
 	}
 	
 	/**
@@ -2421,11 +2432,7 @@ public class Dag<N extends Lop>
 			{
 				// generate temporary filename and a variable name to hold the
 				// output produced by "rootNode"
-				oparams.setFile_name(scratch + Lop.FILE_SEPARATOR
-						+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
-						+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
-						+ ProgramConverter.CP_ROOT_THREAD_ID
-						+ Lop.FILE_SEPARATOR + "temp" + job_id.getNextID());
+				oparams.setFile_name(getFilePath() + "temp" + job_id.getNextID());
 				oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
 
 				// generate an instruction that creates a symbol table entry for the new variable
@@ -2459,7 +2466,7 @@ public class Dag<N extends Lop>
 						//OutputInfo oinfo = getOutputInfo((N)fnOut, false);
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 								fnOutParams.getLabel(),
-								fnOutParams.getLabel(), 
+								getFilePath() + fnOutParams.getLabel(), 
 								true, 
 								OutputInfo.outputInfoToString(getOutputInfo((N)fnOut, false)),
 								new MatrixCharacteristics(fnOutParams.getNum_rows(), fnOutParams.getNum_cols(), fnOutParams.get_rows_in_block().intValue(), fnOutParams.get_cols_in_block().intValue(), fnOutParams.getNnz())
@@ -2530,9 +2537,7 @@ public class Dag<N extends Lop>
 						
 						// generate temporary filename & var name
 						String tempVarName = oparams.getLabel() + "temp";
-						String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-								   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
-								   					    "temp" + job_id.getNextID();
+						String tempFileName = getFilePath() + "temp" + job_id.getNextID();
 						
 						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
@@ -2552,9 +2557,7 @@ public class Dag<N extends Lop>
 						String constVarName = oparams.getLabel();
 						String constFileName = tempFileName + constVarName;
 						
-						oparams.setFile_name(scratch +  Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-								   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR + 
-								   					    constFileName);
+						oparams.setFile_name(getFilePath() + constFileName);
 						
 						/*
 						 * Since this is a node that denotes a transient read/write, we need to make sure 
@@ -2599,9 +2602,7 @@ public class Dag<N extends Lop>
 						// part MM format file on hdfs.
 						if (oparams.getFormat() == Format.CSV)  {
 							
-							String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-			   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
-			   					    "temp" + job_id.getNextID();
+							String tempFileName = getFilePath() + "temp" + job_id.getNextID();
 							
 							String createInst = node.getInstructions(tempFileName);
 							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
@@ -2617,9 +2618,7 @@ public class Dag<N extends Lop>
 						} 
 						else if (oparams.getFormat() == Format.MM )  {
 							
-							String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-			   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
-			   					    "temp" + job_id.getNextID();
+							String tempFileName = getFilePath() + "temp" + job_id.getNextID();
 							
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 													oparams.getLabel(), 
@@ -2874,9 +2873,7 @@ public class Dag<N extends Lop>
 		// set inputs, outputs, and other other properties for the job 
 		mr.setInputOutputLabels(getStringArray(inputLabels), getStringArray(outputLabels));
 		mr.setOutputs(resultIndicesByte);
-		mr.setDimsUnknownFilePrefix(scratch +  
-				                      Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-				                      Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR );
+		mr.setDimsUnknownFilePrefix(getFilePath());
 		
 		mr.setNumberOfReducers(numReducers);
 		mr.setReplication(replication);

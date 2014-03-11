@@ -14,11 +14,13 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
 
-public class PartialMVMult extends Lop 
+public class MapMult extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static final String OPCODE = "mapmult";
 	
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
@@ -29,8 +31,8 @@ public class PartialMVMult extends Lop
 	 * @throws LopsException
 	 */
 	
-	public PartialMVMult(Lop input1, Lop input2, DataType dt, ValueType vt) throws LopsException {
-		super(Lop.Type.MVMult, dt, vt);		
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt) throws LopsException {
+		super(Lop.Type.MapMult, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
@@ -61,7 +63,7 @@ public class PartialMVMult extends Lop
 		sb.append(getExecType());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		
-		sb.append("mvmult");
+		sb.append(OPCODE);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));

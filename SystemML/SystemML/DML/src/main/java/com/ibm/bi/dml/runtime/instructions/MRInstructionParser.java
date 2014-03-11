@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -62,9 +63,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "arimax"  , MRINSTRUCTION_TYPE.Aggregate);
 
 		// AGG_BINARY Instruction Opcodes 
-		String2MRInstructionType.put( "cpmm" , MRINSTRUCTION_TYPE.AggregateBinary);
-		String2MRInstructionType.put( "rmm"  , MRINSTRUCTION_TYPE.AggregateBinary);
-		String2MRInstructionType.put( "mvmult", MRINSTRUCTION_TYPE.AggregateBinary);
+		String2MRInstructionType.put( "cpmm" 	, MRINSTRUCTION_TYPE.AggregateBinary);
+		String2MRInstructionType.put( "rmm"  	, MRINSTRUCTION_TYPE.AggregateBinary);
+		String2MRInstructionType.put( MapMult.OPCODE, MRINSTRUCTION_TYPE.AggregateBinary);
 		
 		// AGG_UNARY Instruction Opcodes 
 		String2MRInstructionType.put( "ua+"   , MRINSTRUCTION_TYPE.AggregateUnary);

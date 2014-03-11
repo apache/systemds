@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
@@ -87,7 +88,7 @@ public class GMR
 			byte index;
 			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
 			for(int i=0; i < inst.length; i++) {
-				if ( inst[i].contains("mvmult") || inst[i].contains(AppendM.OPCODE) ) {
+				if ( inst[i].contains(MapMult.OPCODE) || inst[i].contains(AppendM.OPCODE) ) {
 					// example: MR.mvmult.0.1.2
 					
 					// Determine the index that points to a vector

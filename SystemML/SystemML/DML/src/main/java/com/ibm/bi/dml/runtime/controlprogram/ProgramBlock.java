@@ -330,7 +330,6 @@ public class ProgramBlock
 					LOG.trace("MRJob: " + currMRInst.getJobType() + ", duration = " + (t1-t0)/1000000);
 				}
 				//System.out.println("MRJob: " + currMRInst.getJobType() );
-				//System.out.println(currMRInst.toString());
 			} 
 			else if (currInst instanceof CPInstruction) 
 			{

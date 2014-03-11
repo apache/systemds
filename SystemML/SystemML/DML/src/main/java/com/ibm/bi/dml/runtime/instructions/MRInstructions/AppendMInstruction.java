@@ -13,6 +13,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -74,7 +75,8 @@ public class AppendMInstruction extends BinaryMRInstructionBase
 				cachedValues.add(output, in1);
 			else
 			{
-				MatrixValue value_in2 = MRBaseForCommonInstructions.getDataFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor).getValue();
+				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
+				MatrixValue value_in2 = dcInput.getDataBlock(in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor).getValue();
 				
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);

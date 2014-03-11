@@ -40,7 +40,7 @@ public abstract class Lop
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock
+		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}

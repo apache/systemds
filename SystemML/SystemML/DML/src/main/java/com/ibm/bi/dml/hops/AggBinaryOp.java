@@ -16,7 +16,7 @@ import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
-import com.ibm.bi.dml.lops.PartialMVMult;
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
@@ -59,7 +59,7 @@ public class AggBinaryOp extends Hop
 	private enum MMultMethod { 
 		CPMM,     //cross-product matrix multiplication
 		RMM,      //replication matrix multiplication
-		DIST_MV,  //distributed cache matrix vector multiplication
+		MAPMULT,  //map-side matrix-matrix multiplication using distributed cache
 		TSMM,     //transpose-self matrix multiplication
 		CP        //in-memory matrix multiplication
 	};
@@ -84,18 +84,6 @@ public class AggBinaryOp extends Hop
 	
 	public boolean isMatrixMultiply () {
 		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
-	}
-	
-	/**
-	 * Returns true if the operation is a matrix-vector or vector-matrix multiplication.
-	 * 
-	 * @return
-	 */
-	private boolean isMatrixVectorMultiply() {
-		if ( //(getInput().get(0).isVector() && !getInput().get(1).isVector()) || 
-				(!getInput().get(0).isVector() && getInput().get(1).isVector()) )
-			return true;
-		return false;
 	}
 	
 	/**
@@ -138,11 +126,11 @@ public class AggBinaryOp extends Hop
 								mmtsj);
 					// System.out.println("Method = " + method);
 					
-					if ( method == MMultMethod.DIST_MV) {
-						Lop vector_in = getInput().get(1).constructLops();
+					if ( method == MMultMethod.MAPMULT ) {
+						Lop smallMatrix = getInput().get(1).constructLops();
 						
 						if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
-							vector_in = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
+							smallMatrix = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
 						}
 						
 						// If number of columns is smaller than block size then explicit aggregation is not required.
@@ -152,7 +140,7 @@ public class AggBinaryOp extends Hop
 							needAgg = false;
 						}
 						
-						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), vector_in, get_dataType(), get_valueType());
+						MapMult mvmult = new MapMult(getInput().get(0).constructLops(), smallMatrix, get_dataType(), get_valueType());
 						mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 						
 						if (needAgg) {
@@ -230,6 +218,9 @@ public class AggBinaryOp extends Hop
 						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
 						set_lops(agg1);
+					}
+					else {
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing lops.");
 					}
 				}
 			} 
@@ -429,12 +420,10 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.TSMM;
 		}
 
-		if ( m2_cols == 1 ) {
-			// matrix-vector multiplication. 
-			// Choose DIST_MVMULT if the "dense" vector fits in memory.
-			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-			if ( vec_size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget() )
-				return MMultMethod.DIST_MV;
+		// If the size of second input is small, choose a method that uses distributed cache
+		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+		if ( m2Size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget()) {
+			return MMultMethod.MAPMULT;
 		}
 		
 		// If the dimensions are unknown at compilation time, 

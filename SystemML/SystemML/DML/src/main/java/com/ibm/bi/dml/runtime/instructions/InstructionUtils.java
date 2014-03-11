@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -161,8 +162,8 @@ public class InstructionUtils
 		for(String inst : parts) 
 		{
 			String opcode = getOpCode(inst);
-			if(    opcode.equalsIgnoreCase("mvmult") 
-			    || opcode.equalsIgnoreCase(AppendM.OPCODE) ) 
+			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
+			    	|| opcode.equalsIgnoreCase(MapMult.OPCODE) ) 
 			{
 				return true;
 			}

@@ -24,11 +24,13 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -161,58 +163,36 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			isJobLocal = false;
 		}
 
-		String[] indices = MRJobConfiguration.getDistCacheInputIndices(job).split(Instruction.INSTRUCTION_DELIM);
-		distCacheFiles = DistributedCache.getLocalCacheFiles(job);
-		inputPartitionFlags   = MRJobConfiguration.getInputPartitionFlags(job);
-		inputPartitionFormats = MRJobConfiguration.getInputPartitionFormats(job);
-		inputPartitionSizes   = MRJobConfiguration.getInputPartitionSizes(job);
+		String[] inputIndices = MRJobConfiguration.getInputPaths(job);
+		String[] dcIndices = MRJobConfiguration.getDistCacheInputIndices(job).split(Instruction.INSTRUCTION_DELIM);
+		Path[] dcFiles = DistributedCache.getLocalCacheFiles(job);
+		boolean[] inputPartitionFlags = MRJobConfiguration.getInputPartitionFlags(job);
+		PDataPartitionFormat[] inputPartitionFormats = MRJobConfiguration.getInputPartitionFormats(job);
+		int[] inputPartitionSizes = MRJobConfiguration.getInputPartitionSizes(job);
 		
-		if ( isJobLocal ) {
+		DistributedCacheInput[] dcInputs = new DistributedCacheInput[dcIndices.length];
+		for(int i=0; i < dcIndices.length; i++) {
+        	byte inputIndex = Byte.parseByte(dcIndices[i]);
+        	
 			// When the job is in local mode, files can be read from HDFS directly -- use 
 			// input paths as opposed to "local" paths prepared by DistributedCache. 
-			String[] inputs = MRJobConfiguration.getInputPaths(job);
-			for(int i=0; i < indices.length; i++) {
-				distCacheFiles[i] = new Path(inputs[ Byte.parseByte(indices[i]) ]);
-			}
+        	Path p = null;
+			if(isJobLocal)
+				p = new Path(inputIndices[ Byte.parseByte(dcIndices[i]) ]);
+			else
+				p = dcFiles[i];
+			
+			dcInputs[i] = new DistributedCacheInput(
+								p, 
+								MRJobConfiguration.getNumRows(job, inputIndex), 
+								MRJobConfiguration.getNumColumns(job, inputIndex),
+								inputPartitionFlags[i],
+								inputPartitionFormats[i],
+								inputPartitionSizes[i]
+							);
+        	dcValues.put(inputIndex, dcInputs[i]);
 		}
 		
-		if ( distCacheFiles.length != indices.length ) {
-			throw new IOException("Unexpected error in loadDistCacheFiles(). #Cachefiles (" + distCacheFiles.length + ") != #indices (" + indices.length + ")");
-		}
-		
-		distCacheIndices = new byte[distCacheFiles.length];
-		distCacheNumRows = new long[distCacheFiles.length];
-		distCacheNumColumns = new long[distCacheFiles.length];
-		
-		// Load data from distributed cache only if the data is NOT partitioned!!
-		if (null != distCacheFiles && distCacheFiles.length > 0 ) {
-			for(int i=0; i < distCacheFiles.length; i++) {
-	        	byte index = Byte.parseByte(indices[i]);
-	        	distCacheIndices[i] = index;
-		        distCacheNumRows[i] = MRJobConfiguration.getNumRows(job, index);
-		        distCacheNumColumns[i] = MRJobConfiguration.getNumColumns(job, index);
-		        
-	        	/*if ( inputPartitionFlags[index] == false ) {
-		        	Path cachePath = distCacheFiles[i];
-		        	
-		        	LOG.trace("Reading cached file " + cachePath.getName() + ", " + cachePath.toString() + " from " + (isJobLocal ? "HDFS" : "LOCAL-FS"));
-		        	//System.out.println("Reading cached file " + cachePath.getName() + ", " + cachePath.toString() + " from " + (isJobLocal ? "HDFS" : "LOCAL-FS"));
-		        	long st = System.currentTimeMillis();
-		        	MatrixBlock data = DataConverter.readMatrixFromHDFS(
-		        			cachePath.toString(), InputInfo.BinaryBlockInputInfo, 
-		        			MRJobConfiguration.getNumRows(job, index), // use rlens 
-		        			MRJobConfiguration.getNumColumns(job, index), 
-		        			MRJobConfiguration.getNumRowsPerBlock(job, index), 
-		        			MRJobConfiguration.getNumColumnsPerBlock(job, index), 1.0, !isJobLocal);
-		        	LOG.trace("reading from dist cache complete.." + data.getNumRows() + ", "+ data.getNumColumns() + ": " + (System.currentTimeMillis()-st) + " msec");
-		        	//System.out.println("reading from dist cache complete.." + data.getNumRows() + ", "+ data.getNumColumns() + ": " + (System.currentTimeMillis()-st) + " msec");
-		        	distCacheValues.put(index, data);
-		        }
-		        else {
-		        	LOG.trace("Postponed reading of cached file " + distCacheFiles[i] + " from " + (isJobLocal ? "HDFS" : "LOCAL-FS") + ", as it is partitioned (format=" + inputPartitionFormats[index] + ")");		        
-		        }*/
-			}
-		}
 	}
 
 	public void configure(JobConf job)

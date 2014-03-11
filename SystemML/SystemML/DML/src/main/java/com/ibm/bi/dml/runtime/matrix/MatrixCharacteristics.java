@@ -46,7 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class MatrixCharacteristics
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public long numRows=-1;
@@ -208,7 +208,7 @@ public class MatrixCharacteristics
 		{
 			ReblockInstruction realIns=(ReblockInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);
-			dim_out.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen);
+			dim_out.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen, in_dim.nonZero);
 		}
 		else if( ins instanceof MatrixReshapeMRInstruction )
 		{

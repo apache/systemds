@@ -179,9 +179,9 @@ public class RunMRJobs
 					
 					if ( inst.getJobType() == JobType.REBLOCK ) {
 						ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
-								inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+								inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(), getNNZ(inputMatrices),
 								mapInst, shuffleInst, otherInst,
-								inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
+								inst.getIv_numReducers(), inst.getIv_replication(), jvmReuse, inst.getIv_resultIndices(),   
 								inst.getOutputs(), inst.getOutputInfos() );
 					}
 					else if( inst.getJobType() == JobType.CSV_REBLOCK ) {
@@ -546,5 +546,28 @@ public class RunMRJobs
 				return false;
 		}
 		return true;
+	}
+	
+	/**
+	 * 
+	 * @param inputMatrices
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static long[] getNNZ( MatrixObject[] inputMatrices ) 
+		throws DMLRuntimeException
+	{
+		int len = inputMatrices.length;
+		long[] ret = new long[len];
+		for( int i=0; i<len; i++ )
+		{
+			MatrixObject mo = inputMatrices[i];
+			if( mo != null )
+				ret[i] = mo.getNnz();
+			else
+				ret[i] = -1;
+		}
+			
+		return ret;
 	}
 }

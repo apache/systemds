@@ -112,6 +112,7 @@ public class MRJobConfiguration
 	private static final String INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG="input.matrix.num.column.";
 	private static final String INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG="input.block.num.row.";
 	private static final String INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG="input.block.num.column.";
+	private static final String INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG="input.matrix.num.nnz.";
 	
 	//operations performed in the mapper
 	private static final String INSTRUCTIONS_IN_MAPPER_CONFIG="instructions.in.mapper";
@@ -174,6 +175,8 @@ public class MRJobConfiguration
 	private static final String REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG="reblock.matrix.num.column.";
 	private static final String REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG="reblock.block.num.row.";
 	private static final String REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG="reblock.block.num.column.";
+	private static final String REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG="reblock.matrix.num.nnz.";
+	
 	
 	//characteristics about the matrices to matrixdiag instructions
 	private static final String INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG="diagm2v.matrix.num.row.";
@@ -953,10 +956,25 @@ public class MRJobConfiguration
 			setMatrixDimension(job, inputIndexes[i], rlens[i], clens[i]);
 	}
 	
+	public static void setMatricesDimensions(JobConf job, byte[] inputIndexes, long[] rlens, long[] clens, long[] nnz) {
+		if(rlens.length!=clens.length)
+			throw new RuntimeException("rlens.length should be clens.length");
+		for(int i=0; i<rlens.length; i++)
+			setMatrixDimension(job, inputIndexes[i], rlens[i], clens[i], nnz[i]);
+	}
+	
 	public static void setMatrixDimension(JobConf job, byte matrixIndex, long rlen, long clen)
 	{
 		job.setLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+matrixIndex, rlen);
 		job.setLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, clen);
+		//System.out.println("matrix "+matrixIndex+" with dimension: "+rlen+", "+clen);
+	}
+	
+	public static void setMatrixDimension(JobConf job, byte matrixIndex, long rlen, long clen, long nnz)
+	{
+		job.setLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+matrixIndex, rlen);
+		job.setLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, clen);
+		job.setLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, nnz);
 		//System.out.println("matrix "+matrixIndex+" with dimension: "+rlen+", "+clen);
 	}
 	
@@ -997,6 +1015,11 @@ public class MRJobConfiguration
 	public static int getNumColumnsPerBlock(JobConf job, byte matrixIndex)
 	{
 		return job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, 1);
+	}
+	
+	public static int getNumNonZero(JobConf job, byte matrixIndex)
+	{
+		return job.getInt(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
 	}
 	
 	public static PartitionParams getPartitionParams(JobConf job) {
@@ -1442,7 +1465,7 @@ public class MRJobConfiguration
 		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<Byte, MatrixCharacteristics>();
 		for(byte i: inputIndexes){
 			MatrixCharacteristics dim=new MatrixCharacteristics(getNumRows(job, i), getNumColumns(job, i), 
-					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i));
+					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i), getNumNonZero(job, i));
 			dims.put(i, dim);
 		}
 		DataGenMRInstruction[] dataGenIns = null;
@@ -1663,7 +1686,7 @@ public class MRJobConfiguration
 		dim.numRows=job.getLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
 		dim.numColumns=job.getLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
 		dim.numRowsPerBlock=job.getInt(INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		dim.numColumnsPerBlock=job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);		
 		return dim;
 	}
 	
@@ -1674,6 +1697,7 @@ public class MRJobConfiguration
 		job.setLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
 		job.setInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
 		job.setInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumnsPerBlock);
+		job.setLong(REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG+tag, dim.nonZero);
 	}
 	
 	public static MatrixCharacteristics getMatrixCharactristicsForReblock(JobConf job, byte tag)
@@ -1683,6 +1707,11 @@ public class MRJobConfiguration
 		dim.numColumns=job.getLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
 		dim.numRowsPerBlock=job.getInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
 		dim.numColumnsPerBlock=job.getInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		
+		long nnz = job.getLong(REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG+tag, -1);
+		if( nnz>=0 )
+			dim.nonZero = nnz;
+		
 		return dim;
 	}
 	

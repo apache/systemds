@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,11 +17,16 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
@@ -51,14 +56,14 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
 public class ReblockMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static final Log LOG = LogFactory.getLog(ReblockMR.class.getName());
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-			int[] brlens, int[] bclens, String instructionsInMapper, String reblockInstructions, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
+			int[] brlens, int[] bclens, long[] nnz, String instructionsInMapper, String reblockInstructions, 
+			String otherInstructionsInReducer, int numReducers, int replication, boolean jvmReuse, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -75,7 +80,7 @@ public class ReblockMR
 		MRJobConfiguration.setUpMultipleInputsReblock(job, realIndexes, inputs, inputInfos, brlens, bclens);
 		
 		//set up the dimensions of input matrices
-		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);
+		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens, nnz);
 		
 		//set up the block size
 		MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
@@ -88,11 +93,13 @@ public class ReblockMR
 		
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
-		
+		 
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
+		if( jvmReuse )
+			job.setNumTasksToExecutePerJvm(-1);
+		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, 
 				reblockInstructions, null, otherInstructionsInReducer, resultIndexes);
@@ -104,7 +111,8 @@ public class ReblockMR
 		MatrixCharacteristics[] stats=ret.stats;
 		
 		//set up the number of reducers
-		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
+		int numRed = determineNumReducers(rlens, clens, nnz, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), (int)ret.numReducerGroups);
+		job.setNumReduceTasks(numRed);
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
@@ -162,35 +170,43 @@ public class ReblockMR
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		}
 
-/*		Group rowgroup, colgroup;
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
-		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-			
-			// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 )
-					throw new DMLRuntimeException("Unexpected error after executing Reblock Job");
-				
-				rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);
-				colgroup = runjob.getCounters().getGroup("max_coldim_"+i);
-				int maxrow, maxcol;
-				maxrow = maxcol = 0;
-				for ( int rid=0; rid < numReducers; rid++ ) {
-					if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-						maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-					if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-						maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-				}
-				// System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-				stats[i].numRows = maxrow;
-				stats[i].numColumns = maxcol;
-			}
-		}
-*/		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	
+	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @param defaultNumRed
+	 * @param numRedGroups
+	 * @return
+	 */
+	private static int determineNumReducers( long[] rlen, long[] clen, long[] nnz, int defaultNumRed, int numRedGroups )
+	{
+		//init return with default value
+		int ret = defaultNumRed;
+		
+		//determine max output matrix size
+		long maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		long blockSize = InfrastructureAnalyzer.getHDFSBlockSize()/(1024*1024);
+		long maxSize = -1; //in MB
+		for( int i=0; i<rlen.length; i++ )
+		{
+			double sparsity = OptimizerUtils.getSparsity(rlen[i], clen[i], nnz[i]);
+			long tmp = (int)(((sparsity<MatrixBlockDSM.SPARCITY_TURN_POINT && clen[i]>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT)?
+					           rlen[i]*4+nnz[i]*12 : rlen[i]*clen[i]*8 )/(1024*1024));
+			maxSize = Math.max(maxSize, tmp);
+		}
+		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)
+		ret = (int)Math.max(ret, Math.min(maxSize/blockSize, maxNumRed));
+		
+		//reduce num reducers for few result blocks
+		ret = Math.min(ret, numRedGroups);
+		
+		//ensure there is at least one reducer
+		ret = Math.max(ret, 1);
+		
+		return ret;
+	}
 }

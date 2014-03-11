@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -38,7 +38,7 @@ public class ReblockMapper extends MapperBase
 	implements Mapper<Writable, Writable, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//state of reblock mapper
@@ -50,7 +50,6 @@ public class ReblockMapper extends MapperBase
 	//reblock buffer
 	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<Byte,ReblockBuffer>();
 	private int buffersize =-1;
-	
 	
 	@Override
 	public void map(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, Reporter reporter)
@@ -86,7 +85,8 @@ public class ReblockMapper extends MapperBase
 			throw new RuntimeException(e);
 		}
 	}
-
+	
+	
 	@Override
 	public void close() throws IOException
 	{
@@ -102,6 +102,7 @@ public class ReblockMapper extends MapperBase
 		//handle empty block output (on first task)
 		if( !outputDummyRecords || cachedCollector==null )
 			return;
+		
 		MatrixIndexes tmpIx = new MatrixIndexes();
 		TaggedAdaptivePartialBlock tmpVal = new TaggedAdaptivePartialBlock();
 		AdaptivePartialBlock apb = new AdaptivePartialBlock(new PartialBlock(-1,-1,0));
@@ -114,13 +115,17 @@ public class ReblockMapper extends MapperBase
 			long clen = mc.numColumns;
 			int brlen = mc.numRowsPerBlock;
 			int bclen = mc.numColumnsPerBlock;
+			long nnz = mc.nonZero;
 			
-			for(long i=0, r=1; i<rlen; i+=brlen, r++)
-				for(long j=0, c=1; j<clen; j+=bclen, c++)
-				{
-					tmpIx.setIndexes(r, c);
-					cachedCollector.collect(tmpIx, tmpVal);
-				}
+			
+			//output empty blocks on demand (not required if nnz ensures dense matrix)
+			if( nnz < (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) )
+				for(long i=0, r=1; i<rlen; i+=brlen, r++)
+					for(long j=0, c=1; j<clen; j+=bclen, c++)
+					{
+						tmpIx.setIndexes(r, c);
+						cachedCollector.collect(tmpIx, tmpVal);
+					}
 		}
 	}
 	

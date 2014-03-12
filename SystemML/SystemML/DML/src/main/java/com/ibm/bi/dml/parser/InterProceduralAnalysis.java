@@ -730,7 +730,7 @@ public class InterProceduralAnalysis
 		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(0);
-			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));
+			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
 			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));			
 		}
 		else if( className.equals("com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP") ) 

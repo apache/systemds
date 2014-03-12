@@ -277,6 +277,10 @@ public class MatrixBlockDSM extends MatrixValue
 	
 	public static SparsityEstimate checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2, AggregateBinaryOperator op)
 	{
+		//TODO since MatrixMultLib always uses a dense intermediate output
+		//with subsequent check for sparsity, we should always return a dense estimate
+		//return new SparsityEstimate(false, m1.getNumRows()*m2.getNumRows());
+		
 		SparsityEstimate est=new SparsityEstimate();
 		
 		double m=m2.getNumColumns();

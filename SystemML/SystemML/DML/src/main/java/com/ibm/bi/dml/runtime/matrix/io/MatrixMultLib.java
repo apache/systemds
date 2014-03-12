@@ -79,8 +79,7 @@ public class MatrixMultLib
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
-
-
+	
 	/**
 	 * 
 	 * @param m1
@@ -122,8 +121,7 @@ public class MatrixMultLib
 		if( m1.denseBlock==null || m2.denseBlock==null )
 			return;
 		ret.sparse = false;
-		if( ret.denseBlock==null )
-			ret.denseBlock = new double[ret.rlen * ret.clen];
+		ret.allocateDenseBlock();
 		
 		double[] a = m1.denseBlock;
 		double[] b = m2.denseBlock;
@@ -233,7 +231,6 @@ public class MatrixMultLib
 		ret.examSparsity();
 	}
 	
-	
 	/**
 	 * 
 	 * @param m1
@@ -248,8 +245,7 @@ public class MatrixMultLib
 		if( m1.denseBlock==null || m2.sparseRows==null  )
 			return;
 		ret.sparse = false;
-		if( ret.denseBlock==null )
-			ret.denseBlock = new double[ret.rlen * ret.clen];
+		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		
 		double[] a = m1.denseBlock;
@@ -317,8 +313,7 @@ public class MatrixMultLib
 		if( m1.sparseRows==null || m2.denseBlock==null )
 			return;	
 		ret.sparse = false;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
+		ret.allocateDenseBlock();
 		
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
@@ -428,8 +423,7 @@ public class MatrixMultLib
 		if( m1.sparseRows==null || m2.sparseRows==null )
 			return;	
 		ret.sparse=false;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
+		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		
 		double[] c = ret.denseBlock;
@@ -511,8 +505,8 @@ public class MatrixMultLib
 		ret.rlen = leftTranspose ? m1.clen : m1.rlen;
 		ret.clen = leftTranspose ? m1.clen : m1.rlen;
 		ret.sparse = false;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen]; 
+		ret.allocateDenseBlock();
+	
 		if( m1.denseBlock == null )
 			return;
 		
@@ -682,8 +676,7 @@ public class MatrixMultLib
 		ret.sparse = false;  //assumption dense output
 		if( m1.sparseRows == null )
 			return;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
+		ret.allocateDenseBlock();
 		
 		//2) transpose self matrix multiply sparse
 		// (compute only upper-triangular matrix due to symmetry)		
@@ -1239,6 +1232,189 @@ public class MatrixMultLib
 			}
 		}
 		ret.nonZeros=nnzs;
+	}
+	*/
+	
+	/*
+	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret, int k) 
+			throws DMLRuntimeException
+	{		
+		//Timing time = new Timing(true);
+		
+		if(!m1.sparse && !m2.sparse)
+			matrixMultDenseDense(m1, m2, ret, k);
+		else 
+			throw new DMLRuntimeException("Not implemented yet.");
+		
+		//System.out.println("MM("+k+") ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
+		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+	}
+	*/
+	
+	/*
+	private static void matrixMultDenseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret, int k) 
+		throws DMLRuntimeException
+	{	
+		//check inputs / outputs
+		if( m1.denseBlock==null || m2.denseBlock==null )
+			return;
+		ret.sparse = false;
+		if( ret.denseBlock==null )
+			ret.denseBlock = new double[ret.rlen * ret.clen];
+		
+		double[] a = m1.denseBlock;
+		double[] b = m2.denseBlock;
+		double[] c = ret.denseBlock;
+		final int m = m1.rlen;
+		final int n = m2.clen;
+		final int cd = m1.clen;
+
+		final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
+
+		//init empty result
+		Arrays.fill(c, 0, c.length, 0);
+		
+		try
+		{
+			int blk = (m/k)+((m/k)%blocksizeI); 
+			
+			Thread[] t = new Thread[k];
+			for( int i=0; i<k; i++ )
+				t[i] = new Thread(new MatrixMultLib().new MMWorker( a,b,c,m,n,cd,i*blk,(i+1)*blk ));
+	
+			for( int i=0; i<k; i++ )
+				t[i].start();
+	
+			for( int i=0; i<k; i++ )
+				t[i].join();
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
+		
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+	}
+	
+	private class MMWorker implements Runnable
+	{
+		private double[] a = null;
+		private double[] b = null;
+		private double[] c = null;
+		private int m;
+		private int n;
+		private int cd;
+		private int starti;
+		private int endi;
+		
+		
+		public MMWorker(double[] a, double[] b, double[] c, int m, int n, int cd, int starti, int endi) 
+		{
+			this.a = a;
+			this.b = b;
+			this.c = c;
+			//this.a = new double[a.length]; System.arraycopy(a, 0, this.a, 0, a.length);
+			//this.b = new double[b.length]; System.arraycopy(b, 0, this.b, 0, a.length);
+			//this.c = new double[c.length]; System.arraycopy(c, 0, this.c, 0, a.length);
+			
+			this.m = m;
+			this.n = n;
+			this.cd = cd;
+			this.starti = starti;
+			this.endi = Math.min(endi,m);
+
+			System.out.println("MMWorker: "+(endi-starti)+" rows");
+		}
+
+		@Override
+		public void run() 
+		{
+			//1) Unrolled inner loop (for better instruction-level parallelism)
+			//2) Blocked execution (for less cache trashing in parallel exec) 	
+			//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
+			
+			final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
+			final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
+			final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
+
+			//temporary arrays (nnz a, b index)
+			double[] ta = new double[ blocksizeK ];
+			int[]  tbi  = new int[ blocksizeK ];
+			
+			//blocked execution
+			for( int bi = starti; bi < endi; bi+=blocksizeI )
+				for( int bk = 0, bimin = Math.min(endi, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
+					for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
+					{
+						int bklen = bkmin-bk;
+						int bjlen = Math.min(n, bj+blocksizeJ)-bj;
+						
+						//core sub block matrix multiplication
+			    		for( int i = bi; i < bimin; i++) 
+			    		{
+			    			int aixi = i * cd + bk; //start index on a
+			    			int cixj = i * n + bj; //scan index on c
+			    			
+			    			//determine nnz of a (for sparsity-aware skipping of rows)
+			    			int knnz = 0;
+			    			for( int k = 0; k < bklen; k++ )
+			    				if( a[aixi+k] != 0 ) {
+			    					ta[ knnz ] = a[aixi+k];
+			    					tbi[ knnz ] = (bk+k) * n + bj; //scan index on b
+			    					knnz ++;
+			    				}
+			    			
+			    			//rest not aligned to blocks of 4 rows
+			    			final int bn = knnz % 4;
+			    			switch( bn ){
+				    			case 1: vectMultiplyAdd(ta[0], b, c, tbi[0], cixj, bjlen); break;
+				    	    	case 2: vectMultiplyAdd2(ta[0],ta[1], b, c, tbi[0], tbi[1], cixj, bjlen); break;
+				    			case 3: vectMultiplyAdd3(ta[0],ta[1],ta[2], b, c, tbi[0], tbi[1],tbi[2], cixj, bjlen); break;
+			    			}
+			    			
+			    			//compute blocks of 4 rows (core inner loop)
+			    			for( int k = bn; k<knnz; k+=4 ){
+			    				vectMultiplyAdd4( ta[k], ta[k+1], ta[k+2], ta[k+3], b, c, 
+			    						          tbi[k], tbi[k+1], tbi[k+2], tbi[k+3], cixj, bjlen );
+			    			}
+			    		}
+					}		
+		}
+		
+	}
+	*/
+
+	
+	/*
+	public static void main(String[] args)
+	{
+		int n = 1000;
+		MatrixBlockDSM m1 = MatrixBlock.randOperationsOLD(n, n, 1.0, 0, 1, "uniform", 7);
+		MatrixBlockDSM m2 = MatrixBlock.randOperationsOLD(n, n, 1.0, 0, 1, "uniform", 3);
+		MatrixBlock out = new MatrixBlock(n, n, false);
+		
+		for( int i=0; i<10; i++ )
+		{
+			
+			long t0 = System.nanoTime();
+			
+			try {
+				//MatrixMultLib.matrixMult(m1, m2, out);
+				MatrixMultLib.matrixMult(m1, m2, out, 8);
+				
+			} catch (DMLRuntimeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			long t1 = System.nanoTime();
+
+			if(out.getNonZeros()<0)
+				System.out.println("test");
+			System.out.println("Matrix Mult: "+((t1-t0)/1000000)+" ms");
+		}
+		
 	}
 	*/
 }

@@ -119,12 +119,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-      <version>2.2.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <version>2.2.0</version>
     </dependency> 
@@ -142,56 +136,6 @@
       <version>1.1.1</version>
       <scope>compile</scope>
     </dependency>
-
-    <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>1.6</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.5</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-cli</groupId>
-      <artifactId>commons-cli</artifactId>
-      <version>1.2</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <version>3.1</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-core-asl</artifactId>
-      <version>1.8.8</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>1.8.8</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>1.8.8</version>
-      <scope>compile</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math</artifactId>
@@ -228,7 +172,7 @@
       <scope>compile</scope>
     </dependency>
 
-    <!--TODO: fetch from Nexus once NIBMLE sources are include -->
+
     <dependency>
       <groupId>local</groupId>
       <artifactId>nimble_hadoop2</artifactId>
@@ -237,7 +181,7 @@
       <systemPath>${basedir}/lib/nimble_hadoop2.jar</systemPath>
     </dependency>
 
-    <!--TODO: fetch from Nexus once NIBMLE sources are include -->
+
     <dependency>
       <groupId>local</groupId>
       <artifactId>grappa_vis</artifactId>
@@ -246,28 +190,23 @@
       <systemPath>${basedir}/lib/grappa_vis.jar</systemPath>
     </dependency>
 
-    <!--TODO: fetch from Nexus once NIBMLE sources are include -->
+
     <dependency>
       <groupId>com.ibm.jaql</groupId>
       <artifactId>jaql</artifactId>
       <version>0.5.2</version>
     </dependency>
+<dependency>
+  <groupId>stax</groupId>
+  <artifactId>stax-api</artifactId>
+  <version>1.0.1</version>
+</dependency>
+<dependency>
+  <groupId>commons-collections</groupId>
+  <artifactId>commons-collections</artifactId>
+  <version>3.2.1</version>
+</dependency>
 
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>11.0.2</version>
-    </dependency>
   </dependencies>
 
 </project>

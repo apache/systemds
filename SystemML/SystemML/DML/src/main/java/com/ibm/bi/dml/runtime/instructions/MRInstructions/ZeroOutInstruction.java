@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,14 +14,11 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReIndexOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ZeroOutOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 /*
@@ -31,7 +28,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class ZeroOutInstruction extends UnaryMRInstructionBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public IndexRange indexRange=null;
@@ -157,25 +154,5 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase
 					cachedValues.add(output, out);
 			}
 		
-	}
-	
-	public static void main(String[] args) throws Exception {
-		
-		byte input=1;
-		byte output=2;
-		ZeroOutInstruction ins=new ZeroOutInstruction(new ReIndexOperator(), input, output, new IndexRange(3, 8, 3, 18), "zeroOut");
-		int blockRowFactor=10;
-		int blockColFactor=10;
-		
-		MatrixBlockDSM m=MatrixBlockDSM.getRandomSparseMatrix(blockRowFactor, blockColFactor, 1, 1);
-		//m.examSparsity();
-		CachedValueMap cachedValues=new CachedValueMap();
-		cachedValues.set(input, new MatrixIndexes(1, 1), m);
-		
-		IndexedMatrixValue tempValue=new IndexedMatrixValue(MatrixBlockDSM.class);
-		IndexedMatrixValue zeroInput=new IndexedMatrixValue(MatrixBlockDSM.class);
-		
-		ins.processInstruction(MatrixBlockDSM.class, cachedValues, tempValue, zeroInput, blockRowFactor, blockColFactor);
-		System.out.println(cachedValues.get(output));
 	}
 }

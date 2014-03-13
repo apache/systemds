@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class ResultMergeLocalMemory extends ResultMerge
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//internal comparison matrix
@@ -152,7 +152,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 				long rows = outMB.getNumRows();
 				long cols = outMB.getNumColumns();
 				MatrixBlock outMBNew = new MatrixBlock((int)rows, (int)cols, false);
-				outMBNew.spaceAllocForDenseUnsafe((int)rows, (int)cols);
+				outMBNew.allocateDenseBlockUnsafe((int)rows, (int)cols);
 				
 				//create compare matrix if required (existing data in result)
 				_compare = createCompareMatrix(outMB);

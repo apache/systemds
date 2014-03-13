@@ -13,8 +13,6 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -202,25 +200,5 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 				OperationsOnMatrixValues.performSlice(in.getIndexes(), in.getValue(), outlist, tempRange, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
 			//System.out.println("output: "+outlist);
 			}
-	}
-	
-	public static void main(String[] args) throws Exception {
-		
-		byte input=1;
-		byte output=2;
-		RangeBasedReIndexInstruction ins=new RangeBasedReIndexInstruction(new ReIndexOperator(), input, output, new IndexRange(3, 18, 3, 18), "rangeReIndex");
-		int blockRowFactor=10;
-		int blockColFactor=10;
-		
-		MatrixBlockDSM m=MatrixBlockDSM.getRandomSparseMatrix(blockRowFactor, blockColFactor, 1, 1);
-		m.examSparsity();
-		CachedValueMap cachedValues=new CachedValueMap();
-		cachedValues.set(input, new MatrixIndexes(2, 2), m);
-		
-		IndexedMatrixValue tempValue=new IndexedMatrixValue(MatrixBlockDSM.class);
-		IndexedMatrixValue zeroInput=new IndexedMatrixValue(MatrixBlockDSM.class);
-		
-		ins.processInstruction(MatrixBlockDSM.class, cachedValues, tempValue, zeroInput, blockRowFactor, blockColFactor);
-		System.out.println(cachedValues.get(output));
 	}
 }

@@ -356,7 +356,7 @@ public class DataConverter
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(prop.expectedSparsity*rlen*clen));
 		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
-			ret.spaceAllocForDenseUnsafe((int)rlen, (int)clen);
+			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
 		
 		//prepare file access
 		JobConf job = new JobConf();	
@@ -1723,7 +1723,7 @@ public class DataConverter
 		for( MatrixBlock b : blocks )
 			if( b != null )
 				if( !sparse )
-					b.spaceAllocForDenseUnsafe(b.getNumRows(), b.getNumColumns());		
+					b.allocateDenseBlockUnsafe(b.getNumRows(), b.getNumColumns());		
 		//NOTE: no preallocation for sparse (preallocate sparserows with estnnz) in order to reduce memory footprint
 		
 		return blocks;

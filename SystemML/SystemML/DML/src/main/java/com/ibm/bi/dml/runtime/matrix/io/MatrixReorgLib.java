@@ -247,7 +247,7 @@ public class MatrixReorgLib
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
-		out.adjustSparseRows(m2);
+		out.adjustSparseRows(m2-1);
 				
 		double[] a = in.getDenseArray();
 		SparseRow[] c = out.getSparseRows();
@@ -293,7 +293,7 @@ public class MatrixReorgLib
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
-		out.adjustSparseRows(m2);
+		out.adjustSparseRows(m2-1);
 		
 		SparseRow[] a = in.getSparseRows();
 		SparseRow[] c = out.getSparseRows();

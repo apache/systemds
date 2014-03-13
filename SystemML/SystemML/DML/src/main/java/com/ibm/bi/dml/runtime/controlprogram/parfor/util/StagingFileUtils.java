@@ -202,7 +202,7 @@ public class StagingFileUtils
 	{
 		MatrixBlock tmp = new MatrixBlock( brlen, bclen, sparse );
 		if( !sparse )
-			tmp.spaceAllocForDenseUnsafe(brlen, bclen);
+			tmp.allocateDenseBlockUnsafe(brlen, bclen);
 		
 		FileInputStream fis = new FileInputStream( fname );
 		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	

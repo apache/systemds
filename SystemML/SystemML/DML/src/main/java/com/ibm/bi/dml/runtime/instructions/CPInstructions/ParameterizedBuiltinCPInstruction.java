@@ -144,9 +144,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			String margin = params.get("margin");
 			MatrixBlock soresBlock = null;
 			if( margin.equals("rows") )
-				soresBlock = (MatrixBlock) target.removeEmptyRows(new MatrixBlock());
+				soresBlock = (MatrixBlock) target.removeEmptyOperations(new MatrixBlock(), true);
 			else if( margin.equals("cols") ) 
-				soresBlock = (MatrixBlock) target.removeEmptyColumns(new MatrixBlock());
+				soresBlock = (MatrixBlock) target.removeEmptyOperations(new MatrixBlock(), false);
 			else
 				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
 			

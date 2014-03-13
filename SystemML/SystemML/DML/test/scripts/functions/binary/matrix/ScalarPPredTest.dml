@@ -1,0 +1,37 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A = read($1, rows=$2, cols=$3, format="text");
+
+if( $4 == 0 )
+{
+   B = ppred(A, $5, ">")
+}
+else if( $4 == 1 )
+{
+   B = ppred(A, $5, "<")
+}
+else if( $4 == 2 )
+{
+   B = ppred(A, $5, "==")
+}
+else if( $4 == 3 )
+{
+   B = ppred(A, $5, "!=")
+}
+else if( $4 == 4 )
+{
+   B = ppred(A, $5, ">=")
+}
+else if( $4 == 5 )
+{
+   B = ppred(A, $5, "<=")
+}
+
+write(B, $6, format="text");

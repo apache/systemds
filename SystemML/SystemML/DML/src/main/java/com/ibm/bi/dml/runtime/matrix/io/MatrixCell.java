@@ -245,7 +245,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
 		MatrixCell c3=checkType(result);
-		c3.setValue(op.fn.execute(value, op.constant));
+		c3.setValue(op.fn.execute(value, op.getConstant()));
 		return c3;
 	}
 

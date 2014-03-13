@@ -370,6 +370,9 @@ public class OptimizerUtils
 		
 		if( worstcase )
 		{
+			//NOTE: for matrix-scalar operations this estimate is too conservative, because 
+			//Math.min(1, sp1 + sp2) will always give a sparsity 1 if we pass sp2=1 for scalars.
+			//In order to do better (with guarantees), we need to take the actual values into account  
 			switch(op) 
 			{
 				case PLUS:

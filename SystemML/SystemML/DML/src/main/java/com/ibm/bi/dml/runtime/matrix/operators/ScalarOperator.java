@@ -10,8 +10,12 @@ package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
+import com.ibm.bi.dml.runtime.functionobjects.Equals;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
+import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
@@ -20,26 +24,59 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 public class ScalarOperator  extends Operator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ValueFunction fn;
-	public double constant;
+	protected double _constant;
+	
 	public ScalarOperator(ValueFunction p, double cst)
 	{
-		fn=p;
-		constant=cst;
+		fn = p;
+		_constant = cst;
+		
 		//as long as (0 op v)=0, then op is sparsesafe
-		if( fn instanceof Multiply || fn instanceof Multiply2 ||
-			fn instanceof Power || fn instanceof Power2 ||	
-		    fn instanceof And                                     ) 
+		//note: additional functionobjects might qualify according to constant
+		if(   fn instanceof Multiply || fn instanceof Multiply2 
+		   || fn instanceof Power || fn instanceof Power2 
+		   || fn instanceof And  ) 
+		{
 			sparseSafe=true;
+		}
 		else
+		{
 			sparseSafe=false;
+		}
 	}
-	public void setConstant(double cst) {
-		constant = cst;
+	
+	public double getConstant()
+	{
+		return _constant;
 	}
+	
+	public void setConstant(double cst) 
+	{
+		//set constant
+		_constant = cst;
+		
+		//revisit sparse safe decision according to known constant
+		//note: there would be even more potential if we take left/right op into account
+		if(    fn instanceof Multiply || fn instanceof Multiply2 
+			|| fn instanceof Power || fn instanceof Power2 
+			|| fn instanceof And
+			||(fn instanceof GreaterThan && _constant==0) 
+			||(fn instanceof LessThan && _constant==0)
+			||(fn instanceof NotEquals && _constant==0)
+			||(fn instanceof Equals && _constant!=0)    )
+		{
+			sparseSafe = true;
+		}
+		else
+		{
+			sparseSafe = false;
+		}
+	}
+	
 	public double executeScalar(double in) throws DMLRuntimeException {
 		throw new DMLRuntimeException("executeScalar(): can not be invoked from base class.");
 	}

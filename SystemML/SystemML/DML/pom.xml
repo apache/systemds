@@ -2,7 +2,7 @@
 	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ibm.biginsights</groupId>
-  <artifactId>DML</artifactId>
+  <artifactId>system-ml</artifactId>
   <version>0.4-SNAPSHOT</version>
   <name>SystemML compiler</name>
 
@@ -171,23 +171,15 @@
       <version>4.11</version>
       <scope>compile</scope>
     </dependency>
-
-
     <dependency>
-      <groupId>local</groupId>
-      <artifactId>nimble_hadoop2</artifactId>
+      <groupId>com.ibm.thirdparty</groupId>
+      <artifactId>nimble-hadoop</artifactId>
       <version>1.0.0</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/nimble_hadoop2.jar</systemPath>
     </dependency>
-
-
     <dependency>
-      <groupId>local</groupId>
-      <artifactId>grappa_vis</artifactId>
+      <groupId>com.ibm.thirdparty</groupId>
+      <artifactId>grappa-vis</artifactId>
       <version>1.0.0</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/grappa_vis.jar</systemPath>
     </dependency>
 
 
@@ -196,16 +188,16 @@
       <artifactId>jaql</artifactId>
       <version>0.5.2</version>
     </dependency>
-<dependency>
-  <groupId>stax</groupId>
-  <artifactId>stax-api</artifactId>
-  <version>1.0.1</version>
-</dependency>
-<dependency>
-  <groupId>commons-collections</groupId>
-  <artifactId>commons-collections</artifactId>
-  <version>3.2.1</version>
-</dependency>
+    <dependency>
+      <groupId>stax</groupId>
+      <artifactId>stax-api</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.2.1</version>
+    </dependency>
 
   </dependencies>
 

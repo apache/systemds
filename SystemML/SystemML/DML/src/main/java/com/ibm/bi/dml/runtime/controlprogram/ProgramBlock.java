@@ -147,6 +147,8 @@ public class ProgramBlock
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
 				Statistics.incrementHOPRecompileTime(t1-t0);
+				if( tmp!=_inst )
+					Statistics.incrementHOPRecompileSB();
 			}
 		}
 		catch(Exception ex)
@@ -185,6 +187,8 @@ public class ProgramBlock
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
 				Statistics.incrementHOPRecompileTime(t1-t0);
+				if( tmp!=inst )
+					Statistics.incrementHOPRecompilePred();
 			}
 		}
 		catch(Exception ex)

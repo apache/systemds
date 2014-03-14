@@ -8,10 +8,12 @@
 package com.ibm.bi.dml.utils;
 
 import java.lang.management.CompilationMXBean;
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -38,8 +40,16 @@ public class Statistics
 	/** number of compiled MR jobs */
 	private static int iNoOfCompiledMRJobs = 0;
 
+	//JVM stats
 	private static long jitCompileTime = 0; //in milli sec
+	private static long jvmGCTime = 0; //in milli sec
+	private static long jvmGCCount = 0; //count
+	
+	//HOP DAG recompile stats
 	private static long hopRecompileTime = 0; //in nano sec
+	private static long hopRecompilePred = 0; //count
+	private static long hopRecompileSB = 0;   //count
+	
 	
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
@@ -76,8 +86,32 @@ public class Statistics
 		jitCompileTime += time;
 	}
 	
+	public static synchronized void incrementJVMgcTime( long time ) {
+		jvmGCTime += time;
+	}
+	
+	public static synchronized void incrementJVMgcCount( long delta ) {
+		jvmGCCount += delta;
+	}
+	
 	public static synchronized void incrementHOPRecompileTime( long time ) {
 		hopRecompileTime += time;
+	}
+	
+	public static synchronized void incrementHOPRecompilePred() {
+		hopRecompilePred ++;
+	}
+	
+	public static synchronized void incrementHOPRecompilePred(long delta) {
+		hopRecompilePred += delta;
+	}
+	
+	public static synchronized void incrementHOPRecompileSB() {
+		hopRecompileSB ++;
+	}
+	
+	public static synchronized void incrementHOPRecompileSB(long delta) {
+		hopRecompileSB += delta;
 	}
 
 	/**
@@ -105,6 +139,18 @@ public class Statistics
 		return lEndTime - lStartTime;
 	}
 	
+	public static void reset()
+	{
+		hopRecompileTime = 0;
+		hopRecompilePred = 0;
+		hopRecompileSB = 0;
+		
+		resetJITCompileTime();
+		resetJVMgcTime();
+		resetJVMgcCount();
+		resetCPHeavyHitters();
+	}
+	
 	/**
 	 * 
 	 */
@@ -112,11 +158,12 @@ public class Statistics
 		jitCompileTime = -1 * getJITCompileTime();
 	}
 	
-	/**
-	 * 
-	 */
-	public static void resetHOPRecompileTime(){
-		hopRecompileTime = 0;
+	public static void resetJVMgcTime(){
+		jvmGCTime = -1 * getJVMgcTime();
+	}
+	
+	public static void resetJVMgcCount(){
+		jvmGCTime = -1 * getJVMgcCount();
 	}
 	
 	/**
@@ -190,8 +237,42 @@ public class Statistics
 		return ret;
 	}
 	
+	public static long getJVMgcTime(){
+		long ret = -1; //unsupported
+		
+		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
+		
+		for( GarbageCollectorMXBean gcx : gcxs )
+			ret += gcx.getCollectionTime();
+		if( ret>0 )
+			ret += jvmGCTime;
+		
+		return ret;
+	}
+	
+	public static long getJVMgcCount(){
+		long ret = -1; //unsupported
+		
+		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
+		
+		for( GarbageCollectorMXBean gcx : gcxs )
+			ret += gcx.getCollectionCount();
+		if( ret>0 )
+			ret += jvmGCCount;
+		
+		return ret;
+	}
+	
 	public static long getHopRecompileTime(){
 		return hopRecompileTime;
+	}
+	
+	public static long getHopRecompiledPredDAGs(){
+		return hopRecompilePred;
+	}
+	
+	public static long getHopRecompiledSBDAGs(){
+		return hopRecompileSB;
 	}
 
 	/**
@@ -221,8 +302,11 @@ public class Statistics
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
-			sb.append("Total HOP recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
+			sb.append("Total HOP DAG recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
+			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
+			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
 		}
 		

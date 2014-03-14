@@ -103,6 +103,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMTASKS.toString(), 1);
 		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode() ) {
 			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JITCOMPILE.toString(), Statistics.getJITCompileTime());
+			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JVMGC_COUNT.toString(), Statistics.getJVMgcCount());
+			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JVMGC_TIME.toString(), Statistics.getJVMgcTime());
 			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_MEM.toString(), CacheStatistics.getMemHits());
 			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString(), CacheStatistics.getFSBuffHits());
 			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FS.toString(), CacheStatistics.getFSHits());
@@ -212,8 +214,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() )
 		{
 			CacheStatistics.reset();
-			Statistics.resetHOPRecompileTime();
-			Statistics.resetJITCompileTime();
+			Statistics.reset();
 		}
 	}
 

@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.Power2;
+import com.ibm.bi.dml.runtime.functionobjects.Power2CMinus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -109,6 +110,9 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		}
 		else if ( opcode.equalsIgnoreCase("^2") ) {
 			return new ScalarInstruction(new RightScalarOperator(Power2.getPower2FnObject(), cst), in, out, str);
+		}
+		else if ( opcode.equalsIgnoreCase("^2c-") ) {
+			return new ScalarInstruction(new RightScalarOperator(Power2CMinus.getPower2CMFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("max"), cst), in, out, str);

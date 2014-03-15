@@ -652,7 +652,9 @@ public abstract class Hop
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, INVALID
+		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, INVALID,
+		//fused operators for performance 
+		POW2CM, 
 	};
 
 	// Operations that require 3 operands
@@ -806,6 +808,7 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.MIN, com.ibm.bi.dml.lops.Unary.OperationTypes.MIN);
 		HopsOpOp2LopsU.put(OpOp2.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
+		HopsOpOp2LopsU.put(OpOp2.POW2CM, com.ibm.bi.dml.lops.Unary.OperationTypes.POW2CM);
 	}
 
 	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -910,6 +913,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.AND, "&");
 		HopsOpOp2String.put(OpOp2.LOG, "log");
 		HopsOpOp2String.put(OpOp2.POW, "^");
+		HopsOpOp2String.put(OpOp2.POW2CM, "^2c-");
 		HopsOpOp2String.put(OpOp2.CONCAT, "concat");
 		HopsOpOp2String.put(OpOp2.INVALID, "?");
 		HopsOpOp2String.put(OpOp2.QUANTILE, "quantile");

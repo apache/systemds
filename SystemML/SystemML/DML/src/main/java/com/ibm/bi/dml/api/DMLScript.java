@@ -67,7 +67,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.utils.visualize.DotGraph;
+// import com.ibm.bi.dml.utils.visualize.DotGraph;
 
 
 public class DMLScript 
@@ -499,9 +499,9 @@ public class DMLScript
 		dmlt.constructHops(prog);
 		
 		if( VISUALIZE ) { // HOPs before rewrite
-			DotGraph gt = new DotGraph();
-			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
-			dmlt.resetHopsDAGVisitStatus(prog);
+//			DotGraph gt = new DotGraph();
+//			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
+//			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 	
 		//Step 4: rewrite HOP DAGs (incl IPA and CP/MR)
@@ -514,9 +514,9 @@ public class DMLScript
 		}
 		
 		if( VISUALIZE ) { // HOPs before rewrite
-			DotGraph gt = new DotGraph();
-			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
-			dmlt.resetHopsDAGVisitStatus(prog);
+//			DotGraph gt = new DotGraph();
+//			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
+//			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 	
 		//Step 5: backend-specific compile and execute
@@ -567,9 +567,9 @@ public class DMLScript
 
 		// lops plan visualization 
 		if(VISUALIZE){
-			DotGraph gt = new DotGraph();
-			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
-			dmlt.resetLopsDAGVisitStatus(prog);
+//			DotGraph gt = new DotGraph();
+//			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
+//			dmlt.resetLopsDAGVisitStatus(prog);
 		}
 		
 		////////////////////// generate runtime program ///////////////////////////////
@@ -650,9 +650,9 @@ public class DMLScript
 
 		// plan visualization (hops after rewrite)
 		if(VISUALIZE){
-			DotGraph g = new DotGraph();
-			g.drawSQLLopsDAG(prog, "SQLLopsDAG", 100, 100, PATH_TO_SRC, VISUALIZE);
-			dmlt.resetSQLLopsDAGVisitStatus(prog);
+//			DotGraph g = new DotGraph();
+//			g.drawSQLLopsDAG(prog, "SQLLopsDAG", 100, 100, PATH_TO_SRC, VISUALIZE);
+//			dmlt.resetSQLLopsDAGVisitStatus(prog);
 		}
 	
 		String sql = sqlprog.generateSQLString();

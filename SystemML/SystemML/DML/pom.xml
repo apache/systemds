@@ -62,6 +62,7 @@
 					<excludes>
 						<exclude>**/packagesupport/EigenWrapper.java</exclude>
 						<exclude>**/packagesupport/LinearSolverWrapperCP.java</exclude>
+						<exclude>**/dml/utils/visualize/*.java</exclude>
 					</excludes>
 				</configuration>
 

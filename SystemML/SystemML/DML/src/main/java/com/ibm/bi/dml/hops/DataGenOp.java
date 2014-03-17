@@ -191,8 +191,8 @@ public class DataGenOp extends Hop
 		try
 		{
 			if ( method == DataGenMethod.RAND ) {
-				Hop min = getInput().get(_paramIndexMap.get("min")); //min 
-				Hop max = getInput().get(_paramIndexMap.get("max")); //max
+				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
+				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
 				if(    min instanceof LiteralOp && ((LiteralOp)min).getDoubleValue()==0.0
 					&& max instanceof LiteralOp && ((LiteralOp)max).getDoubleValue()==0.0 )
 				{
@@ -312,10 +312,23 @@ public class DataGenOp extends Hop
 		return _paramIndexMap;
 	}
 	
+	public int getParamIndex(String key)
+	{
+		return _paramIndexMap.get(key);
+	}
+	
+	public boolean hasConstantValue()
+	{
+		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
+		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
+		return min.equals(max);
+	}
+	
 	public static long generateRandomSeed()
 	{
 		return System.nanoTime();
 	}
+	
 
 	@SuppressWarnings("unchecked")
 	@Override

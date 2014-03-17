@@ -1432,4 +1432,23 @@ public class BinaryOp extends Hop
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1));
 	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public boolean supportsMatrixScalarOperations()
+	{
+		return (   op==OpOp2.PLUS    ||op==OpOp2.MINUS 
+		         ||op==OpOp2.MULT    ||op==OpOp2.DIV
+		         ||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
+		         ||op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
+		         ||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
+		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL
+		         ||op==OpOp2.MIN     ||op==OpOp2.MAX
+		         ||op==OpOp2.AND     ||op==OpOp2.OR
+		         ||op==OpOp2.LOG     ||op==OpOp2.POW
+		         ||op==OpOp2.POW2CM );
+	}
 }

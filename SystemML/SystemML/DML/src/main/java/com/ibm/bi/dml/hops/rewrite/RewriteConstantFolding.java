@@ -15,6 +15,8 @@ import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.lops.BinaryCP;
+import com.ibm.bi.dml.lops.BinaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BinaryCPInstruction;
@@ -40,8 +42,11 @@ public class RewriteConstantFolding extends HopRewriteRule
 		if( roots == null )
 			return null;
 
-		for (Hop h : roots) 
-			rule_ConstantFolding(h);
+		for( int i=0; i<roots.size(); i++ )
+		{
+			Hop h = roots.get(i);
+			roots.set(i, rule_ConstantFolding(h));
+		}
 		
 		return roots;
 	}
@@ -53,9 +58,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		if( root == null )
 			return null;
 
-		rule_ConstantFolding(root);
-		
-		return root;
+		return rule_ConstantFolding(root);
 	}
 	
 
@@ -64,10 +67,10 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * @param hop
 	 * @throws HopsException
 	 */
-	private void rule_ConstantFolding( Hop hop ) 
+	private Hop rule_ConstantFolding( Hop hop ) 
 		throws HopsException 
 	{
-		rConstantFoldingBinaryExpression(hop);
+		return rConstantFoldingBinaryExpression(hop);
 	}
 	
 	/**
@@ -75,11 +78,11 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * @param root
 	 * @throws HopsException
 	 */
-	private void rConstantFoldingBinaryExpression( Hop root ) 
+	private Hop rConstantFoldingBinaryExpression( Hop root ) 
 		throws HopsException
 	{
 		if( root.get_visited() == VISIT_STATUS.DONE )
-			return;
+			return root;
 		
 		//recursively process childs (before replacement to allow bottom-recursion)
 		//no iterator in order to prevent concurrent modification
@@ -100,7 +103,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 			
 			if(   (lit1.get_valueType()==ValueType.DOUBLE || lit1.get_valueType()==ValueType.INT)
 			   && (lit2.get_valueType()==ValueType.DOUBLE || lit2.get_valueType()==ValueType.INT)
-			   &&  root.get_valueType()==ValueType.DOUBLE || root.get_valueType()==ValueType.INT ) //disable boolean, string
+			   &&  root.get_valueType()==ValueType.DOUBLE || root.get_valueType()==ValueType.INT || root.get_valueType()==ValueType.BOOLEAN ) //disable string
 			{
 				try
 				{
@@ -122,28 +125,39 @@ public class RewriteConstantFolding extends HopRewriteRule
 					literal = new LiteralOp(String.valueOf(ret), ret);
 				else if( broot.get_valueType()==ValueType.INT )
 					literal = new LiteralOp(String.valueOf((long)ret), (long)ret);
+				else if( broot.get_valueType()==ValueType.BOOLEAN )
+					literal = new LiteralOp(String.valueOf(ret!=0), ret!=0);
 				
 				//reverse replacement in order to keep common subexpression elimination
-				for( int i=0; i<broot.getParent().size(); i++ ) //for all parents
+				int plen = broot.getParent().size();
+				if( plen > 0 ) //broot is NOT a DAG root
 				{
-					Hop parent = broot.getParent().get(i);
-					for( int j=0; j<parent.getInput().size(); j++ )
+					for( int i=0; i<broot.getParent().size(); i++ ) //for all parents
 					{
-						Hop child = parent.getInput().get(j);
-						if( broot == child )
+						Hop parent = broot.getParent().get(i);
+						for( int j=0; j<parent.getInput().size(); j++ )
 						{
-							//replace operator
-							parent.getInput().remove(j);
-							parent.getInput().add(j, literal);
+							Hop child = parent.getInput().get(j);
+							if( broot == child )
+							{
+								//replace operator
+								parent.getInput().remove(j);
+								parent.getInput().add(j, literal);
+							}
 						}
 					}
+					broot.getParent().clear();	
 				}
-				broot.getParent().clear();	
+				else //broot IS a DAG root
+				{
+					root = literal;
+				}
 			}		
 		}
 		
 		//mark processed
 		root.set_visited( VISIT_STATUS.DONE );
+		return root;
 	}
 
 	/**
@@ -157,23 +171,19 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private double evalScalarBinaryOperator(OpOp2 op, double left, double right) 
 		throws DMLRuntimeException
 	{
-		String bopcode = Hop.HopsOpOp2String.get(op);
-		if( bopcode == null )
+		//NOTE: we cannot just just hop strings since e.g., EQUALS has different opcode in Hops and Lops
+		//String bopcode = Hop.HopsOpOp2String.get(op);
+		
+		//get instruction opcode
+		OperationTypes otype = Hop.HopsOpOp2LopsBS.get(op);
+		if( otype == null )
 			throw new DMLRuntimeException("Unknown binary operator type: "+op);
+		String bopcode = BinaryCP.getOpcode(otype);
+		
+		//execute binary operator
 		BinaryOperator bop = BinaryCPInstruction.getBinaryOperator(bopcode);
 		double ret = bop.fn.execute(left, right);
 		
-		/* old constant folding approach
-		switch( broot.getOp() )
-		{
-			case PLUS:	ret = lret + rret; break;
-			case MINUS:	ret = lret - rret; break;
-			case MULT:  ret = lret * rret; break;
-			case DIV:   ret = lret / rret; break;
-			case MIN:   ret = Math.min(lret, rret); break;
-			case MAX:   ret = Math.max(lret, rret); break;
-		}
-		*/
 		return ret;
 	}
 	

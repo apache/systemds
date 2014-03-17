@@ -73,72 +73,9 @@ public class BinaryCP extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		String opString = null;
+		String opString = getOpcode( operation );
 		
-		switch ( operation ) {
 		
-		/* Arithmetic */
-		case ADD:
-			opString = "+"; break;
-		case SUBTRACT:
-			opString = "-"; break;
-		case MULTIPLY:
-			opString = "*"; break;
-		case DIVIDE:
-			opString = "/"; break;
-		case MODULUS:
-			opString = "%%"; break;	
-		case INTDIV:
-			opString = "%/%"; break;	
-		case POW:	
-			opString = "^"; break;
-			
-		/* Relational */
-		case LESS_THAN:
-			opString = "<"; break;
-		case LESS_THAN_OR_EQUALS:
-			opString = "<="; break;
-		case GREATER_THAN:
-			opString = ">"; break;
-		case GREATER_THAN_OR_EQUALS:
-			opString = ">="; break;
-		case EQUALS:
-			opString = "=="; break;
-		case NOT_EQUALS:
-			opString = "!="; break;
-		
-		/* Boolean */
-		case AND:
-			opString = "&&"; break;
-		case OR:
-			opString = "||"; break;
-		
-		/* Builtin Functions */
-		case LOG:
-			opString = "log"; break;
-		case MIN:
-			opString = "min"; break;
-		case MAX:
-			opString = "max"; break;
-		
-		case PRINT:
-			opString = "print"; break;
-			
-		case IQSIZE:
-			opString = "iqsize"; 
-			break;
-		
-		case MATMULT:
-			opString = "ba+*";
-			break;
-			
-		case SEQINCR:
-			opString = "seqincr";
-			break;
-			
-		default:
-			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for BinaryScalar operator: " + operation);
-		}
 		
 		StringBuilder sb = new StringBuilder();
 		
@@ -166,6 +103,76 @@ public class BinaryCP extends Lop
  
 		default:
 			return SimpleInstType.Scalar;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static String getOpcode( OperationTypes op )
+	{
+		switch ( op ) 
+		{
+			/* Arithmetic */
+			case ADD:
+				return "+";
+			case SUBTRACT:
+				return "-";
+			case MULTIPLY:
+				return "*";
+			case DIVIDE:
+				return "/";
+			case MODULUS:
+				return "%%";	
+			case INTDIV:
+				return "%/%";	
+			case POW:	
+				return "^";
+				
+			/* Relational */
+			case LESS_THAN:
+				return "<";
+			case LESS_THAN_OR_EQUALS:
+				return "<=";
+			case GREATER_THAN:
+				return ">";
+			case GREATER_THAN_OR_EQUALS:
+				return ">=";
+			case EQUALS:
+				return "==";
+			case NOT_EQUALS:
+				return "!=";
+			
+			/* Boolean */
+			case AND:
+				return "&&";
+			case OR:
+				return "||";
+			
+			/* Builtin Functions */
+			case LOG:
+				return "log";
+			case MIN:
+				return "min"; 
+			case MAX:
+				return "max"; 
+			
+			case PRINT:
+				return "print";
+				
+			case IQSIZE:
+				return "iqsize"; 
+			
+			case MATMULT:
+				return "ba+*";
+				
+			case SEQINCR:
+				return "seqincr";
+				
+			default:
+				throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + op);
 		}
 	}
 }

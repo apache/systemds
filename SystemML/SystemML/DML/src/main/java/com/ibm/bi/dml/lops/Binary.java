@@ -91,8 +91,13 @@ public class Binary extends Lop
 		return operation;
 	}
 
-	private String getOpcode() {
-		switch(operation) {
+	private String getOpcode()
+	{
+		return getOpcode( operation );
+	}
+	
+	public static String getOpcode( OperationTypes op ) {
+		switch(op) {
 		/* Arithmetic */
 		case ADD:
 			return "+";
@@ -138,7 +143,7 @@ public class Binary extends Lop
 			return "solve";
 			
 		default:
-			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Binary operation: " + operation);
+			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
 		}
 	}
 	

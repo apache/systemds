@@ -80,6 +80,12 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_CONSTANT_FOLDING = true;
 	
+	/**
+	 * Enables if-else branch removal for constant predicates (original literals or 
+	 * results of constant folding). 
+	 * 
+	 */
+	public static boolean ALLOW_BRANCH_REMOVAL = true;
 	
 	/**
 	 * Enables simplex expression evaluation for datagen parameters 'rows', 'cols'. Simple
@@ -178,6 +184,7 @@ public class OptimizerUtils
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				ALLOW_BRANCH_REMOVAL = false;
 				break;
 			// opt level 2: memory-based (all advanced rewrites)
 			case 2:

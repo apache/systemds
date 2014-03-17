@@ -129,6 +129,10 @@ public class DMLProgram
 	public StatementBlock getStatementBlock(int i){
 		return _blocks.get(i);
 	}
+	
+	public void setStatementBlock(int i, StatementBlock sb) {
+		 _blocks.set(i, sb);
+	}
 
 	public void mergeStatementBlocks(){
 		_blocks = StatementBlock.mergeStatementBlocks(_blocks);

@@ -36,22 +36,30 @@ public class ProgramRewriter
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private ArrayList<HopRewriteRule> _ruleSet = null;
+	private ArrayList<HopRewriteRule> _dagRuleSet = null;
+	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
 	
 	public ProgramRewriter()
 	{
-		//initialize ruleSet (with fixed rewrite order)
-		_ruleSet = new ArrayList<HopRewriteRule>();
+		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
+		_dagRuleSet = new ArrayList<HopRewriteRule>();
 			
-		_ruleSet.add(     new RewriteTransientWriteParentHandling()   );
-		_ruleSet.add(     new RewriteBlockSizeAndReblock()            );
+		_dagRuleSet.add(     new RewriteTransientWriteParentHandling()   );
+		_dagRuleSet.add(     new RewriteBlockSizeAndReblock()            );
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
-			_ruleSet.add( new RewriteCommonSubexpressionElimination() );
+			_dagRuleSet.add( new RewriteCommonSubexpressionElimination() );
 		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
-			_ruleSet.add( new RewriteConstantFolding()                ); //dependencies: common subexpression elimination
-		_ruleSet.add(     new RewriteMatrixMultChainOptimization()    );
-		_ruleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
-		_ruleSet.add(     new RewriteRemoveUnnecessaryCasts()         );
+			_dagRuleSet.add( new RewriteConstantFolding()                ); //dependencies: common subexpression elimination
+		_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()    );
+		_dagRuleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
+		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()         );
+		
+		
+		//initialize StatementBlock rewrite ruleSet (with fixed rewrite order)
+		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		
+		if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
+			_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()      );
 	}
 	
 	/**
@@ -76,6 +84,7 @@ public class ProgramRewriter
 		{
 			StatementBlock current = dmlp.getStatementBlock(i);
 			rewriteStatementBlockHopDAGs(current);
+			dmlp.setStatementBlock(i, rewriteStatementBlock(current));
 		}
 	}
 	
@@ -138,7 +147,7 @@ public class ProgramRewriter
 	private ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
 		throws LanguageException, HopsException
 	{	
-		for( HopRewriteRule r : _ruleSet )
+		for( HopRewriteRule r : _dagRuleSet )
 		{
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots);
@@ -156,12 +165,61 @@ public class ProgramRewriter
 	private Hop rewriteHopDAG(Hop root) 
 		throws LanguageException, HopsException
 	{	
-		for( HopRewriteRule r : _ruleSet )
+		for( HopRewriteRule r : _dagRuleSet )
 		{
 			root.resetVisitStatus(); //reset for each rule
 			root = r.rewriteHopDAG(root);
 		}
 		
 		return root;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 * @throws HopsException
+	 */
+	private StatementBlock rewriteStatementBlock( StatementBlock sb ) 
+		throws HopsException
+	{
+		if (sb instanceof FunctionStatementBlock)
+		{
+			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
+			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			for (StatementBlock sbc : fstmt.getBody())
+				rewriteStatementBlock(sbc);
+		}
+		else if (sb instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			for (StatementBlock sbc : wstmt.getBody())
+				rewriteStatementBlock(sbc);
+		}	
+		else if (sb instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			for (StatementBlock sbc : istmt.getIfBody())
+				rewriteStatementBlock(sbc);
+			for (StatementBlock sbc : istmt.getElseBody())
+				rewriteStatementBlock(sbc);
+		}
+		else if (sb instanceof ForStatementBlock) //incl parfor
+		{
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			for (StatementBlock sbc : fstmt.getBody())
+				rewriteStatementBlock(sbc);
+		}
+		
+		//apply rewrite rules
+		for( StatementBlockRewriteRule r : _sbRuleSet )
+		{
+			sb = r.rewriteStatementBlock(sb);
+		}
+		
+		return sb;
 	}
 }

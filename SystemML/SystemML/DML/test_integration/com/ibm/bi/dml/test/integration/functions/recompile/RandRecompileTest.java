@@ -110,6 +110,11 @@ public class RandRecompileTest extends AutomatedTestBase
 		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
+		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
+		boolean oldFlagRand2 = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
+		boolean oldFlagRand3 = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
+		
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testName);
@@ -125,6 +130,12 @@ public class RandRecompileTest extends AutomatedTestBase
 	
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
+			
+			//disable rand specific recompile
+			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = false;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
+			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
+			
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
@@ -148,6 +159,10 @@ public class RandRecompileTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
+			
+			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = oldFlagRand1;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagRand2;
+			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagRand3;
 		}
 	}
 	

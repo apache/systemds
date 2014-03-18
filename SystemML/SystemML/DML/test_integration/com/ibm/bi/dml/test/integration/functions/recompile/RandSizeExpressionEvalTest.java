@@ -60,6 +60,11 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		
+		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
+		boolean oldFlagRand2 = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
+		boolean oldFlagRand3 = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
+		
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testName);
@@ -75,6 +80,12 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 	
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = constFold;
+			
+			//disable rand specific recompile
+			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = false;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
+			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
+			
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
@@ -99,6 +110,10 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldFlagFold;
+			
+			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = oldFlagRand1;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagRand2;
+			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagRand3;
 		}
 	}
 	

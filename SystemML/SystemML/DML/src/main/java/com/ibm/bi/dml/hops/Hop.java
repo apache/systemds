@@ -35,6 +35,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
@@ -1173,6 +1174,48 @@ public abstract class Hop
 	}
 	
 	/**
+	 * Compute worst case estimate for size expression based on worst-case
+	 * statistics of inputs. Limited set of supported operations in comparison
+	 * to refresh rows/cols.
+	 * 
+	 * @param input
+	 * @param memo
+	 */
+	protected long computeDimParameterInformation( Hop input, MemoTable memo )
+	{
+		long ret = -1;
+		
+		if( input instanceof UnaryOp )
+		{
+			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
+				if( mc.get_rows()>0 )
+					ret = mc.get_rows();
+			}
+			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
+				if( mc.get_cols()>0 )
+					ret = mc.get_cols();
+			}
+		}
+		else if ( input instanceof LiteralOp )
+		{
+			ret = UtilFunctions.parseToLong(input.get_name());
+		}
+		else if ( input instanceof BinaryOp )
+		{
+			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>(), memo);
+			if( dim != Long.MAX_VALUE ) //if known
+				ret = dim ;
+		}
+		
+		return ret;
+	}
+	
+	
+	/**
 	 * Function to evaluate simple size expressions of binary operators 
 	 * (plus, minus, mult, div, min, max) over literals and now/ncol.
 	 * 
@@ -1185,11 +1228,11 @@ public abstract class Hop
 	 * @param root
 	 * @return
 	 */
-	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> memo )
+	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo )
 	{
 		//memoization (prevent redundant computation of common subexpr)
-		if( memo.containsKey(root.getHopID()) )
-			return memo.get(root.getHopID());
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
 		
 		long ret = Long.MAX_VALUE;
 		
@@ -1215,8 +1258,8 @@ public abstract class Hop
 			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
 			{
 				BinaryOp broot = (BinaryOp) root;
-				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), memo);
-				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), memo);
+				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo);
+				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo);
 				//note: positive and negative values might be valid subexpressions
 				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
 				{
@@ -1233,15 +1276,76 @@ public abstract class Hop
 			}
 		}
 		
-		memo.put(root.getHopID(), ret);
+		valMemo.put(root.getHopID(), ret);
 		return ret;
 	}
 	
-	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> memo, LocalVariableMap vars )
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 */
+	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo, MemoTable memo )
 	{
 		//memoization (prevent redundant computation of common subexpr)
-		if( memo.containsKey(root.getHopID()) )
-			return memo.get(root.getHopID());
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		long ret = Long.MAX_VALUE;
+		
+		if( root instanceof LiteralOp )
+		{
+			long dim = UtilFunctions.parseToLong(root.get_name());
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof UnaryOp )
+		{
+			UnaryOp uroot = (UnaryOp) root;
+			long dim = -1;
+			if(uroot.get_op() == Hop.OpOp1.NROW)
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				dim = mc.get_rows();
+			}
+			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				dim = mc.get_cols();
+			}
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof BinaryOp )
+		{ 
+			if( OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
+			{
+				BinaryOp broot = (BinaryOp) root;
+				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo, memo);
+				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo, memo);
+				//note: positive and negative values might be valid subexpressions
+				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
+				{
+					switch( broot.op )
+					{
+						case PLUS:	ret = lret + rret; break;
+						case MULT:  ret = lret * rret; break;
+						case MAX:   ret = Math.max(lret, rret); break;
+					}
+				}
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars )
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
 		
 		long ret = Long.MAX_VALUE;
 		
@@ -1274,8 +1378,8 @@ public abstract class Hop
 			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
 			{
 				BinaryOp broot = (BinaryOp) root;
-				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), memo, vars);
-				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), memo, vars);
+				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo, vars);
+				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo, vars);
 				//note: positive and negative values might be valid subexpressions
 				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
 				{
@@ -1292,7 +1396,7 @@ public abstract class Hop
 			}
 		}
 		
-		memo.put(root.getHopID(), ret);
+		valMemo.put(root.getHopID(), ret);
 		return ret;
 	}
 

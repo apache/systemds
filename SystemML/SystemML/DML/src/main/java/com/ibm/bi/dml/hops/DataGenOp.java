@@ -226,6 +226,16 @@ public class DataGenOp extends Hop
 	@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
+		if( method == DataGenMethod.RAND &&
+			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
+		{
+			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
+			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
+			long nnz = (long)(sparsity * dim1 * dim2);
+			if( dim1>0 && dim2>0 )
+				return new long[]{ dim1, dim2, nnz };
+		}
+		
 		return null;
 	}
 

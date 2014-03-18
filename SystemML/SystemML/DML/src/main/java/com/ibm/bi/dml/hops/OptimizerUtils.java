@@ -88,11 +88,21 @@ public class OptimizerUtils
 	public static boolean ALLOW_BRANCH_REMOVAL = true;
 	
 	/**
-	 * Enables simplex expression evaluation for datagen parameters 'rows', 'cols'. Simple
-	 * expressions are defined as binary operations on literals and nrow/ncol.
+	 * Enables simple expression evaluation for datagen parameters 'rows', 'cols'. Simple
+	 * expressions are defined as binary operations on literals and nrow/ncol. This applies
+	 * only to exact size information.
 	 */
 	public static boolean ALLOW_SIZE_EXPRESSION_EVALUATION = true;
 
+	/**
+	 * Enables simple expression evaluation for datagen parameters 'rows', 'cols'. Simple
+	 * expressions are defined as binary operations on literals and b(+) or b(*) on nrow/ncol.
+	 * This applies also to worst-case size information. 
+	 */
+	public static boolean ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = true;
+
+	public static boolean ALLOW_RAND_JOB_RECOMPILE = true;
+	
 	/**
 	 * Enables interprocedural analysis between main script and functions as well as functions
 	 * and other functions. This includes, for example, to propagate statistics into functions

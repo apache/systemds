@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public MatrixMatrixBuiltinCPInstruction(Operator op, 
@@ -68,7 +68,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		Array2DRowRealMatrix vectorInput = prepareInputForCommonsMath(ec, input2.get_name());
 		
-		long inputPrep = System.nanoTime() - start;
+		//long inputPrep = System.nanoTime() - start;
 		start = System.nanoTime();
 		
 		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
@@ -81,7 +81,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		// Invoke solve
 		RealMatrix solutionMatrix = solver.solve(vectorInput);
 		
-		long compute = System.nanoTime() - start;
+		//long compute = System.nanoTime() - start;
 		start = System.nanoTime();
 		
 		MatrixBlock solution = DataConverter.convertToMatrixBlock(solutionMatrix.getData());
@@ -89,10 +89,10 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		ec.setMatrixOutput(output.get_name(), solution);
 		ec.releaseMatrixInput(input1.get_name());
 		ec.releaseMatrixInput(input2.get_name());
-		long outputPrep = System.nanoTime() - start;
-		long total = System.nanoTime()-begin;
+		//long outputPrep = System.nanoTime() - start;
+		//long total = System.nanoTime()-begin;
 		
-		System.out.println("  extfunApache " + inputPrep*1e-6 + " " + compute*1e-6 + " " + outputPrep*1e-6 + " " + total*1e-6);
+		//System.out.println("  extfunApache " + inputPrep*1e-6 + " " + compute*1e-6 + " " + outputPrep*1e-6 + " " + total*1e-6);
 		
 		return;
 	}

@@ -307,7 +307,6 @@ public class AggUnaryOp extends Hop
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
 				break;
 			case MEAN:
-				System.out.println(_direction);
 				//worst-case correction LASTTWOROWS / LASTTWOCOLUMNS 
 				if( _direction == Direction.Col ) //(potentially sparse)
 					val = OptimizerUtils.estimateSizeExactSparsity(2, dim2, sparsity);

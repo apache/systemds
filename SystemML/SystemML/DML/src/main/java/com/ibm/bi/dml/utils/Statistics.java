@@ -238,7 +238,7 @@ public class Statistics
 	}
 	
 	public static long getJVMgcTime(){
-		long ret = -1; //unsupported
+		long ret = 0; 
 		
 		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
 		
@@ -251,7 +251,7 @@ public class Statistics
 	}
 	
 	public static long getJVMgcCount(){
-		long ret = -1; //unsupported
+		long ret = 0; 
 		
 		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
 		

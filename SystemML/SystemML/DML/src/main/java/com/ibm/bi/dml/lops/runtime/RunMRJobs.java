@@ -27,6 +27,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -34,6 +35,8 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
@@ -120,10 +123,22 @@ public class RunMRJobs
 				 break;
 
 			case DATAGEN:
-				ret = DataGenMR.runJob(inst, 
-						rdInst.split(Lop.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
-						inst.getOutputs(), inst.getOutputInfos());
+				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION
+					&& OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE
+					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
+					&& Recompiler.checkCPRand( inst, rdInst ) ) 
+				{
+					ret = executeInMemoryRandOperations(inst, rdInst, outputMatrices);
+					Statistics.decrementNoOfExecutedMRJobs();
+					execCP = true;
+				}
+				else 
+				{
+					ret = DataGenMR.runJob(inst, 
+							rdInst.split(Lop.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
+							inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
+							inst.getOutputs(), inst.getOutputInfos());
+				}
 				break;
 			
 			case CM_COV:
@@ -148,23 +163,7 @@ public class RunMRJobs
 					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPReblock( inst, inputMatrices ) ) 
 				{
-					MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
-					ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
-					byte[] results = inst.getIv_resultIndices();
-					for( ReblockInstruction rblk : rblkSet )
-					{
-						//CP Reblock through caching framework (no copy required: same data, next op copies) 
-						MatrixBlock mb = inputMatrices[rblk.input].acquireRead();
-						for( int i=0; i<results.length; i++ )
-							if( rblk.output == results[i] )
-							{
-								outputMatrices[i].acquireModify( mb );
-								outputMatrices[i].release();
-								mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), rblk.brlen, rblk.bclen, mb.getNonZeros());
-							}
-						inputMatrices[rblk.input].release();
-					}
-					ret = new JobReturn( mc, inst.getOutputInfos(), true);
+					ret = executeInMemoryReblockOperations(inst, shuffleInst, inputMatrices, outputMatrices);
 					Statistics.decrementNoOfExecutedMRJobs();
 					execCP = true;
 				}
@@ -569,5 +568,64 @@ public class RunMRJobs
 		}
 			
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @param shuffleInst
+	 * @param inputMatrices
+	 * @param outputMatrices
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private static JobReturn executeInMemoryReblockOperations( MRJobInstruction inst, String shuffleInst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
+		ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
+		byte[] results = inst.getIv_resultIndices();
+		for( ReblockInstruction rblk : rblkSet )
+		{
+			//CP Reblock through caching framework (no copy required: same data, next op copies) 
+			MatrixBlock mb = inputMatrices[rblk.input].acquireRead();
+			for( int i=0; i<results.length; i++ )
+				if( rblk.output == results[i] )
+				{
+					outputMatrices[i].acquireModify( mb );
+					outputMatrices[i].release();
+					mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), rblk.brlen, rblk.bclen, mb.getNonZeros());
+				}
+			inputMatrices[rblk.input].release();
+		}
+		
+		return  new JobReturn( mc, inst.getOutputInfos(), true);
+	}
+	
+	private static JobReturn executeInMemoryRandOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		System.out.println("IN-MEM RAND");
+		
+		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
+		DataGenMRInstruction[] dgSet = MRInstructionParser.parseDataGenInstructions(randInst);
+		byte[] results = inst.getIv_resultIndices();
+		for( DataGenMRInstruction ldgInst : dgSet )
+		{
+			//CP Rand block operation 
+			RandInstruction lrand = (RandInstruction)ldgInst; 
+			
+			MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+			for( int i=0; i<results.length; i++ )
+				if( lrand.output == results[i] )
+				{
+					outputMatrices[i].acquireModify( mb );
+					outputMatrices[i].release();
+					mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lrand.rowsInBlock, lrand.colsInBlock, mb.getNonZeros());
+				}
+		}
+		
+		return  new JobReturn( mc, inst.getOutputInfos(), true);
 	}
 }

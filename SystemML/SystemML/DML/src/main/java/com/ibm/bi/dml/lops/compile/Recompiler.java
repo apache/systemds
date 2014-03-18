@@ -32,6 +32,7 @@ import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
@@ -64,6 +65,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
@@ -1016,4 +1018,58 @@ public class Recompiler
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param inst
+	 * @param updatedRandInst
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static boolean checkCPRand( MRJobInstruction inst, String updatedRandInst ) 
+		throws DMLRuntimeException 
+	{
+		boolean ret = true;
+		
+		//check only shuffle inst
+		String shuffleInst = inst.getIv_shuffleInstructions();
+		String rrInst = inst.getIv_recordReaderInstructions();
+		String mapInst = inst.getIv_instructionsInMapper();
+		String aggInst = inst.getIv_aggInstructions();
+		String otherInst = inst.getIv_otherInstructions();
+		if(    (shuffleInst != null && shuffleInst.length()>0)
+			|| (rrInst != null && rrInst.length()>0)
+			|| (mapInst != null && mapInst.length()>0)
+			|| (aggInst != null && aggInst.length()>0)
+			|| (otherInst != null && otherInst.length()>0)  )
+		{
+			ret = false;
+		}
+		
+		//check only rand inst
+		if( ret ) {
+			String[] instParts = updatedRandInst.split( Lop.INSTRUCTION_DELIMITOR );
+			for( String lrandStr : instParts )
+				if( !InstructionUtils.getOpCode(lrandStr).equals(DataGen.RAND_OPCODE) )
+				{
+					ret = false;
+					break;
+				}
+				else
+				{
+					//check recompile memory budget
+					//(don't account for sparsity due to dense generation approach)
+					RandInstruction lrandInst = (RandInstruction) RandInstruction.parseInstruction(lrandStr);
+					long rows = lrandInst.rows;
+					long cols = lrandInst.cols;
+					double mem = MatrixBlockDSM.estimateSize(rows, cols, 1.0d);				
+					if( mem >= OptimizerUtils.getMemBudget(true) )
+					{
+						ret = false;
+						break;
+					}
+				}
+		}
+		
+		return ret;
+	}
 }

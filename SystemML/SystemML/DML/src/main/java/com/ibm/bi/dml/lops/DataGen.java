@@ -29,6 +29,8 @@ public class DataGen extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	public static final String RAND_OPCODE = "Rand";
+	
 	/** base dir for rand input */
 	private String baseDir;
 	
@@ -177,7 +179,7 @@ public class DataGen extends Lop
 						+ "Parameter " + DataExpression.RAND_PDF
 						+ " must be a literal for a Rand operation.");
 
-			sb.append("Rand");
+			sb.append(RAND_OPCODE);
 			sb.append(OPERAND_DELIMITOR);
 			/*sb.append(in1);
 			sb.append(OPERAND_DELIMITOR);
@@ -341,7 +343,7 @@ public class DataGen extends Lop
 				throw new LopsException(this.printErrorLocation() + "Parameter " 
 						+ DataExpression.RAND_PDF + " must be a literal for a Rand operation.");
 			
-			sb.append( "Rand" );
+			sb.append( RAND_OPCODE );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( inputIndex );
 			sb.append( OPERAND_DELIMITOR );

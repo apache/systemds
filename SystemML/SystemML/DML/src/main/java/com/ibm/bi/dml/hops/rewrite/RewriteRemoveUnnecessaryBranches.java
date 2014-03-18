@@ -7,9 +7,12 @@
 
 package com.ibm.bi.dml.hops.rewrite;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -48,13 +51,17 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 				{
 					//pull-out simple if body
 					if( istmt.getIfBody().size() == 1 )
-						ret = istmt.getIfBody().get(0);		
+						ret = istmt.getIfBody().get(0);	
+					else
+						ret = createEmptyStatementBlock();
 				}
 				else
 				{
 					//pull-out simple else body
 					if( istmt.getElseBody().size() == 1 )
-						ret = istmt.getElseBody().get(0);	
+						ret = istmt.getElseBody().get(0);
+					else
+						ret = createEmptyStatementBlock();
 				}
 			}
 		}
@@ -79,5 +86,13 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 			
 			default: throw new HopsException("Invalid if predicate value type: "+op.get_valueType());
 		}
+	}
+	
+	private StatementBlock createEmptyStatementBlock()
+	{
+		StatementBlock ret = new StatementBlock(); //empty
+		ret.set_hops(new ArrayList<Hop>());
+		ret.set_lops(new ArrayList<Lop>());
+		return ret;
 	}
 }

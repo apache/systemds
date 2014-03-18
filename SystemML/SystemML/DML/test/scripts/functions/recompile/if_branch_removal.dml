@@ -1,0 +1,33 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+X = read($1, rows=$2, cols=$3);
+
+# test if-only 
+if( $4==1 )
+{
+   v = matrix(1,rows=nrow(X),cols=1);
+   X = append(X, v);
+}  
+
+# test if-else branches
+if( $4!=1 )
+{
+   v = matrix(1,rows=nrow(X),cols=1);
+   X = append(X, v);
+} 
+else
+{
+   v1 = matrix(1,rows=nrow(X),cols=1);
+   X = append(X, v1);
+   v2 = matrix(1,rows=nrow(X),cols=1);
+   X = append(X, v2);
+}
+
+write(X, $5);       

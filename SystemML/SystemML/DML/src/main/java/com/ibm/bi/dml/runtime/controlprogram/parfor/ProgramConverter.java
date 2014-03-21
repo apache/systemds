@@ -481,6 +481,7 @@ public class ProgramConverter
 		
 		copy = new FunctionProgramBlock(fpb.getProgram(), tmp1, tmp2);
 		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), 0, -1, fnStack, true) );
+		copy.setStatementBlock( fpb.getStatementBlock() );
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 	

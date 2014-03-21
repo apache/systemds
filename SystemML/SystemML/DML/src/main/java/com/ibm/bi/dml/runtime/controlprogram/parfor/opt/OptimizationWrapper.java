@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -74,6 +75,7 @@ public class OptimizationWrapper
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
 	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
+	private static final boolean CHECK_PLAN_CORRECTNESS = false; 
 	
 	static
 	{
@@ -247,8 +249,21 @@ public class OptimizationWrapper
 		
 		//core optimize
 		opt.optimize( sb, pb, tree, est, ec );
-		
 		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
+		
+		//assert plan correctness
+		if( CHECK_PLAN_CORRECTNESS && LOG.isDebugEnabled() )
+		{
+			try{
+				OptTreePlanChecker.checkProgramCorrectness(pb, sb, new HashSet<String>());
+				LOG.debug("ParFOR Opt: Checked plan and program correctness.");
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException("Failed to check program correctness.", ex);
+			}
+		}
+		
 		LOG.trace("ParFOR Opt: Optimized plan in "+time.stop()+"ms.");
 		
 		

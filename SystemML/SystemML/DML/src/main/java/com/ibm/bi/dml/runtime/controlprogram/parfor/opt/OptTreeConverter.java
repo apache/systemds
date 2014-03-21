@@ -495,6 +495,8 @@ public class OptTreeConverter
 		}
 		else //last level program block
 		{
+			sb = pb.getStatementBlock();
+			
 			//process all hops
 			node = new OptNode(NodeType.GENERIC);
 			_hlMap.putProgMapping(sb, pb, node);
@@ -577,9 +579,9 @@ public class OptTreeConverter
 			FunctionProgramBlock fpb = ((Program)prog[1]).getFunctionProgramBlock(fnspace, fname);
 			FunctionStatementBlock fsb = ((DMLProgram)prog[0]).getFunctionStatementBlock(fnspace, fname);
 			FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-						
+			
 			OptNode node = new OptNode(NodeType.FUNCCALL);
-			_hlMap.putProgMapping(fsb, fpb, node);
+			_hlMap.putHopMapping(fhop, node); 
 			node.setExecType(ExecType.CP);
 			node.addParam(ParamType.OPSTRING, fKey);
 			
@@ -838,15 +840,24 @@ public class OptTreeConverter
 	 * @param pbOld
 	 * @param pbNew
 	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException 
 	 */
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
-		throws DMLUnsupportedOperationException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		ProgramBlock pbParent = null;
 		if( rtMap )
 			pbParent = (ProgramBlock)_rtMap.getMappedObject( parent.getID() );
 		else
-			pbParent = (ProgramBlock)_hlMap.getMappedProg( parent.getID() )[1];
+		{
+			if( parent.getNodeType()==NodeType.FUNCCALL )
+			{
+				FunctionOp fop = (FunctionOp) _hlMap.getMappedHop(parent.getID());
+				pbParent = ((Program)_hlMap.getRootProgram()[1]).getFunctionProgramBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+			}
+			else
+				pbParent = (ProgramBlock)_hlMap.getMappedProg( parent.getID() )[1];
+		}
 		
 		if( pbParent instanceof IfProgramBlock )
 		{

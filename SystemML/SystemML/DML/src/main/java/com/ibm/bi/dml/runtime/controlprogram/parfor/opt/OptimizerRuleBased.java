@@ -16,6 +16,7 @@ import java.util.HashSet;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
@@ -25,7 +26,6 @@ import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -1618,31 +1618,33 @@ public class OptimizerRuleBased extends Optimizer
 				String fnameNew = FUNCTION_UNFOLD_NAMEPREFIX + fname;
 				
 				//unfold function
-				Object[] tmp = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
-				FunctionStatementBlock fsb = (FunctionStatementBlock) tmp[0];	
-				FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-				FunctionProgramBlock fpb = (FunctionProgramBlock) tmp[1];
+				FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				Program prog = parfor.getProgram();
+				DMLProgram dmlprog = parfor.getStatementBlock().getDMLProg();
+				FunctionProgramBlock fpb = prog.getFunctionProgramBlock(fnamespace, fname);	
+				FunctionStatementBlock fsb = dmlprog.getFunctionStatementBlock(fnamespace, fname);
 				FunctionProgramBlock copyfpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<String>());
-				DMLProgram dmlprog = fsb.getDMLProg();
-				Program prog = fpb.getProgram();
 				prog.addFunctionProgramBlock(fnamespace, fnameNew, copyfpb);
-				dmlprog.addFunctionStatementBlock(fnamespace, fnameNew, fsb);
+				dmlprog.addFunctionStatementBlock(fnamespace, fnameNew, (FunctionStatementBlock)copyfpb.getStatementBlock());
+				
+				//replace function names in old subtree (link to new function)
+				rReplaceFunctionNames(n, fname, fnameNew);
 				
 				//recreate sub opttree
 				String fnameNewKey = fnamespace + Program.KEY_DELIM + fnameNew;
 				OptNode nNew = new OptNode(NodeType.FUNCCALL);
-				OptTreeConverter.getAbstractPlanMapping().putProgMapping(fsb, copyfpb, nNew);
+				OptTreeConverter.getAbstractPlanMapping().putHopMapping(fop, nNew);
 				nNew.setExecType(ExecType.CP);
 				nNew.addParam(ParamType.OPSTRING, fnameNewKey);
 				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
 				OptTreeConverter.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
 				HashSet<String> memo = new HashSet<String>();
-				memo.add(fnameKey);
-				int len = fs.getBody().size();
-				for( int i=0; i<copyfpb.getChildBlocks().size() && i<len; i++ )
+				memo.add(fnameKey); //required if functionop not shared (because not replaced yet)
+				memo.add(fnameNewKey); //requied if functionop shared (indirectly replaced)
+				for( int i=0; i<copyfpb.getChildBlocks().size() /*&& i<len*/; i++ )
 				{
 					ProgramBlock lpb = copyfpb.getChildBlocks().get(i);
-					StatementBlock lsb = fs.getBody().get(i);
+					StatementBlock lsb = lpb.getStatementBlock();
 					nNew.addChild( OptTreeConverter.rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 				}
 				
@@ -1650,8 +1652,9 @@ public class OptimizerRuleBased extends Optimizer
 				recPBs.removeAll( rGetAllParForPBs(n, new HashSet<ParForProgramBlock>()) );
 				recPBs.addAll( rGetAllParForPBs(nNew, new HashSet<ParForProgramBlock>()) );
 				
-				//replace function names in subtree
+				//replace function names in new subtree (recursive link to new function)
 				rReplaceFunctionNames(nNew, fname, fnameNew);
+				
 			}
 			//else, we can return anyway because we will not find that parfor
 			
@@ -1721,24 +1724,27 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param newName
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
+	 * @throws HopsException 
 	 */
 	protected void rReplaceFunctionNames( OptNode n, String oldName, String newName ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException
 	{
 		if( n.getNodeType() == NodeType.FUNCCALL)
 		{
+			FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());	
+			
 			String[] names = n.getParam(ParamType.OPSTRING).split(Program.KEY_DELIM);
 			String fnamespace = names[0];
 			String fname = names[1];
 			
-			if( fname.equals(oldName) )
+			if( fname.equals(oldName) || fname.equals(newName) ) //newName if shared hop
 			{
 				//set opttree function name
 				n.addParam(ParamType.OPSTRING, fnamespace+Program.KEY_DELIM+newName);
 				
 				//set instruction function name
 				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());	
-				ProgramBlock pb = (ProgramBlock)OptTreeConverter.getAbstractPlanMapping().getMappedProg(parentID)[1];
+				ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(parentID)[1];
 				ArrayList<Instruction> instArr = pb.getInstructions();				
 				for( int i=0; i<instArr.size(); i++ )
 				{
@@ -1750,6 +1756,10 @@ public class OptimizerRuleBased extends Optimizer
 							instArr.set(i, FunctionCallCPInstruction.parseInstruction(fci.toString().replaceAll(oldName, newName)));
 					}
 				}
+				
+				//set hop name (for recompile)
+				if( fop.getFunctionName().equals(oldName) )
+					fop.setFunctionName(newName);
 			}
 		}
 	
@@ -1779,18 +1789,21 @@ public class OptimizerRuleBased extends Optimizer
 				if( sub.getNodeType() == NodeType.PARFOR )
 				{
 					long id = sub.getID();
-					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-	                                            .getAbstractPlanMapping().getMappedProg(id)[1];
+					Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+					ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
+					ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 					
 					if( recPBs.contains(pfpb) )
 					{
 						//create for pb as replacement
 						Program prog = pfpb.getProgram();
 						ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
-						
+
 						//replace parfor with for, and update objectmapping
 						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
-						
+						//update link to statement block
+						fpb.setStatementBlock(pfsb);
+							
 						//update node
 						sub.setNodeType(NodeType.FOR);
 						sub.setK(1);
@@ -1845,8 +1858,9 @@ public class OptimizerRuleBased extends Optimizer
 				if( sub.getNodeType() == NodeType.PARFOR && sub.getK() == 1 )
 				{
 					long id = sub.getID();
-					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                                                .getAbstractPlanMapping().getMappedProg(id)[1];
+					Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+					ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
+					ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 					
 					//create for pb as replacement
 					Program prog = pfpb.getProgram();
@@ -1854,6 +1868,8 @@ public class OptimizerRuleBased extends Optimizer
 					
 					//replace parfor with for, and update objectmapping
 					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
+					//update link to statement block
+					fpb.setStatementBlock(pfsb);
 					
 					//update node
 					sub.setNodeType(NodeType.FOR);

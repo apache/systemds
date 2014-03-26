@@ -7,20 +7,28 @@
 
 package com.ibm.bi.dml.hops.rewrite;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
+import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
-import com.ibm.bi.dml.lops.BinaryCP;
-import com.ibm.bi.dml.lops.BinaryCP.OperationTypes;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.compile.Dag;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BinaryCPInstruction;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 
 /**
  * Rule: Constant Folding. For all statement blocks, 
@@ -34,6 +42,13 @@ public class RewriteConstantFolding extends HopRewriteRule
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TMP_VARNAME = "__cf_tmp";
+	
+	//reuse basic execution runtime
+	private static ProgramBlock     _tmpPB = null;
+	private static ExecutionContext _tmpEC = null;
+	
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
@@ -93,41 +108,24 @@ public class RewriteConstantFolding extends HopRewriteRule
 		}
 		
 		//fold binary op if both are literals
-		if( root instanceof BinaryOp 
+		if( root instanceof BinaryOp && root.get_dataType() == DataType.SCALAR
 			&& root.getInput().get(0) instanceof LiteralOp && root.getInput().get(1) instanceof LiteralOp )
 		{ 
 			BinaryOp broot = (BinaryOp) root;
-			LiteralOp lit1 = (LiteralOp) root.getInput().get(0);	
-			LiteralOp lit2 = (LiteralOp) root.getInput().get(1);
-			double ret = Double.MAX_VALUE;
+			LiteralOp literal = null;
 			
-			if(   (lit1.get_valueType()==ValueType.DOUBLE || lit1.get_valueType()==ValueType.INT)
-			   && (lit2.get_valueType()==ValueType.DOUBLE || lit2.get_valueType()==ValueType.INT)
-			   &&  root.get_valueType()==ValueType.DOUBLE || root.get_valueType()==ValueType.INT || root.get_valueType()==ValueType.BOOLEAN ) //disable string
-			{
-				try
-				{
-					double lret = lit1.getDoubleValue();
-					double rret = lit2.getDoubleValue();
-					ret = evalScalarBinaryOperator(broot.getOp(), lret, rret);
-				}
-				catch( DMLRuntimeException ex )
-				{
-					LOG.error("Failed to execute constant folding instructions.", ex);
-					ret = Double.MAX_VALUE;
-				}
+			//core constant folding via runtime instructions
+			try {
+				literal = evalScalarBinaryOperation(broot); 
 			}
-			
-			if( ret!=Double.MAX_VALUE )
+			catch(Exception ex)
 			{
-				LiteralOp literal = null;
-				if( broot.get_valueType()==ValueType.DOUBLE )
-					literal = new LiteralOp(String.valueOf(ret), ret);
-				else if( broot.get_valueType()==ValueType.INT )
-					literal = new LiteralOp(String.valueOf((long)ret), (long)ret);
-				else if( broot.get_valueType()==ValueType.BOOLEAN )
-					literal = new LiteralOp(String.valueOf(ret!=0), ret!=0);
-				
+				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
+			}
+									
+			//replace binary operator with folded constant
+			if( literal != null ) 
+			{
 				//reverse replacement in order to keep common subexpression elimination
 				int plen = broot.getParent().size();
 				if( plen > 0 ) //broot is NOT a DAG root
@@ -159,32 +157,82 @@ public class RewriteConstantFolding extends HopRewriteRule
 		root.set_visited( VISIT_STATUS.DONE );
 		return root;
 	}
-
+	
 	/**
-	 * In order to prevent unexpected side effects from constant folding,
-	 * we use the same runtime for constant folding as we would use for 
-	 * actual instruction execution. 
+	 * In order to (1) prevent unexpected side effects from constant folding and
+	 * (2) for simplicity with regard to arbitrary value type combinations,
+	 * we use the same compilation and runtime for constant folding as we would 
+	 * use for actual instruction execution. 
 	 * 
 	 * @return
+	 * @throws IOException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
 	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
 	 */
-	private double evalScalarBinaryOperator(OpOp2 op, double left, double right) 
-		throws DMLRuntimeException
+	private LiteralOp evalScalarBinaryOperation( BinaryOp bop ) 
+		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
 	{
-		//NOTE: we cannot just just hop strings since e.g., EQUALS has different opcode in Hops and Lops
-		//String bopcode = Hop.HopsOpOp2String.get(op);
+		//Timing time = new Timing( true );
 		
-		//get instruction opcode
-		OperationTypes otype = Hop.HopsOpOp2LopsBS.get(op);
-		if( otype == null )
-			throw new DMLRuntimeException("Unknown binary operator type: "+op);
-		String bopcode = BinaryCP.getOpcode(otype);
+		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.get_dataType(), bop.get_valueType(), bop, DataOpTypes.TRANSIENTWRITE, TMP_VARNAME);
 		
-		//execute binary operator
-		BinaryOperator bop = BinaryCPInstruction.getBinaryOperator(bopcode);
-		double ret = bop.fn.execute(left, right);
+		//generate runtime instruction
+		Dag<Lop> dag = new Dag<Lop>();
+		Lop lops = tmpWrite.constructLops();
+		lops.addToDag( dag );	
+		ArrayList<Instruction> inst = dag.getJobs(ConfigurationManager.getConfig());
 		
-		return ret;
+		//execute instructions
+		ExecutionContext ec = getExecutionContext();
+		ProgramBlock pb = getProgramBlock();
+		pb.setInstructions( inst );
+		
+		pb.execute( ec );
+		
+		//get scalar result (check before invocation)
+		ScalarObject so = (ScalarObject) ec.getVariable(TMP_VARNAME);
+		LiteralOp literal = null;
+		switch( bop.get_valueType() ){
+			case DOUBLE:  literal = new LiteralOp(String.valueOf(so.getDoubleValue()),so.getDoubleValue()); break;
+			case INT:     literal = new LiteralOp(String.valueOf(so.getIntValue()),so.getIntValue()); break;
+			case BOOLEAN: literal = new LiteralOp(String.valueOf(so.getBooleanValue()),so.getBooleanValue()); break;
+			case STRING:  literal = new LiteralOp(String.valueOf(so.getStringValue()),so.getStringValue()); break;	
+		}
+		
+		//cleanup
+		tmpWrite.getInput().clear();
+		bop.getParent().remove(tmpWrite);
+		pb.setInstructions(null);
+		ec.getVariables().removeAll();
+		
+		//System.out.println("Constant folded in "+time.stop()+"ms.");
+		
+		return literal;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static ProgramBlock getProgramBlock() 
+		throws DMLRuntimeException
+	{
+		if( _tmpPB == null )
+			_tmpPB = new ProgramBlock( new Program() );
+		return _tmpPB;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private static ExecutionContext getExecutionContext()
+	{
+		if( _tmpEC == null )
+			_tmpEC = new ExecutionContext(true);
+		return _tmpEC;
+	}
 }

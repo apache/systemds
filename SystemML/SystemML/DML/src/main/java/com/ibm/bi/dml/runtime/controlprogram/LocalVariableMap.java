@@ -83,7 +83,7 @@ public class LocalVariableMap implements Cloneable
 	
 	public void removeAll()
 	{
-		localMap = new HashMap <String, Data> ();
+		localMap.clear();
 	}
 	
 	/**

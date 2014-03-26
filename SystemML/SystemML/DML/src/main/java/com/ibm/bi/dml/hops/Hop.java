@@ -221,7 +221,7 @@ public abstract class Hop
 	{
 		if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 			if ( ! isMemEstimated() ) {
-				LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
+				//LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
 				computeMemEstimate( new MemoTable() ); 
 			}
 			return _memEstimate;

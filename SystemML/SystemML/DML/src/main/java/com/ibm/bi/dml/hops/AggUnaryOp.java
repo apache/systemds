@@ -56,6 +56,21 @@ public class AggUnaryOp extends Hop
 		getInput().add(0, inp);
 		inp.getParent().add(this);
 	}
+	
+	public AggOp getOp()
+	{
+		return _op;
+	}
+	
+	public void setOp(AggOp op)
+	{
+		_op = op;
+	}
+	
+	public Direction getDirection()
+	{
+		return _direction;
+	}
 
 	@Override
 	public Lop constructLops()

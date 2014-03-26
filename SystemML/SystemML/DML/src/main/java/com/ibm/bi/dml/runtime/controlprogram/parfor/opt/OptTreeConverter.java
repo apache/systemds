@@ -576,32 +576,36 @@ public class OptTreeConverter
 			String fnspace = fhop.getFunctionNamespace();
 			String fKey = fnspace + Program.KEY_DELIM + fname;
 			Object[] prog = _hlMap.getRootProgram();
-			FunctionProgramBlock fpb = ((Program)prog[1]).getFunctionProgramBlock(fnspace, fname);
-			FunctionStatementBlock fsb = ((DMLProgram)prog[0]).getFunctionStatementBlock(fnspace, fname);
-			FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-			
+
 			OptNode node = new OptNode(NodeType.FUNCCALL);
 			_hlMap.putHopMapping(fhop, node); 
 			node.setExecType(ExecType.CP);
 			node.addParam(ParamType.OPSTRING, fKey);
 			
-			//process body; NOTE: memo prevents inclusion of functions multiple times
-			if( !memo.contains(fKey) )
+			if( !fnspace.equals(DMLProgram.INTERNAL_NAMESPACE) )
 			{
-				memo.add(fKey); 
-			
-				int len = fs.getBody().size();
-				for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+				FunctionProgramBlock fpb = ((Program)prog[1]).getFunctionProgramBlock(fnspace, fname);
+				FunctionStatementBlock fsb = ((DMLProgram)prog[0]).getFunctionStatementBlock(fnspace, fname);
+				FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+				
+				//process body; NOTE: memo prevents inclusion of functions multiple times
+				if( !memo.contains(fKey) )
 				{
-					ProgramBlock lpb = fpb.getChildBlocks().get(i);
-					StatementBlock lsb = fs.getBody().get(i);
-					node.addChild( rCreateAbstractOptNode(lsb, lpb, vars, false, memo) );
+					memo.add(fKey); 
+				
+					int len = fs.getBody().size();
+					for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+					{
+						ProgramBlock lpb = fpb.getChildBlocks().get(i);
+						StatementBlock lsb = fs.getBody().get(i);
+						node.addChild( rCreateAbstractOptNode(lsb, lpb, vars, false, memo) );
+					}
+				
+					memo.remove(fKey);							
 				}
-			
-				memo.remove(fKey);							
+				else
+					node.addParam(ParamType.RECURSIVE_CALL, "true");
 			}
-			else
-				node.addParam(ParamType.RECURSIVE_CALL, "true");
 			
 			ret.add(node);
 		}

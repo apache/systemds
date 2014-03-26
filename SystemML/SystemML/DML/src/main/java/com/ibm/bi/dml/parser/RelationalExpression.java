@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class RelationalExpression extends Expression
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private Expression _left;
@@ -93,19 +93,16 @@ public class RelationalExpression extends Expression
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
 		
 		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
-		Expression leftExpr = this.getLeft();
-		Expression rightExpr = this.getRight();
-		
-		if ((leftExpr != null && leftExpr instanceof BooleanIdentifier) || (rightExpr != null && rightExpr instanceof BooleanIdentifier)){
-			if ((leftExpr instanceof IntIdentifier || leftExpr instanceof DoubleIdentifier) || rightExpr instanceof IntIdentifier || rightExpr instanceof DoubleIdentifier){
-				if (leftExpr instanceof BooleanIdentifier){
-					if (((BooleanIdentifier) leftExpr).getValue() == true)
+		if ((_left != null && _left instanceof BooleanIdentifier) || (_right != null && _right instanceof BooleanIdentifier)){
+			if ((_left instanceof IntIdentifier || _left instanceof DoubleIdentifier) || _right instanceof IntIdentifier || _right instanceof DoubleIdentifier){
+				if (_left instanceof BooleanIdentifier){
+					if (((BooleanIdentifier) _left).getValue() == true)
 						this.setLeft(new IntIdentifier(1));
 					else
 						this.setLeft(new IntIdentifier(0));
 				}
-				else if (rightExpr instanceof BooleanIdentifier){
-					if (((BooleanIdentifier) rightExpr).getValue() == true)
+				else if (_right instanceof BooleanIdentifier){
+					if (((BooleanIdentifier) _right).getValue() == true)
 						this.setRight(new IntIdentifier(1));
 					else
 						this.setRight(new IntIdentifier(0));
@@ -113,9 +110,17 @@ public class RelationalExpression extends Expression
 			}
 		}
 		
-		this.getLeft().validateExpression(ids, constVars);
-		this.getRight().validateExpression(ids, constVars);
-				
+		
+		//recursive validate
+		_left.validateExpression(ids, constVars);
+		_right.validateExpression(ids, constVars);
+		
+		//constant propagation (precondition for more complex constant folding rewrite)
+		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )
+			_left = constVars.get(((DataIdentifier) _left).getName());
+		if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
+			_right = constVars.get(((DataIdentifier) _right).getName());
+		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());

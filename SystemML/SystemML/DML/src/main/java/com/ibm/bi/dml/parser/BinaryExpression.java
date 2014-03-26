@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class BinaryExpression extends Expression 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Expression _left;
@@ -106,7 +106,7 @@ public class BinaryExpression extends Expression
 		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )
 			_left = constVars.get(((DataIdentifier) _left).getName());
 		if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
-			_right = constVars.get(((DataIdentifier) _right).getName());;
+			_right = constVars.get(((DataIdentifier) _right).getName());
 		
 		
 		String outputName = getTempName();

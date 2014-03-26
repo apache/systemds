@@ -87,7 +87,8 @@ public class ID3Test extends AutomatedTestBase
         writeInputMatrix("y", y, true);
         
         //run tests
-		runTest(true, false, null, 62); //max 62 compiled jobs		
+        //(changed expected MR from 62 to 66 because we now also count MR jobs in predicates)
+		runTest(true, false, null, 66); //max 66 compiled jobs		
 		
 		runRScript(true);
         

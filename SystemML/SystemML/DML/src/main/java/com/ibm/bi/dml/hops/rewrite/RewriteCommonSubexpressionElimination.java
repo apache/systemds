@@ -28,6 +28,18 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private boolean _mergeLeafs = true;
+	
+	public RewriteCommonSubexpressionElimination()
+	{
+		this( true ); //default full CSE
+	}
+	
+	public RewriteCommonSubexpressionElimination( boolean mergeLeafs )
+	{
+		_mergeLeafs = mergeLeafs;
+	}
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
 		throws HopsException
@@ -36,12 +48,15 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			return null;
 		
 		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>();
+		HashMap<String, Hop> literalops = new HashMap<String, Hop>(); //key: <VALUETYPE>_<LITERAL>
 		for (Hop h : roots) 
 		{
-			int cseMerged = rule_CommonSubexpressionElimination_MergeLeafs(h, dataops, literalops);
-			h.resetVisitStatus();
-			cseMerged = rule_CommonSubexpressionElimination(h, dataops, literalops);
+			int cseMerged = 0;
+			if( _mergeLeafs ) {
+				cseMerged += rule_CommonSubexpressionElimination_MergeLeafs(h, dataops, literalops);
+				h.resetVisitStatus();		
+			}
+			cseMerged += rule_CommonSubexpressionElimination(h);
 			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		}
 		
@@ -56,10 +71,13 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			return null;
 		
 		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>();
-		int cseMerged = rule_CommonSubexpressionElimination_MergeLeafs(root, dataops, literalops);
-		root.resetVisitStatus();
-		cseMerged = rule_CommonSubexpressionElimination(root, dataops, literalops);
+		HashMap<String, Hop> literalops = new HashMap<String, Hop>(); //key: <VALUETYPE>_<LITERAL>
+		int cseMerged = 0;
+		if( _mergeLeafs ) {
+			cseMerged += rule_CommonSubexpressionElimination_MergeLeafs(root, dataops, literalops);
+			root.resetVisitStatus();
+		}
+		cseMerged += rule_CommonSubexpressionElimination(root);
 		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		
 		return root;
@@ -83,8 +101,9 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		{
 			if( hop instanceof LiteralOp )
 			{
-				if( !literalops.containsKey(hop.get_name()) )
-					literalops.put(hop.get_name(), hop);
+				String key = hop.get_valueType()+"_"+hop.get_name();
+				if( !literalops.containsKey(key) )
+					literalops.put(key, hop);
 			}
 			else if( hop instanceof DataOp && ((DataOp)hop).isRead())
 			{
@@ -98,20 +117,24 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			for( int i=0; i<hop.getInput().size(); i++ )
 			{
 				Hop hi = hop.getInput().get(i);
+				String litKey = hi.get_valueType()+"_"+hi.get_name();
 				if( hi instanceof DataOp && ((DataOp)hi).isRead() && dataops.containsKey(hi.get_name()) )
 				{
+					
 					//replace child node ref
 					Hop tmp = dataops.get(hi.get_name());
-					tmp.getParent().add(hop);
-					hop.getInput().set(i, tmp);
-					ret++; 
+					if( tmp != hi ) { //if required
+						tmp.getParent().add(hop);
+						hop.getInput().set(i, tmp);
+						ret++;
+					}
 				}
-				else if( hi instanceof LiteralOp && literalops.containsKey(hi.get_name()) )
+				else if( hi instanceof LiteralOp && literalops.containsKey(litKey) )
 				{
-					Hop tmp = literalops.get(hi.get_name());
-					if(hi.get_valueType()==tmp.get_valueType())
-					{	
-						//replace child node ref
+					Hop tmp = literalops.get(litKey);
+					
+					//replace child node ref
+					if( tmp != hi ){ //if required
 						tmp.getParent().add(hop);
 						hop.getInput().set(i, tmp);
 						ret++;
@@ -134,7 +157,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 	 * @return
 	 * @throws HopsException
 	 */
-	private int rule_CommonSubexpressionElimination( Hop hop, HashMap<String, Hop> dataops, HashMap<String, Hop> literalops ) 
+	private int rule_CommonSubexpressionElimination( Hop hop ) 
 		throws HopsException 
 	{
 		int ret = 0;
@@ -143,7 +166,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 
 		//step 1: merge childs recursively first
 		for(Hop hi : hop.getInput())
-			ret += rule_CommonSubexpressionElimination(hi, dataops, literalops);	
+			ret += rule_CommonSubexpressionElimination(hi);	
 		
 		
 		//step 2: merge parent nodes
@@ -158,9 +181,12 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 					
 					if( h1==h2 )
 					{
+						//do nothing, note: we should not remove redundant parent links
+						//(otherwise rewrites would need to take this property into account) 
+						
 						//remove redundant h2 from parent list
-						hop.getParent().remove(j);
-						j--;
+						//hop.getParent().remove(j);
+						//j--;
 					}
 					else if( h1.compare(h2) ) //merge h2 into h1
 					{

@@ -371,6 +371,7 @@ public class DataGenOp extends Hop
 				      && sparsity == that2.sparsity
 				      && _baseDir.equals(that2._baseDir)
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+		
 		if( ret )
 		{
 			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )
@@ -383,9 +384,12 @@ public class DataGenOp extends Hop
 			}
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
+			//note: if min and max is constant, we can safely merge those hops
 			if( method == DataGenMethod.RAND ){
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
-				if( seed.get_name().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) )
+				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
+				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));
+				if( seed.get_name().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) && min != max )
 					ret = false;
 			}
 		}

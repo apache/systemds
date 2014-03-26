@@ -25,7 +25,6 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
@@ -299,6 +298,8 @@ public class ProgramBlock
 				LOG.trace("Instruction: " + currInst.toString());
 			}
 		
+			long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			
 			if (currInst instanceof MRJobInstruction) 
 			{
 				if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
@@ -333,12 +334,17 @@ public class ProgramBlock
 					t1 = System.nanoTime();
 					LOG.trace("MRJob: " + currMRInst.getJobType() + ", duration = " + (t1-t0)/1000000);
 				}
+				
+				if( DMLScript.STATISTICS){
+					long t3 = System.nanoTime();
+					String opcode = Statistics.getCPHeavyHitterCode(currMRInst);
+					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
+				}
+				
 				//System.out.println("MRJob: " + currMRInst.getJobType() );
 			} 
 			else if (currInst instanceof CPInstruction) 
 			{
-				long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				
 				CPInstruction tmp = (CPInstruction)currInst;
 				if( tmp.requiresLabelUpdate() ) //update labels only if required
 				{
@@ -361,7 +367,7 @@ public class ProgramBlock
 
 				if( DMLScript.STATISTICS){
 					long t3 = System.nanoTime();
-					String opcode = InstructionUtils.getOpCode(tmp.toString());
+					String opcode = Statistics.getCPHeavyHitterCode(tmp);
 					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
 				}
 			} 

@@ -18,6 +18,10 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 
 /**
  * This class captures all statistics.
@@ -172,6 +176,28 @@ public class Statistics
 	public static void resetCPHeavyHitters(){
 		_cpInstTime.clear();
 		_cpInstCounts.clear();
+	}
+	
+	public static String getCPHeavyHitterCode( Instruction inst )
+	{
+		String opcode = null;
+		
+		if( inst instanceof MRJobInstruction )
+		{
+			MRJobInstruction mrinst = (MRJobInstruction) inst;
+			opcode = "MR-Job_"+mrinst.getJobType();
+		}
+		else //CPInstructions
+		{
+			opcode = InstructionUtils.getOpCode(inst.toString());
+			if( inst instanceof FunctionCallCPInstruction ) {
+				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
+				opcode = extfunct.getFunctionName();
+				//opcode = extfunct.getNamespace()+Program.KEY_DELIM+extfunct.getFunctionName();
+			}		
+		}
+		
+		return opcode;
 	}
 	
 	public synchronized static void maintainCPHeavyHitters( String key, long timeNanos )

@@ -1,14 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.test.integration.functions.indexing;
 
 import java.util.HashMap;
-import java.util.Random;
 
 import org.junit.Test;
 
@@ -20,7 +19,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class LeftIndexingTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "functions/indexing/";
@@ -43,14 +42,16 @@ public class LeftIndexingTest extends AutomatedTestBase
 	    
         config.addVariable("rows", rows);
         config.addVariable("cols", cols);
-        
+      
         long rowstart=816, rowend=1229, colstart=967, colend=1009;
       //  long rowstart=2, rowend=4, colstart=9, colend=10;
+        /*
         Random rand=new Random(System.currentTimeMillis());
         rowstart=(long)(rand.nextDouble()*((double)rows))+1;
         rowend=(long)(rand.nextDouble()*((double)(rows-rowstart+1)))+rowstart;
         colstart=(long)(rand.nextDouble()*((double)cols))+1;
         colend=(long)(rand.nextDouble()*((double)(cols-colstart+1)))+colstart;
+        */
         config.addVariable("rowstart", rowstart);
         config.addVariable("rowend", rowend);
         config.addVariable("colstart", colstart);
@@ -77,19 +78,19 @@ public class LeftIndexingTest extends AutomatedTestBase
 		       LI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + LI_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
-		double sparsity=rand.nextDouble();
+		double sparsity=1.0;//rand.nextDouble(); 
         double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("A", A, true);
         
-        sparsity=rand.nextDouble();
+        sparsity=0.1;//rand.nextDouble();
         double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("B", B, true);
         
-        sparsity=rand.nextDouble();
+        sparsity=0.5;//rand.nextDouble();
         double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("C", C, true);
         
-        sparsity=rand.nextDouble();
+        sparsity=0.01;//rand.nextDouble();
         double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("D", D, true);
 

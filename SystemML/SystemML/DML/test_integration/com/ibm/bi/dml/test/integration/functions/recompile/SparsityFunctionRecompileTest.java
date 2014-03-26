@@ -113,7 +113,6 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		runRecompileTest(TEST_NAME4, false, true);
 	}
 	
-	//FIXME
 	@Test
 	public void testWhileRecompileNoIPA() 
 	{
@@ -167,6 +166,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 	{	
 		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
 		
 		try
 		{
@@ -184,6 +184,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			
 			MatrixBlock mb = MatrixBlock.randOperationsOLD((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize,(long)(rows*cols*sparsity));
@@ -220,6 +221,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
+			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 		}
 	}
 	

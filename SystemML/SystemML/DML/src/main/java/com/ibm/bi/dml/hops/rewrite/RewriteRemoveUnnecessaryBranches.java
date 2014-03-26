@@ -26,7 +26,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
@@ -45,47 +45,32 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 			{
 				IfStatement istmt = (IfStatement)isb.getStatement(0);
 				LiteralOp litpred = (LiteralOp) pred;
-				boolean condition = getBooleanValue(litpred);
+				boolean condition = HopRewriteUtils.getBooleanValue(litpred);
 				
 				if( condition )
 				{
 					//pull-out simple if body
-					if( istmt.getIfBody().size() == 1 )
-						ret = istmt.getIfBody().get(0);	
-					else
-						ret = createEmptyStatementBlock();
+					int len = istmt.getIfBody().size();
+					if( len == 1 )
+						ret = istmt.getIfBody().get(0);	//pull if-branch
+					else if( len == 0 )
+						ret = null; //remove if branch
+					//otherwise (len>1): sb unchanged
 				}
 				else
 				{
 					//pull-out simple else body
-					if( istmt.getElseBody().size() == 1 )
+					int len = istmt.getElseBody().size();
+					if( len == 1 )
 						ret = istmt.getElseBody().get(0);
-					else
-						ret = createEmptyStatementBlock();
+					else if( len == 0 )
+						ret = null; 
+					//otherwise (len>1): sb unchanged
 				}
 			}
 		}
 		
 		return ret;
-	}
-
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws HopsException
-	 */
-	private boolean getBooleanValue( LiteralOp op )
-		throws HopsException
-	{
-		switch( op.get_valueType() )
-		{
-			case DOUBLE:  return op.getDoubleValue() != 0; 
-			case INT:	  return op.getLongValue()   != 0;
-			case BOOLEAN: return op.getBooleanValue();
-			
-			default: throw new HopsException("Invalid if predicate value type: "+op.get_valueType());
-		}
 	}
 	
 	private StatementBlock createEmptyStatementBlock()

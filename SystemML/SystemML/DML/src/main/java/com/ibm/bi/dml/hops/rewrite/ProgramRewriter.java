@@ -44,16 +44,17 @@ public class ProgramRewriter
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
 			
-		_dagRuleSet.add(     new RewriteTransientWriteParentHandling()   );
-		_dagRuleSet.add(     new RewriteBlockSizeAndReblock()            );
+		_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
+		_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
-			_dagRuleSet.add( new RewriteCommonSubexpressionElimination() );
+			_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
-			_dagRuleSet.add( new RewriteConstantFolding()                ); //dependencies: common subexpression elimination
-		_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()    );
-		_dagRuleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
-		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()         );
-		
+			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependencies: common subexpression elimination
+		_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        );
+		_dagRuleSet.add(     new RewriteAlgebraicSimplification()            ); //dependencies: common subexpression elimination
+		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
+		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //reapply common subexpression elimination after simplification rewrites (no need to merge leafs again)
+			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
 		
 		//initialize StatementBlock rewrite ruleSet (with fixed rewrite order)
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
@@ -77,6 +78,7 @@ public class ProgramRewriter
 			{
 				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
 				rewriteStatementBlockHopDAGs(fsblock);
+				rewriteStatementBlock(fsblock);
 			}
 		
 		// handle regular statement blocks in "main" method
@@ -84,8 +86,8 @@ public class ProgramRewriter
 		{
 			StatementBlock current = dmlp.getStatementBlock(i);
 			rewriteStatementBlockHopDAGs(current);
-			dmlp.setStatementBlock(i, rewriteStatementBlock(current));
 		}
+		dmlp.setStatementBlocks( rewriteStatementBlocks(dmlp.getStatementBlocks()) );
 	}
 	
 	/**
@@ -176,6 +178,35 @@ public class ProgramRewriter
 	
 	/**
 	 * 
+	 * @param sbs
+	 * @return
+	 * @throws HopsException 
+	 */
+	private ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs ) 
+		throws HopsException
+	{
+		int len = sbs.size();
+		
+		//rewrite statement blocks
+		for( int i=0; i<len; i++ )
+			sbs.set(i, rewriteStatementBlock( sbs.get(i) ) );
+		
+		//remove empty slots
+		int pos = 0;
+		for( int i=0; i<len; i++ )
+		{
+			StatementBlock sb = sbs.get(i);
+			if( sb != null )
+				sbs.set(pos++, sb);
+		}
+		while( pos<sbs.size() )
+			sbs.remove(pos);
+		
+		return sbs;
+	}
+	
+	/**
+	 * 
 	 * @param sb
 	 * @return
 	 * @throws HopsException
@@ -187,31 +218,26 @@ public class ProgramRewriter
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			for (StatementBlock sbc : fstmt.getBody())
-				rewriteStatementBlock(sbc);
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			for (StatementBlock sbc : wstmt.getBody())
-				rewriteStatementBlock(sbc);
+			wstmt.setBody( rewriteStatementBlocks( wstmt.getBody() ) );
 		}	
 		else if (sb instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			for (StatementBlock sbc : istmt.getIfBody())
-				rewriteStatementBlock(sbc);
-			for (StatementBlock sbc : istmt.getElseBody())
-				rewriteStatementBlock(sbc);
+			istmt.setIfBody( rewriteStatementBlocks( istmt.getIfBody() ) );
+			istmt.setElseBody( rewriteStatementBlocks( istmt.getElseBody() ) );
 		}
 		else if (sb instanceof ForStatementBlock) //incl parfor
 		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			for (StatementBlock sbc : fstmt.getBody())
-				rewriteStatementBlock(sbc);
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );
 		}
 		
 		//apply rewrite rules

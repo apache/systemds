@@ -66,6 +66,7 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
+import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Statistics;
 // import com.ibm.bi.dml.utils.visualize.DotGraph;
 
@@ -86,7 +87,7 @@ public class DMLScript
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
-	//public static boolean EXPLAIN = false; //default explain
+	public static boolean EXPLAIN = false; //default explain
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -206,7 +207,8 @@ public class DMLScript
 		
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		boolean oldvisualize = VISUALIZE; //keep old visualize		
+		boolean oldvisualize = VISUALIZE; //keep old visualize	
+		boolean oldexplain = EXPLAIN; //keep old explain	
 		try
 		{
 			String fnameOptConfig = null; //optional config filename
@@ -217,8 +219,8 @@ public class DMLScript
 			{
 				if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
 					VISUALIZE = true;
-//				else if( args[i].equalsIgnoreCase("-explain") )
-//					EXPLAIN = true;
+				else if( args[i].equalsIgnoreCase("-explain") )
+					EXPLAIN = true;
 				else if( args[i].equalsIgnoreCase("-stats") )
 					STATISTICS = true;
 				else if ( args[i].equalsIgnoreCase("-exec")){
@@ -226,7 +228,7 @@ public class DMLScript
 					if( rtplatform==null ) 
 						return ret;
 				}
-				else if (args[i].startsWith("-config"))
+				else if (args[i].startsWith("-config="))
 					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
 				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
 					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
@@ -263,6 +265,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			rtplatform = oldrtplatform;
 			VISUALIZE = oldvisualize;
+			EXPLAIN = oldexplain;
 		}
 		
 		return ret;
@@ -590,15 +593,13 @@ public class DMLScript
 		}
 		
 		//count number compiled MR jobs	
-		int jobCount = DMLProgram.countCompiledMRJobs(rtprog);
+		int jobCount = Explain.countCompiledMRJobs(rtprog);
 		Statistics.setNoOfCompiledMRJobs( jobCount );				
 		
 		//explain runtime program
-//		if( EXPLAIN )
-//		{
-//			LOG.info("EXPLAIN (runtime program):");
-//			LOG.info( rtprog.explain() );
-//		}
+		if( EXPLAIN ) {
+			LOG.info("EXPLAIN (runtime program):\n" + Explain.explain( rtprog ) );
+		}
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
 		//System.out.println("Estimated costs: "+costs);

@@ -28,7 +28,7 @@ public class Binary extends Lop
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
-		MAX, MIN, SOLVE, NOTSUPPORTED};	
+		MAX, MIN, POW, SOLVE, NOTSUPPORTED};	
 	OperationTypes operation;
 	
 
@@ -138,6 +138,8 @@ public class Binary extends Lop
 			return "min";
 		case MAX:
 			return "max";
+		case POW:
+			return "^";
 			
 		case SOLVE:
 			return "solve";

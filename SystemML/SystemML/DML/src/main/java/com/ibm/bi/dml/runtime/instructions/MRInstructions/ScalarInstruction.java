@@ -106,6 +106,8 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 			return new ScalarInstruction(new LeftScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("^") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(Power.getPowerFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(Power.getPowerFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("^2") ) {

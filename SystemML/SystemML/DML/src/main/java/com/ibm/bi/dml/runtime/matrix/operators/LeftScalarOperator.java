@@ -9,6 +9,7 @@
 package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 
@@ -20,10 +21,24 @@ public class LeftScalarOperator extends ScalarOperator
 	
 	public LeftScalarOperator(ValueFunction p, double cst) {
 		super(p, cst);
+		
+		//disable sparse-safe for c^M because 1^0=1
+		if( fn instanceof Power )
+			sparseSafe = false;
 	}
 
 	@Override
 	public double executeScalar(double in) throws DMLRuntimeException {
 		return fn.execute(_constant, in);
+	}
+	
+	@Override
+	public void setConstant(double cst) 
+	{
+		super.setConstant(cst);
+		
+		//disable sparse-safe for c^M because 1^0=1
+		if( fn instanceof Power )
+			sparseSafe = false;
 	}
 }

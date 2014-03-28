@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -69,6 +70,9 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		}
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new BinaryInstruction(new BinaryOperator(Divide.getDivideFnObject()), in1, in2, out, str);
+		}
+		else if ( opcode.equalsIgnoreCase("^") ) {
+			return new BinaryInstruction(new BinaryOperator(Power.getPowerFnObject()), in1, in2, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("%%") ) {
 			return new BinaryInstruction(new BinaryOperator(Modulus.getModulusFnObject()), in1, in2, out, str);

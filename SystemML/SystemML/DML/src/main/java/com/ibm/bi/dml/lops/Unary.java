@@ -333,7 +333,7 @@ public class Unary extends Lop
 			sb.append( getOpcode() );
 			sb.append( OPERAND_DELIMITOR );
 			
-			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS )
+			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS || operation == OperationTypes.POW )
 			{
 				//TODO discuss w/ Shirish: we should consolidate the other operations (see ScalarInstruction.parseInstruction / BinaryCPInstruction.getScalarOperator)
 				//append both operands

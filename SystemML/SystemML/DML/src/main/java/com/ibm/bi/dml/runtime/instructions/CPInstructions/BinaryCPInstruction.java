@@ -172,7 +172,9 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 		}
 		//operations for which only matrix-scalar makes sense
 		else if ( opcode.equalsIgnoreCase("^") ){
-			return new RightScalarOperator(Power.getPowerFnObject(), default_constant);
+			if(arg1IsScalar)
+				return new LeftScalarOperator(Power.getPowerFnObject(), default_constant);
+			else return new RightScalarOperator(Power.getPowerFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new RightScalarOperator(Builtin.getBuiltinFnObject("max"), default_constant);

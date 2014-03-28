@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,26 +30,32 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class LinearLogRegTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     private final static String TEST_DIR = "applications/linearLogReg/";
     private final static String TEST_LINEAR_LOG_REG = "LinearLogReg";
 
     private int numRecords, numFeatures, numTestRecords;
+    private double sparsity;
     
-	public LinearLogRegTest(int numRecords, int numFeatures, int numTestRecords) {
+	public LinearLogRegTest(int numRecords, int numFeatures, int numTestRecords, double sparsity) {
 		this.numRecords = numRecords;
 		this.numFeatures = numFeatures;
 		this.numTestRecords = numTestRecords;
+		this.sparsity = sparsity;
 	}
 	
 	@Parameters
 	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { {100, 50, 25}, {1000, 500, 200}, {10000, 750, 1500}};
+	   Object[][] data = new Object[][] { 
+			 //sparse tests (sparsity=0.01)
+			 {100, 50, 25, 0.01}, {1000, 500, 200, 0.01}, {10000, 750, 1500, 0.01}, {100000, 1000, 1500, 0.01},
+			 //dense tests (sparsity=0.7)
+			 {100, 50, 25, 0.7}, {1000, 500, 200, 0.7}, {10000, 750, 1500, 0.7}};
 	   return Arrays.asList(data);
 	 }
-
+ 
     @Override
     public void setUp()
     {
@@ -75,7 +81,7 @@ public class LinearLogRegTest extends AutomatedTestBase
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String LLR_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = LLR_HOME + TEST_LINEAR_LOG_REG + ".dml";
-		programArgs = new String[]{"-args", LLR_HOME + INPUT_DIR + "X" , 
+		programArgs = new String[]{"-stats","-args", LLR_HOME + INPUT_DIR + "X" , 
 				                        Integer.toString(rows), Integer.toString(cols),
 				                         LLR_HOME + INPUT_DIR + "Xt" , 
 				                        Integer.toString(rows_test), Integer.toString(cols_test),
@@ -90,13 +96,13 @@ public class LinearLogRegTest extends AutomatedTestBase
         loadTestConfiguration(TEST_LINEAR_LOG_REG);
 
         // prepare training data set
-        double[][] X = getRandomMatrix(rows, cols, 1, 10, 1, 100);
+        double[][] X = getRandomMatrix(rows, cols, 1, 10, sparsity, 100);
         double[][] y = getRandomMatrix(rows, 1, 0.01, 1, 1, 100);
         writeInputMatrix("X", X, true);
         writeInputMatrix("y", y, true);
         
         // prepare test data set
-        double[][] Xt = getRandomMatrix(rows_test, cols_test, 1, 10, 1, 100);
+        double[][] Xt = getRandomMatrix(rows_test, cols_test, 1, 10, sparsity, 100);
         double[][] yt = getRandomMatrix(rows_test, 1, 0.01, 1, 1, 100);
         writeInputMatrix("Xt", Xt, true);
         writeInputMatrix("yt", yt, true);

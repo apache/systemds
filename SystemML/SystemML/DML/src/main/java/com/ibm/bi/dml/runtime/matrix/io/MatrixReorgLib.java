@@ -201,30 +201,37 @@ public class MatrixReorgLib
 		final int n2 = out.clen;
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
+		out.sparse = false;
 		out.allocateDenseBlock();
 		
 		double[] a = in.getDenseArray();
 		double[] c = out.getDenseArray();
 		
-		//blocking according to typical L2 cache sizes 
-		final int blocksizeI = 128;
-		final int blocksizeJ = 128; 
-		
-		//blocked execution
-		for( int bi = 0; bi<m; bi+=blocksizeI )
-			for( int bj = 0; bj<n; bj+=blocksizeJ )
-			{
-				int bimin = Math.min(bi+blocksizeI, m);
-				int bjmin = Math.min(bj+blocksizeJ, n);
-				//core transpose operation
-				for( int i=bi; i<bimin; i++ )
+		if( m==1 || n==1 ) //VECTOR TRANSPOSE
+		{
+			System.arraycopy(a, 0, c, 0, m2*n2);
+		}
+		else //MATRIX TRANSPOSE
+		{
+			//blocking according to typical L2 cache sizes 
+			final int blocksizeI = 128;
+			final int blocksizeJ = 128; 
+			
+			//blocked execution
+			for( int bi = 0; bi<m; bi+=blocksizeI )
+				for( int bj = 0; bj<n; bj+=blocksizeJ )
 				{
-					int aix = i * n + bj;
-					int cix = bj * n2 + i;
-					transposeRow(a, c, aix, cix, n2, bjmin-bj);
+					int bimin = Math.min(bi+blocksizeI, m);
+					int bjmin = Math.min(bj+blocksizeJ, n);
+					//core transpose operation
+					for( int i=bi; i<bimin; i++ )
+					{
+						int aix = i * n + bj;
+						int cix = bj * n2 + i;
+						transposeRow(a, c, aix, cix, n2, bjmin-bj);
+					}
 				}
-			}
+		}
 		
 		out.nonZeros = in.nonZeros;
 	}

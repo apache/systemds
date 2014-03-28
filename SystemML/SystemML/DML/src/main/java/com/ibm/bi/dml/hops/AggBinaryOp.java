@@ -20,6 +20,8 @@ import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.lops.Transform;
+import com.ibm.bi.dml.lops.Transform.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -96,18 +98,24 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException 
 	{
 		if (get_lops() == null) {
-			if ( isMatrixMultiply() ) {
+			if ( isMatrixMultiply() ) 
+			{
 				ExecType et = optFindExecType();
 				MMTSJType mmtsj = checkTransposeSelf();
 				
-				if ( et == ExecType.CP ) {
-					//System.out.println("Method = CP");
+				if ( et == ExecType.CP ) 
+				{
 					Lop matmultCP = null;
-					if( mmtsj == MMTSJType.NONE ) {
-						matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+					if( mmtsj == MMTSJType.NONE ) //CP MM
+					{
+						if( isLeftTransposeRewriteApplicable() )
+							matmultCP = constructCPLopWithLeftTransposeRewrite();
+						else
+							matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
 												 BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
 					}
-					else {
+					else //CP TSMM
+					{
 						matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
 								              get_dataType(), get_valueType(),et, mmtsj);
 					}
@@ -404,6 +412,62 @@ public class AggBinaryOp extends Hop
 		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
 		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget() );
 	}
+	
+	/**
+	 * Determines if the rewrite t(X)%*%Y -> t(t(Y)%*%X) is applicable
+	 * and cost effective. Whenever X is a wide matrix and Y is a vector
+	 * this has huge impact, because the transpose of X would dominate
+	 * the entire operation costs.
+	 * 
+	 * @return
+	 */
+	private boolean isLeftTransposeRewriteApplicable()
+	{
+		boolean ret = false;
+		Hop h1 = getInput().get(0);
+		Hop h2 = getInput().get(1);
+		
+		if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
+		{
+			long m = h1.get_dim1();
+			long cd = h1.get_dim2();
+			long n = h2.get_dim2();
+			
+			//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
+			if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) ) 
+				ret = true;
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructCPLopWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		tY.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+		//matrix mult
+		Lop mult = new BinaryCP(tY, X.constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());	
+		mult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		
+		//result transpose (dimensions set outside)
+		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+	
+		return out;
+	}
+	
 	
 	/*
 	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce -- CPMM or RMM.

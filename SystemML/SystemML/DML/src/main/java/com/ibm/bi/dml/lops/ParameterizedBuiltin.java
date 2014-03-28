@@ -138,9 +138,13 @@ public class ParameterizedBuiltin extends Lop
 					sb.append(s);
 					sb.append(NAME_VALUE_SEPARATOR);
 					
-					// instruction patching not required because rmEmpty always executed as CP/CP_FILE
+					// get the value/label of the scalar input associated with name "s"
 					Lop iLop = _inputParams.get(s);
-					sb.append(iLop.getOutputParameters().getLabel());
+					if( s.equals("target") )
+						sb.append(iLop.getOutputParameters().getLabel());
+					else
+						sb.append( iLop.prepScalarLabel() );
+					
 					sb.append(OPERAND_DELIMITOR);
 				}
 				break;
@@ -156,7 +160,10 @@ public class ParameterizedBuiltin extends Lop
 					
 					// get the value/label of the scalar input associated with name "s"
 					Lop iLop = _inputParams.get(s);
-					sb.append(iLop.getOutputParameters().getLabel());
+					if( s.equals("target") )
+						sb.append(iLop.getOutputParameters().getLabel());
+					else
+						sb.append( iLop.prepScalarLabel() );
 					sb.append( OPERAND_DELIMITOR );
 				}
 				break;

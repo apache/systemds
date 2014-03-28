@@ -32,6 +32,7 @@ public class ReplaceTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "replace_NaN";
 	private final static String TEST_NAME3 = "replace_Infinity";
 	private final static String TEST_NAME4 = "replace_NInfinity";
+	private final static String TEST_NAME5 = "replace_maxmin";
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
 
@@ -56,6 +57,9 @@ public class ReplaceTest extends AutomatedTestBase
 		addTestConfiguration(
 				TEST_NAME4, 
 				new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] { "C" })   ); 
+		addTestConfiguration(
+				TEST_NAME5, 
+				new TestConfiguration(TEST_DIR, TEST_NAME5, new String[] { "C" })   ); 
 	}
 
 	
@@ -88,6 +92,12 @@ public class ReplaceTest extends AutomatedTestBase
 	{
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.CP );
 	}
+	
+	@Test
+	public void testReplaceMaxMinDenseCP() 
+	{
+		runTestReplace( TEST_NAME5, -1, false, ExecType.CP );
+	}
 
 	@Test
 	public void testReplaceZeroSparseCP() 
@@ -117,6 +127,12 @@ public class ReplaceTest extends AutomatedTestBase
 	public void testReplaceNInfinitySparseCP() 
 	{
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.CP );
+	}
+	
+	@Test
+	public void testReplaceMaxMinSparseCP() 
+	{
+		runTestReplace( TEST_NAME5, -1, true, ExecType.CP );
 	}
 
 	@Test
@@ -148,6 +164,12 @@ public class ReplaceTest extends AutomatedTestBase
 	{
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.MR );
 	}
+	
+	@Test
+	public void testReplaceMaxMinDenseMR() 
+	{
+		runTestReplace( TEST_NAME5, -1, false, ExecType.MR );
+	}
 
 	@Test
 	public void testReplaceZeroSparseMR() 
@@ -177,6 +199,12 @@ public class ReplaceTest extends AutomatedTestBase
 	public void testReplaceNInfinitySparseMR() 
 	{
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.MR );
+	}
+	
+	@Test
+	public void testReplaceMaxMinSparseMR() 
+	{
+		runTestReplace( TEST_NAME5, -1, true, ExecType.MR );
 	}
 		
 	/**
@@ -221,7 +249,7 @@ public class ReplaceTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true); 
 		
-			int numMRExpect = (etype==ExecType.MR)?(test.equals(TEST_NAME1)?1:2):0; 
+			int numMRExpect = (etype==ExecType.MR)?(test.equals(TEST_NAME1)?1:test.equals(TEST_NAME5)?3:2):0; 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 		           numMRExpect, Statistics.getNoOfExecutedMRJobs()); //reblock in test1, reblock+GMR in test2-4
 		

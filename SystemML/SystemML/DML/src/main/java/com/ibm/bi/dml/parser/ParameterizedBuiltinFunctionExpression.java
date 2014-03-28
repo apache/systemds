@@ -231,7 +231,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' missing. Please specify 'rows' or 'cols'.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			else if( !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
+			else if( !(margin instanceof DataIdentifier) && !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
 				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
 			}

@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
@@ -17,13 +18,17 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.Direction;
+import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ReorgOp;
+import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions
@@ -97,6 +102,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			hi = simplifyDiagMatrixMult(hop, hi, i);            //e.g., diag(X%*%Y)->rowSums(X*t(Y)); 
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
+			//hi = removeUnecessaryPPred(hop, hi, i);             //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			rule_AlgebraicSimplification(hi);
@@ -384,9 +390,15 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 				
 				//create new operators (incl refresh size inside for transpose)
 				ReorgOp trans = new ReorgOp(right.get_name(), right.get_dataType(), right.get_valueType(), ReOrgOp.TRANSPOSE, right);
+				trans.set_rows_in_block(right.get_rows_in_block());
+				trans.set_cols_in_block(right.get_cols_in_block());
 				BinaryOp mult = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), OpOp2.MULT, left, trans);
+				mult.set_rows_in_block(right.get_rows_in_block());
+				mult.set_cols_in_block(right.get_cols_in_block());
 				mult.refreshSizeInformation();
 				AggUnaryOp rowSum = new AggUnaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), AggOp.SUM, Direction.Row, mult);
+				rowSum.set_rows_in_block(right.get_rows_in_block());
+				rowSum.set_cols_in_block(right.get_cols_in_block());
 				rowSum.refreshSizeInformation();
 				
 				//rehang new subdag under parent node
@@ -431,7 +443,11 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 				
 				//create new operators (incl refresh size inside for transpose)
 				ReorgOp trans = new ReorgOp(right.get_name(), right.get_dataType(), right.get_valueType(), ReOrgOp.TRANSPOSE, right);
+				trans.set_rows_in_block(right.get_rows_in_block());
+				trans.set_cols_in_block(right.get_cols_in_block());
 				BinaryOp mult = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), OpOp2.MULT, left, trans);
+				mult.set_rows_in_block(right.get_rows_in_block());
+				mult.set_cols_in_block(right.get_cols_in_block());
 				mult.refreshSizeInformation();
 				AggUnaryOp sum = new AggUnaryOp(right.get_name(), DataType.SCALAR, right.get_valueType(), AggOp.SUM, Direction.RowCol, mult);
 				sum.refreshSizeInformation();
@@ -482,6 +498,46 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 		return hi;
 	}
 	
+	/**
+	 * NOTE: currently disabled since this rewrite is INVALID in the
+	 * presence of NaNs (because (NaN!=NaN) is true). 
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop removeUnecessaryPPred(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			Hop datagen = null;
+			
+			//ppred(X,X,"==") -> matrix(1, rows=nrow(X),cols=nrow(Y))
+			if( left==right && bop.getOp()==OpOp2.EQUAL || bop.getOp()==OpOp2.GREATEREQUAL || bop.getOp()==OpOp2.LESSEQUAL )
+				datagen = createDataGenOp(left, 1);
+			
+			//ppred(X,X,"!=") -> matrix(0, rows=nrow(X),cols=nrow(Y))
+			if( left==right && bop.getOp()==OpOp2.NOTEQUAL || bop.getOp()==OpOp2.GREATER || bop.getOp()==OpOp2.LESS )
+				datagen = createDataGenOp(left, 0);
+					
+			if( datagen != null )
+			{
+				removeChildReference(parent, hi);
+				addChildReference(parent, datagen, pos);
+				hi = datagen;
+			}
+		}
+		
+		return hi;
+	}
+	
 	
 	///////////////////////
 	// Util functions
@@ -524,5 +580,32 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 	{
 		parent.getInput().add( pos, child );
 		child.getParent().add( parent );
+	}
+	
+	private Hop createDataGenOp( Hop input, int value ) 
+		throws HopsException
+	{
+		//if(true)return null;
+		
+		Hop rows = (input.get_dim1()>0) ? new LiteralOp(String.valueOf(input.get_dim1()),input.get_dim1()) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop cols = (input.get_dim2()>0) ? new LiteralOp(String.valueOf(input.get_dim2()),input.get_dim2()) :
+			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
+		Hop val = new LiteralOp(String.valueOf(value), value);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(DataExpression.RAND_ROWS, rows);
+		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(input.get_rows_in_block());
+		datagen.set_cols_in_block(input.get_cols_in_block());
+		
+		return datagen;
 	}
 }

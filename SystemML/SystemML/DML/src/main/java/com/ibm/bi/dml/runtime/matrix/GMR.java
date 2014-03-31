@@ -92,14 +92,14 @@ public class GMR
 					// example: MR.mvmult.0.1.2
 					
 					// Determine the index that points to a vector
-					byte in1 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[2].split(Instruction.DATATYPE_PREFIX)[0]);
-					byte in2 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[3].split(Instruction.DATATYPE_PREFIX)[0]);
-					//TODO: need to handle vector-matrix case!
-					//if ( rlens[in1] == 1 || clens[in1] == 1 )
-					//	index = in1; // input1 is a vector
-					//else 
-						index = in2; // input2 is a vector
-					//index = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					String[] parts = inst[i].split(Instruction.OPERAND_DELIM);
+					byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
+					byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					boolean rightCache = inst[i].contains(MapMult.OPCODE)?Boolean.parseBoolean(parts[5]):true; //4 is out
+					if ( rightCache )
+						index = in2; // input2 is in dist cache
+					else 
+						index = in1; // input1 is in dist cache
 					
 					if ( !pathList.contains(index) ) {
 						pathList.add(inputs[index]);

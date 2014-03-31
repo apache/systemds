@@ -32,6 +32,8 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private boolean _rightCache = true;
+	
 	public AggregateBinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
 	{
 		super(op, in1, in2, out);
@@ -39,9 +41,16 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public void setRightCacheMapMult( boolean flag )
+	{
+		_rightCache = flag;
+	}
+	
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
 		
-		InstructionUtils.checkNumFields ( str, 3 );
+		//InstructionUtils.checkNumFields ( str, 3 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
@@ -53,11 +62,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		
 		if ( opcode.equalsIgnoreCase("cpmm") 
 				|| opcode.equalsIgnoreCase("rmm") 
-				|| opcode.equalsIgnoreCase(MapMult.OPCODE) 
-			) {
+				|| opcode.equalsIgnoreCase(MapMult.OPCODE) ) 
+		{
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new AggregateBinaryInstruction(aggbin, in1, in2, out, str);
+			AggregateBinaryInstruction inst = new AggregateBinaryInstruction(aggbin, in1, in2, out, str);
+			if( parts.length==5 )
+				inst.setRightCacheMapMult( Boolean.parseBoolean(parts[4]) );
+			return inst;
 		} 
 		else {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -77,7 +89,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		if ( in2 == null && opcode.equals(MapMult.OPCODE) ) {
+		if ( opcode.equals(MapMult.OPCODE) && ((in1 == null && !_rightCache) || (in2 == null && _rightCache)) ) {
 			// one of the input is from distributed cache.
 			processMapMultInstruction(valueClass, cachedValues, in1, in2, blockRowFactor, blockColFactor);
 			return;
@@ -117,34 +129,66 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 
-		DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-		
-		long in2_cols = dcInput.getNumCols();
-		int  in2_colBlocks = (int) Math.ceil(in2_cols/(double)blockColFactor);
-		
-		for(int bidx=1; bidx <= in2_colBlocks; bidx++) {
+		if( _rightCache )
+		{
+			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
-			// Matrix multiply A[i,k] %*% B[k,bid]
+			long in2_cols = dcInput.getNumCols();
+			int  in2_colBlocks = (int) Math.ceil(in2_cols/(double)blockColFactor);
 			
-			// Setup input2 block
-			IndexedMatrixValue in2Block = dcInput.getDataBlock(in1.getIndexes().getColumnIndex(), bidx, blockRowFactor, blockColFactor);
-						
-			MatrixValue in2BlockValue = in2Block.getValue(); 
-			MatrixIndexes in2BlockIndex = in2Block.getIndexes();
-			
-			//allocate space for the output value
-			IndexedMatrixValue out;
-			out=cachedValues.holdPlace(output, valueClass);
+			for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
+			{	
+				// Matrix multiply A[i,k] %*% B[k,bid]
 				
-			//process instruction
-			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-						in2BlockIndex, in2BlockValue, out.getIndexes(), out.getValue(), 
-						((AggregateBinaryOperator)optr), false);
-			
+				// Setup input2 block
+				IndexedMatrixValue in2Block = dcInput.getDataBlock(in1.getIndexes().getColumnIndex(), bidx, blockRowFactor, blockColFactor);
+							
+				MatrixValue in2BlockValue = in2Block.getValue(); 
+				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
+				
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				out=cachedValues.holdPlace(output, valueClass);
+					
+				//process instruction
+				OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
+							in2BlockIndex, in2BlockValue, out.getIndexes(), out.getValue(), 
+							((AggregateBinaryOperator)optr), false);
+				
+			}
 		}
-		
+		else
+		{
+			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
+			
+			long in1_rows = dcInput.getNumRows();
+			int  in1_rowsBlocks = (int) Math.ceil(in1_rows/(double)blockRowFactor);
+			
+			for(int bidx=1; bidx <= in1_rowsBlocks; bidx++) {
+				
+				// Matrix multiply A[i,k] %*% B[k,bid]
+				
+				// Setup input2 block
+				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, in2.getIndexes().getRowIndex(), blockRowFactor, blockColFactor);
+							
+				MatrixValue in1BlockValue = in1Block.getValue(); 
+				MatrixIndexes in1BlockIndex = in1Block.getIndexes();
+				
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				out=cachedValues.holdPlace(output, valueClass);
+					
+				//process instruction
+				OperationsOnMatrixValues.performAggregateBinary(in1BlockIndex, in1BlockValue, 
+						in2.getIndexes(), in2.getValue(),
+						out.getIndexes(), out.getValue(), 
+							((AggregateBinaryOperator)optr), false);
+				
+			}
+		}		
 	}
 
 }

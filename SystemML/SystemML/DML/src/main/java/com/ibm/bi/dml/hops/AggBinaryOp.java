@@ -9,7 +9,6 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
-import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -108,7 +107,7 @@ public class AggBinaryOp extends Hop
 					Lop matmultCP = null;
 					if( mmtsj == MMTSJType.NONE ) //CP MM
 					{
-						if( isLeftTransposeRewriteApplicable() )
+						if( isLeftTransposeRewriteApplicable(true) )
 							matmultCP = constructCPLopWithLeftTransposeRewrite();
 						else
 							matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
@@ -134,41 +133,46 @@ public class AggBinaryOp extends Hop
 								mmtsj);
 					// System.out.println("Method = " + method);
 					
-					if ( method == MMultMethod.MAPMULT ) {
-						Lop smallMatrix = getInput().get(1).constructLops();
-						
-						if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
-							smallMatrix = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
+					if ( method == MMultMethod.MAPMULT ) 
+					{
+						if( isLeftTransposeRewriteApplicable(false) )
+						{
+							set_lops( constructMRLopWithLeftTransposeRewrite() );
 						}
-						
-						// If number of columns is smaller than block size then explicit aggregation is not required.
-						// i.e., entire matrix multiplication can be performed in the mappers.
-						boolean needAgg = true;
-						if ( getInput().get(0).get_dim2() <= getInput().get(0).get_cols_in_block() ) {
-							needAgg = false;
+						else //GENERAL CASE
+						{
+							Lop smallMatrix = getInput().get(1).constructLops();
+							
+							//TODO revisit once it is taken into account in 'optFindMMultMethod'
+							//if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
+							//	smallMatrix = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
+							//}
+							
+							// If number of columns is smaller than block size then explicit aggregation is not required.
+							// i.e., entire matrix multiplication can be performed in the mappers.
+							boolean needAgg = ( getInput().get(0).get_dim2() > getInput().get(0).get_cols_in_block() ); 
+							
+							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), smallMatrix, get_dataType(), get_valueType(), true);
+							mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							
+							if (needAgg) {
+								Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+								Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+								
+								grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+								agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+								
+								agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+								
+								// aggregation uses kahanSum but the inputs do not have correction values
+								agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+								
+								set_lops(agg1);
+							}
+							else {
+								set_lops(mvmult);
+							}
 						}
-						
-						MapMult mvmult = new MapMult(getInput().get(0).constructLops(), smallMatrix, get_dataType(), get_valueType());
-						mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-						
-						if (needAgg) {
-							Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-							Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-							
-							grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-							agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-							
-							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							
-							// aggregation uses kahanSum but the inputs do not have correction values
-							agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-							
-							set_lops(agg1);
-						}
-						else {
-							set_lops(mvmult);
-						}
-						
 					}
 					else if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(
@@ -421,21 +425,43 @@ public class AggBinaryOp extends Hop
 	 * 
 	 * @return
 	 */
-	private boolean isLeftTransposeRewriteApplicable()
+	private boolean isLeftTransposeRewriteApplicable(boolean CP)
 	{
 		boolean ret = false;
 		Hop h1 = getInput().get(0);
 		Hop h2 = getInput().get(1);
 		
-		if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
+		if( CP ) //in-memory ba (implies input/output transpose can also be CP)
 		{
-			long m = h1.get_dim1();
-			long cd = h1.get_dim2();
-			long n = h2.get_dim2();
-			
-			//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
-			if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) ) 
-				ret = true;
+			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
+			{
+				long m = h1.get_dim1();
+				long cd = h1.get_dim2();
+				long n = h2.get_dim2();
+				
+				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
+				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) ) 
+					ret = true;
+			}
+		}
+		else //MR
+		{
+			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
+			{
+				long m = h1.get_dim1();
+				long cd = h1.get_dim2();
+				long n = h2.get_dim2();
+				
+				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
+				//(compared to CP, we explicitly check that new transposes fit in memory)
+				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getMemBudget(true) &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getMemBudget(true) &&
+					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudget() ) 
+				{
+					ret = true;
+				}
+			}
 		}
 		
 		return ret;
@@ -465,6 +491,52 @@ public class AggBinaryOp extends Hop
 		//result transpose (dimensions set outside)
 		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
 	
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructMRLopWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose CP
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		tY.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+		//matrix mult
+		Lop mult = null;
+		// If number of columns is smaller than block size then explicit aggregation is not required.
+		// i.e., entire matrix multiplication can be performed in the mappers.
+		boolean needAgg = ( X.get_dim1() > X.get_rows_in_block() ); 
+		
+		MapMult mvmult = new MapMult(tY, X.constructLops(), get_dataType(), get_valueType(), false);
+		mvmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		
+		if (needAgg) {
+			Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			grp.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+			mult= agg1;
+		}
+		else
+			mult = mvmult;
+		
+		//result transpose CP 
+		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.get_dim2(), Y.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		
 		return out;
 	}
 	

@@ -22,6 +22,8 @@ public class MapMult extends Lop
 	
 	public static final String OPCODE = "mapmult";
 	
+	private boolean _rightCache = true;
+	
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
 	 * 
@@ -31,12 +33,14 @@ public class MapMult extends Lop
 	 * @throws LopsException
 	 */
 	
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt) throws LopsException {
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache) throws LopsException {
 		super(Lop.Type.MapMult, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
+		
+		_rightCache = rightCache;
 		
 		/*
 		 * This lop can be executed only in MMCJ job.
@@ -64,26 +68,33 @@ public class MapMult extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 		
 		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( this.prepOutputOperand(output_index));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_rightCache);
 		
 		return sb.toString();
 	}
 
+	@Override
 	public boolean usesDistributedCache() {
 		return true;
 	}
 	
-	public int distributedCacheInputIndex() {
-		return 2;  // second input is from distributed cache
+	@Override
+	public int distributedCacheInputIndex() 
+	{
+		if( _rightCache )
+			return 2;  // second input is from distributed cache
+		else
+			return 1;  // first input is from distributed cache
 	}
-
-
 }

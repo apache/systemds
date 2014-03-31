@@ -78,6 +78,7 @@
 					</excludes>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.4</version>
@@ -107,6 +108,23 @@
 				</executions>
 			</plugin>
 
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<index>true</index>
+						<manifest>
+							<addClasspath>true</addClasspath>
+						</manifest>
+						<manifestEntries>
+							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
 		</plugins>
 
 	</build>
@@ -116,30 +134,32 @@
 			<groupId>FIXME.accelerator_development_libraries.biginsights.ihc</groupId>
 			<artifactId>hadoop-core</artifactId>
 			<version>2.2.0-mr1</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
 			<version>2.2.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.1</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math</artifactId>
 			<version>2.2</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.15</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 
 
@@ -147,21 +167,21 @@
 			<groupId>net.sf.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
 			<version>1.8</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.ibm.json</groupId>
 			<artifactId>JSON4J</artifactId>
 			<version>1.0.1.0</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.ibm.thirdparty</groupId>
@@ -179,16 +199,19 @@
 			<groupId>com.ibm.jaql</groupId>
 			<artifactId>jaql</artifactId>
 			<version>0.5.2</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>stax</groupId>
 			<artifactId>stax-api</artifactId>
 			<version>1.0.1</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>

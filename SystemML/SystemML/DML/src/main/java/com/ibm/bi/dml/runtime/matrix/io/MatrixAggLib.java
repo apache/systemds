@@ -39,7 +39,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * ak+, uak+, uark+, uack+, uamin, uarmin, uacmin, uamax, uarmax, uacmax,
  * ua*, uamean, uarmean, uacmean, uarimax.
  * 
- * TODO next opcode extensions: a+, trace, diagM2V, row/colindexmax
+ * TODO next opcode extensions: a+, trace, row/colindexmax
  * TODO low level optimization (potential 3x, sum non-conclusive yet)
  */
 public class MatrixAggLib 

@@ -667,7 +667,11 @@ public abstract class Hop
 	};
 
 	public enum ReOrgOp {
-		TRANSPOSE, DIAG_V2M, DIAG_M2V, RESHAPE
+		TRANSPOSE, DIAG, RESHAPE
+		//Note: Diag types are invalid because for unknown sizes this would 
+		//create incorrect plans (now we try to infer it for memory estimates
+		//and rewrites but the final choice is made during runtime)
+		//DIAG_V2M, DIAG_M2V, 
 	};
 	
 	public enum DataGenMethod {
@@ -724,9 +728,8 @@ public abstract class Hop
 	static {
 		HopsTransf2Lops = new HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes>();
 		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
-		HopsTransf2Lops.put(ReOrgOp.DIAG_V2M, com.ibm.bi.dml.lops.Transform.OperationTypes.VectortoDiagMatrix);
-		//HopsTransf2Lops.put(ReorgOp.DIAG_M2V, dml.lops.Transform.OperationTypes.MatrixtoDiagVector);
-		HopsTransf2Lops.put(ReOrgOp.RESHAPE, com.ibm.bi.dml.lops.Transform.OperationTypes.ReshapeMatrix);
+		HopsTransf2Lops.put(ReOrgOp.DIAG, com.ibm.bi.dml.lops.Transform.OperationTypes.Diag);
+		HopsTransf2Lops.put(ReOrgOp.RESHAPE, com.ibm.bi.dml.lops.Transform.OperationTypes.Reshape);
 
 	}
 
@@ -959,8 +962,7 @@ public abstract class Hop
 	static {
 		HopsTransf2String = new HashMap<ReOrgOp, String>();
 		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
-		HopsTransf2String.put(ReOrgOp.DIAG_M2V, "diagM2V");
-		HopsTransf2String.put(ReOrgOp.DIAG_V2M, "diagV2M");
+		HopsTransf2String.put(ReOrgOp.DIAG, "diag");
 		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
 	}
 

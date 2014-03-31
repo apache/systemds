@@ -116,7 +116,7 @@ public class AggUnaryOp extends Hop
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					agg1.setupCorrectionLocation(transform1.getCorrectionLocaion());
+					agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
 					
 					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	

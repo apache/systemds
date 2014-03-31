@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
@@ -37,6 +38,13 @@ public class MatrixReorgLib
 	
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
+	private enum ReorgType {
+		TRANSPOSE,
+		DIAG,
+		RESHAPE,
+		INVALID,
+	}
+	
 	/////////////////////////
 	// public interface    //
 	/////////////////////////
@@ -48,11 +56,29 @@ public class MatrixReorgLib
 	 */
 	public static boolean isSupportedReorgOperator( ReorgOperator op )
 	{
-		//transpose operation
-		if( op.fn.equals(SwapIndex.getSwapIndexFnObject()) )
-			return true;
+		return (getReorgType(op) != ReorgType.INVALID);
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlockDSM reorg( MatrixBlockDSM in, MatrixBlockDSM out, ReorgOperator op ) 
+		throws DMLRuntimeException
+	{
+		ReorgType type = getReorgType(op);
 		
-		return false;
+		switch( type )
+		{
+			case TRANSPOSE: return transpose(in, out);
+			case DIAG:      return diag(in, out); 
+			
+			default:        
+				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
+		}
 	}
 	
 	/**
@@ -77,6 +103,33 @@ public class MatrixReorgLib
 			transposeDenseToSparse( in, out );
 		
 		//System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		
+		return out;
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlockDSM diag( MatrixBlockDSM in, MatrixBlockDSM out ) 
+			throws DMLRuntimeException
+	{
+		//Timing time = new Timing(true);
+		
+		int rlen = in.rlen;
+		int clen = in.clen;
+		
+		if( clen == 1 ) //diagV2M
+			diagV2M( in, out );
+		else if ( rlen == clen ) //diagM2V
+			diagM2V( in, out );
+		else
+			throw new DMLRuntimeException("Reorg diagM2V requires squared block input. ("+rlen+", "+clen+")");
+		
+		//System.out.println("rdiag ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
 	}
@@ -184,6 +237,23 @@ public class MatrixReorgLib
 	///////////////////////////////
 	// private CP implementation //
 	///////////////////////////////
+
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	private static ReorgType getReorgType( ReorgOperator op )
+	{
+		if( op.fn.equals(SwapIndex.getSwapIndexFnObject()) )  //transpose
+			return ReorgType.TRANSPOSE;
+		
+		if( op.fn.equals(MaxIndex.getMaxIndexFnObject()) ) //diag
+			return ReorgType.DIAG;
+				
+		return ReorgType.INVALID;
+	}
 	
 	/**
 	 * 
@@ -431,6 +501,47 @@ public class MatrixReorgLib
 			c[ cix + 5*n2 ] = a[ aix+5 ];
 			c[ cix + 6*n2 ] = a[ aix+6 ];
 			c[ cix + 7*n2 ] = a[ aix+7 ];	
+		}
+	}
+	
+	/**
+	 * Generic implementation diagV2M (non-performance critical)
+	 * (in most-likely DENSE, out most likely SPARSE)
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void diagV2M( MatrixBlockDSM in, MatrixBlockDSM out )
+	{
+		int rlen = in.rlen;
+		
+		//CASE column vector
+		for( int i=0; i<rlen; i++ )
+		{
+			double val = in.quickGetValue(i, 0);
+			if( val != 0 )
+				out.appendValue(i, i, val);
+		}
+	}
+	
+	/**
+	 * Generic implementation diagM2V (non-performance critical)
+	 * (in most-likely SPARSE, out most likely DENSE)
+	 * 
+	 * NOTE: squared block assumption (checked on entry diag)
+	 * 
+	 * @param in
+	 * @param out
+	 */
+	private static void diagM2V( MatrixBlockDSM in, MatrixBlockDSM out )
+	{
+		int rlen = in.rlen;
+		
+		for( int i=0; i<rlen; i++ )
+		{
+			double val = in.quickGetValue(i, i);
+			if( val != 0 )
+				out.quickSetValue(i, 0, val);
 		}
 	}
 	

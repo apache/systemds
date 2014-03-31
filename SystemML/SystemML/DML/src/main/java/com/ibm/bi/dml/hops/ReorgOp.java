@@ -13,7 +13,6 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -98,65 +97,8 @@ public class ReorgOp extends Hop
 			
 			switch( op )
 			{
-				case DIAG_M2V: 
-				{
-					// Handle M2V case separately
-					// partialAgg (diagM2V) - group - agg (+)
-					
-					if( et==ExecType.MR )
-					{
-						// TODO: this code must be revisited once the support for matrix indexing is implemented. 
-						
-						PartialAggregate transform1 = new PartialAggregate(
-								getInput().get(0).constructLops(),
-								Aggregate.OperationTypes.DiagM2V,
-								HopsDirection2Lops.get(Direction.Col),
-								get_dataType(), get_valueType(), et);
-						transform1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-						Group group1 = new Group(
-								transform1, Group.OperationTypes.Sort,
-								get_dataType(), get_valueType());
-						group1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());						
-						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						Aggregate agg1 = new Aggregate(
-								group1, HopsAgg2Lops.get(AggOp.SUM),
-								get_dataType(), get_valueType(), ExecType.MR);
-						agg1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());	
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						// kahanSum setup is not used for Diag operations. They are
-						// treated as special case in the run time
-						agg1.setupCorrectionLocation(transform1.getCorrectionLocaion());
-	
-						set_lops(agg1);
-					}
-					else //CP
-					{
-						PartialAggregate transform1 = new PartialAggregate(
-								getInput().get(0).constructLops(),
-								Aggregate.OperationTypes.DiagM2V,
-								HopsDirection2Lops.get(Direction.Col),
-								get_dataType(), get_valueType(), et);
-						transform1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-						set_lops(transform1);
-					}	
-					break;
-				}
 				case TRANSPOSE:
-				case DIAG_V2M:
+				case DIAG:
 				{
 					Transform transform1 = new Transform(
 							getInput().get(0).constructLops(), HopsTransf2Lops
@@ -247,11 +189,16 @@ public class ReorgOp extends Hop
 			String sql = null;
 			if (this.op == ReOrgOp.TRANSPOSE) {
 				sql = String.format(SQLLops.TRANSPOSEOP, input.get_sqllops().get_tableName());
-			} else if (op == ReOrgOp.DIAG_M2V) {
+			} 
+			//TODO diag (size-aware)
+			/*
+			else if (op == ReOrgOp.DIAG_M2V) {
 				sql = String.format(SQLLops.DIAG_M2VOP, input.get_sqllops().get_tableName());
 			} else if (op == ReOrgOp.DIAG_V2M) {
 				sql = String.format(SQLLops.DIAG_V2M, input.get_sqllops().get_tableName());
 			}
+			*/
+			
 			//TODO reshape
 			
 			sqllop.set_properties(getProperties(input));
@@ -303,25 +250,24 @@ public class ReorgOp extends Hop
 					ret = new long[]{ mc.get_cols(), mc.get_rows(), mc.getNonZeros() };
 				break;
 			}	
-			case DIAG_V2M:
+			case DIAG:
 			{
+				// NOTE: diag is overloaded according to the number of columns of the input
+				
+				long k = mc.get_rows(); 
+				
+				// CASE a) DIAG V2M
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
-				
-				//the following approach leads to problems if dim1 unknown, but dim2 known to be 1
-				//long k = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
-				long k = mc.get_rows(); 
-				if( k > 0 )
+				if( k == 1 )
 					ret = new long[]{k, k, ((mc.getNonZeros()>0) ? mc.getNonZeros() : k)};
-				break;
-			}	
-			case DIAG_M2V:
-			{
+				
+				// CASE b) DIAG M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)		
-				long k = mc.get_rows();
-				if( k > 0 )
+				if( k > 1 )
 					ret = new long[]{k, 1, ((mc.getNonZeros()>0) ? Math.min(k,mc.getNonZeros()) : k) };
+				
 				break;		
 			}
 			case RESHAPE:
@@ -390,27 +336,29 @@ public class ReorgOp extends Hop
 				setNnz(input1.getNnz());
 				break;
 			}	
-			case DIAG_V2M:
+			case DIAG:
 			{
-				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
-				// #nnz in output is in the worst case k => sparsity = 1/k
+				// NOTE: diag is overloaded according to the number of columns of the input
 				
-				//the following approach leads to problems if dim1 unknown, but dim2 known to be 1
-				//long k = (input1.get_dim1() > 1 ? input1.get_dim1() : input1.get_dim2()); 
 				long k = input1.get_dim1(); 
 				set_dim1(k);
-				set_dim2(k);
-				setNnz( (input1.getNnz()>0) ? input1.getNnz() : k );
-				break;
-			}	
-			case DIAG_M2V:
-			{
+				
+				// CASE a) DIAG_V2M
+				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
+				// #nnz in output is in the worst case k => sparsity = 1/k
+				if( input1.get_dim2()==1 ) {
+					set_dim2(k);
+					setNnz( (input1.getNnz()>0) ? input1.getNnz() : k );
+				}
+				
+				// CASE b) DIAG_M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)		
-				long k = input1.get_dim1();
-				set_dim1(k);
-				set_dim2(1);	
-				setNnz( (input1.getNnz()>0) ? Math.min(k,input1.getNnz()) : k );
+				if( input1.get_dim2()>1 ){
+					set_dim2(1);	
+					setNnz( (input1.getNnz()>0) ? Math.min(k,input1.getNnz()) : k );
+				}
+				
 				break;		
 			}
 			case RESHAPE:

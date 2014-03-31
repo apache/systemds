@@ -120,7 +120,7 @@ public class PartialAggregate extends Lop
 	 * appropriate aggregate operator is used at runtime (see:
 	 * dml.runtime.matrix.operator.AggregateOperator.java and dml.runtime.matrix)
 	 */
-	public CorrectionLocationType getCorrectionLocaion() throws LopsException {
+	public CorrectionLocationType getCorrectionLocation() throws LopsException {
 
 		CorrectionLocationType loc;
 
@@ -271,9 +271,6 @@ public class PartialAggregate extends Lop
 		} else if (operation == Aggregate.OperationTypes.KahanTrace
 				&& direction == DirectionTypes.RowCol) {
 			return "uaktrace";
-		} else if (operation == Aggregate.OperationTypes.DiagM2V
-				&& direction == DirectionTypes.Col) {
-			return "rdiagM2V";
 		} else {
 			throw new UnsupportedOperationException(this.printErrorLocation() +
 					"Instruction is not defined for PartialAggregate operation "

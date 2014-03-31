@@ -189,7 +189,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		if(c3==null)
 			c3=new MatrixCell();
 		
-		if(op.isTrace || op.isDiagM2V)
+		if( op.isTrace )
 		{
 			if(indexesIn.getRowIndex()==indexesIn.getColumnIndex())
 				c3.setValue(getValue());

@@ -1651,16 +1651,10 @@ public class DataConverter
 	public static MatrixBlock convertToMatrixBlock( double[] data, boolean columnVector ) 
 		throws DMLRuntimeException
 	{
-		int rows, cols;
-		if ( columnVector ) {
-			rows = data.length;
-			cols = 1;
-		}
-		else {
-			rows = 1;
-			cols = data.length;
-		}
+		int rows = columnVector ? data.length : 1;
+		int cols = columnVector ? 1 : data.length;
 		MatrixBlock mb = new MatrixBlock(rows, cols, false);
+		
 		try
 		{ 
 			//copy data to mb (can be used because we create a dense matrix)

@@ -81,6 +81,11 @@ public class OptimizerUtils
 	public static boolean ALLOW_CONSTANT_FOLDING = true;
 	
 	/**
+	 * 
+	 */
+	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
+	
+	/**
 	 * Enables if-else branch removal for constant predicates (original literals or 
 	 * results of constant folding). 
 	 * 

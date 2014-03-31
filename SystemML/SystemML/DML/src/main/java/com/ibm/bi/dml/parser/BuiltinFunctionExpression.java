@@ -414,10 +414,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkNumParameters(1);
 			checkMatrixParam(_first);
 			output.setDataType(DataType.MATRIX);
-			if ((id.getDim1() == 1) || (id.getDim2() == 1)) {
-				long dim = (id.getDim1() == 1) ? id.getDim2() : id.getDim1();
-				output.setDimensions(dim, dim);
-			} else {
+			if ( id.getDim2() == 1 ) 
+			{
+				//diag V2M
+				output.setDimensions(id.getDim1(), id.getDim1());
+			} 
+			else 
+			{
 				if (id.getDim1() != id.getDim2()) {
 					
 					throw new LanguageException(this.printErrorLocation() +
@@ -426,7 +429,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 									+ ") in " + this.toString(),
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				}
-				output.setDimensions(id.getDim2(), 1);
+				output.setDimensions(id.getDim1(), 1);
 			}
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(id.getValueType());

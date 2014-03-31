@@ -87,7 +87,6 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "uacmax"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "rdiagM2V", MRINSTRUCTION_TYPE.AggregateUnary);
 
 		// BUILTIN Instruction Opcodes 
 		String2MRInstructionType.put( "abs"  , MRINSTRUCTION_TYPE.Unary);
@@ -132,8 +131,8 @@ public class MRInstructionParser extends InstructionParser
 		// String2InstructionType.put( "sl"    , MRINSTRUCTION_TYPE.Scalar);
 
 		// REORG Instruction Opcodes 
-		String2MRInstructionType.put( "r'"      , MRINSTRUCTION_TYPE.Reorg);
-		String2MRInstructionType.put( "rdiagV2M", MRINSTRUCTION_TYPE.Reorg);
+		String2MRInstructionType.put( "r'"     , MRINSTRUCTION_TYPE.Reorg);
+		String2MRInstructionType.put( "rdiag"  , MRINSTRUCTION_TYPE.Reorg);
 		
 		// DataGen Instruction Opcodes 
 		String2MRInstructionType.put( "Rand"   , MRINSTRUCTION_TYPE.Rand);

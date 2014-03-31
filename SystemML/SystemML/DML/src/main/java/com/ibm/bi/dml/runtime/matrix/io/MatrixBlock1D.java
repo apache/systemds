@@ -919,15 +919,6 @@ public class MatrixBlock1D extends MatrixValue
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps);
 		
-		//TODO: right now cannot handle matrix diag
-	/*	if(op==Reorg.SupportedOperation.REORG_MATRIX_DIAG)
-		{
-			
-			for(int i=0; i<length; i++)
-				result.setValue(startRow+i, 0, getValue(startRow+i, startColumn+i));
-			return result;
-		}*/
-		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
 		{
@@ -974,15 +965,6 @@ public class MatrixBlock1D extends MatrixValue
 			result=new MatrixBlock1D(tempCellIndex.row, tempCellIndex.column, sps);
 		else if(result.getNumRows() == 0 && result.getNumColumns() == 0)
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps);	
-		
-		//TODO: right now cannot handle matrix diag
-	/*	if(op==Reorg.SupportedOperation.REORG_MATRIX_DIAG)
-		{
-			
-			for(int i=0; i<length; i++)
-				result.setValue(startRow+i, 0, getValue(startRow+i, startColumn+i));
-			return result;
-		}*/
 		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
@@ -1276,30 +1258,6 @@ public class MatrixBlock1D extends MatrixValue
 		}
 	}
 	
-	//change to a column vector
-	private void diagM2VHelp(AggregateUnaryOperator op, MatrixBlock1D result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) throws DMLUnsupportedOperationException, DMLRuntimeException
-		{
-			//test whether this block contains any cell in the diag
-			long topRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, 0);
-			long bottomRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, this.rlen-1);
-			long leftColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, 0);
-			long rightColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, this.clen-1);
-			
-			long start=Math.max(topRow, leftColumn);
-			long end=Math.min(bottomRow, rightColumn);
-			
-			if(start>end)
-				return;
-			
-			for(long i=start; i<=end; i++)
-			{
-				int cellRow=UtilFunctions.cellInBlockCalculation(i, blockingFactorRow);
-				int cellCol=UtilFunctions.cellInBlockCalculation(i, blockingFactorCol);
-				result.setValue(cellRow, 0, getValue(cellRow, cellCol));
-			}
-		}
-
 /*
  * blockingFactorRow and blockingFactorCol are the blocking factor for a matrix (1000x1000), they are only used for trace,
  * */
@@ -1335,8 +1293,6 @@ public class MatrixBlock1D extends MatrixValue
 		//TODO: this code is hack to support trace, and should be removed when selection is supported
 		if(op.isTrace)
 			traceHelp(op, (MatrixBlock1D)result, blockingFactorRow, blockingFactorCol, indexesIn);
-		else if(op.isDiagM2V)
-			diagM2VHelp(op, (MatrixBlock1D)result, blockingFactorRow, blockingFactorCol, indexesIn);
 		else if(op.sparseSafe)
 			sparseAggregateUnaryHelp(op, (MatrixBlock1D)result, blockingFactorRow, blockingFactorCol, indexesIn);
 		else

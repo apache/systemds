@@ -349,6 +349,7 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @param cl
 	 * @param estimatedmNNzs
 	 */
+	@Deprecated
 	public void allocateSparseRowsUnsafe(int rl, int cl, int estimatedmNNzs)
 	{
 		sparse=true;
@@ -2702,29 +2703,32 @@ public class MatrixBlockDSM extends MatrixValue
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(MaxIndex.getMaxIndexFnObject())))
-			throw new DMLRuntimeException("the current reorgOperations cannot support "
-					+op.fn.getClass()+", needs to examine whether appendValue is applicable!");
-	//	long time=System.currentTimeMillis();
+			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
+		
 		MatrixBlockDSM result=checkType(ret);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
-			sps=false;
-		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject())) {
-			sps=true;
-		}
+			sps = false;
+		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject()))
+			sps = true;
 		else
 			sps = checkRealSparsity(this, true);
-			
+		
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
 		if( MatrixReorgLib.isSupportedReorgOperator(op) )
-			MatrixReorgLib.transpose(this, result);
-		else
 		{
+			//SPECIAL case (operators with special performance requirements, 
+			//or size-dependent special behavior)
+			MatrixReorgLib.reorg(this, result, op);
+		}
+		else 
+		{
+			//GENERIC case (any reorg operator)
 			CellIndex temp = new CellIndex(0, 0);
 			if(sparse)
 			{
@@ -2780,9 +2784,6 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 		}
 		
-	//	time=System.currentTimeMillis()-time;
-	//	System.out.println("------------- transpose ------------");
-	//	System.out.println(time+"\t"+result.getCapacity()+"\t"+result.getNonZeros());
 		return result;
 	}
 	
@@ -3523,8 +3524,6 @@ public class MatrixBlockDSM extends MatrixValue
 		MatrixBlockDSM ret = (MatrixBlockDSM) result;
 		if(op.isTrace) //TODO: this code is hack to support trace, and should be removed when selection is supported
 			traceHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
-		else if(op.isDiagM2V)
-			diagM2VHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		else if( MatrixAggLib.isSupportedUnaryAggregateOperator(op) ) {
 			MatrixAggLib.aggregateUnaryMatrix(this, ret, op);
 			MatrixAggLib.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
@@ -3581,30 +3580,6 @@ public class MatrixBlockDSM extends MatrixValue
 						quickGetValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
 			}
 			result.quickSetValue(0, 0, newv);
-		}
-	}
-		
-	//change to a column vector
-	private void diagM2VHelp(AggregateUnaryOperator op, MatrixBlockDSM result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//test whether this block contains any cell in the diag
-		long topRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, 0);
-		long bottomRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, this.rlen-1);
-		long leftColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, 0);
-		long rightColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, this.clen-1);
-		
-		long start=Math.max(topRow, leftColumn);
-		long end=Math.min(bottomRow, rightColumn);
-		
-		if(start>end)
-			return;
-		
-		for(long i=start; i<=end; i++)
-		{
-			int cellRow=UtilFunctions.cellInBlockCalculation(i, blockingFactorRow);
-			int cellCol=UtilFunctions.cellInBlockCalculation(i, blockingFactorCol);
-			result.appendValue(cellRow, 0, quickGetValue(cellRow, cellCol));
 		}
 	}
 	

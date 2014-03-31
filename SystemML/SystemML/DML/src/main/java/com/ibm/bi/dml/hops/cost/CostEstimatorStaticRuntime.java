@@ -698,7 +698,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				
 				case AggregateUnary: //opcodes: uak+, uark+, uack+, uamean, uarmean, uacmean, 
 									 //         uamax, uarmax, uarimax, uacmax, uamin, uarmin, uacmin, 
-									 //         ua+, uar+, uac+, ua*, uatrace, uaktrace, rdiagM2V, 
+									 //         ua+, uar+, uac+, ua*, uatrace, uaktrace, 
 					                 //         nrow, ncol, length, cm
 					
 					if( optype.equals("nrow") || optype.equals("ncol") || optype.equals("length") )
@@ -717,8 +717,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}
 				    else if( optype.equals("uatrace") || optype.equals("uaktrace") )
 				    	return 2 * d1m * d1n;
-				    else if( optype.equals("rdiagM2V") )
-				    	return d1m * d1n * DEFAULT_NFLOP_CP;
 				    else if( optype.equals("ua+") || optype.equals("uar+") || optype.equals("uar+")  ){
 				    	//sparse safe operations
 				    	if( !leftSparse ) //dense
@@ -794,7 +792,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 							return xbu * d1m * d1n;
 					}
 										
-				case Reorg: //opcodes: r', rdiagV2M
+				case Reorg: //opcodes: r', rdiag
 				case MatrixReshape: //opcodes: rshape
 					if( leftSparse )
 						return d1m * d1n * d1s;

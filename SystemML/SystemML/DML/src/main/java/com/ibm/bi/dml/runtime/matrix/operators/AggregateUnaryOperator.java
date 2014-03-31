@@ -26,8 +26,6 @@ public class AggregateUnaryOperator  extends Operator
 	
 	//TODO: this is a hack to support trace, and it will be removed once selection operation is supported
 	public boolean isTrace=false;
-	//TODO: this is a hack to support diag, and it will be removed once selection operation is supported
-	public boolean isDiagM2V=false;
 	
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{

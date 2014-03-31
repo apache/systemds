@@ -342,7 +342,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum	
 			{
 				Hop hi2 = au.getInput().get(0);
-				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG_M2V ) //diag
+				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.get_dim2()==1 ) //diagM2V
 				{
 					Hop hi3 = hi2.getInput().get(0);
 					
@@ -373,7 +373,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 	 */
 	private Hop simplifyDiagMatrixMult(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.DIAG_M2V ) //diag()
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.DIAG && hi.get_dim2()==1 ) //diagM2V
 		{
 			Hop hi2 = hi.getInput().get(0);
 			if( hi2 instanceof AggBinaryOp && ((AggBinaryOp)hi2).isMatrixMultiply() ) //X%*%Y

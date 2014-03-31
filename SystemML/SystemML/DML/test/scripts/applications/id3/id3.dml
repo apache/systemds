@@ -276,7 +276,7 @@ attributes = matrix(1, rows=m, cols=1)
 featureCorrections = 1 - colMins(X)
 onesMat = matrix(1, rows=n, cols=m)
 
-X = onesMat %*% diag(featureCorrections) + X
+X = onesMat %*% diag(t(featureCorrections)) + X
 labelCorrection = 1 - min(y)
 y = y + labelCorrection + 0
 

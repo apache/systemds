@@ -72,7 +72,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ua*"     , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uatrace" , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uaktrace", CPINSTRUCTION_TYPE.AggregateUnary);
-		String2CPInstructionType.put( "rdiagM2V", CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "nrow"    ,CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "ncol"    ,CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "length"  ,CPINSTRUCTION_TYPE.AggregateUnary);
@@ -155,8 +154,9 @@ public class CPInstructionParser extends InstructionParser
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
 
-		String2CPInstructionType.put( "r'"   	, CPINSTRUCTION_TYPE.Reorg);
-		String2CPInstructionType.put( "rdiagV2M", CPINSTRUCTION_TYPE.Reorg);
+		String2CPInstructionType.put( "r'"   	    , CPINSTRUCTION_TYPE.Reorg);
+		String2CPInstructionType.put( "rdiag"       , CPINSTRUCTION_TYPE.Reorg);
+		String2CPInstructionType.put( "rshape"      , CPINSTRUCTION_TYPE.MatrixReshape);
 		
 		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
@@ -173,8 +173,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
-		
-		String2CPInstructionType.put( "rshape" , CPINSTRUCTION_TYPE.MatrixReshape);
 		
 		String2CPInstructionType.put( "qr"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);

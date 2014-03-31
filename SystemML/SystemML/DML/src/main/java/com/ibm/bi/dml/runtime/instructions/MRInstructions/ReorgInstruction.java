@@ -31,15 +31,17 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//required for diag (load-balance-aware output of empty blocks)
+	//required for diag (size-based type, load-balance-aware output of empty blocks)
 	private MatrixCharacteristics _mcIn = null;
 	private boolean _outputEmptyBlocks = true;
+	private boolean _isDiag = false;
 	
 	public ReorgInstruction(Operator op, byte in, byte out, String istr)
 	{
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
+		_isDiag = (((ReorgOperator)op).fn==MaxIndex.getMaxIndexFnObject());
 	}
 	
 	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
@@ -67,7 +69,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 			return new ReorgInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, str);
 		} 
 		
-		else if ( opcode.equalsIgnoreCase("rdiagV2M") ) {
+		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			return new ReorgInstruction(new ReorgOperator(MaxIndex.getMaxIndexFnObject()), in, out, str);
 		} 
 		
@@ -100,45 +102,57 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 					out=cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
-				OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
-						out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
-						startRow, startColumn, length);
+				if( _isDiag ) //special diag handling (overloaded, size-dependent operation; hence decided during runtime)
+				{
+					boolean V2M = (_mcIn.get_rows()==1 || _mcIn.get_cols()==1);
+					long rlen = Math.max(_mcIn.get_rows(), _mcIn.get_cols()); //input can be row/column vector
+					
+					//Note: for M2V we directly skip non-diagonal blocks block
+					if( V2M || in.getIndexes().getRowIndex()==in.getIndexes().getColumnIndex() )
+					{
+						if( V2M )
+						{
+							OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
+									out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
+									startRow, startColumn, length);
+							
+							//special handling for vector to matrix diag to make sure the missing 0' are accounted for 
+							//(only for block representation)
+							if(_outputEmptyBlocks && valueClass.equals(MatrixBlock.class) )
+							{
+								long diagIndex=out.getIndexes().getRowIndex();//row index is equal to the col index
+								long brlen = Math.max(_mcIn.get_rows_per_block(),_mcIn.get_cols_per_block());
+								long numRowBlocks = (rlen/brlen)+((rlen%brlen!=0)? 1 : 0);
+								for(long rc=1; rc<=numRowBlocks; rc++)
+								{
+									if( rc==diagIndex ) continue; //prevent duplicate output
+									IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
+									int lbrlen = (int) ((rc*brlen<=rlen) ? brlen : rlen%brlen);
+									emptyIndexValue.getIndexes().setIndexes(rc, diagIndex);
+									emptyIndexValue.getValue().reset(lbrlen, out.getValue().getNumColumns(), true);
+								}
+							}		
+						}
+						else //M2V
+						{
+							//compute matrix indexes
+							out.getIndexes().setIndexes(in.getIndexes().getRowIndex(), 1);
+							
+							//compute result block
+							in.getValue().reorgOperations((ReorgOperator)optr, out.getValue(), startRow, startColumn, length);
+						}
+					}	
+				}
+				else //general case (e.g., transpose)
+				{
+					OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
+							out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
+							startRow, startColumn, length);	
+				}
 				
 				//put the output value in the cache
 				if(out==tempValue)
 					cachedValues.add(output, out);
-				
-				//special handling for vector to matrix diag to make sure the missing 0' are accounted for 
-				//(only for block representation)
-				if(_outputEmptyBlocks && valueClass.equals(MatrixBlock.class) && ((ReorgOperator)optr).fn==MaxIndex.getMaxIndexFnObject())
-				{
-					long diagIndex=out.getIndexes().getRowIndex();//row index is equal to the col index
-					long rlen = Math.max(_mcIn.get_rows(), _mcIn.get_cols()); //input can be row/column vector
-					long brlen = Math.max(_mcIn.get_rows_per_block(),_mcIn.get_cols_per_block());
-					long numRowBlocks = (rlen/brlen)+((rlen%brlen!=0)? 1 : 0);
-					for(long rc=1; rc<=numRowBlocks; rc++)
-					{
-						if( rc==diagIndex ) continue; //prevent duplicate output
-						IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
-						int lbrlen = (int) ((rc*brlen<=rlen) ? brlen : rlen%brlen);
-						emptyIndexValue.getIndexes().setIndexes(rc, diagIndex);
-						emptyIndexValue.getValue().reset(lbrlen, out.getValue().getNumColumns(), true);
-					}
-					
-					// MB> this code led to huge imbalance because mappers with high row index created
-					//     many blocks (e.g., ix=3->4 vs ix=100,000->200,000 blocks ). 					
-					/*
-					for(long rc=1; rc<diagIndex; rc++)
-					{
-						IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
-						emptyIndexValue.getIndexes().setIndexes(rc, diagIndex);
-						emptyIndexValue.getValue().reset(blockRowFactor, out.getValue().getNumColumns(), true);
-						emptyIndexValue=cachedValues.holdPlace(output, valueClass);
-						emptyIndexValue.getIndexes().setIndexes(diagIndex, rc);
-						emptyIndexValue.getValue().reset(out.getValue().getNumRows(), blockColFactor, true);
-					}
-					*/
-				}
 			}
 	}
 }

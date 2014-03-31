@@ -26,8 +26,8 @@ public class Transform extends Lop
 	
 	public enum OperationTypes {
 		Transpose,
-		VectortoDiagMatrix,
-		ReshapeMatrix
+		Diag,
+		Reshape
 	};
 	
 	private OperationTypes operation = null;
@@ -70,7 +70,7 @@ public class Transform extends Lop
 			lps.addCompatibility(JobType.REBLOCK);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
-			if( op == OperationTypes.ReshapeMatrix )
+			if( op == OperationTypes.Reshape )
 				//reshape should be executed in map because we have potentially large intermediate data and want to exploit the combiner.
 				this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 			else
@@ -106,11 +106,11 @@ public class Transform extends Lop
 			// Transpose a matrix
 			return "r'";
 		
-		case VectortoDiagMatrix:
+		case Diag:
 			// Transform a vector into a diagonal matrix
-			return "rdiagV2M";
+			return "rdiag";
 		
-		case ReshapeMatrix:
+		case Reshape:
 			// Transform a vector into a diagonal matrix
 			return "rshape";
 				

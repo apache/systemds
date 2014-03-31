@@ -2776,9 +2776,7 @@ public class DMLTranslator
 
 		case TRANS:
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-					Hop.ReOrgOp.TRANSPOSE, expr);
-			// currBop = new AggUnaryOp(targetName,AggOp.SUM,TransfOp.ColKey,
-			// expr);
+					                    Hop.ReOrgOp.TRANSPOSE, expr);
 			break;
 			
 		case APPEND:
@@ -2787,14 +2785,8 @@ public class DMLTranslator
 			break;
 		
 		case DIAG:
-			// If either of the input is a vector, then output is a matrix
-			if (expr.get_dim1() == 1  || expr.get_dim2() == 1) {
-				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-						Hop.ReOrgOp.DIAG_V2M, expr);
-			} else {
-				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-						Hop.ReOrgOp.DIAG_M2V, expr);
-			}
+			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
+						                Hop.ReOrgOp.DIAG, expr);
 			break;
 			
 		case CTABLE:

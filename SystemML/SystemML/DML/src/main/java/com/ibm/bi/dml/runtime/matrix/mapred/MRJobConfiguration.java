@@ -179,16 +179,16 @@ public class MRJobConfiguration
 	
 	
 	//characteristics about the matrices to matrixdiag instructions
-	private static final String INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG="diagm2v.matrix.num.row.";
-	private static final String INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG="diagm2v.matrix.num.column.";
-	private static final String INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG="diagm2v.block.num.row.";
-	private static final String INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG="diagm2v.block.num.column.";
+	private static final String INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG="rdiag.matrix.num.row.";
+	private static final String INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG="rdiag.matrix.num.column.";
+	private static final String INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG="rdiag.block.num.row.";
+	private static final String INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG="rdiag.block.num.column.";
 	
 	//matrix indexes to be outputted as final results
 	private static final String RESULT_INDEXES_CONFIG="results.indexes";
 	private static final String RESULT_DIMS_UNKNOWN_CONFIG="results.dims.unknown";
 	
-	private static final String INTERMEDIATE_INDEXES_CONFIG="diagm2v.indexes";
+	private static final String INTERMEDIATE_INDEXES_CONFIG="rdiag.indexes";
 	
 	//output matrices and their formats
 	private static final String OUTPUT_MATRICES_DIRS_CONFIG="output.matrices.dirs";

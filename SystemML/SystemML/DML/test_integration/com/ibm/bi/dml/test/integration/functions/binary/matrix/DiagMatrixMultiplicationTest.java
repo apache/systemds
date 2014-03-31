@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -54,86 +55,156 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	public void testDiagMMDenseDenseCP() 
 	{
 		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.CP);
+		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testDiagMMDenseDenseTransposeCP() 
 	{
 		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.CP);
+		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testDiagMVDenseDenseCP() 
 	{
 		//should not apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.CP);
+		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseCP() 
 	{
 		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.CP);
+		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseTransposeCP() 
 	{
 		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.CP);
+		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testDiagMVSparseSparseCP() 
 	{
 		//should not apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.CP);
+		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.CP, true);
 	}
 
 	@Test
 	public void testDiagMMDenseDenseMR() 
 	{
 		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.MR);
+		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testDiagMMDenseDenseTransposeMR() 
 	{
 		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.MR);
+		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testDiagMVDenseDenseMR() 
 	{
 		//should not apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.MR);
+		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseMR() 
 	{
 		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.MR);
+		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseTransposeMR() 
 	{
 		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.MR);
+		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testDiagMVSparseSparseMR() 
 	{
-		//should not apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.MR);
+		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.MR, true);
+	}
+
+	@Test
+	public void testDiagMMDenseDenseNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.CP, false);
 	}
 	
+	@Test
+	public void testDiagMMDenseDenseTransposeNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testDiagMVDenseDenseNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseTransposeNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testDiagMVSparseSparseNoSimplifyCP() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.CP, false);
+	}
+
+	@Test
+	public void testDiagMMDenseDenseNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testDiagMMDenseDenseTransposeNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testDiagMVDenseDenseNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseTransposeNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testDiagMVSparseSparseNoSimplifyMR() 
+	{
+		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.MR, false);
+	}
 
 	/**
 	 * 
@@ -141,22 +212,25 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runDiagMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, boolean rightTranspose, boolean rightVector, ExecType instType)
+	private void runDiagMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, boolean rightTranspose, boolean rightVector, ExecType instType, boolean simplify)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 	
 		String TEST_NAME = rightTranspose ? TEST_NAME2 : TEST_NAME1;
+		boolean oldFlagSimplify = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = simplify;
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                        Integer.toString(rowsA),
 					                        Integer.toString(colsA),
 					                        HOME + INPUT_DIR + "B",
@@ -188,6 +262,7 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagSimplify;
 		}
 	}
 

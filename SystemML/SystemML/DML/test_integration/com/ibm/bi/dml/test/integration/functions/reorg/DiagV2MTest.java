@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,13 +21,13 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class DiagV2MTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "functions/reorg/";
 
 	private final static double epsilon=0.0000000001;
-	private final static int cols = 1059;
+	private final static int rows = 1059;
 	private final static int min=0;
 	private final static int max=100;
 	
@@ -45,13 +45,13 @@ public class DiagV2MTest extends AutomatedTestBase
 		
 	    rtplatform = platform;
 
-        config.addVariable("cols", cols);
+        config.addVariable("rows", rows);
           
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + "DiagV2MTest" + ".dml";
 		programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
-				Long.toString(cols), RI_HOME + OUTPUT_DIR + "C" };
+				Long.toString(rows), RI_HOME + OUTPUT_DIR + "C" };
 		fullRScriptName = RI_HOME + "DiagV2MTest" + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
@@ -61,7 +61,7 @@ public class DiagV2MTest extends AutomatedTestBase
 		//double sparsity=0.2;
 		double sparsity=rand.nextDouble();
 		//System.out.println("sparsity: "+sparsity);
-        double[][] A = getRandomMatrix(1, cols, min, max, sparsity, System.currentTimeMillis());
+        double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("A", A, true);
         sparsity=rand.nextDouble();   
 		/*

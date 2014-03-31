@@ -51,7 +51,8 @@ public class ProgramRewriter
 		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependencies: common subexpression elimination
 		_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        );
-		_dagRuleSet.add(     new RewriteAlgebraicSimplification()            ); //dependencies: common subexpression elimination
+		if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
+			_dagRuleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
 		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //reapply common subexpression elimination after simplification rewrites (no need to merge leafs again)
 			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 

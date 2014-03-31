@@ -27,7 +27,7 @@ public class Aggregate extends Lop
 	
 	/** Aggregate operation types **/
 	
-	public enum OperationTypes {Sum,Product,Min,Max,Trace,DiagM2V,KahanSum,KahanTrace,Mean,MaxIndex};	
+	public enum OperationTypes {Sum,Product,Min,Max,Trace,KahanSum,KahanTrace,Mean,MaxIndex};	
 	OperationTypes operation;
  
 	private boolean isCorrectionUsed = false;

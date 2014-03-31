@@ -174,14 +174,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			aggun.isTrace=true;
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
-		} 
-		else if ( opcode.equalsIgnoreCase("rdiagM2V") ) {
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			aggun.isDiagM2V=true;
-			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
-		} 
-		
+		} 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
 			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());

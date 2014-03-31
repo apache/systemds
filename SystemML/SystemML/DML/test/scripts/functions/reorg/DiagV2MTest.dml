@@ -1,13 +1,13 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-A=read($1, rows=1, cols=$2, format="text")
+A=read($1, rows=$2, cols=1, format="text")
 B=diag(A)
 C=matrix(1, rows=nrow(B), cols=ncol(B));
 D=B%*%C

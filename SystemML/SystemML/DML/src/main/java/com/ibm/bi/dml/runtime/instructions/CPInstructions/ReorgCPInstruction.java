@@ -41,7 +41,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, str);
 		} 
 		
-		else if ( opcode.equalsIgnoreCase("rdiagV2M") ) {
+		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			return new ReorgCPInstruction(new ReorgOperator(MaxIndex.getMaxIndexFnObject()), in, out, str);
 		} 
 		

@@ -60,7 +60,8 @@ public class AggBinaryOp extends Hop
 	private enum MMultMethod { 
 		CPMM,     //cross-product matrix multiplication
 		RMM,      //replication matrix multiplication
-		MAPMULT,  //map-side matrix-matrix multiplication using distributed cache
+		MAPMULT_L,  //map-side matrix-matrix multiplication using distributed cache, for left input
+		MAPMULT_R,  //map-side matrix-matrix multiplication using distributed cache, for right input
 		TSMM,     //transpose-self matrix multiplication
 		CP        //in-memory matrix multiplication
 	};
@@ -133,16 +134,14 @@ public class AggBinaryOp extends Hop
 								mmtsj);
 					// System.out.println("Method = " + method);
 					
-					if ( method == MMultMethod.MAPMULT ) 
+					if ( method == MMultMethod.MAPMULT_L || method == MMultMethod.MAPMULT_R ) 
 					{
-						if( isLeftTransposeRewriteApplicable(false) )
+						if( method == MMultMethod.MAPMULT_R && isLeftTransposeRewriteApplicable(false) )
 						{
 							set_lops( constructMRLopWithLeftTransposeRewrite() );
 						}
 						else //GENERAL CASE
 						{
-							Lop smallMatrix = getInput().get(1).constructLops();
-							
 							//TODO revisit once it is taken into account in 'optFindMMultMethod'
 							//if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
 							//	smallMatrix = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
@@ -151,8 +150,9 @@ public class AggBinaryOp extends Hop
 							// If number of columns is smaller than block size then explicit aggregation is not required.
 							// i.e., entire matrix multiplication can be performed in the mappers.
 							boolean needAgg = ( getInput().get(0).get_dim2() > getInput().get(0).get_cols_in_block() ); 
-							
-							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), smallMatrix, get_dataType(), get_valueType(), true);
+						
+							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+									                     get_dataType(), get_valueType(), (method==MMultMethod.MAPMULT_R));
 							mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 							
 							if (needAgg) {
@@ -557,9 +557,17 @@ public class AggBinaryOp extends Hop
 		}
 
 		// If the size of second input is small, choose a method that uses distributed cache
+		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		if ( m2Size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget()) {
-			return MMultMethod.MAPMULT;
+		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget();
+		if (   m1Size < memBudget || m2Size < memBudget ) 
+		{
+			//apply map mult if one side fits in remote task memory 
+			//(if so pick smaller input for distributed cache)
+			if( m1Size < m2Size )
+				return MMultMethod.MAPMULT_L;
+			else
+				return MMultMethod.MAPMULT_R;
 		}
 		
 		// If the dimensions are unknown at compilation time, 

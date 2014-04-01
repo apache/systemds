@@ -457,8 +457,10 @@ public class DataExpression extends DataIdentifier
 				LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
 				throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			if (dataParam != null && dataParam.getOutput().getDataType() == DataType.SCALAR && dataParam instanceof ConstIdentifier){
-				 
+			if (dataParam != null && dataParam.getOutput().getDataType() == DataType.SCALAR /*&& dataParam instanceof ConstIdentifier*/ ){
+				//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
+				//variable input are routed to a reshape operation (but it works only on matrices and hence, crashes)
+				
 				// replace DataOp MATRIX with RAND -- Rand handles matrix generation for Scalar values
 				// replace data parameter with min / max within Rand case below
 				this.setOpCode(DataOp.RAND);
@@ -1044,10 +1046,16 @@ public class DataExpression extends DataIdentifier
 			
 			Expression dataParam = getVarParam(RAND_DATA);
 			if (dataParam != null){
-			
-				
-				
-				if (dataParam instanceof IntIdentifier){
+				if( dataParam instanceof DataIdentifier )
+				{
+					String errmsg = this.printErrorLocation() + "for matrix statement, parameter " 
+							        + RAND_DATA + " must be a matrix or a scalar literal.";
+					LOG.error( errmsg );
+					throw new LanguageException( errmsg );
+					//addVarParam(RAND_MIN, dataParam);
+					//addVarParam(RAND_MAX, dataParam);
+				}
+				else if (dataParam instanceof IntIdentifier){
 					
 					// update min expr with new IntIdentifier 
 					long roundedValue = ((IntIdentifier)dataParam).getValue();

@@ -4884,19 +4884,20 @@ public class MatrixBlockDSM extends MatrixValue
 				Arrays.fill(c, replacement); 
 				
 				//overwrite with existing values (via scatter)
-				for( int i=0, cix=0; i<rlen; i++, cix+=clen )
-				{
-					SparseRow arow = a[ i ];
-					if( arow!=null && arow.size()>0 )
+				if( a != null  ) //check for empty matrix
+					for( int i=0, cix=0; i<rlen; i++, cix+=clen )
 					{
-						int alen = arow.size();
-						int[] aix = arow.getIndexContainer();
-						double[] avals = arow.getValueContainer();
-						for( int j=0; j<alen; j++ )
-							if( avals[ j ] != 0 )
-								c[ cix+aix[j] ] = avals[ j ];
+						SparseRow arow = a[ i ];
+						if( arow!=null && arow.size()>0 )
+						{
+							int alen = arow.size();
+							int[] aix = arow.getIndexContainer();
+							double[] avals = arow.getValueContainer();
+							for( int j=0; j<alen; j++ )
+								if( avals[ j ] != 0 )
+									c[ cix+aix[j] ] = avals[ j ];
+						}
 					}
-				}
 			}			
 		}
 		else //DENSE <- DENSE

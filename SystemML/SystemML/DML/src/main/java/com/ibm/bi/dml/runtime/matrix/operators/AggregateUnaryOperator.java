@@ -24,9 +24,6 @@ public class AggregateUnaryOperator  extends Operator
 	public AggregateOperator aggOp;
 	public IndexFunction indexFn;
 	
-	//TODO: this is a hack to support trace, and it will be removed once selection operation is supported
-	public boolean isTrace=false;
-	
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{
 		aggOp=aop;

@@ -36,6 +36,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 
@@ -1290,8 +1291,7 @@ public class MatrixBlock1D extends MatrixValue
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
 		
-		//TODO: this code is hack to support trace, and should be removed when selection is supported
-		if(op.isTrace)
+		if(op.indexFn instanceof ReduceDiag)
 			traceHelp(op, (MatrixBlock1D)result, blockingFactorRow, blockingFactorCol, indexesIn);
 		else if(op.sparseSafe)
 			sparseAggregateUnaryHelp(op, (MatrixBlock1D)result, blockingFactorRow, blockingFactorCol, indexesIn);

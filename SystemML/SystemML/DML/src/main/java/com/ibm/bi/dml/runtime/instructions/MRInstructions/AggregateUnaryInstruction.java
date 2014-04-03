@@ -19,9 +19,11 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -142,14 +144,12 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 		} 
 		else if ( opcode.equalsIgnoreCase("uatrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			aggun.isTrace=true;
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			aggun.isTrace=true;
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		}  		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
@@ -197,9 +197,20 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 				else
 					out=cachedValues.holdPlace(output, valueClass);
 				
-				//process instruction
-				OperationsOnMatrixValues.performAggregateUnary(in.getIndexes(), in.getValue(), 
-						out.getIndexes(), out.getValue(), ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
+				MatrixIndexes inix = in.getIndexes();
+				
+				//prune unnecessary blocks for trace
+				if( (((AggregateUnaryOperator)optr).indexFn instanceof ReduceDiag && inix.getColumnIndex()!=inix.getRowIndex()) )
+				{
+					//do nothing (block not on diagonal); but reset
+					out.getValue().reset();
+				}
+				else //general case
+				{
+					//process instruction
+					OperationsOnMatrixValues.performAggregateUnary( inix, in.getValue(), out.getIndexes(), out.getValue(), 
+							                            ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
+				}
 				
 				//put the output value in the cache
 				if(out==tempValue)

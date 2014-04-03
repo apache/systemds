@@ -3522,9 +3522,7 @@ public class MatrixBlockDSM extends MatrixValue
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
 		
 		MatrixBlockDSM ret = (MatrixBlockDSM) result;
-		if(op.isTrace) //TODO: this code is hack to support trace, and should be removed when selection is supported
-			traceHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
-		else if( MatrixAggLib.isSupportedUnaryAggregateOperator(op) ) {
+		if( MatrixAggLib.isSupportedUnaryAggregateOperator(op) ) {
 			MatrixAggLib.aggregateUnaryMatrix(this, ret, op);
 			MatrixAggLib.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
 		}
@@ -3537,50 +3535,6 @@ public class MatrixBlockDSM extends MatrixValue
 			((MatrixBlockDSM)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
 		
 		return ret;
-	}
-	
-
-	private void traceHelp(AggregateUnaryOperator op, MatrixBlockDSM result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//test whether this block contains any cell in the diag
-		long topRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, 0);
-		long bottomRow=UtilFunctions.cellIndexCalculation(indexesIn.getRowIndex(), blockingFactorRow, this.rlen-1);
-		long leftColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, 0);
-		long rightColumn=UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, this.clen-1);
-		
-		long start=Math.max(topRow, leftColumn);
-		long end=Math.min(bottomRow, rightColumn);
-		
-		if(start>end)
-			return;
-		
-		if(op.aggOp.correctionExists)
-		{
-			KahanObject buffer=new KahanObject(0,0);
-			for(long i=start; i<=end; i++)
-			{
-				buffer=(KahanObject) op.aggOp.increOp.fn.execute(buffer, 
-						quickGetValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
-			}
-			result.quickSetValue(0, 0, buffer._sum);
-			if(op.aggOp.correctionLocation==CorrectionLocationType.LASTROW)//extra row
-				result.quickSetValue(1, 0, buffer._correction);
-			else if(op.aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
-				result.quickSetValue(0, 1, buffer._correction);
-			else
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);
-		}else
-		{
-			double newv=0;
-			for(long i=start; i<=end; i++)
-			{
-				newv+=op.aggOp.increOp.fn.execute(newv,
-						quickGetValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
-			}
-			result.quickSetValue(0, 0, newv);
-		}
 	}
 	
 	private void sparseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlockDSM result,

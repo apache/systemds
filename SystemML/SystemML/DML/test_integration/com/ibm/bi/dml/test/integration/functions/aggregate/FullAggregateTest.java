@@ -9,6 +9,8 @@ package com.ibm.bi.dml.test.integration.functions.aggregate;
 
 import java.util.HashMap;
 
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -17,6 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * 
@@ -33,12 +36,13 @@ public class FullAggregateTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "AllMax";
 	private final static String TEST_NAME4 = "AllMin";
 	private final static String TEST_NAME5 = "AllProd";
-
+	private final static String TEST_NAME6 = "DiagSum"; //trace
 	
+
 	private final static String TEST_DIR = "functions/aggregate/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 1005;
+	private final static int rows1 = 1005;
 	private final static int cols1 = 1;
 	private final static int cols2 = 1079;
 	private final static double sparsity1 = 0.1;
@@ -49,7 +53,8 @@ public class FullAggregateTest extends AutomatedTestBase
 		MEAN,
 		MAX,
 		MIN,
-		PROD
+		PROD,
+		TRACE
 	}
 	
 	
@@ -61,6 +66,7 @@ public class FullAggregateTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"B"})); 
 		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"B"})); 
 		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_DIR, TEST_NAME6,new String[]{"B"})); 
 	}
 
 	
@@ -95,6 +101,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testTraceDenseMatrixCP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, false, ExecType.CP);
+	}
+	
+	@Test
 	public void testSumDenseVectorCP() 
 	{
 		runColAggregateOperationTest(OpType.SUM, false, true, ExecType.CP);
@@ -122,6 +134,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	public void testProdDenseVectorCP() 
 	{
 		runColAggregateOperationTest(OpType.PROD, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testTraceDenseVectorCP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, true, ExecType.CP);
 	}
 	
 	@Test
@@ -155,6 +173,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testTraceSparseMatrixCP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, false, ExecType.CP);
+	}
+	
+	@Test
 	public void testSumSparseVectorCP() 
 	{
 		runColAggregateOperationTest(OpType.SUM, true, true, ExecType.CP);
@@ -182,6 +206,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	public void testProdSparseVectorCP() 
 	{
 		runColAggregateOperationTest(OpType.PROD, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testTraceSparseVectorCP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, true, ExecType.CP);
 	}
 	
 	@Test
@@ -215,6 +245,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testTraceDenseMatrixMR() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, false, ExecType.MR);
+	}
+	
+	@Test
 	public void testSumDenseVectorMR() 
 	{
 		runColAggregateOperationTest(OpType.SUM, false, true, ExecType.MR);
@@ -242,6 +278,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	public void testProdDenseVectorMR() 
 	{
 		runColAggregateOperationTest(OpType.PROD, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testTraceDenseVectorMR() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, true, ExecType.MR);
 	}
 	
 	@Test
@@ -275,6 +317,12 @@ public class FullAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testTraceSparseMatrixMR() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, false, ExecType.MR);
+	}
+	
+	@Test
 	public void testSumSparseVectorMR() 
 	{
 		runColAggregateOperationTest(OpType.SUM, true, true, ExecType.MR);
@@ -304,6 +352,12 @@ public class FullAggregateTest extends AutomatedTestBase
 		runColAggregateOperationTest(OpType.PROD, true, true, ExecType.MR);
 	}
 	
+	@Test
+	public void testTraceSparseVectorMR() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, true, ExecType.MR);
+	}
+	
 	
 	/**
 	 * 
@@ -327,9 +381,11 @@ public class FullAggregateTest extends AutomatedTestBase
 				case MAX: TEST_NAME = TEST_NAME3; break;
 				case MIN: TEST_NAME = TEST_NAME4; break;
 				case PROD: TEST_NAME = TEST_NAME5; break;
+				case TRACE: TEST_NAME = TEST_NAME6; break;
 			}
 			
 			int cols = (vector) ? cols1 : cols2;
+			int rows = (type==OpType.TRACE) ? cols : rows1;
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -351,9 +407,9 @@ public class FullAggregateTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
-			
+			runTest(true, false, null, -1); 
+			if( instType==ExecType.CP ) //in CP no MR jobs should be executed
+				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
 		
 			runRScript(true); 
 		

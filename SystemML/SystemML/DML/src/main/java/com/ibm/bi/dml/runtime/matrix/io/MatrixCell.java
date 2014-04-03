@@ -19,6 +19,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -189,7 +190,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		if(c3==null)
 			c3=new MatrixCell();
 		
-		if( op.isTrace )
+		if(op.indexFn instanceof ReduceDiag)
 		{
 			if(indexesIn.getRowIndex()==indexesIn.getColumnIndex())
 				c3.setValue(getValue());

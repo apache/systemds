@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -165,14 +166,12 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		} 
 		else if ( opcode.equalsIgnoreCase("uatrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			aggun.isTrace=true;
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			aggun.isTrace=true;
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
@@ -231,8 +230,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		return null;
 	}
 	
+	@Override
 	public void processInstruction (ExecutionContext ec)
-	throws DMLRuntimeException, DMLUnsupportedOperationException{
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
 		String output_name = output.get_name();
 		String opcode = InstructionUtils.getOpCode(instString);
 		

@@ -276,18 +276,13 @@ public class OperationsOnMatrixValues
 		value_out.copy(value_in);
 	}
 	
-	public static void performAggregateUnary(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, AggregateUnaryOperator op,
-			int brlen, int bclen)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	public static void performAggregateUnary(MatrixIndexes indexes_in, MatrixValue value_in, MatrixIndexes indexes_out, 
+			MatrixValue value_out, AggregateUnaryOperator op,int brlen, int bclen)
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operate on the value indexes first
 		op.indexFn.execute(indexes_in, indexes_out);
 		
-		//MatrixValue value_tmp = null ;
-		//value_in.predicateOperations(indexes_in, value_tmp, op.getPredicateOperation(), brlen, bclen) ;
-		
-		//TODO: cannot handle trace
 		//perform on the value
 		value_out=value_in.aggregateUnaryOperations(op, value_out, brlen, bclen, indexes_in);
 	}

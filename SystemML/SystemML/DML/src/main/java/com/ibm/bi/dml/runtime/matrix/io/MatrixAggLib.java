@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Mean;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
@@ -37,9 +38,9 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  *
  * This library currently covers the following opcodes:
  * ak+, uak+, uark+, uack+, uamin, uarmin, uacmin, uamax, uarmax, uacmax,
- * ua*, uamean, uarmean, uacmean, uarimax.
+ * ua*, uamean, uarmean, uacmean, uarimax, uaktrace.
  * 
- * TODO next opcode extensions: a+, trace, row/colindexmax
+ * TODO next opcode extensions: a+, colindexmax
  * TODO low level optimization (potential 3x, sum non-conclusive yet)
  */
 public class MatrixAggLib 
@@ -139,7 +140,7 @@ public class MatrixAggLib
 	public static void recomputeIndexes( MatrixBlockDSM out, AggregateUnaryOperator op, int brlen, int bclen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
-		if( type == AggType.MAX_INDEX && ix.getColumnIndex()!=1 )
+		if( type == AggType.MAX_INDEX && ix.getColumnIndex()!=1 ) //MAXINDEX
 		{
 			int m = out.rlen;
 			double[] c = out.getDenseArray();
@@ -158,10 +159,10 @@ public class MatrixAggLib
 		ValueFunction vfn = op.aggOp.increOp.fn;
 		IndexFunction ifn = op.indexFn;
 		
-		//(kahan) sum 
+		//(kahan) sum / trace (for ReduceDiag)
 		if( vfn instanceof KahanPlus 
 			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN ||op.aggOp.correctionLocation == CorrectionLocationType.LASTROW ) 
-			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
+			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow || ifn instanceof ReduceDiag) )
 		{
 			return AggType.KAHAN_SUM;
 		}
@@ -356,7 +357,7 @@ public class MatrixAggLib
 		
 		switch( optype )
 		{
-			case KAHAN_SUM: //SUM via k+
+			case KAHAN_SUM: //SUM/TRACE via k+, 
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
 				
@@ -366,6 +367,8 @@ public class MatrixAggLib
 					d_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
 					d_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
+				else if( ixFn instanceof ReduceDiag ) //TRACE
+					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn);
 				break;
 			}
 			case MAX: 
@@ -454,6 +457,9 @@ public class MatrixAggLib
 					s_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
 					s_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
+				else if( ixFn instanceof ReduceDiag ) //TRACE
+					s_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn);
+					
 				break;
 			}
 			case MIN:
@@ -561,6 +567,25 @@ public class MatrixAggLib
 	{
 		for( int i=0, aix=0; i<m; i++, aix+=n )
 			sumAgg( a, c, aix, 0, n, kbuff, kplus );
+	}
+	
+	/**
+	 * TRACE, opcode: uaktrace 
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param kbuff
+	 * @param kplus
+	 */
+	private static void d_uakptrace( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	{
+		//aggregate diag (via ix=n+1)
+		for( int i=0, aix=0; i<m; i++, aix+=(n+1) )
+			kplus.execute2(kbuff, a[ aix ]);			
+		c[0] = kbuff._sum;
+		c[1] = kbuff._correction;	
 	}
 	
 	/**
@@ -793,6 +818,31 @@ public class MatrixAggLib
 				sumAgg( avals, c, aix, alen, n, kbuff, kplus );
 			}
 		}
+	}
+	
+	/**
+	 * TRACE, opcode: uaktrace, sparse input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param kbuff
+	 * @param kplus
+	 */
+	private static void s_uakptrace( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	{
+		for( int i=0; i<m; i++ ) {
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 ) 
+			{
+				double val = arow.get( i );
+				kplus.execute2(kbuff, val);
+			}
+		}
+		System.out.println("sum="+kbuff._sum+", corr="+kbuff._correction);
+		c[0] = kbuff._sum;
+		c[1] = kbuff._correction;	
 	}
 	
 	/**

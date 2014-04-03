@@ -259,6 +259,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	{
 		for(DistributedCacheInput dcInput : dcValues.values() ) 
 			dcInput.reset();
+		dcValues.clear();
 	}
 
 	

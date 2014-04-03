@@ -170,23 +170,27 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		for(int i=0; i < dcIndices.length; i++) {
         	byte inputIndex = Byte.parseByte(dcIndices[i]);
         	
-			// When the job is in local mode, files can be read from HDFS directly -- use 
-			// input paths as opposed to "local" paths prepared by DistributedCache. 
-        	Path p = null;
-			if(isJobLocal)
-				p = new Path(inputIndices[ Byte.parseByte(dcIndices[i]) ]);
-			else
-				p = dcFiles[i];
-			
-			dcInputs[i] = new DistributedCacheInput(
-								p, 
-								MRJobConfiguration.getNumRows(job, inputIndex), 
-								MRJobConfiguration.getNumColumns(job, inputIndex),
-								inputPartitionFlags[i],
-								inputPartitionFormats[i],
-								inputPartitionSizes[i]
-							);
-        	dcValues.put(inputIndex, dcInputs[i]);
+        	//load if not already present (jvm reuse)
+        	if( !dcValues.containsKey(inputIndex) )
+        	{
+				// When the job is in local mode, files can be read from HDFS directly -- use 
+				// input paths as opposed to "local" paths prepared by DistributedCache. 
+	        	Path p = null;
+				if(isJobLocal)
+					p = new Path(inputIndices[ Byte.parseByte(dcIndices[i]) ]);
+				else
+					p = dcFiles[i];
+				
+				dcInputs[i] = new DistributedCacheInput(
+									p, 
+									MRJobConfiguration.getNumRows(job, inputIndex), 
+									MRJobConfiguration.getNumColumns(job, inputIndex),
+									inputPartitionFlags[i],
+									inputPartitionFormats[i],
+									inputPartitionSizes[i]
+								);
+	        	dcValues.put(inputIndex, dcInputs[i]);
+        	}
 		}
 		
 	}
@@ -289,10 +293,14 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			}
 		}
 				
-		try {
+		//load data from distributed cache (if required, reuse if jvm_reuse)
+		try
+		{
 			loadDistCacheFiles(job, rlens, clens);
-		} catch (IOException e) {
-			e.printStackTrace();
+		}
+		catch(IOException ex)
+		{
+			throw new RuntimeException(ex);
 		}
 
 		//collect unary instructions for each representative matrix

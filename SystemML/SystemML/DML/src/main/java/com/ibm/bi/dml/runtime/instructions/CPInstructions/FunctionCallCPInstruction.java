@@ -17,7 +17,6 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -90,11 +89,13 @@ public class FunctionCallCPInstruction extends CPInstruction
 		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
 	}
 
-	public void processInstruction(ProgramBlock pb, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+	@Override
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{		
 		LOG.trace("Executing instruction : " + this.toString());
 		// get the function program block (stored in the Program object)
-		FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(this._namespace, this._functionName);
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(this._namespace, this._functionName);
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
@@ -154,7 +155,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
-		ExecutionContext fn_ec = new ExecutionContext(false);
+		ExecutionContext fn_ec = new ExecutionContext(false, ec.getProgram());
 		fn_ec.setVariables(functionVariables);
 		
 		// execute the function block

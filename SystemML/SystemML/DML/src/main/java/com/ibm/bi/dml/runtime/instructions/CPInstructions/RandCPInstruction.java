@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 public class RandCPInstruction extends UnaryCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public long rows;
@@ -173,7 +173,8 @@ public class RandCPInstruction extends UnaryCPInstruction
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
 	}
 	
-	public void processInstruction (ExecutionContext ec)
+	@Override
+	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException
 	{
 		String output_name = output.get_name();

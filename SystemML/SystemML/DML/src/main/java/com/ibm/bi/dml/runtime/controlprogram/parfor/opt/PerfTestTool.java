@@ -739,7 +739,7 @@ public class PerfTestTool
 			ainst.add( inst.getValue() );
 			pb.setInstructions(ainst);
 			
-			ExecutionContext ec = new ExecutionContext( true );
+			ExecutionContext ec = new ExecutionContext();
 			
 			//foreach registered test configuration
 			for( Integer defID : testDefIDs )

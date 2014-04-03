@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.RightScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
 
-public class BinaryCPInstruction extends ComputationCPInstruction
+public abstract class BinaryCPInstruction extends ComputationCPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

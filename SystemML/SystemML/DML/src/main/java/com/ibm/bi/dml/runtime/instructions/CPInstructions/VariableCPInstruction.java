@@ -414,8 +414,9 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		switch ( opcode ) 
 		{ 
 		case CreateVariable:

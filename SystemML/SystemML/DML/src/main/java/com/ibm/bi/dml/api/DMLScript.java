@@ -611,7 +611,7 @@ public class DMLScript
 			initHadoopExecution( config );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
-			rtprog.execute( new ExecutionContext() );  
+			rtprog.execute( new ExecutionContext(rtprog) );  
 		}
 		finally //ensure cleanup/shutdown
 		{	

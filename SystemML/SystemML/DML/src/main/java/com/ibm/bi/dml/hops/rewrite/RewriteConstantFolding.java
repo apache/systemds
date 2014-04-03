@@ -232,7 +232,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private static ExecutionContext getExecutionContext()
 	{
 		if( _tmpEC == null )
-			_tmpEC = new ExecutionContext(true);
+			_tmpEC = new ExecutionContext();
 		return _tmpEC;
 	}
 }

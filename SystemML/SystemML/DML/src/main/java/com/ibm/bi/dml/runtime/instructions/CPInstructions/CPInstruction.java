@@ -14,17 +14,16 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class CPInstruction extends Instruction 
+public abstract class CPInstruction extends Instruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, MatrixReshape }; 
@@ -54,13 +53,16 @@ public class CPInstruction extends Instruction
 		return null;
 	}
 
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		throw new DMLRuntimeException ( "processInstruction(ProgramBlock): should not be invoked in the base class.");
-	}
-
-	public void processInstruction(ProgramBlock pb, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		throw new DMLRuntimeException ( "processInstruction(ProgramBlock): should not be invoked in the base class.");
-	}
+	/**
+	 * This method should be used to execute the instruction. It's abstrac to force 
+	 * subclasses to override it. 
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public abstract void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException;
 
 	@Override
 	public String getGraphString() {

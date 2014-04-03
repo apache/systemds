@@ -147,7 +147,7 @@ public class ProgramConverter
 	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec) 
 		throws CloneNotSupportedException 
 	{
-		ExecutionContext cpec = new ExecutionContext(false);
+		ExecutionContext cpec = new ExecutionContext(false, ec.getProgram());
 		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
 	
 		return cpec;
@@ -1367,7 +1367,7 @@ public class ProgramConverter
 		
 		//handle execution context
 		String ecStr = st.nextToken();
-		ExecutionContext ec = parseExecutionContext( ecStr );
+		ExecutionContext ec = parseExecutionContext( ecStr, prog );
 			
 		//handle program blocks
 		String spbs = st.nextToken();
@@ -2004,7 +2004,7 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static ExecutionContext parseExecutionContext(String in) 
+	public static ExecutionContext parseExecutionContext(String in, Program prog) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ExecutionContext ec = null;
@@ -2014,7 +2014,7 @@ public class ProgramConverter
 		if( !lin.equals( EMPTY ) )
 		{
 			LocalVariableMap vars = parseVariables(lin);
-			ec = new ExecutionContext( false );
+			ec = new ExecutionContext( false, prog );
 			ec.setVariables(vars);
 		}
 		

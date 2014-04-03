@@ -23,23 +23,25 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.utils.Statistics;
 
 
@@ -50,6 +52,7 @@ public class ProgramBlock
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
+	private static final boolean CHECK_MATRIX_SPARSITY = false;
 	
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
@@ -355,10 +358,7 @@ public class ProgramBlock
 				}
 
 				//execute original or updated instruction
-				if(tmp.getCPInstructionType() == CPINSTRUCTION_TYPE.External)
-					tmp.processInstruction(this, ec); //FIXME
-				else
-					tmp.processInstruction(ec);
+				tmp.processInstruction(ec);
 				
 				if (LOG.isTraceEnabled()){	
 					t1 = System.nanoTime();
@@ -370,6 +370,9 @@ public class ProgramBlock
 					String opcode = Statistics.getCPHeavyHitterCode(tmp);
 					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
 				}
+				
+				if( CHECK_MATRIX_SPARSITY )
+					checkSparsity( tmp, ec.getVariables() );
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{			
@@ -394,33 +397,35 @@ public class ProgramBlock
 		}
 	}
 	
-	/*
-	public String explain( int level )
+	/**
+	 * 
+	 * @param lastInst
+	 * @param vars
+	 * @throws DMLRuntimeException
+	 */
+	private void checkSparsity( Instruction lastInst, LocalVariableMap vars )
+		throws DMLRuntimeException
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		//explain block
-		String offset = "";
-		for( int i=0; i<level; i++ )
-			offset+="--";	
-		sb.append("GENERIC\n");
-		
-		//explain instructions
-		int nextlevel = level+1;
-		offset += "--";		
-		for( Instruction inst : _inst )
+		for( String varname : vars.keySet() )
 		{
-			sb.append(offset);
-			if( inst instanceof MRJobInstruction )
-				sb.append( ((MRJobInstruction)inst).toString(nextlevel) );
-			else 
-				sb.append( inst );
-			sb.append("\n");
+			Data dat = vars.get(varname);
+			if( dat instanceof MatrixObject )
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				if( mo.isDirty() ){
+					MatrixBlock mb = mo.acquireRead();
+					boolean sparse1 = mb.isInSparseFormat();
+					mb.recomputeNonZeros();
+					mb.examSparsity();
+					boolean sparse2 = mb.isInSparseFormat();
+					mo.release();
+					
+					if( sparse1 != sparse2 )
+						throw new DMLRuntimeException("Matrix was in wrong data representation: (actual="+sparse1+", expected="+sparse2+", inst="+lastInst+")");
+				}
+			}
 		}
-		
-		return sb.toString();
 	}
-	*/
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for program blocks

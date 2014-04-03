@@ -32,7 +32,8 @@ public class ExecutionContext
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	
+	//program reference (e.g., function repository)
+	private Program _prog;
 	
 	//symbol table
 	private LocalVariableMap _variables;
@@ -44,17 +45,23 @@ public class ExecutionContext
 	
 	public ExecutionContext()
 	{
-		this( true );
+		this( true, null );
+	}
+	
+	public ExecutionContext(Program prog)
+	{
+		this( true, prog );
+		
 	}
 
 	public ExecutionContext(NetezzaConnector nzCon)
 	{
-		this( true );
+		this( true, null );
 		nzConnector = nzCon;
 		statistics = new ArrayList<SQLExecutionStatistics>();
 	}
 	
-	public ExecutionContext( boolean allocateVariableMap )
+	public ExecutionContext( boolean allocateVariableMap, Program prog )
 	{
 		nzConnector = null;
 		statistics = null;
@@ -62,6 +69,7 @@ public class ExecutionContext
 			_variables = new LocalVariableMap();
 		else
 			_variables = null;
+		_prog = prog;
 	}
 	
 	public void addStatistic(int instructionId, long runtime, String opString)
@@ -109,6 +117,9 @@ public class ExecutionContext
 	}
 
 
+	public Program getProgram(){
+		return _prog;
+	}
 	
 	public LocalVariableMap getVariables() {
 		return _variables;
@@ -117,6 +128,7 @@ public class ExecutionContext
 	public void setVariables(LocalVariableMap vars) {
 		_variables = vars;
 	}
+	
 	
 	/* -------------------------------------------------------
 	 * Methods to handle variables and associated data objects

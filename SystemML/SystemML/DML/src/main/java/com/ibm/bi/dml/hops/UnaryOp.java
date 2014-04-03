@@ -559,7 +559,13 @@ public class UnaryOp extends Hop
 		{
 			//do nothing always known
 		}
-		else 
+		else if( _op == OpOp1.CAST_AS_MATRIX && getInput().get(0).get_dataType()==DataType.SCALAR )
+		{
+			//prevent propagating 0 from scalar (which would be interpreted as unknown)
+			set_dim1( 1 );
+			set_dim2( 1 );
+		}
+		else //general case
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change

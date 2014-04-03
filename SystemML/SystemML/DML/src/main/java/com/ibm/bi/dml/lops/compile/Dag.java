@@ -1045,8 +1045,11 @@ public class Dag<N extends Lop>
 						// then that input must get executed in one of previous jobs.
 						int dcInputIndex = node.distributedCacheInputIndex();
 						N dcInput = (N) node.getInputs().get(dcInputIndex-1);
-						if ( dcInput.getType() != Lop.Type.Data &&  execNodes.contains(dcInput) )
+						if (     (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
+							  &&  execNodes.contains(dcInput) )
+						{
 							queueThisNode = true;
+						}
 					}
 					if (!queueThisNode && !hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
 						LOG.trace(indent + "Adding -"

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,6 +14,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -35,7 +36,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class DataPartitionerRemoteMR extends DataPartitioner
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long _pfid = -1;
@@ -69,10 +70,13 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	protected void partitionMatrix(String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
+		String jobname = "ParFor-DPMR";
+		long t0 = System.nanoTime();
+		
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
 		if( _pfid >= 0 ) //use in parfor
-			job.setJobName("ParFor_Partition-MR"+_pfid);
+			job.setJobName(jobname+_pfid);
 		else //use for partition instruction
 			job.setJobName("Partition-MR");
 			
@@ -185,7 +189,12 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException(ex);
-		}		
+		}
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
+		}
 	}
 	
 }

@@ -74,10 +74,12 @@ public class RemoteParForMR
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
+		String jobname = "ParFor-EMR";
+		long t0 = System.nanoTime();
 		
 		JobConf job;
 		job = new JobConf( RemoteParForMR.class );
-		job.setJobName("ParFor_Execute-MR"+pfid);
+		job.setJobName(jobname+pfid);
 		
 		//maintain dml script counters
 		Statistics.incrementNoOfCompiledMRJobs();
@@ -231,6 +233,11 @@ public class RemoteParForMR
 			{
 				throw new DMLRuntimeException(ex);
 			}
+		}
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
 		}
 		
 		return ret;

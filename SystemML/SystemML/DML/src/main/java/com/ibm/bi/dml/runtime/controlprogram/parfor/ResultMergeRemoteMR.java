@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -174,9 +175,12 @@ public class ResultMergeRemoteMR extends ResultMerge
 	protected void executeMerge(String fname, String fnameNew, String[] srcFnames, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
+		String jobname = "ParFor-RMMR";
+		long t0 = System.nanoTime();
+		
 		JobConf job;
 		job = new JobConf( ResultMergeRemoteMR.class );
-		job.setJobName("ParFor_ResultMerge-MR"+_pfid);
+		job.setJobName(jobname+_pfid);
 
 		//maintain dml script counters
 		Statistics.incrementNoOfCompiledMRJobs();
@@ -313,6 +317,11 @@ public class ResultMergeRemoteMR extends ResultMerge
 		{
 			throw new DMLRuntimeException(ex);
 		}		
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
+		}
 	}
 	
 }

@@ -14,6 +14,10 @@ import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
@@ -68,6 +72,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 
 /**
@@ -80,6 +85,10 @@ public class Recompiler
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
+	
+	//max threshold for in-memory reblock of text input [in bytes]
+	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
+	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1024*1024*1024; 
 	
 	/**
 	 * 	
@@ -97,8 +106,9 @@ public class Recompiler
 	{
 		ArrayList<Instruction> newInst = null;
 
-		//long begin = System.nanoTime();
-		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		//need for synchronization as we do temp changes in shared hops/lops
+		//however, we create deep copies for most dags to allow for concurrent recompile
+		synchronized( hops ) 
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
@@ -136,8 +146,6 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		//recompileTime += (System.nanoTime()-begin);
-		//recompileCount++;
 		return newInst;
 	}
 
@@ -162,7 +170,8 @@ public class Recompiler
 	{
 		ArrayList<Instruction> newInst = null;
 
-		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		//need for synchronization as we do temp changes in shared hops/lops
+		synchronized( hops ) 
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
@@ -758,16 +767,14 @@ public class Recompiler
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
 		
-		//preserve Treads to prevent wrong rmfilevar instructions
-		//TODO revisit if this is still required
-		
-		// TODO: check with Matthias to see if commenting out following two lines would create any problem.
-		//if( hop.getOpString().equals("TRead") )
-		//	return; 
-		
 		//clear all relevant lops to allow for recompilation
-		//(does not apply to literal ops since always constants)
-		//if( !(hop instanceof LiteralOp) ) //TODO
+		if( hop instanceof LiteralOp )
+		{
+			//for literal ops, we just clear parents because always constant
+			if( hop.get_lops() != null )
+				hop.get_lops().getOutputs().clear();	
+		}
+		else //GENERAL CASE
 		{
 			hop.set_lops(null);
 			if( hop.getInput() != null )
@@ -789,13 +796,6 @@ public class Recompiler
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
-		
-		//output
-		//System.out.println(" HOP STATISTICS "+hop.getOpString());
-		//System.out.println("  name = "+hop.get_name());
-		//System.out.println("  rows = "+hop.get_dim1());
-		//System.out.println("  cols = "+hop.get_dim2());
-		//System.out.println("  nnz = "+hop.getNnz());
 
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
@@ -816,8 +816,6 @@ public class Recompiler
 					d.setNnz(mo.getNnz());
 				}
 			}
-			//else 
-			//	System.out.println("Warning: missing statistics for "+varName);
 		}
 		else if ( hop instanceof DataGenOp )
 		{
@@ -922,9 +920,6 @@ public class Recompiler
 		
 		hop.refreshSizeInformation();
 		
-		//if( hop.getExecType()==ExecType.MR )
-		//	System.out.println("HOP with exec type MR after recompilation "+hop.getOpString());
-		
 		hop.set_visited(VISIT_STATUS.DONE);
 	}
 	
@@ -958,9 +953,10 @@ public class Recompiler
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException 
+	 * @throws IOException 
 	 */
 	public static boolean checkCPReblock(MRJobInstruction inst, MatrixObject[] inputs) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException, IOException 
 	{
 		boolean ret = true;
 		
@@ -1004,8 +1000,9 @@ public class Recompiler
 					ret = false;
 					break;
 				}
+				
 				long nnz = mo.getNnz();
-				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);				
+				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);			
 				if( mem >= OptimizerUtils.getMemBudget(true) )
 				{
 					ret = false;
@@ -1014,7 +1011,29 @@ public class Recompiler
 			}
 		}
 		
-		
+		//check in-memory reblock size threshold
+		//(prevent long single-threaded text read)
+		if( ret ) {
+			for( MatrixObject mo : inputs )
+			{
+				MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
+				if((   iimd.getInputInfo()==InputInfo.TextCellInputInfo
+					|| iimd.getInputInfo()==InputInfo.MatrixMarketInputInfo
+					|| iimd.getInputInfo()==InputInfo.CSVInputInfo)
+					&& !mo.isDirty() )
+				{
+					JobConf job = ConfigurationManager.getCachedJobConf();
+					FileSystem fs = FileSystem.get(job);
+					FileStatus fstatus = fs.getFileStatus(new Path(mo.getFileName()));
+					if( fstatus.getLen() > CP_REBLOCK_THRESHOLD_SIZE )
+					{
+						ret = false;
+						break;
+					}
+				}
+			}
+		}
+	
 		return ret;
 	}
 

@@ -650,7 +650,8 @@ public class OptimizerRuleBased extends Optimizer
 				n.setExecType( ExecType.MR );  //remote parfor
 			}
 			//MR if remote data partitioning, because data will be distributed on all nodes 
-			else if( n.getParam(ParamType.DATA_PARTITIONER)!=null && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString()) )
+			else if( n.getParam(ParamType.DATA_PARTITIONER)!=null && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+					 && !InfrastructureAnalyzer.isLocalMode())
 			{
 				n.setExecType( ExecType.MR );  //remote parfor
 			}

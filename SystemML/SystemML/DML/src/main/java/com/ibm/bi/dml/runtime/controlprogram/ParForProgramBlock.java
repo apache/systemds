@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -78,6 +79,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 
 
 
@@ -85,9 +87,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
  * The ParForProgramBlock has the same execution semantics as a ForProgamBlock but executes
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
- * 
- * TODO currently it seams that there is a general issue with JVM reuse in Hadoop 1.0.3
- * (Error Task log directory for task attempt_201209251949_2586_m_000014_0 does not exist. May be cleaned up by Task Tracker, if older logs.)      
  * 
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
@@ -194,7 +193,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean ALLOW_DATA_COLOCATION       = true;
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
-	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
+	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //TODO determine read only, reuse 
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
@@ -232,6 +231,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
+	protected Set<String>      _variablesDP         = null;
 	protected String           _colocatedDPMatrix   = null;
 	protected int              _replicationDP       = WRITE_REPLICATION_FACTOR;
 	protected int              _replicationExport   = -1;
@@ -312,9 +312,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( !OPTIMIZE )
 			_optMode = POptMode.NONE;
 			
-		if( !ALLOW_UNSCOPED_PARTITIONING )
-			_variablesDPOriginal = new LocalVariableMap();
-		
+		_variablesDPOriginal = new LocalVariableMap();
+		_variablesDP = new HashSet<String>();
 		
 		//create IDs for all parworkers
 		if( _execMode == PExecMode.LOCAL )
@@ -403,22 +402,25 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public void enableColocatedPartitionedMatrix( String varname )
 	{
-		//only enabled though optimizer
+		//only called from optimizer
 		_colocatedDPMatrix = varname;
 	}
 	
 	public void setPartitionReplicationFactor( int rep )
 	{
+		//only called from optimizer
 		_replicationDP = rep;
 	}
 	
 	public void setExportReplicationFactor( int rep )
 	{
+		//only called from optimizer
 		_replicationExport = rep;
 	}
 	
 	public void disableJVMReuse() 
 	{
+		//only called from optimizer
 		_jvmReuse = false;
 	}
 	
@@ -495,10 +497,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		Timing time = null;
 		if( _monitor )
-		{
-			time = new Timing();
-			time.start();
-		}
+			time = new Timing(true);
+		
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
 			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
@@ -514,28 +514,20 @@ public class ParForProgramBlock extends ForProgramBlock
 						LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 						if( dpf != PDataPartitionFormat.NONE )
 						{
-							Timing ltime = new Timing();
-							ltime.start();
-							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
-								_variablesDPOriginal.put(var, moVar);
+							Timing ltime = new Timing(true);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
 							ec.setVariable(var, moVarNew);
-							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
+							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
+							_variablesDPOriginal.put(var, moVar);
+							_variablesDP.add(var);
 							LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
 						}
-					}
-					else if( ALLOW_UNSCOPED_PARTITIONING ) //note: vars partitioned and not recompiled can only happen in case of unscoped partitioning over multiple top-level parfors.
-					{
-						//only recompile if input matrix is already partitioned.
-						Timing ltime = new Timing();
-						ltime.start();
-						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
-						LOG.trace("Recompilation done in "+ltime.stop()+" ms");
 					}
 				}
 			}
 		}
+		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 			
@@ -546,7 +538,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		//begin PARALLEL EXECUTION of (PAR)FOR body
 		///////
 		LOG.trace("EXECUTE PARFOR ID = "+_ID+" with mode = "+_execMode+", numThreads = "+_numThreads+", taskpartitioner = "+_taskPartitioner);
-		
 		
 		if( _monitor )
 		{
@@ -593,16 +584,15 @@ public class ParForProgramBlock extends ForProgramBlock
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		ec.setVariable(iterVarName, iterVar);
 		
-		//ensure that subsequent program blocks only see partitioned data if allowed
-		if( !ALLOW_UNSCOPED_PARTITIONING )
+		//ensure that subsequent program blocks never see partitioned data (invalid plans!)
+		//we can replace those variables, because partitioning only applied for read-only matrices
+		for( String var : _variablesDPOriginal.keySet() )
 		{
-			//we can replace those variables, because partitioning only applied for read-only matrices
-			for( String var : _variablesDPOriginal.keySet() )
-			{
-				MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
-				//TODO cleanup partitioned matrix
-				ec.setVariable(var, mo);
-			}
+			//cleanup partitioned matrix
+			VariableCPInstruction.processRemoveVariableInstruction(ec, var); 
+			//reset to original matrix
+			MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
+			ec.setVariable(var, mo); 
 		}
 		
 		///////
@@ -611,9 +601,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 		//print profiling report (only if top-level parfor because otherwise in parallel context)
 		if( _monitorReport )
-			LOG.info("\n"+StatisticMonitor.createReport());
+		    LOG.info("\n"+StatisticMonitor.createReport());
 		
+		//reset flags/modifications made by optimizer
+		for( String dpvar : _variablesDP ) //release forced exectypes
+		    ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, dpvar, ec, false);
+		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
+		//execute exit instructions (usually empty)
 		executeInstructions(_exitInstructions, ec);			
 	}
 
@@ -897,7 +892,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							case STRING:  dataObj = new StringObject(var,"-1");   break;
 						}
 					case MATRIX:
-						//TODO currently we do not create any unscoped matrix object outputs
+						//currently we do not create any unscoped matrix object outputs
 						//because metadata (e.g., outputinfo) not known at this place.
 						break;
 					case UNKNOWN:
@@ -1366,7 +1361,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * NOTE: Currently we use a fixed rule (multiple results AND REMOTE_MR -> only selected by the optimizer
 	 * if mode was REMOTE_MR as well). 
-	 * TODO Eventually, the optimizer should decide about parallel result merge and its degree of parallelism.
+	 * 
+	 * TODO The optimizer should explicitly decide about parallel result merge and its degree of parallelism.
 	 * 
 	 * @return
 	 */
@@ -1567,9 +1563,16 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 	
-	
-	public String printBlockErrorLocation(){
-		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	private void resetOptimizerFlags()
+	{
+		//reset all state that was set but is not guaranteed to be overwritten by optimizer
+		_variablesDP.clear();
+		_colocatedDPMatrix     = null;
+		_replicationDP         = WRITE_REPLICATION_FACTOR;
+		_replicationExport     = -1;
+		_jvmReuse              = true;
+		_recompileMemoryBudget = -1;
+		
 	}
 	
 	
@@ -1630,6 +1633,11 @@ public class ParForProgramBlock extends ForProgramBlock
 				LOG.error("Error executing result merge: ", ex);
 			}
 		}
+	}
+	
+
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 	
 }

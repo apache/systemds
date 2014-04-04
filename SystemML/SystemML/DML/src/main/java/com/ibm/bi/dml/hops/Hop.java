@@ -240,8 +240,14 @@ public abstract class Hop
 	{
 		_memEstimate = mem;
 	}
+	
+	public void clearMemEstimate()
+	{
+		_memEstimate = OptimizerUtils.INVALID_SIZE;
+	}
 
-	public boolean isMemEstimated() {
+	public boolean isMemEstimated() 
+	{
 		return (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
 

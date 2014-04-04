@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -42,8 +42,224 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInst
 public class ProgramRecompiler 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	
+	/**
+	 * NOTE: if force is set, we set and recompile the respective indexing hops;
+	 * otherwise, we release the forced exec type and recompile again. Hence, 
+	 * any changes can be exactly reverted with the same access behavior.
+	 * 
+	 * @param sb
+	 * @param pb
+	 * @param var
+	 * @param ec
+	 * @param force
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		if( pb instanceof IfProgramBlock )
+		{
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			IfStatement is = (IfStatement) sb.getStatement(0);
+			
+			int len = is.getIfBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
+			{
+				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
+				StatementBlock lsb = is.getIfBody().get(0);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec,force);
+			}
+			//process else condition
+			if( ipb.getChildBlocksElseBody() != null )
+			{
+				int len2 = is.getElseBody().size();
+				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
+				{
+					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
+					StatementBlock lsb = is.getElseBody().get(i);
+					rFindAndRecompileIndexingHOP(lsb,lpb,var,ec,force);
+				}
+			}				
+		}
+		else if( pb instanceof WhileProgramBlock )
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			//process body
+			int len = ws.getBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
+			{
+				ProgramBlock lpb = wpb.getChildBlocks().get(i);
+				StatementBlock lsb = ws.getBody().get(i);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec, force);
+			}			
+		}
+		else if( pb instanceof ForProgramBlock ) //for or parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			ForStatementBlock fsb = (ForStatementBlock)sb;
+			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			//process body
+			int len = fs.getBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+			{
+				ProgramBlock lpb = fpb.getChildBlocks().get(i);
+				StatementBlock lsb = fs.getBody().get(i);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec, force);
+			}	
+		}
+		else //last level program block
+		{
+			try
+			{
+				//process actual hops
+				boolean ret = false;
+				Hop.resetVisitStatus(sb.get_hops());
+				if( force )
+				{
+					//set forced execution type
+					for( Hop h : sb.get_hops() )
+						ret |= rFindAndSetCPIndexingHOP(h, var);
+				}
+				else
+				{
+					//release forced execution type
+					for( Hop h : sb.get_hops() )
+						ret |= rFindAndReleaseIndexingHOP(h, var);
+				}
+				
+				//recompilation on-demand
+				if( ret )
+				{
+					//construct new instructions
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), 0);
+					pb.setInstructions( newInst ); 
+				}
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param var
+	 * @return
+	 */
+	private static boolean rFindAndSetCPIndexingHOP(Hop hop, String var) 
+	{
+		boolean ret = false;
+		
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return ret;
+		
+		ArrayList<Hop> in = hop.getInput();
+		
+		if( hop instanceof IndexingOp )
+		{
+			String inMatrix = hop.getInput().get(0).get_name();
+			if( inMatrix.equals(var) )
+			{
+				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
+				//(rowblock/colblock only applied if in total less than two blocks,
+				// hence always mem_est<mem_budget)
+				if( hop.getMemEstimate() < OptimizerUtils.getMemBudget(true) )
+					hop.setForcedExecType( LopProperties.ExecType.CP );
+				else
+					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );
+				
+				ret = true;
+			}
+		}
+		
+		//recursive search
+		if( in != null )
+			for( Hop hin : in )
+				ret |= rFindAndSetCPIndexingHOP(hin,var);
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+		
+		return ret;
+	}
+	
+	private static boolean rFindAndReleaseIndexingHOP(Hop hop, String var) 
+	{
+		boolean ret = false;
+		
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return ret;
+		
+		ArrayList<Hop> in = hop.getInput();
+		
+		if( hop instanceof IndexingOp )
+		{
+			String inMatrix = hop.getInput().get(0).get_name();
+			if( inMatrix.equals(var) )
+			{
+				hop.setForcedExecType(null);
+				hop.clearMemEstimate();
+				ret = true;
+			}
+		}
+		
+		//recursive search
+		if( in != null )
+			for( Hop hin : in )
+				ret |= rFindAndReleaseIndexingHOP(hin,var);
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+		
+		return ret;
+	}
+	
+	
+
+	///////
+	// additional general-purpose functionalities
+	
+	/**
+	 * 
+	 * @param iterVar
+	 * @param offset
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//create instruction string
+		StringBuilder sb = new StringBuilder("CP"+Lop.OPERAND_DELIMITOR+"+"+Lop.OPERAND_DELIMITOR);
+		sb.append(iterVar);
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
+		sb.append(offset);
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
+		sb.append(iterVar);
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT");
+		String str = sb.toString(); 
+		
+		//create instruction set
+		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
+		tmp.add(inst);
+		
+		return tmp;
+	}
+	
+	
+	
+	
+	/////////////////////////////////
+	// experimental functionality
+	//////////
 	
 	/**
 	 * 
@@ -202,158 +418,4 @@ public class ProgramRecompiler
 		}
 	}
 	
-	///////
-	// additional general-purpose functionalities
-	
-	/**
-	 * 
-	 * @param iterVar
-	 * @param offset
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
-	 */
-	public static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//create instruction string
-		StringBuilder sb = new StringBuilder("CP"+Lop.OPERAND_DELIMITOR+"+"+Lop.OPERAND_DELIMITOR);
-		sb.append(iterVar);
-		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
-		sb.append(offset);
-		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
-		sb.append(iterVar);
-		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT");
-		String str = sb.toString(); 
-		
-		//create instruction set
-		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
-		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
-		tmp.add(inst);
-		
-		return tmp;
-	}
-	
-	/**
-	 * 
-	 * @param sb
-	 * @param pb
-	 * @param var
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
-	 */
-	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		if( pb instanceof IfProgramBlock )
-		{
-			IfProgramBlock ipb = (IfProgramBlock) pb;
-			IfStatement is = (IfStatement) sb.getStatement(0);
-			
-			int len = is.getIfBody().size(); //robustness for potentially added problem blocks
-			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
-			{
-				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
-				StatementBlock lsb = is.getIfBody().get(0);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
-			}
-			//process else condition
-			if( ipb.getChildBlocksElseBody() != null )
-			{
-				int len2 = is.getElseBody().size();
-				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
-				{
-					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
-					StatementBlock lsb = is.getElseBody().get(i);
-					rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
-				}
-			}				
-		}
-		else if( pb instanceof WhileProgramBlock )
-		{
-			WhileProgramBlock wpb = (WhileProgramBlock) pb;
-			WhileStatement ws = (WhileStatement) sb.getStatement(0);
-			//process body
-			int len = ws.getBody().size(); //robustness for potentially added problem blocks
-			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
-			{
-				ProgramBlock lpb = wpb.getChildBlocks().get(i);
-				StatementBlock lsb = ws.getBody().get(i);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
-			}			
-		}
-		else if( pb instanceof ForProgramBlock ) //for or parfor
-		{
-			ForProgramBlock fpb = (ForProgramBlock) pb;
-			ForStatementBlock fsb = (ForStatementBlock)sb;
-			ForStatement fs = (ForStatement) fsb.getStatement(0);
-			//process body
-			int len = fs.getBody().size(); //robustness for potentially added problem blocks
-			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-			{
-				ProgramBlock lpb = fpb.getChildBlocks().get(i);
-				StatementBlock lsb = fs.getBody().get(i);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
-			}	
-		}
-		else //last level program block
-		{
-			try
-			{
-				//process actual hops
-				boolean ret = false;
-				Hop.resetVisitStatus(sb.get_hops());
-				for( Hop h : sb.get_hops() )
-					ret |= rFindAndSetCPIndexingHOP(h, var);
-				
-				//recompilation on-demand
-				if( ret )
-				{
-					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), 0);
-					pb.setInstructions( newInst );   
-				}
-			}
-			catch(Exception ex)
-			{
-				throw new DMLRuntimeException(ex);
-			}
-		}
-	}
-	
-	public static boolean rFindAndSetCPIndexingHOP(Hop hop, String var) 
-	{
-		boolean ret = false;
-		
-		if( hop.get_visited() == VISIT_STATUS.DONE )
-			return ret;
-		
-		ArrayList<Hop> in = hop.getInput();
-		
-		if( hop instanceof IndexingOp )
-		{
-			String inMatrix = hop.getInput().get(0).get_name();
-			if( inMatrix.equals(var) )
-			{
-				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
-				//(rowblock/colblock only applied if in total less than two blocks,
-				// hence always mem_est<mem_budget)
-				if( hop.getMemEstimate() < OptimizerUtils.getMemBudget(true) )
-					hop.setForcedExecType( LopProperties.ExecType.CP );
-				else
-					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );
-				
-				ret = true;
-			}
-		}
-		
-		//recursive search
-		if( in != null )
-			for( Hop hin : in )
-				ret |= rFindAndSetCPIndexingHOP(hin,var);
-		
-		hop.set_visited(VISIT_STATUS.DONE);
-		
-		return ret;
-	}
 }

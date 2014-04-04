@@ -30,7 +30,7 @@ public class OptimizerUtils
 	 * Utilization factor used in deciding whether an operation to be scheduled on CP or MR. 
 	 * NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE < 1.0
 	 */
-	public static final double MEM_UTIL_FACTOR = 0.7d;
+	public static double MEM_UTIL_FACTOR = 0.7d;
 	
 	/**
 	 * Default memory size, which is used the actual estimate can not be computed 

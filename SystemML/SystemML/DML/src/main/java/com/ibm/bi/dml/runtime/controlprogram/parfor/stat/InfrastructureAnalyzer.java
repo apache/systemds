@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,13 +21,11 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
  * such as memory and number of logical processors.
  * 
  * 
- * TODO handle mapred.child.java.opts
- * 
  */
 public class InfrastructureAnalyzer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
@@ -356,9 +354,14 @@ public class InfrastructureAnalyzer
 				_remoteParReduce = stat.getMaxReduceTasks(); 
 				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
 				
-				//handle jvm max mem
-				String javaOpts = job.get("mapred.child.java.opts");
-				_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts);
+				//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
+				//(for robustness we probe both: child and map configuration parameters)
+				String javaOpts1 = job.get("mapred.child.java.opts");
+				String javaOpts2 = job.get("mapreduce.map.java.opts", null);
+				if( javaOpts2 != null ) //specific value overrides generic
+					_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts2); 
+				else
+					_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts1);
 				
 				//analyze if local mode
 				String jobTracker = job.get("mapred.job.tracker", "local");

@@ -143,8 +143,7 @@ public class OptimizationWrapper
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		Timing time = new Timing();	
-		time.start();
+		Timing time = new Timing(true);
 		
 		LOG.debug("ParFOR Opt: Running optimization for ParFOR("+pb.getID()+")");
 		
@@ -188,8 +187,7 @@ public class OptimizationWrapper
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		Timing time = new Timing();
-		time.start();
+		Timing time = new Timing(true);
 		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );

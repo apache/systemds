@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public abstract class ParWorker
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ParWorker.class.getName());
@@ -139,8 +139,8 @@ public abstract class ParWorker
 		Timing time1 = null, time2 = null;		
 		if( _monitor )
 		{
-			time1 = new Timing(); time1.start();
-			time2 = new Timing(); time2.start();
+			time1 = new Timing(true); 
+			time2 = new Timing(true); 
 		}
 		
 		//core execution
@@ -186,8 +186,8 @@ public abstract class ParWorker
 		Timing time1 = null, time2 = null;		
 		if( _monitor )
 		{
-			time1 = new Timing(); time1.start();
-			time2 = new Timing(); time2.start();
+			time1 = new Timing(true); 
+			time2 = new Timing(true); 
 		}
 		
 		//core execution

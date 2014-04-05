@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -193,7 +192,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean ALLOW_DATA_COLOCATION       = true;
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
-	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //TODO determine read only, reuse 
+	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //reuse partition input matrices, applied only if read-only in surrounding loops
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
@@ -231,7 +230,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
-	protected Set<String>      _variablesDP         = null;
+	protected LocalVariableMap _variablesDPReuse    = null;
 	protected String           _colocatedDPMatrix   = null;
 	protected int              _replicationDP       = WRITE_REPLICATION_FACTOR;
 	protected int              _replicationExport   = -1;
@@ -313,7 +312,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			_optMode = POptMode.NONE;
 			
 		_variablesDPOriginal = new LocalVariableMap();
-		_variablesDP = new HashSet<String>();
+		_variablesDPReuse = new LocalVariableMap();
 		
 		//create IDs for all parworkers
 		if( _execMode == PExecMode.LOCAL )
@@ -495,9 +494,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		//DATA PARTITIONING of read-only parent variables of type (matrix,unpartitioned)
 		///////
-		Timing time = null;
-		if( _monitor )
-			time = new Timing(true);
+		Timing time = _monitor ? new Timing(true) : null;
 		
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
@@ -507,22 +504,34 @@ public class ParForProgramBlock extends ForProgramBlock
 				Data dat = ec.getVariable(var);
 				if( dat != null && dat instanceof MatrixObject )
 				{
-					MatrixObject moVar = (MatrixObject) dat;
-					if( !moVar.isPartitioned() )
+					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
+					
+					PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
+					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
+					
+					if( dpf != PDataPartitionFormat.NONE )
 					{
-						PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
-						LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
-						if( dpf != PDataPartitionFormat.NONE )
+						Timing ltime = new Timing(true);
+						
+						//input data partitioning (reuse if possible)
+						Data dpdatNew = _variablesDPReuse.get(var);
+						if( dpdatNew == null ) //no reuse opportunity
 						{
-							Timing ltime = new Timing(true);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
-							ec.setVariable(var, moVarNew);
-							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
-							_variablesDPOriginal.put(var, moVar);
-							_variablesDP.add(var);
-							LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
+							dpdatNew = moVarNew;
 						}
+						ec.setVariable(var, dpdatNew);
+						
+						//recompile parfor body program
+						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
+						
+						//store original and partitioned matrix (for reuse if applicable)
+						_variablesDPOriginal.put(var, moVar);
+						if( ALLOW_REUSE_PARTITION_VARS &&  ProgramRecompiler.isApplicableForReusePartitionedMatrix(_sb.getDMLProg(), _sb, var))
+							_variablesDPReuse.put(var, dpdatNew);
+						
+						LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
 					}
 				}
 			}
@@ -588,8 +597,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		//we can replace those variables, because partitioning only applied for read-only matrices
 		for( String var : _variablesDPOriginal.keySet() )
 		{
-			//cleanup partitioned matrix
-			VariableCPInstruction.processRemoveVariableInstruction(ec, var); 
+			//cleanup partitioned matrix (if not reused)
+			if( !_variablesDPReuse.keySet().contains(var) )
+				VariableCPInstruction.processRemoveVariableInstruction(ec, var); 
 			//reset to original matrix
 			MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
 			ec.setVariable(var, mo); 
@@ -604,7 +614,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		    LOG.info("\n"+StatisticMonitor.createReport());
 		
 		//reset flags/modifications made by optimizer
-		for( String dpvar : _variablesDP ) //release forced exectypes
+		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
 		    ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, dpvar, ec, false);
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
@@ -639,12 +649,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		 * Step 4) collect results from each parallel worker
 		 */
 
-		Timing time = null;
-		if( _monitor )
-		{
-			time = new Timing();
-			time.start();
-		}
+		Timing time = (_monitor ? new Timing(true) : null );
+		
 
 		int numExecutedTasks = 0;
 		int numExecutedIterations = 0;
@@ -755,12 +761,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		 * Step 4) collect results from each parallel worker
 		 */
 		
-		Timing time = null;
-		if( _monitor )
-		{
-			time = new Timing();
-			time.start();
-		}
+		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
 		boolean flagForced = false;
@@ -1566,7 +1567,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void resetOptimizerFlags()
 	{
 		//reset all state that was set but is not guaranteed to be overwritten by optimizer
-		_variablesDP.clear();
+		_variablesDPOriginal.removeAll();
 		_colocatedDPMatrix     = null;
 		_replicationDP         = WRITE_REPLICATION_FACTOR;
 		_replicationExport     = -1;

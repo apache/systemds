@@ -16,6 +16,7 @@ import org.junit.Test;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -29,7 +30,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME = "parfor_repeatedopt";
+	private final static String TEST_NAME1 = "parfor_repeatedopt1";
+	private final static String TEST_NAME2 = "parfor_repeatedopt2";
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static double eps = 1e-8;
 	
@@ -40,11 +42,11 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"R"}) ); 
+		
 	}
 
-	//TODO combination with update
-	
 	@Test
 	public void testParForRepeatedOptNoReuseNoUpdateCP() 
 	{
@@ -59,7 +61,6 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		runParForRepeatedOptTest( false, true, ExecType.CP, numExpectedMRJobs );
 	}
 	
-	/*
 	@Test
 	public void testParForRepeatedOptReuseNoUpdateCP() 
 	{
@@ -73,9 +74,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
 		runParForRepeatedOptTest( true, true, ExecType.CP, numExpectedMRJobs );
 	}
-	*/
-
-	
+		
 	
 	/**
 	 * 
@@ -87,6 +86,9 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		double memfactorOld = OptimizerUtils.MEM_UTIL_FACTOR;
+		boolean reuseOld = ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS;
+		
+		String TEST_NAME = update ? TEST_NAME2 : TEST_NAME1;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
@@ -96,7 +98,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		{
 			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.MEM_UTIL_FACTOR = computeMemoryUtilFactor( 70 ); //force partitioning
-		
+			ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS = reusePartitionedData;
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats","-args", HOME + INPUT_DIR + "V" , 
@@ -122,14 +125,13 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
-			
-			
-			//TODO check compiled and execute jobs
 		}
 		finally
 		{
+			//reset optimizer flags to pre-test configuration
 			rtplatform = platformOld;
 			OptimizerUtils.MEM_UTIL_FACTOR = memfactorOld;
+			ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS = reuseOld;
 		}
 	}
 	

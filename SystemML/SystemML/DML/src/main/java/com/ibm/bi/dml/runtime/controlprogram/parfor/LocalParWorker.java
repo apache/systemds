@@ -22,7 +22,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 public class LocalParWorker extends ParWorker implements Runnable
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected LocalTaskQueue<Task> _taskQueue   = null;
@@ -53,12 +53,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 	public void run() 
 	{
 		// monitoring start
-		Timing time1 = null;
-		if( _monitor )
-		{
-			time1 = new Timing(); 
-			time1.start();
-		}
+		Timing time1 = ( _monitor ? new Timing(true) : null ); 
 		
 		// continuous execution (execute tasks until (1) stopped or (2) no more tasks)
 		Task lTask = null; 

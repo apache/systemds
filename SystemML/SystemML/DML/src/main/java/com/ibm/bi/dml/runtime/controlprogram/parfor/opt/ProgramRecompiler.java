@@ -18,11 +18,14 @@ import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -65,16 +68,20 @@ public class ProgramRecompiler
 		if( pb instanceof IfProgramBlock )
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
+			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement is = (IfStatement) sb.getStatement(0);
-			
-			int len = is.getIfBody().size(); //robustness for potentially added problem blocks
+			//process if condition
+			if( isb.getPredicateHops()!=null )
+				ipb.setPredicate( rFindAndRecompileIndexingHOP(isb.getPredicateHops(),ipb.getPredicate(),var,ec,force) );
+			//process if branch
+			int len = is.getIfBody().size(); 
 			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
 			{
-				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
-				StatementBlock lsb = is.getIfBody().get(0);
+				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(i);
+				StatementBlock lsb = is.getIfBody().get(i);
 				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec,force);
 			}
-			//process else condition
+			//process else branch
 			if( ipb.getChildBlocksElseBody() != null )
 			{
 				int len2 = is.getElseBody().size();
@@ -89,7 +96,11 @@ public class ProgramRecompiler
 		else if( pb instanceof WhileProgramBlock )
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			//process while condition
+			if( wsb.getPredicateHops()!=null )
+				wpb.setPredicate( rFindAndRecompileIndexingHOP(wsb.getPredicateHops(),wpb.getPredicate(),var,ec,force) );
 			//process body
 			int len = ws.getBody().size(); //robustness for potentially added problem blocks
 			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
@@ -104,6 +115,12 @@ public class ProgramRecompiler
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			if( fsb.getFromHops()!=null )
+				fpb.setFromInstructions( rFindAndRecompileIndexingHOP(fsb.getFromHops(),fpb.getFromInstructions(),var,ec,force) );
+			if( fsb.getToHops()!=null )
+				fpb.setToInstructions( rFindAndRecompileIndexingHOP(fsb.getToHops(),fpb.getToInstructions(),var,ec,force) );
+			if( fsb.getIncrementHops()!=null )
+				fpb.setIncrementInstructions( rFindAndRecompileIndexingHOP(fsb.getIncrementHops(),fpb.getIncrementInstructions(),var,ec,force) );
 			//process body
 			int len = fs.getBody().size(); //robustness for potentially added problem blocks
 			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
@@ -147,6 +164,109 @@ public class ProgramRecompiler
 			}
 		}
 	}
+	
+	/**
+	 * 
+	 * @param prog
+	 * @param parforSB
+	 * @param var
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static boolean isApplicableForReusePartitionedMatrix( DMLProgram prog, StatementBlock parforSB, String var )
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		boolean ret = false;
+		
+		for( StatementBlock sb : prog.getStatementBlocks() )
+			ret |= isApplicableForReusePartitionedMatrix(sb, parforSB, var);
+		
+		return  ret;	
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @param parforSB
+	 * @param var
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private static boolean isApplicableForReusePartitionedMatrix( StatementBlock sb, StatementBlock parforSB, String var )
+			throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		boolean ret = false;
+		
+		if( sb instanceof IfStatementBlock )
+		{
+			IfStatement is = (IfStatement) sb.getStatement(0);
+			for( StatementBlock lsb : is.getIfBody() )
+				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+			for( StatementBlock lsb : is.getElseBody() )
+				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+		}
+		else if( sb instanceof WhileStatementBlock )
+		{
+			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			for( StatementBlock lsb : ws.getBody() )
+				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);		
+		}
+		else if( sb instanceof ForStatementBlock ) //for or parfor
+		{
+			ForStatementBlock fsb = (ForStatementBlock)sb;
+			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			if( fsb == parforSB ) {
+				//found parfor statement 
+				ret = true;
+			}
+			else {
+				for( StatementBlock lsb : fs.getBody() )
+					ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+			}
+		}
+		
+		return  ret && !sb.variablesUpdated().containsVariable(var);	
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param in
+	 * @param force
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private static ArrayList<Instruction> rFindAndRecompileIndexingHOP( Hop hop, ArrayList<Instruction> in, String var, ExecutionContext ec, boolean force ) 
+		throws DMLRuntimeException
+	{
+		ArrayList<Instruction> tmp = in;
+		
+		try
+		{
+			boolean ret = false;
+			hop.resetVisitStatus();
+			
+			if( force ) //set forced execution type
+				ret = rFindAndSetCPIndexingHOP(hop, var);
+			else //release forced execution type
+				ret = rFindAndReleaseIndexingHOP(hop, var);
+			
+			//recompilation on-demand
+			if( ret )
+			{
+				//construct new instructions
+				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), 0);
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
+		
+		return tmp;
+	}
+	
 	
 	/**
 	 * 
@@ -220,7 +340,6 @@ public class ProgramRecompiler
 		return ret;
 	}
 	
-	
 
 	///////
 	// additional general-purpose functionalities
@@ -233,7 +352,7 @@ public class ProgramRecompiler
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
+	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//create instruction string
@@ -266,7 +385,7 @@ public class ProgramRecompiler
 	 * @param n
 	 * @throws DMLRuntimeException
 	 */
-	public static void recompilePartialPlan( OptNode n ) 
+	protected static void recompilePartialPlan( OptNode n ) 
 		throws DMLRuntimeException 
 	{
 		//NOTE: need to recompile complete programblock because (1) many to many relationships
@@ -319,7 +438,7 @@ public class ProgramRecompiler
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static ProgramBlock recompile( OptNode n ) 
+	protected static ProgramBlock recompile( OptNode n ) 
 		throws DMLRuntimeException 
 	{
 		ProgramBlock pbNew = null;
@@ -390,7 +509,7 @@ public class ProgramRecompiler
 	 * @param pbNew
 	 * @throws DMLRuntimeException
 	 */
-	public static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
+	protected static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
 		throws DMLRuntimeException 
 	{
 		OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();

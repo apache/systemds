@@ -1,0 +1,28 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1,rows=$2,cols=$3);
+n = $3;
+
+R = matrix(0, rows=1,cols=n); 
+
+iter = 1;
+while( iter <= 3 )
+{
+   #repeated opt for each while iteration
+   parfor( i in 1:ncol(V), log=DEBUG )
+   {
+      Xi = V[,i];
+      R[1,i] = R[1,i] + sum(Xi);
+   }
+   
+   iter = iter+1;
+}
+
+write(R, $4);       

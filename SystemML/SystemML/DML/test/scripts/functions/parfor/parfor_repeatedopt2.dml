@@ -15,12 +15,11 @@ R = matrix(0, rows=1,cols=n);
 iter = 1;
 while( iter <= 3 )
 {
-   #if no update, reuse possible (branch removed during rewrite)
    if( $5==1 )
    {
       V = V * iter;
    }
-   
+
    #repeated opt for each while iteration
    parfor( i in 1:ncol(V), log=DEBUG )
    {

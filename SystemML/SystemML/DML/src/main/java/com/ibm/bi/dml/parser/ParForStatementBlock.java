@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
+import com.ibm.bi.dml.parser.Expression.BuiltinFunctionOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
@@ -238,8 +239,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}	
 		
 		//start time measurement for normalization and dependency analysis
-		Timing time = new Timing();
-		time.start();
+		Timing time = new Timing(true);
 		
 		// LOOP DEPENDENCY ANALYSIS (test for dependency existence)
 		// no false negative guaranteed, but possibly false positives
@@ -512,14 +512,33 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				if( s instanceof ForStatement ) //includes for and parfor
 				{
+					ForStatement fs = (ForStatement) s;
+					//predicate
+					Collection<DataIdentifier> datsFromRead = rGetDataIdentifiers(fs.getIterablePredicate().getFromExpr());
+					Collection<DataIdentifier> datsToRead = rGetDataIdentifiers(fs.getIterablePredicate().getToExpr());
+					Collection<DataIdentifier> datsIncrementRead = rGetDataIdentifiers(fs.getIterablePredicate().getIncrementExpr());
+					rDeterminePartitioningCandidates(var, datsFromRead, C);
+					rDeterminePartitioningCandidates(var, datsToRead, C);
+					rDeterminePartitioningCandidates(var, datsIncrementRead, C);
+					//for / parfor body
 					rDeterminePartitioningCandidates(var,((ForStatement)s).getBody(), C);
 				}
 				else if( s instanceof WhileStatement ) 
 				{
+					WhileStatement ws = (WhileStatement) s;
+					//predicate
+					Collection<DataIdentifier> datsRead = rGetDataIdentifiers(ws.getConditionalPredicate().getPredicate());
+					rDeterminePartitioningCandidates(var, datsRead, C);
+					//while body
 					rDeterminePartitioningCandidates(var,((WhileStatement)s).getBody(), C);
 				}
 				else if( s instanceof IfStatement ) 
 				{
+					IfStatement is = (IfStatement) s;
+					//predicate
+					Collection<DataIdentifier> datsRead = rGetDataIdentifiers(is.getConditionalPredicate().getPredicate());
+					rDeterminePartitioningCandidates(var, datsRead, C);
+					//if and else branch
 					rDeterminePartitioningCandidates(var,((IfStatement)s).getIfBody(), C);
 					rDeterminePartitioningCandidates(var,((IfStatement)s).getElseBody(), C);
 				}
@@ -530,23 +549,34 @@ public class ParForStatementBlock extends ForStatementBlock
 				else
 				{
 					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
-					if( datsRead != null )
-						for(DataIdentifier read : datsRead)
-						{ 
-							String readStr = read.getName();							
-							if( var.equals( readStr ) ) 
-							{
-								if( read instanceof IndexedIdentifier )
-								{
-									IndexedIdentifier idat = (IndexedIdentifier) read;
-									C.add( determineAccessPattern(idat) );
-								}
-								else if( read instanceof DataIdentifier )
-								{
-									C.add( PDataPartitionFormat.NONE );
-								}
-							}
-						}
+					rDeterminePartitioningCandidates(var, datsRead, C);
+				}
+			}
+	}
+	
+	/**
+	 * 
+	 * @param var
+	 * @param datsRead
+	 * @param C
+	 */
+	private void rDeterminePartitioningCandidates(String var, Collection<DataIdentifier> datsRead, Collection<PDataPartitionFormat> C)
+	{
+		if( datsRead != null )
+			for(DataIdentifier read : datsRead)
+			{ 
+				String readStr = read.getName();							
+				if( var.equals( readStr ) ) 
+				{
+					if( read instanceof IndexedIdentifier )
+					{
+						IndexedIdentifier idat = (IndexedIdentifier) read;
+						C.add( determineAccessPattern(idat) );
+					}
+					else if( read instanceof DataIdentifier )
+					{
+						C.add( PDataPartitionFormat.NONE );
+					}
 				}
 			}
 	}
@@ -889,9 +919,14 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if(e instanceof BuiltinFunctionExpression)
 		{
 			BuiltinFunctionExpression be = (BuiltinFunctionExpression) e;
-			ret.addAll( rGetDataIdentifiers(be.getFirstExpr()) );
-			ret.addAll( rGetDataIdentifiers(be.getSecondExpr()) );
-			ret.addAll( rGetDataIdentifiers(be.getThirdExpr()) );
+			//disregard meta data ops nrow/ncol (to exclude from candidates)
+			if( !((be.getOpCode() == BuiltinFunctionOp.NROW || be.getOpCode() == BuiltinFunctionOp.NCOL)
+				&& be.getFirstExpr() instanceof DataIdentifier) )
+			{
+				ret.addAll( rGetDataIdentifiers(be.getFirstExpr()) );
+				ret.addAll( rGetDataIdentifiers(be.getSecondExpr()) );
+				ret.addAll( rGetDataIdentifiers(be.getThirdExpr()) );
+			}
 		}
 		else if(e instanceof ParameterizedBuiltinFunctionExpression)
 		{

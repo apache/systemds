@@ -30,17 +30,18 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class GLMTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     private final static String TEST_DIR = "applications/glm/";
     private final static String TEST_GLM = "GLM";
 
     private int numRecords, numFeatures, distFamilyType, linkType;
-    private double distParam, linkPower, avgLinearForm, stdevLinearForm, dispersion;
+    private double distParam, linkPower, intercept, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
     
 	public GLMTest (int numRecords_, int numFeatures_, int distFamilyType_, double distParam_,
-		int linkType_, double linkPower_, double avgLinearForm_, double stdevLinearForm_, double dispersion_)
+		int linkType_, double linkPower_, double intercept_, double logFeatureVarianceDisbalance_, 
+		double avgLinearForm_, double stdevLinearForm_, double dispersion_)
 	{
 		this.numRecords = numRecords_;
 		this.numFeatures = numFeatures_;
@@ -48,84 +49,97 @@ public class GLMTest extends AutomatedTestBase
 		this.distParam = distParam_;
 		this.linkType = linkType_;
 		this.linkPower = linkPower_;
+		this.intercept = intercept_;
+		this.logFeatureVarianceDisbalance = logFeatureVarianceDisbalance_;
 	    this.avgLinearForm = avgLinearForm_;
 	    this.stdevLinearForm = stdevLinearForm_;
 		this.dispersion = dispersion_;
 	}
 	
-	//---------------------------------------------
-	//  Dst Var Lnk Lnk   Distribution       Cano-
-	//  typ pow typ pow   Family.link        nical?
-	//---------------------------------------------
-	//   1  0.0  1 -1.0   Gaussian.inverse
-	//   1  0.0  1  0.0   Gaussian.log
-	//   1  0.0  1  1.0   Gaussian.id         Yes
-	//   1  1.0  1  0.0   Poisson.log         Yes
-	//   1  1.0  1  0.5   Poisson.sqrt
-	//   1  1.0  1  1.0   Poisson.id
-	//   1  2.0  1 -1.0   Gamma.inverse       Yes
-	//   1  2.0  1  0.0   Gamma.log
-	//   1  2.0  1  1.0   Gamma.id
-	//   1  3.0  1 -2.0   InvGaussian.1/mu^2  Yes
-	//   1  3.0  1 -1.0   InvGaussian.inverse
-	//   1  3.0  1  0.0   InvGaussian.log
-	//   1  3.0  1  1.0   InvGaussian.id
-	//---------------------------------------------
-	//   2 -1.0  *   *    Binomial {-1, 1}
-	//   2  0.0  *   *    Binomial { 0, 1}
-	//   2  1.0  *   *    Binomial two-column
-	//   2   *   1  0.0   Binomial.log
-	//   2   *   2   *    Binomial.logit      Yes
-	//   2   *   3   *    Binomial.probit
-	//   2   *   4   *    Binomial.cloglog
-	//   2   *   5   *    Binomial.cauchit
-	//---------------------------------------------
+	// SUPPORTED GLM DISTRIBUTION FAMILIES AND LINKS:
+	// -----------------------------------------------
+	// INPUT PARAMETERS:    MEANING:            Cano-
+	// dfam vpow link lpow  Distribution.link   nical?
+	// -----------------------------------------------
+	//  1   0.0   1  -1.0   Gaussian.inverse
+	//  1   0.0   1   0.0   Gaussian.log
+	//  1   0.0   1   1.0   Gaussian.id          Yes
+	//  1   1.0   1   0.0   Poisson.log          Yes
+	//  1   1.0   1   0.5   Poisson.sqrt
+	//  1   1.0   1   1.0   Poisson.id
+	//  1   2.0   1  -1.0   Gamma.inverse        Yes
+	//  1   2.0   1   0.0   Gamma.log
+	//  1   2.0   1   1.0   Gamma.id
+	//  1   3.0   1  -2.0   InvGaussian.1/mu^2   Yes
+	//  1   3.0   1  -1.0   InvGaussian.inverse
+	//  1   3.0   1   0.0   InvGaussian.log
+	//  1   3.0   1   1.0   InvGaussian.id
+	//  1    *    1    *    AnyVariance.AnyLink
+	// -----------------------------------------------
+	//  2    *    1   0.0   Binomial.log
+	//  2    *    2    *    Binomial.logit       Yes
+	//  2    *    3    *    Binomial.probit
+	//  2    *    4    *    Binomial.cloglog
+	//  2    *    5    *    Binomial.cauchit
+	// -----------------------------------------------
+
 	@Parameters
 	public static Collection<Object[]> data() {
 		// SCHEMA: 
-		// #RECORDS, #FEATURES, DISTRIBUTION_TYPE, DISTRIBUTION_PARAMETER, LINK_TYPE, LINK_POWER, 
-		//     AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION
+		// #RECORDS, #FEATURES, DISTRIBUTION_FAMILY, VARIANCE_POWER or BERNOULLI_NO, LINK_TYPE, LINK_POWER, 
+		//     INTERCEPT, LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION
 		Object[][] data = new Object[][] { 
+				
+		//     #RECS  #FTRS DFM VPOW  LNK LPOW   ICPT  LFVD  AVGLT STDLT  DISP
 				
 		// Both DML and R work and compute close results:
 
-			{  10000,  100, 1,  0.0, 1,  0.0,  10.0, 2.0,  2.5 },   // Gaussian.log
-			{  10000,  100, 1,  0.0, 1,  1.0,   0.0, 2.0,  2.5 },   // Gaussian.id
-			{  10000,  100, 1,  0.0, 1, -1.0,   0.2, 0.03, 2.5 },   // Gaussian.inverse
-			{  10000,  100, 1,  1.0, 1,  0.0,   0.0, 2.0,  2.5 },   // Poisson.log
-			{  10000,  100, 1,  1.0, 1,  0.5,  10.0, 2.0,  2.5 },   // Poisson.sqrt
-			{  10000,  100, 1,  1.0, 1,  1.0,  50.0, 5.0,  2.5 },   // Poisson.id
-			{  10000,  100, 1,  2.0, 1,  0.0,   0.0, 2.0,  2.5 },   // Gamma.log
-			{  10000,  100, 1,  2.0, 1, -1.0,   2.0, 0.3,  2.0 },   // Gamma.inverse
-			{  10000,  100, 1,  3.0, 1, -2.0,  20.0, 3.0,  1.7 },   // InvGaussian.1/mu^2
-			{  10000,  100, 1,  3.0, 1, -1.0,  10.0, 2.0,  2.5 },   // InvGaussian.inverse
-			{  10000,  100, 1,  3.0, 1,  0.0,  -2.0, 0.3,  2.5 },   // InvGaussian.log
-			{  10000,  100, 1,  3.0, 1,  1.0,   0.2, 0.03, 2.5 },   // InvGaussian.id
+			{ 100000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // Gaussian.log     // CHECK DEVIANCE !!!
+			{  10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Gaussian.id
+			{  20000,  100,  1,  0.0,  1, -1.0,  0.01, 0.0,   0.2,  0.03, 2.5 },   // Gaussian.inverse
+			{  10000,  100,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0,  1.0,  2.5 },   // Poisson.log
+			{ 100000,   10,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0, 50.0,  2.5 },   // Poisson.log             // Pr[0|x] gets near 1
+			{  20000,  100,  1,  1.0,  1,  0.5,  0.01, 3.0,  10.0,  2.0,  2.5 },   // Poisson.sqrt
+			{  10000,  100,  1,  1.0,  1,  1.0,  0.01, 3.0,  50.0, 10.0,  2.5 },   // Poisson.id
+			{  50000,  100,  1,  2.0,  1,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Gamma.log
+			{  10000,  100,  1,  2.0,  1, -1.0,  0.01, 3.0,   2.0,  0.3,  2.0 },   // Gamma.inverse
+			{  10000,  100,  1,  3.0,  1, -2.0,  1.0,  3.0,  50.0,  7.0,  1.7 },   // InvGaussian.1/mu^2
+			{  10000,  100,  1,  3.0,  1, -1.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // InvGaussian.inverse
+			{ 100000,   50,  1,  3.0,  1,  0.0,  0.5,  3.0,  -2.0,  1.0,  2.5 },   // InvGaussian.log
+			{ 100000,  100,  1,  3.0,  1,  1.0,  0.01, 3.0,   0.2,  0.03, 2.5 },   // InvGaussian.id
 
-			{  50000,  100, 2, -1.0, 1,  0.0,  -5.0, 1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
-			{  10000,  100, 2, -1.0, 2,  0.0,   0.0, 2.0,  1.0 },   // Bernoulli {-1, 1}.logit
-			{  10000,  100, 2, -1.0, 3,  0.0,   0.0, 2.0,  1.0 },   // Bernoulli {-1, 1}.probit
-			{  10000,  100, 2, -1.0, 4,  0.0,  -2.0, 1.0,  1.0 },   // Bernoulli {-1, 1}.cloglog
-			{  10000,  100, 2, -1.0, 5,  0.0,   0.0, 2.0,  1.0 },   // Bernoulli {-1, 1}.cauchit
+			{ 100000,   50,  2, -1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
+			{ 100000,   50,  2, -1.0,  1,  1.0,  0.01, 3.0,   0.4,  0.1,  1.0 },   // Bernoulli {-1, 1}.id
+			{ 100000,   40,  2, -1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.1,  1.0 },   // Bernoulli {-1, 1}.sqrt
+			{  10000,  100,  2, -1.0,  2,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.logit
+			{  10000,  100,  2, -1.0,  2,  0.0,  0.01, 3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.logit   // Pr[y|x] near 0, 1
+			{  20000,  100,  2, -1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.probit
+			{ 100000,   10,  2, -1.0,  3,  0.0,  0.01, 3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.probit  // Pr[y|x] near 0, 1
+			{  10000,  100,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.cloglog
+			{  50000,   20,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.cloglog // Pr[y|x] near 0, 1
+			{  20000,  100,  2, -1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.cauchit
+        
+			{  50000,  100,  2,  1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
+			{  10000,  100,  2,  1.0,  1,  1.0,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.id
+			{ 100000,  100,  2,  1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.05, 2.5 },   // Binomial two-column.sqrt
+			{  10000,  100,  2,  1.0,  2,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
+			{  20000,  100,  2,  1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
+			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5 },   // Binomial two-column.cloglog
+			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
 
-			{  50000,  100, 2,  1.0, 1,  0.0,  -5.0, 1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
-			{  10000,  100, 2,  1.0, 2,  0.0,   0.0, 2.0,  2.5 },   // Binomial two-column.logit
-			{  10000,  100, 2,  1.0, 3,  0.0,   0.0, 2.0,  2.5 },   // Binomial two-column.probit
-			{  10000,  100, 2,  1.0, 4,  0.0,  -2.0, 1.0,  2.5 },   // Binomial two-column.cloglog
-			{  10000,  100, 2,  1.0, 5,  0.0,   0.0, 2.0,  2.5 },   // Binomial two-column.cauchit
 
 		//  DML WORKS, BUT R FAILS:
 				
-		//	{  10000,  100, 1,  1.0, 1,  1.0,  10.0, 2.0,  2.5 },   // Poisson.id
-		//	{  10000,  100, 1,  2.0, 1, -1.0,  10.0, 2.0,  2.5 },   // Gamma.inverse
-		//	{  10000,  100, 1,  2.0, 1,  1.0,  10.0, 2.0,  2.5 },   // Gamma.id             // Tried tweaking, cannot satisfy R
-		//	{  10000,  100, 1,  3.0, 1, -2.0,  10.0, 2.0,  2.5 },   // InvGaussian.1/mu^2
-		//	{  10000,  100, 1,  3.0, 1,  0.0,   0.0, 2.0,  2.5 },   // InvGaussian.log      // R computes nonsense!
-		//	{  10000,  100, 1,  3.0, 1,  1.0,   2.0, 0.2,  1.5 },   // InvGaussian.id
+		//	{  10000,  100,  1,  1.0,  1,  1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Poisson.id
+		//	{  10000,  100,  1,  2.0,  1, -1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gamma.inverse
+		//	{  10000,  100,  1,  2.0,  1,  1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gamma.id             // Tried tweaking, cannot satisfy R
+		//	{  10000,  100,  1,  3.0,  1, -2.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // InvGaussian.1/mu^2
+		//	{  10000,  100,  1,  3.0,  1,  0.0,  0.0,  0.0,   0.0,  2.0,  2.5 },   // InvGaussian.log      // R computes nonsense!
+		//	{  10000,  100,  1,  3.0,  1,  1.0,  0.0,  0.0,   2.0,  0.2,  1.5 },   // InvGaussian.id
 				
 	    //  BOTH R AND DML FAIL:
 				
-		//	{  10000,  100, 1,  0.0, 1, -1.0,  10.0, 2.0,  2.5 },   // Gaussian.inverse     // R and DML compute nonsense
+		//	{  10000,  100,  1,  0.0,  1, -1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gaussian.inverse     // R and DML compute nonsense
 		
 		
 		};
@@ -156,6 +170,7 @@ public class GLMTest extends AutomatedTestBase
         config.addVariable ("glmDistParameter", distParam);
         config.addVariable ("glmLinkFunctionType", linkType);
         config.addVariable ("glmLinkFunctionPower", linkPower);
+        config.addVariable ("glmIntercept", intercept);
         config.addVariable ("glmDispersion", dispersion);
         
         loadTestConfiguration(TEST_GLM);
@@ -163,12 +178,22 @@ public class GLMTest extends AutomatedTestBase
         // prepare training data set
                                
         Random r = new Random (314159265);
-        double[][] X = getRandomMatrix (rows, cols, 0.0, 1.0, 1.0, 34567); // 271828183);
+        double[][] X = getRandomMatrix (rows, cols, -1.0, 1.0, 1.0, 34567); // 271828183);
+        double shift_X = 1.0;
+        
+        // make the feature columns of X variance disbalanced
+        
+        for (int j = 0; j < cols; j ++)
+        {
+        	double varFactor = Math.pow (10.0, logFeatureVarianceDisbalance * (- 0.25 + j / (double) (2 * cols - 2)));
+        	for (int i = 0; i < rows; i ++)
+        		X [i][j] = shift_X + X [i][j] * varFactor;
+        }
         
     	double[] beta_unscaled = new double [cols];
         for (int j = 0; j < cols; j ++)
         	beta_unscaled [j] = r.nextGaussian ();
-        double[] beta = scaleWeights (beta_unscaled, X, avgLinearForm, stdevLinearForm);
+        double[] beta = scaleWeights (beta_unscaled, X, intercept, avgLinearForm, stdevLinearForm);
 
         long nnz_in_X = 0;
         long nnz_in_y = 0;
@@ -184,7 +209,7 @@ public class GLMTest extends AutomatedTestBase
         
         for (int i = 0; i < rows; i ++)
         {
-        	double eta = 0.0;
+        	double eta = intercept;
         	for (int j = 0; j < cols; j ++)
         	{
         		eta += X [i][j] * beta [j];
@@ -224,33 +249,38 @@ public class GLMTest extends AutomatedTestBase
         writeInputMatrixWithMTD ("X", X, true, mc_X);
 
         MatrixCharacteristics mc_y = new MatrixCharacteristics (rows, y[0].length, defaultBlockSize, defaultBlockSize, nnz_in_y);
-        writeInputMatrixWithMTD ("y", y, true, mc_y);
+        writeInputMatrixWithMTD ("Y", y, true, mc_y);
         
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String GLMR_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = GLMR_HOME + TEST_GLM + ".dml";
-		programArgs = new String[] {"-args",
-				GLMR_HOME + INPUT_DIR + "X", 
-				GLMR_HOME + INPUT_DIR + "y",
-				String.format ("%d", distFamilyType),
-				String.format ("%f", distParam),
-				String.format ("%d", linkType),
-				String.format ("%f", linkPower),
-				"0.0",     // DISPERSION (0.0: ESTIMATE)
-				"0.0",            // LAMBDA REGULARIZER
-				"0.000000000001", // TOLERANCE (EPSILON)
-				GLMR_HOME + OUTPUT_DIR + "w_DML" };
+		programArgs = new String[] {"-nvargs",
+				"dfam=" + String.format ("%d", distFamilyType),
+				((distFamilyType == 2 && distParam != 1.0) ? "yneg=" : "vpow=") + String.format ("%f", distParam),
+				((distFamilyType == 2 && distParam != 1.0) ? "vpow=0.0" : "yneg=0.0"),
+				"link=" + String.format ("%d", linkType),
+				"lpow=" + String.format ("%f", linkPower),
+				"icpt=2",
+				"disp=0.0",    // DISPERSION (0.0: ESTIMATE)
+				"reg=0.0",            // LAMBDA REGULARIZER
+				"tol=0.000000000001", // TOLERANCE (EPSILON)
+				"moi=300",
+				"mii=0",
+				"X=" + GLMR_HOME + INPUT_DIR + "X", 
+				"Y=" + GLMR_HOME + INPUT_DIR + "Y",
+				"B=" + GLMR_HOME + OUTPUT_DIR + "betas_DML" };
 
 		fullRScriptName = GLMR_HOME + "GLM.R";
 		rCmd =  "Rscript" + " " + fullRScriptName     + " "
              +  GLMR_HOME + INPUT_DIR + "X.mtx"       + " "
-             +  GLMR_HOME + INPUT_DIR + "y.mtx"       + " "
+             +  GLMR_HOME + INPUT_DIR + "Y.mtx"       + " "
              +  String.format ("%d", distFamilyType)  + " "
 	         +  String.format ("%f", distParam)       + " "
 	         +  String.format ("%d", linkType)        + " "
 	         +  String.format ("%f", linkPower)       + " "
+	         +  "1" + " " // INTERCEPT - CHANGE THIS LATER
 	         +  "0.000000000001" + " " // TOLERANCE (EPSILON)
-	         +  GLMR_HOME + EXPECTED_DIR + "w_R";
+	         +  GLMR_HOME + EXPECTED_DIR + "betas_R";
 
 		
 		boolean exceptionExpected = false;
@@ -270,8 +300,12 @@ public class GLMTest extends AutomatedTestBase
 			max_abs_beta = (max_abs_beta >= Math.abs (beta[j]) ? max_abs_beta : Math.abs (beta[j]));
 		}
 
-        HashMap<CellIndex, Double> wDML = readDMLMatrixFromHDFS ("w_DML");
-
+        HashMap<CellIndex, Double> wDML_raw = readDMLMatrixFromHDFS ("betas_DML");
+		HashMap<CellIndex, Double> wDML = new HashMap <CellIndex, Double> ();
+		for (CellIndex key : wDML_raw.keySet())
+			if (key.column == 1)
+				wDML.put (key, wDML_raw.get (key));
+        
 //        System.out.println ("Comparing TRUE and DML weight vectors...");
 //        TestUtils.compareMatrices (wTRUE, wDML, 0.001 * max_abs_beta, "wTRUE", "wDML");
 		
@@ -280,16 +314,16 @@ public class GLMTest extends AutomatedTestBase
 		runRScript(true);
 		System.out.println ("Completed the R script run.");
 
-		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("w_R");
+		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
         
         System.out.println ("Comparing R and DML weight vectors...");
-        TestUtils.compareMatrices (wR, wDML, 0.0000006 * max_abs_beta, "wR", "wDML");
+        TestUtils.compareMatrices (wR, wDML, 0.000001 * max_abs_beta, "wR", "wDML");
 
         // System.out.println ("Comparing TRUE and R weight vectors...");
         // TestUtils.compareMatrices (wTRUE, wR, 0.001 * max_abs_beta, "wTRUE", "wR");
     }
     
-    double[] scaleWeights (double[] w_unscaled, double[][] X, double meanLF, double sigmaLF)
+    double[] scaleWeights (double[] w_unscaled, double[][] X, double icept, double meanLF, double sigmaLF)
     {
     	int rows = X.length;
     	int cols = w_unscaled.length;
@@ -319,13 +353,13 @@ public class GLMTest extends AutomatedTestBase
             sum_wx1x += wx * one_x; 
         }
         
-        double a0 = meanLF * rows * sum_wx / (sum_wx * sum_wx + sum_1x * sum_1x);
-        double b0 = meanLF * rows * sum_1x / (sum_wx * sum_wx + sum_1x * sum_1x);
+        double a0 = (meanLF - icept) * rows * sum_wx / (sum_wx * sum_wx + sum_1x * sum_1x);
+        double b0 = (meanLF - icept) * rows * sum_1x / (sum_wx * sum_wx + sum_1x * sum_1x);
         double a1 = sum_1x;
         double b1 = - sum_wx;
         double qA = a1 * a1 * sum_wxwx + 2 * a1 * b1 * sum_wx1x + b1 * b1 * sum_1x1x;
         double qB = 2 * (a0 * a1 * sum_wxwx + a0 * b1 * sum_wx1x + a1 * b0 * sum_wx1x + b0 * b1 * sum_1x1x);
-        double qC_nosigmaLF = a0 * a0 * sum_wxwx + 2 * a0 * b0 * sum_wx1x + b0 * b0 * sum_1x1x - rows * meanLF * meanLF;
+        double qC_nosigmaLF = a0 * a0 * sum_wxwx + 2 * a0 * b0 * sum_wx1x + b0 * b0 * sum_1x1x - rows * (meanLF - icept) * (meanLF - icept);
         double qC = qC_nosigmaLF - rows * sigmaLF * sigmaLF;
         double qD = qB * qB - 4 * qA * qC;
         if (qD < 0)
@@ -352,7 +386,7 @@ public class GLMTest extends AutomatedTestBase
         	sum_eta += eta;
         	sum_sq_eta += eta * eta;
         }
-        double mean_eta = sum_eta / rows;
+        double mean_eta = icept + sum_eta / rows;
         double sigma_eta = Math.sqrt ((sum_sq_eta - sum_eta * sum_eta / rows) / (rows - 1));
         System.out.println (String.format ("Linear Form Mean  =%8.4f (Desired:%8.4f)",  mean_eta, meanLF));
         System.out.println (String.format ("Linear Form Sigma =%8.4f (Desired:%8.4f)", sigma_eta, sigmaLF));

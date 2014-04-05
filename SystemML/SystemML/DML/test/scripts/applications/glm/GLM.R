@@ -44,13 +44,14 @@
 # INPUT 4: (double) For Power families: Variance power of the mean
 # INPUT 5: (int) Link function type
 # INPUT 6: (double) Link as power of the mean
-# INPUT 7: (double) tolerance (epsilon)
-# INPUT 8: the regression coefficients output file
+# INPUT 7: (int) Intercept: 0 = no, 1 = yes
+# INPUT 8: (double) tolerance (epsilon)
+# INPUT 9: the regression coefficients output file
 # OUTPUT : Matrix beta [columns, 1]
 #
 # Assume that $GLMR_HOME is set to the home of the R script
 # Assume input and output directories are $GLMR_HOME/in/ and $GLMR_HOME/expected/
-# Rscript $GLMR_HOME/GLM.R $GLMR_HOME/in/X.mtx $GLMR_HOME/in/y.mtx 2 0.0 2 0.0 0.00000001 $GLMR_HOME/expected/w.mtx
+# Rscript $GLMR_HOME/GLM.R $GLMR_HOME/in/X.mtx $GLMR_HOME/in/y.mtx 2 0.0 2 0.0 1 0.00000001 $GLMR_HOME/expected/w.mtx
 
 args <- commandArgs (TRUE);
 
@@ -68,7 +69,8 @@ dist_type  <- as.integer (args[3]);
 dist_param <- as.numeric (args[4]);
 link_type  <- as.integer (args[5]);
 link_power <- as.numeric (args[6]);
-eps_n <- as.numeric (args[7]);
+icept <- as.integer (args[7]);
+eps_n <- as.numeric (args[8]);
 
 f_ly <- gaussian ();
 var_power <- dist_param;
@@ -87,6 +89,8 @@ if (dist_type == 1 & var_power == 3.0 & link_type == 1 & link_power == -1.0) { f
 if (dist_type == 1 & var_power == 3.0 & link_type == 1 & link_power ==  0.0) { f_ly <- inverse.gaussian (link = "log");      } else
 if (dist_type == 1 & var_power == 3.0 & link_type == 1 & link_power == -2.0) { f_ly <- inverse.gaussian (link = "1/mu^2");   } else
 if (dist_type == 2                    & link_type == 1 & link_power ==  0.0) { f_ly <- binomial (link = "log");              } else
+if (dist_type == 2                    & link_type == 1 & link_power ==  1.0) { f_ly <- binomial (link = "identity");         } else
+if (dist_type == 2                    & link_type == 1 & link_power ==  0.5) { f_ly <- binomial (link = "sqrt");             } else
 if (dist_type == 2                    & link_type == 2                     ) { f_ly <- binomial (link = "logit");            } else
 if (dist_type == 2                    & link_type == 3                     ) { f_ly <- binomial (link = "probit");           } else
 if (dist_type == 2                    & link_type == 4                     ) { f_ly <- binomial (link = "cloglog");          } else
@@ -109,8 +113,17 @@ c_rol <- glm.control (epsilon = eps_n, maxit = 100, trace = FALSE);
 X_matrix = as.matrix (X_here);
 y_matrix = as.matrix (y_here);
 
-glmOut <- glm (y_matrix ~ X_matrix - 1, family = f_ly, control = c_rol);
-betas <- coef (glmOut);
+if (icept == 0) {
+    glmOut <- glm (y_matrix ~ X_matrix - 1, family = f_ly, control = c_rol);
+    betas <- coef (glmOut);
+} else {
+    glmOut <- glm (y_matrix ~ X_matrix    , family = f_ly, control = c_rol);
+    betas <- coef (glmOut);
+    beta_intercept = betas [1];
+    betas [1 : num_features] = betas [2 : (num_features + 1)];
+    betas [num_features + 1] = beta_intercept;
+}
+
 print (c("Deviance", glmOut$deviance));
-writeMM (as (betas, "CsparseMatrix"), args[8], format = "text");
+writeMM (as (betas, "CsparseMatrix"), args[9], format = "text");
 

@@ -8,23 +8,24 @@
 #-------------------------------------------------------------
 
 # Apply Conjugate Gradient - Steihaug algorithm in order to approximately minimize
-# 0.5 z^T (X^T diag(w) X + lambda) z + (g + lambda * beta)^T z
+# 0.5 z^T (X^T diag(w) X + diag (lambda)) z + (g + lambda * beta)^T z
 # under constraint:  ||z|| <= trust_delta.  Here A = X^T diag(w) X.
 # See Alg. 7.2 on p. 171 of "Numerical Optimization" 2nd ed. by Nocedal and Wright
 
 # THE CG-STEIHAUG PROCEDURE SCRIPT:
-get_CG_Steihaug_point =
-    function (Matrix[double] A_CG, Matrix[double] g_CG, Matrix[double] beta_CG, double trust_delta_CG, double lambda_CG)
-# Matrix[double] X_CG, Matrix[double] w_CG, 
-    return (Matrix[double] z_CG, double neg_log_l_change_CG, int reached_trust_boundary_CG)
+get_CG_Steihaug_point_A =
+    function (Matrix[double] A, Matrix[double] g, Matrix[double] beta, Matrix[double] lambda,
+        double trust_delta, int max_iter_CG)
+# Matrix[double] X, Matrix[double] w, 
+    return (Matrix[double] z, double neg_log_l_change, int reached_trust_boundary)
 {
-    trust_delta_sq_CG = trust_delta_CG * trust_delta_CG;
-    size_CG = nrow (g_CG);
-    z_CG = matrix (0.0, rows = size_CG, cols = 1);
-    neg_log_l_change_CG = 0.0;
-    reached_trust_boundary_CG = 0;
-    g_reg_CG = g_CG + lambda_CG * beta_CG;
-    r_CG = g_reg_CG;
+    trust_delta_sq = trust_delta * trust_delta;
+    size_CG = nrow (g);
+    z = matrix (0.0, rows = size_CG, cols = 1);
+    neg_log_l_change = 0.0;
+    reached_trust_boundary = 0;
+    g_reg = g + lambda * beta;
+    r_CG = g_reg;
     p_CG = -r_CG;
     rr_CG = sum(r_CG * r_CG);
     eps_CG = rr_CG * min (0.25, sqrt (rr_CG));
@@ -33,44 +34,47 @@ get_CG_Steihaug_point =
         converged_CG = 1;
     }
     
-    # A_CG = t(X_CG) %*% diag (w_CG) %*% X_CG;
+    # A = t(X) %*% diag (w) %*% X;
 
-    max_iteration_CG = size_CG;
+    max_iteration_CG = max_iter_CG;
+    if (max_iteration_CG <= 0) {
+        max_iteration_CG = size_CG;
+    }
     i_CG = 0;
     while (converged_CG == 0)
     {
-        q_CG = (A_CG %*% p_CG) + lambda_CG * p_CG;
+        q_CG = (A %*% p_CG) + lambda * p_CG;
         pq_CG = sum (p_CG * q_CG);
         if (pq_CG <= 0) {
             pp_CG = sum (p_CG * p_CG);  
             if (pp_CG > 0) {
-                [z_CG, neg_log_l_change_CG] = 
-                    get_trust_boundary_point (g_reg_CG, z_CG, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq_CG);
-                reached_trust_boundary_CG = 1;
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
             } else {
-                neg_log_l_change_CG = 0.5 * sum (z_CG * (r_CG + g_reg_CG));
+                neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
             }
             converged_CG = 1;
         }
         if (converged_CG == 0) {
             alpha_CG = rr_CG / pq_CG;
-            new_z_CG = z_CG + alpha_CG * p_CG;
-            if (sum(new_z_CG * new_z_CG) >= trust_delta_sq_CG) {
+            new_z = z + alpha_CG * p_CG;
+            if (sum(new_z * new_z) >= trust_delta_sq) {
                 pp_CG = sum (p_CG * p_CG);  
-                [z_CG, neg_log_l_change_CG] = 
-                    get_trust_boundary_point (g_reg_CG, z_CG, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq_CG);
-                reached_trust_boundary_CG = 1;
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
                 converged_CG = 1;
             }
             if (converged_CG == 0) {
-                z_CG = new_z_CG;
+                z = new_z;
                 old_rr_CG = rr_CG;
                 r_CG = r_CG + alpha_CG * q_CG;
                 rr_CG = sum(r_CG * r_CG);
                 i_CG = i_CG + 1;
                 if (i_CG == max_iteration_CG | rr_CG < eps_CG) {
-                    neg_log_l_change_CG = 0.5 * sum (z_CG * (r_CG + g_reg_CG));
-                    reached_trust_boundary_CG = 0;
+                    neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
+                    reached_trust_boundary = 0;
                     converged_CG = 1;
                 }
                 if (converged_CG == 0) {
@@ -82,27 +86,138 @@ get_CG_Steihaug_point =
 }
 # END CG-STEIHAUG PROCEDURE SCRIPT
 
+
+# THE SAME AS ABOVE, BUT TAKING (X, w) INSTEAD OF A:
+get_CG_Steihaug_point_Xw =
+    function (Matrix[double] X, Matrix[double] w, Matrix[double] g, Matrix[double] beta, Matrix[double] lambda,
+        double trust_delta, int max_iter_CG)
+    return (Matrix[double] z, double neg_log_l_change, int reached_trust_boundary)
+{
+    trust_delta_sq = trust_delta * trust_delta;
+    size_CG = nrow (g);
+    z = matrix (0.0, rows = size_CG, cols = 1);
+    neg_log_l_change = 0.0;
+    reached_trust_boundary = 0;
+    g_reg = g + lambda * beta;
+    r_CG = g_reg;
+    p_CG = -r_CG;
+    rr_CG = sum(r_CG * r_CG);
+    eps_CG = rr_CG * min (0.25, sqrt (rr_CG));
+    converged_CG = 0;
+    if (rr_CG < eps_CG) {
+        converged_CG = 1;
+    }
+    
+    # A = t(X) %*% diag (w) %*% X;
+
+    max_iteration_CG = max_iter_CG;
+    if (max_iteration_CG <= 0) {
+        max_iteration_CG = size_CG;
+    }
+    i_CG = 0;
+    while (converged_CG == 0)
+    {
+        temp_CG = w * (X %*% p_CG);
+        q_CG = (t(X) %*% temp_CG) + lambda * p_CG;
+        pq_CG = sum (p_CG * q_CG);
+        if (pq_CG <= 0) {
+            pp_CG = sum (p_CG * p_CG);  
+            if (pp_CG > 0) {
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
+            } else {
+                neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
+            }
+            converged_CG = 1;
+        }
+        if (converged_CG == 0) {
+            alpha_CG = rr_CG / pq_CG;
+            new_z = z + alpha_CG * p_CG;
+            if (sum(new_z * new_z) >= trust_delta_sq) {
+                pp_CG = sum (p_CG * p_CG);  
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
+                converged_CG = 1;
+            }
+            if (converged_CG == 0) {
+                z = new_z;
+                old_rr_CG = rr_CG;
+                r_CG = r_CG + alpha_CG * q_CG;
+                rr_CG = sum(r_CG * r_CG);
+                i_CG = i_CG + 1;
+                if (i_CG == max_iteration_CG | rr_CG < eps_CG) {
+                    neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
+                    reached_trust_boundary = 0;
+                    converged_CG = 1;
+                }
+                if (converged_CG == 0) {
+                    p_CG = -r_CG + (rr_CG / old_rr_CG) * p_CG;
+                }
+            }
+        }
+    }
+}
+
+
 # Below is an auxiliary function used twice inside the CG-STEIHAUG loop:
 get_trust_boundary_point = 
-    function (Matrix[double] g_auxCG, Matrix[double] z_auxCG, Matrix[double] p_auxCG, 
-              Matrix[double] q_auxCG, Matrix[double] r_auxCG, double pp_auxCG, double pq_auxCG, 
-              double trust_delta_sq_auxCG)
-    return (Matrix[double] new_z_auxCG, double f_change_auxCG)
+    function (Matrix[double] g, Matrix[double] z, Matrix[double] p, 
+              Matrix[double] q, Matrix[double] r, double pp, double pq, 
+              double trust_delta_sq)
+    return (Matrix[double] new_z, double f_change)
 {
-    zz_auxCG = sum (z_auxCG * z_auxCG);  pz_auxCG = sum (p_auxCG * z_auxCG);
-    sq_root_d_auxCG = sqrt (pz_auxCG * pz_auxCG - pp_auxCG * (zz_auxCG - trust_delta_sq_auxCG));
-    tau_auxCG_1 = (- pz_auxCG + sq_root_d_auxCG) / pp_auxCG;
-    tau_auxCG_2 = (- pz_auxCG - sq_root_d_auxCG) / pp_auxCG;
-    zq_auxCG = sum (z_auxCG * q_auxCG);  gp_auxCG = sum (g_auxCG * p_auxCG);
-    f_extra_auxCG = 0.5 * sum (z_auxCG * (r_auxCG + g_auxCG));
-    f_change_auxCG_1 = f_extra_auxCG + (0.5 * tau_auxCG_1 * pq_auxCG + zq_auxCG + gp_auxCG) * tau_auxCG_1;
-    f_change_auxCG_2 = f_extra_auxCG + (0.5 * tau_auxCG_2 * pq_auxCG + zq_auxCG + gp_auxCG) * tau_auxCG_2;
-    if (f_change_auxCG_1 < f_change_auxCG_2) {
-        new_z_auxCG = z_auxCG + (tau_auxCG_1 * p_auxCG);
-        f_change_auxCG = f_change_auxCG_1;
+    zz = sum (z * z);  pz = sum (p * z);
+    sq_root_d = sqrt (pz * pz - pp * (zz - trust_delta_sq));
+    tau_1 = (- pz + sq_root_d) / pp;
+    tau_2 = (- pz - sq_root_d) / pp;
+    zq = sum (z * q);  gp = sum (g * p);
+    f_extra = 0.5 * sum (z * (r + g));
+    f_change_1 = f_extra + (0.5 * tau_1 * pq + zq + gp) * tau_1;
+    f_change_2 = f_extra + (0.5 * tau_2 * pq + zq + gp) * tau_2;
+    if (f_change_1 < f_change_2) {
+        new_z = z + (tau_1 * p);
+        f_change = f_change_1;
     }
     else {
-        new_z_auxCG = z_auxCG + (tau_auxCG_2 * p_auxCG);
-        f_change_auxCG = f_change_auxCG_2;
+        new_z = z + (tau_2 * p);
+        f_change = f_change_2;
     }
+}
+
+
+round_to_print = function (double x_to_truncate)
+return (double mantissa, int eee)
+{
+    mantissa = 1.0;
+    eee = 0;
+    positive_infinity = 1.0 / 0.0;
+    x = abs (x_to_truncate);
+    if (x != x / 2.0) {
+        log_ten = log (10.0);
+        d_eee = round (log (x) / log_ten - 0.5);
+        mantissa = round (x * exp (log_ten * (4.0 - d_eee))) / 10000;
+        if (mantissa == 10.0) {
+            mantissa = 1.0;
+            d_eee = d_eee + 1;
+        }
+        if (x_to_truncate < 0.0) {
+            mantissa = - mantissa;
+        }
+        eee = 0;
+        pow_two = 1;
+        res_eee = abs (d_eee);
+        while (res_eee != 0.0) {
+            new_res_eee = round (res_eee / 2.0 - 0.3);
+            if (new_res_eee * 2.0 < res_eee) {
+                eee = eee + pow_two;
+            }
+            res_eee = new_res_eee;
+            pow_two = 2 * pow_two;
+        }
+        if (d_eee < 0.0) {
+            eee = - eee;
+        }
+    } else { mantissa = x_to_truncate; }
 }

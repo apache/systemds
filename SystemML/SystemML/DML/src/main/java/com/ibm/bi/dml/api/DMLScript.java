@@ -598,7 +598,9 @@ public class DMLScript
 		
 		//explain runtime program
 		if( EXPLAIN ) {
-			LOG.info("EXPLAIN (runtime program):\n" + Explain.explain( rtprog ) );
+			LOG.info("EXPLAIN (runtime program):\n" 
+					 + Explain.explainMemoryBudget()
+					 + Explain.explain( rtprog ) );
 		}
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());

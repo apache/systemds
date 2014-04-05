@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import java.text.DecimalFormat;
-
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
@@ -45,8 +43,6 @@ public class OptimizerUtils
 	public static final long BOOLEAN_SIZE = 1;
 	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
-	private static DecimalFormat df = new DecimalFormat("#.##");
-	
 	/**
 	 * Enables/disables dynamic re-compilation of lops/instructions.
 	 * If enabled, we recompile each program block that contains at least
@@ -464,6 +460,6 @@ public class OptimizerUtils
 	public static String toMB(double inB) {
 		if ( inB < 0 )
 			return "-";
-		return String.valueOf( df.format((inB/(1024*1024))) ) + "";
+		return String.format("%.0f", inB/(1024*1024) );
 	}
 }

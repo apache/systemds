@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -34,6 +35,22 @@ public class Explain
 	
 	
 	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static String explainMemoryBudget()
+	{
+		StringBuffer sb = new StringBuffer();
+		sb.append( "# Memory Budget local/remote = " );
+		sb.append( OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) );
+		sb.append( "MB/" );
+		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudget()) );
+		sb.append( "MB" );
+		
+		return sb.toString();		 
+	}
 	
 	/**
 	 * 

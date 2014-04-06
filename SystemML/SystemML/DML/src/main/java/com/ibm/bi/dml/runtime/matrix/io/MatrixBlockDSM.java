@@ -1011,8 +1011,8 @@ public class MatrixBlockDSM extends MatrixValue
 		if ( limit < 0 ) {
 			throw new DMLRuntimeException("Unexpected error in sparseToDense().. limit < 0: " + rlen + ", " + clen + ", " + limit);
 		}
-		if(denseBlock==null || denseBlock.length < limit )
-			denseBlock=new double[limit];
+		
+		allocateDenseBlock();
 		Arrays.fill(denseBlock, 0, limit, 0);
 		nonZeros=0;
 		
@@ -1420,21 +1420,24 @@ public class MatrixBlockDSM extends MatrixValue
 		//copy values
 		double val;		
 		for( int i=0, ix=0; i<src.rlen; i++, ix+=src.clen )
-			if( sparseRows[rl+i] == null || sparseRows[rl+i].size()==0 )
+		{
+			int rix = rl + i;
+			if( sparseRows[rix]==null || sparseRows[rix].size()==0 )
 			{
-				if( sparseRows[rl+i]==null )
-					sparseRows[rl+i] = new SparseRow(estimatedNNzsPerRow, clen); 
-				SparseRow brow = sparseRows[rl+i];
 				for( int j=0; j<src.clen; j++ )
 					if( (val = src.denseBlock[ix+j]) != 0 )
-						brow.append(cl+j, val); 
+					{
+						if( sparseRows[rix]==null )
+							sparseRows[rix] = new SparseRow(estimatedNNzsPerRow, clen); 
+						sparseRows[rix].append(cl+j, val); 
+					}
 				
-				if( awareDestNZ )
-					nonZeros += brow.size();
+				if( awareDestNZ && sparseRows[rix]!=null )
+					nonZeros += sparseRows[rix].size();
 			}
 			else if( awareDestNZ ) //general case (w/ awareness NNZ)
 			{
-				SparseRow brow = sparseRows[rl+i];
+				SparseRow brow = sparseRows[rix];
 				int lnnz = brow.size();
 				if( cl==cu ) 
 				{
@@ -1454,11 +1457,12 @@ public class MatrixBlockDSM extends MatrixValue
 			}	
 			else //general case (w/o awareness NNZ)
 			{
-				SparseRow brow = sparseRows[rl+i];
+				SparseRow brow = sparseRows[rix];
 				for( int j=0; j<src.clen; j++ )
 					if( (val = src.denseBlock[ix+j]) != 0 ) 
 						brow.set(cl+j, val);
-			}		
+			}
+		}
 	}
 	
 	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ)
@@ -2253,9 +2257,7 @@ public class MatrixBlockDSM extends MatrixValue
 				(op.fn instanceof Multiply && !that.sparse )))
 		{
 			//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
-			
-			if( result.denseBlock==null )
-				result.denseBlock = new double[result.rlen * result.clen];
+			result.allocateDenseBlock();
 			int m = result.rlen;
 			int n = result.clen;
 			double[] c = result.denseBlock;
@@ -2324,12 +2326,10 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 		else if( !result.sparse && !this.sparse && !that.sparse && this.denseBlock!=null && that.denseBlock!=null )
 		{
-			if( result.denseBlock==null )
-				result.denseBlock = new double[result.rlen * result.clen];
+			result.allocateDenseBlock();
 			int m = result.rlen;
 			int n = result.clen;
 			double[] c = result.denseBlock;
-			
 			
 			//int nnz = 0;
 			for( int i=0; i<m*n; i++ )
@@ -2357,9 +2357,6 @@ public class MatrixBlockDSM extends MatrixValue
 				}
 		}
 		
-	//	System.out.println("-- input 1: \n"+this.toString());
-	//	System.out.println("-- input 2: \n"+that.toString());
-	//	System.out.println("~~ output: \n"+result);
 		return result;
 	}
 	
@@ -2372,16 +2369,12 @@ public class MatrixBlockDSM extends MatrixValue
 		else
 			result.reset(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
-		//double st = System.nanoTime();
-		double v;
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++)
 			{
-				v=op.fn.execute(this.quickGetValue(r, c), that.quickGetValue(r, c));
+				double v = op.fn.execute(this.quickGetValue(r, c), that.quickGetValue(r, c));
 				result.appendValue(r, c, v);
 			}
-		//double en = System.nanoTime();
-		//System.out.println("denseBinaryHelp()-new: " + (en-st)/Math.pow(10, 9) + " sec.");
 		
 		return result;
 	}
@@ -2424,34 +2417,23 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 	private static void appendLeftForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int size1, 
-				int startPosition, int resultRow, MatrixBlockDSM result) 
+				int pos, int resultRow, MatrixBlockDSM result) 
 		throws DMLRuntimeException
 	{
-		int column;
-		double v;
-		int p1=startPosition;
-		//take care of left over
-		while(p1<size1)
+		for(int j=pos; j<size1; j++)
 		{
-			v=op.fn.execute(values1[p1], 0);
-			column=cols1[p1];
-			p1++;	
-			result.appendValue(resultRow, column, v);
+			double v = op.fn.execute(values1[j], 0);
+			result.appendValue(resultRow, cols1[j], v);
 		}
 	}
 	
 	private static void appendRightForSparseBinary(BinaryOperator op, double[] values2, int[] cols2, int size2, 
-			int startPosition, int resultRow, MatrixBlockDSM result) throws DMLRuntimeException
+		int pos, int resultRow, MatrixBlockDSM result) throws DMLRuntimeException
 	{
-		int column;
-		double v;
-		int p2=startPosition;
-		while(p2<size2)
+		for( int j=pos; j<size2; j++ )
 		{
-			v=op.fn.execute(0, values2[p2]);
-			column=cols2[p2];
-			p2++;
-			result.appendValue(resultRow, column, v);
+			double v = op.fn.execute(0, values2[j]);
+			result.appendValue(resultRow, cols2[j], v);
 		}
 	}
 	
@@ -4828,9 +4810,7 @@ public class MatrixBlockDSM extends MatrixValue
 			else //DENSE <- SPARSE
 			{
 				ret.sparse = false;
-				int mn = ret.rlen * ret.clen;
-				if(ret.denseBlock==null)
-					ret.denseBlock = new double[ mn ];	
+				ret.allocateDenseBlock();	
 				SparseRow[] a = sparseRows;
 				double[] c = ret.denseBlock;
 				
@@ -4857,8 +4837,7 @@ public class MatrixBlockDSM extends MatrixValue
 		else //DENSE <- DENSE
 		{
 			int mn = ret.rlen * ret.clen;
-			if(ret.denseBlock==null)
-				ret.denseBlock = new double[ mn ];	
+			ret.allocateDenseBlock();
 			double[] a = denseBlock;
 			double[] c = ret.denseBlock;
 			
@@ -5182,27 +5161,27 @@ public class MatrixBlockDSM extends MatrixValue
 						}
 					}
 				}	
-			}else if(this.sparseRows==null)
+			}
+			else if(this.sparseRows==null)
 			{
 				this.sparseRows=new SparseRow[rlen];
 				for(int r=0; r<rlen; r++)
 				{
-					if(that.sparseRows[r]==null)
-						continue;
-					
-					this.sparseRows[r]=new SparseRow(that.sparseRows[r].size(), clen);
-					appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
-							that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, this);
-				}
-				
-			}else
+					SparseRow brow = that.sparseRows[r];
+					if( brow!=null && brow.size()>0 )
+					{
+						this.sparseRows[r] = new SparseRow( brow.size(), clen );
+						appendRightForSparseBinary(op, brow.getValueContainer(), brow.getIndexContainer(), brow.size(), 0, r, this);
+					}
+				}				
+			}
+			else //that.sparseRows==null
 			{
 				for(int r=0; r<rlen; r++)
 				{
-					if(this.sparseRows[r]==null)
-						continue;
-					appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
-							this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, this);
+					SparseRow arow = this.sparseRows[r];
+					if( arow!=null && arow.size()>0 )
+						appendLeftForSparseBinary(op, arow.getValueContainer(), arow.getIndexContainer(), arow.size(), 0, r, this);
 				}
 			}
 		}else

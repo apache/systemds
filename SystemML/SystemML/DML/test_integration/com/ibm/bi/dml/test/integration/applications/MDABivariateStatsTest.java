@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2014
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.integration.applications;
 
 import java.util.Arrays;
@@ -17,7 +24,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 @RunWith(value = Parameterized.class)
-public class MDABivariateStatsTest extends AutomatedTestBase {
+public class MDABivariateStatsTest extends AutomatedTestBase 
+{
+	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
@@ -35,8 +44,8 @@ public class MDABivariateStatsTest extends AutomatedTestBase {
 	
 	@Parameters
 	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { { 10000, 100, 1, 1 }, { 10000, 100, 100, 0}
-			   							  //, { 100000, 100, 1, 1 }, { 100000, 100, 100, 0}
+	   Object[][] data = new Object[][] { { 10000, 100, 1, 1 }, { 10000, 100, 100, 0}, 
+			                              { 100000, 100, 1, 1 }, { 100000, 100, 100, 0}
 			   							  };
 	   return Arrays.asList(data);
 	 }

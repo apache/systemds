@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.hops.rewrite;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,7 +35,7 @@ public abstract class StatementBlockRewriteRule
 	 * @param root
 	 * @throws HopsException 
 	 */
-	public abstract StatementBlock rewriteStatementBlock( StatementBlock sb ) 
+	public abstract ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb ) 
 		throws HopsException;
 	
 }

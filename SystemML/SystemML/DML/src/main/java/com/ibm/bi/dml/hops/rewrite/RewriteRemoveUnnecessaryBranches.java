@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -30,10 +29,10 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
-	public StatementBlock rewriteStatementBlock(StatementBlock sb)
+	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb)
 		throws HopsException 
 	{
-		StatementBlock ret = sb;
+		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 		
 		if( sb instanceof IfStatementBlock )
 		{
@@ -51,33 +50,25 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 				{
 					//pull-out simple if body
 					int len = istmt.getIfBody().size();
-					if( len == 1 )
-						ret = istmt.getIfBody().get(0);	//pull if-branch
-					else if( len == 0 )
-						ret = null; //remove if branch
-					//otherwise (len>1): sb unchanged
+					if( len >= 1 )
+						ret.addAll( istmt.getIfBody() ); //pull if-branch
+					//otherwise: add nothing (remove if-else)
 				}
 				else
 				{
 					//pull-out simple else body
 					int len = istmt.getElseBody().size();
-					if( len == 1 )
-						ret = istmt.getElseBody().get(0);
-					else if( len == 0 )
-						ret = null; 
-					//otherwise (len>1): sb unchanged
+					if( len >= 1 )
+						ret.addAll( istmt.getElseBody() ); //pull else-branch
+					//otherwise: add nothing (remove if-else)
 				}
 			}
+			else //keep original sb (non-constant condition)
+				ret.add( sb );
 		}
+		else //keep original sb (no if)
+			ret.add( sb );
 		
-		return ret;
-	}
-	
-	private StatementBlock createEmptyStatementBlock()
-	{
-		StatementBlock ret = new StatementBlock(); //empty
-		ret.set_hops(new ArrayList<Hop>());
-		ret.set_lops(new ArrayList<Lop>());
 		return ret;
 	}
 }

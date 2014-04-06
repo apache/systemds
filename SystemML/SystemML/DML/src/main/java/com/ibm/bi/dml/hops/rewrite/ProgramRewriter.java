@@ -186,22 +186,15 @@ public class ProgramRewriter
 	private ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs ) 
 		throws HopsException
 	{
-		int len = sbs.size();
+		ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();
 		
-		//rewrite statement blocks
-		for( int i=0; i<len; i++ )
-			sbs.set(i, rewriteStatementBlock( sbs.get(i) ) );
+		//rewrite statement blocks (with potential expansion)
+		for( StatementBlock sb : sbs )
+			tmp.addAll( rewriteStatementBlock(sb) );
 		
-		//remove empty slots
-		int pos = 0;
-		for( int i=0; i<len; i++ )
-		{
-			StatementBlock sb = sbs.get(i);
-			if( sb != null )
-				sbs.set(pos++, sb);
-		}
-		while( pos<sbs.size() )
-			sbs.remove(pos);
+		//copy results into original collection
+		sbs.clear();
+		sbs.addAll( tmp );
 		
 		return sbs;
 	}
@@ -212,14 +205,18 @@ public class ProgramRewriter
 	 * @return
 	 * @throws HopsException
 	 */
-	private StatementBlock rewriteStatementBlock( StatementBlock sb ) 
+	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb ) 
 		throws HopsException
 	{
+		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
+		ret.add(sb);
+		
+		//recursive invocation
 		if (sb instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );			
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
@@ -244,9 +241,15 @@ public class ProgramRewriter
 		//apply rewrite rules
 		for( StatementBlockRewriteRule r : _sbRuleSet )
 		{
-			sb = r.rewriteStatementBlock(sb);
+			ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();			
+			for( StatementBlock sbc : ret )
+				tmp.addAll( r.rewriteStatementBlock(sbc) );
+			
+			//take over set of rewritten sbs		
+			ret.clear();
+			ret.addAll(tmp);
 		}
 		
-		return sb;
+		return ret;
 	}
 }

@@ -1,0 +1,39 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# This script can be used to compute label predictions
+# Meant for use with a model learnt using l2-svm.dml
+#
+# Given ground truth labels, the script will compute an 
+# accuracy (%) for the predictions
+#
+# Example Usage:
+# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs DATA=X 
+#  	     		     			    	      	  	  LABEL=Y 
+#							    	  				  INTERCEPT=0 
+#							    	  				  MODEL=w
+#
+# Note about inputs: 
+# Assumes that labels (entries in Y) are set to either -1 or +1
+
+$INTERCEPT = 0
+
+X = read($DATA)
+y = read($LABEL)
+intercept = $INTERCEPT
+w = read($MODEL)
+b = 0.0
+if(intercept == 1){
+  b = castAsScalar(w[nrow(w),1])
+}
+scores = b + (X %*% w[1:ncol(X),])
+pred = 2*ppred(scores, 0, ">") - 1
+num_correct = sum(ppred(pred, y, "=="))
+acc = 100*num_correct/nrow(X)
+print("CORRECT PERCENTAGE: " + acc)

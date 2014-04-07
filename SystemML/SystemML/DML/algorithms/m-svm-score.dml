@@ -1,0 +1,50 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# This script can be used to compute label predictions
+# Meant for use with an SVM model (learnt using m-svm.dml) on a held out test set
+#
+# Given ground truth labels, the script will compute an 
+# accuracy (%) for the predictions
+#
+# Example Usage:
+# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs DATA=X 
+#  	     		     		     	     			 SPECIFIED_Y=y_specified 
+#						     						 LABEL=y 
+#						     						 INTERCEPT=intercept 
+#						     						 MODEL=W 
+#						     						 SCORES=scores 
+#						     						 PREDICTED=predicted_y
+
+$INTERCEPT=0
+$SPECIFIED_Y=0
+
+X = read($DATA);
+intercept = $INTERCEPT
+W = read($MODEL);
+
+Nt = nrow(X);
+num_classes = ncol(W)
+b = Rand(rows=1, cols=num_classes, min=0, max=0, pdf="uniform")
+n=ncol(X);
+if (intercept == 1) {
+ b = W[n+1,]
+}
+ones = Rand(rows=Nt, cols=1, min=1, max=1, pdf="uniform")
+scores = X %*% W[1:n,] + ones %*% b;
+write(scores, $SCORES, format="text");
+
+predicted_y = rowIndexMax(scores);
+write(predicted_y, $PREDICTED, format="text");
+
+if ($SPECIFIED_Y == 1) {
+ y = read($LABEL);
+ correct_percentage = sum(ppred(predicted_y - y, 0, "==")) / Nt * 100;
+ print("%CORRECT: " + correct_percentage)
+}

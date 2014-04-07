@@ -37,3 +37,9 @@ pred = 2*ppred(scores, 0, ">") - 1
 num_correct = sum(ppred(pred, y, "=="))
 acc = 100*num_correct/nrow(X)
 print("CORRECT PERCENTAGE: " + acc)
+
+#in case you want to write the predictions to hdfs
+#uncomment the following line
+#write(pred, $PREDICTIONS, format="text")
+#for the above to work, one will need to pass in an
+#extra arg PREDICTIONS=<HDFS Dir> during invocation

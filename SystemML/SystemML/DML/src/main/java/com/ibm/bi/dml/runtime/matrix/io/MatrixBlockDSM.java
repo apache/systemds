@@ -1700,11 +1700,44 @@ public class MatrixBlockDSM extends MatrixValue
 	private void writeSparseToDense(DataOutput out) 
 		throws IOException 
 	{
-		//TODO those binary search operations (quick get on sparse) are absolutely unnecessary.
+		//write block type 'dense'
+		out.writeByte( BlockType.DENSE_BLOCK.ordinal() );
+		
+		//write data (from sparse to dense)
+		if( sparseRows==null ) //empty block
+			for( int i=0; i<rlen*clen; i++ )
+				out.writeDouble(0);
+		else //existing sparse block
+		{
+			for( int i=0; i<rlen; i++ )
+			{
+				if( i<sparseRows.length && sparseRows[i]!=null && sparseRows[i].size()>0 )
+				{
+					SparseRow arow = sparseRows[i];
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();
+					//foreach non-zero value, fill with 0s if required
+					for( int j=0, j2=0; j2<alen; j++, j2++ ) {
+						for( ; j<aix[j2]; j++ )
+							out.writeDouble( 0 );
+						out.writeDouble( avals[j2] );
+					}					
+					//remaining 0 values in row
+					for( int j=aix[alen-1]+1; j<clen; j++)
+						out.writeDouble( 0 );
+				}
+				else //empty row
+					for( int j=0; j<clen; j++ )
+						out.writeDouble( 0 );	
+			}
+		}
+		/* old version with binary search for each cell
 		out.writeByte( BlockType.DENSE_BLOCK.ordinal() );
 		for(int i=0; i<rlen; i++)
 			for(int j=0; j<clen; j++)
 				out.writeDouble(quickGetValue(i, j));
+		*/
 	}
 	
 	private void writeDenseToSparse(DataOutput out) 

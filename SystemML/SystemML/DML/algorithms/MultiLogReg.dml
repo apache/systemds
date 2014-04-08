@@ -1,0 +1,289 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Solves Multinomial Logistic Regression using Trust Region methods.
+# (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location to read the matrix of feature vectors
+# Y     String  ---     Location to read the matrix with category labels
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# test  Int     0       0 = just compute the betas; 1 = test them with Xt and Yt
+# Xt    String  "Xt"    location to read the test feature vectors
+# Yt    String  "Yt"    location to read the test category labels
+# icpt  Int     0       Intercept presence, shifting and rescaling X columns:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double  0.0     regularization parameter (lambda = 1/C); intercept is not regularized
+# tol   Double 0.000001 tolerance ("epsilon")
+# moi   Int     100     max. number of outer (Newton) iterations
+# mii   Int     0       max. number of inner (conjugate gradient) iterations, 0 = no max
+# --------------------------------------------------------------------------------------------
+
+
+$test = 0;
+$Xt   = "Xt";
+$Yt   = "Yt";
+$icpt = 0;
+$reg  = 0.0;
+$tol  = 0.000001;
+$moi  = 100;
+$mii  = 0;
+
+
+# The largest label represents the baseline category; if label -1 or 0 is present, then it is the baseline.
+# How to invoke this dml script?
+# Example:
+# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs test=1 icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
+#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 Xt=INPUT_DIR/Xt123 Yt=INPUT_DIR/Yt123 B=OUTPUT_DIR/B123
+
+print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
+print ("Reading X...");
+X = read ($X);
+print ("Reading Y...");
+Y_vec = read ($Y);
+
+is_test = $test;
+intercept_status = $icpt;
+tol = 0.0 + $tol;
+maxiter = $moi;
+maxinneriter = $mii;
+
+eta0 = 0.0001;
+eta1 = 0.25;
+eta2 = 0.75;
+sigma1 = 0.25;
+sigma2 = 0.5;
+sigma3 = 4.0;
+psi = 0.1;
+
+N = nrow (X);
+D = ncol (X);
+
+# Read the test data files, if required
+if (is_test == 1) {
+    print ("Reading Xt...");
+    Xt = read ($Xt);
+    print ("Reading Yt...");
+    Yt_vec = read ($Yt);
+} else {
+    Xt     = matrix (0.0, rows = 1, cols = D);
+    Yt_vec = matrix (0.0, rows = 1, cols = 1);
+}
+Nt = nrow (Xt);
+ones_N      = matrix (1.0, rows = N , cols = 1  );
+ones_Nt     = matrix (1.0, rows = Nt, cols = 1  );
+
+# Introduce the intercept, shift and rescale the columns of X if needed
+
+shift_X_cols = matrix (0, rows = 1, cols = D);
+scale_X_cols = matrix (1, rows = 1, cols = D);
+scale_lambda = matrix (1, rows = 1, cols = D);
+
+if (intercept_status == 1 | intercept_status == 2) {  # add the intercept column
+    if (intercept_status == 2) { # shift/rescale X columns to mean 0, variance 1
+        shift_X_cols = - colSums(X) / N;
+        X = X + ones_N %*% shift_X_cols;
+        scale_X_cols = sqrt ((N - 1) / colSums (X ^ 2));
+        X = X * (ones_N %*% scale_X_cols);
+    }
+    X  = append (X,  ones_N);
+    Xt = append (Xt, ones_Nt);
+    D = ncol (X);
+    zero_cell = matrix (0, rows = 1, cols = 1);
+    shift_X_cols = append (shift_X_cols, zero_cell);
+    scale_X_cols = append (scale_X_cols, zero_cell + 1);
+    scale_lambda = append (scale_lambda, zero_cell);
+}
+
+# Convert "Y_vec" and "Yt_vec" into indicator matrices
+if (min (Y_vec) <= 0) { 
+    # Category labels "0", "-1" etc. are converted into the largest label
+    max_y = max (Y_vec);
+    Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * ppred (Y_vec , 0.0, "<=");
+    Yt_vec = Yt_vec + (- Yt_vec + max_y + 1) * ppred (Yt_vec, 0.0, "<=");
+}
+seq_N = seq (1, N); # How to use seq: seq (from, to, increment)
+Y = ctable (seq_N, Y_vec);
+K = ncol (Y) - 1;   # The number of  non-baseline categories
+Y = Y [, 1:K];      # Indicators for non-baseline categories
+
+ones_K      = matrix (1.0, rows = 1 , cols = K  );
+ones_Kplus1 = matrix (1.0, rows = 1 , cols = K+1);
+zeros_DK    = matrix (0.0, rows = D , cols = K  );
+zeros_N     = matrix (0.0, rows = N , cols = 1  );
+seqs_Nt_Kplus1 = ones_Nt %*% t(seq (1, K+1));
+
+lambda = (t(scale_lambda) %*% ones_K) * $reg;
+delta = 0.5 * sqrt (D) / max (sqrt (rowSums (X ^ 2)));
+
+B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% B
+LT = matrix (0.0, rows = N, cols = K);  ### P_raw = exp (LT);
+P  = matrix (1.0, rows = N, cols = K);  ### P_denom = 1.0 + rowSums (P_raw);
+P = P / (K + 1);                        ### P = P_raw / (P_denom %*% ones_K);
+obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (P_denom)) + 0.5 * sum (lambda * (B ^ 2));
+
+Grad = t(X) %*% (P - Y) + lambda * B;
+norm_Grad = sqrt (sum (Grad ^ 2));
+norm_Grad_initial = norm_Grad;
+
+iter = 0;
+
+# boolean for convergence check
+converge = (norm_Grad < tol) | (iter > maxiter);
+
+while (! converge)
+{
+	print ("-- Outer Iteration = " + iter);
+	print ("   Objective = " + obj + ",  Gradient Norm = " + norm_Grad);
+	
+	# SOLVE TRUST REGION SUB-PROBLEM
+	S = zeros_DK;
+	R = - Grad;
+	V = R;     # d -> V
+	delta2 = delta * delta;
+	inneriter = 0;
+	norm_R2 = sum (R ^ 2);
+	innerconverge = (sqrt (norm_R2) <= psi * norm_Grad);
+	is_trust_boundary_reached = 0;
+	
+	while (! innerconverge)
+	{
+	    inneriter = inneriter + 1;
+	    Q = P * (X %*% V);
+	    HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K)) + lambda * V;
+		alpha = norm_R2 / sum (V * HV);
+		Snew = S + alpha * V;
+		norm_Snew2 = sum (Snew ^ 2);
+		if (norm_Snew2 <= delta2)
+		{
+			S = Snew;
+			R = R - alpha * HV;
+			old_norm_R2 = norm_R2 
+			norm_R2 = sum (R ^ 2);
+			V = R + (norm_R2 / old_norm_R2) * V;
+			innerconverge = (sqrt (norm_R2) <= psi * norm_Grad) | (inneriter > maxinneriter);
+		} else {
+		   	print ("      --- cg reaches trust region boundary");
+	        is_trust_boundary_reached = 1;
+			sv = sum (S * V);
+			v2 = sum (V ^ 2);
+			s2 = sum (S ^ 2);
+			rad = sqrt (sv ^ 2 + v2 * (delta2 - s2));
+			if (sv >= 0) {
+				alpha = (delta2 - s2) / (sv + rad);
+			} else {
+				alpha = (rad - sv) / v2;
+			}
+			S = S + alpha * V;
+			R = R - alpha * HV;
+			innerconverge = true;
+		}
+	}  
+	
+	print ("      --- Inner CG Iteration =  " + inneriter);
+	# END TRUST REGION SUB-PROBLEM
+	
+	# compute rho, update B, obtain delta
+	gs = sum (S * Grad);
+	qk = - 0.5 * (gs - sum (S * R));
+	B_new = B + S;
+	
+    LT_new = X %*% B_new;
+    P_raw_new = exp (LT_new);
+    P_denom_new = 1.0 + rowSums (P_raw_new);
+    P_new = P_raw_new / (P_denom_new %*% ones_K);
+    obj_new = - sum (Y * LT_new) + sum (log (P_denom_new)) + 0.5 * sum (lambda * (B_new ^ 2));
+	
+	# Consider following Vikas's lead and updating LT_new in the inner loop
+	
+	
+	#######################################
+	###        C A U T I O N  !         ###
+	###  BOTH obj AND obj_new ARE BIG,  ###
+	###  BUT THEIR DIFFERENCE IS SMALL  ### 
+	#######################################
+	actred = (obj - obj_new);
+	
+	rho = actred / qk;
+	snorm = sqrt (sum (S ^ 2));
+	print ("     Actual    = " + actred);
+	print ("     Predicted = " + qk);
+	
+	if (iter == 0) {
+	   delta = min (delta, snorm);
+	}
+
+	alpha2 = obj_new - obj - gs;
+	if (alpha2 <= 0) {
+	   alpha = sigma3;
+	} 
+	else {
+	   alpha = max (sigma1, -0.5 * gs / alpha2);
+	}
+
+	if (rho > eta0)
+	{
+		B = B_new;
+		LT = LT_new;
+		P = P_new;
+		Grad = t(X) %*% (P - Y) + lambda * B;
+		norm_Grad = sqrt (sum (Grad * Grad));
+		obj = obj_new;
+	}
+	
+	if (rho < eta0) {
+		delta = min (max (alpha, sigma1) * snorm, sigma2 * delta);
+	}
+	else {
+		if (rho < eta1) {
+			delta = max (sigma1 * delta, min (alpha * snorm, sigma2 * delta));
+		}
+		else { 
+			if (rho < eta2) {
+				delta = max (sigma1 * delta, min (alpha * snorm, sigma3 * delta));
+			}
+			else {
+				delta = max (delta, min (alpha * snorm, sigma3 * delta));
+			}
+		}
+	} 
+	
+	iter = iter + 1;
+	converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxiter) |
+	    ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 0.00000000000001)));
+	print ("     Delta =  "     + delta);
+	print ("     Rho = "        + rho);
+	print ("     OuterIter =  " + iter);
+	print ("     Converge =  "  + converge);
+
+	if (is_test == 1) {
+	    LText_test = matrix (0.0, rows = Nt, cols = K+1);
+	    LText_test [, 1:K] = Xt %*% B;
+	    Yt_vec_predicted = rowSums (seqs_Nt_Kplus1 
+		    * ppred (LText_test, rowMaxs (LText_test) %*% ones_Kplus1, "=="));
+	    correct = sum (ppred (Yt_vec_predicted, Yt_vec, "=="));
+	    accuracy = correct * 100.0 / Nt;
+        print ("     Accuracy =  "  + accuracy);
+        print ("     Correct =  "   + correct);
+	}
+} 
+
+B_out = B;
+if (intercept_status == 2) {
+    B_out = (t(scale_X_cols) %*% ones_K) * B_out;
+    B_out [D, ] = B_out [D, ] + shift_X_cols %*% B_out;
+}
+
+
+writeMM (B_out, $B);

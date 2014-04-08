@@ -32,6 +32,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.CSVReBlock;
@@ -801,7 +802,10 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rUpdateStatistics(c, vars);	
 		
-		if( hop instanceof DataOp )
+		//update statitics for transient reads according to current statistics
+		//(with awareness not to override persistent reads to an existing name)
+		if(     hop instanceof DataOp 
+			&& ((DataOp)hop).get_dataop() != DataOpTypes.PERSISTENTREAD )
 		{
 			DataOp d = (DataOp) hop;
 			String varName = d.get_name();

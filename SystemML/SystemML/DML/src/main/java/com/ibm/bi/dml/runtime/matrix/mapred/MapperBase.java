@@ -151,7 +151,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		}
 	}
 
-	private void loadDistCacheFiles(JobConf job, long[] rlens, long[] clens) throws IOException {
+	private void loadDistCacheFiles(JobConf job, long[] rlens, long[] clens, int[] brlens, int[] bclens) throws IOException {
 		
 		if ( MRJobConfiguration.getDistCacheInputIndices(job) == null )
 			return;
@@ -183,8 +183,10 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 				
 				dcInputs[i] = new DistributedCacheInput(
 									p, 
-									MRJobConfiguration.getNumRows(job, inputIndex), 
-									MRJobConfiguration.getNumColumns(job, inputIndex),
+									MRJobConfiguration.getNumRows(job, inputIndex), //rlens[inputIndex],
+									MRJobConfiguration.getNumColumns(job, inputIndex), //clens[inputIndex],
+									MRJobConfiguration.getNumRowsPerBlock(job, inputIndex), //brlens[inputIndex],
+									MRJobConfiguration.getNumColumnsPerBlock(job, inputIndex), //bclens[inputIndex],
 									inputPartitionFlags[i],
 									inputPartitionFormats[i],
 									inputPartitionSizes[i]
@@ -296,7 +298,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		//load data from distributed cache (if required, reuse if jvm_reuse)
 		try
 		{
-			loadDistCacheFiles(job, rlens, clens);
+			loadDistCacheFiles(job, rlens, clens, brlens, bclens);
 		}
 		catch(IOException ex)
 		{

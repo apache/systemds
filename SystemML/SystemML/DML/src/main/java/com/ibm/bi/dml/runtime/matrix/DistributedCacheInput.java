@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2014
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.ArrayList;
@@ -12,74 +19,95 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 
-public class DistributedCacheInput {
+public class DistributedCacheInput 
+{	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private Path localFilePath;
-	private long numRows, numCols;
+	private Path localFilePath = null;
+	private long _rlen = -1;
+	private long _clen = -1;
+	private int _brlen = -1;
+	private int _bclen = -1;
 	
-	private boolean isPartitioned;
-	private PDataPartitionFormat pFormat;
-	private int pSize;
+	private boolean isPartitioned = false;
+	private PDataPartitionFormat pFormat = PDataPartitionFormat.NONE;
+	private int pSize = -1;
 	
-	IndexedMatrixValue[][] dataBlocks;
+	private IndexedMatrixValue[][] dataBlocks = null;
 	
 	
-	private void init() {
-		localFilePath = null;
-		numRows = numCols = -1;
-		isPartitioned = false;
-		pFormat = PDataPartitionFormat.NONE;
-		pSize = -1;
-		dataBlocks = null;
-	}
-	
-	public DistributedCacheInput() {
-		init();
-	}
-	
-	public DistributedCacheInput(Path p, long rows, long cols) {
-		init();
+	public DistributedCacheInput(Path p, long rows, long cols, int brlen, int bclen) 
+	{
 		localFilePath = p;
-		numRows = rows;
-		numCols = cols;
+		_rlen = rows;
+		_clen = cols;
+		_brlen = brlen;
+		_bclen = bclen;
 	}
 	
-	public DistributedCacheInput(Path p, long rows, long cols, boolean partitioned, PDataPartitionFormat pfmt, int psize) {
-		init();
-		localFilePath = p;
-		numRows = rows;
-		numCols = cols;
+	public DistributedCacheInput(Path p, long rows, long cols, int brlen, int bclen, 
+			                     boolean partitioned, PDataPartitionFormat pfmt, int psize) 
+	{
+		this(p, rows, cols, brlen, bclen);
 		isPartitioned = partitioned;
 		pFormat = pfmt;
 		pSize = psize;
 	}
 	
-	public void reset() {
-		init();
+	/**
+	 * 
+	 */
+	public void reset() 
+	{
+		localFilePath = null;
+		_rlen = -1;
+		_clen = -1;
+		_brlen = -1;
+		_bclen = -1;
+		isPartitioned = false;
+		pFormat = PDataPartitionFormat.NONE;
+		pSize = -1;
+		dataBlocks = null;
 	}
 
-	public IndexedMatrixValue getDataBlock(long rowBlockIndex,
-			long colBlockIndex, int rowBlockSize, int colBlockSize)
-			throws DMLRuntimeException {
+	/**
+	 * 
+	 * @param rowBlockIndex
+	 * @param colBlockIndex
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public IndexedMatrixValue getDataBlock(long rowBlockIndex, long colBlockIndex)
+		throws DMLRuntimeException 
+	{
 		if (dataBlocks == null)
-			readDataBlocks(rowBlockSize, colBlockSize);
+			readDataBlocks(_brlen, _bclen);
 		return dataBlocks[(int) rowBlockIndex - 1][(int) colBlockIndex - 1];
 	}
 	
+	/**
+	 * 
+	 * @param rowBlockSize
+	 * @param colBlockSize
+	 * @throws DMLRuntimeException
+	 */
 	private void readDataBlocks(int rowBlockSize, int colBlockSize)
-			throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		if (!isPartitioned) // entire vector
 		{
 			try {
 				ArrayList<IndexedMatrixValue> tmp = DataConverter
 						.readMatrixBlocksFromHDFS(localFilePath.toString(),
 								InputInfo.BinaryBlockInputInfo,
-								numRows, // use rlens
-								numCols, rowBlockSize, colBlockSize,
+								_rlen, _clen, 
+								_brlen, _bclen,
 								!MRBaseForCommonInstructions.isJobLocal);
 
-				int rowBlocks = (int) Math.ceil(numRows / (double) rowBlockSize);
-				int colBlocks = (int) Math.ceil(numCols / (double) colBlockSize);
+				int rowBlocks = (int) Math.ceil(_rlen / (double) _brlen);
+				int colBlocks = (int) Math.ceil(_clen / (double) _bclen);
 
 				dataBlocks = new IndexedMatrixValue[rowBlocks][colBlocks];
 
@@ -91,7 +119,8 @@ public class DistributedCacheInput {
 				throw new DMLRuntimeException(ex);
 			}
 
-		} else // partitioned input
+		} 
+		else // partitioned input
 		{
 			throw new DMLRuntimeException(
 					"Partitioned inputs are not supported.");
@@ -212,34 +241,45 @@ public class DistributedCacheInput {
 		this.localFilePath = localFilePath;
 	}
 	public long getNumRows() {
-		return numRows;
-	}
-	public void setNumRows(long numRows) {
-		this.numRows = numRows;
+		return _rlen;
 	}
 	public long getNumCols() {
-		return numCols;
+		return _clen;
+	}
+	public int getNumRowsPerBlock(){
+		return _brlen;
+	}
+	public int getNumColsPerBlock(){
+		return _bclen;
+	}
+	
+	public boolean isPartitioned() {
+		return isPartitioned;
+	}
+	
+	public PDataPartitionFormat getpFormat() {
+		return pFormat;
+	}
+
+	public int getpSize() {
+		return pSize;
+	}
+	
+	/*
+	public void setNumRows(long numRows) {
+		this.numRows = numRows;
 	}
 	public void setNumCols(long numCols) {
 		this.numCols = numCols;
 	}
-	public boolean isPartitioned() {
-		return isPartitioned;
-	}
 	public void setPartitioned(boolean isPartitioned) {
 		this.isPartitioned = isPartitioned;
 	}
-	public PDataPartitionFormat getpFormat() {
-		return pFormat;
-	}
 	public void setpFormat(PDataPartitionFormat pFormat) {
 		this.pFormat = pFormat;
-	}
-	public int getpSize() {
-		return pSize;
-	}
+	}	
 	public void setpSize(int pSize) {
 		this.pSize = pSize;
 	}
-	
+	*/
 }

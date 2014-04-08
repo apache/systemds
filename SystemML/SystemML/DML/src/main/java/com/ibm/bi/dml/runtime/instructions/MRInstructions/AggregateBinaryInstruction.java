@@ -137,14 +137,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
 			long in2_cols = dcInput.getNumCols();
-			int  in2_colBlocks = (int) Math.ceil(in2_cols/(double)blockColFactor);
+			int  in2_colBlocks = (int) Math.ceil(((double)in2_cols)/dcInput.getNumColsPerBlock());
 			
 			for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
 			{	
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in2Block = dcInput.getDataBlock(in1.getIndexes().getColumnIndex(), bidx, blockRowFactor, blockColFactor);
+				IndexedMatrixValue in2Block = dcInput.getDataBlock(in1.getIndexes().getColumnIndex(), bidx);
 							
 				MatrixValue in2BlockValue = in2Block.getValue(); 
 				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
@@ -165,14 +165,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
 			
 			long in1_rows = dcInput.getNumRows();
-			int  in1_rowsBlocks = (int) Math.ceil(in1_rows/(double)blockRowFactor);
+			int  in1_rowsBlocks = (int) Math.ceil(((double)in1_rows)/dcInput.getNumRowsPerBlock());
 			
 			for(int bidx=1; bidx <= in1_rowsBlocks; bidx++) {
 				
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, in2.getIndexes().getRowIndex(), blockRowFactor, blockColFactor);
+				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, in2.getIndexes().getRowIndex());
 							
 				MatrixValue in1BlockValue = in1Block.getValue(); 
 				MatrixIndexes in1BlockIndex = in1Block.getIndexes();

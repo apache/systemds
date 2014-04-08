@@ -76,7 +76,7 @@ public class AppendMInstruction extends BinaryMRInstructionBase
 			else
 			{
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-				MatrixValue value_in2 = dcInput.getDataBlock(in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor).getValue();
+				MatrixValue value_in2 = dcInput.getDataBlock(in1.getIndexes().getRowIndex(), 1).getValue();
 				
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);

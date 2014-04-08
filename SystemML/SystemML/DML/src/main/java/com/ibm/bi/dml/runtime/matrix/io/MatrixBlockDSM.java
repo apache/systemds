@@ -1249,7 +1249,7 @@ public class MatrixBlockDSM extends MatrixValue
 			
 			for(int j=0; j<clen; j++)
 			{
-				double val = that.denseBlock[ix];
+				double val = that.denseBlock[ix++];
 				if( val != 0 )
 				{
 					if(sparseRows[i]==null) //create sparse row only if required

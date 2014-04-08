@@ -76,7 +76,7 @@ source ("CGSteihaug.dml");
 
 
 # Default values for input parameters
-/*
+
 $dfam = 1;
 $vpow = 0.0;
 $link = 0;
@@ -88,7 +88,7 @@ $tol  = 0.000001;
 $disp = 0.0;
 $moi  = 200;
 $mii  = 0;
-*/
+
 
 print("BEGIN GLM SCRIPT");
 print("Reading X...");

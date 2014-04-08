@@ -137,6 +137,9 @@ Grad = t(X) %*% (P - Y) + lambda * B;
 norm_Grad = sqrt (sum (Grad ^ 2));
 norm_Grad_initial = norm_Grad;
 
+if (maxinneriter == 0) {
+    maxinneriter = D * K;
+}
 iter = 0;
 
 # boolean for convergence check

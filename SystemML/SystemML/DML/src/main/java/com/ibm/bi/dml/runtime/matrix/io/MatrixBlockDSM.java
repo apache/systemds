@@ -1940,6 +1940,13 @@ public class MatrixBlockDSM extends MatrixValue
 			return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
 	}
 	
+	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, int nnzm1, int nnzm2)
+	{
+		boolean ret = (clenm1>SKINNY_MATRIX_TURN_POINT);
+		long ennz = Math.min(rlenm1*clenm1, nnzm1+nnzm2);
+		return (ret && (((double)ennz)/rlenm1/clenm1) < SPARCITY_TURN_POINT);
+	}
+	
 	
 	////////
 	// Core block operations (called from instructions)
@@ -2907,12 +2914,13 @@ public class MatrixBlockDSM extends MatrixValue
 					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
 		}
 		MatrixBlockDSM result=checkType(ret);
+		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, rhsMatrix.getNonZeros());
 		if(result==null)
-			result=new MatrixBlockDSM(this);
-		else {
-			//result.reset(ru-rl+1, cu-cl+1, result_sparsity);			
-			 result.copy(this);
-		}
+			result=new MatrixBlockDSM(rlen, clen, sp);
+		else
+			result.reset(rlen, clen, sp);
+		result.copy(this, sp);
+		
 		//NOTE conceptually we could directly use a zeroout and copy(..., false) but
 		//     since this was factors slower, we still use a full copy and subsequently
 		//     copy(..., true) - however, this can be changed in the future once we 

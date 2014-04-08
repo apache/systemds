@@ -412,16 +412,19 @@ public class ProgramBlock
 			if( dat instanceof MatrixObject )
 			{
 				MatrixObject mo = (MatrixObject)dat;
-				if( mo.isDirty() ){
-					MatrixBlock mb = mo.acquireRead();
+				if( mo.isDirty() && !mo.isPartitioned() )
+				{
+					MatrixBlock mb = mo.acquireRead();	
 					boolean sparse1 = mb.isInSparseFormat();
-					mb.recomputeNonZeros();
-					mb.examSparsity();
+					synchronized( mb ) { //potential state change
+						mb.recomputeNonZeros();
+						mb.examSparsity();
+					}
 					boolean sparse2 = mb.isInSparseFormat();
 					mo.release();
 					
 					if( sparse1 != sparse2 )
-						throw new DMLRuntimeException("Matrix was in wrong data representation: (actual="+sparse1+", expected="+sparse2+", inst="+lastInst+")");
+						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2+", inst="+lastInst+")");
 				}
 			}
 		}

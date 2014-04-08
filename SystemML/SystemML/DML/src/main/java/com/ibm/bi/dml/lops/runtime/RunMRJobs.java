@@ -616,7 +616,8 @@ public class RunMRJobs
 			//CP Rand block operation 
 			RandInstruction lrand = (RandInstruction)ldgInst; 
 			
-			MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+			//MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+			MatrixBlock mb = MatrixBlock.randOperations((int)lrand.rows, (int)lrand.cols, lrand.rowsInBlock, lrand.colsInBlock, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
 			for( int i=0; i<results.length; i++ )
 				if( lrand.output == results[i] )
 				{

@@ -11,7 +11,10 @@ import java.util.HashMap;
 
 import org.apache.commons.math.random.Well1024a;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 
 public class MatrixBlock extends MatrixBlockDSM
 {
@@ -35,27 +38,50 @@ public class MatrixBlock extends MatrixBlockDSM
 		super(map);
 	}
 	
-	
-	public static MatrixBlock randOperationsOLD(int rows, int cols, double sparsity, double min, double max, String pdf, long seed)
+	/**
+	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
+	 *  
+	 * @param rows
+	 * @param cols
+	 * @param sparsity
+	 * @param min
+	 * @param max
+	 * @param pdf
+	 * @param seed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed) throws DMLRuntimeException
 	{
-		MatrixBlock m = new MatrixBlock();
-		
-		if ( pdf.equalsIgnoreCase("normal") ) {
-			m.getNormalRandomSparseMatrixOLD(rows, cols, sparsity, seed);
-		}
-		else {
-			m.getRandomSparseMatrixOLD(rows, cols, sparsity, min, max, seed);
-		}
-		return m;
+		int blocksize = ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
+		return randOperations(
+				rows, cols, blocksize, blocksize, 
+				sparsity, min, max, pdf, seed);
 	}
 	
-	public static MatrixBlock randOperationsNEW(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, Well1024a bigrand) {
+	/**
+	 * Function to generate the random matrix with specified dimensions and block dimensions.
+	 * @param rows
+	 * @param cols
+	 * @param rowsInBlock
+	 * @param colsInBlock
+	 * @param sparsity
+	 * @param min
+	 * @param max
+	 * @param pdf
+	 * @param seed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock randOperations(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, long seed) throws DMLRuntimeException {
+		Well1024a bigrand = RandCPInstruction.setupSeedsForRand(seed);
 		MatrixBlock m = new MatrixBlock();
 		if ( pdf.equalsIgnoreCase("normal") ) {
-			m.getNormalRandomSparseMatrixNEW(rows, cols, rowsInBlock, colsInBlock, sparsity, bigrand, -1);
+			// for normally distributed values, min and max are specified as an invalid value NaN.
+			m.getRandomMatrix(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);
 		}
 		else {
-			m.getRandomSparseMatrix(rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, bigrand, -1);
+			m.getRandomMatrix(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, bigrand, -1);
 		}
 		return m;
 	}

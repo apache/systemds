@@ -189,14 +189,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 			LOG.trace("Process RandCPInstruction with seed = "+lSeed+".");
 			
 			//long begin = System.nanoTime();
-			
-			// setup seeds
-			Well1024a bigrand = setupSeedsForRand(seed);
-			
-			// execute rand
-			//soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, bigrand));
-			soresBlock = (MatrixBlock) (MatrixBlock.randOperationsOLD((int)rows, (int)cols, sparsity, minValue, maxValue, pdf, lSeed));
-			
+			soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed));
 			//System.out.println("RandTime " + (System.nanoTime()-begin)*1e-6 + " msec.");
 		}
 		else if ( this.method == DataGenMethod.SEQ ) {

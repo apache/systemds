@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.TreeMap;
 
 import org.apache.commons.math.random.Well1024a;
@@ -50,8 +49,9 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.RandN;
-import com.ibm.bi.dml.runtime.util.RandNPair;
+import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
+import com.ibm.bi.dml.runtime.util.PRNGenerator;
+import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -5303,6 +5303,208 @@ public class MatrixBlockDSM extends MatrixValue
 	// (rand, sequence)
 	
 	/**
+	 * Function to generate a matrix of random numbers. This is invoked from maptasks of 
+	 * DataGen MR job.  The parameter <code>seed</code> denotes the block-level seed.
+	 * 
+	 * @param pdf
+	 * @param rows
+	 * @param cols
+	 * @param rowsInBlock
+	 * @param colsInBlock
+	 * @param sparsity
+	 * @param min
+	 * @param max
+	 * @param seed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlockDSM getRandomMatrix(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed) throws DMLRuntimeException
+	{
+		return getRandomMatrix(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, null, seed);
+	}
+	
+	/**
+	 * Function to generate a matrix of random numbers. This is invoked both
+	 * from CP as well as from MR. In case of CP, it generates an entire matrix
+	 * block-by-block. A <code>bigrand</code> is passed so that block-level
+	 * seeds are generated internally. In case of MR, it generates a single
+	 * block for given block-level seed <code>bSeed</code>.
+	 * 
+	 * When pdf="uniform", cell values are drawn from uniform distribution in
+	 * range <code>[min,max]</code>.
+	 * 
+	 * When pdf="normal", cell values are drawn from standard normal
+	 * distribution N(0,1). The range of generated values will always be
+	 * (-Inf,+Inf).
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param rowsInBlock
+	 * @param colsInBlock
+	 * @param sparsity
+	 * @param min
+	 * @param max
+	 * @param bigrand
+	 * @param bSeed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlockDSM getRandomMatrix(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) throws DMLRuntimeException
+	{
+		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
+		PRNGenerator valuePRNG = null;
+		if ( pdf.equalsIgnoreCase("uniform")) 
+			valuePRNG = new UniformPRNGenerator();
+		else if ( pdf.equalsIgnoreCase("normal"))
+			valuePRNG = new NormalPRNGenerator();
+		else
+			throw new DMLRuntimeException("Unsupported distribution function for Rand: " + pdf);
+		
+		/*
+		 * Setup min and max for distributions other than "uniform". Min and Max
+		 * are set up in such a way that the usual logic of
+		 * (max-min)*prng.nextDouble() is still valid. This is done primarily to
+		 * share the same code across different distributions.
+		 */
+		if ( pdf.equalsIgnoreCase("normal") ) {
+			min=0;
+			max=1;
+		}
+		
+		// Determine the sparsity of output matrix
+		sparse = (sparsity < SPARCITY_TURN_POINT);
+		if(cols<=SKINNY_MATRIX_TURN_POINT) {
+			sparse=false;
+		}
+		this.reset(rows, cols, sparse);
+		
+		// Special case shortcuts for efficiency
+		if ( pdf.equalsIgnoreCase("uniform")) {
+			//specific cases for efficiency
+			if ( min == 0.0 && max == 0.0 ) { //all zeros
+				// nothing to do here
+				return this;
+			} 
+			else if( !sparse && sparsity==1.0d && min == max ) //equal values
+			{
+				allocateDenseBlock();
+				Arrays.fill(denseBlock, 0, rlen*clen, min);
+				nonZeros = rlen*clen;
+				return this;
+			}
+		}
+		
+		// Allocate memory
+		if ( sparse ) {
+			sparseRows = new SparseRow[rows];
+			for(int i=0; i<rows; i++) {
+				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
+			}
+		}
+		else {
+			this.allocateDenseBlock();
+		}
+
+		double val;
+		double range = max - min;
+
+		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
+		int ncb = (int) Math.ceil((double)cols/colsInBlock);
+		int blockrows, blockcols, rowoffset, coloffset;
+		int blocknnz,i,j;
+		double v;
+		// loop throught row-block indices
+		for(int rbi=0; rbi < nrb; rbi++) {
+			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
+			rowoffset = rbi*rowsInBlock;
+			
+			// loop throught column-block indices
+			for(int cbj=0; cbj < ncb; cbj++) {
+				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
+				coloffset = cbj*colsInBlock;
+				
+				/* Generate a block (rbi,cbj) */
+				
+				// select the appropriate block-level seed
+				long seed = -1;
+				if ( bigrand == null ) {
+					// case of MR: simply use the passed-in value
+					seed = bSeed;
+				}
+				else {
+					// case of CP: generate a block-level seed from matrix-level Well1024a seed
+					seed = bigrand.nextLong();
+				}
+				// Initialize the PRNGenerator for cell values
+				valuePRNG.init(seed);
+				
+				// Initialize the PRNGenerator for determining cells that contain a non-zero value
+				// Note that, "pdf" parameter applies only to cell values and the individual cells 
+				// are always selected uniformly at random.
+				UniformPRNGenerator nnzPRNG = new UniformPRNGenerator(seed);
+				
+				// block-level sparsity, which may differ from overall sparsity in the matrix.
+				boolean localSparse = sparse && !(blockcols<=SKINNY_MATRIX_TURN_POINT);
+				
+				if ( localSparse ) {
+					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
+					for(int ind=0; ind<blocknnz; ind++) {
+						i = nnzPRNG.nextInt(blockrows);
+						j = nnzPRNG.nextInt(blockcols);
+						v = nnzPRNG.nextDouble();
+						//System.out.println("("+(rowoffset+i)+","+(coloffset+j) +") " + i + "," + j);
+						this.sparseRows[rowoffset+i].set(coloffset+j, v);
+					}
+				}
+				else {
+					if (sparsity == 1.0) {
+						for(int ii=0; ii < blockrows; ii++) {
+							for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
+								val = min + (range * valuePRNG.nextDouble());
+								this.denseBlock[index] = val;
+							}
+						}
+					}
+					else {
+						if ( sparse ) {
+							/* This case evaluated only when this function is invoked from CP. 
+							 * In this case:
+							 *     sparse=true -> entire matrix is in sparse format and hence denseBlock=null
+							 *     localSparse=true -> local block is dense, and hence on MR side a denseBlock will be allocated
+							 * i.e., we need to generate data in a dense-style but set values in sparseRows
+							 * 
+							 */
+							// In this case, entire matrix is in sparse format but the current block is dense
+							for(int ii=0; ii < blockrows; ii++) {
+								for(int jj=0; jj < blockcols; jj++) {
+									if(nnzPRNG.nextDouble() <= sparsity) {
+										val = min + (range * valuePRNG.nextDouble());
+										//this.denseBlock[index] = val;
+										this.sparseRows[ii+rowoffset].set(jj+coloffset, val);
+									}
+								}
+							}
+						}
+						else {
+							for(int ii=0; ii < blockrows; ii++) {
+								for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
+									if(nnzPRNG.nextDouble() <= sparsity) {
+										val = min + (range * valuePRNG.nextDouble());
+										this.denseBlock[index] = val;
+									}
+								}
+							}
+						}
+					}
+				} // sparse or dense 
+			} // cbj
+		} // rbi
+		
+		recomputeNonZeros();
+		return this;
+	}
+	
+	/**
 	 * Method to generate a sequence according to the given parameters. The
 	 * generated sequence is always in dense format.
 	 * 
@@ -5345,427 +5547,6 @@ public class MatrixBlockDSM extends MatrixValue
 		return this;
 	}
 
-	public MatrixBlockDSM getRandomSparseMatrixOLD(int rows, int cols, double sparsity, double min, double max, long seed)
-	{
-		sparse = (sparsity < SPARCITY_TURN_POINT && cols > SKINNY_MATRIX_TURN_POINT);
-		this.reset(rows, cols, sparse);
-		
-		//specific cases for efficiency
-		if ( min == 0.0 && max == 0.0 ) { //all zeros
-			// nothing to do here
-			sparse = (cols > SKINNY_MATRIX_TURN_POINT);
-			return this;
-		} 
-		else if( !sparse && sparsity==1.0d && min == max ) //equal values
-		{
-			allocateDenseBlock();
-			Arrays.fill(denseBlock, 0, rlen*clen, min);
-			nonZeros = rlen*clen;
-			return this;
-		}
-
-		double val;
-		Random ru = new Random(seed); // for actual values
-		Random random=new Random(ru.nextLong()); // for checking sparsity
-		double range = max - min;
-
-		if ( sparse ) {
-			// sparse representation
-			sparseRows=new SparseRow[rows];
-			estimatedNNzsPerRow=(int)(clen*sparsity);
-			for(int i=0; i<rows; i++) {
-				for(int j=0; j<cols; j++) {
-					if(random.nextDouble() <= sparsity) 
-					{
-						if( sparseRows[i] == null ) //create sparse row if required
-							sparseRows[i] = new SparseRow(estimatedNNzsPerRow, clen);
-						val = min + (range * ru.nextDouble());
-						sparseRows[i].append(j, val );
-					}
-				}
-			}
-		}
-		else {
-			// dense representation
-			this.allocateDenseBlock();
-			if ( sparsity == 1.0 ) {
-				// special handling for the case sparsity=1.0, for better efficiency
-				for(int index=0; index < rows*cols; index++) {
-					val = min + (range * ru.nextDouble());
-					this.denseBlock[index] = val;
-				}
-			}
-			else {
-				for(int index=0; index < rows*cols; index++) {
-					if(random.nextDouble() <= sparsity) {
-						val = min + (range * ru.nextDouble());
-						this.denseBlock[index] = val;
-					}
-				}
-			}
-		}
-		
-		recomputeNonZeros();
-		return this;
-	}
-	
-	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed)
-	{
-		return getRandomSparseMatrix(rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, null, seed);
-	}
-	
-	/**
-	 * Function to generate a matrix of random numbers.
-	 * This is invoked both from CP as well as from MR. In case of CP, it generates an entire matrix block-by-block. 
-	 * A <code>bigrand</code> is passed so that block-level seeds are generated internally. In case of MR, it generates
-	 * a single block for given block-level seed <code>bSeed</code>.
-	 * 
-	 * 
-	 * @param rows
-	 * @param cols
-	 * @param rowsInBlock
-	 * @param colsInBlock
-	 * @param sparsity
-	 * @param min
-	 * @param max
-	 * @param bigrand
-	 * @param bSeed
-	 * @return
-	 */
-	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed)
-	{
-		sparse = (sparsity < SPARCITY_TURN_POINT);
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols<=SKINNY_MATRIX_TURN_POINT) {
-			//System.out.println(" cols less .. changing sparse from " +  sparse + " to false");
-			sparse=false;
-		}
-		this.reset(rows, cols, sparse);
-		
-		//specific cases for efficiency
-		if ( min == 0.0 && max == 0.0 ) { //all zeros
-			// nothing to do here
-			return this;
-		} 
-		else if( !sparse && sparsity==1.0d && min == max ) //equal values
-		{
-			allocateDenseBlock();
-			Arrays.fill(denseBlock, 0, rlen*clen, min);
-			nonZeros = rlen*clen;
-			return this;
-		}
-		
-		// Allocate memory
-		if ( sparse ) {
-			sparseRows = new SparseRow[rows];
-			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
-			}
-		}
-		else {
-			this.allocateDenseBlock();
-		}
-
-		double val;
-		double range = max - min;
-
-		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
-		int ncb = (int) Math.ceil((double)cols/colsInBlock);
-		int blockrows, blockcols, rowoffset, coloffset;
-		int blocknnz,i,j;
-		double v;
-		// loop throught row-block indices
-		for(int rbi=0; rbi < nrb; rbi++) {
-			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
-			rowoffset = rbi*rowsInBlock;
-			
-			// loop throught column-block indices
-			for(int cbj=0; cbj < ncb; cbj++) {
-				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
-				coloffset = cbj*colsInBlock;
-				
-				/* Generate a block (ri,rj) */
-				
-				// select the appropriate block-level seed
-				long seed = -1;
-				if ( bigrand == null ) {
-					// case of MR: simply use the passed-in value
-					seed = bSeed;
-				}
-				else {
-					// case of CP: generate a block-level seed from matrix-level Well1024a seed
-					seed = bigrand.nextLong();
-				}
-				
-				// generate actual random numbers
-				Random ru = new Random(seed); // for actual values
-				Random random=new Random(seed); // for checking sparsity
-				boolean localSparse = sparse && !(blockcols<=SKINNY_MATRIX_TURN_POINT); // block-level sparsity
-				
-				//System.out.println("-- " + rbi + "," + cbj + ": " + rowoffset + ", "+coloffset + ": blockrows/cols ("+blockrows+"/"+blockcols+") " + blocknnz + ", seed = " + seed + ", sparse=" + (sparse?"sparse":"dense") + ": localsp " + (localSparse?"sparse":"dense") );
-				if ( localSparse ) {
-					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
-					for(int ind=0; ind<blocknnz; ind++) {
-						i = random.nextInt(blockrows);
-						j = random.nextInt(blockcols);
-						v = random.nextDouble();
-						//System.out.println("("+(rowoffset+i)+","+(coloffset+j) +") " + i + "," + j);
-						this.sparseRows[rowoffset+i].set(coloffset+j, v);
-					}
-				}
-				else {
-					if (sparsity == 1.0) {
-						for(int ii=0; ii < blockrows; ii++) {
-							for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-								val = min + (range * ru.nextDouble());
-								this.denseBlock[index] = val;
-							}
-						}
-					}
-					else {
-						if ( sparse ) {
-							/* This case evaluated only when this function is invoked from CP. 
-							 * In this case:
-							 *     sparse=true -> entire matrix is in sparse format and hence denseBlock=null
-							 *     localSparse=true -> local block is dense, and hence on MR side a denseBlock will be allocated
-							 * i.e., we need to generate data in a dense-style but set values in sparseRows
-							 * 
-							 */
-							// In this case, entire matrix is in sparse format but the current block is dense
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0; jj < blockcols; jj++) {
-									if(random.nextDouble() <= sparsity) {
-										val = min + (range * ru.nextDouble());
-										//this.denseBlock[index] = val;
-										this.sparseRows[ii+rowoffset].set(jj+coloffset, val);
-									}
-								}
-							}
-						}
-						else {
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-									if(random.nextDouble() <= sparsity) {
-										val = min + (range * ru.nextDouble());
-										this.denseBlock[index] = val;
-									}
-								}
-							}
-						}
-					}
-				} // sparse or dense 
-			} // cbj
-		} // rbi
-		
-		recomputeNonZeros();
-		return this;
-	}
-	
-	public MatrixBlockDSM getNormalRandomSparseMatrixNEW(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, long seed)
-	{
-		return getNormalRandomSparseMatrixNEW(rows, cols, rowsInBlock, colsInBlock, sparsity, null, seed);
-	}
-	/**
-	 * Generates a matrix of random numbers from standard normal distribution N(0,1).
-	 * Unlike in <code>getRandomSparseMatrix()</code>, parameters <code>min</code> and
-	 * <code>max</code> are not relevant for this function, since the range of values
-	 * in N(0,1) is (-Inf,+Inf).
-	 * 
-	 */
-	public MatrixBlockDSM getNormalRandomSparseMatrixNEW(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, Well1024a bigrand, long bSeed)
-	{
-		sparse = (sparsity < SPARCITY_TURN_POINT);
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols<=SKINNY_MATRIX_TURN_POINT)
-			sparse=false;
-		this.reset(rows, cols, sparse);
-
-		// Allocate memory
-		if ( sparse ) {
-			sparseRows = new SparseRow[rows];
-			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
-			}
-		}
-		else {
-			this.allocateDenseBlock();
-		}
-
-		double val;
-		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
-		int ncb = (int) Math.ceil((double)cols/colsInBlock);
-		int blockrows, blockcols, rowoffset, coloffset;
-		int blocknnz,i,j;
-		double v;
-		for(int rbi=0; rbi < nrb; rbi++) {
-			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
-			rowoffset = rbi*rowsInBlock;
-			for(int cbj=0; cbj < ncb; cbj++) {
-				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
-				coloffset = cbj*colsInBlock;
-				
-				// generate a block (ri,rj) by generating row and column indices for non-zero values
-				blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
-				long seed = -1;
-				if ( bigrand == null ) {
-					seed = bSeed;
-				}
-				else {
-					seed = bigrand.nextLong();
-				}
-				Random ru = new Random(seed); // for generating actual values, // uniform generator, used internally within RandNPair 
-				Random random=new Random(ru.nextLong()); // for checking the sparsity
-				
-				RandN rn = new RandN(ru);
-				
-				
-				boolean localSparse = sparse && !(blockcols<=SKINNY_MATRIX_TURN_POINT); // block-level sparsity
-				
-				if ( localSparse ) {
-					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
-					for(int ind=0; ind<blocknnz; ind++) {
-						i = random.nextInt(blockrows);
-						j = random.nextInt(blockcols);
-						v = rn.nextDouble();
-						this.sparseRows[rowoffset+i].set(coloffset+j, v);
-					}
-				}
-				else {
-					if (sparsity == 1.0) {
-						for(int ii=0; ii < blockrows; ii++) {
-							for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-								val = rn.nextDouble();
-								this.denseBlock[index] = val;
-							}
-						}
-					}
-					else {
-						if ( sparse ) {
-							/* This case evaluated only when this function is invoked from CP. 
-							 * In this case:
-							 *     sparse=true -> entire matrix is in sparse format and hence denseBlock=null
-							 *     localSparse=true -> local block is dense, and hence on MR side a denseBlock will be allocated
-							 * i.e., we need to generate data in a dense-style but set values in sparseRows
-							 * 
-							 */
-							// In this case, entire matrix is in sparse format but the current block is dense
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0; jj < blockcols; jj++) {
-									if(random.nextDouble() <= sparsity) {
-										val = rn.nextDouble();
-										//this.denseBlock[index] = val;
-										this.sparseRows[ii+rowoffset].set(jj+coloffset, val);
-									}
-								}
-							}
-						}
-						else {
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-									if(random.nextDouble() <= sparsity) {
-										val = rn.nextDouble();
-										this.denseBlock[index] = val;
-									}
-								}
-							}
-						}
-					}
-				} // sparse or dense 
-
-				
-				/*if ( sparse ) {
-					for(int ind=0; ind<blocknnz; ind++) {
-						i = random.nextInt(blockrows);
-						j = random.nextInt(blockcols);
-						v = rn.nextDouble();
-						this.sparseRows[rowoffset+i].set(coloffset+j, v);
-					}
-				}
-				else {
-					if (sparsity == 1.0) {
-						for(int ind=0, index=rbi*rowsInBlock+cbj*colsInBlock; ind < blockrows*blockcols; ind++, rowoffset++) {
-							val = rn.nextDouble();
-							this.denseBlock[index] = val;
-						}
-					}
-					else {
-						for(int ind=0, index=rbi*rowsInBlock+cbj*colsInBlock; ind < blockrows*blockcols; ind++, index++) {
-							if(random.nextDouble() <= sparsity) {
-								val = rn.nextDouble();
-								this.denseBlock[index] = val;
-							}
-						}
-					}
-				} // sparse or dense 
-*/			} // cbj
-		} // rbi
-		
-		recomputeNonZeros();
-		return this;
-	}
-
-	public MatrixBlockDSM getNormalRandomSparseMatrixOLD(int rows, int cols, double sparsity, long seed)
-	{
-		sparse = (sparsity < SPARCITY_TURN_POINT);
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols<=SKINNY_MATRIX_TURN_POINT)
-			sparse=false;
-		this.reset(rows, cols, sparse);
-
-		double val;
-		Random ru = new Random(seed); // for generating actual values, // uniform generator, used internally within RandNPair 
-		Random random=new Random(ru.nextLong()); // for checking the sparsity
-		
-		if ( sparse ) {
-			// sparse representation
-			RandN rn = new RandN(ru);
-			sparseRows=new SparseRow[rows];
-			estimatedNNzsPerRow=(int)(clen*sparsity);
-			for(int i=0; i<rows; i++) {
-				for(int j=0; j<cols; j++) {
-					if(random.nextDouble()>sparsity)
-						continue;
-					if( sparseRows[i] == null ) //create sparse row if required
-						sparseRows[i] = new SparseRow(estimatedNNzsPerRow, clen);	
-					val = rn.nextDouble();
-					sparseRows[i].append(j, val );
-				}
-			}
-		}
-		else {
-			// dense representation
-			this.allocateDenseBlock();
-			if ( sparsity == 1.0 ) {
-				// special handling for the case sparsity=1.0, for better efficiency
-				
-				//Random ru = new Random(seed); // uniform generator, used internally within RandNPair 
-				RandNPair pair = new RandNPair();
-				int index = 0;
-				while ( index < rows*cols ) {
-					pair.compute(ru);
-					this.denseBlock[index++] = pair.getFirst();
-					if ( index < rows*cols )
-						this.denseBlock[index++] = pair.getSecond();
-				}
-			}
-			else {
-				RandN rn = new RandN(seed);
-				for(int index=0; index < rows*cols; index++) {
-					if(random.nextDouble() <= sparsity) {
-						this.denseBlock[index] = rn.nextDouble();
-					}
-				}
-			}
-		}
-		
-		recomputeNonZeros();
-		return this;
-	}
-
-	
 	////////
 	// Misc methods
 		

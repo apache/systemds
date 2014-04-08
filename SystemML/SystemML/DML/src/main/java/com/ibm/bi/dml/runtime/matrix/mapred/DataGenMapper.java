@@ -67,13 +67,15 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				
 				indexes.setIndexes(blockRowNumber, blockColNumber);
 				
-				if ( pdf.equalsIgnoreCase("normal") ) { 
-					//block.getNormalRandomSparseMatrix(blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, seed); 
-					block.getNormalRandomSparseMatrixOLD(blockRowSize, blockColSize, sparsity, seed); 
-				}
-				else {
-					//block.getRandomSparseMatrix(blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
-					block.getRandomSparseMatrixOLD(blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
+				try {
+					if ( pdf.equalsIgnoreCase("normal") ) { 
+						block.getRandomMatrix(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, Double.NaN, Double.NaN, seed); 
+					}
+					else {
+						block.getRandomMatrix(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
+					}
+				} catch(DMLRuntimeException e) {
+					throw new IOException(e);
 				}
 			}
 			else if ( dataGen_instructions.get(i).getDataGenMethod() == DataGenMethod.SEQ ) { 

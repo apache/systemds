@@ -134,7 +134,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			
-			MatrixBlock mb = MatrixBlock.randOperationsOLD((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
+			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize,(long)(rows*cols*sparsity));
 			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "V", OutputInfo.TextCellOutputInfo, mc);
 			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "V.mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);

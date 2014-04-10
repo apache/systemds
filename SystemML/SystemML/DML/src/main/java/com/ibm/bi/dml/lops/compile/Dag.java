@@ -262,6 +262,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unused")
 	private void deleteUnwantedTransientReadVariables(Vector<N> nodeV,
 			ArrayList<Instruction> inst) throws DMLRuntimeException,
 			DMLUnsupportedOperationException {
@@ -872,8 +873,29 @@ public class Dag<N extends Lop>
 				}
 				
 				// if inputs come from different jobs, then queue
+				if ( node.getInputs().size() >= 2) {
+					int jobid = Integer.MIN_VALUE;
+					boolean queueit = false;
+					for(int idx=0; idx < node.getInputs().size(); idx++) {
+						int input_jobid = jobType(node.getInputs().get(idx), jobNodes);
+						if (input_jobid != -1) {
+							if ( jobid == Integer.MIN_VALUE )
+								jobid = input_jobid;
+							else if ( jobid != input_jobid ) { 
+								queueit = true;
+								break;
+							}
+						}
+					}
+					if ( queueit ) {
+						LOG.trace(indent + "Queueing node " + node.toString() + " (code 3)");
+						queuedNodes.add(node);
+						removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
+						continue;
+					}
+				}
 
-				if (node.getInputs().size() == 2) {
+				/*if (node.getInputs().size() == 2) {
 					int j1 = jobType(node.getInputs().get(0), jobNodes);
 					int j2 = jobType(node.getInputs().get(1), jobNodes);
 					if (j1 != -1 && j2 != -1 && j1 != j2) {
@@ -887,7 +909,7 @@ public class Dag<N extends Lop>
 
 						continue;
 					}
-				}
+				}*/
 
 				// See if this lop can be eliminated
 				// This check is for "aligner" lops (e.g., group)
@@ -908,7 +930,7 @@ public class Dag<N extends Lop>
 					if (hasMRJobChildNode(node, execNodes)) {
 						// "node" must NOT be queued when node=group and the child that defines job is Rand
 						// this is because "group" can be pushed into the "Rand" job.
-						if (! (node.getType() == Lop.Type.Grouping && getMRJobChildNode(node,execNodes).getType() == Lop.Type.DataGen) ) {
+						if (! (node.getType() == Lop.Type.Grouping && checkDataGenAsChildNode(node,execNodes))  ) {
 							LOG.trace(indent + "Queueing node "
 										+ node.toString() + " (code 4)");
 
@@ -1534,6 +1556,188 @@ public class Dag<N extends Lop>
 	private void removeNodesForNextIteration(N node, Vector<N> finishedNodes,
 			Vector<N> execNodes, Vector<N> queuedNodes,
 			ArrayList<Vector<N>> jobvec) throws LopsException {
+		
+		// only queued nodes with multiple inputs need to be handled.
+		if (node.getInputs().size() == 1)
+			return;
+		
+		//if all children are queued, then there is nothing to do.
+		int numInputs = node.getInputs().size();
+		boolean allQueued = true;
+		for(int i=0; i < numInputs; i++) {
+			if( !queuedNodes.contains(node.getInputs().get(0)) ) {
+				allQueued = false;
+				break;
+			}
+		}
+		if ( allQueued )
+			return; 
+		
+	    LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
+
+		// Determine if <code>node</code> has inputs from the same job or multiple jobs
+	    int jobid = Integer.MIN_VALUE;
+		boolean inputs_in_same_job = true;
+		for(int idx=0; idx < node.getInputs().size(); idx++) {
+			int input_jobid = jobType(node.getInputs().get(idx), jobvec);
+			if (input_jobid != -1) {
+				if ( jobid == Integer.MIN_VALUE )
+					jobid = input_jobid;
+				else if ( jobid != input_jobid ) { 
+					inputs_in_same_job = false;
+					break;
+				}
+			}
+		}
+
+		// Determine if there exist any unassigned inputs to <code>node</code>
+		// Evaluate only those lops that execute in MR.
+		boolean unassigned_inputs = false;
+		for(int i=0; i < numInputs; i++) {
+			Lop input = node.getInputs().get(i);
+			//if ( input.getExecLocation() != ExecLocation.ControlProgram && jobType(input, jobvec) == -1 ) {
+			if ( input.getExecType() == ExecType.MR && jobType(input, jobvec) == -1 ) {
+				unassigned_inputs = true;
+				break;
+			}
+		}
+
+		// Determine if any node's children are queued
+		boolean child_queued = false;
+		for(int i=0; i < numInputs; i++) {
+			if (queuedNodes.contains(node.getInputs().get(i)) ) {
+				child_queued = true;
+				break;
+			}
+		}
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Property Flags:");
+			LOG.trace("  Inputs in same job: " + inputs_in_same_job);
+			LOG.trace("  Unassigned inputs: " + unassigned_inputs);
+			LOG.trace("  Child queued: " + child_queued);
+		}
+
+		// Evaluate each lop in <code>execNodes</code> for removal.
+		// Add lops to be removed to <code>markedNodes</code>.
+		
+		Vector<N> markedNodes = new Vector<N>();
+		for (int i = 0; i < execNodes.size(); i++) {
+
+			N tmpNode = execNodes.elementAt(i);
+
+			if (LOG.isTraceEnabled()) {
+				LOG.trace("Checking for removal (" + tmpNode.getID()
+						+ ") " + tmpNode.toString());
+			}
+			
+			// TODO: statiko -- check if this is too conservative?
+			if (child_queued) {
+				// if one of the children are queued, 
+				// remove some child nodes on other leg that may be needed later on. 
+				// For e.g. Group lop. 
+				
+				// TODO: do we need to focus this check only on those nodes that are NOT queued? 
+				//       example: numInputs=4 and input2,input4 are queued, then evaluate only input1 and input3.
+				if(node.getInputs().contains(tmpNode) && tmpNode.isAligner()) {
+				    markedNodes.add(tmpNode);
+				    LOG.trace("Removing for next iteration: (" 
+				    		+ tmpNode.getID() + ") " + tmpNode.toString());
+				}
+ 
+				else {
+					if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
+						&& isChild(tmpNode, node, IDMap)  && branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
+					    
+						if( //e.g. MMCJ
+					        (node.getExecLocation() == ExecLocation.MapAndReduce &&
+							branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes) && !tmpNode.definesMRJob() )
+							||
+							//e.g. Binary
+							(node.getExecLocation() == ExecLocation.Reduce && branchCanBePiggyBackedReduce(tmpNode, node, execNodes, finishedNodes))  
+						    ) 
+						{
+					      LOG.trace("Removing for next iteration: ("
+									    + tmpNode.getID() + ") " + tmpNode.toString());
+		        				markedNodes.add(tmpNode);
+						}
+					 }
+				}
+			} 
+			else {
+				/*
+				 * "node" has no other queued children.
+				 * 
+				 * If inputs are in the same job and "node" is of type
+				 * MapAndReduce, then remove nodes of all types other than
+				 * Reduce, MapAndReduce, and the ones that define a MR job as
+				 * they can be piggybacked later.
+				 * 
+				 * e.g: A=Rand, B=Rand, C=A%*%B Here, both inputs of MMCJ lop
+				 * come from Rand job, and they should not be removed.
+				 * 
+				 * Other examples: -- MMCJ whose children are of type
+				 * MapAndReduce (say GMR) -- Inputs coming from two different
+				 * jobs .. GMR & REBLOCK
+				 */
+				if ((inputs_in_same_job || unassigned_inputs)
+						&& node.getExecLocation() == ExecLocation.MapAndReduce
+						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,
+								node)
+						&& isChild(tmpNode, node, IDMap) &&
+						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
+						&& tmpNode.definesMRJob() != true) {
+					LOG.trace("Removing for next iteration:: ("
+								+ tmpNode.getID() + ") " + tmpNode.toString());
+
+					markedNodes.add(tmpNode);
+				}
+
+				// as this node has inputs coming from different jobs, need to
+				// free up everything
+				// below and include the closest MapAndReduce lop if this is of
+				// type Reduce.
+				// if it is of type MapAndReduce, don't need to free any nodes
+
+				if (!inputs_in_same_job && !unassigned_inputs
+						&& isChild(tmpNode, node, IDMap) &&
+						node.getInputs().contains(tmpNode) && tmpNode.isAligner()
+					) 
+				{
+					LOG.trace("Removing for next iteration ("
+								+ tmpNode.getID() + ") " + tmpNode.toString());
+					markedNodes.add(tmpNode);
+				}
+			}
+		} // for i
+
+		// we also need to delete all parent nodes of marked nodes
+		for (int i = 0; i < execNodes.size(); i++) {
+			LOG.trace("Checking for removal - ("
+						+ execNodes.elementAt(i).getID() + ") "
+						+ execNodes.elementAt(i).toString());
+
+			if (hasChildNode(execNodes.elementAt(i), markedNodes)) {
+				markedNodes.add(execNodes.elementAt(i));
+				LOG.trace("Removing for next iteration - ("
+							+ execNodes.elementAt(i).getID() + ") "
+							+ execNodes.elementAt(i).toString());
+			}
+		}
+
+		// delete marked nodes from finishedNodes and execNodes
+		// add to queued nodes
+		for (int i = 0; i < markedNodes.size(); i++) {
+			finishedNodes.remove(markedNodes.elementAt(i));
+			execNodes.remove(markedNodes.elementAt(i));
+			removeNodeByJobType(markedNodes.elementAt(i), jobvec);
+			queuedNodes.add(markedNodes.elementAt(i));
+		}
+	}
+
+	@SuppressWarnings("unused")
+	private void removeNodesForNextIterationOLD(N node, Vector<N> finishedNodes,
+			Vector<N> execNodes, Vector<N> queuedNodes,
+			ArrayList<Vector<N>> jobvec) throws LopsException {
 		// only queued nodes with two inputs need to be handled.
 
 		// TODO: statiko -- this should be made == 1
@@ -1921,27 +2125,6 @@ public class Dag<N extends Lop>
 				return true;
 		}
 		
-		return false;
-	}
-
-	@SuppressWarnings("unchecked")
-	private boolean hasOtherQueuedParentNodeOLD(N tmpNode, Vector<N> queuedNodes,
-			N node) {
-		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
-			N n = (N) tmpNode.getOutputs().get(i);
-			
-			// if node is a child of n then n's level must be greater than node
-			if(n.getLevel() <= node.getLevel() )
-				continue;
-			
-			if (queuedNodes.contains(n) && !n.equals(node) && isChild(n, node, IDMap)) {
-				return true;
-			} else {
-				if (hasOtherQueuedParentNode(n, queuedNodes, node))
-					return true;
-			}
-		}
-
 		return false;
 	}
 
@@ -2836,9 +3019,10 @@ public class Dag<N extends Lop>
 			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR, cellModeOverride);
 			outputLabels.add(out.getVarName());
 			outputs.add(out.getFileName());
-			//if ( out.getFileName() == null )
-			//	System.err.println("error here .. ");
 			outputInfos.add(out.getOutInfo());
+			if (LOG.isTraceEnabled()) {
+				LOG.trace("    Output Info: " + out.getFileName() + ";" + OutputInfo.outputInfoToString(out.getOutInfo()) + ";" + out.getVarName());
+			}
 			renameInstructions.addAll(out.getLastInstructions());
 			variableInstructions.addAll(out.getPreInstructions());
 			writeInstructions.addAll(out.getPostInstructions());
@@ -3695,26 +3879,6 @@ public class Dag<N extends Lop>
 		return a.get_reachable()[bID];
 	}
 	
-	public static boolean isChildOLD(Lop a, Lop b) {
-		for (int i = 0; i < b.getInputs().size(); i++) {
-			if (b.getInputs().get(i).equals(a))
-				return true;
-
-			/**
-			 * dfs search
-			 */
-			boolean return_val = isChildOLD(a, b.getInputs().get(i));
-
-			/**
-			 * return true, if matching parent found, else continue
-			 */
-			if (return_val)
-				return true;
-		}
-
-		return false;
-	}
-
 	@SuppressWarnings("unchecked")
 	/**
 	 * Method to topologically sort lops
@@ -3826,26 +3990,6 @@ public class Dag<N extends Lop>
 		}
 		return false;
 	}
-
-	@SuppressWarnings("unchecked")
-	private boolean hasChildNodeOLD(N node, Vector<N> childNodes, ExecLocation type) {
-		if(childNodes.size() == 0)
-			return false;
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			N n = (N) node.getInputs().get(i);
-			if (childNodes.contains(n) && n.getExecLocation() == type) {
-				return true;
-			} else {
-				if (hasChildNodeOLD(n, childNodes, type))
-					return true;
-			}
-
-		}
-
-		return false;
-
-	}
-
 	@SuppressWarnings("unchecked")
 	private N getChildNode(N node, Vector<N> childNodes, ExecLocation type) {
 		if ( childNodes.size() == 0 )
@@ -3859,24 +4003,6 @@ public class Dag<N extends Lop>
 			}
 		}
 		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	private N getChildNodeOLD(N node, Vector<N> childNodes, ExecLocation type) {
-		if(childNodes.size() == 0)
-			return null;
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			N n = (N) node.getInputs().get(i);
-			if (childNodes.contains(n) && n.getExecLocation() == type) {
-				return n;
-			} else {
-				return getChildNodeOLD(n, childNodes, type);
-			}
-
-		}
-
-		return null;
-
 	}
 
 	/*
@@ -3901,25 +4027,6 @@ public class Dag<N extends Lop>
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
-	private N getParentNodeOLD(N node, Vector<N> parentNodes, ExecLocation type) {
-		if(parentNodes.size() ==0)
-			return null;
-		
-		for (int i = 0; i < node.getOutputs().size(); i++) {
-			N n = (N) node.getOutputs().get(i);
-			if (parentNodes.contains(n) && n.getExecLocation() == type) {
-				return n;
-			} else {
-				return getParentNodeOLD(n, parentNodes, type);
-			}
-
-		}
-
-		return null;
-
-	}
-
 	// Checks if "node" has any descendants in nodesVec with definedMRJob flag
 	// set to true
 	@SuppressWarnings("unchecked")
@@ -3938,56 +4045,19 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean hasMRJobChildNodeOLD(N node, Vector<N> nodesVec) {
-		if(nodesVec.size() ==0)
-			return false;
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			N n = (N) node.getInputs().get(i);
-			if (nodesVec.contains(n) && n.definesMRJob()) {
-				return true;
-			} else {
-				if (hasMRJobChildNodeOLD(n, nodesVec))
-					return true;
-			}
-
-		}
-
-		return false;
-
-	}
-
-	// Find the descendant of "node" in "nodeVec" that has its definedMRJob flag set to true
-	// returns null if no such descendant exists in nodeVec
-	@SuppressWarnings("unchecked")
-	private N getMRJobChildNode(N node, Vector<N> nodesVec) {
+	private boolean checkDataGenAsChildNode(N node, Vector<N> nodesVec) {
 		if(nodesVec.size() == 0)
-			return null;
+			return true;
 		
 		int index = IDMap.get(node.getID());
+		boolean onlyDatagen = true;
 		for (int i = 0; i < nodesVec.size(); i++) {
 			N n = nodesVec.get(i);
-			if ( n.definesMRJob() && n.get_reachable()[index]) 
-				return n;
+			if ( n.definesMRJob() && n.get_reachable()[index] &&  JobType.findJobTypeFromLop(n) != JobType.DATAGEN )
+				onlyDatagen = false;
 		}
-		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	private N getMRJobChildNodeOLD(N node, Vector<N> nodesVec) {
-		if(nodesVec.size() == 0)
-			return null;
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			N n = (N) node.getInputs().get(i);
-			if (nodesVec.contains(n) && n.definesMRJob()) {
-				return n;
-			} else {
-				N ret = getMRJobChildNodeOLD(n, nodesVec);
-				if ( ret != null ) 
-					return ret;
-			}
-
-		}
-		return null;
+		// return true also when there is no lop in "nodesVec" that defines a MR job.
+		return onlyDatagen;
 	}
 
 	private int getChildAlignment(N node, Vector<N> execNodes, ExecLocation type) {
@@ -4033,25 +4103,6 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean hasChildNodeOLD(N node, Vector<N> nodes) {
-		if(nodes.size() == 0)
-			return false;
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			N n = (N) node.getInputs().get(i);
-			if (nodes.contains(n)) {
-				return true;
-			} else {
-				if (hasChildNodeOLD(n, nodes))
-					return true;
-			}
-
-		}
-
-		return false;
-
-	}
-
-	@SuppressWarnings("unchecked")
 	private boolean hasParentNode(N node, Vector<N> parentNodes) {
 		if ( parentNodes.size() == 0 )
 			return false;
@@ -4061,24 +4112,6 @@ public class Dag<N extends Lop>
 			if ( node.get_reachable()[index])
 				return true;
 		}
-		return false;
-	}
-	
-	@SuppressWarnings("unchecked")
-	private boolean hasParentNodeOLD(N node, Vector<N> childNodes) {
-		if(childNodes.size() == 0)
-			return false;
-		for (int i = 0; i < node.getOutputs().size(); i++) {
-			N n = (N) node.getOutputs().get(i);
-			if (childNodes.contains(n)) {
-				return true;
-			} else {
-				if (hasParentNodeOLD(n, childNodes))
-					return true;
-			}
-
-		}
-
 		return false;
 	}
 	

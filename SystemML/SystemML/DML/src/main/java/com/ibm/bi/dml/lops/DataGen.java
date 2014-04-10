@@ -445,7 +445,7 @@ public class DataGen extends Lop
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("Rand");
+		sb.append(method.toString());
 		sb.append(" ; num_rows=" + this.getOutputParameters().getNum_rows());
 		sb.append(" ; num_cols=" + this.getOutputParameters().getNum_cols());
 		sb.append(" ; nnz=" + this.getOutputParameters().getNnz());

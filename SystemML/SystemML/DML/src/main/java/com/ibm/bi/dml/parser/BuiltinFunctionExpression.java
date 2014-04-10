@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+Â * IBM Confidential
+Â * OCO Source Materials
+Â * (C) Copyright IBM Corp. 2010, 2014
+Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Â */
 
 package com.ibm.bi.dml.parser;
 
@@ -446,7 +446,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		// Contingency tables
-		case CTABLE:
+		case TABLE:
 			if (_third != null) {
 			   checkNumParameters(3);
 			}
@@ -473,7 +473,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.DOUBLE);
 			break;
 
-		case CENTRALMOMENT:
+		case MOMENT:
 			/*
 			 * x = centralMoment(V,order) or xw = centralMoment(V,W,order)
 			 */
@@ -496,7 +496,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(0,0);
 			break;
 
-		case COVARIANCE:
+		case COV:
 			/*
 			 * x = cov(V1,V2) or xw = cov(V1,V2,W)
 			 */
@@ -1011,14 +1011,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;
 		else if (functionName.equals("interQuartileMean"))
 			bifop= Expression.BuiltinFunctionOp.IQM;
-		else if (functionName.equals("ctable"))
-			bifop = Expression.BuiltinFunctionOp.CTABLE;
+		else if (functionName.equals("table"))
+			bifop = Expression.BuiltinFunctionOp.TABLE;
 		else if (functionName.equals("round"))
 			bifop = Expression.BuiltinFunctionOp.ROUND;
-		else if (functionName.equals("centralMoment"))
-			 bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;
+		else if (functionName.equals("moment"))
+			 bifop = Expression.BuiltinFunctionOp.MOMENT;
 		else if (functionName.equals("cov"))
-			bifop = Expression.BuiltinFunctionOp.COVARIANCE;
+			bifop = Expression.BuiltinFunctionOp.COV;
 		else if (functionName.equals("seq"))
 			bifop = Expression.BuiltinFunctionOp.SEQ;
 		else if (functionName.equals("qr"))

@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+Â * IBM Confidential
+Â * OCO Source Materials
+Â * (C) Copyright IBM Corp. 2010, 2014
+Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Â */
 
 package com.ibm.bi.dml.parser;
 
@@ -50,14 +50,12 @@ public abstract class Expression
 		CAST_AS_DOUBLE, 
 		CAST_AS_INT,
 		CAST_AS_BOOLEAN,
-		CENTRALMOMENT, 
 		COLMEAN,
 		COLMAX,
 		COLMIN, 
 		COLSUM,
 		COS,
-		COVARIANCE, 
-		CTABLE,
+		COV, 
 		DIAG,
 		EXP,
 		INTERQUANTILE, 
@@ -67,6 +65,7 @@ public abstract class Expression
 		MAX,
 		MEAN,
 		MIN, 
+		MOMENT, 
 		NCOL, 
 		NROW,
 		PMIN, 
@@ -85,6 +84,7 @@ public abstract class Expression
 		SIN, 
 		SQRT,
 		SUM, 
+		TABLE,
 		TAN,
 		TRACE, 
 		TRANS,
@@ -159,7 +159,10 @@ public abstract class Expression
 	}
 
 	public Identifier getOutput() {
-		return _outputs[0];
+		if (_outputs != null && _outputs.length > 0)
+			return _outputs[0];
+		else
+			return null;
 	}
 	
 	public Identifier[] getOutputs() {

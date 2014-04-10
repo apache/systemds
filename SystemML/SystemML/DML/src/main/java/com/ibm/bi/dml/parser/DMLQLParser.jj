@@ -182,11 +182,8 @@ TOKEN :
 	| <ELSE  	: "else">
 	| <WHILE  	: "while">
 	| <FOR  	: "for">
-	| <TRUE  	: "true">
-	| <TRUE_C   : "TRUE">
-	| <FALSE  	: "false">
-	| <FALSE_C  : "FALSE">
-	| <NULL  	: "null">
+	| <TRUE  	: "TRUE">
+	| <FALSE   : "FALSE">
 	| <FUNCTION : "function">
 
 	// RESERVED KEYWORDS -- core to DML, not in R
@@ -321,7 +318,7 @@ DMLProgram __inputInternal() :
 					| current = WhileStatement()
 					| current = ForStatement()
 					| current = IfStatement()
-					| current = MetaLearningStatement()
+					//| current = MetaLearningStatement()
 					| current = AssignValueStatements()
 				} catch (DMLParseException e){					runningList.add(e);
 					skipStatement = true;
@@ -475,7 +472,7 @@ ArrayList<StatementBlock> GroupedStatements() :
 					| current = WhileStatement()
 					| current = ForStatement()
 					| current = IfStatement()
-					| current = MetaLearningStatement()
+					//| current = MetaLearningStatement()
 					| current = AssignValueStatements()
 				} catch (DMLParseException e){
 					runningList.add(e);
@@ -647,7 +644,7 @@ ForStatement ForStatement() :
 				| current = WhileStatement()
 				| current = ForStatement()
 				| current = IfStatement()
-				| current = MetaLearningStatement()
+			//	| current = MetaLearningStatement()
 				| current = AssignValueStatements()
 			} catch (DMLParseException e){				runningList.add(e);
 				skipStatement = true;
@@ -1228,7 +1225,7 @@ IfStatement IfStatement() :
 					| current = WhileStatement()
 					| current = ForStatement()
 					| current = IfStatement()
-					| current = MetaLearningStatement()
+					//| current = MetaLearningStatement()
 					| current = AssignValueStatements()
 				} catch (DMLParseException e){					runningList.add(e);
 					skipStatement = true;
@@ -1286,7 +1283,7 @@ IfStatement IfStatement() :
 							| current = WhileStatement()
 							| current = ForStatement()
 							| current = IfStatement()
-							| current = MetaLearningStatement()
+						//	| current = MetaLearningStatement()
 							| current = AssignValueStatements()
 						} catch (DMLParseException e){							runningList.add(e);
 							skipStatement = true;
@@ -1386,7 +1383,7 @@ WhileStatement WhileStatement() :
 					| current = WhileStatement()
 					| current = ForStatement()
 					| current = IfStatement()
-					| current = MetaLearningStatement()
+					//| current = MetaLearningStatement()
 					| current = AssignValueStatements()
 				} catch (DMLParseException e) {					runningList.add(e);
 					skipStatement = true; 
@@ -2162,7 +2159,7 @@ BooleanIdentifier BooleanConstant() :
 {
 	try {
 	    (
-	  		((t = <TRUE>) | (t =<FALSE>) | t= <TRUE_C> | t= <FALSE_C>)
+	  		(t = <TRUE> | t =<FALSE>)
 	  		{
 	   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
 	   			id.setDimensions(0,0);
@@ -2468,7 +2465,7 @@ void RelationalOp() :
 	(<LESS> | <GREATER> | <GREATEREQUAL> | <LESSEQUAL> | <EQUAL> | <NOTEQUAL>)
 }
 
-
+/*
 Statement MetaLearningStatement() :
 {
 	FunctionCallIdentifier 	inputs 					= null;
@@ -2510,7 +2507,7 @@ Statement MetaLearningStatement() :
  	}
  
 }
-
+*/
 /*
 ELStatement ELStatement() :
 {

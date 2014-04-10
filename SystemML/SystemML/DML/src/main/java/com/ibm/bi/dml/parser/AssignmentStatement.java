@@ -112,7 +112,7 @@ public class AssignmentStatement extends Statement
 			
 			//recompilation hook after ctable because worst estimates usually too conservative 
 			//(despite propagating worst-case estimates, especially if we not able to propagate sparsity)
-			if(_source != null && _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
+			if(_source != null && _source.toString().contains(Expression.BuiltinFunctionOp.TABLE.toString()) ) 
 				ret = true;
 		}
 		//System.out.println(_source +": "+ret);

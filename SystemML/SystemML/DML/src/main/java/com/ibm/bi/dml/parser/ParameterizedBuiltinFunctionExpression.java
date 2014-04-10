@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+Â * IBM Confidential
+Â * OCO Source Materials
+Â * (C) Copyright IBM Corp. 2010, 2014
+Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Â */
 
 package com.ibm.bi.dml.parser;
 
@@ -26,11 +26,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			return null;
 		
 		// check if the function name is built-in function
-		//	 (assign built-in function op if function is built-in
+		//	 (assign built-in function op if function is built-in)
 		Expression.ParameterizedBuiltinFunctionOp pbifop = null;	
 		if (functionName.equals("cumulativeProbability"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.CDF;
-		else if (functionName.equals("groupedAggregate"))
+		
+		
+		else if (functionName.equals("aggregate"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;
 		else if (functionName.equals("removeEmpty"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.RMEMPTY;

@@ -2789,7 +2789,7 @@ public class DMLTranslator
 						                Hop.ReOrgOp.DIAG, expr);
 			break;
 			
-		case CTABLE:
+		case TABLE:
 			if ( expr3 != null ) {
 				// example DML statement: F = ctable(A,B,W) 
 				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
@@ -2924,7 +2924,7 @@ public class DMLTranslator
 							expr, expr2);
 				}
 			break;
-		case CENTRALMOMENT:
+		case MOMENT:
 			if (expr3 == null){
 				currBuiltinOp=new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp2.CENTRALMOMENT, expr, expr2);
@@ -2935,7 +2935,7 @@ public class DMLTranslator
 			}
 			break;
 			
-		case COVARIANCE:
+		case COV:
 			if (expr3 == null){
 				currBuiltinOp=new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp2.COVARIANCE, expr, expr2);

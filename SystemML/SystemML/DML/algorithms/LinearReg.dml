@@ -1,0 +1,142 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
+# THIS SCRIPT SOLVES LINEAR REGRESSION USING THE CONJUGATE GRADIENT ALGORITHM
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
+# Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# icpt  Int     0       Intercept presence, shifting and rescaling the columns of X:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double 0.000001 Regularization constant (lambda) for L2-regularization; set to nonzero
+#                       for highly dependend/sparse/numerous features
+# tol   Double 0.000001 Tolerance (epsilon); conjugate graduent procedure terminates early if
+#                       L2 norm of the beta-residual is less than tolerance * its initial norm
+# maxi  Int     0       Maximum number of conjugate gradient iterations, 0 = no maximum
+# --------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
+#         OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
+# icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
+# icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+# icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+#                        Col.2: betas for shifted/rescaled X and intercept
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f LR_HOME_DIR/LinearReg.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y
+#     B=OUTPUT_DIR/B icpt=2 reg=1.0 tol=0.001 maxi=100
+
+$icpt=0
+$reg=0.000001
+$tol=0.000001
+$maxi=0
+
+print ("BEGIN LINEAR REGRESSION SCRIPT");
+print ("Reading X...");
+X = read ($X);
+print ("Reading Y...");
+y = read ($Y);
+
+intercept_status = $icpt;
+tolerance = $tol;
+max_iteration = $maxi;
+
+N = nrow (X);
+D = ncol (X);
+ones_N = matrix (1, rows = N, cols = 1);
+zero_cell = matrix (0, rows = 1, cols = 1);
+
+# Introduce the intercept, shift and rescale the columns of X if needed
+
+shift_X_cols = matrix (0, rows = 1, cols = D);
+scale_X_cols = matrix (1, rows = 1, cols = D);
+scale_lambda = matrix (1, rows = 1, cols = D);
+
+if (intercept_status == 2) {
+# Shift and scale the columns of X to mean = 0, variance = 1
+    shift_X_cols = - colSums(X) / N;
+    var_X_cols = (colSums (X ^ 2) - N * shift_X_cols ^ 2) / (N - 1);
+    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    scale_X_cols = 1 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+    X = (X + ones_N %*% shift_X_cols) * (ones_N %*% scale_X_cols);
+}
+
+if (intercept_status == 1 | intercept_status == 2) {
+# Add the intercept column to X
+    X = append (X, ones_N);
+    D = ncol (X);
+    shift_X_cols = append (shift_X_cols, zero_cell);
+    scale_X_cols = append (scale_X_cols, zero_cell + 1);
+    scale_lambda = append (scale_lambda, zero_cell);
+}
+
+lambda = t(scale_lambda) * $reg;
+beta = matrix (0, rows = D, cols = 1);
+
+if (max_iteration == 0) {
+    max_iteration = D;
+}
+i = 0;
+
+# BEGIN THE CONJUGATE GRADIENT ALGORITHM
+print ("Running the CG algorithm...");
+
+r = - t(X) %*% y;
+p = - r;
+norm_r2 = sum (r ^ 2);
+norm_r2_initial = norm_r2;
+
+while (i < max_iteration & norm_r2 / norm_r2_initial > tolerance ^ 2)
+{
+	q = t(X) %*% (X %*% p) + lambda * p;
+	a = norm_r2 / sum (p * q);
+	beta = beta + a * p;
+	r = r + a * q;
+	old_norm_r2 = norm_r2;
+	norm_r2 = sum (r ^ 2);
+	p = -r + (norm_r2 / old_norm_r2) * p;
+	i = i + 1;
+}
+
+print ("The CG algorithm is done.");
+# END THE CONJUGATE GRADIENT ALGORITHM
+
+y_residual = y - X %*% beta;
+res_bias = sum (y_residual) / N;
+ss_error = sum (y_residual ^ 2) - N * res_bias ^ 2;
+ss_total = sum (y ^ 2) - sum (y) ^ 2 / N;
+plain_R2 = 1 - ss_error / ss_total;
+
+print ("Residual bias = " + res_bias);
+print ("R^2 (bias subtracted) = " + plain_R2);    
+
+deg_freedom = N - ncol(X);
+if (intercept_status == 0) { deg_freedom = deg_freedom - 1 };
+if (deg_freedom > 0) {
+    res_var = ss_error / deg_freedom;
+    adjusted_R2 = 1 - res_var / (ss_total / (N - 1));
+    print ("Adjusted R^2 = " + adjusted_R2);
+    print ("Residual st.dev. = " + sqrt (res_var));
+}
+
+# Prepare the output matrix
+print("Writing the output matrix...");
+
+beta_out = beta;
+if (intercept_status == 2) {
+    beta_out = t(scale_X_cols) * beta_out;
+    beta_out [D, ] = beta_out [D, ] + shift_X_cols %*% beta_out;
+    beta_out = append (beta_out, beta);
+}
+write (beta_out, $B);

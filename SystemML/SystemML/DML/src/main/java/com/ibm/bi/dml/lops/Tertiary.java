@@ -26,7 +26,14 @@ public class Tertiary extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum OperationTypes { CTABLE_TRANSFORM, CTABLE_TRANSFORM_SCALAR_WEIGHT, CTABLE_TRANSFORM_HISTOGRAM, CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, INVALID };	
+	public enum OperationTypes { 
+		CTABLE_TRANSFORM, 
+		CTABLE_TRANSFORM_SCALAR_WEIGHT, 
+		CTABLE_TRANSFORM_HISTOGRAM, 
+		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, 
+		CTABLE_EXPAND_SCALAR_WEIGHT, 
+		INVALID };	
+	
 	OperationTypes operation;
 	
 
@@ -64,14 +71,16 @@ public class Tertiary extends Lop
 		boolean definesMRJob = false;
 		
 		if ( et == ExecType.MR ) {
-			/*
-			 *  This lop can be executed in GMR, RAND, REBLOCK jobs
-			 */
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
+			lps.addCompatibility(JobType.DATAGEN); 
+			//lps.addCompatibility(JobType.REBLOCK); MB: disabled since no runtime support
 			
-			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+			if( operation==OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+				this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+				//TODO create runtime for ctable in gmr mapper and switch to maporreduce.
+				//this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
+			else
+				this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
@@ -86,7 +95,8 @@ public class Tertiary extends Lop
 
 	}
 
-	public static OperationTypes findCtableOperationByInputDataTypes(DataType dt1, DataType dt2, DataType dt3) {
+	public static OperationTypes findCtableOperationByInputDataTypes(DataType dt1, DataType dt2, DataType dt3) 
+	{
 		if ( dt1 == DataType.MATRIX ) {
 			if (dt2 == DataType.MATRIX && dt3 == DataType.SCALAR) {
 				// F = ctable(A,B) or F = ctable(A,B,1)
@@ -205,7 +215,37 @@ public class Tertiary extends Lop
 			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
+		
+		case CTABLE_EXPAND_SCALAR_WEIGHT:
+			// F = ctable(seq,B) or F = ctable(seq,B,1)
+			// second and third inputs must be scalars, and hence input_index2 == -1, input_index3 == -1
+			if ( input_index3 != -1 ) {
+				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
+			}
 			
+			// parse the third input (scalar)
+			// if it is a literal, copy val, else surround with the label with
+			// ## symbols. these will be replaced at runtime.
+			
+			int scalarIndex2 = 1; // index of the scalar input
+			int scalarIndex3 = 2; // index of the scalar input
+			
+			sb.append( "ctableexpandscalarweight" );
+			sb.append( OPERAND_DELIMITOR );
+			//get(0) because input under group
+			sb.append( getInputs().get(0).prepInputOperand(input_index1));
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append( getInputs().get(scalarIndex2).prepScalarInputOperand(getExecType()));
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append( getInputs().get(scalarIndex3).prepScalarInputOperand(getExecType()));
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append( this.prepOutputOperand(output_index));
+			
+			break;
+		
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			if ( input_index2 != -1 || input_index3 != -1)
@@ -259,5 +299,48 @@ public class Tertiary extends Lop
 		return sb.toString();
 	}
 
- 
+	/**
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static String getOpcode(OperationTypes type)
+	{
+		switch( type ) 
+		{
+			case CTABLE_TRANSFORM: return "ctabletransform";
+			case CTABLE_TRANSFORM_SCALAR_WEIGHT: return "ctabletransformscalarweight";
+			case CTABLE_EXPAND_SCALAR_WEIGHT: return "ctableexpandscalarweight";
+			case CTABLE_TRANSFORM_HISTOGRAM: return "ctabletransformhistogram"; 
+			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: return "ctabletransformweightedhistogram";
+		
+			default:
+				throw new UnsupportedOperationException("Tertiary operation code is not defined: " + type);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static OperationTypes getOperationType(String opcode)
+	{
+		OperationTypes op = null;
+		
+		if( opcode.equals("ctabletransform") )
+			op = OperationTypes.CTABLE_TRANSFORM;
+		else if( opcode.equals("ctabletransformscalarweight") )
+			op = OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT;
+		else if( opcode.equals("ctableexpandscalarweight") )
+			op = OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT;
+		else if( opcode.equals("ctabletransformhistogram") )
+			op = OperationTypes.CTABLE_TRANSFORM_HISTOGRAM;
+		else if( opcode.equals("ctabletransformweightedhistogram") )
+			op = OperationTypes.CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM;
+		else
+			throw new UnsupportedOperationException("Tertiary operation code is not defined: " + opcode);
+		
+		return op;
+	}
 }

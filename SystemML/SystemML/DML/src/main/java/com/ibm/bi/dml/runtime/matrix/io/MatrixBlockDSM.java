@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
+import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
@@ -68,7 +69,8 @@ public class MatrixBlockDSM extends MatrixValue
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
-		SPARSE_BLOCK, //sparse representation, see sparseRows
+		ULTRA_SPARSE_BLOCK, //ultra sparse representation, in-mem same as sparse
+		SPARSE_BLOCK, //sparse representation, see sparseRows 
 		DENSE_BLOCK, //dense representation, see denseBlock			
 	}
 	
@@ -121,30 +123,6 @@ public class MatrixBlockDSM extends MatrixValue
 	public MatrixBlockDSM(MatrixBlockDSM that)
 	{
 		this.copy(that);
-	}
-	
-	public MatrixBlockDSM(HashMap<CellIndex, Double> map) 
-	{
-		// compute dimensions from the map
-		int nrows=0, ncols=0;
-		for (CellIndex index : map.keySet()) {
-			nrows = (nrows < index.row ? index.row : nrows);
-			ncols = (ncols < index.column ? index.column : ncols);
-		}
-		
-		rlen = nrows;
-		clen = ncols;
-		sparse = checkRealSparsity(nrows, ncols, map.size()); 
-		nonZeros = 0;
-		maxrow = nrows;
-		maxcolumn = ncols;
-		estimatedNNzsPerRow = (int)Math.ceil((double)map.size()/(double)rlen);
-		
-		for (CellIndex index : map.keySet()) {
-			double d  = map.get(index).doubleValue();
-			if ( d != 0 ) 
-				quickSetValue(index.row-1, index.column-1, d);
-		}
 	}
 	
 	////////
@@ -454,6 +432,18 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 		
 		return (lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT);
+	}
+	
+	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param nonZeros
+	 * @return
+	 */
+	public static boolean isExactInSparseFormat(long rlen, long clen, long nonZeros)
+	{		
+		return (nonZeros<(rlen*clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT);
 	}
 	
 	public boolean isVector() 
@@ -1570,6 +1560,10 @@ public class MatrixBlockDSM extends MatrixValue
 		BlockType format=BlockType.values()[bformat];
 		switch(format)
 		{
+			case ULTRA_SPARSE_BLOCK:
+				sparse = true;
+				readUltraSparseBlock(in);
+				break;
 			case SPARSE_BLOCK:
 				sparse = true;
 				readSparseBlock(in);
@@ -1621,6 +1615,23 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
+	private void readUltraSparseBlock(DataInput in) throws IOException 
+	{	
+		adjustSparseRows(rlen-1); //adjust to size
+		resetSparse(); //reset all sparse rows
+		
+		nonZeros=in.readInt();
+		for(int i=0; i<nonZeros; i++)
+		{
+			int r = in.readInt();
+			int c = in.readInt();
+			double val = in.readDouble();			
+			if(sparseRows[r]==null)
+				sparseRows[r]=new SparseRow(1,clen);
+			sparseRows[r].append(c, val);
+		}
+	}
+	
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeInt(rlen);
@@ -1628,8 +1639,10 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		if(sparse)
 		{
-			if(sparseRows==null)
+			if(sparseRows==null || nonZeros==0) //MB or cond
 				writeEmptyBlock(out);
+			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
+				writeSparseToUltraSparse(out); //MB new write
 			//if it should be dense, then write to the dense format
 			else if(nonZeros>=((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
 				writeSparseToDense(out);
@@ -1637,9 +1650,11 @@ public class MatrixBlockDSM extends MatrixValue
 				writeSparseBlock(out);
 		}else
 		{
-			if(denseBlock==null)
+			if(denseBlock==null || nonZeros==0) //MB or cond
 				writeEmptyBlock(out);
 			//if it should be sparse
+			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
+				writeDenseToUltraSparse(out);
 			else if(nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
 				writeDenseToSparse(out);
 			else
@@ -1697,6 +1712,26 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
+	private void writeSparseToUltraSparse(DataOutput out) throws IOException 
+	{
+		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
+		out.writeInt(nonZeros);
+
+		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
+			if(sparseRows[r]!=null && sparseRows[r].size()>0 )
+			{
+				int alen = sparseRows[r].size();
+				int[] aix = sparseRows[r].getIndexContainer();
+				double[] avals = sparseRows[r].getValueContainer();
+				for(int j=0; j<alen; j++)
+				{
+					out.writeInt(r);
+					out.writeInt(aix[j]);
+					out.writeDouble(avals[j]);
+				}
+			}	
+	}
+	
 	private void writeSparseToDense(DataOutput out) 
 		throws IOException 
 	{
@@ -1738,6 +1773,21 @@ public class MatrixBlockDSM extends MatrixValue
 			for(int j=0; j<clen; j++)
 				out.writeDouble(quickGetValue(i, j));
 		*/
+	}
+	
+	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
+	{
+		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
+		out.writeInt(nonZeros);
+
+		for(int r=0, ix=0; r<rlen; r++)
+			for(int c=0; c<clen; c++, ix++)
+				if( denseBlock[ix]!=0 )
+				{
+					out.writeInt(r);
+					out.writeInt(c);
+					out.writeDouble(denseBlock[ix]);
+				}
 	}
 	
 	private void writeDenseToSparse(DataOutput out) 
@@ -1784,23 +1834,27 @@ public class MatrixBlockDSM extends MatrixValue
 			lnonZeros = (long) nonZeros;
 		}
 				
+		//get exact size estimate (see write for the corresponding meaning)
 		if(sparse)
 		{
-			if(sparseRows==null)
+			if(sparseRows==null || nonZeros==0)
 				return 9; //empty block
+			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
+				return 4 + nonZeros*16 + 9; //ultra sparse block
 			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
-				return lrlen*lclen*8 + 9;	
+				return lrlen*lclen*8 + 9;	//dense block
 			else
-				return lrlen*4 + lnonZeros*12 + 9;	
+				return lrlen*4 + lnonZeros*12 + 9; //sparse block
 		}else
 		{
-			if(denseBlock==null)
+			if(denseBlock==null || nonZeros==0)
 				return 9; //empty block
-			//if it should be sparse
+			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
+				return 4 + nonZeros*16 + 9; //ultra sparse block
 			else if(lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT)
-				return lrlen*4 + lnonZeros*12 + 9;
+				return lrlen*4 + lnonZeros*12 + 9; //sparse block
 			else
-				return lrlen*lclen*8 + 9;
+				return lrlen*lclen*8 + 9; //dense block
 		}
 	}
 	
@@ -2728,6 +2782,7 @@ public class MatrixBlockDSM extends MatrixValue
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlockDSM result=checkType(ret);
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
@@ -2763,8 +2818,8 @@ public class MatrixBlockDSM extends MatrixValue
 						double[] values=sparseRows[r].getValueContainer();
 						for(int i=0; i<sparseRows[r].size(); i++)
 						{
-							result.tempCellIndex.set(r, cols[i]);
-							op.fn.execute(result.tempCellIndex, temp);
+							tempCellIndex.set(r, cols[i]);
+							op.fn.execute(tempCellIndex, temp);
 							result.appendValue(temp.row, temp.column, values[i]);
 						}
 					}
@@ -2813,6 +2868,7 @@ public class MatrixBlockDSM extends MatrixValue
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixBlockDSM result=checkType(ret);
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
@@ -3526,6 +3582,7 @@ public class MatrixBlockDSM extends MatrixValue
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
 		if(op.aggOp.correctionExists)
 		{
@@ -3566,9 +3623,11 @@ public class MatrixBlockDSM extends MatrixValue
 		//initialize result
 		if(op.aggOp.initialValue!=0)
 			result.resetDenseWithValue(result.rlen, result.clen, op.aggOp.initialValue);
-
+		
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		KahanObject buffer=new KahanObject(0,0);
 		int r = 0, c = 0;
+		
 		if(sparse)
 		{
 			if(sparseRows!=null)
@@ -3580,9 +3639,9 @@ public class MatrixBlockDSM extends MatrixValue
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
 					{
-						result.tempCellIndex.set(r, cols[i]);
-						op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-						incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, values[i], buffer);
+						tempCellIndex.set(r, cols[i]);
+						op.indexFn.execute(tempCellIndex, tempCellIndex);
+						incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, values[i], buffer);
 
 					}
 				}
@@ -3597,9 +3656,9 @@ public class MatrixBlockDSM extends MatrixValue
 				{
 					r=i/clen;
 					c=i%clen;
-					result.tempCellIndex.set(r, c);
-					op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, denseBlock[i], buffer);
+					tempCellIndex.set(r, c);
+					op.indexFn.execute(tempCellIndex, tempCellIndex);
+					incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, denseBlock[i], buffer);
 				}
 			}
 		}
@@ -3612,12 +3671,14 @@ public class MatrixBlockDSM extends MatrixValue
 		if(op.aggOp.initialValue!=0)
 			result.resetDenseWithValue(result.rlen, result.clen, op.aggOp.initialValue);
 		
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		KahanObject buffer=new KahanObject(0,0);
+		
 		for(int i=0; i<rlen; i++)
 			for(int j=0; j<clen; j++)
 			{
-				result.tempCellIndex.set(i, j);
-				op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
+				tempCellIndex.set(i, j);
+				op.indexFn.execute(tempCellIndex, tempCellIndex);
 
 				if(op.aggOp.correctionExists
 				   && op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN
@@ -3634,7 +3695,7 @@ public class MatrixBlockDSM extends MatrixValue
 						result.quickSetValue(i, 1, newMaxValue);
 					}
 				}else
-					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, quickGetValue(i,j), buffer);
+					incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column, quickGetValue(i,j), buffer);
 			}
 	}
 	
@@ -4148,20 +4209,6 @@ public class MatrixBlockDSM extends MatrixValue
 		} while(t<pos && i < getNumRows());
 		
 		return quickGetValue(i,0);
-		
-		/*if ( sum_wt%2 == 1 ) {
-			// sum_wt is odd
-			return quickGetValue(i,0);
-		}
-		else {
-			// sum_wt is even
-			if ( pos+1 <= t ) {
-				return quickGetValue(i,0);
-			}
-			else {
-				return (quickGetValue(i,0)+quickGetValue(i+1,0))/2;
-			}
-		}*/
 	}
 	
 	/**
@@ -4899,231 +4946,142 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 	
-	@Override
-	/*
+	/**
 	 *  D = ctable(A,v2,W)
 	 *  this <- A; scalarThat <- v2; that2 <- W; result <- D
-	 */
-	public void tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2Val, HashMap<CellIndex, Double> ctableResult)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		/*
-		 * (i1,j1,v1) from input1 (this)
-		 * (v2) from sclar_input2 (scalarThat)
-		 * (i3,j3,w)  from input3 (that2)
-		 */
-		
-		MatrixBlockDSM that2 = checkType(that2Val);
-		
-		double v1;
-		double v2 = scalarThat;
-		double w;
-		if(sparse)
-		{
-			if(sparseRows!=null)
-			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if ( sparseRows[r] == null )
-						continue;
-					int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
-					{
-						// output (v1,v2,w)
-						v1 = values[i];
-						w = that2.quickGetValue(r, cols[i]);
-						updateCtable(v1, v2, w, ctableResult);
-					}
-				}
-			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					v1 = this.quickGetValue(r, c);
-					w = that2.quickGetValue(r, c);
-					updateCtable(v1, v2, w, ctableResult);
-				}
-			}
-			
-		}
-		
-	}
-
-	/*
-	 *  D = ctable(A,v2,w)
-	 *  this <- A; scalar_that <- v2; scalar_that2 <- w; result <- D
+	 *  
+	 * (i1,j1,v1) from input1 (this)
+	 * (v2) from sclar_input2 (scalarThat)
+	 * (i3,j3,w)  from input3 (that2)
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
-			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
-		/*
-		 * (i1,j1,v1) from input1 (this)
-		 * (v2) from sclar_input2 (scalarThat)
-		 * (w)  from scalar_input3 (scalarThat2)
-		 */
-		
-		double v1;
+			MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		MatrixBlockDSM that2 = checkType(that2Val);
+		CTable ctable = CTable.getCTableFnObject();
 		double v2 = scalarThat;
-		double w = scalarThat2;
-		if(sparse)
-		{
-			if(sparseRows!=null)
-			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if ( sparseRows[r] == null )
-						continue;
-					//int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
-					{
-						// output (v1,v2,w)
-						v1 = values[i];
-						updateCtable(v1, v2, w, ctableResult);
-					}
-				}
-			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					v1 = this.quickGetValue(r, c);
-					updateCtable(v1, v2, w, ctableResult);
-				}
-			}
-			
-		}
 		
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ )
+			{
+				double v1 = this.quickGetValue(i, j);
+				double w = that2.quickGetValue(i, j);
+				ctable.execute(v1, v2, w, ctableResult);
+			}
 	}
 
-	/*
+	/**
+	 *  D = ctable(A,v2,w)
+	 *  this <- A; scalar_that <- v2; scalar_that2 <- w; result <- D
+	 *  
+	 * (i1,j1,v1) from input1 (this)
+     * (v2) from sclar_input2 (scalarThat)
+	 * (w)  from scalar_input3 (scalarThat2)
+	 */
+	@Override
+	public void tertiaryOperations(Operator op, double scalarThat,
+			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		CTable ctable = CTable.getCTableFnObject();
+		double v2 = scalarThat;
+		double w = scalarThat2;
+		
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ )
+			{
+				double v1 = this.quickGetValue(i, j);
+				ctable.execute(v1, v2, w, ctableResult);
+			}		
+	}
+	
+	/**
+	 * Specific ctable case of ctable(seq(...),X), where X is the only
+	 * matrix input. The 'left' input parameter specifies if the seq appeared
+	 * on the left, otherwise it appeared on the right.
+	 * 
+	 */
+	@Override
+	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
+			boolean left, int brlen, HashMap<MatrixIndexes, Double> ctableResult)
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		CTable ctable = CTable.getCTableFnObject();
+		double w = scalarThat;
+		int offset = (int) ((ix1.getRowIndex()-1)*brlen); 
+		
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ )
+			{
+				double v1 = this.quickGetValue(i, j);
+				if( left )
+					ctable.execute(offset+i+1, v1, w, ctableResult);
+				else
+					ctable.execute(v1, offset+i+1, w, ctableResult);
+			}
+	}
+
+	/**
 	 *  D = ctable(A,B,w)
 	 *  this <- A; that <- B; scalar_that2 <- w; result <- D
+	 *  
+	 * (i1,j1,v1) from input1 (this)
+	 * (i1,j1,v2) from input2 (that)
+	 * (w)  from scalar_input3 (scalarThat2)
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue thatVal,
-			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-
-		/*
-		 * (i1,j1,v1) from input1 (this)
-		 * (i1,j1,v2) from input2 (that)
-		 * (w)  from scalar_input3 (scalarThat2)
-		 */
-		
+			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
 		MatrixBlockDSM that = checkType(thatVal);
-		
-		double v1, v2;
+		CTable ctable = CTable.getCTableFnObject();
 		double w = scalarThat2;
-		if(sparse)
-		{
-			if(sparseRows!=null)
+		
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ )
 			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if ( sparseRows[r] == null )
-						continue;
-					int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
-					{
-						// output (v1,v2,w)
-						v1 = values[i];
-						v2 = that.quickGetValue(r, cols[i]);
-						updateCtable(v1, v2, w, ctableResult);
-					}
-				}
+				double v1 = this.quickGetValue(i, j);
+				double v2 = that.quickGetValue(i, j);
+				ctable.execute(v1, v2, w, ctableResult);
 			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					v1 = this.quickGetValue(r, c);
-					v2 = that.quickGetValue(r, c);
-					updateCtable(v1, v2, w, ctableResult);
-				}
-			}
-			
-		}
 	}
 	
-	/*
+	/**
 	 *  D = ctable(A,B,W)
 	 *  this <- A; that <- B; that2 <- W; result <- D
+	 *  
+	 * (i1,j1,v1) from input1 (this)
+	 * (i1,j1,v2) from input2 (that)
+	 * (i1,j1,w)  from input3 (that2)
 	 */
-	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<CellIndex, Double> ctableResult)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
-		/*
-		 * (i1,j1,v1) from input1 (this)
-		 * (i1,j1,v2) from input2 (that)
-		 * (i1,j1,w)  from input3 (that2)
-		 */
-		
 		MatrixBlockDSM that = checkType(thatVal);
 		MatrixBlockDSM that2 = checkType(that2Val);
+		CTable ctable = CTable.getCTableFnObject();
 		
-		double v1, v2, w;
-		if(sparse)
-		{
-			if(sparseRows!=null)
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ )
 			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if ( sparseRows[r] == null )
-						continue;
-					int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
-					{
-						// output (v1,v2,w)
-						v1 = values[i];
-						v2 = that.quickGetValue(r, cols[i]);
-						w = that2.quickGetValue(r, cols[i]);
-						updateCtable(v1, v2, w, ctableResult);
-					}
-				}
-			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					v1 = this.quickGetValue(r, c);
-					v2 = that.quickGetValue(r, c);
-					w = that2.quickGetValue(r, c);
-					updateCtable(v1, v2, w, ctableResult);
-				}
-			}
-			
-		}
+				double v1 = this.quickGetValue(i, j);
+				double v2 = that.quickGetValue(i, j);
+				double w = that2.quickGetValue(i, j);
+				ctable.execute(v1, v2, w, ctableResult);
+			}		
 	}
 
 	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
@@ -5397,22 +5355,19 @@ public class MatrixBlockDSM extends MatrixValue
 		// Allocate memory
 		if ( sparse ) {
 			sparseRows = new SparseRow[rows];
-			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
-			}
+			//note: individual sparse rows are allocated on demand,
+			//for consistentcy with memory estimates and prevent OOMs.
 		}
 		else {
 			this.allocateDenseBlock();
 		}
 
-		double val;
 		double range = max - min;
 
 		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
 		int ncb = (int) Math.ceil((double)cols/colsInBlock);
 		int blockrows, blockcols, rowoffset, coloffset;
-		int blocknnz,i,j;
-		double v;
+		int blocknnz;
 		// loop throught row-block indices
 		for(int rbi=0; rbi < nrb; rbi++) {
 			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
@@ -5423,7 +5378,7 @@ public class MatrixBlockDSM extends MatrixValue
 				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
 				coloffset = cbj*colsInBlock;
 				
-				/* Generate a block (rbi,cbj) */
+				// Generate a block (rbi,cbj) 
 				
 				// select the appropriate block-level seed
 				long seed = -1;
@@ -5449,18 +5404,19 @@ public class MatrixBlockDSM extends MatrixValue
 				if ( localSparse ) {
 					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
 					for(int ind=0; ind<blocknnz; ind++) {
-						i = nnzPRNG.nextInt(blockrows);
-						j = nnzPRNG.nextInt(blockcols);
-						v = nnzPRNG.nextDouble();
-						//System.out.println("("+(rowoffset+i)+","+(coloffset+j) +") " + i + "," + j);
-						this.sparseRows[rowoffset+i].set(coloffset+j, v);
+						int i = nnzPRNG.nextInt(blockrows);
+						int j = nnzPRNG.nextInt(blockcols);
+						double v = nnzPRNG.nextDouble();
+						if( sparseRows[rowoffset+i]==null )
+							sparseRows[rowoffset+i]=new SparseRow(estimatedNNzsPerRow, clen);
+						sparseRows[rowoffset+i].set(coloffset+j, v);
 					}
 				}
 				else {
 					if (sparsity == 1.0) {
 						for(int ii=0; ii < blockrows; ii++) {
 							for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-								val = min + (range * valuePRNG.nextDouble());
+								double val = min + (range * valuePRNG.nextDouble());
 								this.denseBlock[index] = val;
 							}
 						}
@@ -5478,9 +5434,10 @@ public class MatrixBlockDSM extends MatrixValue
 							for(int ii=0; ii < blockrows; ii++) {
 								for(int jj=0; jj < blockcols; jj++) {
 									if(nnzPRNG.nextDouble() <= sparsity) {
-										val = min + (range * valuePRNG.nextDouble());
-										//this.denseBlock[index] = val;
-										this.sparseRows[ii+rowoffset].set(jj+coloffset, val);
+										double val = min + (range * valuePRNG.nextDouble());
+										if( sparseRows[ii+rowoffset]==null )
+											sparseRows[ii+rowoffset]=new SparseRow(estimatedNNzsPerRow, clen);
+										sparseRows[ii+rowoffset].set(jj+coloffset, val);
 									}
 								}
 							}
@@ -5489,7 +5446,7 @@ public class MatrixBlockDSM extends MatrixValue
 							for(int ii=0; ii < blockrows; ii++) {
 								for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
 									if(nnzPRNG.nextDouble() <= sparsity) {
-										val = min + (range * valuePRNG.nextDouble());
+										double val = min + (range * valuePRNG.nextDouble());
 										this.denseBlock[index] = val;
 									}
 								}

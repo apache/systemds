@@ -9,6 +9,7 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.CentralMoment;
 import com.ibm.bi.dml.lops.CoVariance;
@@ -25,6 +26,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -59,6 +61,8 @@ public class TertiaryOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITE = true;
 	
 	Hop.OpOp3 op;
 
@@ -329,6 +333,7 @@ public class TertiaryOp extends Hop
 		DataType dt2 = getInput().get(1).get_dataType(); 
 		DataType dt3 = getInput().get(2).get_dataType(); 
 		Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+		tertiaryOp = isSequenceRewriteApplicable() ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOp;
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.CP ) {
@@ -429,6 +434,29 @@ public class TertiaryOp extends Hop
 						tertiaryOp,
 						get_dataType(), get_valueType(), et);
 				break;
+		
+			case CTABLE_EXPAND_SCALAR_WEIGHT:
+				// F=ctable(seq(1,N),A) or F = ctable(seq,A,1)
+				int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0
+				
+				Group group = new Group(
+						getInput().get(left).constructLops(),
+						Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group.getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block(), getNnz());
+				//TODO remove group, whenever we push it into the map task
+				
+				tertiary = new Tertiary(
+						group,//getInput().get(1).constructLops(), //matrix
+						getInput().get(2).constructLops(), //weight
+						new LiteralOp(String.valueOf(left),left).constructLops(), //left
+						tertiaryOp,
+						get_dataType(), get_valueType(), et);
+				
+				break;
+				
 			case CTABLE_TRANSFORM_HISTOGRAM:
 				// F=ctable(A,1) or F = ctable(A,1,1)
 				tertiary = new Tertiary(
@@ -808,7 +836,18 @@ public class TertiaryOp extends Hop
 			switch(op) 
 			{
 				case CTABLE:
-					//do nothing because the output size is data dependent
+					//in general, do nothing because the output size is data dependent
+					//however, for ctable_expand at least one dimension is known
+					if( isSequenceRewriteApplicable() )
+					{
+						Hop input1 = getInput().get(0);
+						Hop input2 = getInput().get(1);
+						
+						if( input1 instanceof DataGenOp && ((DataGenOp)input1).getDataGenMethod()==DataGenMethod.SEQ )
+							set_dim1( input1._dim1 );
+						else //if( input2 instanceof DataGenOp && ((DataGenOp)input2).getDataGenMethod()==DataGenMethod.SEQ )
+							set_dim2( input2._dim1 );
+					}
 					break;
 				
 				case QUANTILE:
@@ -848,5 +887,66 @@ public class TertiaryOp extends Hop
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1)
 				&& getInput().get(2) == that2.getInput().get(2));
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private boolean isSequenceRewriteApplicable() 
+	{
+		return    isSequenceRewriteApplicable(true)
+			   || isSequenceRewriteApplicable(false);
+	}
+	
+	/**
+	 * 
+	 * @param left
+	 * @return
+	 */
+	private boolean isSequenceRewriteApplicable( boolean left ) 
+	{
+		boolean ret = false;
+		
+		//early abort if rewrite globally not allowed
+		if( !ALLOW_CTABLE_SEQUENCE_REWRITE )
+			return ret;
+		
+		try
+		{
+			if( getInput().size()==2 || (getInput().size()==3 && getInput().get(2).get_dataType()==DataType.SCALAR) )
+			{
+				Hop input1 = getInput().get(0);
+				Hop input2 = getInput().get(1);
+				if( input1.get_dataType() == DataType.MATRIX && input2.get_dataType() == DataType.MATRIX )
+				{
+					//probe rewrite on left input
+					if( left && input1 instanceof DataGenOp )
+					{
+						DataGenOp dgop = (DataGenOp) input1;
+						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
+							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+							ret = (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1);
+						}
+					}
+					//probe rewrite on right input
+					if( !left && input2 instanceof DataGenOp )
+					{
+						DataGenOp dgop = (DataGenOp) input2;
+						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
+							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1);
+						}
+					}
+				}			
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new RuntimeException(ex);
+			//ret = false;
+		}
+			
+		return ret;
 	}
 }

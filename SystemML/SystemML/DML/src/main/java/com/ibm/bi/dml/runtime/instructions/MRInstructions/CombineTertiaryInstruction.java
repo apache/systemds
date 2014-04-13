@@ -1,12 +1,14 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
+import com.ibm.bi.dml.lops.Tertiary;
+import com.ibm.bi.dml.lops.Tertiary.OperationTypes;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -14,16 +16,15 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
 public class CombineTertiaryInstruction extends TertiaryInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CombineTertiaryInstruction(Operator op, byte in1, byte in2,
+	public CombineTertiaryInstruction(OperationTypes op, byte in1, byte in2,
 			byte in3, byte out, String istr) {
 		super(op, in1, in2, in3, out, istr);
 		mrtype = MRINSTRUCTION_TYPE.CombineTertiary;
@@ -43,8 +44,10 @@ public class CombineTertiaryInstruction extends TertiaryInstruction
 		in3 = Byte.parseByte(parts[3]);
 		out = Byte.parseByte(parts[4]);
 		
+		OperationTypes op = Tertiary.getOperationType(opcode);
+		
 		if ( opcode.equalsIgnoreCase("combinetertiary") ) {
-			return new CombineTertiaryInstruction(null, in1, in2, in3, out, str);
+			return new CombineTertiaryInstruction(op, in1, in2, in3, out, str);
 		} 
 		return null;
 	}

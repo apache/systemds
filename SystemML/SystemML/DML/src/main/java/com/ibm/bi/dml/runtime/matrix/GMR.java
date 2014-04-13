@@ -240,15 +240,6 @@ public class GMR
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);
 		
-		
-		//System.out.println("GMR --> setting blocksize = "+ DMLTranslator.DMLBlockSize);
-		/* TODO MP
-		if(realbrlens == null || realbrlens.length == 0) {
-			job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);
-		}else {
-			job.setInt("DMLBlockSize", realbrlens[0]);
-		}*/
-		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, aggInstructionsInReducer, 
 				otherInstructionsInReducer, resultIndexes);

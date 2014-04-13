@@ -16,9 +16,10 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 
 public class TertiaryCPInstruction extends ComputationCPInstruction
@@ -76,7 +77,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
-		HashMap<CellIndex,Double> ctableMap = new HashMap<CellIndex,Double>();
+		HashMap<MatrixIndexes,Double> ctableMap = new HashMap<MatrixIndexes,Double>();
 		MatrixBlock resultBlock = null;
 		Tertiary.OperationTypes ctableOp = findCtableOperation();
 		
@@ -119,11 +120,9 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		if(input3.get_dataType() == DataType.MATRIX)
 			ec.releaseMatrixInput(input3.get_name());
 		
-		resultBlock = new MatrixBlock(ctableMap);
+		resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
 		ec.setMatrixOutput(output.get_name(), resultBlock);
 		ctableMap.clear();
 		resultBlock = null;
-	}
-
-	
+	}	
 }

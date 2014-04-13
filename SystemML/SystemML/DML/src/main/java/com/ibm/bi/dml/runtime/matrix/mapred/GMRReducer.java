@@ -16,10 +16,9 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
@@ -37,24 +36,20 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	private MatrixValue realOutValue;
 	private GMRCtableBuffer _buff;
 	
+	@Override
 	public void reduce(MatrixIndexes indexes, Iterator<TaggedMatrixValue> values,
 			OutputCollector<MatrixIndexes, MatrixValue> out, Reporter reporter) 
 		throws IOException 
 	{
 		long start=System.currentTimeMillis();
 		commonSetup(reporter);
-		
 		cachedValues.reset();
 	
 		//perform aggregate operations first
 		processAggregateInstructions(indexes, values);
 		
 		//perform mixed operations
-		try {
-			processReducerInstructionsInGMR();
-		} catch (Exception e) {
-			throw new IOException(e);
-		} 
+		processReducerInstructionsInGMR();
 		
 		//output the final result matrices
 		outputResultsFromCachedValuesForGMR(reporter);
@@ -62,24 +57,41 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
 	
-	//process mixture of instructions
-	protected void processReducerInstructionsInGMR() throws DMLUnsupportedOperationException, DMLRuntimeException 
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	protected void processReducerInstructionsInGMR() 
+		throws IOException 
 	{
 		if(mixed_instructions==null)
 			return;
-		for(MRInstruction ins: mixed_instructions)
-		{
-			if(ins instanceof TertiaryInstruction)
-			{  
-				((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer());
-				if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
-					_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
+		
+		try 
+		{		
+			for(MRInstruction ins: mixed_instructions)
+			{
+				if(ins instanceof TertiaryInstruction)
+				{  
+					MatrixCharacteristics dim = dimensions.get(((TertiaryInstruction) ins).input1);
+					((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), dim.get_rows_per_block(), dim.get_cols_per_block());
+					if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
+						_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
+				}
+				else
+					processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 			}
-			else
-				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
+		} 
+		catch (Exception e) {
+			throw new IOException(e);
 		}
 	}
 	
+	/**
+	 * 
+	 * @param reporter
+	 * @throws IOException
+	 */
 	protected void outputResultsFromCachedValuesForGMR(Reporter reporter) throws IOException
 	{
 		for(int i=0; i<resultIndexes.length; i++)
@@ -97,26 +109,20 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 			else
 				collectOutput_N_Increase_Counter(outValue.getIndexes(), 
 					outValue.getValue(), i, reporter);
-	//		LOG.info("output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
-	//		System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
 		}
 	}
 	
-	public void close()throws IOException
-	{
-		//flush ctable buffer 
-		_buff.flushBuffer(cachedReporter);
-		
-			
-		super.close();		
-	}
-	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);
 		
-		_buff = new GMRCtableBuffer(collectFinalMultipleOutputs);
-		_buff.setMetadataReferences(resultIndexes, resultsNonZeros, resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
+		//init ctable buffer (if required, after super init)
+		if( containsTertiaryInstruction() ){
+			_buff = new GMRCtableBuffer(collectFinalMultipleOutputs);
+			_buff.setMetadataReferences(resultIndexes, resultsNonZeros, resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
+			prepareMatrixCharacteristicsTertiaryInstruction(job); //put matrix characteristics in dimensions map
+		}
 		
 		try {
 			realOutValue=valueClass.newInstance();
@@ -127,4 +133,16 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		if(valueClass.equals(MatrixCell.class))
 			valueClass=MatrixPackedCell.class;
 	}
+	
+	@Override
+	public void close()throws IOException
+	{
+		//flush ctable buffer (if required)
+		if( containsTertiaryInstruction() )
+			_buff.flushBuffer(cachedReporter);
+					
+		super.close();		
+	}
+	
+	
 }

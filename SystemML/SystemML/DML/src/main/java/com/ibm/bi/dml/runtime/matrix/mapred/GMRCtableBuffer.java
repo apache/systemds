@@ -16,7 +16,6 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 
 
 public class GMRCtableBuffer 
@@ -29,7 +28,7 @@ public class GMRCtableBuffer
 	//4k entries * ~64byte = 256KB (common L2 cache size)
 	public static final int MAX_BUFFER_SIZE = 4096; 
 	
-	private HashMap<Byte, HashMap<CellIndex, Double>> _buffer = null;
+	private HashMap<Byte, HashMap<MatrixIndexes, Double>> _buffer = null;
 	private CollectMultipleConvertedOutputs _collector = null;
 
 	private byte[] _resultIndexes = null;
@@ -41,7 +40,7 @@ public class GMRCtableBuffer
 	
 	public GMRCtableBuffer( CollectMultipleConvertedOutputs collector )
 	{
-		_buffer = new HashMap<Byte, HashMap<CellIndex, Double>>();
+		_buffer = new HashMap<Byte, HashMap<MatrixIndexes, Double>>();
 		_collector = collector;
 	}
 	
@@ -69,7 +68,7 @@ public class GMRCtableBuffer
 	public int getBufferSize()
 	{
 		int ret = 0;
-		for( Entry<Byte, HashMap<CellIndex, Double>> ctable : _buffer.entrySet() )
+		for( Entry<Byte, HashMap<MatrixIndexes, Double>> ctable : _buffer.entrySet() )
 			ret += ctable.getValue().size();
 		return ret;
 	}
@@ -78,7 +77,7 @@ public class GMRCtableBuffer
 	 * 
 	 * @return
 	 */
-	public HashMap<Byte, HashMap<CellIndex, Double>> getBuffer()
+	public HashMap<Byte, HashMap<MatrixIndexes, Double>> getBuffer()
 	{
 		return _buffer;
 	}
@@ -93,19 +92,20 @@ public class GMRCtableBuffer
 	{
 		try
 		{
-			MatrixIndexes key=new MatrixIndexes();
+			MatrixIndexes key=null;//new MatrixIndexes();
 			MatrixCell value=new MatrixCell();
-			for(Entry<Byte, HashMap<CellIndex, Double>> ctable: _buffer.entrySet())
+			for(Entry<Byte, HashMap<MatrixIndexes, Double>> ctable: _buffer.entrySet())
 			{
 				Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
-				for(Entry<CellIndex, Double> e: ctable.getValue().entrySet())
+				for(Entry<MatrixIndexes, Double> e: ctable.getValue().entrySet())
 				{
-					key.setIndexes(e.getKey().row, e.getKey().column);
+					key = e.getKey();
 					value.setValue(e.getValue());
 					for(Integer i: resultIDs)
 					{
 						_collector.collectOutput(key, value, i, reporter);
 						_resultNonZeros[i]++;
+						
 						if( _resultDimsUnknown[i] == (byte) 1 ) {
 							_resultMaxRowDims[i] = Math.max( key.getRowIndex(), _resultMaxRowDims[i]);
 							_resultMaxColDims[i] = Math.max( key.getColumnIndex(), _resultMaxColDims[i]);
@@ -121,5 +121,4 @@ public class GMRCtableBuffer
 		//remove existing partial ctables
 		_buffer.clear();
 	}
-	
 }

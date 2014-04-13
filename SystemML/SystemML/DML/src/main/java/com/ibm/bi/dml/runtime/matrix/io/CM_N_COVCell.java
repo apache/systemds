@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 
+@SuppressWarnings("rawtypes")
 public class CM_N_COVCell extends MatrixValue implements WritableComparable
 {
 	@SuppressWarnings("unused")
@@ -279,7 +280,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue that,
 			MatrixValue that2,
-			HashMap<CellIndex, Double> ctableResult)
+			HashMap<MatrixIndexes, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 		
@@ -288,7 +289,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue that,
 			double scalarThat2,
-			HashMap<CellIndex, Double> ctableResult)
+			HashMap<MatrixIndexes, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
@@ -296,7 +297,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
 			double scalarThat2,
-			HashMap<CellIndex, Double> ctableResult)
+			HashMap<MatrixIndexes, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throw new RuntimeException("operation not supported fro WeightedCell");
+	}
+	
+	@Override
+	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
+			HashMap<MatrixIndexes, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
@@ -304,7 +312,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
 			MatrixValue that2,
-			HashMap<CellIndex, Double> ctableResult)
+			HashMap<MatrixIndexes, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
@@ -336,7 +344,6 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
 			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// TODO Auto-generated method stub
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 

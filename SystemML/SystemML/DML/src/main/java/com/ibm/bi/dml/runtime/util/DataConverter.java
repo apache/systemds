@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
@@ -1668,6 +1669,39 @@ public class DataConverter
 		return mb;
 	}
 
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock( HashMap<MatrixIndexes,Double> map )
+	{
+		// compute dimensions from the map
+		long nrows=0, ncols=0;
+		for (MatrixIndexes index : map.keySet()) {
+			nrows = Math.max( nrows, index.getRowIndex() );
+			ncols = Math.max( ncols, index.getColumnIndex() );
+		}
+		
+		int rlen = (int)nrows;
+		int clen = (int)ncols;
+		int nnz = map.size();
+		boolean sparse = MatrixBlock.isExactInSparseFormat(rlen, clen, nnz); 		
+		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
+		
+		// copy map values into new block
+		for (MatrixIndexes index : map.keySet()) {
+			double value  = map.get(index).doubleValue();
+			if ( value != 0 )
+			{
+				mb.quickSetValue( (int)index.getRowIndex()-1, 
+						          (int)index.getColumnIndex()-1, 
+						          value );
+			}
+		}
+		
+		return mb;
+	}
 	
 	/////////////////////////////////////////////
 	// Helper methods for the specific formats //

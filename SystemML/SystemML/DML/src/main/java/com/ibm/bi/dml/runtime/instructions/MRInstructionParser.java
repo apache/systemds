@@ -145,6 +145,7 @@ public class MRInstructionParser extends InstructionParser
 		// Tertiary Reorg Instruction Opcodes 
 		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Tertiary);
 		String2MRInstructionType.put( "ctabletransformscalarweight", MRINSTRUCTION_TYPE.Tertiary);
+		String2MRInstructionType.put( "ctableexpandscalarweight", MRINSTRUCTION_TYPE.Tertiary);
 		String2MRInstructionType.put( "ctabletransformhistogram", MRINSTRUCTION_TYPE.Tertiary);
 		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Tertiary);
 		

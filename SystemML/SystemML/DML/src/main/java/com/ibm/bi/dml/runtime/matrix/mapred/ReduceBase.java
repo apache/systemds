@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
@@ -385,4 +386,35 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		}
 	}
 	
+
+	/**
+	 * 
+	 * @return
+	 */
+	protected boolean containsTertiaryInstruction()
+	{
+		if( mixed_instructions != null )
+			for(MRInstruction inst : mixed_instructions)
+				if( inst instanceof TertiaryInstruction )
+					return true;
+		return false;
+	}
+	
+
+	/**
+	 * 
+	 * @param job
+	 */
+	protected void prepareMatrixCharacteristicsTertiaryInstruction(JobConf job)
+	{
+		if( mixed_instructions != null )
+			for(MRInstruction inst : mixed_instructions)
+				if( inst instanceof TertiaryInstruction )
+				{
+					TertiaryInstruction tinst = (TertiaryInstruction) inst;
+					if( tinst.input1!=-1 )
+						dimensions.put(tinst.input1, MRJobConfiguration.getMatrixCharacteristicsForInput(job, tinst.input1));					
+					//extend as required, currently only ctableexpand needs blocksizes
+				}
+	}
 }

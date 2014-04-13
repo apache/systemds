@@ -1287,11 +1287,13 @@ public class BinaryOp extends Hop
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
 				setRequiresRecompile();
 		}
-
+		
 		if ( op == OpOp2.SOLVE ) {
 			_etype = ExecType.CP;
+			/*
 			if ( getMemEstimate() > OptimizerUtils.getMemBudget(true) )
 				throw new HopsException("Insufficient memory to execute function: solve()" );
+				*/
 		}
 		
 		return _etype;

@@ -268,13 +268,10 @@ public class MatrixAggLib
 		final int n = in.clen;
 		final int rlen = Math.min(a.length, m);
 		
-		int nnzC = 0;
-		int nnzCC = 0;
-		
 		for( int i=0, cix=0; i<rlen; i++, cix+=n )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()<0 )
+			if( arow!=null && arow.size()>0 )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();
@@ -288,14 +285,12 @@ public class MatrixAggLib
 					akplus.execute2(buffer1, avals[j]);
 					c[ix]  = buffer1._sum;
 					cc[ix] = buffer1._correction;
-					nnzC += (buffer1._sum!=0)?1:0;
-					nnzCC += (buffer1._correction!=0)?1:0;
 				}
 			}
 		}
 		
-		aggVal.nonZeros = nnzC;
-		aggCorr.nonZeros = nnzCC;
+		aggVal.recomputeNonZeros();
+		aggCorr.recomputeNonZeros();
 	}
 	
 	/**

@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -69,7 +69,7 @@ num_attrs = nrow (initial_reports);   # Number of attribute values per each term
 num_frees = ncol (CReps);   # Number of free variables used to describe all consistent reports
 
 dReps_size = num_terms * num_attrs;
-dReps = matrix (initial_reports, rows = dReps_size, cols = 1, byrow = false);
+dReps = matrix (initial_reports, rows = dReps_size, cols = 1, byrow = FALSE);
 
 # We assume that all report-series consistent with hard constraints form an affine set:
 #     reports = CReps %*% freeVars + dReps
@@ -100,7 +100,7 @@ regresParams = RegresParamMap %*% params + RegresCoeffDefault;
 bilinear_vector = regresValues * regresParams;
 
 ### DELETE: bilinear_form = matricize (bilinear_vector, num_factors);
-bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
 bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
 
 opt_iter = 1;
@@ -125,7 +125,7 @@ while (is_opt_converged == 0)
             bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
         }
         ### DELETE: bilinear_updater = matricize (bilinear_vector, num_factors);
-        bilinear_updater = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);        
+        bilinear_updater = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);        
         
         q_minus_1 = sum (RegresScaleMult * rowSums (bilinear_form - bilinear_updater) * rowSums (bilinear_form - bilinear_updater));
         q_plus_1  = sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater) * rowSums (bilinear_form + bilinear_updater));
@@ -150,7 +150,7 @@ while (is_opt_converged == 0)
                 bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
             }
             ### DELETE: bilinear_updater_1 = matricize (bilinear_vector, num_factors);
-            bilinear_updater_1 = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+            bilinear_updater_1 = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
 
             if (is_step_params == 1) {
                 bilinear_vector = regresValues * (RegresParamMap %*% p);
@@ -158,7 +158,7 @@ while (is_opt_converged == 0)
                 bilinear_vector = (RegresValueMap %*% CReps %*% p) * regresParams;
             }
             ### DELETE: bilinear_updater_p = matricize (bilinear_vector, num_factors);
-            bilinear_updater_p = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+            bilinear_updater_p = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
 
             quadratic_plus_1  = 
                 sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater_1) * rowSums (bilinear_form + bilinear_updater_1));
@@ -194,7 +194,7 @@ while (is_opt_converged == 0)
     bilinear_vector = regresValues * regresParams;
     
     ### DELETE: bilinear_form = matricize (bilinear_vector, num_factors);
-    bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+    bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
     bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
         
     if (is_step_params == 1) {
@@ -267,7 +267,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     bilinear_form_vector = regresValues * regresParams;
     
     ### DELETE: bilinear_form = matricize (bilinear_form_vector, num_factors);
-    bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+    bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
     bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
     
     if (bilinear_form_value > old_bilinear_form_value) {
@@ -345,7 +345,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
             bilinear_updater_vector = regresValues * regresParams_updater;
         }
         ### DELETE: bilinear_updater = matricize (bilinear_updater_vector, num_factors);
-        bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+        bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
             
         # Compute the quadratic by three shift-points: -1, 0, +1
 
@@ -394,7 +394,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     
     reports = CReps %*% freeVars + dReps;
     ### DELETE: reports_matrix = matricize (reports, num_attrs);
-    reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = false);
+    reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = FALSE);
         
     # Make an observation of the reports and/or the parameters
     

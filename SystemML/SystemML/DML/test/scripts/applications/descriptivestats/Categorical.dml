@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -17,7 +17,7 @@
 V = read($1, rows=$2, cols=1, format="text")
 
 # a set of number of values specify the number of cases of each categorical
-Nc = ctable(V,1);
+Nc = table(V,1);
 
 # the number of categories of a categorical variable
 R = nrow(Nc)

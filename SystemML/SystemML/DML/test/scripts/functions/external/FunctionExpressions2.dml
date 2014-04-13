@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -13,7 +13,7 @@ order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Ma
 foo = function( Matrix[Double] A ) return (Matrix[Double] B)  
 {
    for( i in 1:ncol(A) ) {
-      B = order(A*A+7, i, true);
+      B = order(A*A+7, i, TRUE);
    }
 }
  

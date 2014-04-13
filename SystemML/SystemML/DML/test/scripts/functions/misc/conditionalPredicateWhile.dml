@@ -11,5 +11,5 @@ val1 = $1;
 
 # test auto casting with variables
 while( val1 ) {
-   val1 = false;
+   val1 = FALSE;
 }

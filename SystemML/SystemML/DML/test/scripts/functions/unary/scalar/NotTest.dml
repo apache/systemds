@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -12,31 +12,31 @@
 $$readhelper$$
 
 TrueTrue = Helper;
-booleanVar = true;
-while(!booleanVar == true) {
+booleanVar = TRUE;
+while(!booleanVar == TRUE) {
 	TrueTrue = 2 * Helper;
 }
 write(TrueTrue, "$$outdir$$true_true", format="text");
 
 TrueFalse = Helper;
-booleanVar = true;
-while(!booleanVar == false) {
+booleanVar = TRUE;
+while(!booleanVar == FALSE) {
 	TrueFalse = 2 * Helper;
-	booleanVar = false;
+	booleanVar = FALSE;
 }
 write(TrueFalse, "$$outdir$$true_false", format="text");
 
 FalseFalse = Helper;
-booleanVar = false;
-while(!booleanVar == false) {
+booleanVar = FALSE;
+while(!booleanVar == FALSE) {
 	FalseFalse = 2 * Helper;
 }
 write(FalseFalse, "$$outdir$$false_false", format="text");
 
 FalseTrue = Helper;
-booleanVar = false;
-while(!booleanVar == true) {
+booleanVar = FALSE;
+while(!booleanVar == TRUE) {
 	FalseTrue = 2 * Helper;
-	booleanVar = true;
+	booleanVar = TRUE;
 }
 write(FalseTrue, "$$outdir$$false_true", format="text");

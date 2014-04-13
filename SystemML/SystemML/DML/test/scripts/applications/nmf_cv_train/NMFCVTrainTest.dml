@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -22,13 +22,13 @@
 	hd = Rand(rows = numtopics, cols=zcol) ;
 	
 	accuracy = 0.000001
-	continue = true
+	continue = TRUE
 	zerror = z - wd %*% hd
 	newObj = sum(zerror * zerror)
 	
 	max_iteration = 10
 	i = 0
-	while (continue == true & i < max_iteration) {
+	while (continue == TRUE & i < max_iteration) {
   		hd = hd * ((t(wd) %*% z) /  ( (t(wd) %*% wd) %*% hd))
   		wd = wd * ((z %*% t(hd)) / ( wd %*% (hd %*% t(hd))))
 		i = i + 1

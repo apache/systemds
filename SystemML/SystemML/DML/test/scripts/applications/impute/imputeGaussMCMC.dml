@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -69,7 +69,7 @@ num_attrs = nrow (initial_reports);   # Number of attribute values per each term
 num_frees = ncol (CReps);   # Number of free variables used to describe all consistent reports
 
 dReps_size = num_terms * num_attrs;
-dReps = matrix (initial_reports, rows = dReps_size, cols = 1, byrow = false);
+dReps = matrix (initial_reports, rows = dReps_size, cols = 1, byrow = FALSE);
 
 # We assume that all report-series consistent with hard constraints form an affine set:
 #     reports = CReps %*% freeVars + dReps
@@ -447,7 +447,7 @@ regresValues = RegresValueMap %*% reports + RegresFactorDefault;
 regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
 
 bilinear_vector = regresValues * regresParams;
-bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
 bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
 
 max_num_iter = max_num_burnin_iterations + max_num_observed_iterations;
@@ -503,7 +503,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     regresParams = RegresParamMap %*% params + RegresCoeffDefault;
     bilinear_form_vector = regresValues * regresParams;
     
-    bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+    bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
     bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
     
     if (bilinear_form_value > old_bilinear_form_value) {
@@ -580,7 +580,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
             regresParams_updater = RegresParamMap %*% params_updater;
             bilinear_updater_vector = regresValues * regresParams_updater;
         }
-        bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+        bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
             
         # Compute the quadratic by three shift-points: -1, 0, +1
 
@@ -628,7 +628,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     # Update / adjust the reports and the parameters
     
     reports = CReps %*% freeVars + dReps;
-    reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = false);
+    reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = FALSE);
         
     # Make an observation of the reports and/or the parameters
     

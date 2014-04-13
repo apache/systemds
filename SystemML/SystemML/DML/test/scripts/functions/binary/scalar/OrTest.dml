@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -11,7 +11,7 @@
 
 $$readhelper$$
 
-trueVar = true;
+trueVar = TRUE;
 
 Left1 = Helper;
 i = 0;
@@ -26,7 +26,7 @@ write(Left1, "$$outdir$$left_1", format="text");
 
 Left2 = Helper;
 i = 0;
-while(i == 0 | trueVar == false)
+while(i == 0 | trueVar == FALSE)
 {
 	Left2 = 2 * Left2;
 	i = 1;
@@ -45,7 +45,7 @@ write(Left3, "$$outdir$$left_3", format="text");
 
 Left4 = Helper;
 i = 0;
-while(i == 1 | trueVar == false)
+while(i == 1 | trueVar == FALSE)
 {
 	Left4 = 2 * Left4;
 }
@@ -74,7 +74,7 @@ write(Right2, "$$outdir$$right_2", format="text");
 
 Right3 = Helper;
 i = 0;
-while(trueVar == false | i == 0)
+while(trueVar == FALSE | i == 0)
 {
 	Right3 = 2 * Right3;
 	i = 1;
@@ -83,7 +83,7 @@ write(Right3, "$$outdir$$right_3", format="text");
 
 Right4 = Helper;
 i = 0;
-while(trueVar == false | i == 1)
+while(trueVar == FALSE | i == 1)
 {
 	Right4 = 2 * Right4;
 }

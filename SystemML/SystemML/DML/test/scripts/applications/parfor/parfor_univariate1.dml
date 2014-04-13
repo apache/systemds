@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -75,9 +75,9 @@ else {
 			rng = maximum - minimum;
 
 			mu = mean(F);
-			m2 = centralMoment(F, 2);
-			m3 = centralMoment(F, 3);
-			m4 = centralMoment(F, 4);
+			m2 = moment(F, 2);
+			m3 = moment(F, 3);
+			m4 = moment(F, 4);
 
 			var = m/(m-1.0)*m2;
 			std_dev = sqrt(var);
@@ -125,7 +125,7 @@ else {
 				}
 				else {
 					# compute CATEGORICAL statistics on the projected column
-					cat_counts = ctable(F,1);  # counts for each category
+					cat_counts = table(F,1);  # counts for each category
 					num_cat = nrow(cat_counts); # number of categories
 
 					mode = rowIndexMax(t(cat_counts));

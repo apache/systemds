@@ -79,7 +79,7 @@
 # reach).
 
 id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes, Double minsplit) return (Matrix[Double] nodes, Matrix[Double] edges){
-	hist_labels = groupedAggregate(target=X_subset, groups=y, fn="sum")
+	hist_labels = aggregate(target=X_subset, groups=y, fn="sum")
 	
 	if (1==1) {
 	  print(" ");
@@ -111,7 +111,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		edges = matrix(-1, rows=1, cols=1)
 	}else{
 		#computing gains for all available attributes using parfor
-		hist_labels2 = groupedAggregate(target=X_subset, groups=y, fn="sum")
+		hist_labels2 = aggregate(target=X_subset, groups=y, fn="sum")
 		num_samples2 = sum(X_subset)
 		print(num_samples2+" #samples")
 		zero_entries_in_hist1 = ppred(hist_labels2, 0, "==")
@@ -125,7 +125,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		parfor(i in 1:nrow(attributes)){
 			if(castAsScalar(attributes[i,1]) == 1){
 				attr_vals = X[,i]
-				attr_domain = groupedAggregate(target=X_subset, groups=attr_vals, fn="sum")
+				attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
 
 				hxt_vector = matrix(0, rows=nrow(attr_domain), cols=1)
 				
@@ -135,7 +135,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 						Tj = X_subset * ppred(X[,i], val, "==")
 						
 						#entropy = compute_entropy(Tj, y)
-						hist_labels1 = groupedAggregate(target=Tj, groups=y, fn="sum")
+						hist_labels1 = aggregate(target=Tj, groups=y, fn="sum")
 						num_samples1 = sum(Tj)
 						zero_entries_in_hist = ppred(hist_labels1, 0, "==")
 						pi = hist_labels1/num_samples1
@@ -169,7 +169,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		print("gain is: " + max_gain)
 		
 		attr_vals = X[,best_attr]
-		attr_domain = groupedAggregate(target=X_subset, groups=attr_vals, fn="sum")
+		attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
 		if (1==1) {
 	  		print(" ");
 		}

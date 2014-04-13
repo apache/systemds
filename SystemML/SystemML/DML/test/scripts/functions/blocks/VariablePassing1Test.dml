@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -18,11 +18,11 @@ D = A * x;
 C = B * D;
 B = B * D;
 
-continue = true;
-while(continue == true) {
+continue = TRUE;
+while(continue == TRUE) {
 	F = 3 * B;
 	E = 3 * D;
-	continue = false;
+	continue = FALSE;
 }
 
 write(C, "$$outdir$$c", format="text");

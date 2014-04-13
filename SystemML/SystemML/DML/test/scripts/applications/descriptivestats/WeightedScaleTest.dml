@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -33,13 +33,13 @@ wt = sum(W)
 s1 = sum(V*W)
 
 # 2nd central moment
-m2 = centralMoment(V, W, 2)
+m2 = moment(V, W, 2)
 
 # 3rd central moment
-m3 = centralMoment(V, W, 3)
+m3 = moment(V, W, 3)
 
 # 4th central moment
-m4 = centralMoment(V, W, 4)
+m4 = moment(V, W, 4)
 
 # mean
 mu = mean(V, W)

@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -19,7 +19,7 @@
 A1 = read($1, rows=$2, cols=1);
 A2 = read($3, rows=$2, cols=1);
 
-F = ctable(A1, A2);
+F = table(A1, A2);
 
 # Perform computations only on 2x2 contingency tables
 if (nrow(F) != 2 | ncol(F) != 2) {

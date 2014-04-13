@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -17,7 +17,7 @@ R = matrix(0, rows=n,cols=n);
 parfor( i in 1:8 )
 {
    X = V[,i];                 
-   m2X = centralMoment(X,2);
+   m2X = moment(X,2);
    sigmaX = sqrt(m2X * (W/(W-1.0)) );
       
    parfor( j in (i+1):(i+9) )  
@@ -25,7 +25,7 @@ parfor( i in 1:8 )
       Y = V[,j];
 
       #corr computation    
-      m2Y = centralMoment(Y,2);
+      m2Y = moment(Y,2);
       sigmaY = sqrt(m2Y * (W/(W-1.0)) );      
       covXY = cov(X,Y);      
       rXY = covXY / (sigmaX*sigmaY); 

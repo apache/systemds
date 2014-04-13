@@ -11,7 +11,7 @@ order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Ma
 			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
  
 A = read( $1, rows=$2, cols=$3);  
-B1 = order(A, $4, false);
+B1 = order(A, $4, FALSE);
 
 write(B1, $5);
 

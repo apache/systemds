@@ -3,7 +3,7 @@
 # 
 # OCO Source Materials
 # 
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # 
 # The source code for this program is not published or
 # 
@@ -45,7 +45,7 @@ labels = D[,label_index]
 labelCorrection = 0
 if(label_measurement_level == 1){
 	numLabels = nrow(labels)
-    cmLabels = centralMoment(labels,2)
+    cmLabels = moment(labels,2)
     stdLabels = sqrt(cmLabels * (numLabels/(numLabels-1.0)) )
 	standard_deviations[label_index,1] = stdLabels
 }else{
@@ -71,7 +71,7 @@ if(max_num_distinct_values != 0){
 	maxNumberOfGroups = max_num_distinct_values
 }
 if(label_measurement_level==0){
-	distinct_label_values = groupedAggregate(target=labels, groups=labels, fn="count")
+	distinct_label_values = aggregate(target=labels, groups=labels, fn="count")
 	if(max_num_distinct_values != 0){
 		contingencyTableSz = max_num_distinct_values*nrow(distinct_label_values)
 	}
@@ -128,7 +128,7 @@ parfor(i3 in 1:nrow(feature_indices), check=0){
 					contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
 				}
 			}
-			contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=true)
+			contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=TRUE)
             contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
             
 			contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues
@@ -190,8 +190,8 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R, Double
 
     # compute standard deviations for both X and Y by computing 2^nd central moment
     W = nrow(X)
-    m2X = centralMoment(X,2)
-    m2Y = centralMoment(Y,2)
+    m2X = moment(X,2)
+    m2Y = moment(Y,2)
     sigmaX = sqrt(m2X * (W/(W-1.0)) )
     sigmaY = sqrt(m2Y * (W/(W-1.0)) )
 
@@ -205,7 +205,7 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R, Double
 bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double pval, Matrix[Double] contingencyTable, Matrix[Double] rowMarginals, Matrix[Double] colMarginals) {
 
     # Contingency Table
-    FF = ctable(A,B)
+    FF = table(A,B)
 
     tmp = removeEmpty(target=FF, margin="rows"); 
     F = removeEmpty(target=tmp, margin="cols");
@@ -239,15 +239,15 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double pVal, Mat
 	# mean and variance in target variable
     W = nrow(A)
     my = mean(Y)
-    varY = centralMoment(Y,2) * W/(W-1.0)
+    varY = moment(Y,2) * W/(W-1.0)
 
     # category-wise (frequencies, means, variances)
-    CFreqs1 = groupedAggregate(target=Y, groups=A, fn="count")
+    CFreqs1 = aggregate(target=Y, groups=A, fn="count")
     present_domain_vals_mat = removeEmpty(target=diag(1-ppred(CFreqs1, 0, "==")), margin="rows")
     CFreqs = present_domain_vals_mat %*% CFreqs1
 
-    CMeans = present_domain_vals_mat %*% groupedAggregate(target=Y, groups=A, fn="mean")
-    CVars = present_domain_vals_mat %*% groupedAggregate(target=Y, groups=A, fn="variance")
+    CMeans = present_domain_vals_mat %*% aggregate(target=Y, groups=A, fn="mean")
+    CVars = present_domain_vals_mat %*% aggregate(target=Y, groups=A, fn="variance")
     
     # number of categories
     R = nrow(CFreqs)

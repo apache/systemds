@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # STRATIFIED BIVARIATE STATISTICS, VERSION 2
 # 
 # INPUT  1: Dataset with records as rows (matrix filename)
@@ -73,7 +82,7 @@ tXcols = t(Xcols);
 ones = matrix (1.0, rows = num_attrs_X, cols = 1);
 one_to_num_attrs_X = sumup (ones);
 ProjX = matrix (0.0, rows = num_attrs, cols = num_attrs_X);
-ProjX_ctable = ctable (tXcols, one_to_num_attrs_X);
+ProjX_ctable = table (tXcols, one_to_num_attrs_X);
 ProjX [1:nrow(ProjX_ctable), ] = ProjX_ctable;
 X = Data %*% ProjX;
 X_mask = 1 - (DataNaNmask %*% ProjX);
@@ -82,7 +91,7 @@ tYcols = t(Ycols);
 ones = matrix (1.0, rows = num_attrs_Y, cols = 1);
 one_to_num_attrs_Y = sumup (ones);
 ProjY = matrix (0.0, rows = num_attrs, cols = num_attrs_Y);
-ProjY_ctable = ctable (tYcols, one_to_num_attrs_Y);
+ProjY_ctable = table (tYcols, one_to_num_attrs_Y);
 ProjY [1:nrow(ProjY_ctable), ] = ProjY_ctable;
 Y = Data %*% ProjY;
 Y_mask = 1 - (DataNaNmask %*% ProjY);
@@ -98,7 +107,7 @@ num_strata_with_empty_but_no_NaNs = max (vector_of_strata_with_empty_but_no_NaNs
 num_records_with_nonNaN_strata = nrow (Proj_to_deNaN_strata);
 ones = matrix (1.0, rows = num_records_with_nonNaN_strata, cols = 1);
 one_to_num_records_with_nonNaN_strata = sumup (ones);
-StrataSummator_with_empty_from_nonNaNs = ctable (vector_of_strata_with_empty_but_no_NaNs, one_to_num_records_with_nonNaN_strata);
+StrataSummator_with_empty_from_nonNaNs = table (vector_of_strata_with_empty_but_no_NaNs, one_to_num_records_with_nonNaN_strata);
 StrataSummator_from_nonNaNs = removeEmpty (target = StrataSummator_with_empty_from_nonNaNs, margin = "rows");
 StrataSummator = StrataSummator_from_nonNaNs %*% Proj_to_deNaN_strata;
 num_strata = nrow (StrataSummator);
@@ -168,12 +177,12 @@ sum_XX_forXY_rectangle = t(X * X)  %*% Y_mask;
 sum_Y_forXY_rectangle  = t(X_mask) %*% Y;
 sum_YY_forXY_rectangle = t(X_mask) %*% (Y * Y);
 sum_XY_rectangle       = t(X)      %*% Y;
-cnt_XY_global       = matrix (cnt_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = true);
-sum_X_forXY_global  = matrix (sum_X_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = true);
-sum_XX_forXY_global = matrix (sum_XX_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = true);
-sum_Y_forXY_global  = matrix (sum_Y_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = true);
-sum_YY_forXY_global = matrix (sum_YY_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = true);
-sum_XY_global       = matrix (sum_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = true);
+cnt_XY_global       = matrix (cnt_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_X_forXY_global  = matrix (sum_X_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_XX_forXY_global = matrix (sum_XX_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_Y_forXY_global  = matrix (sum_Y_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_YY_forXY_global = matrix (sum_YY_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_XY_global       = matrix (sum_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = TRUE);
 ones_XY = matrix (1.0, rows = 1, cols = num_attrs_XY);
 
 # Compute the global bivariate statistics for output

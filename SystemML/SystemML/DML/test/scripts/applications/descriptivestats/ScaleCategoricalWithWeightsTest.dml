@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -25,12 +25,12 @@ Y = read($3, rows=$2, cols=1, format="text");
 WM = read($4, rows=$2, cols=1, format="text");
 
 W = sum(WM);
-my = sum(Y*WM)/W
-varY = centralMoment(Y,WM,2) * W/(W-1.0)
+my = sum(Y*WM)/W;
+varY = moment(Y,WM,2) * W/(W-1.0);
 
-CFreqs = groupedAggregate(target=WM, groups=A, fn="sum");
-CMeans = groupedAggregate(target=Y, groups=A, weights=WM, fn="mean");
-CVars = groupedAggregate(target=Y, groups=A, weights=WM, fn="variance");
+CFreqs = aggregate(target=WM, groups=A, fn="sum");
+CMeans = aggregate(target=Y, groups=A, weights=WM, fn="mean");
+CVars =  aggregate(target=Y, groups=A, weights=WM, fn="variance");
 
 # number of categories
 R = nrow(CFreqs);

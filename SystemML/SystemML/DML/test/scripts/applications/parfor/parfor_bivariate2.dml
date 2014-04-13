@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -129,7 +129,7 @@ write(cat_vars, $6 + "/category.variances");
 bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double chisq, Double df, Double pval, Double cramersv) {
 
     # Contingency Table
-    F = ctable(A,B);
+    F = table(A,B);
 
     # Chi-Squared
     W = sum(F);
@@ -165,8 +165,8 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R) {
 
     # compute standard deviations for both X and Y by computing 2^nd central moment
     W = nrow(X);
-    m2X = centralMoment(X,2);
-    m2Y = centralMoment(Y,2);
+    m2X = moment(X,2);
+    m2Y = moment(Y,2);
     sigmaX = sqrt(m2X * (W/(W-1.0)) );
     sigmaY = sqrt(m2Y * (W/(W-1.0)) );
 
@@ -183,12 +183,12 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double Eta, Doub
     # mean and variance in target variable
     W = nrow(A);
     my = mean(Y);
-    varY = centralMoment(Y,2) * W/(W-1.0)
+    varY = moment(Y,2) * W/(W-1.0)
 
     # category-wise (frequencies, means, variances)
-    CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
-    CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
-    CVars = groupedAggregate(target=Y, groups=A, fn="variance");
+    CFreqs = aggregate(target=Y, groups=A, fn="count"); 
+    CMeans = aggregate(target=Y, groups=A, fn="mean");
+    CVars =  aggregate(target=Y, groups=A, fn="variance");
 
     # number of categories
     R = nrow(CFreqs);
@@ -221,7 +221,7 @@ computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
 bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
 
     # compute contingency table
-    F = ctable(A,B);
+    F = table(A,B);
 
     catA = nrow(F);  # number of categories in A
     catB = ncol(F);  # number of categories in B
@@ -241,8 +241,8 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
     meanY = mean(D,columnS);
 
     W = sum(F); # total weight, or total #cases
-    varX = centralMoment(C,R,2)*(W/(W-1.0));
-    varY = centralMoment(D,columnS,2)*(W/(W-1.0));
+    varX = moment(C,R,2)*(W/(W-1.0));
+    varY = moment(D,columnS,2)*(W/(W-1.0));
 
     covXY = 0.0;
     for(i in 1:catA) {

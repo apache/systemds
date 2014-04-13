@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -118,7 +118,7 @@ while(!converge) {
   delta2 = delta*delta 
   stsScalar = castAsScalar(sts)
   
-  shouldBreak = false;  # to mimic "break" in the following 'if' condition
+  shouldBreak = FALSE;  # to mimic "break" in the following 'if' condition
   if (stsScalar > delta2) {
       print("      --- cg reaches trust region boundary")
    s = s - castAsScalar(alpha) * d
@@ -140,8 +140,8 @@ while(!converge) {
    r = r - castAsScalar(tau) * Hd
    
    #break
-   shouldBreak = true;
-   innerconverge = true;
+   shouldBreak = TRUE;
+   innerconverge = TRUE;
   
   } 
   

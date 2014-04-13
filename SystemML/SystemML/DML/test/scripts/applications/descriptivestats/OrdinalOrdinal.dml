@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -36,7 +36,7 @@ A = read($1, rows=$2, cols=1, format="text");
 B = read($3, rows=$2, cols=1, format="text");
 
 # compute contingency table
-F = ctable(A,B);
+F = table(A,B);
 
 catA = nrow(F);  # number of categories in A
 catB = ncol(F);  # number of categories in B
@@ -56,8 +56,8 @@ columnS = t(S);
 meanY = mean(D,columnS);
 
 W = sum(F); # total weight, or total #cases
-varX = centralMoment(C,R,2)*(W/(W-1.0));
-varY = centralMoment(D,columnS,2)*(W/(W-1.0));
+varX = moment(C,R,2)*(W/(W-1.0));
+varY = moment(D,columnS,2)*(W/(W-1.0));
 
 covXY = 0.0;
 for(i in 1:catA) {

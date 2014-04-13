@@ -9,7 +9,7 @@
 
 X = read($1, rows=$2, cols=2);
 
-Y = groupedAggregate(target=X[,1],groups=X[,2], fn="count");
+Y = aggregate(target=X[,1],groups=X[,2], fn="count");
 Z = matrix(7, rows=nrow(Y)+ncol(Y), cols=nrow(Y)+ncol(Y)+1);
 
 write(Z, $3);       

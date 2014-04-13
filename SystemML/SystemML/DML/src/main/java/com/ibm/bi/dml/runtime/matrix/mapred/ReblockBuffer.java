@@ -36,7 +36,7 @@ public class ReblockBuffer
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//default buffer size: 5M -> 120MB 4M -> 96MB
+	//default buffer size: 5M -> 5M * 3x8B = 120MB 
 	public static final int DEFAULT_BUFFER_SIZE = 5000000;
 	public static final int BLOCK_THRESHOLD = 16;
 	
@@ -179,9 +179,9 @@ public class ReblockBuffer
 		}
 		
 		//Step 2) decide on intermediate representation
-		long blockedSize = IX.size()*_brlen*4 + 12*_count; //worstcase
+		long blockedSize = ((long)IX.size())*_brlen*4 + 12*_count; //worstcase
 		long cellSize = 24 * _count;
-		boolean blocked = ( IX.size()<=BLOCK_THRESHOLD || blockedSize<=cellSize );
+		boolean blocked = ( IX.size()<=BLOCK_THRESHOLD && blockedSize<=cellSize );
 		
 		//Step 3)
 		TaggedAdaptivePartialBlock outTVal = new TaggedAdaptivePartialBlock();

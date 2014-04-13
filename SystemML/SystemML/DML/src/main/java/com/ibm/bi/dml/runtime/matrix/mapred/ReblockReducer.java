@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -37,7 +37,7 @@ public class ReblockReducer extends ReduceBase
 	implements Reducer<MatrixIndexes, TaggedAdaptivePartialBlock, MatrixIndexes, MatrixBlock>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<Byte, MatrixCharacteristics>();
@@ -125,14 +125,6 @@ public class ReblockReducer extends ReduceBase
 					boolean appendOnly = out.isInSparseFormat();
 					MatrixBlock in = srcBlk.getMatrixBlock();
 					
-					//TODO investigate robustness for mulitple reblock instructions
-					//bulk copy first block
-					//if( out.getNonZeros() == 0 ) { 
-					//	//out.copy(in);
-					//	block.set(indexes, in);
-					//	continue;
-					//}
-
 					//merge copy other blocks
 					if( in.isInSparseFormat() ) //SPARSE
 					{
@@ -171,11 +163,12 @@ public class ReblockReducer extends ReduceBase
 			}
 			else //BINARY CELL
 			{
+				MatrixBlock out = (MatrixBlock)block.getValue(); //always block output
 				PartialBlock pb = srcBlk.getPartialBlock();
 				int row = pb.getRowIndex();
 				int column = pb.getColumnIndex();
-				if(row>=0 && column >=0)
-					block.getValue().setValue(row, column, pb.getValue());	
+				if(row>=0 && column >=0) //filter empty block marks
+					out.quickSetValue(row, column, pb.getValue());
 			}
 			
 			//System.out.println("Merged block (sparse="+(srcBlk.isBlocked()&&srcBlk.isBlocked()&&!srcBlk.getMatrixBlock().isInSparseFormat())+") in "+time.stop());

@@ -58,18 +58,11 @@ public class DiagV2MTest extends AutomatedTestBase
 
 		Random rand=new Random(System.currentTimeMillis());
 		loadTestConfiguration(config);
-		//double sparsity=0.2;
-		double sparsity=rand.nextDouble();
-		//System.out.println("sparsity: "+sparsity);
-        double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
+		double sparsity=0.599200924665577;//rand.nextDouble();
+		double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, 1397289950533L); // System.currentTimeMillis()
         writeInputMatrix("A", A, true);
         sparsity=rand.nextDouble();   
-		/*
-		 * Expected number of jobs:
-		 * Reblock - 1 job 
-		 * While loop iteration - 10 jobs
-		 * Final output write - 1 job
-		 */
+		
         //boolean exceptionExpected = false;
 		//int expectedNumberOfJobs = 12;
 		//runTest(exceptionExpected, null, expectedNumberOfJobs);

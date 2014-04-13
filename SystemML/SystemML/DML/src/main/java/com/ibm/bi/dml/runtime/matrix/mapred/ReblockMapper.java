@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Vector;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -42,8 +43,8 @@ public class ReblockMapper extends MapperBase
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//state of reblock mapper
-	private boolean outputDummyRecords = false;
 	private OutputCollector<Writable, Writable> cachedCollector = null;
+	private JobConf cachedJobConf = null;
 	private HashMap<Byte, MatrixCharacteristics> dimensionsOut = new HashMap<Byte, MatrixCharacteristics>();
 	private HashMap<Byte, MatrixCharacteristics> dimensionsIn = new HashMap<Byte, MatrixCharacteristics>();
 	
@@ -58,13 +59,15 @@ public class ReblockMapper extends MapperBase
 		cachedCollector = out;
 		commonMap(rawKey, rawValue, out, reporter);
 	}
-	
+
 	@Override
 	public void configure(JobConf job) 
 	{
 		MRJobConfiguration.setMatrixValueClass(job, false); //worst-case
 		super.configure(job);
-		outputDummyRecords = MapReduceTool.getUniqueKeyPerTask(job, true).equals("0");
+		
+		//cache job conf for use in close 
+		cachedJobConf = job;
 		
 		try 
 		{
@@ -78,7 +81,11 @@ public class ReblockMapper extends MapperBase
 			}
 		
 			//compute reblock buffer size (according to relevant rblk inst of this task only)
-			buffersize = ReblockBuffer.DEFAULT_BUFFER_SIZE/reblock_instructions.size();
+			//(buffer size divided by max reblocks per input matrix, because those are shared in JVM)
+			int maxlen = 1;
+			for( Vector<ReblockInstruction> rinst : reblock_instructions )
+				maxlen = Math.max(maxlen, rinst.size()); //max reblocks per input				
+			buffersize = ReblockBuffer.DEFAULT_BUFFER_SIZE/maxlen;
 		} 
 		catch (Exception e)
 		{
@@ -99,9 +106,12 @@ public class ReblockMapper extends MapperBase
 			rbuff.flushBuffer(e.getKey(), cachedCollector);
 		}
 		
-		//handle empty block output (on first task)
-		if( !outputDummyRecords || cachedCollector==null )
+		//handle empty block output (responsibility distributed over all map tasks)
+		if( cachedJobConf==null || cachedCollector==null )
 			return;
+		
+		long mapID = Long.parseLong(MapReduceTool.getUniqueKeyPerTask(cachedJobConf, true));
+		long numMap = cachedJobConf.getNumMapTasks(); 
 		
 		MatrixIndexes tmpIx = new MatrixIndexes();
 		TaggedAdaptivePartialBlock tmpVal = new TaggedAdaptivePartialBlock();
@@ -113,19 +123,26 @@ public class ReblockMapper extends MapperBase
 			MatrixCharacteristics mc = e.getValue();
 			long rlen = mc.numRows;
 			long clen = mc.numColumns;
-			int brlen = mc.numRowsPerBlock;
-			int bclen = mc.numColumnsPerBlock;
+			long brlen = mc.numRowsPerBlock;
+			long bclen = mc.numColumnsPerBlock;
 			long nnz = mc.nonZero;
 			
+			//output empty blocks on demand (not required if nnz ensures that values exist in each block)
+			if( nnz >= (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) )
+				continue; //safe to skip empty block output
 			
-			//output empty blocks on demand (not required if nnz ensures dense matrix)
-			if( nnz < (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) )
-				for(long i=0, r=1; i<rlen; i+=brlen, r++)
-					for(long j=0, c=1; j<clen; j+=bclen, c++)
-					{
-						tmpIx.setIndexes(r, c);
-						cachedCollector.collect(tmpIx, tmpVal);
-					}
+			//output part of empty blocks (all mappers contribute for better load balance),
+			//where mapper responsibility is distributed over row blocks 
+			long numBlocks = (long)Math.ceil((double)rlen/brlen);
+			long len = (long)Math.ceil((double)numBlocks/numMap);
+			long start = mapID * len * brlen;
+			long end = Math.min((mapID+1) * len * brlen, rlen);
+			for(long i=start, r=start/brlen+1; i<end; i+=brlen, r++)
+				for(long j=0, c=1; j<clen; j+=bclen, c++)
+				{
+					tmpIx.setIndexes(r, c);
+					cachedCollector.collect(tmpIx, tmpVal);
+				}
 		}
 	}
 	

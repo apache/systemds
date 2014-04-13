@@ -155,8 +155,8 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 					val1 = Integer.toString((int)V[0][0]); 
 					val2 = Integer.toString((int)V[0][1]); break;
 				case BOOLEAN:
-					val1 = Boolean.toString( (V[0][0]!=0) ); 
-					val2 = Boolean.toString( (V[0][1]!=0) ); break;
+					val1 = (V[0][0]!=0)?"TRUE":"FALSE"; 
+					val2 = (V[0][1]!=0)?"TRUE":"FALSE"; break;
 			}
 			
 		    String HOME = SCRIPT_DIR + TEST_DIR;

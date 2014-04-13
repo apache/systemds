@@ -200,7 +200,7 @@ TOKEN :
  	| <BUILD_ENSEMBLE	: "build ensemble" >
 	| <USE_ENSEMBLE 	: "use ensemble" >
 	| <CROSSVAL 		: "crossval">
-	| <AGGREGATE   	: "aggregate">
+	//| <AGGREGATE   	: "aggregate"> //MB:conflict with aggregate parameterized builtin function.
 	| <TRAIN	   	: "train" >
 	| <TEST			: "test" >
 	| <PARTITION	: "partition" >

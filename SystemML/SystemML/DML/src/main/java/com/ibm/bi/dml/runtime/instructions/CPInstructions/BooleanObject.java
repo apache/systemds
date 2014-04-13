@@ -49,7 +49,7 @@ public class BooleanObject extends ScalarObject
 	}
 
 	public String getStringValue(){
-		return Boolean.toString(_value);
+		return Boolean.toString(_value).toUpperCase();
 	}
 	
 	public String toString() { 

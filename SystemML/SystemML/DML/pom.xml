@@ -19,6 +19,20 @@
 
 	<build>
 		<plugins>
+			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" NIMBLE INTO SYSTEMML.JAR -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
+
+			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -115,9 +129,9 @@
 				<configuration>
 					<archive>
 						<index>true</index>
-						<manifest>
-							<addClasspath>true</addClasspath>
-						</manifest>
+<!-- 						<manifest> -->
+<!-- 							<addClasspath>true</addClasspath> -->
+<!-- 						</manifest> -->
 						<manifestEntries>
 							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
 						</manifestEntries>
@@ -174,7 +188,6 @@
 			<groupId>com.ibm.json</groupId>
 			<artifactId>JSON4J</artifactId>
 			<version>1.0.1.0</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>

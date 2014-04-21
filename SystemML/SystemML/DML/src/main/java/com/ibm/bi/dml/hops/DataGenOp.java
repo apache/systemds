@@ -18,6 +18,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -127,7 +128,10 @@ public class DataGenOp extends Hop
 			
 			rnd.getOutputParameters().setDimensions(
 					get_dim1(), get_dim2(),
-					get_rows_in_block(), get_cols_in_block(), getNnz());
+					//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
+					(get_rows_in_block()>0)?get_rows_in_block():DMLTranslator.DMLBlockSize, 
+					(get_cols_in_block()>0)?get_cols_in_block():DMLTranslator.DMLBlockSize,  
+					getNnz());
 			
 			rnd.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(rnd);

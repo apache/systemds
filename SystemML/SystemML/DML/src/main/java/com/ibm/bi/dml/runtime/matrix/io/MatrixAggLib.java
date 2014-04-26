@@ -335,8 +335,11 @@ public class MatrixAggLib
 	private static void aggregateUnaryMatrixDense(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
 			throws DMLRuntimeException
 	{
-		if( in.denseBlock==null )
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.denseBlock==null ){
+			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
 			return;
+		}	
 		
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -425,8 +428,11 @@ public class MatrixAggLib
 	private static void aggregateUnaryMatrixSparse(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
 			throws DMLRuntimeException
 	{
-		if( in.sparseRows==null )
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.sparseRows==null ){
+			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
 			return;
+		}
 		
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -504,6 +510,43 @@ public class MatrixAggLib
 		out.examSparsity();
 	}
 
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param optype
+	 * @param ixFn
+	 */
+	private static void aggregateUnaryMatrixEmpty(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, IndexFunction ixFn)
+	{
+		//do nothing for pseudo sparse-safe operations
+		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD)
+			return;
+		
+		//compute result based on meta data only
+		switch( optype )
+		{
+			case MAX_INDEX:
+			{
+				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
+					out.quickSetValue(0, 0, in.clen); //maxindex
+				break;
+			}
+			case MEAN:
+			{
+				if( ixFn instanceof ReduceAll ) // MEAN
+					out.quickSetValue(0, 1, in.rlen*in.clen); //count
+				else if( ixFn instanceof ReduceCol ) //ROWMEAN
+					for( int i=0; i<in.rlen; i++ ) //0-sum and 0-correction 
+						out.quickSetValue(i, 1, in.clen); //count
+				else if( ixFn instanceof ReduceRow ) //COLMEAN
+					for( int j=0; j<in.clen; j++ ) //0-sum and 0-correction 
+						out.quickSetValue(1, j, in.rlen); //count				
+				break;
+			}
+		}
+	}
+	
 	
 	////////////////////////////////////////////
 	// core aggregation functions             //
@@ -835,7 +878,6 @@ public class MatrixAggLib
 				kplus.execute2(kbuff, val);
 			}
 		}
-		System.out.println("sum="+kbuff._sum+", corr="+kbuff._correction);
 		c[0] = kbuff._sum;
 		c[1] = kbuff._correction;	
 	}

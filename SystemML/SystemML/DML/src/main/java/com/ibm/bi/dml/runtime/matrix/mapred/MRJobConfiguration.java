@@ -1016,9 +1016,9 @@ public class MRJobConfiguration
 		return job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, 1);
 	}
 	
-	public static int getNumNonZero(JobConf job, byte matrixIndex)
+	public static long getNumNonZero(JobConf job, byte matrixIndex)
 	{
-		return job.getInt(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
+		return job.getLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
 	}
 	
 	public static PartitionParams getPartitionParams(JobConf job) {

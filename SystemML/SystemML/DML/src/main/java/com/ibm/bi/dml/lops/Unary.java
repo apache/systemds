@@ -123,6 +123,9 @@ public class Unary extends Lop
 			 */
 			lps.addCompatibility(JobType.ANY);
 			lps.removeCompatibility(JobType.PARTITION);
+			lps.removeCompatibility(JobType.SORT);
+			lps.removeCompatibility(JobType.CM_COV);
+			lps.removeCompatibility(JobType.COMBINE);
 			this.lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {

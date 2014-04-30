@@ -149,8 +149,8 @@ public class AggBinaryOp extends Hop
 							
 							// If number of columns is smaller than block size then explicit aggregation is not required.
 							// i.e., entire matrix multiplication can be performed in the mappers.
-							boolean needAgg = ( getInput().get(0).get_dim2() > getInput().get(0).get_cols_in_block() ); 
-						
+							boolean needAgg = requiresAggregation(method); 
+							
 							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
 									                     get_dataType(), get_valueType(), (method==MMultMethod.MAPMULT_R));
 							mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -515,7 +515,7 @@ public class AggBinaryOp extends Hop
 		Lop mult = null;
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
-		boolean needAgg = ( X.get_dim1() > X.get_rows_in_block() ); 
+		boolean needAgg = ( X.get_dim1() <= 0 || X.get_dim1() > X.get_rows_in_block() ); 
 		
 		MapMult mvmult = new MapMult(tY, X.constructLops(), get_dataType(), get_valueType(), false);
 		mvmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -540,8 +540,34 @@ public class AggBinaryOp extends Hop
 		return out;
 	}
 	
+	/**
+	 * 
+	 * @param method
+	 * @return
+	 */
+	private boolean requiresAggregation(MMultMethod method) 
+	{
+		//worst-case assumption (for plan correctness)
+		boolean ret = true;
+		
+		//right side cached (no agg if left has just one column block)
+		if(  method == MMultMethod.MAPMULT_R && getInput().get(0).get_dim2() > 0 //known num columns
+	         && getInput().get(0).get_dim2() <= getInput().get(0).get_cols_in_block() ) 
+        {
+            ret = false;
+        }
+        
+		//left side cached (no agg if right has just one row block)
+        if(  method == MMultMethod.MAPMULT_L && getInput().get(1).get_dim1() > 0 //known num rows
+             && getInput().get(1).get_dim1() <= getInput().get(1).get_rows_in_block() ) 
+        {
+       	    ret = false;
+        }
+        
+        return ret;
+	}
 	
-	/*
+	/**
 	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce -- CPMM or RMM.
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 

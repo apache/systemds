@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
-import com.ibm.bi.dml.lops.Tertiary;
 import com.ibm.bi.dml.lops.Tertiary.OperationTypes;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -44,10 +43,8 @@ public class CombineTertiaryInstruction extends TertiaryInstruction
 		in3 = Byte.parseByte(parts[3]);
 		out = Byte.parseByte(parts[4]);
 		
-		OperationTypes op = Tertiary.getOperationType(opcode);
-		
 		if ( opcode.equalsIgnoreCase("combinetertiary") ) {
-			return new CombineTertiaryInstruction(op, in1, in2, in3, out, str);
+			return new CombineTertiaryInstruction(null, in1, in2, in3, out, str);
 		} 
 		return null;
 	}

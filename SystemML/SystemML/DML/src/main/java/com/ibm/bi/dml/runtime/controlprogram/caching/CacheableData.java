@@ -50,7 +50,7 @@ public abstract class CacheableData extends Data
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	public static final long 	CACHING_THRESHOLD = 4*1024; //obj not s.t. caching if below threshold [in bytes]
-	public static final double 	CACHING_BUFFER_SIZE = 0.2; 
+	public static final double 	CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
 	

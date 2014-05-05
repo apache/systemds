@@ -173,7 +173,9 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			job.setInt("dfs.replication", _replication);
 			
 			//set the max number of retries per map task
-			job.setInt("mapreduce.map.maxattempts", _max_retry);
+		    //  disabled job-level configuration to respect cluster configuration
+			//  note: this refers to hadoop2, hence it never had effect on mr1
+			//job.setInt("mapreduce.map.maxattempts", _max_retry);
 			
 			//set unique working dir
 			ExecMode mode = ExecMode.CLUSTER;

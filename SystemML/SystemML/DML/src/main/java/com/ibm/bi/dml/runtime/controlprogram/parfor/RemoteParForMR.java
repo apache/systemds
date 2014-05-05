@@ -170,7 +170,9 @@ public class RemoteParForMR
 			job.setInt("dfs.replication", replication);
 			
 			//set the max number of retries per map task
-			job.setInt("mapreduce.map.maxattempts", max_retry);
+			//  disabled job-level configuration to respect cluster configuration
+			//  note: this refers to hadoop2, hence it never had effect on mr1
+			//job.setInt("mapreduce.map.maxattempts", max_retry);
 			
 			// By default, the job executes in "cluster" mode.
 			// Determine if we can optimize and run it in "local" mode.

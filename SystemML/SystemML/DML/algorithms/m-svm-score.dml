@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -14,20 +14,20 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs DATA=X 
-#  	     		     		     	     			 SPECIFIED_Y=y_specified 
-#						     						 LABEL=y 
-#						     						 INTERCEPT=intercept 
-#						     						 MODEL=W 
-#						     						 SCORES=scores 
-#						     						 PREDICTED=predicted_y
+# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs X=X 
+#  	     		     		     	     			 specified_y=y_specified 
+#						     						 Y=y 
+#						     						 icpt=intercept 
+#						     						 model=W 
+#						     						 scores=scores 
+#						     						 predicted=predicted_y
 
-$INTERCEPT=0
-$SPECIFIED_Y=0
+$icpt=0
+$specified_y=0
 
-X = read($DATA);
-intercept = $INTERCEPT
-W = read($MODEL);
+X = read($X);
+intercept = $icpt
+W = read($model);
 
 Nt = nrow(X);
 num_classes = ncol(W)
@@ -38,13 +38,13 @@ if (intercept == 1) {
 }
 ones = Rand(rows=Nt, cols=1, min=1, max=1, pdf="uniform")
 scores = X %*% W[1:n,] + ones %*% b;
-write(scores, $SCORES, format="text");
+write(scores, $scores, format="text");
 
 predicted_y = rowIndexMax(scores);
-write(predicted_y, $PREDICTED, format="text");
+write(predicted_y, $predicted, format="text");
 
-if ($SPECIFIED_Y == 1) {
- y = read($LABEL);
+if ($specified_y == 1) {
+ y = read($Y);
  correct_percentage = sum(ppred(predicted_y - y, 0, "==")) / Nt * 100;
  print("%CORRECT: " + correct_percentage)
 }

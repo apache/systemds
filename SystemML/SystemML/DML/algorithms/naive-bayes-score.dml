@@ -1,0 +1,39 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Implements scoring with a naive Bayes model learnt using
+# naive-bayes.dml
+#
+# hadoop jar SystemML.jar -f naive-bayes-score.dml -nvargs X=<DATA>
+#							   							   Y=<LABELS>
+#							   							   prior=<Model file1>
+#							   							   conditionals=<Model file2>
+
+D = read($X)
+prior = read($prior)
+conditionals = read($conditionals)
+
+numRows = nrow(D)
+
+ones = matrix(1, rows=numRows, cols=1)
+D_w_ones = append(D, ones)
+model = append(conditionals, prior)
+
+scores = D_w_ones %*% t(log(model))
+
+C = read($Y)
+pred = rowIndexMax(scores)
+acc = sum(ppred(pred, C, "==")) / numRows * 100
+print("Accuracy (%): " + acc)
+
+#in case you want to write the predictions to hdfs
+#uncomment the following line
+#write(pred, $PREDICTED, format="text")
+#for the above to work, one will need to pass
+#in an extra arg PREDICTED=path/file during invocation

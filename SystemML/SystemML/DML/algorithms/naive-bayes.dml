@@ -1,0 +1,58 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Implements multinomial naive Bayes classifier with Laplace correction
+#
+# Example Usage:
+# hadoop jar SystemML.jar -f NaiveBayes.dml -nvargs X=<Data> 
+# 	     		     		    	    			Y=<labels>
+#						    						classes=<Num Classes> 
+#						    						laplace=<Laplace Correction>
+#						    						prior=<Model file1>
+#						    						conditionals=<Model file2>
+
+# defaults
+$laplace = 1
+
+# reading input args
+numClasses = $classes
+D = read($X)
+C = read($Y)
+laplace_correction = $laplace
+
+numRows = nrow(D)
+numFeatures = ncol(D)
+
+# Compute conditionals
+
+# Compute the feature counts for each class
+classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures) {
+  Col = D[,i]
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum")
+}
+
+# Compute the total feature count for each class 
+# and add the number of features to this sum
+# for subsequent regularization (Laplace's rule)
+classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
+
+# Compute class conditional probabilities
+class_conditionals = matrix(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures) {
+  class_conditionals[,i] = (classFeatureCounts[,i] + laplace_correction) / classSums;
+}
+
+# Compute class priors
+class_counts = aggregate(target=C, groups=C, fn="count")
+class_prior = class_counts / numRows;
+
+# write out the model
+write(class_prior, $prior, format="text");
+write(class_conditionals, $conditionals, format="text");

@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -15,33 +15,33 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume number of classes is 10, epsilon = 0.001, lambda=1.0, max_iterations = 100
 # 
-# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs DATA=$INPUT_DIR/X 
-#  	     		     			 	 					 LABEL=$INPUT_DIR/y 
-# 	     		  				 						 INTERCEPT=intercept 
-#							 							 CLASSES=10 
-#							 							 EPS=.001 
-#							 							 LAMBDA=1.0 
-#							 							 MAXITER=100 
-#							 							 MODEL=$OUTPUT_DIR/w
+# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X 
+#  	     		     			 	 					 Y=$INPUT_DIR/y 
+# 	     		  				 						 icpt=intercept 
+#							 							 classes=10 
+#							 							 tol=.001 
+#							 							 reg=1.0 
+#							 							 maxiter=100 
+#							 							 model=$OUTPUT_DIR/w
 
-$INTERCEPT = 0
-$EPS=0.001
-$LAMBDA=1.0
-$MAXITER=100
+$icpt = 0
+$tol=0.001
+$reg=1.0
+$maxiter=100
 
-print("INTERCEPT=" + $INTERCEPT + " EPS=" + $EPS + " LAMBDA=" + $LAMBDA + " MAXITER=" + $MAXITER)
+print("icpt=" + $icpt + " tol=" + $tol + " reg=" + $reg + " maxiter=" + $maxiter)
 
-X = read($DATA)
+X = read($X)
 check_X = sum(X)
 if(check_X == 0){
 	print("X has no non-zeros")
 }else{
-Y = read($LABEL)
-intercept = $INTERCEPT
-num_classes = $CLASSES
-epsilon = $EPS
-lambda = $LAMBDA
-max_iterations = $MAXITER
+Y = read($Y)
+intercept = $icpt
+num_classes = $classes
+epsilon = $tol
+lambda = $reg
+max_iterations = $maxiter
  
 num_samples = nrow(X)
 num_features = ncol(X)
@@ -119,5 +119,5 @@ parfor(iter_class in 1:num_classes){
  w[,iter_class] = w_class
 }
 
-write(w, $MODEL, format="text")
+write(w, $model, format="text")
 }

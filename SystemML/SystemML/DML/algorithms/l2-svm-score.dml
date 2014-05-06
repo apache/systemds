@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -14,20 +14,20 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs DATA=X 
-#  	     		     			    	      	  	  LABEL=Y 
-#							    	  				  INTERCEPT=0 
-#							    	  				  MODEL=w
+# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs X=X 
+#  	     		     			    	      	  	  Y=Y 
+#							    	  				  icpt=0 
+#							    	  				  model=w
 #
 # Note about inputs: 
 # Assumes that labels (entries in Y) are set to either -1 or +1
 
-$INTERCEPT = 0
+$icpt = 0
 
-X = read($DATA)
-y = read($LABEL)
-intercept = $INTERCEPT
-w = read($MODEL)
+X = read($X)
+y = read($Y)
+intercept = $icpt
+w = read($model)
 b = 0.0
 if(intercept == 1){
   b = castAsScalar(w[nrow(w),1])

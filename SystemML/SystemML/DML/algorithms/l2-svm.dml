@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -14,29 +14,29 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume epsilon = 0.001, lambda = 1, maxiterations = 100
 #
-# hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs DATA=$INPUT_DIR/X 
-#  	     		     			    	    				LABEL=$INPUT_DIR/Y 
-#							    							INTERCEPT=0 
-# 	  						    							EPS=0.001 
-#							    							LAMBDA=1 
-#							    							MAXITER=100 
-#							    							MODEL=$OUPUT_DIR/w
+# hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X 
+#  	     		     			    	    				Y=$INPUT_DIR/Y 
+#							    							icpt=0 
+# 	  						    							tol=0.001 
+#							    							reg=1 
+#							    							maxiter=100 
+#							    							model=$OUPUT_DIR/w
 #
 # Note about inputs: 
 # Assumes that labels (entries in Y) are set to either -1 or +1
 
-$INTERCEPT=0
-$EPS=0.001
-$LAMBDA=1.0
-$MAXITER=100
+$icpt=0
+$tol=0.001
+$reg=1.0
+$maxiter=100
 
-X = read($DATA)
-Y = read($LABEL)
+X = read($X)
+Y = read($Y)
 
-intercept = $INTERCEPT
-epsilon = $EPS
-lambda = $LAMBDA
-maxiterations = $MAXITER
+intercept = $icpt
+epsilon = $tol
+lambda = $reg
+maxiterations = $maxiter
 
 num_samples = nrow(X)
 dimensions = ncol(X)
@@ -107,7 +107,7 @@ if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
     iter = iter + 1
   }
 
-  write(w, $MODEL, format="text")
+  write(w, $model, format="text")
 }else{
   print("Training labels (Y) can only be -1 or +1 (binary classification). "
   	+ "Please ensure that before invoking L2SVM.dml");

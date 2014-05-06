@@ -71,6 +71,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 /**
@@ -101,13 +102,7 @@ public class PerfTestTool
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//internal parameters
-	public static final boolean READ_STATS_ON_STARTUP  = false;
-	public static final int     TEST_REPETITIONS       = 10; 
-	public static final int     NUM_SAMPLES_PER_TEST   = 11; 
-	public static final int     MODEL_MAX_ORDER        = 2;
-	public static final boolean MODEL_INTERCEPT        = true;
-	
+	//public parameters (used for estimation)
 	public static final long    MIN_DATASIZE           = 1000;
 	public static final long    MAX_DATASIZE           = 1000000; 
 	public static final long    DEFAULT_DATASIZE       = 500000;//(MAX_DATASIZE-MIN_DATASIZE)/2;
@@ -121,25 +116,31 @@ public class PerfTestTool
 	public static final double  MAX_SORT_IO_MEM        = 500;
 	public static final double  DEFAULT_SORT_IO_MEM    = 256; //BI: default 256MB, hadoop: default 100MB
 	
+	//internal parameters
+	private static final boolean READ_STATS_ON_STARTUP  = false;
+	private static final int     TEST_REPETITIONS       = 10; 
+	private static final int     NUM_SAMPLES_PER_TEST   = 11; 
+	private static final int     MODEL_MAX_ORDER        = 2;
+	private static final boolean MODEL_INTERCEPT        = true;
 	
-	public static final String  PERF_TOOL_DIR          = "./conf/PerfTestTool/";
-	public static final String  PERF_RESULTS_FNAME     = PERF_TOOL_DIR + "%id%.dat";
-	public static final String  PERF_PROFILE_FNAME     = PERF_TOOL_DIR + "performance_profile.xml";
-	public static final String  DML_SCRIPT_FNAME       = "./src/com/ibm/bi/dml/runtime/controlprogram/parfor/opt/PerfTestToolRegression.dml";
-	public static final String  DML_TMP_FNAME          = PERF_TOOL_DIR + "temp.dml";
+	private static final String  PERF_TOOL_DIR          = "./conf/PerfTestTool/";
+	private static final String  PERF_RESULTS_FNAME     = PERF_TOOL_DIR + "%id%.dat";
+	private static final String  PERF_PROFILE_FNAME     = PERF_TOOL_DIR + "performance_profile.xml";
+	private static final String  DML_SCRIPT_FNAME       = "./src/com/ibm/bi/dml/runtime/controlprogram/parfor/opt/PerfTestToolRegression.dml";
+	private static final String  DML_TMP_FNAME          = PERF_TOOL_DIR + "temp.dml";
 	
 	//XML profile tags and attributes
-	public static final String  XML_PROFILE            = "profile";
-	public static final String  XML_DATE               = "date";
-	public static final String  XML_INSTRUCTION        = "instruction";
-	public static final String  XML_ID                 = "id";
-	public static final String  XML_NAME               = "name";
-	public static final String  XML_COSTFUNCTION       = "cost_function";
-	public static final String  XML_MEASURE            = "measure";
-	public static final String  XML_VARIABLE           = "lvariable";
-	public static final String  XML_INTERNAL_VARIABLES = "pvariables";
-	public static final String  XML_DATAFORMAT         = "dataformat";
-	public static final String  XML_ELEMENT_DELIMITER  = "\u002c"; //","; 
+	private static final String  XML_PROFILE            = "profile";
+	private static final String  XML_DATE               = "date";
+	private static final String  XML_INSTRUCTION        = "instruction";
+	private static final String  XML_ID                 = "id";
+	private static final String  XML_NAME               = "name";
+	private static final String  XML_COSTFUNCTION       = "cost_function";
+	private static final String  XML_MEASURE            = "measure";
+	private static final String  XML_VARIABLE           = "lvariable";
+	private static final String  XML_INTERNAL_VARIABLES = "pvariables";
+	private static final String  XML_DATAFORMAT         = "dataformat";
+	private static final String  XML_ELEMENT_DELIMITER  = "\u002c"; //","; 
 		
 	//ID sequences for instructions and test definitions
 	private static IDSequence _seqInst     = null;
@@ -239,9 +240,7 @@ public class PerfTestTool
 		try
 		{
 			if( READ_STATS_ON_STARTUP )
-			{
 				readProfile( PERF_PROFILE_FNAME );
-			}
 		}
 		catch(Exception ex)
 		{
@@ -1278,6 +1277,11 @@ public class PerfTestTool
 	public static void externalReadProfile( String fname ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, XMLStreamException, IOException
 	{
+		//validate external name (security issue)
+		if( !LocalFileUtils.validateExternalFilename(fname, false) )
+			throw new DMLRuntimeException("Invalid (non-trustworthy) external profile filename.");
+		
+		//register internals and read external profile
 		registerTestConfigurations();
 		registerInstructions();
 		readProfile( fname );
@@ -1582,11 +1586,8 @@ public class PerfTestTool
 		//init profile map
 		_profile = new HashMap<Integer, HashMap<Integer,CostFunction>>();
 		
-		//check file for existence
-		File f = new File( fname );		
-		if( !f.exists() )
-			System.out.println("ParFOR PerfTestTool: Warning cannot read profile file "+fname);
-		FileInputStream fis = new FileInputStream( f );
+		//read existing profile
+		FileInputStream fis = new FileInputStream( fname );
 
 		//xml parsing
 		XMLInputFactory xif = XMLInputFactory.newInstance();

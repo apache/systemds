@@ -43,7 +43,6 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.parser.DMLParseException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -84,6 +83,9 @@ public class DMLScript
 		NZ,             // execute matrix operations on NZ SQL backend
 	};
 	
+	//switch to disable Netezza runtime for production
+	private static final boolean DISABLE_NZ_RUNTIME = true;
+	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
@@ -102,7 +104,7 @@ public class DMLScript
 			+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
-//			+ "   -explain: (optional) show the initially compiled runtime program\n"
+			+ "   -explain: (optional) show the initially compiled runtime program\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, HDFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
@@ -296,7 +298,7 @@ public class DMLScript
 			
 			if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
 				arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
-//				arg.equalsIgnoreCase("-explain") || 
+				arg.equalsIgnoreCase("-explain") || 
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
 				arg.startsWith("-config="))
@@ -361,6 +363,8 @@ public class DMLScript
 				if(    script.startsWith("hdfs:") 
 					|| script.startsWith("gpfs:") ) 
 				{ 
+					if( !LocalFileUtils.validateExternalFilename(script, true) )
+						throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
 					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 					Path scriptPath = new Path(script);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
@@ -368,6 +372,8 @@ public class DMLScript
 				// from local file system
 				else 
 				{ 
+					if( !LocalFileUtils.validateExternalFilename(script, false) )
+						throw new LanguageException("Invalid (non-trustworthy) local filename.");
 					in = new BufferedReader(new FileReader(script));
 				}
 				
@@ -479,21 +485,8 @@ public class DMLScript
 		LOG.debug("\nDML config: \n" + conf.getConfigInfo());
 		
 		//Step 2: parse dml script
-		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-		
-		try {
-			prog = parser.parse();
-		} catch (Exception e){
-			if (e instanceof DMLParseException){
-				for ( DMLParseException dmlpe : ((DMLParseException)e).getExceptionList()){
-					LOG.error(dmlpe.getExceptionList().get(0).getMessage());
-					System.out.println(dmlpe.getExceptionList().get(0).getMessage());
-				}
-			}
-			prog = null;
-			throw new ParseException("DMLQLParser encountered 1 or more errors during parsing.");
-		}
+		DMLProgram prog = parser.parse();
 		
 		//Step 3: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -507,7 +500,7 @@ public class DMLScript
 //			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 	
-		//Step 4: rewrite HOP DAGs (incl IPA and CP/MR)
+		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
 		
 		if (LOG.isDebugEnabled()) {
@@ -531,7 +524,12 @@ public class DMLScript
 				executeHadoop(dmlt, prog, conf);
 				break;
 			case NZ:
+				if( DISABLE_NZ_RUNTIME )
+					throw new DMLRuntimeException("Runtime platform '"+rtplatform+"' is disabled for production use.");
 				executeNetezza(dmlt, prog, conf, "dmlnz");		
+				
+			default:
+				throw new DMLRuntimeException("Unsupported runtime platform: "+rtplatform);
 		}
 	}
 	
@@ -718,7 +716,7 @@ public class DMLScript
 		throws IOException, ParseException, DMLRuntimeException
 	{
 		//check security aspects
-		checkSecuritySetup();
+		checkSecuritySetup( config );
 		
 		//create scratch space with appropriate permissions
 		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
@@ -741,10 +739,11 @@ public class DMLScript
 	
 	/**
 	 * 
+	 * @param config 
 	 * @throws IOException
 	 * @throws DMLRuntimeException 
 	 */
-	private static void checkSecuritySetup() 
+	private static void checkSecuritySetup(DMLConfig config) 
 		throws IOException, DMLRuntimeException
 	{
 		//analyze local configuration
@@ -783,6 +782,14 @@ public class DMLScript
 		{
 			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
 		}
+		
+		//validate external filenames working directories
+		String localtmpdir = config.getTextValue(DMLConfig.LOCAL_TMP_DIR);
+		String hdfstmpdir = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+		if( !LocalFileUtils.validateExternalFilename(localtmpdir, false) )
+			throw new DMLRuntimeException("Invalid (non-trustworthy) local working directory.");
+		if( !LocalFileUtils.validateExternalFilename(hdfstmpdir, true) )
+			throw new DMLRuntimeException("Invalid (non-trustworthy) hdfs working directory.");
 	}
 	
 	/**

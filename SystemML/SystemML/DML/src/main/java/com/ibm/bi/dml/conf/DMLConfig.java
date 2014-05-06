@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -86,6 +87,11 @@ public class DMLConfig
 		_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 	}
 	
+	public DMLConfig()
+	{
+		
+	}
+	
 	/**
 	 * 
 	 * @param fileName
@@ -116,7 +122,7 @@ public class DMLConfig
 				LOG.error("Failed to parse DML config file ",e);
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
-				
+		
 		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 	}
 	
@@ -178,12 +184,18 @@ public class DMLConfig
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		Document domTree = null;
 		if (config_file_name.startsWith("hdfs:") ||
-		    config_file_name.startsWith("gpfs:") ) { // config file from DFS
+		    config_file_name.startsWith("gpfs:") )  // config file from DFS
+		{
+			if( !LocalFileUtils.validateExternalFilename(config_file_name, true) )
+				throw new IOException("Invalid (non-trustworthy) hdfs config filename.");
 			FileSystem DFS = FileSystem.get(ConfigurationManager.getCachedJobConf());
             Path configFilePath = new Path(config_file_name);
             domTree = builder.parse(DFS.open(configFilePath));  
 		}
-		else { // config from local file system
+		else  // config from local file system
+		{
+			if( !LocalFileUtils.validateExternalFilename(config_file_name, false) )
+				throw new IOException("Invalid (non-trustworthy) local config filename.");
 			domTree = builder.parse(config_file_name);
 		}
 		
@@ -199,7 +211,7 @@ public class DMLConfig
 	public String getTextValue(String tagName) 
 	{
 		//get the actual value
-		String retVal = getTextValue(xml_root,tagName);
+		String retVal = (xml_root!=null)?getTextValue(xml_root,tagName):null;
 		
 		if (retVal == null)
 		{

@@ -23,6 +23,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.json.java.JSONObject;
 
 
@@ -31,6 +32,8 @@ public class DataExpression extends DataIdentifier
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	public static boolean REJECT_READ_UNKNOWN_SIZE = true;
 	
 	public static final String RAND_ROWS 	=  "rows";	 
 	public static final String RAND_COLS 	=  "cols";
@@ -512,7 +515,6 @@ public class DataExpression extends DataIdentifier
 			
 			if (getVarParam(IO_FILENAME) instanceof ConstIdentifier){
 				filename = getVarParam(IO_FILENAME).toString() +".mtd";
-				
 			}
 			else if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
 				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
@@ -542,6 +544,11 @@ public class DataExpression extends DataIdentifier
 				LOG.error(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
 				throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
+			
+			//validate read filename
+			if( !LocalFileUtils.validateExternalFilename(filename, true) )
+				throw new LanguageException("Invalid (non-trustworthy) hdfs read filename.");
+	    	
 			
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = true;
@@ -887,7 +894,8 @@ public class DataExpression extends DataIdentifier
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : new Long (getVarParam(READROWPARAM).toString());
 					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : new Long(getVarParam(READCOLPARAM).toString());
 					
-					if ( dim1 <= 0 || dim2 <= 0 ) {
+					if ( (dim1 <= 0 || dim2 <= 0) && REJECT_READ_UNKNOWN_SIZE )
+					{
 						LOG.error(this.printErrorLocation() + "Invalid dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
@@ -1028,6 +1036,12 @@ public class DataExpression extends DataIdentifier
 					}
 				}
 			}
+			
+			//validate read filename
+			String fnameWrite = getVarParam(IO_FILENAME).toString();
+			if( !LocalFileUtils.validateExternalFilename(fnameWrite, true) )
+				throw new LanguageException("Invalid (non-trustworthy) hdfs write filename.");
+	    	
 			
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);

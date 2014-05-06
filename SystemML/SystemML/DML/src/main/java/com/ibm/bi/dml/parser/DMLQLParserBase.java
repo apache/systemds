@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
 public abstract class DMLQLParserBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(DMLQLParserBase.class.getName());
@@ -182,9 +182,25 @@ public abstract class DMLQLParserBase
 	 * 
 	 * No return value; parse tree nodes go into the parser's catalog.
 	 */
-	public DMLProgram parse() throws ParseException {
-		_dmlp = new DMLProgram();
-		_dmlp = __inputInternal();
+	public DMLProgram parse() throws ParseException 
+	{
+		try 
+		{
+			_dmlp = new DMLProgram();
+			_dmlp = __inputInternal();
+		} 
+		catch (Exception e)
+		{
+			if (e instanceof DMLParseException){
+				for ( DMLParseException dmlpe : ((DMLParseException)e).getExceptionList()){
+					LOG.error(dmlpe.getExceptionList().get(0).getMessage());
+					System.out.println(dmlpe.getExceptionList().get(0).getMessage());
+				}
+			}
+			_dmlp = null;
+			throw new ParseException("DMLQLParser encountered 1 or more errors during parsing.");
+		}
+		
 		return _dmlp;
 	}
 	

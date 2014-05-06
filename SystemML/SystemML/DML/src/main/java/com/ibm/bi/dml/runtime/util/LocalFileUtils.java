@@ -20,6 +20,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -474,4 +475,33 @@ public class LocalFileUtils
 		return sb.toString();
 	}
 	
+	/**
+	 * Validate external directory and filenames as soon as they enter the system
+	 * in order to prevent security issues such as path traversal, etc.
+	 * Currently, external (user provided) filenames are: scriptfile, config file,
+	 * local tmp working dir, hdfs working dir (scratch), read/write expressions,
+	 * and several export functionalities. 	 
+	 *  
+	 * 
+	 * @param fname
+	 * @param hdfs
+	 * @return
+	 */
+	public static boolean validateExternalFilename( String fname, boolean hdfs )
+	{
+		boolean ret = true;
+		
+		//check read local file from hdfs context
+		//(note: currently rejected with "wrong fs" anyway but this is impl-specific)
+		if( hdfs && !InfrastructureAnalyzer.isLocalMode() 
+			&& fname.startsWith("file:") )
+		{
+			//prevent redirection to local file system
+			ret = false; 
+		}
+		
+		//TODO white and black lists according to BI requirements
+		
+		return ret;
+	}
 }

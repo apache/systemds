@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 /*
  * BIRelease: Following code is commented for BigInsights Release. 
@@ -31,9 +32,9 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 public class NetezzaConnector 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
+	
 	public NetezzaConnector()
 	{
 		
@@ -257,6 +258,11 @@ public class NetezzaConnector
     {
     	checkConnected();
     	
+    	//validate external filename
+    	if( !LocalFileUtils.validateExternalFilename(fileName, false) )
+			throw new IOException("Invalid (non-trustworthy) external filename.");
+    	
+    	
     	ResultSet rs = null;
     	Statement st = null;
 
@@ -340,6 +346,10 @@ public class NetezzaConnector
     {
     	checkConnected();
     	
+    	//validate external filename
+    	if( !LocalFileUtils.validateExternalFilename(fileName, false) )
+			throw new IOException("Invalid (non-trustworthy) external filename.");
+    	
     	BufferedReader reader = null;
     	Statement st = null;
 
@@ -413,11 +423,17 @@ public class NetezzaConnector
         }
     }
     
-    public void exportHadoopDirectoryToNetezza(String dirName, String tablename, boolean createTable) throws SQLException, IOException
+    public void exportHadoopDirectoryToNetezza(String dirName, String tablename, boolean createTable) 
+    	throws SQLException, IOException
     {
     	checkConnected();
     	
+    	//validate external filename
+    	if( !LocalFileUtils.validateExternalFilename(dirName, false) )
+			throw new IOException("Invalid (non-trustworthy) external filename.");
+    	
     	File dir = new File(dirName);
+    	
     	Statement st = conn.createStatement();
     	String template = 
         	"INSERT INTO \"%s\" SELECT * FROM EXTERNAL '%s' USING ( DELIMITER ' ' Y2BASE 2000 ENCODING 'internal' REMOTESOURCE 'JDBC' ESCAPECHAR '\')";
@@ -458,6 +474,7 @@ public class NetezzaConnector
     public void exportTable(String tableName, String filename) throws SQLException
     {
     	checkConnected();
+    	
     	String template = 
     	"INSERT INTO \"%s\" SELECT * FROM EXTERNAL '%s' USING ( DELIMITER ' ' Y2BASE 2000 ENCODING 'internal' REMOTESOURCE 'JDBC' ESCAPECHAR '\')";
     	Statement st = null;

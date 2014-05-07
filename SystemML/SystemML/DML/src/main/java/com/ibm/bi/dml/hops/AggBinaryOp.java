@@ -150,9 +150,10 @@ public class AggBinaryOp extends Hop
 							// If number of columns is smaller than block size then explicit aggregation is not required.
 							// i.e., entire matrix multiplication can be performed in the mappers.
 							boolean needAgg = requiresAggregation(method); 
+							boolean outputEmptyBlocks = !hasOnlyCPConsumers(); 
 							
 							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-									                     get_dataType(), get_valueType(), (method==MMultMethod.MAPMULT_R));
+									                     get_dataType(), get_valueType(), (method==MMultMethod.MAPMULT_R), outputEmptyBlocks);
 							mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 							
 							if (needAgg) {
@@ -243,7 +244,7 @@ public class AggBinaryOp extends Hop
 		
 		return get_lops();
 	}
-	
+
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -517,7 +518,7 @@ public class AggBinaryOp extends Hop
 		// i.e., entire matrix multiplication can be performed in the mappers.
 		boolean needAgg = ( X.get_dim1() <= 0 || X.get_dim1() > X.get_rows_in_block() ); 
 		
-		MapMult mvmult = new MapMult(tY, X.constructLops(), get_dataType(), get_valueType(), false);
+		MapMult mvmult = new MapMult(tY, X.constructLops(), get_dataType(), get_valueType(), false, false);
 		mvmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 		
 		if (needAgg) {
@@ -538,6 +539,25 @@ public class AggBinaryOp extends Hop
 		out.getOutputParameters().setDimensions(X.get_dim2(), Y.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 		
 		return out;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException 
+	 */
+	private boolean hasOnlyCPConsumers() 
+		throws HopsException
+	{
+		boolean ret = true;
+		for( Hop p : getParent() ) {
+			p.optFindExecType(); //ensure exec type evaluated
+			ret &= ( p.getExecType()==ExecType.CP 
+					|| (p instanceof AggBinaryOp && ((AggBinaryOp)p).hasOnlyCPConsumers()))
+					&& !(p instanceof FunctionOp || p instanceof DataOp ); //no function call or transient write
+		}
+			
+		return ret;	
 	}
 	
 	/**

@@ -23,6 +23,7 @@ public class MapMult extends Lop
 	public static final String OPCODE = "mapmult";
 	
 	private boolean _rightCache = true;
+	private boolean _outputEmptyBlocks = true;
 	
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
@@ -33,7 +34,7 @@ public class MapMult extends Lop
 	 * @throws LopsException
 	 */
 	
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache) throws LopsException {
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean emptyBlocks) throws LopsException {
 		super(Lop.Type.MapMult, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
@@ -41,6 +42,7 @@ public class MapMult extends Lop
 		input2.addOutput(this);
 		
 		_rightCache = rightCache;
+		_outputEmptyBlocks = emptyBlocks;
 		
 		/*
 		 * This lop can be executed only in MMCJ job.
@@ -80,6 +82,9 @@ public class MapMult extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_rightCache);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_outputEmptyBlocks);
 		
 		return sb.toString();
 	}

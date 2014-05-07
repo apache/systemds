@@ -32,26 +32,52 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private boolean _rightCache = true;
+	private String _opcode = null;
 	
-	public AggregateBinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
+	private boolean _rightCache = true;
+	private boolean _outputEmptyBlocks = true;
+	
+	public AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr)
 	{
 		super(op, in1, in2, out);
 		mrtype = MRINSTRUCTION_TYPE.AggregateBinary;
 		instString = istr;
+		
+		_opcode = opcode;
 	}
 	
+	/**
+	 * 
+	 * @param flag
+	 */
 	public void setRightCacheMapMult( boolean flag )
 	{
 		_rightCache = flag;
 	}
 	
+	/**
+	 * 
+	 * @param flag
+	 */
+	public void setOutputEmptyBlocksMapMult( boolean flag )
+	{
+		_outputEmptyBlocks = flag;
+	}
+	
+	public boolean getOutputEmptyBlocks()
+	{
+		return _outputEmptyBlocks;
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		
-		//InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		byte in1, in2, out;
@@ -66,16 +92,15 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		{
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			AggregateBinaryInstruction inst = new AggregateBinaryInstruction(aggbin, in1, in2, out, str);
-			if( parts.length==5 )
+			AggregateBinaryInstruction inst = new AggregateBinaryInstruction(aggbin, opcode, in1, in2, out, str);
+			if( parts.length==6 ) {
 				inst.setRightCacheMapMult( Boolean.parseBoolean(parts[4]) );
+				inst.setOutputEmptyBlocksMapMult( Boolean.parseBoolean(parts[5]) );
+			}
 			return inst;
 		} 
-		else {
-			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
 		
-		// return null;
+		throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 	}
 
 	@Override
@@ -87,34 +112,35 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
 		
-		String opcode = InstructionUtils.getOpCode(instString);
-		
-		if ( opcode.equals(MapMult.OPCODE) && ((in1 == null && !_rightCache) || (in2 == null && _rightCache)) ) {
+		if ( _opcode.equals(MapMult.OPCODE) && ((in1 == null && !_rightCache) || (in2 == null && _rightCache)) ) 
+		{
 			// one of the input is from distributed cache.
 			processMapMultInstruction(valueClass, cachedValues, in1, in2, blockRowFactor, blockColFactor);
-			return;
 		}
-		
-		if(in1==null || in2==null)
-			return;
+		else //generic matrix mult
+		{
+			//check empty inputs
+			if(in1==null || in2==null)
+				return;
+			
+			//allocate space for the output value
+			IndexedMatrixValue out;
+			if(output==input1 || output==input2)
+				out=tempValue;
+			else
+				out=cachedValues.holdPlace(output, valueClass);
 
-		//allocate space for the output value
-		IndexedMatrixValue out;
-		if(output==input1 || output==input2)
-			out=tempValue;
-		else
-			out=cachedValues.holdPlace(output, valueClass);
-		
-		//process instruction
-		OperationsOnMatrixValues.performAggregateBinary(
-				    in1.getIndexes(), in1.getValue(), 
-					in2.getIndexes(), in2.getValue(), 
-					out.getIndexes(), out.getValue(), 
-					((AggregateBinaryOperator)optr), false);
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
+			//process instruction
+			OperationsOnMatrixValues.performAggregateBinary(
+					    in1.getIndexes(), in1.getValue(), 
+						in2.getIndexes(), in2.getValue(), 
+						out.getIndexes(), out.getValue(), 
+						((AggregateBinaryOperator)optr), false);
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);				
+		}
 	}
 	
 	/**
@@ -129,9 +155,11 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) throws DMLRuntimeException, DMLUnsupportedOperationException 
+	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-
+		boolean removeOutput = true;
+		
 		if( _rightCache )
 		{
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
@@ -150,14 +178,14 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
 				
 				//allocate space for the output value
-				IndexedMatrixValue out;
-				out=cachedValues.holdPlace(output, valueClass);
-					
+				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
+				
 				//process instruction
 				OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
 							in2BlockIndex, in2BlockValue, out.getIndexes(), out.getValue(), 
-							((AggregateBinaryOperator)optr), false);
+							((AggregateBinaryOperator)optr), false);	
 				
+				removeOutput &= ( !_outputEmptyBlocks && out.getValue().isEmpty() );
 			}
 		}
 		else
@@ -178,17 +206,20 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 				MatrixIndexes in1BlockIndex = in1Block.getIndexes();
 				
 				//allocate space for the output value
-				IndexedMatrixValue out;
-				out=cachedValues.holdPlace(output, valueClass);
-					
+				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
+				
 				//process instruction
 				OperationsOnMatrixValues.performAggregateBinary(in1BlockIndex, in1BlockValue, 
 						in2.getIndexes(), in2.getValue(),
 						out.getIndexes(), out.getValue(), 
 							((AggregateBinaryOperator)optr), false);
-				
+			
+				removeOutput &= ( !_outputEmptyBlocks && out.getValue().isEmpty() );
 			}
 		}		
+		
+		//empty block output filter (enabled by compiler consumer operation is in CP)
+		if( removeOutput )
+			cachedValues.remove(output);
 	}
-
 }

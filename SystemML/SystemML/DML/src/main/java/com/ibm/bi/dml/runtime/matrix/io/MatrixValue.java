@@ -98,6 +98,8 @@ public abstract class MatrixValue implements WritableComparable
 
 	public abstract boolean isInSparseFormat();
 
+	public abstract boolean isEmpty();
+	
 	public abstract void reset();
 
 	public abstract void reset(int rl, int cl);

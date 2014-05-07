@@ -152,10 +152,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	protected void processMixedInstructions(MRInstruction[] mixed_instructions) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(mixed_instructions==null)
-			return;
-		for(MRInstruction ins: mixed_instructions)
-			processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
+		if( mixed_instructions != null )
+			for( MRInstruction ins : mixed_instructions )
+				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}
 	
 	/**
@@ -167,10 +166,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	protected void processMixedInstructions(Vector<MRInstruction> mixed_instructions) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(mixed_instructions==null || mixed_instructions.isEmpty())
-			return;
-		for(MRInstruction ins: mixed_instructions)
-			processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
+		if( mixed_instructions != null )
+			for( MRInstruction ins : mixed_instructions )
+				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}
 	
 	/**
@@ -189,7 +187,14 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	{
 		//Timing time = new Timing(true);
 		
-		if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
+		if ( ins instanceof AggregateBinaryInstruction ) {
+			byte input = ((AggregateBinaryInstruction)ins).input1;
+			MatrixCharacteristics dim=dimensions.get(input);
+			if(dim==null)
+				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+		}
+		else if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
 				|| ins instanceof RangeBasedReIndexInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
@@ -237,13 +242,6 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			if( dimIn==null )
 				throw new DMLRuntimeException("Dimensions for instruction "+arinst+"  is unset!!!");
 			arinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
-		}
-		else if ( ins instanceof AggregateBinaryInstruction ) {
-			byte input = ((AggregateBinaryInstruction)ins).input1;
-			MatrixCharacteristics dim=dimensions.get(input);
-			if(dim==null)
-				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
 		}
 		else
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);

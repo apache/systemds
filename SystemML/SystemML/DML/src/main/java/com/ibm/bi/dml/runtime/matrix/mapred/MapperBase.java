@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -87,7 +88,9 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	protected Converter inputConverter=null;
 	
 	//a counter to measure the time spent in a mapper
-	protected static enum Counters {MAP_TIME };
+	protected static enum Counters {
+		MAP_TIME 
+	};
 	
 	protected void commonMap(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, 
 	Reporter reporter) throws IOException 
@@ -99,11 +102,11 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		//for each represenattive matrix, read the record and apply instructions
 		for(int i=0; i<representativeMatrixes.size(); i++)
 		{
+			byte thisMatrix=representativeMatrixes.get(i);
+			
 			//convert the record into the right format for the representatice matrix
 			inputConverter.setBlockSize(brlens[i], bclens[i]);
 			inputConverter.convert(rawKey, rawValue);
-			
-			byte thisMatrix=representativeMatrixes.get(i);
 			
 			//apply unary instructions on the converted indexes and values
 			while(inputConverter.hasNext())
@@ -126,6 +129,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 				specialOperationsForActualMap(i, out, reporter);
 			}
 		}
+		
 		reporter.incrCounter(Counters.MAP_TIME, System.currentTimeMillis()-start);
 	}
 	
@@ -197,6 +201,28 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		
 	}
 
+	/**
+	 * Determines if empty blocks can be discarded on map input. Conceptually, this is true
+	 * if the individual instruction don't need to output empty blocks and if they are sparsesafe.
+	 * 
+	 * @return
+	 */
+	public boolean allowsFilterEmptyInputBlocks()
+	{
+		boolean ret = true;
+		int count = 0;
+		
+		if( ret && mapper_instructions!=null )
+			for( Vector<MRInstruction> vinst : mapper_instructions )
+				for( MRInstruction inst : vinst ){
+					ret &= (inst instanceof AggregateBinaryInstruction 
+						   && !((AggregateBinaryInstruction)inst).getOutputEmptyBlocks() );
+					count++; //ensure that mapper instructions exists
+				}
+		
+		return ret && count>0;
+	}
+	
 	public void configure(JobConf job)
 	{
 		super.configure(job);

@@ -113,6 +113,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	public boolean isInSparseFormat() {
 		return false;
 	}
+	
+	@Override
+	public boolean isEmpty(){
+		return (value==0);
+	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {

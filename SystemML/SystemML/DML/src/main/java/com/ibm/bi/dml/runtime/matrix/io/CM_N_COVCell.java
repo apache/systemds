@@ -145,6 +145,11 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public boolean isInSparseFormat() {
 		return false;
 	}
+	
+	@Override
+	public boolean isEmpty(){
+		return false;
+	}
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,

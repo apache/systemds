@@ -33,6 +33,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 @RunWith(value = Parameterized.class)
 public class RandRuntimePlatformTest extends AutomatedTestBase 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "RandRuntimePlatformTest";
 	
@@ -149,20 +154,30 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	
 			boolean exceptionExpected = false;
 			
-			/* Generate Data in CP */
+			// Generate Data in CP
+			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			programArgs[6] = HOME + OUTPUT_DIR + "A_SN"; // data file generated from CP
+			runTest(true, exceptionExpected, null, -1); 
+						
+			
+			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			programArgs[6] = HOME + OUTPUT_DIR + "A_CP"; // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 			
-			/* Generate Data in MR */
+			// Generate Data in MR
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
 			programArgs[6] = HOME + OUTPUT_DIR + "A_MR"; // data file generated from MR
 			runTest(true, exceptionExpected, null, -1); 
 		
-			//compare matrices 
+			//compare matrices (1-2, 2-3 -> transitively 1-3)
 			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
 			HashMap<CellIndex, Double> mrfile = readDMLMatrixFromHDFS("A_MR");
 			TestUtils.compareMatrices(cpfile, mrfile, eps, "CPFile", "MRFile");
+			cpfile = null;
+			HashMap<CellIndex, Double> snfile = readDMLMatrixFromHDFS("A_SN");
+			TestUtils.compareMatrices(snfile, mrfile, eps, "SNFile", "MRFile");		
+			
 		}
 		finally
 		{

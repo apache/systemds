@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ibm.biginsights</groupId>
-  <version>3.0-SNAPSHOT</version>
+  <version>0.4-SystemML-4Q-SNAPSHOT</version>
   <artifactId>systemml-reactor</artifactId>
   <packaging>pom</packaging>
 
   <name>IBM BigInsights SystemML</name>
-  <description />
+  <description></description>
 
   <scm>
     <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
     <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
   </scm>
-  
+
   <parent>
     <groupId>com.ibm.biginsights</groupId>
     <artifactId>multimodule-parent</artifactId>
-    <version>1.3.6</version>
+    <version>1.3.2</version>
   </parent>
 
   <modules>

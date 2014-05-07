@@ -64,6 +64,15 @@ public class ProgramRewriter
 			_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()      );
 	}
 	
+	public ProgramRewriter( HopRewriteRule rewrite )
+	{
+		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
+		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet.add( rewrite );		
+		
+		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+	}
+	
 	/**
 	 * 
 	 * @param dmlp

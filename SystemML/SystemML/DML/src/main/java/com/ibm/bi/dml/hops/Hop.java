@@ -1031,7 +1031,7 @@ public abstract class Hop
 				if(h instanceof DataOp)
 				{
 					DataOp o = ((DataOp)h);
-					if(o._dataop == DataOpTypes.PERSISTENTWRITE || o._dataop == DataOpTypes.TRANSIENTWRITE)
+					if(o.getDataOpType() == DataOpTypes.PERSISTENTWRITE || o.getDataOpType() == DataOpTypes.TRANSIENTWRITE)
 					{
 						hasWriteOutput = true;
 						break;

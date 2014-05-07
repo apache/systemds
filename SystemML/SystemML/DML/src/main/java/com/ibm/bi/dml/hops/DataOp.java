@@ -33,8 +33,8 @@ public class DataOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	DataOpTypes _dataop;
-	String _fileName = null;
+	private DataOpTypes _dataop;
+	private String _fileName = null;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
 	
 	private boolean _recompileRead = true;
@@ -137,6 +137,16 @@ public class DataOp extends Hop
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
+	}
+	
+	public DataOpTypes getDataOpType()
+	{
+		return _dataop;
+	}
+	
+	public void setDataOpType( DataOpTypes type )
+	{
+		_dataop = type;
 	}
 	
 	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {

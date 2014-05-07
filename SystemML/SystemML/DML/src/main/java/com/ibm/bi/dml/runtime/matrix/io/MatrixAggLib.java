@@ -83,15 +83,23 @@ public class MatrixAggLib
 		throws DMLRuntimeException
 	{	
 		//Timing time = new Timing(true);
+		//boolean saggVal = aggVal.isInSparseFormat(), saggCorr = aggCorr.isInSparseFormat(); 
+		//long naggVal = aggVal.getNonZeros(), naggCorr = aggCorr.getNonZeros();
 		
+		//core aggregation
 		if(!in.sparse && !aggVal.sparse && !aggCorr.sparse)
-			aggregateBinaryMatrixDense(in, aggVal, aggCorr);
+			aggregateBinaryMatrixAllDense(in, aggVal, aggCorr);
 		else if(in.sparse && !aggVal.sparse && !aggCorr.sparse)
-			aggregateBinaryMatrixSparse(in, aggVal, aggCorr);
-		else
-			aggregateBinaryMatrixGeneric(in, aggVal, aggCorr);
+			aggregateBinaryMatrixSparseDense(in, aggVal, aggCorr);
+		else if(in.sparse ) //any aggVal, aggCorr
+			aggregateBinaryMatrixSparseGeneric(in, aggVal, aggCorr);
+		else //if( !in.sparse ) //any aggVal, aggCorr
+			aggregateBinaryMatrixDenseGeneric(in, aggVal, aggCorr);
 		
-		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.getNonZeros()+","+in.sparse+"), " +
+		//		          "("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
+		//		          "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+"), ("+aggCorr.getNonZeros()+","+aggCorr.isInSparseFormat()+") " +
+		//		          "in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -203,10 +211,10 @@ public class MatrixAggLib
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixDense(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixAllDense(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
 			throws DMLRuntimeException
 	{
-		if( in.denseBlock==null )
+		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
 		//allocate output arrays (if required)
@@ -238,6 +246,8 @@ public class MatrixAggLib
 		
 		aggVal.nonZeros = nnzC;
 		aggCorr.nonZeros = nnzCC;
+		//aggVal.examSparsity();
+		//aggCorr.examSparsity(); 
 	}
 
 	/**
@@ -247,10 +257,10 @@ public class MatrixAggLib
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixSparse(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixSparseDense(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
 			throws DMLRuntimeException
 	{
-		if( in.sparseRows==null )
+		if( in.sparseRows==null || in.isEmptyBlock(false) )
 			return;
 		
 		//allocate output arrays (if required)
@@ -291,6 +301,8 @@ public class MatrixAggLib
 		
 		aggVal.recomputeNonZeros();
 		aggCorr.recomputeNonZeros();
+		//aggVal.examSparsity();
+		//aggCorr.examSparsity(); 
 	}
 	
 	/**
@@ -300,26 +312,80 @@ public class MatrixAggLib
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixGeneric(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+			throws DMLRuntimeException
+	{
+		if( in.sparseRows==null || in.isEmptyBlock(false) )
+			return;
+		
+		SparseRow[] a = in.getSparseRows();
+		
+		KahanObject buffer1 = new KahanObject(0, 0);
+		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
+		
+		final int m = in.rlen;
+		final int rlen = Math.min(a.length, m);
+		
+		for( int i=0; i<rlen; i++ )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				int[] aix = arow.getIndexContainer();
+				double[] avals = arow.getValueContainer();
+				
+				for( int j=0; j<alen; j++ )
+				{
+					int jix = aix[j];
+					buffer1._sum        = aggVal.quickGetValue(i, jix);
+					buffer1._correction = aggCorr.quickGetValue(i, jix);
+					akplus.execute2(buffer1, avals[j]);
+					aggVal.quickSetValue(i, jix, buffer1._sum);
+					aggCorr.quickSetValue(i, jix, buffer1._correction);
+				}
+			}
+		}
+		
+		//note: nnz of aggVal/aggCorr maintained internally 
+		aggVal.examSparsity();
+		aggCorr.examSparsity(); 
+	}
+	
+	
+	/**
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @param aggCorr
+	 * @throws DMLRuntimeException
+	 */
+	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
 		throws DMLRuntimeException
 	{	
+		if( in.denseBlock==null || in.isEmptyBlock(false) )
+			return;
+		
 		final int m = in.rlen;
 		final int n = in.clen;
+		
+		double[] a = in.getDenseArray();
 		
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
 		
 		//incl implicit nnz maintenance
-		for(int i=0; i<m; i++)
-			for(int j=0; j<n; j++)
+		for(int i=0, ix=0; i<m; i++)
+			for(int j=0; j<n; j++, ix++)
 			{
 				buffer._sum = aggVal.quickGetValue(i, j);
 				buffer._correction = aggCorr.quickGetValue(i, j);
-				akplus.execute(buffer, in.quickGetValue(i, j));
+				akplus.execute(buffer, a[ix]);
 				aggVal.quickSetValue(i, j, buffer._sum);
 				aggCorr.quickSetValue(i, j, buffer._correction);
 			}
 		
+		//note: nnz of aggVal/aggCorr maintained internally 
 		aggVal.examSparsity();
 		aggCorr.examSparsity();
 	}
@@ -335,8 +401,7 @@ public class MatrixAggLib
 	private static void aggregateUnaryMatrixDense(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
 			throws DMLRuntimeException
 	{
-		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.denseBlock==null ){
+		if( in.denseBlock==null || in.isEmptyBlock(false) ){
 			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
 			return;
 		}	
@@ -429,7 +494,7 @@ public class MatrixAggLib
 			throws DMLRuntimeException
 	{
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.sparseRows==null ){
+		if( in.sparseRows==null || in.isEmptyBlock(false) ){
 			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
 			return;
 		}

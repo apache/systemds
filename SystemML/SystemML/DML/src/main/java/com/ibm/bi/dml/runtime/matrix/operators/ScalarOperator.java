@@ -13,6 +13,7 @@ import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Equals;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
@@ -67,7 +68,8 @@ public class ScalarOperator  extends Operator
 			||(fn instanceof GreaterThan && _constant==0) 
 			||(fn instanceof LessThan && _constant==0)
 			||(fn instanceof NotEquals && _constant==0)
-			||(fn instanceof Equals && _constant!=0)    )
+			||(fn instanceof Equals && _constant!=0)
+			||(fn instanceof Minus && _constant==0)  )
 		{
 			sparseSafe = true;
 		}

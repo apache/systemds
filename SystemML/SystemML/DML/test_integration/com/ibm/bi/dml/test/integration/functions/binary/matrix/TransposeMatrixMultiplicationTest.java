@@ -28,7 +28,8 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME = "TransposeMatrixMultiplication";
+	private final static String TEST_NAME1 = "TransposeMatrixMultiplication";
+	private final static String TEST_NAME2 = "TransposeMatrixMultiplicationMinus";
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static double eps = 1e-10;
 	
@@ -52,9 +53,10 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "C" })   ); 
+		addTestConfiguration( TEST_NAME1, 
+				new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })   );
+		addTestConfiguration( TEST_NAME2, 
+				new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "C" })   );
 	}
 
 	
@@ -153,14 +155,50 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runTransposeMatrixMultiplicationTest(true, true, ExecType.MR, true);
 	}
+	
+	@Test
+	public void testTransposeMMMinusDenseDenseCP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.CP, false, true);
+	}
+	
+	@Test
+	public void testTransposeMVMinusDenseDenseCP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.CP, true, true);
+	}
+	
+	@Test
+	public void testTransposeMMMinusDenseDenseMR() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, false, true);
+	}
+	
+	@Test
+	public void testTransposeMVMinusDenseDenseMR() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, true, true);
+	}
 
 	/**
 	 * 
 	 * @param sparseM1
 	 * @param sparseM2
 	 * @param instType
+	 * @param vectorM2
 	 */
 	private void runTransposeMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean vectorM2)
+	{
+		runTransposeMatrixMultiplicationTest(sparseM1, sparseM2, instType, vectorM2, false);
+	}
+	
+	/**
+	 * 
+	 * @param sparseM1
+	 * @param sparseM2
+	 * @param instType
+	 */
+	private void runTransposeMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean vectorM2, boolean minusM1)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -170,7 +208,8 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 		int colsA = vectorM2 ? colsA2 : colsA1;
 		int rowsB = vectorM2 ? rowsB2 : rowsB1;
 		int colsB = vectorM2 ? colsB2 : colsB1;
-		
+	
+		String TEST_NAME = minusM1 ? TEST_NAME2 : TEST_NAME1;
 		
 		try
 		{

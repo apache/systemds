@@ -58,11 +58,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
 		else
 			return new AppendCPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, 
-										   in2,
-										   in3,
-										   out,
-										   str);
+										   in1, in2, in3, out, str);
 	}
 	
 	@Override
@@ -76,30 +72,18 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		//check input dimensions
 		if(matBlock1.getNumRows() != matBlock2.getNumRows())
 			throw new DMLRuntimeException("Append is not possible for input matrices " 
-										  + input1.get_name()
-										  + " and "
-										  + input2.get_name()
+										  + input1.get_name() + " and " + input2.get_name()
 										  + "with unequal number of rows");
 		
-		//create output properties
-		ReorgOperator r_op = (ReorgOperator) optr;
-		OffsetColumnIndex off = ((OffsetColumnIndex)((ReorgOperator)optr).fn);
-		off.setOutputSize(matBlock1.getNumRows(), matBlock1.getNumColumns() + matBlock2.getNumColumns());
-		
 		//execute append operations (append both inputs to initially empty output)
-		off.setOffset(0);
-		MatrixBlock tmp = (MatrixBlock) matBlock1.appendOperations(r_op, new MatrixBlock(), 0, 0, 0 );
-		off.setOffset(matBlock1.getNumColumns());
-		MatrixBlock ret = (MatrixBlock) matBlock2.appendOperations(r_op, tmp, 0, 0, 0 );
+		MatrixBlock ret = (MatrixBlock) matBlock1.appendOperations(matBlock2, new MatrixBlock());
 		
 		//set output
 		String output_name = output.get_name();
 		ec.setMatrixOutput(output_name, ret);
-
+		
 		//release inputs 
 		ec.releaseMatrixInput(input1.get_name());
 		ec.releaseMatrixInput(input2.get_name());
-	
-		//System.out.println("Finish Append with output col size = "+ret.getNumColumns());
 	}
 }

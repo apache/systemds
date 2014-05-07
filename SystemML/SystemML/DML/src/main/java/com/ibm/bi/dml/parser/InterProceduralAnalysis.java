@@ -55,7 +55,8 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
  *   2) Intra-Procedural Analysis: propagate statistics across hop dags of subsequent 
  *      statement blocks in order to allow chained function calls and reasoning about
  *      changing sparsity etc (that requires the rewritten hops dag as input). This 
- *      also includes control-flow aware propagation of size and sparsity.
+ *      also includes control-flow aware propagation of size and sparsity. Furthermore,
+ *      it also serves as a second constant propagation pass.
  * 
  * In general, the basic concepts of IPA are as follows and all places that deal with
  * statistic propagation should adhere to that:
@@ -298,6 +299,8 @@ public class InterProceduralAnalysis
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
 			//old stats into predicate
 			propagateStatisticsAcrossPredicateDAG(wsb.getPredicateHops(), callVars);
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, wsb);
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : wstmt.getBody())
@@ -305,13 +308,15 @@ public class InterProceduralAnalysis
 			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ) //second pass if required
 				for (StatementBlock sbi : wstmt.getBody())
 					propagateStatisticsAcrossBlock(sbi, fcand, callVars);
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, sb);
 		}	
 		else if (sb instanceof IfStatementBlock) 
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
 			//old stats into predicate
-			propagateStatisticsAcrossPredicateDAG(isb.getPredicateHops(), callVars);
+			propagateStatisticsAcrossPredicateDAG(isb.getPredicateHops(), callVars);			
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			LocalVariableMap callVarsElse = (LocalVariableMap) callVars.clone();
@@ -320,6 +325,8 @@ public class InterProceduralAnalysis
 			for (StatementBlock sbi : istmt.getElseBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVarsElse);
 			callVars = reconcileUpdatedCallVarsIf(oldCallVars, callVars, callVarsElse, isb);
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, sb);
 		}
 		else if (sb instanceof ForStatementBlock) //incl parfor
 		{
@@ -329,16 +336,22 @@ public class InterProceduralAnalysis
 			propagateStatisticsAcrossPredicateDAG(fsb.getFromHops(), callVars);
 			propagateStatisticsAcrossPredicateDAG(fsb.getToHops(), callVars);
 			propagateStatisticsAcrossPredicateDAG(fsb.getIncrementHops(), callVars);
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, fsb);
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : fstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVars);
 			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, fsb) )
 				for (StatementBlock sbi : fstmt.getBody())
-					propagateStatisticsAcrossBlock(sbi, fcand, callVars);	
+					propagateStatisticsAcrossBlock(sbi, fcand, callVars);
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, sb);
 		}
 		else //generic (last-level)
-		{
+		{	
+			//remove updated constant scalars
+			Recompiler.removeUpdatedScalars(callVars, sb);
 			//old stats in, new stats out if updated
 			ArrayList<Hop> roots = sb.get_hops();
 			DMLProgram prog = sb.getDMLProg();
@@ -394,7 +407,7 @@ public class InterProceduralAnalysis
 			//update DAG statistics from leafs to roots
 			for( Hop hop : roots )
 				Recompiler.rUpdateStatistics( hop, vars );
-				
+
 			//extract statistics from roots
 			Recompiler.extractDAGOutputStatistics(roots, vars, true);
 		}
@@ -403,6 +416,7 @@ public class InterProceduralAnalysis
 			throw new HopsException("Failed to update Hop DAG statistics.", ex);
 		}
 	}
+	
 	
 	/**
 	 * 
@@ -414,6 +428,8 @@ public class InterProceduralAnalysis
 	private boolean reconcileUpdatedCallVarsLoops( LocalVariableMap oldCallVars, LocalVariableMap callVars, StatementBlock sb )
 	{
 		boolean requiresRecompile = false;
+		
+		//handle matrices
 		for( String varname : sb._updated.getVariableNames() )
 		{
 			Data dat1 = oldCallVars.get(varname);
@@ -485,33 +501,39 @@ public class InterProceduralAnalysis
 				dat2 = elseVar;
 			}
 			
-			if( dat1 != null && dat1 instanceof MatrixObject && dat2!=null && dat2 instanceof MatrixObject )
+			//compare size and value information (note: by definition both dat1 and dat2 are of same type
+			//because we do not allow data type changes)
+			if( dat1 != null && dat1 instanceof MatrixObject && dat2!=null )
 			{
-				MatrixObject moOld = (MatrixObject) dat1;
-				MatrixObject mo = (MatrixObject) dat2;
-				MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
-				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-				
-				if( mcOld.get_rows() != mc.get_rows() 
-						|| mcOld.get_cols() != mc.get_cols()
-						|| mcOld.getNonZeros() != mc.getNonZeros() )
+				//handle matrices
+				if( dat1 instanceof MatrixObject && dat2 instanceof MatrixObject )
 				{
-					long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+					MatrixObject moOld = (MatrixObject) dat1;
+					MatrixObject mo = (MatrixObject) dat2;
+					MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
+					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 					
-					//handle dimension change
-					if(    mcOld.get_rows() != mc.get_rows() 
-						|| mcOld.get_cols() != mc.get_cols() )
+					if( mcOld.get_rows() != mc.get_rows() 
+							|| mcOld.get_cols() != mc.get_cols()
+							|| mcOld.getNonZeros() != mc.getNonZeros() )
 					{
-						ldim1=-1; ldim2=-1; //unknown
+						long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+						
+						//handle dimension change
+						if(    mcOld.get_rows() != mc.get_rows() 
+							|| mcOld.get_cols() != mc.get_cols() )
+						{
+							ldim1=-1; ldim2=-1; //unknown
+						}
+						//handle sparsity change
+						if( mcOld.getNonZeros() != mc.getNonZeros() )
+						{
+							lnnz=-1; //unknown		
+						}
+						
+						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
+						callVarsIf.put(varname, moNew);
 					}
-					//handle sparsity change
-					if( mcOld.getNonZeros() != mc.getNonZeros() )
-					{
-						lnnz=-1; //unknown		
-					}
-					
-					MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
-					callVarsIf.put(varname, moNew);
 				}
 			}
 		}

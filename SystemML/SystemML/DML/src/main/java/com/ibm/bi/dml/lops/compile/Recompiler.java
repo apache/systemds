@@ -35,6 +35,7 @@ import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.DataGen;
@@ -47,6 +48,7 @@ import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -114,8 +116,6 @@ public class Recompiler
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
 			
-			//TODO potentially invoke also mmchain opt, currently not many usecases 
-			
 			// clear existing lops
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
@@ -139,8 +139,7 @@ public class Recompiler
 			}		
 			
 			// construct instructions
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
-			
+			newInst = dag.getJobs(ConfigurationManager.getConfig());			
 		}
 		
 		// replace thread ids in new instructions
@@ -254,6 +253,18 @@ public class Recompiler
 		return newInst;
 	}
 
+	/**
+	 * 
+	 * @param hops
+	 * @param tid
+	 * @param et
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
 	public static ArrayList<Instruction> recompileHopsDag2Forced( Hop hops, long tid, ExecType et ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
@@ -530,8 +541,10 @@ public class Recompiler
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			removeUpdatedScalars(vars, tmp.getStatementBlock());
 			for (ProgramBlock pb2 : tmp.getChildBlocks())
 				rRecompileProgramBlock(pb2, vars, tid);
+			removeUpdatedScalars(vars, tmp.getStatementBlock());
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
@@ -540,12 +553,15 @@ public class Recompiler
 				rRecompileProgramBlock(pb2, vars, tid);
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
 				rRecompileProgramBlock(pb2, vars, tid);
+			removeUpdatedScalars(vars, tmp.getStatementBlock());
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			removeUpdatedScalars(vars, tmp.getStatementBlock());
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
 				rRecompileProgramBlock(pb2, vars, tid);
+			removeUpdatedScalars(vars, tmp.getStatementBlock());
 		}		
 		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			    || pb instanceof CVProgramBlock
@@ -570,6 +586,8 @@ public class Recompiler
 				//propagate stats across hops (should be executed on clone of vars)
 				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
 			}
+			
+			removeUpdatedScalars(vars, sb);			
 		}
 		
 	}
@@ -677,6 +695,32 @@ public class Recompiler
 		
 	}
 	
+	/**
+	 * 
+	 * @param callVars
+	 * @param sb
+	 */
+	public static void removeUpdatedScalars( LocalVariableMap callVars, StatementBlock sb )
+	{
+		if( sb != null )
+		{
+			//remove update scalar variables from constants
+			for( String varname : sb.variablesUpdated().getVariables().keySet() )
+			{
+				Data dat = callVars.get(varname);
+				if( dat != null && dat.getDataType() == DataType.SCALAR )
+				{
+					callVars.remove(varname);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param hops
+	 * @param vars
+	 */
 	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars)
 	{
 		extractDAGOutputStatistics(hops, vars, true);
@@ -693,27 +737,52 @@ public class Recompiler
 			extractDAGOutputStatistics(hop, vars, overwrite);
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @param vars
+	 */
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars)
 	{
 		extractDAGOutputStatistics(hop, vars, true);
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @param vars
+	 * @param overwrite
+	 */
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
-		if(    hop.getOpString().equals("TWrite") ) //for all writes
-			//&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims FIXME
+		if(    hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
+			//&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims 
 		{
 			String varName = hop.get_name();
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
 			{
-				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
-				MatrixCharacteristics mc = new MatrixCharacteristics( 
-											hop.get_dim1(), hop.get_dim2(), 
-											DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
-											hop.getNnz());
-				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
-				mo.setMetaData(meta);	
-				vars.put(varName, mo);
+				//extract matrix sizes for size propagation
+				if( hop.get_dataType()==DataType.MATRIX )
+				{
+					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
+					MatrixCharacteristics mc = new MatrixCharacteristics( 
+												hop.get_dim1(), hop.get_dim2(), 
+												DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+												hop.getNnz());
+					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+					mo.setMetaData(meta);	
+					vars.put(varName, mo);
+				}
+				//extract scalar constants for second constant propagation
+				else if( hop.get_dataType()==DataType.SCALAR )
+				{
+					if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof LiteralOp )
+					{
+						ScalarObject constant = HopRewriteUtils.getScalarObject((LiteralOp)hop.getInput().get(0));
+						if( constant!=null )
+							vars.put(varName, constant);
+					}
+				}
 			}
 			else //already existing: take largest   
 			{
@@ -728,6 +797,15 @@ public class Recompiler
 						//update statistics if necessary
 						mc.setDimension(hop.get_dim1(), hop.get_dim2());
 						mc.setNonZeros(hop.getNnz());
+					}
+				}
+				else //scalar (just overwrite)
+				{
+					if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof LiteralOp )
+					{
+						ScalarObject constant = HopRewriteUtils.getScalarObject((LiteralOp)hop.getInput().get(0));
+						if( constant!=null )
+							vars.put(varName, constant);
 					}
 				}
 				

@@ -9,6 +9,11 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class HopRewriteUtils 
@@ -72,5 +77,33 @@ public class HopRewriteUtils
 			
 			default: throw new HopsException("Invalid int value: "+op.get_valueType());
 		}
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 * @throws HopsException
+	 */
+	public static ScalarObject getScalarObject( LiteralOp op )
+	{
+		ScalarObject ret = null;
+		
+		try
+		{
+			switch( op.get_valueType() )
+			{
+				case DOUBLE:  ret = new DoubleObject(op.getDoubleValue()); break;
+				case INT:	  ret = new IntObject((int)op.getLongValue()); break;
+				case BOOLEAN: ret = new BooleanObject(op.getBooleanValue()); break;
+				case STRING:  ret = new StringObject(op.getStringValue()); break;
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new RuntimeException("Failed to create scalar object for constant. Continue.", ex);
+		}
+		
+		return ret;
 	}
 }

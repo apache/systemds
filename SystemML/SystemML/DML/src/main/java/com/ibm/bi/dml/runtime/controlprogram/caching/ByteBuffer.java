@@ -121,6 +121,15 @@ public class ByteBuffer
 		return _size;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isInSparseFormat()
+	{
+		return _sparse;
+	}
+	
 	public void freeMemory()
 	{
 		//clear strong references to buffer/matrix
@@ -133,8 +142,7 @@ public class ByteBuffer
 		else
 		{
 			_mdata = null;
-		}	
-		
+		}
 	}
 	
 	/**

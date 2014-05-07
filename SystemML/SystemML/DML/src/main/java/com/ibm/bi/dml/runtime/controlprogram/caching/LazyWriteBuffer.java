@@ -53,7 +53,7 @@ public class LazyWriteBuffer
 	 */
 	public static void writeMatrix( String fname, MatrixBlock mb ) 
 		throws FileNotFoundException, IOException
-	{
+	{	
 		long lSize = mb.getExactSizeOnDisk(); 
 		boolean requiresWrite = ( lSize >= _limit || lSize >= Integer.MAX_VALUE );
 	
@@ -105,7 +105,7 @@ public class LazyWriteBuffer
 			LocalFileUtils.writeMatrixBlockToLocal(fname, mb);
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSWrites();
-		}
+		}	
 	}
 	
 	/**
@@ -205,4 +205,27 @@ public class LazyWriteBuffer
 			PageCache.clear();
 	}
 	
+	/**
+	 * 
+	 */
+	public static void printStatus( String position )
+	{
+		System.out.println("WRITE BUFFER STATUS ("+position+") --");
+		
+		//print buffer meta data
+		System.out.println("\tWB: Buffer Meta Data: " +
+				     "limit="+_limit+", " +
+				     "size[bytes]="+_size+", " +
+				     "size[elements]="+_mQueue.size()+"/"+_mData.size());
+		
+		//print current buffer entries
+		int count = _mQueue.size();
+		for( String fname : _mQueue )
+		{
+			ByteBuffer bbuff = _mData.get(fname);
+			
+			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isInSparseFormat());
+			count--;
+		}
+	}
 }

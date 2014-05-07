@@ -66,6 +66,8 @@ public class MatrixBlockDSM extends MatrixValue
 	public static final double SPARCITY_TURN_POINT=0.4;
 	//sparsity column threshold, based on initial capacity of sparse representation 
 	public static final int SKINNY_MATRIX_TURN_POINT=4;
+	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
+	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -283,7 +285,7 @@ public class MatrixBlockDSM extends MatrixValue
 	 * 
 	 * @param r
 	 */
-	protected void adjustSparseRows(int r)
+	public void adjustSparseRows(int r)
 	{
 		if(sparseRows==null)
 			sparseRows=new SparseRow[rlen];
@@ -371,6 +373,21 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
+	/**
+	 * Allows to cleanup all previously allocated sparserows or denseblocks.
+	 * This is for example required in reading a matrix with many empty blocks 
+	 * via distributed cache into in-memory list of blocks - not cleaning blocks 
+	 * from non-empty blocks would significantly increase the total memory consumption.
+	 * 
+	 */
+	public void cleanupBlock( boolean dense, boolean sparse )
+	{
+		if(dense)
+			denseBlock = null;
+		if(sparse)
+			sparseRows = null;
+	}
+	
 	////////
 	// Metadata information 
 	
@@ -410,6 +427,17 @@ public class MatrixBlockDSM extends MatrixValue
 	public boolean isInSparseFormat()
 	{
 		return sparse;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isUltraSparse()
+	{
+		double sp = ((double)nonZeros/rlen)/clen;
+		//check for sparse representation in order to account for vectors in dense
+		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && nonZeros<40;
 	}
 	
 	/**
@@ -487,8 +515,19 @@ public class MatrixBlockDSM extends MatrixValue
 		maxcolumn = c;
 	}
 	
+	@Override
+	public boolean isEmpty()
+	{
+		return isEmptyBlock(false);
+	}
 	
 	public boolean isEmptyBlock()
+	{
+		return isEmptyBlock(true);
+	}
+	
+	
+	public boolean isEmptyBlock(boolean safe)
 	{
 		boolean ret = false;
 		if( sparse && sparseRows==null )
@@ -498,7 +537,8 @@ public class MatrixBlockDSM extends MatrixValue
 		if( nonZeros==0 )
 		{
 			//prevent under-estimation
-			recomputeNonZeros();
+			if(safe)
+				recomputeNonZeros();
 			ret = (nonZeros==0);
 		}
 		return ret;
@@ -875,14 +915,11 @@ public class MatrixBlockDSM extends MatrixValue
 	 */
 	public void appendToSparse( MatrixBlockDSM that, int rowoffset, int coloffset ) 
 	{
-		if(   that.sparse && that.sparseRows==null 
-		   || !that.sparse && that.denseBlock==null )
-		{
+		if( that==null || that.isEmptyBlock(false) )
 			return; //nothing to append
-		}
 		
 		//init sparse rows if necessary
-		adjustSparseRows(rlen-1);
+		//adjustSparseRows(rlen-1);
 		
 		if( that.sparse ) //SPARSE <- SPARSE
 		{
@@ -1562,19 +1599,23 @@ public class MatrixBlockDSM extends MatrixValue
 		{
 			case ULTRA_SPARSE_BLOCK:
 				sparse = true;
+				cleanupBlock(true, true); //clean all
 				readUltraSparseBlock(in);
 				break;
 			case SPARSE_BLOCK:
 				sparse = true;
+				cleanupBlock(true, false); //reuse sparse
 				readSparseBlock(in);
 				break;
 			case DENSE_BLOCK:
 				sparse = false;
+				cleanupBlock(false, true); //reuse dense
 				readDenseBlock(in);
 				break;
 			case EMPTY_BLOCK:
 				sparse = true;
-				reset();
+				cleanupBlock(true, true); //clean all
+				nonZeros = 0;
 				break;
 		}
 	}
@@ -1593,7 +1634,7 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 	private void readSparseBlock(DataInput in) throws IOException {
-		
+				
 		adjustSparseRows(rlen-1);
 		nonZeros=0;
 		for(int r=0; r<rlen; r++)
@@ -1620,7 +1661,9 @@ public class MatrixBlockDSM extends MatrixValue
 		adjustSparseRows(rlen-1); //adjust to size
 		resetSparse(); //reset all sparse rows
 		
-		nonZeros=in.readInt();
+		//at least 1 nonZero, otherwise empty block
+		nonZeros = in.readInt(); 
+		
 		for(int i=0; i<nonZeros; i++)
 		{
 			int r = in.readInt();
@@ -2583,7 +2626,7 @@ public class MatrixBlockDSM extends MatrixValue
 		else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 		{
 			
-			//e.g., ak+ kahan plus as used in sum, mmcj and tsmm
+			//e.g., ak+ kahan plus as used in sum, mapmult, mmcj and tsmm
 			if(aggOp.increOp.fn instanceof KahanPlus)
 			{
 				MatrixAggLib.aggregateBinaryMatrix(newWithCor, this, cor);
@@ -2864,6 +2907,48 @@ public class MatrixBlockDSM extends MatrixValue
 		return result;
 	}
 	
+	/**
+	 * 
+	 * @param that
+	 * @param ret
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlockDSM appendOperations( MatrixBlockDSM that, MatrixBlockDSM ret ) 	
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		MatrixBlockDSM result = checkType( ret );
+		final int m = rlen;
+		final int n = clen+that.clen;
+		final int nnz = nonZeros+that.nonZeros;		
+		boolean sp = checkRealSparsity(m, n, nnz);
+		
+		//init result matrix 
+		if( result == null ) 
+			result = new MatrixBlockDSM(m, n, sp, nnz);
+		else
+			result.reset(m, n, sp, nnz);
+		
+		//core append operation
+		//copy left and right input into output
+		if( !result.sparse ) //DENSE
+		{	
+			result.copy(0, m-1, 0, clen-1, this, false);
+			result.copy(0, m-1, clen, n-1, that, false);
+		}
+		else //SPARSE
+		{
+			result.adjustSparseRows(rlen-1);
+			result.appendToSparse(this, 0, 0);
+			result.appendToSparse(that, 0, clen);
+		}		
+		result.nonZeros = nnz;
+		
+		return result;
+	}
+	
+	@Deprecated
 	public MatrixValue appendOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) 	
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{

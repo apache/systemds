@@ -67,7 +67,9 @@ public class MatrixMultLib
 	{		
 		//Timing time = new Timing(true);
 		
-		if(!m1.sparse && !m2.sparse)
+		if( m1.isUltraSparse() || m2.isUltraSparse() )
+			matrixMultUltraSparse(m1, m2, ret);
+		else if(!m1.sparse && !m2.sparse)
 			matrixMultDenseDense(m1, m2, ret);
 		else if(m1.sparse && m2.sparse)
 			matrixMultSparseSparse(m1, m2, ret);
@@ -118,8 +120,10 @@ public class MatrixMultLib
 		throws DMLRuntimeException
 	{	
 		//check inputs / outputs
-		if( m1.denseBlock==null || m2.denseBlock==null )
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
+		//if( m1.denseBlock==null || m2.denseBlock==null )
+		//	return;
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
@@ -186,13 +190,7 @@ public class MatrixMultLib
 				    			int cixj = i * n + bj; //scan index on c
 				    			
 				    			//determine nnz of a (for sparsity-aware skipping of rows)
-				    			int knnz = 0;
-				    			for( int k = 0; k < bklen; k++ )
-				    				if( a[aixi+k] != 0 ) {
-				    					ta[ knnz ] = a[aixi+k];
-				    					tbi[ knnz ] = (bk+k) * n + bj; //scan index on b
-				    					knnz ++;
-				    				}
+				    			int knnz = copyNonZeroElements(a, aixi, bk, bj, n, ta, tbi, bklen);
 				    			
 				    			//rest not aligned to blocks of 4 rows
 				    			final int bn = knnz % 4;
@@ -242,8 +240,10 @@ public class MatrixMultLib
 		throws DMLRuntimeException 
 	{
 		//check inputs / outputs
-		if( m1.denseBlock==null || m2.sparseRows==null  )
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
+		//if( m1.denseBlock==null || m2.sparseRows==null  )
+		//	return;
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
@@ -310,8 +310,10 @@ public class MatrixMultLib
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
-		if( m1.sparseRows==null || m2.denseBlock==null )
-			return;	
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		//if( m1.sparseRows==null || m2.denseBlock==null )
+		//	return;	
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
@@ -420,8 +422,10 @@ public class MatrixMultLib
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
-		if( m1.sparseRows==null || m2.sparseRows==null )
-			return;	
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		//if( m1.sparseRows==null || m2.sparseRows==null )
+		//	return;	
 		ret.sparse=false;
 		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
@@ -489,6 +493,88 @@ public class MatrixMultLib
 		ret.examSparsity();
 	}
 
+	/**
+	 * This implementation applies to any combination of dense/sparse if at least one
+	 * input is ultrasparse (sparse and very few nnz). In that case, most importantly,
+	 * we want to create a sparse output and only iterate over the few nnz as the major
+	 * dimension. Low-level optimization have less importance in that case and having
+	 * this generic implementation helps to reduce the implementations from (2+1)^2
+	 * to 2^2+1.
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @throws DMLRuntimeException
+	 */
+	private static void matrixMultUltraSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+		throws DMLRuntimeException 
+	{
+		//check inputs / outputs
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		ret.sparse = true;		
+		ret.reset();
+		
+		boolean leftUS = m1.isUltraSparse();
+		int m  = m1.rlen;
+		int cd = m1.clen;
+		int n  = m2.clen;
+		
+		if( leftUS ) //left is ultra-sparse (IKJ)
+		{
+			for( int i=0; i<m; i++ )
+			{
+				SparseRow arow = m1.sparseRows[ i ];
+				if( arow != null && arow.size() > 0 ) 
+				{
+					int alen = arow.size();
+					int[] aixs = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();	
+					for( int k=0; k<alen; k++ )
+					{
+						double aval = avals[k];
+						int aix = aixs[k];
+						for( int j=0; j<n; j++ )
+						{
+							double cval = ret.quickGetValue(i, j);
+							double cvald = aval*m2.quickGetValue(aix, j);
+							if( cvald != 0 )
+								ret.quickSetValue(i, j, cval+cvald);
+						}
+					}
+				}
+			}
+		}
+		else //right is ultra-sparse (KJI)
+		{
+			for(int k = 0; k < cd; k++ ) 
+			{			
+				SparseRow brow = m2.sparseRows[ k ];
+				if( brow != null && brow.size() > 0 ) 
+				{
+					int blen = brow.size();
+					int[] bixs = brow.getIndexContainer();
+					double[] bvals = brow.getValueContainer();								
+					for( int j=0; j<blen; j++ )
+					{
+						double bval = bvals[j];
+						int bix = bixs[j];
+						for( int i=0; i<m; i++ )
+						{
+							double cvald = bval*m1.quickGetValue(i, k);
+							if( cvald != 0 ){
+								double cval = ret.quickGetValue(i, bix);
+								ret.quickSetValue(i, bix, cval+cvald);
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		//check if sparse output if correct
+		ret.examSparsity();	
+	}
 
 	/**
 	 * 
@@ -561,13 +647,7 @@ public class MatrixMultLib
 					    			int cixj = i * nx + bj; //scan index on c
 					    			
 					    			//determine nnz of a (for sparsity-aware skipping of rows)
-					    			int knnz = 0;
-					    			for( int k = 0; k < bklen; k++, aixi+=n )
-					    				if( a[aixi] != 0 ) {
-					    					ta[ knnz ] = a[aixi];
-					    					tbi[ knnz ] = (bk+k) * nx + bj; //scan index on b
-					    					knnz ++;
-					    				}
+					    			int knnz = copyNonZeroElements(a, aixi, bk, bj, n, nx, ta, tbi, bklen);
 					    			
 					    			//rest not aligned to blocks of 4 rows
 					    			final int bn = knnz % 4;
@@ -1125,25 +1205,6 @@ public class MatrixMultLib
 	
 	
 	/**
-	 * Used for all version of TSMM where the result is known to be symmetric.
-	 * Hence, we compute only the upper triangular matrix and copy this partial
-	 * result down to lower triangular matrix once.
-	 * 
-	 * @param ret
-	 */
-	private static void copyUpperToLowerTriangle( MatrixBlockDSM ret )
-	{
-		double[] c = ret.denseBlock;
-		final int m = ret.rlen;
-		final int n = ret.clen;
-		
-		//copy symmetric values
-		for( int i=0, uix=0; i<m; i++, uix+=n )
-			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-				c[ lix ] = c[ uix+j ];
-	}
-
-	/**
 	 * 
 	 * @param aval
 	 * @param b
@@ -1175,6 +1236,76 @@ public class MatrixMultLib
 			c[ ci+6 ] = aval * b[ bi+6 ];
 			c[ ci+7 ] = aval * b[ bi+7 ];
 		}
+	}
+	
+	/**
+	 * Used for all version of TSMM where the result is known to be symmetric.
+	 * Hence, we compute only the upper triangular matrix and copy this partial
+	 * result down to lower triangular matrix once.
+	 * 
+	 * @param ret
+	 */
+	private static void copyUpperToLowerTriangle( MatrixBlockDSM ret )
+	{
+		double[] c = ret.denseBlock;
+		final int m = ret.rlen;
+		final int n = ret.clen;
+		
+		//copy symmetric values
+		for( int i=0, uix=0; i<m; i++, uix+=n )
+			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
+				c[ lix ] = c[ uix+j ];
+	}
+
+	/**
+	 * 
+	 * @param a
+	 * @param aixi
+	 * @param bk
+	 * @param bj
+	 * @param n
+	 * @param tmpa
+	 * @param tmpbi
+	 * @param bklen
+	 * @return
+	 */
+	private static int copyNonZeroElements( double[] a, final int aixi, final int bk, final int bj, final int n, double[] tmpa, int[] tmpbi, final int bklen )
+	{
+		int knnz = 0;
+		for( int k = 0; k < bklen; k++ )
+			if( a[ aixi+k ] != 0 ) {
+				tmpa[ knnz ] = a[ aixi+k ];
+				tmpbi[ knnz ] = (bk+k) * n + bj; //scan index on b
+				knnz ++;
+			}
+		
+		return knnz;
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param aixi
+	 * @param bk
+	 * @param bj
+	 * @param n
+	 * @param nx
+	 * @param tmpa
+	 * @param tmpbi
+	 * @param bklen
+	 * @return
+	 */
+	private static int copyNonZeroElements( double[] a, int aixi, final int bk, final int bj, final int n, final int nx, double[] tmpa, int[] tmpbi, final int bklen )
+	{
+		int knnz = 0;
+		for( int k = 0; k < bklen; k++, aixi+=n )
+			if( a[ aixi ] != 0 ) {
+				tmpa[ knnz ] = a[ aixi ];
+				tmpbi[ knnz ] = (bk+k) * nx + bj; //scan index on b
+				knnz ++;
+			}
+		
+		return knnz;
 	}
 	
 	/////////////////////////////////////////////////////
@@ -1385,36 +1516,32 @@ public class MatrixMultLib
 	}
 	*/
 
-	
-	/*
 	public static void main(String[] args)
 	{
-		int n = 1000;
-		MatrixBlockDSM m1 = MatrixBlock.randOperationsOLD(n, n, 1.0, 0, 1, "uniform", 7);
-		MatrixBlockDSM m2 = MatrixBlock.randOperationsOLD(n, n, 1.0, 0, 1, "uniform", 3);
-		MatrixBlock out = new MatrixBlock(n, n, false);
-		
-		for( int i=0; i<10; i++ )
+		try 
 		{
+			int n = 1000;
+			MatrixBlockDSM m1 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.7, 0, 1, "uniform", 7);
+			MatrixBlockDSM m2 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.00001, 0, 1, "uniform", 3);
+			MatrixBlock out = new MatrixBlock(n, n, false);
 			
-			long t0 = System.nanoTime();
-			
-			try {
-				//MatrixMultLib.matrixMult(m1, m2, out);
-				MatrixMultLib.matrixMult(m1, m2, out, 8);
+			for( int i=0; i<20; i++ )
+			{
 				
-			} catch (DMLRuntimeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				long t0 = System.nanoTime();
+				
+				MatrixMultLib.matrixMult(m1, m2, out);
+				//MatrixMultLib.matrixMult(m1, m2, out, 8);
+				
+				long t1 = System.nanoTime();
+	
+				System.out.println("Matrix Mult: "+(((double)(t1-t0))/1000000)+" ms");
 			}
 			
-			long t1 = System.nanoTime();
-
-			if(out.getNonZeros()<0)
-				System.out.println("test");
-			System.out.println("Matrix Mult: "+((t1-t0)/1000000)+" ms");
+		} 
+		catch (DMLRuntimeException e) {
+			e.printStackTrace();
 		}
 		
 	}
-	*/
 }

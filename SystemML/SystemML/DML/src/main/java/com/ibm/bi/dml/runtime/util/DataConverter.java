@@ -358,6 +358,8 @@ public class DataConverter
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(prop.expectedSparsity*rlen*clen));
 		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+		else if( sparse )
+			ret.adjustSparseRows((int)rlen-1);
 		
 		//prepare file access
 		JobConf job = new JobConf();	
@@ -1490,7 +1492,7 @@ public class DataConverter
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
-			
+		
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
@@ -1499,7 +1501,11 @@ public class DataConverter
 			try
 			{
 				while( reader.next(key, value) )
-				{					
+				{	
+					//empty block filter (skip entire block)
+					if( value.isEmptyBlock(false) )
+						continue;
+					
 					int row_offset = (int)(key.getRowIndex()-1)*brlen;
 					int col_offset = (int)(key.getColumnIndex()-1)*bclen;
 					
@@ -1569,7 +1575,7 @@ public class DataConverter
 					}
 			
 					//copy block to result
-					dest.add(new IndexedMatrixValue(key, value));
+					dest.add(new IndexedMatrixValue(new MatrixIndexes(key), new MatrixBlockDSM(value)));
 				}
 			}
 			finally

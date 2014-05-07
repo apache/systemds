@@ -108,6 +108,26 @@ public class Explain
 	}
 	
 	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
+	public static String explain( ArrayList<Instruction> inst )
+	{
+		return explainInstructions(inst, 0);
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
+	public static String explain( Instruction inst )
+	{
+		return explainGenericInstruction(inst, 0);
+	}
+	
+	/**
 	 * Counts the number of compiled MRJob instructions in the
 	 * given runtime program.
 	 * 
@@ -203,18 +223,7 @@ public class Explain
 		
 		for( Instruction inst : instSet )
 		{
-			String tmp = null;
-			if( inst instanceof MRJobInstruction )
-				tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
-			else
-				tmp = inst.toString();
-			
-			inst.toString();
-			if( REPLACE_SPECIAL_CHARACTERS ){
-				tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
-				tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
-				tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");
-			}
+			String tmp = explainGenericInstruction(inst, level);
 			
 			sb.append( offsetInst );
 			sb.append( tmp );
@@ -222,6 +231,29 @@ public class Explain
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
+	private static String explainGenericInstruction( Instruction inst, int level )
+	{
+		String tmp = null;
+		if( inst instanceof MRJobInstruction )
+			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
+		else
+			tmp = inst.toString();
+		
+		inst.toString();
+		if( REPLACE_SPECIAL_CHARACTERS ){
+			tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
+			tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
+			tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");
+		}
+		
+		return tmp;
 	}
 	
 	/**

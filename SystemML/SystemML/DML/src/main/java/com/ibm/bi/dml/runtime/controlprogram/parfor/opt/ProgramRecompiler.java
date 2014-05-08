@@ -291,7 +291,7 @@ public class ProgramRecompiler
 				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
 				//(rowblock/colblock only applied if in total less than two blocks,
 				// hence always mem_est<mem_budget)
-				if( hop.getMemEstimate() < OptimizerUtils.getMemBudget(true) )
+				if( hop.getMemEstimate() < OptimizerUtils.getLocalMemBudget() )
 					hop.setForcedExecType( LopProperties.ExecType.CP );
 				else
 					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );

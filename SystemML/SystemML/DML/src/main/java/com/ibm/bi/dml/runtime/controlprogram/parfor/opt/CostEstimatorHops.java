@@ -63,7 +63,7 @@ public class CostEstimatorHops extends CostEstimator
 		{
 			if( h.getExecType()==ExecType.MR ) //CP estimate but MR type
 				value = DEFAULT_MEM_MR;
-			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getMemBudget(true) )
+			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() )
 			{
 				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");

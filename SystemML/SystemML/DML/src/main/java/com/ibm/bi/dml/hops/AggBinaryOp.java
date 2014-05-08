@@ -52,7 +52,7 @@ public class AggBinaryOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private static final double MVMULT_MEM_MULTIPLIER = 0.9;
+	private static final double MVMULT_MEM_MULTIPLIER = 1.0;
 	
 	private OpOp2 innerOp;
 	private AggOp outerOp;
@@ -415,7 +415,7 @@ public class AggBinaryOp extends Hop
 	private static boolean partitionVectorInDistCache(long rows, long cols) {
 		//return true;
 		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
-		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget() );
+		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) );
 	}
 	
 	/**
@@ -456,9 +456,9 @@ public class AggBinaryOp extends Hop
 				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
 				//(compared to CP, we explicitly check that new transposes fit in memory)
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
-					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getMemBudget(true) &&
-					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getMemBudget(true) &&
-					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudget() ) 
+					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
+					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudget(true) ) 
 				{
 					ret = true;
 				}
@@ -605,7 +605,7 @@ public class AggBinaryOp extends Hop
 		// If the size of second input is small, choose a method that uses distributed cache
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget();
+		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true);
 		if (   m1Size < memBudget || m2Size < memBudget ) 
 		{
 			//apply map mult if one side fits in remote task memory 

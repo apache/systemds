@@ -226,26 +226,30 @@ public class OptimizerUtils
 	 * @param localOnly specifies if only budget of current JVM or also MR JVMs 
 	 * @return
 	 */
-	public static double getMemBudget( boolean localOnly )
+	public static double getLocalMemBudget()
 	{
-		double ret = -1;		
-		if( localOnly )
-			ret = InfrastructureAnalyzer.getLocalMaxMemory();
-		else
-			ret = InfrastructureAnalyzer.getGlobalMaxMemory();
-		
+		double ret = InfrastructureAnalyzer.getLocalMaxMemory();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
+	
+	public static double getRemoteMemBudget()
+	{
+		return getRemoteMemBudget(false);
+	}
+	
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public static double getRemoteMemBudget()
+	public static double getRemoteMemBudget(boolean substractSortBuffer)
 	{
 		double ret = InfrastructureAnalyzer.getRemoteMaxMemory();
+		if( substractSortBuffer )
+			ret -= InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
+
 	
 	/**
 	 * Returns the number of reducers that potentially run in parallel.

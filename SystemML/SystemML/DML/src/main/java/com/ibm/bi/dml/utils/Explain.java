@@ -44,7 +44,7 @@ public class Explain
 	{
 		StringBuffer sb = new StringBuffer();
 		sb.append( "# Memory Budget local/remote = " );
-		sb.append( OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) );
+		sb.append( OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) );
 		sb.append( "MB/" );
 		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudget()) );
 		sb.append( "MB" );

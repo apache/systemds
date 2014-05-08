@@ -83,8 +83,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
 		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
 		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_lm   = OptimizerUtils.getMemBudget(true);
-		_rm   = OptimizerUtils.MEM_UTIL_FACTOR * InfrastructureAnalyzer.getRemoteMaxMemory(); //Hops.getMemBudget(false); 
+		_lm   = OptimizerUtils.getLocalMemBudget();
+		_rm   = OptimizerUtils.getRemoteMemBudget(false);
 		
 		_cost = est;
 		

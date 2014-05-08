@@ -193,7 +193,7 @@ public abstract class PlanRewriter
 			
 			hop.refreshMemEstimates(new MemoTable());
 			double memEstimate = hop.getMemEstimate();
-			double budget = OptimizerUtils.getMemBudget(true);
+			double budget = OptimizerUtils.getLocalMemBudget();
 			if(memEstimate > budget) 
 				return false;
 		}

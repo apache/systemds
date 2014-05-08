@@ -165,8 +165,8 @@ public class OptimizerRuleBased extends Optimizer
 		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
 		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
 		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_lm   = OptimizerUtils.getMemBudget(true);
-		_rm   = OptimizerUtils.MEM_UTIL_FACTOR * InfrastructureAnalyzer.getRemoteMaxMemory(); //Hops.getMemBudget(false); 
+		_lm   = OptimizerUtils.getLocalMemBudget();
+		_rm   = OptimizerUtils.getRemoteMemBudget(false);
 		
 		_cost = est;
 		
@@ -418,7 +418,7 @@ public class OptimizerRuleBased extends Optimizer
 				break;
 		}
 		
-		if( mem < OptimizerUtils.getMemBudget(true) )
+		if( mem < OptimizerUtils.getLocalMemBudget() )
 			return LopProperties.ExecType.CP;
 		else
 			return LopProperties.ExecType.CP_FILE;
@@ -1331,7 +1331,7 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(false));
+						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getRemoteMemBudget(false));
 					}
 				}
 			}
@@ -1441,7 +1441,9 @@ public class OptimizerRuleBased extends Optimizer
 					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 					long rows = mo.getNumRows();
 					long cols = mo.getNumColumns();
-					ret &= isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(inLocal));
+					double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
+						                         OptimizerUtils.getRemoteMemBudget();
+					ret &= isInMemoryResultMerge(rows, cols, memBudget);
 				}
 			}
 		}

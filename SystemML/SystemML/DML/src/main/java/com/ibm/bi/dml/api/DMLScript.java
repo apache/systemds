@@ -555,7 +555,7 @@ public class DMLScript
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
 		          "Level = " + OptimizerUtils.getOptLevel() + "\n"
 				 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
-				 +"Memory Budget = " + ((double)OptimizerUtils.getMemBudget(true)/1024/1024) + " MB" + "\n");
+				 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
 			
 		/////////////////////// construct the lops ///////////////////////////////////
 		dmlt.constructLops(prog);

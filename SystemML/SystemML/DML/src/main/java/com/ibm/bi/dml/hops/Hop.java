@@ -413,7 +413,7 @@ public abstract class Hop
 	protected ExecType findExecTypeByMemEstimate() {
 		ExecType et = null;
 		char c = ' ';
-		if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
+		if ( getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
 			et = ExecType.CP;
 		}
 		else {

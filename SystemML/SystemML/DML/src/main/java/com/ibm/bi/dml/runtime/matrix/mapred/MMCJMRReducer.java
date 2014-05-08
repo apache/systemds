@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -35,7 +35,7 @@ public class MMCJMRReducer extends MMCJMRCombinerReducerBase
 implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private class RemainIndexValue
@@ -82,8 +82,6 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 	
 	private boolean outputDummyRecords = false;
 	
-	private long count=0;
-	
 	@Override
 	public void reduce(TaggedFirstSecondIndexes indexes, Iterator<MatrixValue> values,
 			OutputCollector<Writable, Writable> out,
@@ -103,7 +101,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 		long firstIndex=indexes.getFirstIndex();
 		long secondIndex=indexes.getSecondIndex();
 		
-		//for a differe k
+		//for a different k
 		if(prevFirstIndex!=firstIndex)
 		{
 			resetCache();
@@ -155,30 +153,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 				} catch (DMLUnsupportedOperationException e) {
 					throw new IOException(e);
 				}
-				
-		/*		if(count%1000==0)
-				{
-					LOG.info("left block: sparse format="+left.value.isInSparseFormat()+
-							", dimension="+left.value.getNumRows()+"x"+left.value.getNumColumns()
-							+", nonZeros="+left.value.getNonZeros());
-					
-					LOG.info("right block: sparse format="+right.value.isInSparseFormat()+
-							", dimension="+right.value.getNumRows()+"x"+right.value.getNumColumns()
-							+", nonZeros="+right.value.getNonZeros());
-					
-					LOG.info("result block: sparse format="+valueBuffer.isInSparseFormat()+
-							", dimension="+valueBuffer.getNumRows()+"x"+valueBuffer.getNumColumns()
-							+", nonZeros="+valueBuffer.getNonZeros());
-				}
-				count++;*/
-				
-/*				LOG.info("left block");
-				LOG.info(cache.get(i).block.toString());
-				LOG.info("right block");
-				LOG.info(rblock.block.toString());
-				LOG.info("output block");
-				LOG.info(buffer.toString());
-*/
+
 				//if(valueBuffer.getNonZeros()>0)
 					collectOutput(indexesbuffer, valueBuffer);
 			}
@@ -314,7 +289,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 		int blockRlen=dim1.numRowsPerBlock;
 		int blockClen=dim2.numColumnsPerBlock;
 		int elementSize=(int)Math.ceil((double)(77+8*blockRlen*blockClen+20+12)/0.75);
-		OUT_CACHE_SIZE=((int)OptimizerUtils.getMemBudget(true)-MRJobConfiguration.getMMCJCacheSize(job))/elementSize;
+		OUT_CACHE_SIZE=((int)OptimizerUtils.getLocalMemBudget() //current jvm max mem
+				       -MRJobConfiguration.getMMCJCacheSize(job))/elementSize;
 		outCache=new HashMap<MatrixIndexes, MatrixValue>(OUT_CACHE_SIZE);
 	}
 }

@@ -43,7 +43,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(true)) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols, OptimizerUtils.getLocalMemBudget()) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
@@ -64,7 +64,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols, OptimizerUtils.getMemBudget(true)) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols, OptimizerUtils.getLocalMemBudget()) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );

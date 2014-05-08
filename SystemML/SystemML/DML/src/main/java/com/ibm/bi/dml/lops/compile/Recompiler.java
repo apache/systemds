@@ -114,7 +114,7 @@ public class Recompiler
 		synchronized( hops ) 
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
-					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
 			
 			// clear existing lops
 			Hop.resetVisitStatus(hops);
@@ -174,7 +174,7 @@ public class Recompiler
 		synchronized( hops ) 
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
-					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
 			
 			// clear existing lops
 			hops.resetVisitStatus();
@@ -1085,7 +1085,7 @@ public class Recompiler
 				
 				long nnz = mo.getNnz();
 				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);			
-				if( mem >= OptimizerUtils.getMemBudget(true) )
+				if( mem >= OptimizerUtils.getLocalMemBudget() )
 				{
 					ret = false;
 					break;
@@ -1163,7 +1163,7 @@ public class Recompiler
 					long rows = lrandInst.rows;
 					long cols = lrandInst.cols;
 					double mem = MatrixBlockDSM.estimateSize(rows, cols, 1.0d);				
-					if( mem >= OptimizerUtils.getMemBudget(true) )
+					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;

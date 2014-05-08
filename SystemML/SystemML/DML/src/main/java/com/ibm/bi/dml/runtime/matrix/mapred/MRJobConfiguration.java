@@ -46,7 +46,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruc
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
@@ -1508,9 +1508,9 @@ public class MRJobConfiguration
 							dims.get(tempIns.input1));
 					intermediateMatrixIndexes.add(tempIns.input1);
 				}
-				else if(ins instanceof AppendRInstruction)
+				else if(ins instanceof AppendGInstruction)
 				{
-					AppendRInstruction tempIns=(AppendRInstruction) ins;
+					AppendGInstruction tempIns=(AppendGInstruction) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input1, 
 							dims.get(tempIns.input1));
 					intermediateMatrixIndexes.add(tempIns.input1);

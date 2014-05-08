@@ -15,8 +15,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
@@ -172,9 +171,12 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "rangeReIndexForLeft"  , MRINSTRUCTION_TYPE.RangeReIndex);
 		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
 
+		//append
+		String2MRInstructionType.put( "mappend"  , MRINSTRUCTION_TYPE.Append);
+		String2MRInstructionType.put( "rappend"  , MRINSTRUCTION_TYPE.Append);
+		String2MRInstructionType.put( "gappend"  , MRINSTRUCTION_TYPE.Append);
+		
 		//misc
-		String2MRInstructionType.put( "mappend"  , MRINSTRUCTION_TYPE.AppendM);
-		String2MRInstructionType.put( "rappend"  , MRINSTRUCTION_TYPE.AppendR);
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 		
 		//dummy (pseudo instructions)
@@ -231,12 +233,9 @@ public class MRInstructionParser extends InstructionParser
 			
 		case Reblock:
 			return (MRInstruction) ReblockInstruction.parseInstruction(str);
-			
-		case AppendM:
-			return (MRInstruction) AppendMInstruction.parseInstruction(str);
 		
-		case AppendR:
-			return (MRInstruction) AppendRInstruction.parseInstruction(str);
+		case Append:
+			return (MRInstruction) AppendInstruction.parseInstruction(str);
 			
 		case Reorg:
 			return (MRInstruction) ReorgInstruction.parseInstruction(str);

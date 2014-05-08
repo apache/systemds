@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.AppendCP;
+import com.ibm.bi.dml.lops.AppendG;
 import com.ibm.bi.dml.lops.AppendR;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
@@ -56,14 +57,16 @@ public class BinaryOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final double APPEND_MEM_MULTIPLIER = 0.9;
+	//we use the full remote memory budget (but reduced by sort buffer), 
+	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 	
 	Hop.OpOp2 op;
 
 	private enum AppendMethod { 
 		CP_APPEND, //in-memory general case append
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
-		MR_RAPPEND, //mam-reduce general case append
+		MR_RAPPEND, //reduce-only append (output must have at most one column block)
+		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
 	};
 	
 	private BinaryOp() {
@@ -361,53 +364,16 @@ public class BinaryOp extends Hop
 				DataType dt2 = getInput().get(1).get_dataType();
 				if(dt1!=DataType.MATRIX || dt2!=DataType.MATRIX)
 					throw new HopsException("Append can only apply to two matrices!");
-				
-				Lop offset = createAppendOffsetLop( 0 ); //offset 1st input
 						
 				if( et == ExecType.MR )
 				{
-					AppendMethod am = optFindAppendMethod(getInput().get(0)._dim1, getInput().get(0)._dim2, 
-						                                  getInput().get(1)._dim1, getInput().get(1)._dim2);
-					
-					switch( am )
-					{
-						case MR_MAPPEND: 
-							//special case map-only append
-							AppendM appM = new AppendM(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
-					                                  offset, get_dataType(), get_valueType());
-							appM.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							appM.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
-									                                get_rows_in_block(), get_cols_in_block(), getNnz());
-							set_lops(appM);
-							break;
-						case MR_RAPPEND:
-							//general case reduce append
-							Lop offset2 = createAppendOffsetLop( 1 ); //offset second input
-							
-							AppendR appR = new AppendR(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
-	                                  offset, offset2, get_dataType(), get_valueType());
-							appR.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							appR.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
-					                                get_rows_in_block(), get_cols_in_block(), getNnz());
-							
-							//group
-							Group group1 = new Group(appR, Group.OperationTypes.Sort, DataType.MATRIX, get_valueType());
-							group1.getOutputParameters().setDimensions(get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
-									get_rows_in_block(), get_cols_in_block(), getNnz());
-							group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			
-							//aggregate
-							Aggregate agg1 = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-									                       get_valueType(), et);
-							agg1.getOutputParameters().setDimensions(get_dim1(),getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							set_lops(agg1);
-			
-							break;
-					}
+					Lop lop = constructAppendLop(getInput().get(0), getInput().get(1), get_dataType(), get_valueType(), this);
+					set_lops( lop );						
 				}
 				else //CP
 				{
+					Lop offset = createAppendOffsetLop( getInput().get(0) ); //offset 1st input
+					
 					AppendCP app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
 							                    offset, get_dataType(), get_valueType());
 					app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -1301,23 +1267,114 @@ public class BinaryOp extends Hop
 	
 	/**
 	 * 
+	 * @param left
+	 * @param right
+	 * @return
+	 * @throws HopsException 
+	 * @throws LopsException 
+	 */
+	public static Lop constructAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+		throws HopsException, LopsException
+	{
+		Lop ret = null;
+		
+		long m1_dim1 = left.get_dim1();
+		long m1_dim2 = left.get_dim2();		
+		long m2_dim1 = right.get_dim1();
+		long m2_dim2 = right.get_dim2();
+		long m3_dim2 = m1_dim2 + m2_dim2; //output cols
+		long m3_nnz = left.getNnz() + right.getNnz(); //output nnz
+		long brlen = left.get_rows_in_block();
+		long bclen = left.get_cols_in_block();
+		
+		Lop offset = createAppendOffsetLop( left ); //offset 1st input
+		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, bclen);
+	
+		switch( am )
+		{
+			case MR_MAPPEND: 
+			{
+				//special case map-only append
+				AppendM appM = new AppendM(left.constructLops(), right.constructLops(),	offset, dt, vt);
+				appM.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+				appM.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				ret = appM;
+				break;
+			}
+			case MR_RAPPEND:
+			{
+				//special case reduce append w/ one column block
+				//group
+				Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
+				group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, left.getNnz());
+				group1.setAllPositions(left.getBeginLine(), left.getBeginColumn(), left.getEndLine(), left.getEndColumn());
+				
+				Group group2 = new Group(right.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
+				group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right.getNnz());
+				group1.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
+				
+				AppendR appR = new AppendR(group1, group2, dt, vt);
+				appR.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				appR.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+				
+				ret = appR;
+				break;
+			}	
+			case MR_GAPPEND:
+			{
+				//general case: map expand append, reduce aggregate
+				Lop offset2 = createAppendOffsetLop( right ); //offset second input
+				
+				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt);
+				appG.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				appG.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+				
+				//group
+				Group group1 = new Group(appG, Group.OperationTypes.Sort, DataType.MATRIX, vt);
+				group1.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				group1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+				
+				//aggregate
+				Aggregate agg1 = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX, vt, ExecType.MR);
+				agg1.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				agg1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+				ret = agg1;
+				break;
+			}	
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
 	 * @param m1_dim1
 	 * @param m1_dim2
 	 * @param m2_dim1
 	 * @param m2_dim2
 	 * @return
 	 */
-	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2 )
+	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long bclen )
 	{
+		//check for best case (map-only)
 		if(    m2_dim2 == 1  //rhs is vector
 		    && m2_dim1 >= 1 // rhs row dim known 
 		    && OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0) //vector fits in mapper mem
-		       < APPEND_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) )
+		       < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) )
 		{
 			return AppendMethod.MR_MAPPEND;
 		}
 		
-		return AppendMethod.MR_RAPPEND; //general case
+		//check for in-block append (reduce-only)
+		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
+			&& m1_dim2+m2_dim2 <= bclen ) //output has one column block
+		{
+			return AppendMethod.MR_RAPPEND;
+		}
+		
+		//general case (map and reduce)
+		return AppendMethod.MR_GAPPEND; 
+	
 	}
 	
 	/**
@@ -1327,27 +1384,26 @@ public class BinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop createAppendOffsetLop( int inputPos ) 
+	private static Lop createAppendOffsetLop( Hop hop ) 
 		throws HopsException, LopsException
 	{
 		Lop offset = null;
 		
-		if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			&& getInput().get(inputPos).dimsKnown()    )
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && hop.dimsKnown() )
 		{
 			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
 			// a literal in order to increase the piggybacking potential. This is safe because append 
 			// is always marked for recompilation and hence, we have propagated the exact dimensions.
-			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(getInput().get(inputPos).get_dim2()));
+			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(hop.get_dim2()));
 		}
 		else
 		{
-			offset = new UnaryCP(getInput().get(inputPos).constructLops(), 
+			offset = new UnaryCP(hop.constructLops(), 
 					UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
 		}
 		
 		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-		offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		offset.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
 		
 		return offset;
 	}

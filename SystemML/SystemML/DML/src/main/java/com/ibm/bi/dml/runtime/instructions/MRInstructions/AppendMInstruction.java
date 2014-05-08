@@ -22,19 +22,18 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class AppendMInstruction extends BinaryMRInstructionBase 
+public class AppendMInstruction extends AppendInstruction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long _offset; 
+	
 	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, byte out, String istr)
 	{
-		super(op, in1, in2, out);
+		super(op, in1, in2, out, istr);
 		_offset = offset;
-		mrtype = MRINSTRUCTION_TYPE.AppendM;
-		instString = istr;
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {

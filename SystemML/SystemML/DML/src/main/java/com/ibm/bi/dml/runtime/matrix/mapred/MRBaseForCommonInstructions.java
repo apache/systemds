@@ -21,7 +21,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -234,9 +234,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
 		}
-		else if(ins instanceof AppendRInstruction)
+		else if(ins instanceof AppendGInstruction)
 		{
-			AppendRInstruction arinst = ((AppendRInstruction) ins);
+			AppendGInstruction arinst = ((AppendGInstruction) ins);
 			byte input = arinst.input1;
 			MatrixCharacteristics dimIn=dimensions.get(input);
 			if( dimIn==null )

@@ -41,10 +41,10 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 	private final static String MODEL_FILE = "sentiment_model.mtx";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 50; //107;
+	private final static int rows = 107;
 	private final static int cols = 46; //fixed
 	
-	private final static int nRuns = 30000;
+	private final static int nRuns = 10;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -91,7 +91,6 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 		
 		//run DML via JMLC
 		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( Xset );
-		
 		
 		//run R and compare results to DML result
 		String HOME = SCRIPT_DIR + TEST_DIR;

@@ -548,7 +548,8 @@ public class MatrixObject extends CacheableData
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
 		
 		// clear existing WB / FS representation (but prevent unnecessary probes)
-		if( !(isEmpty()||(_data!=null && isBelowCachingThreshold()) ))
+		if( !(isEmpty()||(_data!=null && isBelowCachingThreshold()) 
+			  ||(_data!=null && !isCachingActive()) )) //additional condition for JMLC
 			freeEvictedBlob();	
 		
 		// clear the in-memory data

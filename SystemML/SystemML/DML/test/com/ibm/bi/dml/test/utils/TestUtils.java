@@ -809,6 +809,28 @@ public class TestUtils
 		return ret_arr;
 		
 	}
+	
+	/**
+	 * 
+	 * @param matrix
+	 * @param rows
+	 * @param cols
+	 * @return
+	 */
+	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix, int rows, int cols)
+	{		
+		double [][] ret_arr = new double[rows][cols];
+		
+		for(CellIndex ci:matrix.keySet())
+		{
+			int i = ci.row-1;
+			int j = ci.column-1;
+			ret_arr[i][j] = matrix.get(ci);
+		}
+		
+		return ret_arr;
+		
+	}
 
 	/**
 	 * Converts a 2D double array into a 1D double array.

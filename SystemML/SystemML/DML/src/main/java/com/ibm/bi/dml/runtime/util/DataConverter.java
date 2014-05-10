@@ -66,6 +66,7 @@ public class DataConverter
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	
 	//////////////
 	// READING and WRITING of matrix blocks to/from HDFS
 	// (textcell, binarycell, binaryblock)
@@ -418,6 +419,65 @@ public class DataConverter
 		return ret;
 	}
 
+	/**
+	 * 	
+	 * @param is
+	 * @param inputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param expectedSparsity
+	 * @return
+	 * @throws IOException
+	 */
+	public static MatrixBlock readMatrixFromInputStream( InputStream is, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, double expectedSparsity ) 
+		throws IOException
+	{
+		//check valid input infos
+		if( !(inputinfo == InputInfo.TextCellInputInfo || inputinfo== InputInfo.MatrixMarketInputInfo) )
+			throw new IOException("Unsupported inputinfo for read from input stream: "+inputinfo);
+		
+		boolean sparse = ( expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
+		                   && clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
+
+		//prepare result matrix block
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(expectedSparsity*rlen*clen));
+		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
+			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+		else if( sparse )
+			ret.adjustSparseRows((int)rlen-1);
+
+		try
+		{
+			//core read (consistent use of internal readers)
+			readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, (inputinfo==InputInfo.MatrixMarketInputInfo));
+		
+			//finally check if change of sparse/dense block representation required
+			if( !sparse || inputinfo==InputInfo.BinaryBlockInputInfo )
+				ret.recomputeNonZeros();
+			ret.examSparsity();	
+		}
+		catch(Exception ex)
+		{
+			throw new IOException(ex);
+		}
+		
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @param dir
+	 * @param inputInfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param localFS
+	 * @return
+	 * @throws IOException
+	 */
 	public static ArrayList<IndexedMatrixValue> readMatrixBlocksFromHDFS(String dir, InputInfo inputInfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
 		throws IOException
 	{	
@@ -454,6 +514,7 @@ public class DataConverter
 		
 		return ret;
 	}
+
 	
 	/**
 	 * Reads a partition that contains the given block index (rowBlockIndex, colBlockIndex)
@@ -1201,7 +1262,30 @@ public class DataConverter
 	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
+		//create input stream for path
+		InputStream inputStream = fs.open(path);
+		
+		//actual read
+		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, brlen, bclen, matrixMarket);
+	}
+	
+	/**
+	 * 
+	 * @param is
+	 * @param dest
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param matrixMarket
+	 * @throws IOException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 */
+	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+			throws IOException, IllegalAccessException, InstantiationException
+	{
+		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	
 		
 		boolean sparse = dest.isInSparseFormat();
 		String value = null;
@@ -1212,18 +1296,16 @@ public class DataConverter
 		if ( matrixMarket ) {
 			value = br.readLine(); // header line
 			if ( !value.startsWith("%%") ) {
-				throw new IOException("Error while reading \"" + path.toString() + "\" in MatrixMarket format. Expecting a header line <blah>, but encountered, \"" + value +"\".");
+				throw new IOException("Error while reading file in MatrixMarket format. Expecting a header line, but encountered, \"" + value +"\".");
 			}
 			value = br.readLine(); // line with matrix dimensions
 			
-			// validate
-			long mm_rlen, mm_clen, mm_nnz;
-			String[] fields = value.split(" ");
-			mm_rlen = Long.parseLong(fields[0]);
-			mm_clen = Long.parseLong(fields[1]);
-			mm_nnz = Long.parseLong(fields[2]);
+			// validate (rlen clen nnz)
+			String[] fields = value.split(" "); 
+			long mm_rlen = Long.parseLong(fields[0]);
+			long mm_clen = Long.parseLong(fields[1]);
 			if ( rlen != mm_rlen || clen != mm_clen ) {
-				throw new IOException("Unexpected matrix dimensions while reading \"" + path.toString() + "\". Expecting dimensions [" + rlen + " rows, " + clen + " cols] but encountered [" + mm_rlen + " rows, " + mm_clen + "cols].");
+				throw new IOException("Unexpected matrix dimensions while reading file in MatrixMarket format. Expecting dimensions [" + rlen + " rows, " + clen + " cols] but encountered [" + mm_rlen + " rows, " + mm_clen + "cols].");
 			}
 		}
 		
@@ -1277,6 +1359,7 @@ public class DataConverter
 				br.close();
 		}
 	}
+	
 	
 	/**
 	 * 

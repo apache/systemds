@@ -8,11 +8,12 @@
 package com.ibm.bi.dml.api.jmlc;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -39,11 +40,16 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 /**
  * JMLC (Java Machine Learning Connector) API:
  * 
- * NOTE: Currently fused API and implementation in order to reduce complexity. 
+ * NOTES: 
+ *   * Currently fused API and implementation in order to reduce complexity. 
+ *   * See SystemTMulticlassSVMScoreTest for an usage example. 
  */
 public class Connection 
 {
@@ -190,6 +196,32 @@ public class Connection
 	}
 	
 	/**
+	 * Converts an input string representation of a matrix in textcell format
+	 * into a dense double array. The number of rows and columns need to be 
+	 * specified because textcell only represents non-zero values and hence
+	 * does not define the dimensions in the general case.
+	 * 
+	 * @param input  a string representation of an input matrix, 
+	 *              in format textcell (rowindex colindex value)
+	 * @param rows number of rows
+	 * @param cols number of columns 
+	 * @return
+	 * @throws IOException 
+	 */
+	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
+		throws IOException
+	{
+		//read input matrix
+		InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
+		MatrixBlock mb = DataConverter.readMatrixFromInputStream(is, InputInfo.TextCellInputInfo, rows, cols, 1000, 1000, 1.0d);
+		
+		//convert to double array
+		double[][] ret = DataConverter.convertToDoubleMatrix( mb );
+		
+		return ret;
+	}
+	
+	/**
 	 * 
 	 * @param prog
 	 */
@@ -210,6 +242,11 @@ public class Connection
 			rCleanupRuntimeProgram(pb, outputs);
 	}
 	
+	/**
+	 * 
+	 * @param pb
+	 * @param outputs
+	 */
 	private void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
 	{
 		if( pb instanceof WhileProgramBlock )
@@ -250,58 +287,6 @@ public class Connection
 						}
 				}
 			}
-		}
-	}
-	
-	
-	/**
-	 * Simple test program because not integrated into our testsuite yet.
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args)
-	{
-		//test jmlc		
-		Connection conn = new Connection();
-		
-		try
-		{
-			//read and precompile script
-			String script = conn.readScript("./Test.dml");			
-			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"});
-			
-			double[][] m = new double[50][50];
-			for( int j=0; j<50; j++ )
-				Arrays.fill(m[j], 2);
-			
-			//execute script multiple times
-			for( int i=0; i<50; i++ )
-			{
-				//prepare test input data
-				double[][] X = new double[50][49];
-				for( int j=0; j<50; j++ )
-					Arrays.fill(X[j], i*j);
-				
-				//bind input parameters
-				pstmt.setMatrix("W", m);
-				pstmt.setMatrix("X", X);
-				
-				//execute script
-				ResultVariables rs = pstmt.executeScript();
-				
-				//get output parameter
-				double[][] Y = rs.getMatrix("predicted_y");
-				System.out.println("ret="+Y[0][0]);
-			}
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
-		finally
-		{
-			if( conn != null )
-				conn.close();
 		}
 	}
 }

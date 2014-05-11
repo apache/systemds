@@ -143,7 +143,9 @@ public class MatrixMultLib
 			else if( n>1 && cd == 1 )  //OUTER PRODUCT
 			{
 				for( int i=0, cix=0; i < m; i++, cix+=n) {
-					if( a[i]!=0 )
+					if( a[i] == 1 )
+						System.arraycopy(b, 0, c, cix, n);
+				    else if( a[i] != 0 )
 						vectMultiplyWrite(a[i], b, c, 0, cix, n);
 					else
 						Arrays.fill(c, cix, cix+n, 0);

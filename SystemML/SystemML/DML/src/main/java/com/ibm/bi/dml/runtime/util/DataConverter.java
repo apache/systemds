@@ -611,98 +611,6 @@ public class DataConverter
 	}
 	
 	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
-	public static void writeMatrixMarketToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
-		throws IOException
-	{
-		boolean sparse = src.isInSparseFormat();
-		boolean entriesWritten = false;
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-        
-    	int rows = src.getNumRows();
-		int cols = src.getNumColumns();
-
-		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
-			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		
-		try
-		{
-			//for obj reuse and preventing repeated buffer re-allocations
-			StringBuilder sb = new StringBuilder();
-			
-			// First output MM header
-			sb.append ("%%MatrixMarket matrix coordinate real general\n");
-		
-			// output number of rows, number of columns and number of nnz
-			sb.append (rlen + " " + clen + " " + nnz + "\n");
-            br.write( sb.toString());
-            sb.setLength(0);
-            
-            // output matrix cell
-			if( sparse ) //SPARSE
-			{			   
-				SparseCellIterator iter = src.getSparseCellIterator();
-				while( iter.hasNext() )
-				{
-					IJV cell = iter.next();
-
-					sb.append(cell.i+1);
-					sb.append(' ');
-					sb.append(cell.j+1);
-					sb.append(' ');
-					sb.append(cell.v);
-					sb.append('\n');
-					br.write( sb.toString() ); //same as append
-					sb.setLength(0); 
-					entriesWritten = true;					
-				}
-			}
-			else //DENSE
-			{
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{
-						double lvalue = src.getValueDenseUnsafe(i, j);
-						if( lvalue != 0 ) //for nnz
-						{
-							sb.append(i+1);
-							sb.append(' ');
-							sb.append(j+1);
-							sb.append(' ');
-							sb.append(lvalue);
-							sb.append('\n');
-							br.write( sb.toString() ); //same as append
-							sb.setLength(0); 
-							entriesWritten = true;
-						}
-					}
-			}
-	
-			//handle empty result
-			if ( !entriesWritten ) {
-				br.write("1 1 0\n");
-			}
-		}
-		finally
-		{
-			if( br != null )
-				br.close();
-		}
-	}
-	
-	/**
 	 * Method to merge multiple CSV part files on HDFS into a single CSV file on HDFS. 
 	 * The part files are created by CSV_WRITE MR job. 
 	 * 
@@ -927,8 +835,8 @@ public class DataConverter
 		boolean sparse = src.isInSparseFormat();
 		boolean entriesWritten = false;
 		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-        
+        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		
     	int rows = src.getNumRows();
 		int cols = src.getNumColumns();
 
@@ -965,12 +873,110 @@ public class DataConverter
 			else //DENSE
 			{
 				for( int i=0; i<rows; i++ )
+				{
+					String rowIndex = Integer.toString(i+1);					
 					for( int j=0; j<cols; j++ )
 					{
 						double lvalue = src.getValueDenseUnsafe(i, j);
 						if( lvalue != 0 ) //for nnz
 						{
-							sb.append(i+1);
+							sb.append(rowIndex);
+							sb.append(' ');
+							sb.append( j+1 );
+							sb.append(' ');
+							sb.append( lvalue );
+							sb.append('\n');
+							br.write( sb.toString() ); //same as append
+							sb.setLength(0); 
+							entriesWritten = true;
+						}
+						
+					}
+				}
+			}
+	
+			//handle empty result
+			if ( !entriesWritten ) {
+				br.write("1 1 0\n");
+			}
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
+		}
+	}
+
+	/**
+	 * 
+	 * @param fileName
+	 * @param src
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @throws IOException
+	 */
+	private static void writeMatrixMarketToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
+		throws IOException
+	{
+		boolean sparse = src.isInSparseFormat();
+		boolean entriesWritten = false;
+		FileSystem fs = FileSystem.get(job);
+        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+        
+    	int rows = src.getNumRows();
+		int cols = src.getNumColumns();
+
+		//bound check per block
+		if( rows > rlen || cols > clen )
+		{
+			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
+					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+		}
+		
+		try
+		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
+			// First output MM header
+			sb.append ("%%MatrixMarket matrix coordinate real general\n");
+		
+			// output number of rows, number of columns and number of nnz
+			sb.append (rlen + " " + clen + " " + nnz + "\n");
+            br.write( sb.toString());
+            sb.setLength(0);
+            
+            // output matrix cell
+			if( sparse ) //SPARSE
+			{			   
+				SparseCellIterator iter = src.getSparseCellIterator();
+				while( iter.hasNext() )
+				{
+					IJV cell = iter.next();
+
+					sb.append(cell.i+1);
+					sb.append(' ');
+					sb.append(cell.j+1);
+					sb.append(' ');
+					sb.append(cell.v);
+					sb.append('\n');
+					br.write( sb.toString() ); //same as append
+					sb.setLength(0); 
+					entriesWritten = true;					
+				}
+			}
+			else //DENSE
+			{
+				for( int i=0; i<rows; i++ )
+				{
+					String rowIndex = Integer.toString(i+1);					
+					for( int j=0; j<cols; j++ )
+					{
+						double lvalue = src.getValueDenseUnsafe(i, j);
+						if( lvalue != 0 ) //for nnz
+						{
+							sb.append(rowIndex);
 							sb.append(' ');
 							sb.append(j+1);
 							sb.append(' ');
@@ -981,6 +987,7 @@ public class DataConverter
 							entriesWritten = true;
 						}
 					}
+				}
 			}
 	
 			//handle empty result

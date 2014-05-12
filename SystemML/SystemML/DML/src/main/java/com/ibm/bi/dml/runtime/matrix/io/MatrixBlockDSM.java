@@ -6,6 +6,7 @@
  */
 
 package com.ibm.bi.dml.runtime.matrix.io;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
@@ -63,9 +65,9 @@ public class MatrixBlockDSM extends MatrixValue
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
-	public static final double SPARCITY_TURN_POINT=0.4;
+	public static final double SPARCITY_TURN_POINT = 0.4;
 	//sparsity column threshold, based on initial capacity of sparse representation 
-	public static final int SKINNY_MATRIX_TURN_POINT=4;
+	public static final int SKINNY_MATRIX_TURN_POINT = 4;
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	
@@ -90,8 +92,11 @@ public class MatrixBlockDSM extends MatrixValue
 	protected int estimatedNNzsPerRow = -1; 
 		
 	//ctable-specific attributes
-	protected int maxrow;
-	protected int maxcolumn;
+	protected int maxrow = -1;
+	protected int maxcolumn = -1;
+	
+	//grpaggregate-specific attributes
+	protected int numGroups = -1;
 	
 	////////
 	// Matrix Constructors
@@ -154,6 +159,11 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 		}
 		nonZeros=0;
+		
+		//operation-specific attributes
+		maxrow = rlen;
+		maxcolumn = clen;
+		numGroups = -1;
 	}
 	
 	public void reset(int rl, int cl) {
@@ -453,7 +463,8 @@ public class MatrixBlockDSM extends MatrixValue
 		long lnonZeros = (long) nonZeros;
 			
 		//ensure exact size estimates for write
-		if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		if( lnonZeros<=0 )
+		//if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
 		{
 			recomputeNonZeros();
 			lnonZeros = (long) nonZeros;
@@ -972,6 +983,46 @@ public class MatrixBlockDSM extends MatrixValue
 			if( arow!=null && arow.size()>1 )
 				arow.sort();
 	}
+	
+	/**
+	 * Wrapper method for reduceall-min of a matrix.
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public double min() 
+		throws DMLRuntimeException
+	{
+		//construct operator
+		AggregateOperator aop = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
+		
+		//execute operation
+		MatrixBlockDSM out = new MatrixBlockDSM(1, 1, false);
+		MatrixAggLib.aggregateUnaryMatrix(this, out, auop);
+		
+		return out.quickGetValue(0, 0);
+	}
+	
+	/**
+	 * Wrapper method for reduceall-max of a matrix.
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double max() 
+		throws DMLRuntimeException
+	{
+		//construct operator
+		AggregateOperator aop = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
+		
+		//execute operation
+		MatrixBlockDSM out = new MatrixBlockDSM(1, 1, false);
+		MatrixAggLib.aggregateUnaryMatrix(this, out, auop);
+		
+		return out.quickGetValue(0, 0);
+	}
 
 	////////
 	// basic block handling functions
@@ -1057,8 +1108,6 @@ public class MatrixBlockDSM extends MatrixValue
 				denseBlock[r*clen+cols[i]]=values[i];
 				nonZeros++;
 			}
-			//sparseRows[r].setValueContainer(null);
-			//sparseRows[r].setIndexContainer(null);
 		}
 		
 		//cleanup sparse rows
@@ -1871,7 +1920,8 @@ public class MatrixBlockDSM extends MatrixValue
 		long lnonZeros = (long) nonZeros;
 		
 		//ensure exact size estimates for write
-		if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		if( lnonZeros<=0 )
+		//if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
 		{
 			recomputeNonZeros();
 			lnonZeros = (long) nonZeros;
@@ -2948,6 +2998,17 @@ public class MatrixBlockDSM extends MatrixValue
 		return result;
 	}
 	
+	/**
+	 * 
+	 * @param op
+	 * @param ret
+	 * @param startRow
+	 * @param startColumn
+	 * @param length
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	@Deprecated
 	public MatrixValue appendOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) 	
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
@@ -4676,58 +4737,69 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 	}
 		
+	/**
+	 * Invocation from CP instructions. The aggregate is computed on the groups object
+	 * against target and weights. 
+	 * 
+	 * Notes:
+	 * * The computed number of groups is reused for multiple invocations with different target.
+	 * * This implementation supports that the target is passed as column or row vector,
+	 *   in case of row vectors we also use sparse-safe implementations for sparse safe
+	 *   aggregation operators.
+	 * 
+	 * @param tgt
+	 * @param wghts
+	 * @param ret
+	 * @param op
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
 	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, Operator op) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		//setup input matrices
 		// this <- groups
-		MatrixBlockDSM target=checkType(tgt);
-		MatrixBlockDSM weights=checkType(wghts);
+		MatrixBlockDSM target = checkType(tgt);
+		MatrixBlockDSM weights = checkType(wghts);
 		
-		if (this.getNumColumns() != 1 || target.getNumColumns() != 1 || (weights!=null && weights.getNumColumns()!=1) )
-			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices.");
-		if ( this.getNumRows() != target.getNumRows() || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
+		//check valid dimensions
+		if( this.getNumColumns() != 1 || (weights!=null && weights.getNumColumns()!=1) )
+			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices for groups and weights.");
+		if( target.getNumColumns() != 1 && op instanceof CMOperator )
+			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices for target (for this aggregation function).");
+		if( target.getNumColumns() != 1 && target.getNumRows()!=1 )
+			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column or row matrix for target.");
+		if( this.getNumRows() != Math.max(target.getNumRows(),target.getNumColumns()) || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
 			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
 		
 		// Determine the number of groups
-		double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
-		double d;
-		if ( sparse ) {
-			for ( int i=0; i < sparseRows.length; i++ ) {
-				if ( sparseRows[i] == null)
-					continue;
-				double[] values = sparseRows[i].getValueContainer();
-				for ( int j=0; j < sparseRows[i].size(); j++ ) {
-					d = values[j];
-					min = (d < min ? d : min);
-					max = (d > max ? d : max);
-				}
-			}
-		}
-		else {
-			for ( int i=0; i < denseBlock.length; i++ ) {
-				d = denseBlock[i];
-				min = (d < min ? d : min);
-				max = (d > max ? d : max);
-			}
-		}
-		if ( min <= 0 )
-			throw new DMLRuntimeException("Invalid value (" + min + ") encountered in \"groups\" while computing groupedAggregate");
-		if ( max <= 0 )
-			throw new DMLRuntimeException("Invalid value (" + max + ") encountered in \"groups\" while computing groupedAggregate.");
-		int numGroups = (int) max;
-	
-		MatrixBlockDSM result=checkType(ret);
+		if( numGroups <= 0 ) //reuse if available
+		{
+			double min = this.min();
+			double max = this.max();
+			
+			if ( min <= 0 )
+				throw new DMLRuntimeException("Invalid value (" + min + ") encountered in 'groups' while computing groupedAggregate");
+			if ( max <= 0 )
+				throw new DMLRuntimeException("Invalid value (" + max + ") encountered in 'groups' while computing groupedAggregate.");
 		
-		// Allocate memory to hold the result
-		boolean result_sparsity = false; // it is likely that resulting matrix is dense
+			numGroups = (int) max;
+		}
+	
+		// Allocate result matrix
+		MatrixBlockDSM result = checkType(ret);
+		boolean result_sparsity = false;
 		if(result==null)
 			result=new MatrixBlockDSM(numGroups, 1, result_sparsity);
 		else
 			result.reset(numGroups, 1, result_sparsity);
 
 		// Compute the result
-		int g;
 		double w = 1; // default weight
+		
+		//CM operator for count, mean, variance
+		//note: current support only for column vectors
 		if(op instanceof CMOperator) {
 			// initialize required objects for storing the result of CM operations
 			CM cmFn = CM.getCMFnObject(((CMOperator) op).getAggOpType());
@@ -4736,8 +4808,8 @@ public class MatrixBlockDSM extends MatrixValue
 				cmValues[i] = new CM_COV_Object();
 			
 			for ( int i=0; i < this.getNumRows(); i++ ) {
-				g = (int) this.quickGetValue(i, 0);
-				d = target.quickGetValue(i,0);
+				int g = (int) this.quickGetValue(i, 0);
+				double d = target.quickGetValue(i,0);
 				if ( weights != null )
 					w = weights.quickGetValue(i,0);
 				// cmValues is 0-indexed, whereas range of values for g = [1,numGroups]
@@ -4749,49 +4821,102 @@ public class MatrixBlockDSM extends MatrixValue
 				// result is 0-indexed, so is cmValues
 				result.quickSetValue(i, 0, cmValues[i].getRequiredResult(op));
 		}
-		else if(op instanceof AggregateOperator) {
-			AggregateOperator aggop=(AggregateOperator) op;
+		//Aggregate operator for sum (via kahan sum)
+		//note: support for row/column vectors and dense/sparse
+		else if( op instanceof AggregateOperator ) 
+		{
+			//the only aggregate operator that is supported here is sum,
+			//furthermore, we always use KahanPlus and hence aggop.correctionExists is true
+			
+			AggregateOperator aggop = (AggregateOperator) op;
 				
-			if(aggop.correctionExists) {
-				
-				KahanObject[] buffer = new KahanObject[numGroups];
-				for(int i=0; i < numGroups; i++ )
-					buffer[i] = new KahanObject(aggop.initialValue, 0);
-				
-				for ( int i=0; i < this.getNumRows(); i++ ) {
-					g = (int) this.quickGetValue(i, 0);
-					d = target.quickGetValue(i,0);
+			//default case for aggregate(sum)
+			groupedAggregateKahanPlus(target, weights, result, aggop);
+		}
+		else
+			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
+		
+		return result;
+	}
+	
+
+	/**
+	 * This is a specific implementation for aggregate(fn="sum"), where we use KahanPlus for numerical
+	 * stability. In contrast to other functions of aggregate, this implementation supports row and column
+	 * vectors for target and exploits sparse representations since KahanPlus is sparse-safe.
+	 * 
+	 * @param target
+	 * @param weights
+	 * @param op
+	 * @throws DMLRuntimeException 
+	 */
+	private void groupedAggregateKahanPlus( MatrixBlockDSM target, MatrixBlockDSM weights, MatrixBlockDSM result, AggregateOperator aggop ) throws DMLRuntimeException
+	{
+		boolean rowVector = target.getNumColumns()>1;
+		double w = 1; //default weight
+		
+		//skip empty blocks (sparse-safe operation)
+		if( target.isEmptyBlock(false) ) 
+			return;
+		
+		//init group buffers
+		KahanObject[] buffer = new KahanObject[numGroups];
+		for(int i=0; i < numGroups; i++ )
+			buffer[i] = new KahanObject(aggop.initialValue, 0);
+			
+		if( rowVector ) //target is rowvector
+		{	
+			if( target.sparse ) //SPARSE target
+			{
+				if( target.sparseRows[0]!=null )
+				{
+					int len = target.sparseRows[0].size();
+					int[] aix = target.sparseRows[0].getIndexContainer();
+					double[] avals = target.sparseRows[0].getValueContainer();	
+					for( int j=0; j<len; j++ ) //for each nnz
+					{
+						int g = (int) this.quickGetValue(aix[j], 0);						
+						if ( weights != null )
+							w = weights.quickGetValue(aix[j],0);
+						aggop.increOp.fn.execute(buffer[g-1], avals[j]*w);						
+					}
+				}
+					
+			}
+			else //DENSE target
+			{
+				for ( int i=0; i < this.getNumColumns(); i++ ) {
+					double d = target.denseBlock[ i ];
+					if( d != 0 ) //sparse-safe
+					{
+						int g = (int) this.quickGetValue(i, 0);						
+						if ( weights != null )
+							w = weights.quickGetValue(i,0);
+						// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+						aggop.increOp.fn.execute(buffer[g-1], d*w);
+					}
+				}
+			}
+		}
+		else //column vector (always dense, but works for sparse as well)
+		{
+			for ( int i=0; i < this.getNumRows(); i++ ) 
+			{
+				double d = target.quickGetValue(i,0);
+				if( d != 0 ) //sparse-safe
+				{
+					int g = (int) this.quickGetValue(i, 0);						
 					if ( weights != null )
 						w = weights.quickGetValue(i,0);
 					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
 					aggop.increOp.fn.execute(buffer[g-1], d*w);
 				}
-
-				// extract the required value from each KahanObject
-				for ( int i=0; i < numGroups; i++ )
-					// result is 0-indexed, so is buffer
-					result.quickSetValue(i, 0, buffer[i]._sum);
 			}
-			else {
-				for ( int i=0; i < numGroups; i++ )
-					result.quickSetValue(i, 0, aggop.initialValue);
-				
-				double v;
-				for ( int i=0; i < this.getNumRows(); i++ ) {
-					g = (int) this.quickGetValue(i, 0);
-					d = target.quickGetValue(i,0);
-					if ( weights != null )
-						w = weights.quickGetValue(i, 0);
-					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
-					v = aggop.increOp.fn.execute(result.getValue(g-1,1), d*w);
-					result.quickSetValue(g-1, 0, v);
-				}
-			}
-			
-		}else
-			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
+		}
 		
-		return result;
+		// extract the results from group buffers
+		for ( int i=0; i < numGroups; i++ )
+			result.quickSetValue(i, 0, buffer[i]._sum);
 	}
 
 	public MatrixValue removeEmptyOperations( MatrixValue ret, boolean rows )

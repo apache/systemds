@@ -49,12 +49,12 @@ public class MatrixAggLib
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	//internal configuration parameters
+	private static final boolean NAN_AWARENESS = false;
+
 	////////////////////////////////
 	// public matrix agg interface
 	////////////////////////////////
-	
-	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
-	public static final boolean NAN_AWARENESS = false;
 	
 	private enum AggType {
 		KAHAN_SUM,
@@ -68,8 +68,8 @@ public class MatrixAggLib
 
 	
 	/**
-	 * Core incremental matrix aggregate (ak+) as used in tsmm, cpmm,
-	 * append, indexing, etc. Note that we try to keep the current 
+	 * Core incremental matrix aggregate (ak+) as used in mapmult, tsmm, 
+	 * cpmm, etc. Note that we try to keep the current 
 	 * aggVal and aggCorr in dense format in order to allow efficient
 	 * access according to the dense/sparse input. 
 	 * 
@@ -155,7 +155,7 @@ public class MatrixAggLib
 			for( int i=0, cix=0; i<m; i++, cix+=2 )
 				c[cix] = UtilFunctions.cellIndexCalculation(ix.getColumnIndex(), bclen, (int)c[cix]-1);
 		}
-	}
+	}	
 	
 	/**
 	 * 

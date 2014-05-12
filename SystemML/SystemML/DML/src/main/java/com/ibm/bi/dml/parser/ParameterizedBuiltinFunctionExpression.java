@@ -135,7 +135,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				DataIdentifier targetid = (DataIdentifier)getVarParam(Statement.GAGG_TARGET);
 				DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
 				DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
-				
+			
+				/* MB: Disabled because now groupedaggregate supports both row and column vectors.
 				if( targetid.dimsKnown() && groupsid.dimsKnown() &&
 					(targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2()) )
 				{
@@ -143,6 +144,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 					throw new LanguageException(this.printErrorLocation() + "target and groups must have same dimensions -- " 
 							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
 				}
+				*/
 				if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
 					(targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() ))
 				{

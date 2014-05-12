@@ -19,15 +19,12 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -74,12 +71,14 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	/**
 	 * 
 	 */
+	@Override
 	public void map(LongWritable key, Text value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
 	{
 		LOG.trace("execute RemoteParWorkerMapper "+_stringID+" ("+_workerID+")");
 		
-		int numIters = getExecutedIterations(); //for multiple iterations / jvm reuse
+		//state for jvm reuse and multiple iterations 
+		int numIters = getExecutedIterations(); 
 		
 		try 
 		{
@@ -90,7 +89,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			executeTask( lTask );
 		
 			//write output if required (matrix indexed write)
-			exportResultVariables( out );
+			RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars, _rvarFnames, out );
 		}
 		catch(Exception ex)
 		{
@@ -99,32 +98,17 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		}
 		
 		//statistic maintenance
-		reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMITERS.toString(), getExecutedIterations()-numIters);
-		reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMTASKS.toString(), 1);
-		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode() ) {
-			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JITCOMPILE.toString(), Statistics.getJITCompileTime());
-			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JVMGC_COUNT.toString(), Statistics.getJVMgcCount());
-			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JVMGC_TIME.toString(), Statistics.getJVMgcTime());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_MEM.toString(), CacheStatistics.getMemHits());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString(), CacheStatistics.getFSBuffHits());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FS.toString(), CacheStatistics.getFSHits());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_HDFS.toString(), CacheStatistics.getHDFSHits());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_FSBUFF.toString(), CacheStatistics.getFSBuffWrites());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_FS.toString(), CacheStatistics.getFSWrites());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_HDFS.toString(), CacheStatistics.getHDFSWrites());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_TIME_ACQR.toString(), CacheStatistics.getAcquireRTime());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_TIME_ACQM.toString(), CacheStatistics.getAcquireMTime());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_TIME_RLS.toString(), CacheStatistics.getReleaseTime());
-			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_TIME_EXP.toString(), CacheStatistics.getExportTime());
+		RemoteParForUtils.incrementParForMRCounters(reporter, 1, getExecutedIterations()-numIters);
 		
-			//print heaver hitter per task
-			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(10));
-		}
+		//print heaver hitter per task
+		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() )
+			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(10));	
 	}
 
 	/**
 	 * 
 	 */
+	@Override
 	public void configure(JobConf job)
 	{
 		boolean requiresConfigure = true;
@@ -167,7 +151,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
 				//create local runtime program
-				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
+				String in = MRJobConfiguration.getProgramBlocks(job);
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
 				_childBlocks = body.getChildBlocks();
 				_ec          = body.getEc();				
@@ -188,7 +172,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				}
 				
 				//ensure that resultvar files are not removed
-				pinResultVariables();
+				super.pinResultVariables();
 				
 				_numTasks    = 0;
 				_numIters    = 0;
@@ -229,12 +213,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		throws IOException 
 	{
 		//cleanup cache and local tmp dir
-		if( !InfrastructureAnalyzer.isLocalMode() )
-		{
-			CacheableData.cleanupCacheDir();
-			CacheableData.disableCaching();
-			LocalFileUtils.cleanupWorkingDirectory();
-		}
+		RemoteParForUtils.cleanupWorkingDirectories();
 		
 		//change cache status for jvm_reuse (make empty allows us to
 		//reuse in-memory objects if still present, re-load from HDFS
@@ -255,70 +234,5 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 */
-	private void pinResultVariables()
-	{
-		for( String var : _resultVars )
-		{
-			Data dat = _ec.getVariable(var);
-			if( dat instanceof MatrixObject )
-			{
-				MatrixObject mo = (MatrixObject)dat;
-				mo.enableCleanup(false); 
-			}
-		}
-	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
-	private void exportResultVariables( OutputCollector<Writable, Writable> out ) 
-		throws DMLRuntimeException, IOException
-	{
-		//create key and value for reuse
-		LongWritable okey = new LongWritable( _workerID ); 
-		Text ovalue = new Text();
-		
-		//foreach result variables probe if export necessary
-		for( String rvar : _resultVars )
-		{
-			Data dat = _ec.getVariable( rvar );
-			
-			//export output variable to HDFS (see RunMRJobs)
-			if ( dat.getDataType() == DataType.MATRIX ) 
-			{
-				MatrixObject mo = (MatrixObject) dat;
-				if( mo.isDirty() )
-				{
-					if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
-					{
-						String fname = _rvarFnames.get( rvar );
-						if( fname!=null )
-							mo.setFileName( fname );
-							
-						//export result var (iff actually modified in parfor)
-						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)		
-						_rvarFnames.put(rvar, mo.getFileName());	
-					}
-					else
-					{
-						//export result var (iff actually modified in parfor)
-						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
-					}
-					
-					//pass output vars (scalars by value, matrix by ref) to result
-					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
-					String datStr = ProgramConverter.serializeDataObject(rvar, mo);
-					ovalue.set( datStr );
-					out.collect( okey, ovalue );
-				}
-			}	
-		}
-	}
+
 }

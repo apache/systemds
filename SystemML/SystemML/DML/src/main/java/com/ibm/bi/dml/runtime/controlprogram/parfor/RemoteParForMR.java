@@ -90,7 +90,7 @@ public class RemoteParForMR
 			//configure the MR job
 		
 			//set arbitrary CP program blocks that will perform in the mapper
-			MRJobConfiguration.setProgramBlocksInMapper(job, program); 
+			MRJobConfiguration.setProgramBlocks(job, program); 
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(RemoteParWorkerMapper.class); //map-only

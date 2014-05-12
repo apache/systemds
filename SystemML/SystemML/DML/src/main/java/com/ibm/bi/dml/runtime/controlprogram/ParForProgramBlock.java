@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteDPParForMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
@@ -79,6 +80,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 
 
 
@@ -101,7 +103,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	// execution modes
 	public enum PExecMode{
 		LOCAL,      //local (master) multi-core execution mode
-		REMOTE_MR,	//remote (MR cluster) execution mode	
+		REMOTE_MR,	//remote (MR cluster) execution mode
+		REMOTE_MR_DP,	//remote (MR cluster) execution mode, fused with data partitioning
 		UNSPECIFIED
 	}
 
@@ -232,6 +235,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected LocalVariableMap _variablesDPOriginal = null;
 	protected LocalVariableMap _variablesDPReuse    = null;
 	protected String           _colocatedDPMatrix   = null;
+	protected boolean          _tSparseCol          = false;
 	protected int              _replicationDP       = WRITE_REPLICATION_FACTOR;
 	protected int              _replicationExport   = -1;
 	//specifics used for result partitioning
@@ -315,7 +319,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_variablesDPReuse = new LocalVariableMap();
 		
 		//create IDs for all parworkers
-		if( _execMode == PExecMode.LOCAL )
+		if( _execMode == PExecMode.LOCAL /*&& _optMode==POptMode.NONE*/ )
 			setLocalParWorkerIDs();
 	
 		//initialize program block cache if necessary
@@ -403,6 +407,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		//only called from optimizer
 		_colocatedDPMatrix = varname;
+	}
+	
+	public void setTransposeSparseColumnVector( boolean flag )
+	{
+		_tSparseCol = flag;
 	}
 	
 	public void setPartitionReplicationFactor( int rep )
@@ -507,6 +516,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
 					
 					PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
+					//dpf = (_optMode != POptMode.NONE) ? OptimizerRuleBased.decideBlockWisePartitioning(moVar, dpf) : dpf;
 					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 					
 					if( dpf != PDataPartitionFormat.NONE )
@@ -571,6 +581,10 @@ public class ParForProgramBlock extends ForProgramBlock
 					
 				case REMOTE_MR: // create parworkers as MR tasks (one job per parfor)
 					executeRemoteParFor(ec, iterVar, from, to, incr);
+					break;
+				
+				case REMOTE_MR_DP: // create parworkers as MR tasks (one job per parfor)
+					executeRemoteParForDP(ec, iterVar, from, to, incr);
 					break;
 					
 				default:
@@ -838,6 +852,87 @@ public class ParForProgramBlock extends ForProgramBlock
 		}			
 	}	
 	
+	/**
+	 * 
+	 * @param ec
+	 * @param itervar
+	 * @param from
+	 * @param to
+	 * @param incr
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 */
+	private void executeRemoteParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+	{
+		/* Step 0) check and recompile MR inst
+		 * Step 1) serialize child PB and inst
+		 * Step 2) create tasks
+		 *         serialize tasks
+		 * Step 3) submit MR Jobs and wait for results                        
+		 * Step 4) collect results from each parallel worker
+		 */
+		
+		Timing time = ( _monitor ? new Timing(true) : null );
+		
+		// Step 0) check and compile to CP (if forced remote parfor)
+		boolean flagForced = checkMRAndRecompileToCP(0);
+		
+		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
+		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
+		PDataPartitionFormat inputDPF = _sb.determineDataPartitionFormat( _colocatedDPMatrix );
+		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
+			
+		// Step 2) init parallel workers (serialize PBs)
+		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
+		//        cannot reuse serialized string, since variables are serialized as well.
+		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
+		String program = ProgramConverter.serializeParForBody( body );
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
+		
+		// Step 3) create tasks 
+		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
+		String resultFile = constructResultFileName();
+		int numIterations = partitioner.getNumIterations();
+		int numCreatedTasks = numIterations;//partitioner.createTasks().size();
+						
+		if( _monitor )
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
+		
+		//write matrices to HDFS 
+		exportMatricesToHDFS(ec);
+				
+		// Step 4) submit MR job (wait for finished work)
+		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
+				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
+				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
+		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), program, resultFile, inputMatrix, inputDPF, inputOI, _tSparseCol, ExecMode.CLUSTER, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
+			
+		// Step 5) collecting results from each parallel worker
+		int numExecutedTasks = ret.getNumExecutedTasks();
+		int numExecutedIterations = ret.getNumExecutedIterations();
+		
+		//consolidate results into global symbol table
+		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
+				                    ret.getVariables() );
+		
+		if( flagForced ) //see step 0
+			releaseForcedRecompile(0);
+		inputMatrix.unsetPartitioned();
+		
+		if( _monitor ) 
+		{
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+		}			
+	}
 	
 	/**
 	 * Cleanup result variables of parallel workers after result merge.
@@ -1392,6 +1487,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private void setLocalParWorkerIDs()
 	{
+		if( _numThreads<=0 )
+			return;
+		
 		//set all parworker IDs required if PExecMode.LOCAL is used
 		_pwIDs = new long[ _numThreads ];
 		

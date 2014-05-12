@@ -115,7 +115,7 @@ public class LocalVariableMap implements Cloneable
 		{
 			if (count != 0)
 				sb.append (ELEMENT_DELIM);
-			sb.append (ProgramConverter.serializeDataObject (e.getKey (), e.getValue ()));
+			sb.append (ProgramConverter.serializeDataObject (e.getKey(), e.getValue()));
 			count++;
 		}
 		

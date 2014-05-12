@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 /**
  * Remote data partitioner mapper implementation that does the actual
@@ -51,6 +52,7 @@ public class DataPartitionerRemoteMapper
 	/**
 	 * 
 	 */
+	@Override
 	public void map(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
 	{
@@ -60,6 +62,7 @@ public class DataPartitionerRemoteMapper
 	/**
 	 * 
 	 */
+	@Override
 	public void configure(JobConf job)
 	{
 		long rlen = MRJobConfiguration.getPartitioningNumRows( job );
@@ -80,7 +83,10 @@ public class DataPartitionerRemoteMapper
 			if( oi == OutputInfo.BinaryBlockOutputInfo )
 				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf, n);
 			else if( oi == OutputInfo.BinaryCellOutputInfo )
-				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(rlen, clen, brlen, bclen, pdf, n); 
+			{
+				boolean outputEmpty = MRJobConfiguration.getProgramBlocks(job)!=null; //fused parfor
+				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(job, rlen, clen, brlen, bclen, pdf, n, outputEmpty); 
+			}
 			else
 				throw new RuntimeException("Paritioning from '"+ii+"' to '"+oi+"' not supported");
 		}
@@ -92,9 +98,10 @@ public class DataPartitionerRemoteMapper
 	 * 
 	 */
 	@Override
-	public void close() throws IOException 
+	public void close() 
+		throws IOException 
 	{
-		//do nothing
+		_mapper.close();
 	}
 	
 	private abstract class DataPartitionerMapper //NOTE: could also be refactored as three different mappers
@@ -118,6 +125,12 @@ public class DataPartitionerRemoteMapper
 		
 		protected abstract void processKeyValue( Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter ) 
 			throws IOException;
+		
+		protected void close()
+			throws IOException
+		{
+			//do nothing
+		}
 	}
 	
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
@@ -269,13 +282,23 @@ public class DataPartitionerRemoteMapper
 	private class DataPartitionerMapperBinaryblock extends DataPartitionerMapper
 	{
 		private MatrixBlock _reuseBlk = null;
+		private LongWritable _longKey = null;
+		private MatrixIndexes _pairKey = null;
+		private PairWritableBlock _pair = null;
 		
 		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
 		
-			//create reuse block
+			//create reuse keys and block 
+			_longKey = new LongWritable(); //MR key
+			_pair = new PairWritableBlock(); //MR value (pair composed of key and value)
+			_pairKey = new MatrixIndexes();
 			_reuseBlk = DataPartitioner.createReuseMatrixBlock(pdf, brlen, bclen);
+			
+			//prewire pair outputs
+			_pair.indexes = _pairKey;
+			_pair.block = _reuseBlk;
 		}
 		
 		@Override
@@ -284,8 +307,6 @@ public class DataPartitionerRemoteMapper
 		{
 			try
 			{
-				LongWritable longKey = new LongWritable();
-				PairWritableBlock pairValue = new PairWritableBlock();
 				MatrixIndexes key2 =  (MatrixIndexes)key;
 				MatrixBlock value2 = (MatrixBlock)value;
 				long row_offset = (key2.getRowIndex()-1)*_brlen;
@@ -304,61 +325,55 @@ public class DataPartitionerRemoteMapper
 							              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
 				}
 						
+				//partition inputs according to partitioning scheme 
+				//(note: output pair is pre-wired, changes only required for blockwise)
 				switch( _pdf )
 				{
 					case ROW_WISE:
 						_reuseBlk.reset(1, (int)cols, sparse, (int)(cols*sparsity));								
 						for( int i=0; i<rows; i++ )
 						{
-							longKey.set(row_offset+1+i);
-							key2.setIndexes(1, (col_offset/_bclen+1) );	
-							value2.sliceOperations(i+1, i+1, 1, cols, _reuseBlk);		
-							pairValue.indexes = key2;
-							pairValue.block = _reuseBlk;
-							out.collect(longKey, pairValue);
+							_longKey.set(row_offset+1+i);
+							_pairKey.setIndexes(1, (col_offset/_bclen+1) );	
+							value2.sliceOperations(i+1, i+1, 1, cols, _reuseBlk);
+							out.collect(_longKey, _pair);
 							_reuseBlk.reset();
 						}
 						break;
 					case ROW_BLOCK_WISE:
-						longKey.set((row_offset/_brlen+1));
-						key2.setIndexes(1, (col_offset/_bclen+1) );
-						pairValue.indexes = key2;
-						pairValue.block = value2;
-						out.collect(longKey, pairValue);
+						_longKey.set((row_offset/_brlen+1));
+						_pairKey.setIndexes(1, (col_offset/_bclen+1) );
+						_pair.block = value2;
+						out.collect(_longKey, _pair);
 						break;
 					case ROW_BLOCK_WISE_N:
-						longKey.set((row_offset/_n+1));
-						key2.setIndexes(((row_offset%_n)/_brlen)+1, (col_offset/_bclen+1) );
-						pairValue.indexes = key2;
-						pairValue.block = value2;
-						out.collect(longKey, pairValue);
+						_longKey.set((row_offset/_n+1));
+						_pairKey.setIndexes(((row_offset%_n)/_brlen)+1, (col_offset/_bclen+1) );
+						_pair.block = value2;
+						out.collect(_longKey, _pair);
 						break;
 					case COLUMN_WISE:
 						_reuseBlk.reset((int)rows, 1, false);
 						for( int i=0; i<cols; i++ )
 						{
-							longKey.set(col_offset+1+i);
-							key2.setIndexes(row_offset/_brlen+1, 1);							
-							value2.sliceOperations(1, rows, i+1, i+1, _reuseBlk);							
-							pairValue.indexes = key2;
-							pairValue.block = _reuseBlk;
-							out.collect(longKey, pairValue );
+							_longKey.set(col_offset+1+i);
+							_pairKey.setIndexes(row_offset/_brlen+1, 1);							
+							value2.sliceOperations(1, rows, i+1, i+1, _reuseBlk);
+							out.collect(_longKey, _pair );
 							_reuseBlk.reset();
 						}	
 						break;
 					case COLUMN_BLOCK_WISE:
-						longKey.set(col_offset/_bclen+1);
-						key2.setIndexes( row_offset/_brlen+1, 1 );
-						pairValue.indexes = key2;
-						pairValue.block = value2;
-						out.collect(longKey, pairValue);
+						_longKey.set(col_offset/_bclen+1);
+						_pairKey.setIndexes( row_offset/_brlen+1, 1 );
+						_pair.block = value2;
+						out.collect(_longKey, _pair);
 						break;
 					case COLUMN_BLOCK_WISE_N:
-						longKey.set(col_offset/_n+1);
-						key2.setIndexes( row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1 );
-						pairValue.indexes = key2;
-						pairValue.block = value2;
-						out.collect(longKey, pairValue);
+						_longKey.set(col_offset/_n+1);
+						_pairKey.setIndexes( row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1 );
+						_pair.block = value2;
+						out.collect(_longKey, _pair);
 						break;	
 				}
 			} 
@@ -374,16 +389,24 @@ public class DataPartitionerRemoteMapper
 	 */
 	private class DataPartitionerMapperBinaryblock2Binarycell extends DataPartitionerMapper
 	{
+		private JobConf _cachedJobConf = null;
+		private boolean _outputEmpty = false;
 		
-		protected DataPartitionerMapperBinaryblock2Binarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
+		private OutputCollector<Writable, Writable> _out = null;
+		
+		protected DataPartitionerMapperBinaryblock2Binarycell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n, boolean outputEmpty) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
+			_outputEmpty = outputEmpty;
+			_cachedJobConf = job;
 		}
 		
 		@Override
 		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 			throws IOException 
 		{
+			_out = out;
+			
 			try
 			{
 				LongWritable longKey = new LongWritable();
@@ -606,5 +629,42 @@ public class DataPartitionerRemoteMapper
 				throw new IOException("Unable to partition binary block matrix.", e);
 			}
 		}	
+		
+		@Override
+		protected void close() 
+			throws IOException
+		{
+			if( _outputEmpty )
+			{
+				LongWritable longKey = new LongWritable();
+				PairWritableCell pairValue = new PairWritableCell();
+				pairValue.indexes = new MatrixIndexes(-1,-1);
+				pairValue.cell = new MatrixCell(0);
+				
+				long mapID = Long.parseLong(MapReduceTool.getUniqueKeyPerTask(_cachedJobConf, true));
+				long numMap = _cachedJobConf.getNumMapTasks(); 
+				
+				//output part of empty blocks (all mappers contribute for better load balance),
+				//where mapper responsibility is distributed over all partitions
+				long numPartitions = -1;
+				switch( _pdf ){
+					case ROW_WISE: 			 numPartitions = _rlen; break;
+					case ROW_BLOCK_WISE:     numPartitions = (int)Math.ceil(_rlen/(double)_brlen); break;
+					case COLUMN_WISE:        numPartitions = _clen; break;
+					case COLUMN_BLOCK_WISE:  numPartitions = (int)Math.ceil(_clen/(double)_bclen); break;
+				}
+				
+				long len = (long)Math.ceil((double)numPartitions/numMap);
+				long start = mapID * len;
+				long end = Math.min((mapID+1) * len, numPartitions);
+				for( long i=start; i<end; i++ )
+				{
+					longKey.set( i+1 );
+					_out.collect(longKey, pairValue);
+				}	
+			}
+			
+			
+		}
 	}
 }

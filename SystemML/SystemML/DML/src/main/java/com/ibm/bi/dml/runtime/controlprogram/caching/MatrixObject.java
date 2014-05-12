@@ -103,9 +103,10 @@ public class MatrixObject extends CacheableData
 	private PDataPartitionFormat _partitionFormat = null; //indicates how obj partitioned
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
-
+	private MatrixBlock _partitionInMemory = null;
+	
 	/**
-	 * Informtaion relevant to specific external file formats
+	 * Information relevant to specific external file formats
 	 */
 	FileFormatProperties _formatProperties = null;
 	
@@ -214,31 +215,71 @@ public class MatrixObject extends CacheableData
 		}
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public long getNumRows () 
-		throws DMLRuntimeException
 	{
-		if(_metaData == null)
-			throw new DMLRuntimeException("No metadata available.");
-		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		return mc.get_rows ();
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public long getNumColumns() 
-		throws DMLRuntimeException
 	{
-		if(_metaData == null)
-			throw new DMLRuntimeException("No metadata available.");
-		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		return mc.get_cols ();
 	}
-
-	public long getNnz() 
-		throws DMLRuntimeException
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumRowsPerBlock() 
 	{
-		if(_metaData == null)
-			throw new DMLRuntimeException("No metadata available.");
-		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		return mc.numRowsPerBlock;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumColumnsPerBlock() 
+	{
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		return mc.numRowsPerBlock;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNnz() 
+	{
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		return mc.nonZero;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public double getSparsity() 
+	{
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		
+		return ((double)mc.nonZero)/mc.numRows/mc.numColumns;
 	}
 
 	/**
@@ -732,6 +773,14 @@ public class MatrixObject extends CacheableData
 		_partitionSize = n;
 	}
 	
+
+	public void unsetPartitioned() 
+	{
+		_partitioned = false;
+		_partitionFormat = null;
+		_partitionSize = -1;
+	}
+	
 	/**
 	 * 
 	 * @return
@@ -749,6 +798,11 @@ public class MatrixObject extends CacheableData
 	public int getPartitionSize()
 	{
 		return _partitionSize;
+	}
+	
+	public void setInMemoryPartition(MatrixBlock block)
+	{
+		_partitionInMemory = block;
 	}
 	
 	/**
@@ -771,6 +825,10 @@ public class MatrixObject extends CacheableData
 		
 		if ( !_partitioned )
 			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+		
+		//return static partition of set from outside of the program
+		if( _partitionInMemory != null )
+			return _partitionInMemory;
 		
 		MatrixBlock mb = null;
 		

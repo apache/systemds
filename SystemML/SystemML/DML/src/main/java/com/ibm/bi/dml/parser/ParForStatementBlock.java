@@ -208,10 +208,15 @@ public class ParForStatementBlock extends ForStatementBlock
 						params.put(key, _paramDefaults2.get(key));
 					}
 					//special treatment for degree of parallelism
-					else if( key.equals(PAR) && params.containsKey(EXEC_MODE) 
-						&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
+					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
+							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
 					{
 						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelMapTasks()));
+					}
+					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
+							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR_DP.toString()) )
+					{
+						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelReduceTasks()));						
 					}
 					else //default case
 						params.put(key, _paramDefaults.get(key));

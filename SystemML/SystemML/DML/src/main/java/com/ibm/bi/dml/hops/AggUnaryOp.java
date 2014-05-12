@@ -397,6 +397,18 @@ public class AggUnaryOp extends Hop
 	}
 	
 	@Override
+	public boolean isTransposeSafe()
+	{
+		boolean ret = (_direction == Direction.RowCol) && //full aggregate
+                      (_op == AggOp.SUM || _op == AggOp.MIN || //valid aggregration functions
+		               _op == AggOp.MAX || _op == AggOp.PROD || 
+		               _op == AggOp.MEAN);
+		//note: trace and maxindex are not transpose-safe.
+		
+		return ret;	
+	}
+	
+	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
 		AggUnaryOp ret = new AggUnaryOp();	

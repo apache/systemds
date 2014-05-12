@@ -18,9 +18,11 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 
 /**
@@ -100,6 +102,31 @@ public abstract class ParWorker
 	{
 		return _numIters;
 	}
+	
+	/**
+	 * 
+	 */
+	public void resetExecutedTasks()
+	{
+		_numTasks = 0;
+		_numIters = 0;
+	}
+	
+	/**
+	 * 
+	 */
+	protected void pinResultVariables()
+	{
+		for( String var : _resultVars )
+		{
+			Data dat = _ec.getVariable(var);
+			if( dat instanceof MatrixObject )
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				mo.enableCleanup(false); 
+			}
+		}
+	}
 
 	/**
 	 * 
@@ -123,8 +150,7 @@ public abstract class ParWorker
 			//default: //MB: due to enum types this can never happen
 			//	throw new DMLRuntimeException("Undefined task type: '"+task.getType()+"'.");
 		}
-	}
-		
+	}	
 		
 	/**
 	 * 

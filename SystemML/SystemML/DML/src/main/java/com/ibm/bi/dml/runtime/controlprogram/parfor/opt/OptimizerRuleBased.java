@@ -75,10 +75,12 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * - 8) rewrite use nested parallelism 
  * - 9) rewrite set degree of parallelism
  * - 10) rewrite set task partitioner
- * - 11) rewrite set result merge 		 		 
- * - 12) rewrite set recompile memory budget
- * - 13) rewrite remove recursive parfor	
- * - 14) rewrite remove unnecessary parfor		
+ * - 11) rewrite set fused data partitioning and execution
+ * - 12) rewrite transpose vector operations (for sparse)
+ * - 13) rewrite set result merge 		 		 
+ * - 14) rewrite set recompile memory budget
+ * - 15) rewrite remove recursive parfor	
+ * - 16) rewrite remove unnecessary parfor		
  * 	 
  * 
  * TODO take remote memory into account in data/result partitioning rewrites (smaller/larger)
@@ -110,8 +112,10 @@ public class OptimizerRuleBased extends Optimizer
 	protected int _lkmaxCP = -1; //local max par (if only CP inst)
 	protected int _lkmaxMR = -1; //local max par (if also MR inst)
 	protected int _rnk  = -1; //remote num nodes
-	protected int _rk   = -1; //remote par
-	protected int _rkmax = -1; //remote max par
+	protected int _rk   = -1; //remote par (mappers)
+	protected int _rk2  = -1; //remote par (reducers)
+	protected int _rkmax = -1; //remote max par (mappers)
+	protected int _rkmax2 = -1; //remote max par (reducers)
 	protected double _lm = -1; //general memory constraint
 	protected double _rm = -1; //global memory constraint
 	
@@ -157,16 +161,7 @@ public class OptimizerRuleBased extends Optimizer
 			return true;
 		
 		//ANALYZE infrastructure properties
-		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
-		_Nmax  = pn.getMaxProblemSize(); 
-		_lk    = InfrastructureAnalyzer.getLocalParallelism();
-		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
-		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
-		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
-		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
-		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_lm   = OptimizerUtils.getLocalMemBudget();
-		_rm   = OptimizerUtils.getRemoteMemBudget(false);
+		analyzeProblemAndInfrastructure( pn );
 		
 		_cost = est;
 		
@@ -183,7 +178,8 @@ public class OptimizerRuleBased extends Optimizer
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		rewriteSetDataPartitioner( pn, ec.getVariables() );
+		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
@@ -222,6 +218,12 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 10: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
+			
+			// rewrite 11: fused data partitioning and execution
+			rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, ec.getVariables());
+			
+			// rewrite 12: transpose sparse vector operations
+			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
@@ -231,20 +233,20 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
-		
-		//rewrite 11: set result merge
+
+		// rewrite 13: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 12: set local recompile memory budget
+		// rewrite 14: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 13: parfor (in recursive functions) to for
+		// rewrite 15: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 14: parfor (par=1) to for 
+		// rewrite 16: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -252,6 +254,25 @@ public class OptimizerRuleBased extends Optimizer
 		return true;
 	}
 
+	/**
+	 * 
+	 * @param pn
+	 */
+	protected void analyzeProblemAndInfrastructure( OptNode pn )
+	{
+		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
+		_Nmax  = pn.getMaxProblemSize(); 
+		_lk    = InfrastructureAnalyzer.getLocalParallelism();
+		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
+		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
+		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
+		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+		_rk2   = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
+		_rkmax2 = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
+		_lm   = OptimizerUtils.getLocalMemBudget();
+		_rm   = OptimizerUtils.getRemoteMemBudget(false); 		
+	}
 	
 	///////
 	//REWRITE set data partitioner
@@ -260,9 +281,10 @@ public class OptimizerRuleBased extends Optimizer
 	/**
 	 * 
 	 * @param n
+	 * @param partitionedMatrices  
 	 * @throws DMLRuntimeException 
 	 */
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars) 
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PDataPartitionFormat> partitionedMatrices ) 
 		throws DMLRuntimeException
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
@@ -296,6 +318,8 @@ public class OptimizerRuleBased extends Optimizer
 					
 			}
 			apply = rFindDataPartitioningCandidates(n, cand2, vars);
+			if( apply )
+				partitionedMatrices.putAll(cand2);
 		}
 		PDataPartitioner pdp = (apply)? PDataPartitioner.REMOTE_MR : PDataPartitioner.NONE;		
 		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
@@ -308,7 +332,8 @@ public class OptimizerRuleBased extends Optimizer
 		n.addParam(ParamType.DATA_PARTITIONER, pdp.toString());
 	
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'set data partitioner' - result="+pdp.toString() );
+		LOG.debug(getOptMode()+" OPT: rewrite 'set data partitioner' - result="+pdp.toString()+
+				  " ("+ProgramConverter.serializeStringCollection(partitionedMatrices.keySet())+")" );
 		
 		return blockwise;
 	}
@@ -396,7 +421,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return mem;
 	}
-	
+
 	/**
 	 * 
 	 * @param mo
@@ -407,14 +432,42 @@ public class OptimizerRuleBased extends Optimizer
 	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf ) 
 		throws DMLRuntimeException
 	{
-		double mem = -1;
+		return getRIXExecType(mo, dpf, false);
+	}
+	
+	/**
+	 * 
+	 * @param mo
+	 * @param dpf
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
+		throws DMLRuntimeException
+	{
+		double mem = -1;		
+		
+		long rlen = mo.getNumRows();
+		long clen = mo.getNumColumns();
+		long brlen = mo.getNumRowsPerBlock();
+		long bclen = mo.getNumColumnsPerBlock();
+		long nnz = mo.getNnz();
+		double lsparsity = ((double)nnz)/rlen/clen;		
+		double sparsity = withSparsity ? lsparsity : 1.0;
+		
 		switch( dpf )
 		{
 			case COLUMN_WISE:
-				mem = mo.getNumRows() * 8; 
+				mem = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), 1, sparsity); 
+				break;
+			case COLUMN_BLOCK_WISE:
+				mem = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), bclen, sparsity); 
 				break;
 			case ROW_WISE:
-				mem = mo.getNumColumns() * 8;
+				mem = OptimizerUtils.estimateSizeExactSparsity(1, mo.getNumColumns(), sparsity);
+				break;
+			case ROW_BLOCK_WISE:
+				mem = OptimizerUtils.estimateSizeExactSparsity(brlen, mo.getNumColumns(), sparsity);
 				break;
 		}
 		
@@ -422,6 +475,44 @@ public class OptimizerRuleBased extends Optimizer
 			return LopProperties.ExecType.CP;
 		else
 			return LopProperties.ExecType.CP_FILE;
+	}
+	
+	/**
+	 * 
+	 * @param mo
+	 * @param dpf
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static PDataPartitionFormat decideBlockWisePartitioning( MatrixObject mo, PDataPartitionFormat dpf ) 
+		throws DMLRuntimeException
+	{
+		long rlen = mo.getNumRows();
+		long clen = mo.getNumColumns();
+		long brlen = mo.getNumRowsPerBlock();
+		long bclen = mo.getNumColumnsPerBlock();
+		long k = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+		
+		PDataPartitionFormat ret = dpf;
+		if( getRIXExecType(mo, dpf)==LopProperties.ExecType.CP )
+		if( ret == PDataPartitionFormat.ROW_WISE )
+		{
+			if( rlen/brlen > 4*k && //note: average sparsity, read must deal with it
+				getRIXExecType(mo, PDataPartitionFormat.ROW_BLOCK_WISE, false)==LopProperties.ExecType.CP )
+			{
+				ret = PDataPartitionFormat.ROW_BLOCK_WISE;				
+			}
+		}
+		else if( ret == PDataPartitionFormat.COLUMN_WISE )
+		{
+			if( clen/bclen > 4*k && //note: average sparsity, read must deal with it
+				getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP )
+			{
+				ret = PDataPartitionFormat.COLUMN_BLOCK_WISE;				
+			}
+		}
+				
+		return ret;	
 	}
 	
 	///////
@@ -797,10 +888,11 @@ public class OptimizerRuleBased extends Optimizer
 		// on the partitioned matrix
 		boolean apply = false;
 		String varname = null;
+		String partitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
-		if(    n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+		if(   partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString())
 			&& n.getExecType()==ExecType.MR )
 		{
 			//find all candidates matrices (at least one partitioned access via iterVar)
@@ -1199,6 +1291,196 @@ public class OptimizerRuleBased extends Optimizer
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set task partitioner' - result="+partitioner+((flagLIX) ? ","+n.getParam(ParamType.TASK_SIZE) : "") );	
 	}
+	
+	///////
+	//REWRITE set fused data partitioning / execution
+	///
+	
+	/**
+	 * This dedicated execution mode can only be applied if all of the 
+	 * following conditions are true:
+	 * - Only cp instructions in the parfor body
+	 * - Only one partitioned input 
+	 * - number of iterations is equal to number of partitions (nrow/ncol)
+	 * - partitioned matrix access via plain iteration variables (no composed expressions)
+	 *   (this ensures that each partition is exactly read once)
+	 * - no left indexing (since by default static task partitioning)
+	 * 
+	 * Furthermore, it should be only chosen if we already decided for remote partitioning
+	 * and otherwise would create a large number of partition files.
+	 * @param partitionedMatrices, ExecutionContext ec 
+	 * 
+	 * @param n
+	 * @param partitioner
+	 * @throws DMLRuntimeException 
+	 */
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
+		throws DMLRuntimeException 
+	{
+		//assertions (warnings of corrupt optimizer decisions)
+		if( pn.getNodeType() != NodeType.PARFOR )
+			LOG.warn(getOptMode()+" OPT: Fused data partitioning and execution is only applicable for a ParFor node.");
+		
+		boolean apply = false;
+		String partitioner = pn.getParam(ParamType.DATA_PARTITIONER);
+		
+		//precondition: rewrite only invoked if exec type MR 
+		// (this also implies that the body is CP only)
+		
+		// try to merge MR data partitioning and MR exec 
+		if(  pn.getExecType()==ExecType.MR   //MR EXEC and CP body
+			&& partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString()) //MR partitioning
+			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
+		{
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+	                  .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			
+			//partitioned matrix
+			String moVarname = partitionedMatrices.keySet().iterator().next();
+			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			MatrixObject mo = (MatrixObject)vars.get(moVarname);
+			
+			//check if access via iteration variable and sizes match
+			String iterVarname = pfpb.getIterablePredicateVars()[0];
+			
+			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
+			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
+				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+			{
+				int k = Math.min(_N,_rk2);
+				
+				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
+				pn.setK( k );
+				
+				pfpb.setExecMode(PExecMode.REMOTE_MR_DP); //set fused exec type	
+				pfpb.setDataPartitioner(PDataPartitioner.NONE);
+				pfpb.enableColocatedPartitionedMatrix( moVarname ); 
+				pfpb.setDegreeOfParallelism(k);
+				
+				apply = true;
+			}
+		}
+		
+		LOG.debug(getOptMode()+" OPT: rewrite 'set fused data partitioning and execution' - result="+apply );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param iterVarname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean rIsAccessByIterationVariable( OptNode n, String varName, String iterVarname ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				rIsAccessByIterationVariable( cn, varName, iterVarname );
+		}
+		else if(    n.getNodeType()== NodeType.HOP
+			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
+			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
+		{
+			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			String inMatrix = h.getInput().get(0).get_name();
+			String indexAccess = null;
+			switch( dpf )
+			{
+				case ROW_WISE: //input 1 and 2 eq
+					if( h.getInput().get(1) instanceof DataOp )
+						indexAccess = h.getInput().get(1).get_name();
+					break;
+				case COLUMN_WISE: //input 3 and 4 eq
+					if( h.getInput().get(3) instanceof DataOp )
+						indexAccess = h.getInput().get(3).get_name();
+					break;
+			}
+			
+			ret &= inMatrix.equals(varName) && indexAccess.equals(iterVarname);
+		}
+		
+		return ret;
+	}
+	
+	///////
+	//REWRITE transpose sparse vector operations
+	///
+	
+	protected void rewriteSetTranposeSparseVectorOperations(OptNode pn, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
+		throws DMLRuntimeException 
+	{
+		//assertions (warnings of corrupt optimizer decisions)
+		if( pn.getNodeType() != NodeType.PARFOR )
+			LOG.warn(getOptMode()+" OPT: Transpose sparse vector operations is only applicable for a ParFor node.");
+		
+		boolean apply = false;
+		
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+                .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		
+		if(    pfpb.getExecMode() == PExecMode.REMOTE_MR_DP 
+			&& partitionedMatrices.size()==1 ) //general applicable
+		{
+			String moVarname = partitionedMatrices.keySet().iterator().next();
+			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			Data dat = vars.get(moVarname);
+			
+			if(    dat !=null && dat instanceof MatrixObject 
+				&& moDpf == PDataPartitionFormat.COLUMN_WISE	
+				&& ((MatrixObject)dat).getSparsity()<= MatrixBlockDSM.SPARCITY_TURN_POINT  //check for sparse matrix
+				&& rIsTransposeSafePartition(pn, moVarname) ) //tranpose-safe
+			{
+				pfpb.setTransposeSparseColumnVector( true );
+				
+				apply = true;
+			}
+		}
+		
+		LOG.debug(getOptMode()+" OPT: rewrite 'set transpose sparse vector operations' - result="+apply );			
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param iterVarname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean rIsTransposeSafePartition( OptNode n, String varName ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				rIsTransposeSafePartition( cn, varName );
+		}
+		else if(    n.getNodeType()== NodeType.HOP
+			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
+			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
+		{
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			
+			String inMatrix = h.getInput().get(0).get_name();
+			if( inMatrix.equals(varName) )
+			{
+				//check that all parents are transpose-safe operations
+				//(even a transient write would not be safe due to indirection into other DAGs)			
+				ArrayList<Hop> parent = h.getParent();
+				for( Hop p : parent )
+					ret &= p.isTransposeSafe();
+			}
+		}
+		
+		return ret;
+	}
+	
 	
 	
 	///////

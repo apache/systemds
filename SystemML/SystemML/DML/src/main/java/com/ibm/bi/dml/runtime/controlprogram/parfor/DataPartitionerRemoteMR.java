@@ -86,11 +86,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		try
 		{
 			Path path = new Path(fname);
-			Path pathNew = new Path(fnameNew);
 			
 			/////
 			//configure the MR job
-			MRJobConfiguration.setPartitioningInfoInMapper(job, rlen, clen, brlen, bclen, ii, oi, _format, _n, fnameNew);
+			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, _format, _n, fnameNew);
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(DataPartitionerRemoteMapper.class); 
@@ -173,7 +172,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			job.setInt("dfs.replication", _replication);
 			
 			//set the max number of retries per map task
-		    //  disabled job-level configuration to respect cluster configuration
+			//  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1
 			//job.setInt("mapreduce.map.maxattempts", _max_retry);
 			

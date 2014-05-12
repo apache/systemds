@@ -150,6 +150,23 @@ public abstract class Hop
 	public abstract boolean allowsAllExecTypes();
 	
 	/**
+	 * Defines if this operation is transpose-safe, which means that
+	 * the result of op(input) is equivalent to op(t(input)).
+	 * Usually, this applies to aggregate operations with fixed output
+	 * dimension. Finally, this information is very useful in order to
+	 * safely optimize the plan for sparse vectors, which otherwise
+	 * would be (currently) always represented dense.
+	 * 
+	 * 
+	 * @return
+	 */
+	public boolean isTransposeSafe()
+	{
+		//by default: its conservatively define as unsafe
+		return false;
+	}
+	
+	/**
 	 * 
 	 */
 	public void checkAndSetForcedPlatform()
@@ -1473,6 +1490,7 @@ public abstract class Hop
 	public abstract Object clone() throws CloneNotSupportedException;
 	
 	public abstract boolean compare( Hop that );
+	
 	
 	
 	///////////////////////////////////////////////////////////////////////////

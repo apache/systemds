@@ -81,6 +81,10 @@ public class ParameterizedBuiltinOp extends Hop
 	public String getOpString() {
 		return "" + _op;
 	}
+	
+	public ParamBuiltinOp getOp() {
+		return _op;
+	}
 
 	@Override
 	public Lop constructLops() 
@@ -474,6 +478,31 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	@Override
+	public boolean isTransposeSafe()
+	{
+		boolean ret = false;
+		
+		try
+		{
+			if( _op == ParamBuiltinOp.GROUPEDAGG )
+			{
+				int ix = _paramIndexMap.get(Statement.GAGG_FN);
+				Hop fnHop = getInput().get(ix);
+				ret = (fnHop instanceof LiteralOp && Statement.GAGG_FN_SUM.equals(((LiteralOp)fnHop).getStringValue()) );
+			}
+		}
+		catch(Exception ex){
+			//silent false
+		}
+		
+		return ret;	
 	}
 	
 	/**

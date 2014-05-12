@@ -241,6 +241,7 @@ public class OptTreeConverter
 					node.setExecType(ExecType.CP);
 					break;
 				case REMOTE_MR:
+				case REMOTE_MR_DP:
 					node.setExecType(ExecType.MR);
 					break;
 			}
@@ -461,6 +462,7 @@ public class OptTreeConverter
 					node.setExecType(ExecType.CP);
 					break;
 				case REMOTE_MR:
+				case REMOTE_MR_DP:
 					node.setExecType(ExecType.MR);
 					break;
 				case UNSPECIFIED:

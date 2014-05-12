@@ -120,7 +120,7 @@ public class MRJobConfiguration
 	private static final String OUTPUT_INDEXES_IN_MAPPER_CONFIG="output.indexes.in.mapper";
 	
 	//parfor serialized program
-	private static final String PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG="programblocks.in.mapper";
+	private static final String PARFOR_PROGRAMBLOCKS_CONFIG="programblocks.in.mr";
 	
 	//partitioning input/output info
 	private static final String PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG="partitioning.input.matrix.num.row";
@@ -132,6 +132,8 @@ public class MRJobConfiguration
 	private static final String PARTITIONING_OUTPUT_FORMAT_CONFIG="partitioning.output.format";
 	private static final String PARTITIONING_OUTPUT_N_CONFIG="partitioning.output.n";
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
+	private static final String PARTITIONING_ITERVAR_CONFIG="partitioning.itervar";
+	private static final String PARTITIONING_TRANSPOSE_COL_CONFIG="partitioning.transposed.col";
 	
 	//result merge info
 	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
@@ -627,19 +629,19 @@ public class MRJobConfiguration
 	}
 	
 	//parfor configurations
-	public static void setProgramBlocksInMapper(JobConf job, String sProgramBlocks) 
+	public static void setProgramBlocks(JobConf job, String sProgramBlocks) 
 	{
-		job.set(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG, sProgramBlocks);
+		job.set(PARFOR_PROGRAMBLOCKS_CONFIG, sProgramBlocks);
 	}
 	
-	public static String getProgramBlocksInMapper(JobConf job) 
+	public static String getProgramBlocks(JobConf job) 
 	{
-		String str = job.get(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG);
+		String str = job.get(PARFOR_PROGRAMBLOCKS_CONFIG);
 		return str;
 	}
 	
 	//partitioning configurations
-	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew )
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew )
 		throws DMLRuntimeException
 	{
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
@@ -651,6 +653,19 @@ public class MRJobConfiguration
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
 		job.set(PARTITIONING_OUTPUT_N_CONFIG, String.valueOf(n));
 		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
+	}
+	
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, String itervar, boolean tSparseCol )
+			throws DMLRuntimeException
+	{
+		//set basic partitioning information
+		setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, dpf, n, fnameNew);
+		
+		//set iteration variable name (used for ParFor-DPE)
+		job.set(PARTITIONING_ITERVAR_CONFIG, itervar);
+		
+		//set transpose sparse column vector
+		job.setBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, tSparseCol);
 	}
 	
 	public static long getPartitioningNumRows( JobConf job )
@@ -716,6 +731,16 @@ public class MRJobConfiguration
 	public static String getPartitioningFilename( JobConf job )
 	{
 		return job.get(PARTITIONING_OUTPUT_FILENAME_CONFIG);
+	}
+	
+	public static String getPartitioningItervar( JobConf job )
+	{
+		return job.get(PARTITIONING_ITERVAR_CONFIG);
+	}
+	
+	public static boolean getPartitioningTransposedCol( JobConf job )
+	{
+		return job.getBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, false);
 	}
 	
 	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen )

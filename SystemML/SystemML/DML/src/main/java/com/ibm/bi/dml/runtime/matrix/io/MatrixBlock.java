@@ -11,6 +11,7 @@ import org.apache.commons.math.random.Well1024a;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 
@@ -48,7 +49,9 @@ public class MatrixBlock extends MatrixBlockDSM
 	 */
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed) throws DMLRuntimeException
 	{
-		int blocksize = ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
+		DMLConfig conf = ConfigurationManager.getConfig();
+		int blocksize = (conf!=null) ? ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE)
+				                     : DMLTranslator.DMLBlockSize;
 		return randOperations(
 				rows, cols, blocksize, blocksize, 
 				sparsity, min, max, pdf, seed);

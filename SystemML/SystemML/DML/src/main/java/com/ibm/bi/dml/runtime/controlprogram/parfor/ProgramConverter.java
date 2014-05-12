@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
@@ -971,7 +972,7 @@ public class ProgramConverter
 	 * @param vars
 	 * @return
 	 */
-	public static String serializeStringHashSet( HashSet<String> set)
+	public static String serializeStringCollection( Collection<String> set)
 	{
 		StringBuilder sb = new StringBuilder();
 		int count=0;

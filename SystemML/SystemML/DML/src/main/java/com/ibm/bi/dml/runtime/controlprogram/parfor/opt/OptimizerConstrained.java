@@ -7,7 +7,8 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
+import java.util.HashMap;
+
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -15,15 +16,16 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
@@ -75,16 +77,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			return true;
 		
 		//ANALYZE infrastructure properties
-		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
-		_Nmax  = pn.getMaxProblemSize(); 
-		_lk    = InfrastructureAnalyzer.getLocalParallelism();
-		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
-		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
-		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
-		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
-		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_lm   = OptimizerUtils.getLocalMemBudget();
-		_rm   = OptimizerUtils.getRemoteMemBudget(false);
+		super.analyzeProblemAndInfrastructure( pn );
 		
 		_cost = est;
 		
@@ -105,7 +98,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		rewriteSetDataPartitioner( pn, ec.getVariables() );
+		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
@@ -116,6 +110,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		
 		// rewrite 3: execution strategy
+		PExecMode tmpmode = getPExecMode(pn); //keep old
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M, M2, flagLIX );
 		
 		//exec-type-specific rewrites
@@ -144,6 +139,13 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			
 			// rewrite 10: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
+			
+			// rewrite 11: fused data partitioning and execution
+			rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, ec.getVariables(), tmpmode);
+			
+			// rewrite 12: transpose sparse vector operations
+			super.rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
+		
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
@@ -154,19 +156,19 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 11: set result merge
+		//rewrite 13: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 12: set local recompile memory budget
+		//rewrite 14: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 13: parfor (in recursive functions) to for
+		// rewrite 15: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 14: parfor (par=1) to for 
+		// rewrite 16: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -184,7 +186,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param n
 	 * @throws DMLRuntimeException 
 	 */
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars) 
+	@Override
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PDataPartitionFormat> partitionedMatrices) 
 		throws DMLRuntimeException
 	{
 		boolean blockwise = false;
@@ -198,7 +201,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: forced 'set data partitioner' - result="+n.getParam(ParamType.DATA_PARTITIONER) );
 		}	
 		else
-			super.rewriteSetDataPartitioner(n, vars);
+			super.rewriteSetDataPartitioner(n, vars, partitionedMatrices);
 		
 		return blockwise;
 	}
@@ -215,11 +218,12 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param M
 	 * @throws DMLRuntimeException 
 	 */
+	@Override
 	protected boolean rewriteSetExecutionStategy(OptNode n, double M, double M2, boolean flagLIX) 
 		throws DMLRuntimeException
 	{
 		boolean ret = false;
-		
+				
 		// constraint awareness
 		if( n.getExecType() != null  )
 		{
@@ -248,6 +252,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param mMax  (per node)
 	 * @param nested
 	 */
+	@Override
 	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
 	{
 		// constraint awareness
@@ -272,6 +277,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param n
 	 * @param partitioner
 	 */
+	@Override
 	protected void rewriteSetTaskPartitioner(OptNode pn, boolean flagNested, boolean flagLIX) 
 	{
 		// constraint awareness
@@ -308,6 +314,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param n
 	 * @throws DMLRuntimeException 
 	 */
+	@Override
 	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
@@ -322,4 +329,73 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		else
 			super.rewriteSetResultMerge(n, vars, inLocal);	
 	}		
+	
+	
+	///////
+	//REWRITE set fused data partitioning / execution
+	///
+	
+	/**
+	 * 
+	 * @param pn
+	 * @param flagLIX
+	 * @param partitionedMatrices
+	 * @param vars
+	 * @param emode
+	 * @throws DMLRuntimeException
+	 */
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode) 
+		throws DMLRuntimeException
+	{
+		if( emode == PExecMode.REMOTE_MR_DP )
+		{
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+	                  .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			
+			//partitioned matrix
+			if( partitionedMatrices.size()<=0 )
+			{
+				LOG.debug(getOptMode()+" OPT: unable to force 'set fused data partitioning and execution' - result="+false );
+				return;
+			}
+		
+			String moVarname = partitionedMatrices.keySet().iterator().next();
+			PDataPartitionFormat moDpf = partitionedMatrices.get(moVarname);
+			MatrixObject mo = (MatrixObject)vars.get(moVarname);
+			
+			//check if access via iteration variable and sizes match
+			String iterVarname = pfpb.getIterablePredicateVars()[0];
+			
+			if( rIsAccessByIterationVariable(pn, moVarname, iterVarname) &&
+			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
+				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
+			{
+				int k = Math.min(_N,_rk2);
+				
+				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
+				pn.setK( k );
+				
+				pfpb.setExecMode(PExecMode.REMOTE_MR_DP); //set fused exec type	
+				pfpb.setDataPartitioner(PDataPartitioner.NONE);
+				pfpb.enableColocatedPartitionedMatrix( moVarname ); 
+				pfpb.setDegreeOfParallelism(k);
+			}
+			
+			LOG.debug(getOptMode()+" OPT: force 'set fused data partitioning and execution' - result="+true );
+		}
+		else 
+			super.rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, vars);
+	}
+	
+	/**
+	 * 
+	 * @param pn
+	 * @return
+	 */
+	private PExecMode getPExecMode( OptNode pn )
+	{
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+			    .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		return pfpb.getExecMode();
+	}
 }

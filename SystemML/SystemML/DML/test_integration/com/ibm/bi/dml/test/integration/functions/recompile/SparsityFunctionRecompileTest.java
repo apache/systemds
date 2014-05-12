@@ -215,6 +215,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		}
 		catch(Exception ex)
 		{
+			ex.printStackTrace();
 			Assert.fail("Failed to run test: "+ex.getMessage());
 		}
 		finally

@@ -1,0 +1,44 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+D = read($1)
+C = read($2)
+
+# reading input args
+numClasses = $3
+laplace_correction = 1
+
+numRows = nrow(D)
+numFeatures = ncol(D)
+
+# Compute conditionals
+
+# Compute the feature counts for each class
+classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures) {
+  Col = D[,i]
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum")
+}
+
+# Compute the total feature count for each class 
+# and add the number of features to this sum
+# for subsequent regularization (Laplace's rule)
+classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
+
+# Compute class conditional probabilities
+repClassSums = classSums %*% matrix(1,rows=1,cols=numFeatures);
+class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums;
+
+# Compute class priors
+class_counts = aggregate(target=C, groups=C, fn="count")
+class_prior = class_counts / numRows;
+
+# write out the model
+write(class_prior, $4, format="text");
+write(class_conditionals, $5, format="text");

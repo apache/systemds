@@ -1,0 +1,30 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+intercept_status = 2;
+
+X = read ($1);
+
+n = nrow (X);
+m = ncol (X);
+
+ones_n = matrix (1, rows = n, cols = 1);
+zero_cell = matrix (0, rows = 1, cols = 1);
+
+shift_X_cols = matrix (0, rows = 1, cols = m);
+
+if (intercept_status == 2) {
+    X = (X + ones_n %*% shift_X_cols);
+}
+
+X = append (X, ones_n);
+
+if(1==1){ }
+
+print("sum="+sum(X)) 

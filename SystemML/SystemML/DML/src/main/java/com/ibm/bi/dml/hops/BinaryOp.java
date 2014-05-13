@@ -1427,8 +1427,13 @@ public class BinaryOp extends Hop
 			if( op== OpOp2.APPEND )
 			{
 				set_dim1( (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1() );
-				set_dim2( input1.get_dim2() + input2.get_dim2() );
-				setNnz( input1.getNnz() + input2.getNnz() );
+				
+				//ensure both columns are known, otherwise dangerous underestimation due to +(-1)
+				if( input1.get_dim2()>0 && input2.get_dim2()>0 )
+					set_dim2( input1.get_dim2() + input2.get_dim2() );
+				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
+				if( input1.getNnz()>0 && input2.getNnz()>0 )
+					setNnz( input1.getNnz() + input2.getNnz() );
 			}
 			else //general case
 			{

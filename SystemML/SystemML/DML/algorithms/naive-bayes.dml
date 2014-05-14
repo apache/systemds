@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2014
+# (C) Copyright IBM Corp. 2010, 2013
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -11,11 +11,11 @@
 #
 # Example Usage:
 # hadoop jar SystemML.jar -f NaiveBayes.dml -nvargs X=<Data> 
-# 	     		     		    	    			Y=<labels>
-#						    						classes=<Num Classes> 
-#						    						laplace=<Laplace Correction>
-#						    						prior=<Model file1>
-#						    						conditionals=<Model file2>
+# 	     		     		    	    Y=<labels>
+#						    classes=<Num Classes> 
+#						    laplace=<Laplace Correction>
+#						    prior=<Model file1>
+#						    conditionals=<Model file2>
 
 # defaults
 $laplace = 1
@@ -44,10 +44,9 @@ parfor (i in 1:numFeatures) {
 classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
 
 # Compute class conditional probabilities
-class_conditionals = matrix(0, rows=numClasses, cols=numFeatures)
-parfor (i in 1:numFeatures) {
-  class_conditionals[,i] = (classFeatureCounts[,i] + laplace_correction) / classSums;
-}
+ones = matrix(1, rows=1, cols=numFeatures)
+repClassSums = classSums %*% ones
+class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
 
 # Compute class priors
 class_counts = aggregate(target=C, groups=C, fn="count")

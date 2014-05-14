@@ -172,6 +172,11 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			
 			//ensure that resultvar files are not removed
 			super.pinResultVariables();
+		
+			//enable/disable caching (if required)
+			boolean cpCaching = MRJobConfiguration.getParforCachingConfig( job );
+			if( !cpCaching )
+				CacheableData.disableCaching();
 			
 			_numTasks    = 0;
 			_numIters    = 0;			
@@ -192,7 +197,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		}
 		
 		//get partitioned matrix varname (this needs to happen after program parsing) 
-		_inputVar = getPartionedMatrixName();		
+		_inputVar = getPartionedMatrixName();	
 	}
 	
 	/**
@@ -221,6 +226,9 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		
 		//cleanup cache and local tmp dir
 		RemoteParForUtils.cleanupWorkingDirectories();
+		
+		//ensure caching is not disabled for CP in local mode
+		CacheableData.enableCaching();
 	}
 
 	/**
@@ -264,11 +272,12 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			PairWritableBlock pairValue = (PairWritableBlock)valueList.next();
 			int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
 			int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
+			MatrixBlock block = pairValue.block;
 			if( !_partition.isInSparseFormat() ) //DENSE
 			{
-				_partition.copy( row_offset, row_offset+_rlen-1, 
-						   col_offset, col_offset+_clen-1,
-						   pairValue.block, false );
+				_partition.copy( row_offset, row_offset+block.getNumRows()-1, 
+						   col_offset, col_offset+block.getNumColumns()-1,
+						   pairValue.block, false ); 
 			}
 			else //SPARSE 
 			{
@@ -348,6 +357,10 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		if( _partition.isInSparseFormat() && sort )
 			_partition.sortSparseRows();
 
+		//ensure right number of nnz
+		if( !_partition.isInSparseFormat() )
+			_partition.recomputeNonZeros();
+			
 		//exam and switch dense/sparse representation
 		try {
 			_partition.examSparsity();

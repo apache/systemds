@@ -120,7 +120,8 @@ public class MRJobConfiguration
 	private static final String OUTPUT_INDEXES_IN_MAPPER_CONFIG="output.indexes.in.mapper";
 	
 	//parfor serialized program
-	private static final String PARFOR_PROGRAMBLOCKS_CONFIG="programblocks.in.mr";
+	private static final String PARFOR_PROGRAMBLOCKS_CONFIG = "parfor.programblocks.in.mr";
+	private static final String PARFOR_CACHING_CONFIG = "parfor.cp.caching";
 	
 	//partitioning input/output info
 	private static final String PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG="partitioning.input.matrix.num.row";
@@ -638,6 +639,16 @@ public class MRJobConfiguration
 	{
 		String str = job.get(PARFOR_PROGRAMBLOCKS_CONFIG);
 		return str;
+	}
+	
+	public static void setParforCachingConfig(JobConf job, boolean flag)
+	{
+		job.setBoolean(PARFOR_CACHING_CONFIG, flag);
+	}
+	
+	public static boolean getParforCachingConfig(JobConf job) 
+	{
+		return job.getBoolean(PARFOR_CACHING_CONFIG, true);
 	}
 	
 	//partitioning configurations

@@ -248,6 +248,26 @@ public class ExecutionContext
 	}
 	
 	/**
+	 * 
+	 * @param varName
+	 * @param outputData
+	 * @param inplace
+	 * @throws DMLRuntimeException
+	 */
+	public void setMatrixOutput(String varName, MatrixBlock outputData, boolean inplace) 
+		throws DMLRuntimeException 
+	{
+		if( inplace ) //modify metadata to prevent output serialization
+		{
+			MatrixObject sores = (MatrixObject) this.getVariable (varName);
+	        sores.enableUpdateInPlace( true );
+		}
+		
+		//default case
+		setMatrixOutput(varName, outputData);
+	}
+	
+	/**
 	 * Pin a given list of variables i.e., set the "clean up" state in 
 	 * corresponding matrix objects, so that the cached data inside these
 	 * objects is not cleared and the corresponding HDFS files are not 

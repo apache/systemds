@@ -94,7 +94,8 @@ public class MatrixObject extends CacheableData
 	private String _varName = ""; //plan variable name
 	private String _cacheFileName = null; //local eviction file name
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
-	private boolean _cleanupFlag = true; //flag if obj unpinned
+	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
+	private boolean _pinnedFlag = false; //flag if in-place update TODO maybe rename to updateInPlace
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -535,8 +536,9 @@ public class MatrixObject extends CacheableData
 		
 		super.release();
 
-		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem) //TODO
+		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem)
 			&& isCached() //not empty and not read/modify
+			&& !isUpdateInPlace()        //pinned result variable
 		    && !isBelowCachingThreshold() ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) 
@@ -1066,6 +1068,11 @@ public class MatrixObject extends CacheableData
 	// ***                                     ***
 	// *******************************************
 	
+	private boolean isUpdateInPlace()
+	{
+		return _pinnedFlag;
+	}
+	
 	/**
 	 * 
 	 */
@@ -1387,6 +1394,26 @@ public class MatrixObject extends CacheableData
 	{
 		return _cleanupFlag;
 	}
+	
+	/**
+	 * 
+	 * @param flag
+	 */
+	public void enableUpdateInPlace(boolean flag)
+	{
+		_pinnedFlag = flag;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isUpdateInPlaceEnabled()
+	{
+		return _pinnedFlag;
+	}
+	
+	
 
 	/**
 	 * 

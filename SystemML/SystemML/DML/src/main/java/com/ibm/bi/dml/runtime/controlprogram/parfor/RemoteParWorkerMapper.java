@@ -174,6 +174,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				//ensure that resultvar files are not removed
 				super.pinResultVariables();
 				
+				//enable/disable caching (if required)
+				boolean cpCaching = MRJobConfiguration.getParforCachingConfig( job );
+				if( !cpCaching )
+					CacheableData.disableCaching();
+				
 				_numTasks    = 0;
 				_numIters    = 0;
 				
@@ -233,6 +238,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				}
 			}
 		}
+		
+		//ensure caching is not disabled for CP in local mode
+		CacheableData.enableCaching();
 	}
 
 }

@@ -63,6 +63,7 @@ public class RemoteParForMR
 	 * @param program
 	 * @param taskFile
 	 * @param resultFile
+	 * @param _enableCPCaching 
 	 * @param mode
 	 * @param numMappers
 	 * @param replication
@@ -70,7 +71,7 @@ public class RemoteParForMR
 	 * @throws DMLRuntimeException
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
-			                                   ExecMode mode, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
+			                                   boolean enableCPCaching, ExecMode mode, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -91,6 +92,9 @@ public class RemoteParForMR
 		
 			//set arbitrary CP program blocks that will perform in the mapper
 			MRJobConfiguration.setProgramBlocks(job, program); 
+			
+			//enable/disable caching
+			MRJobConfiguration.setParforCachingConfig(job, enableCPCaching);
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(RemoteParWorkerMapper.class); //map-only

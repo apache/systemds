@@ -812,7 +812,8 @@ public class ProgramConverter
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
 				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
-				matrixMetaData = new String[8];
+				boolean inplace = mo.isUpdateInPlaceEnabled();
+				matrixMetaData = new String[9];
 				matrixMetaData[0] = String.valueOf( mc.get_rows() );
 				matrixMetaData[1] = String.valueOf( mc.get_cols() );
 				matrixMetaData[2] = String.valueOf( mc.get_rows_per_block() );
@@ -821,6 +822,7 @@ public class ProgramConverter
 				matrixMetaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
 				matrixMetaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
 				matrixMetaData[7] = String.valueOf( partFormat );
+				matrixMetaData[8] = String.valueOf( inplace );
 				break;
 			default:
 				throw new DMLRuntimeException("Unable to serialize datatype "+datatype);
@@ -1980,12 +1982,14 @@ public class ProgramConverter
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
 				PDataPartitionFormat partFormat = PDataPartitionFormat.valueOf( st.nextToken() );
+				boolean inplace = Boolean.parseBoolean( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
 				if( partFormat!=PDataPartitionFormat.NONE )
 					mo.setPartitioned( partFormat, -1 ); //TODO once we support BLOCKWISE_N we should support it here as well
+				mo.enableUpdateInPlace(inplace);
 				dat = mo;
 				break;
 			}

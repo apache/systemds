@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -141,10 +142,17 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 			
 			// rewrite 11: fused data partitioning and execution
-			rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, ec.getVariables(), tmpmode);
+			rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, ec.getVariables(), tmpmode);
 			
 			// rewrite 12: transpose sparse vector operations
 			super.rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
+		
+			//rewrite 13:
+			HashSet<String> inplaceResultVars = new HashSet<String>();
+			super.rewriteSetInPlaceResultIndexing(pn, M, ec.getVariables(), inplaceResultVars);
+			
+			//rewrite 14:
+			super.rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
 		
 		}
 		else //if( pn.getExecType() == ExecType.CP )
@@ -156,19 +164,19 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 13: set result merge
+		//rewrite 15: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 14: set local recompile memory budget
+		//rewrite 16: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 15: parfor (in recursive functions) to for
+		// rewrite 17: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 16: parfor (par=1) to for 
+		// rewrite 18: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -344,7 +352,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 * @param emode
 	 * @throws DMLRuntimeException
 	 */
-	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode) 
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode) 
 		throws DMLRuntimeException
 	{
 		if( emode == PExecMode.REMOTE_MR_DP )
@@ -384,7 +392,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: force 'set fused data partitioning and execution' - result="+true );
 		}
 		else 
-			super.rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, vars);
+			super.rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, vars);
 	}
 	
 	/**

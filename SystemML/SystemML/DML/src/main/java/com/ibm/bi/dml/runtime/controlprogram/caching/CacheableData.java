@@ -456,5 +456,10 @@ public abstract class CacheableData extends Data
 	{
 		_activeFlag = false;
 	}
+	
+	public static synchronized void enableCaching()
+	{
+		_activeFlag = true;
+	}
 
 }

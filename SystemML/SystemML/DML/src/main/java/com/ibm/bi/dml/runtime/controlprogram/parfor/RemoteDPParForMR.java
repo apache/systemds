@@ -65,6 +65,7 @@ public class RemoteDPParForMR
 	 * @param program
 	 * @param taskFile
 	 * @param resultFile
+	 * @param enableCPCaching 
 	 * @param mode
 	 * @param numMappers
 	 * @param replication
@@ -72,7 +73,7 @@ public class RemoteDPParForMR
 	 * @throws DMLRuntimeException
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String program, String resultFile, MatrixObject input, PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol,
-			                                   ExecMode mode, int numReducers, int replication, int max_retry)  //opt params
+			                                   boolean enableCPCaching, ExecMode mode, int numReducers, int replication, int max_retry)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -93,6 +94,9 @@ public class RemoteDPParForMR
 		
 			//set arbitrary CP program blocks that will perform in the reducers
 			MRJobConfiguration.setProgramBlocks(job, program); 
+
+			//enable/disable caching
+			MRJobConfiguration.setParforCachingConfig(job, enableCPCaching);
 		
 			//setup input matrix
 			Path path = new Path( input.getFileName() );

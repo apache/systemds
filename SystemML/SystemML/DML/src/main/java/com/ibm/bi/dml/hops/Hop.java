@@ -268,6 +268,16 @@ public abstract class Hop
 		return (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
 
+	public double getOutputMemEstimate()
+	{
+		return _outputMemEstimate;
+	}
+
+	public double getIntermediateMemEstimate()
+	{
+		return _processingMemEstimate;
+	}
+	
 	/**
 	 * Computes the estimate of memory required to store the input/output of this hop in memory. 
 	 * This is the default implementation (orchestration of hop-specific implementation) 

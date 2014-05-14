@@ -77,11 +77,18 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * - 10) rewrite set task partitioner
  * - 11) rewrite set fused data partitioning and execution
  * - 12) rewrite transpose vector operations (for sparse)
- * - 13) rewrite set result merge 		 		 
- * - 14) rewrite set recompile memory budget
- * - 15) rewrite remove recursive parfor	
- * - 16) rewrite remove unnecessary parfor		
+ * - 13) rewrite set in-place result indexing
+ * - 14) rewrite disable caching (prevent sparse serialization)
+ * - 15) rewrite set result merge 		 		 
+ * - 16) rewrite set recompile memory budget
+ * - 17) rewrite remove recursive parfor	
+ * - 18) rewrite remove unnecessary parfor		
  * 	 
+ * TODO fuse also result merge into fused data partitioning and execute
+ *      (for writing the result directly from execute we need to partition
+ *      columns/rows according to blocksize -> rewrite (only applicable if 
+ *      numCols/blocksize>numreducers)+custom MR partitioner)
+ * 
  * 
  * TODO take remote memory into account in data/result partitioning rewrites (smaller/larger)
  * TODO memory estimates with shared reads
@@ -220,10 +227,17 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 			
 			// rewrite 11: fused data partitioning and execution
-			rewriteSetFusedDataPartitioningExecution(pn, flagLIX, partitionedMatrices, ec.getVariables());
-			
+			rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, ec.getVariables());
+		
 			// rewrite 12: transpose sparse vector operations
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
+			
+			//rewrite 13:
+			HashSet<String> inplaceResultVars = new HashSet<String>();
+			rewriteSetInPlaceResultIndexing(pn, M, ec.getVariables(), inplaceResultVars);
+			
+			//rewrite 14:
+			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
@@ -234,19 +248,19 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 
-		// rewrite 13: set result merge
+		// rewrite 15: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 14: set local recompile memory budget
+		// rewrite 16: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 15: parfor (in recursive functions) to for
+		// rewrite 17: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 16: parfor (par=1) to for 
+		// rewrite 18: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -1308,13 +1322,14 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * Furthermore, it should be only chosen if we already decided for remote partitioning
 	 * and otherwise would create a large number of partition files.
+	 * @param M 
 	 * @param partitionedMatrices, ExecutionContext ec 
 	 * 
 	 * @param n
 	 * @param partitioner
 	 * @throws DMLRuntimeException 
 	 */
-	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
+	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1329,6 +1344,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// try to merge MR data partitioning and MR exec 
 		if(  pn.getExecType()==ExecType.MR   //MR EXEC and CP body
+			&& M < _rm //fits into remote memory (to be extended for location reduce)	
 			&& partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString()) //MR partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
@@ -1481,6 +1497,196 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 	
+	
+	///////
+	//REWRITE set in-place result indexing
+	///
+	
+	/**
+	 * 
+	 * @param pn
+	 * @param M
+	 * @param vars
+	 * @param inPlaceResultVars
+	 * @throws DMLRuntimeException
+	 */
+	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars) 
+		throws DMLRuntimeException 
+	{
+		//assertions (warnings of corrupt optimizer decisions)
+		if( pn.getNodeType() != NodeType.PARFOR )
+			LOG.warn(getOptMode()+" OPT: Transpose sparse vector operations is only applicable for a ParFor node.");
+		
+		boolean apply = false;
+
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+              .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		
+		//note currently we decide for all result vars jointly, i.e.,
+		//only if all fit pinned in remaining budget, we apply this rewrite.
+		
+		ArrayList<String> retVars = pfpb.getResultVariables();
+		
+		//compute total sum of pinned result varible memory
+		double sum = computeTotalSizeResultVariables(retVars, vars);
+		
+		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
+		//most importantly counted twice if this is part of the maximum operation)
+		double totalMem = Math.min((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<String>()));
+		
+		if(   (pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR) 
+			&& totalMem < _rm //max operator and sum of result vars fit
+			&& rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) )
+		{
+			apply = true;
+			
+			//add result vars to result and set state
+			//will be serialized and transfered via symbol table 
+			for( String var : retVars ){
+				Data dat = vars.get(var);
+				if( dat instanceof MatrixObject )
+					((MatrixObject)dat).enableUpdateInPlace(true);
+			}
+			inPlaceResultVars.addAll(retVars);
+		}
+		
+		LOG.debug(getOptMode()+" OPT: rewrite 'set in-place result indexing' - result="+
+		          apply+" ("+ProgramConverter.serializeStringCollection(inPlaceResultVars)+", M="+toMB(M+sum)+")" );	
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param retVars
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean rHasOnlyInPlaceSafeLeftIndexing( OptNode n, ArrayList<String> retVars ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				ret &= rHasOnlyInPlaceSafeLeftIndexing( cn, retVars );
+		}
+		else if(    n.getNodeType()== NodeType.HOP
+			     && n.getParam(ParamType.OPSTRING).equals(LeftIndexingOp.OPSTRING) )
+		{
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			if( retVars.contains( h.getInput().get(0).get_name() ) )
+			{
+				ret &= (h.getParent().size()==1 
+						&& h.getParent().get(0).get_name().equals(h.getInput().get(0).get_name()));
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param retVars
+	 * @param vars
+	 * @return
+	 */
+	private double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars)
+	{
+		double sum = 1;
+		for( String var : retVars ){
+			Data dat = vars.get(var);
+			if( dat instanceof MatrixObject )
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				sum += OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), 1.0);	
+			} 
+		}
+		
+		return sum;
+	}
+	
+	///////
+	//REWRITE disable CP caching  
+	///
+	
+	/**
+	 * 
+	 * @param pn
+	 * @param inplaceResultVars
+	 * @param vars
+	 * @throws DMLRuntimeException
+	 */
+	protected void rewriteDisableCPCaching(OptNode pn, HashSet<String> inplaceResultVars, LocalVariableMap vars) 
+		throws DMLRuntimeException 
+	{
+		//assertions (warnings of corrupt optimizer decisions)
+		if( pn.getNodeType() != NodeType.PARFOR )
+			LOG.warn(getOptMode()+" OPT: Disable caching is only applicable for a ParFor node.");
+		
+		
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+              .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		
+		double M_sumInterm = rComputeSumMemoryIntermediates(pn, inplaceResultVars);
+		boolean apply = false;
+		
+		if( (pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR)
+			&& M_sumInterm < _rm ) //all intermediates and operations fit into memory budget
+		{
+			pfpb.setCPCaching(false); //default is true			
+			apply = true;
+		}
+		
+		LOG.debug(getOptMode()+" OPT: rewrite 'disable CP caching' - result="+apply+" (M="+toMB(M_sumInterm)+")" );			
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param inplaceResultVars 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<String> inplaceResultVars ) 
+		throws DMLRuntimeException
+	{
+		double sum = 0;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				sum += rComputeSumMemoryIntermediates( cn, inplaceResultVars );
+		}
+		else if(    n.getNodeType()== NodeType.HOP )
+		{
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			
+			if(    n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
+				&& n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
+			{
+				//set during partitioning rewrite
+				sum += h.getMemEstimate();
+			}
+			else
+			{
+				//base intermediate (worst-case w/ materialized intermediates)
+				sum +=   h.getOutputMemEstimate()
+					   + h.getIntermediateMemEstimate(); 
+
+				//inputs not represented in the planopttree (worst-case no CSE)
+				if( h.getInput() != null )
+					for( Hop cn : h.getInput() )
+						if( cn instanceof DataOp && ((DataOp)cn).isRead()  //read data
+							&& !inplaceResultVars.contains(cn.get_name())) //except in-place result vars
+						{
+							sum += cn.getMemEstimate();	
+						}
+			}
+		}
+		
+		return sum;
+	}
 	
 	
 	///////

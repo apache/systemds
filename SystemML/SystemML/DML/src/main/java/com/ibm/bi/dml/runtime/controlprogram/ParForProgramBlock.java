@@ -243,6 +243,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics used for recompilation 
 	protected double           _oldMemoryBudget = -1;
 	protected double           _recompileMemoryBudget = -1;
+	//specifics for caching
+	protected boolean          _enableCPCaching     = true;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -379,6 +381,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		setLocalParWorkerIDs();
 	}
 
+	public void setCPCaching(boolean flag)
+	{
+		_enableCPCaching = flag;
+	}
+	
 	public void setExecMode( PExecMode mode )
 	{
 		_execMode = mode;
@@ -826,7 +833,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				
 		// Step 3) submit MR job (wait for finished work)
 		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
-		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj,
+		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj, _enableCPCaching,
 				                                          ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(ec),
 				                                          (ALLOW_REUSE_MR_JVMS & _jvmReuse) );
 		
@@ -909,7 +916,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
 				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
 				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), program, resultFile, inputMatrix, inputDPF, inputOI, _tSparseCol, ExecMode.CLUSTER, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
+		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), program, resultFile, inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, ExecMode.CLUSTER, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

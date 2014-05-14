@@ -3099,8 +3099,9 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	public MatrixValue leftIndexingOperations(MatrixValue rhsMatrix, long rowLower, long rowUpper, 
-			long colLower, long colUpper, MatrixValue ret) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+			long colLower, long colUpper, MatrixValue ret, boolean inplace) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		// Check the validity of bounds
 		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
 				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
@@ -3117,11 +3118,17 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 		MatrixBlockDSM result=checkType(ret);
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, rhsMatrix.getNonZeros());
-		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sp);
-		else
-			result.reset(rlen, clen, sp);
-		result.copy(this, sp);
+		
+		if( !inplace ) //general case
+		{
+			if(result==null)
+				result=new MatrixBlockDSM(rlen, clen, sp);
+			else
+				result.reset(rlen, clen, sp);
+			result.copy(this, sp);
+		}
+		else //update in-place
+			result = this;
 		
 		//NOTE conceptually we could directly use a zeroout and copy(..., false) but
 		//     since this was factors slower, we still use a full copy and subsequently
@@ -3165,14 +3172,20 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixValue ret) 
+	public MatrixValue leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixValue ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		MatrixBlockDSM result=checkType(ret);
-		if(result==null)
-			result=new MatrixBlockDSM(this);
-		else 
-			result.copy(this);
+
+		if( !inplace ) //general case
+		{
+			if(result==null)
+				result=new MatrixBlockDSM(this);
+			else 
+				result.copy(this);
+		}
+		else //update in-place
+			result = this;
 		
 		int rl = (int)row-1;
 		int cl = (int)col-1;

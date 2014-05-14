@@ -115,52 +115,60 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		String opcode = InstructionUtils.getOpCode( instString );
 		
-		String opcode = InstructionUtils.getOpCode(this.instString);
-		
+		//get indexing range
 		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
 		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
 		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();
 		long cu = ec.getScalarInput(colUpper.get_name(), colUpper.get_valueType(), colUpper.isLiteral()).getLongValue();
 		
+		//get original matrix
 		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
-		MatrixBlock resultBlock = null;
 		
-		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) //MB: it will always be rangeReIndex!
+		//right indexing
+		if( opcode.equalsIgnoreCase("rangeReIndex") )
 		{
-			resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
-		}
-		else
-		{
-			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock resultBlock = null;
 			
-			if ( opcode.equalsIgnoreCase("rangeReIndex"))
+			if( mo.isPartitioned() ) //via data partitioning
+				resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
+			else //via slicing the in-memory matrix
 			{
-				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
-			}
-			else if ( opcode.equalsIgnoreCase("leftIndex"))
+				MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());	
+				ec.releaseMatrixInput(input1.get_name());
+			}	
+			
+			ec.setMatrixOutput(output.get_name(), resultBlock);
+		}
+		//left indexing
+		else if ( opcode.equalsIgnoreCase("leftIndex"))
+		{
+			boolean inplace = mo.isUpdateInPlaceEnabled();
+			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock resultBlock = null;
+			
+			if(input2.get_dataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
-				if(input2.get_dataType() == DataType.MATRIX) //MATRIX<-MATRIX
-				{
-					MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.get_name());
-					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
-					ec.releaseMatrixInput(input2.get_name());
-				}
-				else //MATRIX<-SCALAR 
-				{
-					if(!(rl==ru && cl==cu))
-						throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
-					ScalarObject scalar = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral());
-					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock());
-				}
+				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.get_name());
+				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock(), inplace);
+				ec.releaseMatrixInput(input2.get_name());
 			}
-			else
-				throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
+			else //MATRIX<-SCALAR 
+			{
+				if(!(rl==ru && cl==cu))
+					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
+				ScalarObject scalar = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral());
+				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock(), inplace);
+			}
 			
 			ec.releaseMatrixInput(input1.get_name());
+			ec.setMatrixOutput(output.get_name(), resultBlock, inplace);
 		}
-		
-		ec.setMatrixOutput(output.get_name(), resultBlock);
+		else
+			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");		
 	}
 }

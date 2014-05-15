@@ -2650,10 +2650,9 @@ public class DMLTranslator
 			break;
 
 		case NROW:
-			/* 
-			 * If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
-			 * Else create a UnaryOp so that a control program instruction is generated
-			 */
+			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
+			// Else create a UnaryOp so that a control program instruction is generated
+			
 			long nRows = expr.get_dim1();
 			if (nRows == -1) {
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NROW, expr);
@@ -2665,10 +2664,9 @@ public class DMLTranslator
 			break;
 
 		case NCOL:
-			/* 
-			 * If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
-			 * Else create a UnaryOp so that a control program instruction is generated
-			 */
+			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
+			// Else create a UnaryOp so that a control program instruction is generated
+			
 			long nCols = expr.get_dim2();
 			if (nCols == -1) {
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NCOL, expr);
@@ -2716,7 +2714,8 @@ public class DMLTranslator
 			break;
 			
 		case MIN:
-			if (expr.get_dataType() == DataType.MATRIX) {
+			//construct AggUnary for min(X) but BinaryOp for min(X,Y)
+			if( expr2 == null ) {
 				currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 						AggOp.MIN, Direction.RowCol, expr);
 			} else {
@@ -2725,21 +2724,14 @@ public class DMLTranslator
 			}
 			break;
 		case MAX:
-			if (expr.get_dataType() == DataType.MATRIX) {
+			//construct AggUnary for max(X) but BinaryOp for max(X,Y)
+			if( expr2 == null ) {
 				currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 						AggOp.MAX, Direction.RowCol, expr);
 			} else {
 				currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MAX,
 						expr, expr2);
 			}
-			break;
-		case PMIN:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MIN,
-					expr, expr2);
-			break;
-		case PMAX:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MAX,
-					expr, expr2);
 			break;
 			
 		case PPRED:

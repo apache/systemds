@@ -80,6 +80,9 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		else if ( opcode.equalsIgnoreCase("%/%") ) {
 			return new BinaryInstruction(new BinaryOperator(IntegerDivide.getIntegerDivideFnObject()), in1, in2, out, str);
 		}
+		else if ( opcode.equalsIgnoreCase("min") ) {
+			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("min")), in1, in2, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
 		}

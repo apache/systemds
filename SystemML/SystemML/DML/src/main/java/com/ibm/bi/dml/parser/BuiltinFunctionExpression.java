@@ -271,18 +271,37 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 		case MIN:
 		case MAX:
-			if (_first.getOutput().getDataType() == DataType.SCALAR) {
-				// Example: x = min(2,5)
-				checkNumParameters(2);
-			} else {
-				// Example: x = min(A)
+			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
+			
+			//unary aggregate
+			if (_second == null) 
+			{
 				checkNumParameters(1);
 				checkMatrixParam(_first);
+				output.setDataType( DataType.SCALAR );
+				output.setDimensions(0, 0);
+				output.setBlockDimensions (0, 0);
 			}
-			output.setDataType(DataType.SCALAR);
-			output.setDimensions(0, 0);
-			output.setBlockDimensions (0, 0);
+			//binary operation
+			else
+			{
+				checkNumParameters(2);
+				DataType dt1 = _first.getOutput().getDataType();
+				DataType dt2 = _second.getOutput().getDataType();
+				DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX)?
+				                   DataType.MATRIX : DataType.SCALAR;				
+				if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
+					checkMatchingDimensions(_first, _second);
+				long rlen = Math.max(_first.getOutput().getDim1(),_second.getOutput().getDim1());
+				long clen = Math.max(_first.getOutput().getDim2(),_second.getOutput().getDim2());
+				long brlen = Math.max(_first.getOutput().getRowsInBlock(),_second.getOutput().getRowsInBlock()); 
+				long bclen =  Math.max(_first.getOutput().getColumnsInBlock(),_second.getOutput().getColumnsInBlock()); 				
+				output.setDataType( dtOut );
+				output.setDimensions(rlen, clen);
+				output.setBlockDimensions (brlen, bclen);
+			}
 			output.setValueType(id.getValueType());
+			
 			break;
 		case CAST_AS_SCALAR:
 			checkNumParameters(1);
@@ -362,22 +381,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(appendDim1, appendDim2); 
 			
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
-			break;
-		case PMIN:
-		case PMAX:
-			// pmin (X, Y) or pmin(X, y)
-			checkNumParameters(2); 
-			checkMatrixParam(_first);
-			
-			if (_second.getOutput().getDataType() == DataType.MATRIX) {
-			 checkMatrixParam(_second);
-			 checkMatchingDimensions(_first, _second);
-			}
-	
-			output.setDataType(DataType.MATRIX);
-			output.setDimensions(id.getDim1(),id.getDim2());
-			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
-			output.setValueType(id.getValueType());
 			break;
 		case PPRED:
 			// ppred (X,Y, "<"); or ppred (X,y, "<");
@@ -947,10 +950,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.MIN;
 		else if (functionName.equals("max"))
 			 bifop = Expression.BuiltinFunctionOp.MAX;
+		//NOTE: pmin and pmax are just kept for compatibility to R
+		// min and max is capable of handling all unary and binary
+		// operations (in contrast to R)
 		else if (functionName.equals("pmin"))
-			 bifop = Expression.BuiltinFunctionOp.PMIN;
+			bifop = Expression.BuiltinFunctionOp.MIN;
 		else if (functionName.equals("pmax"))
-			 bifop = Expression.BuiltinFunctionOp.PMAX;
+			 bifop = Expression.BuiltinFunctionOp.MAX;
 		else if (functionName.equals("ppred"))
 			bifop = Expression.BuiltinFunctionOp.PPRED;
 		else if (functionName.equals("log"))

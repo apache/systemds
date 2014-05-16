@@ -73,6 +73,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -911,74 +912,24 @@ public class Recompiler
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
 			} 
 			else if ( d.getDataGenMethod() == DataGenMethod.SEQ ) {
-				
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
+				double from = d.computeBoundsInformation(d.getInput().get(ix1), vars);
+				double to = d.computeBoundsInformation(d.getInput().get(ix2), vars);
+				double incr = d.computeBoundsInformation(d.getInput().get(ix3), vars);
 				
-				Hop from_hop = d.getInput().get(ix1);
-				Hop to_hop   = d.getInput().get(ix2);
-				Hop incr_hop = d.getInput().get(ix3);
+				//special case increment 
+				Hop input3 = d.getInput().get(ix3);
+				if ( input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR 
+					&& from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) 
+				{
+					incr =( from >= to )? -1.0 : 1.0;
+				}
 				
-				double from = 0, to=0, incr=0;
-				boolean fromKnown=false, toKnown=false, incrKnown=false;
-				try {
-					// from
-					if ( from_hop.getKind() == Kind.LiteralOp ) {
-						from = ((LiteralOp)from_hop).getDoubleValue();
-						fromKnown = true;
-					}
-					else {
-						String name = d.getInput().get(ix1).get_name();
-						Data dat = vars.get(name);
-						if( dat!=null && dat instanceof ScalarObject ) {
-							from = ((ScalarObject)dat).getDoubleValue();
-							fromKnown = true;
-						}
-					}
-					
-					// to
-					if ( to_hop.getKind() == Kind.LiteralOp ) {
-						to = ((LiteralOp)to_hop).getDoubleValue();
-						toKnown = true;
-					}
-					else {
-						String name = d.getInput().get(ix2).get_name();
-						Data dat = vars.get(name);
-						if( dat!=null && dat instanceof ScalarObject ) {
-							to = ((ScalarObject)dat).getDoubleValue();
-							toKnown = true;
-						}
-					}
-					
-					// incr
-					if ( incr_hop.getKind() == Kind.LiteralOp ) {
-						incr = ((LiteralOp)incr_hop).getDoubleValue();
-						incrKnown = true;
-					}
-					else if ( incr_hop.getKind() == Kind.BinaryOp && ((BinaryOp)incr_hop).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) {
-						if ( from >= to )
-							incr = -1.0;
-						else
-							incr = 1.0;
-						incrKnown = true;
-					}
-					else {
-						String name = d.getInput().get(ix3).get_name();
-						Data dat = vars.get(name);
-						if( dat!=null && dat instanceof ScalarObject ) {
-							incr = ((ScalarObject)dat).getDoubleValue();
-							incrKnown = true;
-						}
-					}
-					
-					if ( fromKnown && toKnown && incrKnown ) {
-						d.set_dim1( 1 + (long)Math.floor((to-from)/incr) );
-						d.set_dim2( 1 );
-					}
-					
-				} catch(HopsException e) {
-					throw new DMLRuntimeException(e);
+				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE && incr!=Double.MAX_VALUE ) {
+					d.set_dim1( 1 + (long)Math.floor((to-from)/incr) );
+					d.set_dim2( 1 );
 				}
 			}
 			else {
@@ -989,14 +940,8 @@ public class Recompiler
 				 && ((ReorgOp)(hop)).getOp()==Hop.ReOrgOp.RESHAPE )
 		{
 			ReorgOp d = (ReorgOp) hop;
-			String name1 = d.getInput().get(1).get_name(); //rows
-			String name2 = d.getInput().get(2).get_name(); //cols
-			Data dat1 = vars.get(name1);
-			Data dat2 = vars.get(name2);
-			if( dat1!=null && dat1 instanceof ScalarObject )
-				d.set_dim1( ((ScalarObject)dat1).getLongValue() );
-			if( dat2!=null && dat2 instanceof ScalarObject )
-				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
+			d.refreshRowsParameterInformation(d.getInput().get(1), vars);
+			d.refreshColsParameterInformation(d.getInput().get(2), vars);
 		}
 		
 		
@@ -1126,7 +1071,7 @@ public class Recompiler
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static boolean checkCPRand( MRJobInstruction inst, String updatedRandInst ) 
+	public static boolean checkCPDataGen( MRJobInstruction inst, String updatedRandInst ) 
 		throws DMLRuntimeException 
 	{
 		boolean ret = true;
@@ -1149,13 +1094,8 @@ public class Recompiler
 		//check only rand inst
 		if( ret ) {
 			String[] instParts = updatedRandInst.split( Lop.INSTRUCTION_DELIMITOR );
-			for( String lrandStr : instParts )
-				if( !InstructionUtils.getOpCode(lrandStr).equals(DataGen.RAND_OPCODE) )
-				{
-					ret = false;
-					break;
-				}
-				else
+			for( String lrandStr : instParts ) {
+				if( InstructionUtils.getOpCode(lrandStr).equals(DataGen.RAND_OPCODE) )
 				{
 					//check recompile memory budget
 					//(don't account for sparsity due to dense generation approach)
@@ -1169,6 +1109,26 @@ public class Recompiler
 						break;
 					}
 				}
+				else if( InstructionUtils.getOpCode(lrandStr).equals(DataGen.SEQ_OPCODE) )
+				{
+					//check recompile memory budget
+					//(don't account for sparsity because always dense)
+					SeqInstruction lrandInst = (SeqInstruction) SeqInstruction.parseInstruction(lrandStr);
+					long rows = lrandInst.rows;
+					long cols = lrandInst.cols;
+					double mem = MatrixBlockDSM.estimateSize(rows, cols, 1.0d);				
+					if( mem >= OptimizerUtils.getLocalMemBudget() )
+					{
+						ret = false;
+						break;
+					}
+				}
+				else
+				{
+					ret = false;
+					break;
+				}
+			}
 		}
 		
 		return ret;

@@ -30,6 +30,7 @@ public class DataGen extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String RAND_OPCODE = "Rand";
+	public static final String SEQ_OPCODE = "seq";
 	
 	/** base dir for rand input */
 	private String baseDir;

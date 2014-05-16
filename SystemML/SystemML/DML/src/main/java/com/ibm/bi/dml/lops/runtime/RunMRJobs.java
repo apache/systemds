@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
@@ -126,9 +127,9 @@ public class RunMRJobs
 				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION
 					&& OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE
 					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
-					&& Recompiler.checkCPRand( inst, rdInst ) ) 
+					&& Recompiler.checkCPDataGen( inst, rdInst ) ) 
 				{
-					ret = executeInMemoryRandOperations(inst, rdInst, outputMatrices);
+					ret = executeInMemoryDataGenOperations(inst, rdInst, outputMatrices);
 					Statistics.decrementNoOfExecutedMRJobs();
 					execCP = true;
 				}
@@ -603,28 +604,41 @@ public class RunMRJobs
 		return  new JobReturn( mc, inst.getOutputInfos(), true);
 	}
 	
-	private static JobReturn executeInMemoryRandOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
+	private static JobReturn executeInMemoryDataGenOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		System.out.println("IN-MEM RAND");
-		
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		DataGenMRInstruction[] dgSet = MRInstructionParser.parseDataGenInstructions(randInst);
 		byte[] results = inst.getIv_resultIndices();
 		for( DataGenMRInstruction ldgInst : dgSet )
 		{
-			//CP Rand block operation 
-			RandInstruction lrand = (RandInstruction)ldgInst; 
-			
-			//MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
-			MatrixBlock mb = MatrixBlock.randOperations((int)lrand.rows, (int)lrand.cols, lrand.rowsInBlock, lrand.colsInBlock, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
-			for( int i=0; i<results.length; i++ )
-				if( lrand.output == results[i] )
-				{
-					outputMatrices[i].acquireModify( mb );
-					outputMatrices[i].release();
-					mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lrand.rowsInBlock, lrand.colsInBlock, mb.getNonZeros());
-				}
+			if( ldgInst instanceof RandInstruction )
+			{
+				//CP Rand block operation 
+				RandInstruction lrand = (RandInstruction)ldgInst; 
+				
+				//MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+				MatrixBlock mb = MatrixBlock.randOperations((int)lrand.rows, (int)lrand.cols, lrand.rowsInBlock, lrand.colsInBlock, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+				for( int i=0; i<results.length; i++ )
+					if( lrand.output == results[i] )
+					{
+						outputMatrices[i].acquireModify( mb );
+						outputMatrices[i].release();
+						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lrand.rowsInBlock, lrand.colsInBlock, mb.getNonZeros());
+					}
+			}
+			else if( ldgInst instanceof SeqInstruction )
+			{
+				SeqInstruction lseq = (SeqInstruction) ldgInst;
+				MatrixBlock mb = MatrixBlock.seqOperations(lseq.fromValue, lseq.toValue, lseq.incrValue);
+				for( int i=0; i<results.length; i++ )
+					if( lseq.output == results[i] )
+					{
+						outputMatrices[i].acquireModify( mb );
+						outputMatrices[i].release();
+						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lseq.rowsInBlock, lseq.colsInBlock, mb.getNonZeros());
+					}
+			}
 		}
 		
 		return  new JobReturn( mc, inst.getOutputInfos(), true);

@@ -9,7 +9,6 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -77,7 +76,7 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 			rule_RemoveUnnecessaryCasts( inputs.get(i) );
 		
 		//remove cast if unnecessary
-		if( hop instanceof UnaryOp && isValueTypeCast(((UnaryOp)hop).get_op()) )
+		if( hop instanceof UnaryOp && HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).get_op()) )
 		{
 			Hop in = hop.getInput().get(0);
 			ValueType vtIn = in.get_valueType(); //type cast input
@@ -110,17 +109,5 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 		
 		//mark processed
 		hop.set_visited( VISIT_STATUS.DONE );
-	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @return
-	 */
-	private boolean isValueTypeCast( OpOp1 op )
-	{
-		return (   op == OpOp1.CAST_AS_BOOLEAN 
-				|| op == OpOp1.CAST_AS_INT 
-				|| op == OpOp1.CAST_AS_DOUBLE );
 	}
 }

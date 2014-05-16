@@ -18,6 +18,7 @@ import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
@@ -107,16 +108,15 @@ public class RewriteConstantFolding extends HopRewriteRule
 			rConstantFoldingBinaryExpression(h);
 		}
 		
-		//fold binary op if both are literals
-		if( root instanceof BinaryOp && root.get_dataType() == DataType.SCALAR
-			&& root.getInput().get(0) instanceof LiteralOp && root.getInput().get(1) instanceof LiteralOp )
+		//fold binary op if both are literals / unary op if literal
+		if(    root.get_dataType() == DataType.SCALAR //scalar ouput
+			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )	
 		{ 
-			BinaryOp broot = (BinaryOp) root;
 			LiteralOp literal = null;
 			
 			//core constant folding via runtime instructions
 			try {
-				literal = evalScalarBinaryOperation(broot); 
+				literal = evalScalarOperation(root); 
 			}
 			catch(Exception ex)
 			{
@@ -127,16 +127,16 @@ public class RewriteConstantFolding extends HopRewriteRule
 			if( literal != null ) 
 			{
 				//reverse replacement in order to keep common subexpression elimination
-				int plen = broot.getParent().size();
+				int plen = root.getParent().size();
 				if( plen > 0 ) //broot is NOT a DAG root
 				{
-					for( int i=0; i<broot.getParent().size(); i++ ) //for all parents
+					for( int i=0; i<root.getParent().size(); i++ ) //for all parents
 					{
-						Hop parent = broot.getParent().get(i);
+						Hop parent = root.getParent().get(i);
 						for( int j=0; j<parent.getInput().size(); j++ )
 						{
 							Hop child = parent.getInput().get(j);
-							if( broot == child )
+							if( root == child )
 							{
 								//replace operator
 								parent.getInput().remove(j);
@@ -144,7 +144,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 							}
 						}
 					}
-					broot.getParent().clear();	
+					root.getParent().clear();	
 				}
 				else //broot IS a DAG root
 				{
@@ -171,7 +171,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	private LiteralOp evalScalarBinaryOperation( BinaryOp bop ) 
+	private LiteralOp evalScalarOperation( Hop bop ) 
 		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
 	{
 		//Timing time = new Timing( true );
@@ -234,5 +234,31 @@ public class RewriteConstantFolding extends HopRewriteRule
 		if( _tmpEC == null )
 			_tmpEC = new ExecutionContext();
 		return _tmpEC;
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	private boolean isApplicableBinaryOp( Hop hop )
+	{
+		ArrayList<Hop> in = hop.getInput();
+		return (   hop instanceof BinaryOp 
+				&& in.get(0) instanceof LiteralOp 
+				&& in.get(1) instanceof LiteralOp ); 
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	private boolean isApplicableUnaryOp( Hop hop )
+	{
+		ArrayList<Hop> in = hop.getInput();
+		return (   hop instanceof UnaryOp 
+				&& in.get(0) instanceof LiteralOp 
+				&& HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).get_op()));			
 	}
 }

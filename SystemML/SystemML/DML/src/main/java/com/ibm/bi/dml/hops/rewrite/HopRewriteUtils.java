@@ -9,6 +9,7 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
@@ -22,6 +23,19 @@ public class HopRewriteUtils
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static boolean isValueTypeCast( OpOp1 op )
+	{
+		return (   op == OpOp1.CAST_AS_BOOLEAN 
+				|| op == OpOp1.CAST_AS_INT 
+				|| op == OpOp1.CAST_AS_DOUBLE );
+	}
+	
 	/**
 	 * 
 	 * @param op

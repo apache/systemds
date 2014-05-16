@@ -25,6 +25,7 @@ import com.ibm.bi.dml.hops.globalopt.SplitOp;
 import com.ibm.bi.dml.hops.globalopt.HopsVisitor.Flag;
 import com.ibm.bi.dml.hops.globalopt.enumerate.Rewrite;
 import com.ibm.bi.dml.hops.globalopt.transform.HopsMetaData;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -1109,104 +1110,212 @@ public abstract class Hop
 	 */
 	protected void refreshRowsParameterInformation( Hop input )
 	{
-		if( input instanceof UnaryOp )
-		{
-			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
-				set_dim1(input.getInput().get(0).get_dim1());
-			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
-				set_dim1(input.getInput().get(0).get_dim2());
-		}
-		else if ( input instanceof LiteralOp )
-		{
-			set_dim1(UtilFunctions.parseToLong(input.get_name()));
-		}
-		else if ( input instanceof BinaryOp )
-		{
-			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>());
-			if( dim != Long.MAX_VALUE ) //if known
-				set_dim1( dim );
-		}
+		long size = computeSizeInformation(input);
+		if( size > 0 )
+			set_dim1( size );
 	}
 	
-	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars )
-	{
-		if( input instanceof UnaryOp )
-		{
-			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
-				set_dim1(input.getInput().get(0).get_dim1());
-			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
-				set_dim1(input.getInput().get(0).get_dim2());
-		}
-		else if ( input instanceof LiteralOp )
-		{
-			set_dim1(UtilFunctions.parseToLong(input.get_name()));
-		}
-		else if ( input instanceof BinaryOp )
-		{
-			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>(), vars);
-			if( dim != Long.MAX_VALUE ) //if known
-				set_dim1( dim );
-		}
-		else if( input instanceof DataOp )
-		{
-			String name = input.get_name();
-			Data dat = vars.get(name);
-			if( dat!=null && dat instanceof ScalarObject )
-				set_dim1( ((ScalarObject)dat).getLongValue() );
-		}
-	}
 	
 	/**
 	 * Util function for refreshing scalar cols input parameter.
 	 */
 	protected void refreshColsParameterInformation( Hop input )
 	{
-		if( input instanceof UnaryOp )
-		{
-			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW  )
-				set_dim2(input.getInput().get(0).get_dim1());
-			else if( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL  )
-				set_dim2(input.getInput().get(0).get_dim2());
-		}
-		else if ( input instanceof LiteralOp )
-		{
-			set_dim2(UtilFunctions.parseToLong(input.get_name()));
-		}
-		else if ( input instanceof BinaryOp )
-		{
-			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>());
-			if( dim != Long.MAX_VALUE ) //if known
-				set_dim2( dim );
-		}
+		long size = computeSizeInformation(input);
+		if( size > 0 )
+			set_dim2( size );
 	}
 	
-	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars )
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public long computeSizeInformation( Hop input )
 	{
+		long ret = -1;
+		
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW  )
-				set_dim2(input.getInput().get(0).get_dim1());
-			else if( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL  )
-				set_dim2(input.getInput().get(0).get_dim2());
+			UnaryOp uop = (UnaryOp) input;
+			if( uop.get_op() == Hop.OpOp1.NROW  )
+				ret = input.getInput().get(0).get_dim1();
+			else if( uop.get_op() == Hop.OpOp1.NCOL  )
+				ret = input.getInput().get(0).get_dim2();
+			else if( HopRewriteUtils.isValueTypeCast( uop.get_op() ) )
+				ret = computeSizeInformation(input.getInput().get(0));
 		}
 		else if ( input instanceof LiteralOp )
 		{
-			set_dim2(UtilFunctions.parseToLong(input.get_name()));
+			ret = UtilFunctions.parseToLong(input.get_name());
 		}
 		else if ( input instanceof BinaryOp )
 		{
-			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>(), vars);
+			long dim = rEvalSimpleBinaryLongExpression(input, new HashMap<Long, Long>());
 			if( dim != Long.MAX_VALUE ) //if known
-				set_dim2( dim );
+				ret = dim;
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param vars
+	 */
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars )
+	{
+		long size = computeSizeInformation(input, vars);
+		if( size > 0 )
+			set_dim1( size );
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param vars
+	 */
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars )
+	{
+		long size = computeSizeInformation(input, vars);
+		if( size > 0 )
+			set_dim2( size );
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param vars
+	 * @return
+	 */
+	public long computeSizeInformation( Hop input, LocalVariableMap vars )
+	{
+		long ret = -1;
+		
+		if( input instanceof UnaryOp )
+		{
+			UnaryOp uop = (UnaryOp) input;
+			if( uop.get_op() == Hop.OpOp1.NROW  )
+				ret = input.getInput().get(0).get_dim1();
+			else if( uop.get_op() == Hop.OpOp1.NCOL  )
+				ret = input.getInput().get(0).get_dim2();
+			else if( HopRewriteUtils.isValueTypeCast( uop.get_op() ) )
+				ret = computeSizeInformation(input.getInput().get(0), vars);
+		}
+		else if ( input instanceof LiteralOp )
+		{
+			ret = UtilFunctions.parseToLong(input.get_name());
+		}
+		else if ( input instanceof BinaryOp )
+		{
+			long dim = rEvalSimpleBinaryLongExpression(input, new HashMap<Long, Long>(), vars);
+			if( dim != Long.MAX_VALUE ) //if known
+				ret = dim;
 		}
 		else if( input instanceof DataOp )
 		{
 			String name = input.get_name();
 			Data dat = vars.get(name);
 			if( dat!=null && dat instanceof ScalarObject )
-				set_dim2( ((ScalarObject)dat).getLongValue() );
+				ret = ((ScalarObject)dat).getLongValue();
 		}
+		
+		return ret;
 	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public double computeBoundsInformation( Hop input ) 
+	{
+		double ret = Double.MAX_VALUE;
+		
+		try
+		{
+			if( input instanceof UnaryOp )
+			{
+				UnaryOp uop = (UnaryOp) input;
+				if( uop.get_op() == Hop.OpOp1.NROW  )
+					ret = input.getInput().get(0).get_dim1();
+				else if( uop.get_op() == Hop.OpOp1.NCOL  )
+					ret = input.getInput().get(0).get_dim2();
+				else if( HopRewriteUtils.isValueTypeCast( uop.get_op() ) )
+					ret = computeBoundsInformation(input.getInput().get(0));
+			}
+			else if ( input instanceof LiteralOp )
+			{
+				ret = HopRewriteUtils.getDoubleValue((LiteralOp)input);
+			}
+			else if ( input instanceof BinaryOp )
+			{
+				double dim = rEvalSimpleBinaryDoubleExpression(input, new HashMap<Long, Double>());
+				if( dim != Double.MAX_VALUE ) //if known 
+					ret = dim;
+			}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace(); //just debugging
+			ret = Double.MAX_VALUE;
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Computes bound information for sequence if possible, otherwise returns
+	 * Double.MAX_VALUE
+	 * 
+	 * @param input
+	 * @param vars
+	 * @return
+	 */
+	public double computeBoundsInformation( Hop input, LocalVariableMap vars ) 
+	{
+		double ret = Double.MAX_VALUE;
+		
+		try
+		{
+			if( input instanceof UnaryOp )
+			{
+				UnaryOp uop = (UnaryOp) input;
+				if( uop.get_op() == Hop.OpOp1.NROW  )
+					ret = input.getInput().get(0).get_dim1();
+				else if( uop.get_op() == Hop.OpOp1.NCOL  )
+					ret = input.getInput().get(0).get_dim2();
+				else if( HopRewriteUtils.isValueTypeCast( uop.get_op() ) )
+					ret = computeBoundsInformation(input.getInput().get(0), vars);
+			}
+			else if ( input instanceof LiteralOp )
+			{
+				ret = HopRewriteUtils.getDoubleValue((LiteralOp)input);
+			}
+			else if ( input instanceof BinaryOp )
+			{
+				double dim = rEvalSimpleBinaryDoubleExpression(input, new HashMap<Long, Double>(), vars);
+				if( dim != Double.MAX_VALUE ) //if known 
+					ret = dim;
+			}
+			else if( input instanceof DataOp )
+			{
+				String name = input.get_name();
+				Data dat = vars.get(name);
+				if( dat!=null && dat instanceof ScalarObject )
+					ret = ((ScalarObject)dat).getDoubleValue();
+			}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace(); //just debugging
+			ret = Double.MAX_VALUE;
+		}
+		
+		return ret;
+	}
+	
 	
 	/**
 	 * Compute worst case estimate for size expression based on worst-case
@@ -1241,7 +1350,7 @@ public abstract class Hop
 		}
 		else if ( input instanceof BinaryOp )
 		{
-			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>(), memo);
+			long dim = rEvalSimpleBinaryLongExpression(input, new HashMap<Long, Long>(), memo);
 			if( dim != Long.MAX_VALUE ) //if known
 				ret = dim ;
 		}
@@ -1263,7 +1372,7 @@ public abstract class Hop
 	 * @param root
 	 * @return
 	 */
-	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo )
+	protected long rEvalSimpleBinaryLongExpression( Hop root, HashMap<Long, Long> valMemo )
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1293,8 +1402,8 @@ public abstract class Hop
 			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
 			{
 				BinaryOp broot = (BinaryOp) root;
-				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo);
-				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo);
+				long lret = rEvalSimpleBinaryLongExpression(broot.getInput().get(0), valMemo);
+				long rret = rEvalSimpleBinaryLongExpression(broot.getInput().get(1), valMemo);
 				//note: positive and negative values might be valid subexpressions
 				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
 				{
@@ -1319,64 +1428,10 @@ public abstract class Hop
 	 * 
 	 * @param root
 	 * @param valMemo
+	 * @param vars
 	 * @return
 	 */
-	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo, MemoTable memo )
-	{
-		//memoization (prevent redundant computation of common subexpr)
-		if( valMemo.containsKey(root.getHopID()) )
-			return valMemo.get(root.getHopID());
-		
-		long ret = Long.MAX_VALUE;
-		
-		if( root instanceof LiteralOp )
-		{
-			long dim = UtilFunctions.parseToLong(root.get_name());
-			if( dim != -1 ) //if known
-				ret = dim;
-		}
-		else if( root instanceof UnaryOp )
-		{
-			UnaryOp uroot = (UnaryOp) root;
-			long dim = -1;
-			if(uroot.get_op() == Hop.OpOp1.NROW)
-			{
-				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
-				dim = mc.get_rows();
-			}
-			else if( uroot.get_op() == Hop.OpOp1.NCOL )
-			{
-				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
-				dim = mc.get_cols();
-			}
-			if( dim != -1 ) //if known
-				ret = dim;
-		}
-		else if( root instanceof BinaryOp )
-		{ 
-			if( OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
-			{
-				BinaryOp broot = (BinaryOp) root;
-				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo, memo);
-				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo, memo);
-				//note: positive and negative values might be valid subexpressions
-				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
-				{
-					switch( broot.op )
-					{
-						case PLUS:	ret = lret + rret; break;
-						case MULT:  ret = lret * rret; break;
-						case MAX:   ret = Math.max(lret, rret); break;
-					}
-				}
-			}
-		}
-		
-		valMemo.put(root.getHopID(), ret);
-		return ret;
-	}
-	
-	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars )
+	protected long rEvalSimpleBinaryLongExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars )
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1413,8 +1468,8 @@ public abstract class Hop
 			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
 			{
 				BinaryOp broot = (BinaryOp) root;
-				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), valMemo, vars);
-				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), valMemo, vars);
+				long lret = rEvalSimpleBinaryLongExpression(broot.getInput().get(0), valMemo, vars);
+				long rret = rEvalSimpleBinaryLongExpression(broot.getInput().get(1), valMemo, vars);
 				//note: positive and negative values might be valid subexpressions
 				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
 				{
@@ -1425,6 +1480,195 @@ public abstract class Hop
 						case MULT:  ret = lret * rret; break;
 						case DIV:   ret = lret / rret; break;
 						case MIN:   ret = Math.min(lret, rret); break;
+						case MAX:   ret = Math.max(lret, rret); break;
+					}
+				}
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 * @throws HopsException
+	 */
+	protected double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		if( root instanceof LiteralOp )
+		{
+			double dim = HopRewriteUtils.getDoubleValue((LiteralOp)root);
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof UnaryOp )
+		{
+			UnaryOp uroot = (UnaryOp) root;
+			double dim = -1;
+			if(uroot.get_op() == Hop.OpOp1.NROW)
+				dim = uroot.getInput().get(0).get_dim1();
+			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+				dim = uroot.getInput().get(0).get_dim2();
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof BinaryOp )
+		{ 
+			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
+			{
+				BinaryOp broot = (BinaryOp) root;
+				double lret = rEvalSimpleBinaryDoubleExpression(broot.getInput().get(0), valMemo);
+				double rret = rEvalSimpleBinaryDoubleExpression(broot.getInput().get(1), valMemo);
+				//note: positive and negative values might be valid subexpressions
+				if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
+				{
+					switch( broot.op )
+					{
+						case PLUS:	ret = lret + rret; break;
+						case MINUS:	ret = lret - rret; break;
+						case MULT:  ret = lret * rret; break;
+						case DIV:   ret = lret / rret; break;
+						case MIN:   ret = Math.min(lret, rret); break;
+						case MAX:   ret = Math.max(lret, rret); break;
+					}
+				}
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @param vars
+	 * @return
+	 * @throws HopsException
+	 */
+	protected double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		if( root instanceof LiteralOp )
+		{
+			double dim = HopRewriteUtils.getDoubleValue((LiteralOp)root);
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof UnaryOp )
+		{
+			UnaryOp uroot = (UnaryOp) root;
+			double dim = -1;
+			if(uroot.get_op() == Hop.OpOp1.NROW)
+				dim = uroot.getInput().get(0).get_dim1();
+			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+				dim = uroot.getInput().get(0).get_dim2();
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof DataOp )
+		{
+			String name = root.get_name();
+			Data dat = vars.get(name);
+			if( dat!=null && dat instanceof ScalarObject )
+				ret = ((ScalarObject)dat).getDoubleValue();
+		}
+		else if( root instanceof BinaryOp )
+		{ 
+			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
+			{
+				BinaryOp broot = (BinaryOp) root;
+				double lret = rEvalSimpleBinaryDoubleExpression(broot.getInput().get(0), valMemo, vars);
+				double rret = rEvalSimpleBinaryDoubleExpression(broot.getInput().get(1), valMemo, vars);
+				//note: positive and negative values might be valid subexpressions
+				if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
+				{
+					switch( broot.op )
+					{
+						case PLUS:	ret = lret + rret; break;
+						case MINUS:	ret = lret - rret; break;
+						case MULT:  ret = lret * rret; break;
+						case DIV:   ret = lret / rret; break;
+						case MIN:   ret = Math.min(lret, rret); break;
+						case MAX:   ret = Math.max(lret, rret); break;
+					}
+				}
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 */
+	protected long rEvalSimpleBinaryLongExpression( Hop root, HashMap<Long, Long> valMemo, MemoTable memo )
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		long ret = Long.MAX_VALUE;
+		
+		if( root instanceof LiteralOp )
+		{
+			long dim = UtilFunctions.parseToLong(root.get_name());
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof UnaryOp )
+		{
+			UnaryOp uroot = (UnaryOp) root;
+			long dim = -1;
+			if(uroot.get_op() == Hop.OpOp1.NROW)
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				dim = mc.get_rows();
+			}
+			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+			{
+				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				dim = mc.get_cols();
+			}
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof BinaryOp )
+		{ 
+			if( OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
+			{
+				BinaryOp broot = (BinaryOp) root;
+				long lret = rEvalSimpleBinaryLongExpression(broot.getInput().get(0), valMemo, memo);
+				long rret = rEvalSimpleBinaryLongExpression(broot.getInput().get(1), valMemo, memo);
+				//note: positive and negative values might be valid subexpressions
+				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
+				{
+					switch( broot.op )
+					{
+						case PLUS:	ret = lret + rret; break;
+						case MULT:  ret = lret * rret; break;
 						case MAX:   ret = Math.max(lret, rret); break;
 					}
 				}

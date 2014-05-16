@@ -296,15 +296,14 @@ public class DataGenOp extends Hop
 			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
 			input3 = getInput().get(_paramIndexMap.get(Statement.SEQ_INCR)); 
 
-			HashMap<Long,Long> memo = new HashMap<Long, Long>();
-			long from = rEvalSimpleBinarySizeExpression(input1, memo);
-			boolean fromKnown = (from != Long.MAX_VALUE);
+			double from = computeBoundsInformation(input1);
+			boolean fromKnown = (from != Double.MAX_VALUE);
 			
-			long to = rEvalSimpleBinarySizeExpression(input2, memo);
-			boolean toKnown = (to != Long.MAX_VALUE);
+			double to = computeBoundsInformation(input2);
+			boolean toKnown = (to != Double.MAX_VALUE);
 			
-			long incr = rEvalSimpleBinarySizeExpression(input3, memo);
-			boolean incrKnown = (incr != Long.MAX_VALUE);
+			double incr = computeBoundsInformation(input3);
+			boolean incrKnown = (incr != Double.MAX_VALUE);
 			
 			if(  !incrKnown && input3.getKind() == Kind.BinaryOp //special case for incr
 			   && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) 

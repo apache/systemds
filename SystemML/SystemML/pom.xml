@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.ibm.biginsights</groupId>
     <artifactId>multimodule-parent</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.6</version>
   </parent>
 
   <modules>

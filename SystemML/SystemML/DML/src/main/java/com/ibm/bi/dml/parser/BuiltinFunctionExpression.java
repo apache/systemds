@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2014
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2014
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.parser;
 
@@ -995,7 +995,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
 		else if (functionName.equals("colMeans"))
 			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
-		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) //'castAsScalar' for backwards compatibility
+		//'castAsScalar' for backwards compatibility
+		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) 
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
 		else if (functionName.equals("as.matrix"))
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_MATRIX;
@@ -1011,11 +1012,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;
 		else if (functionName.equals("interQuartileMean"))
 			bifop= Expression.BuiltinFunctionOp.IQM;
-		else if (functionName.equals("table"))
+		//'ctable' for backwards compatibility 
+		else if (functionName.equals("table") || functionName.equals("ctable"))
 			bifop = Expression.BuiltinFunctionOp.TABLE;
 		else if (functionName.equals("round"))
 			bifop = Expression.BuiltinFunctionOp.ROUND;
-		else if (functionName.equals("moment"))
+		//'centralMoment' for backwards compatibility 
+		else if (functionName.equals("moment") || functionName.equals("centralMoment"))
 			 bifop = Expression.BuiltinFunctionOp.MOMENT;
 		else if (functionName.equals("cov"))
 			bifop = Expression.BuiltinFunctionOp.COV;

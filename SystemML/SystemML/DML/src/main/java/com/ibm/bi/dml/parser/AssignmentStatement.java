@@ -102,6 +102,13 @@ public class AssignmentStatement extends Statement
 		
 		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
 		{
+			//1) Leaf nodes with unknown size:
+			//recompilation hook after reads with unknown size (this can currently only happen for csv)
+			if( _source instanceof DataExpression && ((DataExpression)_source).isCSVReadWithUnknownSize() )
+				ret = true;	
+			
+			//2) Data-dependent operations:
+			
 			//TODO additional candidates (currently, not enabled because worst-case estimates usually reasonable)
 			//if( _source.toString().contains(Expression.DataOp.RAND.toString()) )
 			//	ret = true;	

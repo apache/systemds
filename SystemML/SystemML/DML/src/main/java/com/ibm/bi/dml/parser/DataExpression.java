@@ -2054,6 +2054,27 @@ public class DataExpression extends DataIdentifier
         // Therefore, one need not actually read the data to infer the format.
 	}
 	
-	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isCSVReadWithUnknownSize()
+	{
+		boolean ret = false;
+		
+		Expression format = getVarParam(FORMAT_TYPE);
+		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV) )
+		{
+			Expression rows = getVarParam(READROWPARAM);
+			Expression cols = getVarParam(READCOLPARAM);
+			if(   (rows==null || Long.parseLong(rows.toString())<0)
+				||(cols==null || Long.parseLong(cols.toString())<0) )
+			{
+				ret = true;
+			}
+		}
+		
+		return ret;
+	}
 	
 } // end class

@@ -59,10 +59,18 @@ public class DataGenOp extends Hop
 	
 	/** target identifier which will hold the random object */
 	private DataIdentifier id;
+	
+		
+	//Rand-specific attributes
+	
 	/** sparsity of the random object, this is used for mem estimate */
 	private double sparsity;
 	/** base directory for temp file (e.g., input seeds)*/
 	private String _baseDir;
+	
+	//seq-specific attributes (used for recompile/recompile)
+	private double _incr = Double.MAX_VALUE; 
+	
 	
 	private DataGenOp() {
 		//default constructor for clone
@@ -273,8 +281,7 @@ public class DataGenOp extends Hop
 	
 	@Override
 	public void refreshSizeInformation()
-	{
-		
+	{		
 		Hop input1 = null;  
 		Hop input2 = null; 
 		Hop input3 = null;
@@ -315,6 +322,7 @@ public class DataGenOp extends Hop
 			if ( fromKnown && toKnown && incrKnown ) {
 				set_dim1(1 + (long)Math.floor(((double)(to-from))/incr));
 				set_dim2(1);
+				_incr = incr;
 			}
 		}
 		
@@ -339,6 +347,16 @@ public class DataGenOp extends Hop
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
 		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
 		return min.equals(max);
+	}
+	
+	public void setIncrementValue(double incr)
+	{
+		_incr = incr;
+	}
+	
+	public double getIncrementValue()
+	{
+		return _incr;
 	}
 	
 	public static long generateRandomSeed()

@@ -64,8 +64,8 @@ public class TertiaryOp extends Hop
 	
 	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITE = true;
 	
-	Hop.OpOp3 op;
-
+	private Hop.OpOp3 op = null;
+	
 	private TertiaryOp() {
 		//default constructor for clone
 	}
@@ -926,7 +926,8 @@ public class TertiaryOp extends Hop
 						DataGenOp dgop = (DataGenOp) input1;
 						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-							ret = (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1);
+							ret = (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
+								  || dgop.getIncrementValue()==1.0; //set by recompiler
 						}
 					}
 					//probe rewrite on right input
@@ -935,7 +936,8 @@ public class TertiaryOp extends Hop
 						DataGenOp dgop = (DataGenOp) input2;
 						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1);
+							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
+								   || dgop.getIncrementValue()==1.0; //set by recompiler;
 						}
 					}
 				}			

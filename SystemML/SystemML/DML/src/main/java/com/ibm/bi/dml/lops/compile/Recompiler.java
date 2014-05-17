@@ -26,6 +26,7 @@ import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -93,6 +94,7 @@ public class Recompiler
 	//max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1024*1024*1024; 
+	private static final double CP_CSV_REBLOCK_FILESIZE_RATIO = 0.4;
 	
 	/**
 	 * 	
@@ -930,6 +932,7 @@ public class Recompiler
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE && incr!=Double.MAX_VALUE ) {
 					d.set_dim1( 1 + (long)Math.floor((to-from)/incr) );
 					d.set_dim2( 1 );
+					d.setIncrementValue( incr );
 				}
 			}
 			else {
@@ -942,6 +945,22 @@ public class Recompiler
 			ReorgOp d = (ReorgOp) hop;
 			d.refreshRowsParameterInformation(d.getInput().get(1), vars);
 			d.refreshColsParameterInformation(d.getInput().get(2), vars);
+		}
+		else if( hop instanceof IndexingOp )
+		{
+			IndexingOp iop = (IndexingOp)hop;
+			Hop input2 = iop.getInput().get(1); //inpRowL
+			Hop input3 = iop.getInput().get(2); //inpRowU
+			Hop input4 = iop.getInput().get(3); //inpColL
+			Hop input5 = iop.getInput().get(4); //inpColU
+			double rl = iop.computeBoundsInformation(input2, vars);
+			double ru = iop.computeBoundsInformation(input3, vars);
+			double cl = iop.computeBoundsInformation(input4, vars);
+			double cu = iop.computeBoundsInformation(input5, vars);
+			if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
+				iop.set_dim1( (long)(ru-rl+1) );
+			if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
+				iop.set_dim2( (long)(cu-cl+1) );
 		}
 		
 		
@@ -1023,17 +1042,34 @@ public class Recompiler
 				
 				// If the dimensions are unknown then reblock can not be recompiled into CP
 				// Note: unknown dimensions at this point can only happen for CSV files.
-				if ( rows == -1 || cols == -1 ) {
+				// however, we do a conservative check with the CSV filesize
+				if ( rows == -1 || cols == -1 ) 
+				{
+					/* TODO for this feature we need csv read with unknown size 
+					JobConf job = ConfigurationManager.getCachedJobConf();
+					FileSystem fs = FileSystem.get(job);
+					FileStatus fstatus = fs.getFileStatus(new Path(mo.getFileName()));
+					if( fstatus.getLen() > CP_CSV_REBLOCK_FILESIZE_RATIO * OptimizerUtils.getLocalMemBudget() )
+					{
+						ret = false;
+						break;
+					}			
+					*/
+					
 					ret = false;
 					break;
 				}
-				
-				long nnz = mo.getNnz();
-				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);			
-				if( mem >= OptimizerUtils.getLocalMemBudget() )
+				//default case (known dimensions)
+				else
 				{
-					ret = false;
-					break;
+					long nnz = mo.getNnz();
+					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
+					double mem = MatrixBlockDSM.estimateSize(rows, cols, sp);			
+					if( mem >= OptimizerUtils.getLocalMemBudget() )
+					{
+						ret = false;
+						break;
+					}
 				}
 			}
 		}

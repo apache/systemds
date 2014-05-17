@@ -251,15 +251,29 @@ public class LeftIndexingOp  extends Hop
 			_memEstimate = getInputSize(0) //original matrix (left)
 			               + subSize // new submatrix (right)
 			               + _outputMemEstimate; //output size (output)
-		}		
+		}
+		else if ( dimsKnown() && _nnz<0 &&
+				  _memEstimate>=OptimizerUtils.DEFAULT_SIZE)
+		{
+			//try a last attempt to infer a reasonable estimate wrt output sparsity
+			//(this is important for indexing sparse matrices into empty matrices).
+			MatrixCharacteristics mcM1 = memo.getAllInputStats(getInput().get(0));
+			MatrixCharacteristics mcM2 = memo.getAllInputStats(getInput().get(1));
+			if( mcM1.getNonZeros()>=0 && mcM2.getNonZeros()>=0  ) {
+				long lnnz = mcM1.getNonZeros() + mcM2.getNonZeros();
+				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				_memEstimate = getInputSize(0) //original matrix (left)
+			                 + getInputSize(1) // new submatrix (right)
+			                 + _outputMemEstimate; //output size (output)
+			}
+		}
 	}
 	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
-		// However, the sparsity might change -- we can not handle the change in sparsity, for now
-		double sparsity = 1.0;
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -274,10 +288,15 @@ public class LeftIndexingOp  extends Hop
 	{
 		long[] ret = null;
 	
-		Hop input = getInput().get(0);
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
-		if( mc.dimsKnown() ) 
-			ret = new long[]{mc.get_rows(), mc.get_cols(), -1};
+		Hop input1 = getInput().get(0); //original matrix
+		Hop input2 = getInput().get(1); //right matrix		
+		MatrixCharacteristics mc1 = memo.getAllInputStats(input1);
+		MatrixCharacteristics mc2 = memo.getAllInputStats(input2);
+		
+		if( mc1.dimsKnown() ) {
+			ret = new long[]{mc1.get_rows(), mc1.get_cols(), 
+				            (mc1.getNonZeros()>0&&mc2.getNonZeros()>0)?mc1.getNonZeros()+mc2.getNonZeros():-1};
+		}
 		
 		return ret;
 	}
@@ -311,7 +330,7 @@ public class LeftIndexingOp  extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hop input1 = getInput().get(0);		
+		Hop input1 = getInput().get(0);	//original matrix	
 		set_dim1( input1.get_dim1() );
 		set_dim2( input1.get_dim2() );
 		setNnz(-1); //TODO enhanced propagation

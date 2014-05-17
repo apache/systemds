@@ -107,7 +107,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled MR jobs
 			int expectNumCompiled = -1;
-			if( IPA ) expectNumCompiled = 3; //reblock, GMR,GMR 
+			if( IPA ) expectNumCompiled = 1; //reblock (with recompile right indexing); before: 3 reblock, GMR,GMR 
 			else      expectNumCompiled = 4;//reblock, GMR,GMR,GMR 
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
@@ -115,7 +115,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0;
-			else if( IPA )  expectNumExecuted = 21; //reblock, 10*(GMR,GMR)
+			else if( IPA )  expectNumExecuted = 1; //reblock (with recompile right indexing); before: 21 reblock, 10*(GMR,GMR)
 			else            expectNumExecuted = 31; //reblock, 10*(GMR,GMR,GMR) 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());

@@ -7,13 +7,20 @@
 
 package com.ibm.bi.dml.hops;
 
+import java.util.HashMap;
+
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class OptimizerUtils 
 {
@@ -466,4 +473,289 @@ public class OptimizerUtils
 			return "-";
 		return String.format("%.0f", inB/(1024*1024) );
 	}
+	
+
+	
+	/**
+	 * Function to evaluate simple size expressions over literals and now/ncol.
+	 * 
+	 * It returns the exact results of this expressions if known, otherwise
+	 * Long.MAX_VALUE if unknown.
+	 * 
+	 * @param root
+	 * @return
+	 * @throws HopsException 
+	 */
+	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo ) 
+		throws HopsException
+	{
+		long ret = Long.MAX_VALUE;
+		
+		//for simplicity and robustness call double and cast.
+		HashMap<Long, Double> dvalMemo = new HashMap<Long, Double>();
+		double tmp = rEvalSimpleDoubleExpression(root, dvalMemo);
+		if( tmp!=Double.MAX_VALUE )
+			ret = UtilFunctions.toLong( tmp );
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @param vars
+	 * @return
+	 * @throws HopsException 
+	 */
+	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars ) 
+		throws HopsException
+	{
+		long ret = Long.MAX_VALUE;
+		
+		//for simplicity and robustness call double and cast.
+		HashMap<Long, Double> dvalMemo = new HashMap<Long, Double>();
+		double tmp = rEvalSimpleDoubleExpression(root, dvalMemo, vars);
+		if( tmp!=Double.MAX_VALUE )
+			ret = UtilFunctions.toLong( tmp );
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 * @throws HopsException
+	 */
+	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		//always use constants
+		if( root instanceof LiteralOp )
+			ret = HopRewriteUtils.getDoubleValue((LiteralOp)root);
+		
+		//advanced size expression evaluation
+		if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
+		{
+			if( root instanceof UnaryOp )
+				ret = rEvalSimpleUnaryDoubleExpression(root, valMemo);
+			else if( root instanceof BinaryOp )
+				ret = rEvalSimpleBinaryDoubleExpression(root, valMemo);
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @param vars
+	 * @return
+	 * @throws HopsException
+	 */
+	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
+		{
+			if( root instanceof LiteralOp )
+				ret = HopRewriteUtils.getDoubleValue((LiteralOp)root);
+			else if( root instanceof UnaryOp )
+				ret = rEvalSimpleUnaryDoubleExpression(root, valMemo, vars);
+			else if( root instanceof BinaryOp )
+				ret = rEvalSimpleBinaryDoubleExpression(root, valMemo, vars);
+			else if( root instanceof DataOp ) {
+				String name = root.get_name();
+				Data dat = vars.get(name);
+				if( dat!=null && dat instanceof ScalarObject )
+					ret = ((ScalarObject)dat).getDoubleValue();
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 * @throws HopsException
+	 */
+	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		UnaryOp uroot = (UnaryOp) root;
+		Hop input = uroot.getInput().get(0);
+		
+		if(uroot.get_op() == Hop.OpOp1.NROW)
+			ret = (input.get_dim1()>0) ? input.get_dim1() : Double.MAX_VALUE;
+		else if( uroot.get_op() == Hop.OpOp1.NCOL )
+			ret = (input.get_dim2()>0) ? input.get_dim2() : Double.MAX_VALUE;
+		else
+		{
+			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo);
+			if( lval != Double.MAX_VALUE )
+			{
+				switch( uroot.get_op() )
+				{
+					case SQRT:	ret = Math.sqrt(lval); break;
+					case ROUND: ret = Math.round(lval); break;
+					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
+					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
+					case CAST_AS_DOUBLE: ret = lval; break;
+				}
+			}
+		}
+			
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @param vars
+	 * @return
+	 * @throws HopsException
+	 */
+	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		
+		UnaryOp uroot = (UnaryOp) root;
+		Hop input = uroot.getInput().get(0);
+		
+		if(uroot.get_op() == Hop.OpOp1.NROW)
+			ret = (input.get_dim1()>0) ? input.get_dim1() : Double.MAX_VALUE;
+		else if( uroot.get_op() == Hop.OpOp1.NCOL )
+			ret = (input.get_dim2()>0) ? input.get_dim2() : Double.MAX_VALUE;
+		else
+		{
+			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo, vars);
+			if( lval != Double.MAX_VALUE )
+			{
+				switch( uroot.get_op() )
+				{
+					case SQRT:	ret = Math.sqrt(lval); break;
+					case ROUND: ret = Math.round(lval); break;
+					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
+					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
+					case CAST_AS_DOUBLE: ret = lval; break;
+				}
+			}
+		}
+			
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @return
+	 * @throws HopsException
+	 */
+	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+
+		BinaryOp broot = (BinaryOp) root;
+		
+		double lret = rEvalSimpleDoubleExpression(broot.getInput().get(0), valMemo);
+		double rret = rEvalSimpleDoubleExpression(broot.getInput().get(1), valMemo);
+		//note: positive and negative values might be valid subexpressions
+		if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
+		{
+			switch( broot.op )
+			{
+				case PLUS:	ret = lret + rret; break;
+				case MINUS:	ret = lret - rret; break;
+				case MULT:  ret = lret * rret; break;
+				case DIV:   ret = lret / rret; break;
+				case MIN:   ret = Math.min(lret, rret); break;
+				case MAX:   ret = Math.max(lret, rret); break;
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param valMemo
+	 * @param vars
+	 * @return
+	 * @throws HopsException
+	 */
+	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+		throws HopsException
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+
+		BinaryOp broot = (BinaryOp) root;
+		
+		double lret = rEvalSimpleDoubleExpression(broot.getInput().get(0), valMemo, vars);
+		double rret = rEvalSimpleDoubleExpression(broot.getInput().get(1), valMemo, vars);
+		//note: positive and negative values might be valid subexpressions
+		if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
+		{
+			switch( broot.op )
+			{
+				case PLUS:	ret = lret + rret; break;
+				case MINUS:	ret = lret - rret; break;
+				case MULT:  ret = lret * rret; break;
+				case DIV:   ret = lret / rret; break;
+				case MIN:   ret = Math.min(lret, rret); break;
+				case MAX:   ret = Math.max(lret, rret); break;
+			}
+		}
+		
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
+		
 }

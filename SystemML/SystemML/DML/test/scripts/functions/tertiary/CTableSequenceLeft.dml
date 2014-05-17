@@ -9,4 +9,9 @@
 
 A = read($1, rows=$2, cols=$3, format="text");            
 B = table(seq(1, nrow(A)), A);
-write(B, $4, format="text");
+
+if( $4==1 ){ #withAgg
+   print("sum="+sum(B));
+}
+
+write(B, $5, format="text");

@@ -25,9 +25,13 @@ import com.ibm.bi.dml.utils.Statistics;
 /**
  * This test investigates the specific Hop-Lop rewrite ctable(seq(1,nrow(X)),X).
  * 
- * NOTE: table in R treats every distinct value of X as a specific value, while
- * we cast those double values to long. Hence, we need to round the generated 
- * dataset.
+ * NOTES: 
+ * * table in R treats every distinct value of X as a specific value, while
+ *   we cast those double values to long. Hence, we need to round the generated 
+ *   dataset.
+ * * May, 16 2014: extended tests to include aggregate because some specific issues
+ *   only show up on subsequent GMR operations after ctable produced the output in
+ *   matrix cell.
  * 
  */
 public class CTableSequenceTest extends AutomatedTestBase 
@@ -57,50 +61,100 @@ public class CTableSequenceTest extends AutomatedTestBase
 	@Test
 	public void testCTableSequenceLeftNoRewriteCP() 
 	{
-		runCTableSequenceTest(false, true, ExecType.CP);
+		runCTableSequenceTest(false, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testCTableSequenceLeftRewriteCP() 
 	{
-		runCTableSequenceTest(true, true, ExecType.CP);
+		runCTableSequenceTest(true, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testCTableSequenceLeftNoRewriteMR() 
 	{
-		runCTableSequenceTest(false, true, ExecType.MR);
+		runCTableSequenceTest(false, true, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testCTableSequenceLeftRewriteMR() 
 	{
-		runCTableSequenceTest(true, true, ExecType.MR);
+		runCTableSequenceTest(true, true, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testCTableSequenceRightNoRewriteCP() 
 	{
-		runCTableSequenceTest(false, false, ExecType.CP);
+		runCTableSequenceTest(false, false, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testCTableSequenceRightRewriteCP() 
 	{
-		runCTableSequenceTest(true, false, ExecType.CP);
+		runCTableSequenceTest(true, false, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testCTableSequenceRightNoRewriteMR() 
 	{
-		runCTableSequenceTest(false, false, ExecType.MR);
+		runCTableSequenceTest(false, false, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testCTableSequenceRightRewriteMR() 
 	{
-		runCTableSequenceTest(true, false, ExecType.MR);
+		runCTableSequenceTest(true, false, false, ExecType.MR);
 	}
+	
+	
+	@Test
+	public void testCTableSequenceLeftNoRewriteAggCP() 
+	{
+		runCTableSequenceTest(false, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftRewriteAggCP() 
+	{
+		runCTableSequenceTest(true, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftNoRewriteAggMR() 
+	{
+		runCTableSequenceTest(false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftRewriteAggMR() 
+	{
+		runCTableSequenceTest(true, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testCTableSequenceRightNoRewriteAggCP() 
+	{
+		runCTableSequenceTest(false, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testCTableSequenceRightRewriteAggCP() 
+	{
+		runCTableSequenceTest(true, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testCTableSequenceRightNoRewriteAggMR() 
+	{
+		runCTableSequenceTest(false, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testCTableSequenceRightRewriteAggMR() 
+	{
+		runCTableSequenceTest(true, false, true, ExecType.MR);
+	}
+	
 
 	/**
 	 * 
@@ -108,7 +162,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runCTableSequenceTest( boolean rewrite, boolean left, ExecType et)
+	private void runCTableSequenceTest( boolean rewrite, boolean left, boolean withAgg, ExecType et)
 	{
 		String TEST_NAME = left ? TEST_NAME1 : TEST_NAME2;
 		
@@ -129,6 +183,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                        Integer.toString(rows),
 					                        Integer.toString(1),
+					                        Integer.toString(withAgg?1:0),
 					                        HOME + OUTPUT_DIR + "B"};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
@@ -150,7 +205,8 @@ public class CTableSequenceTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//5 instead of 4 for rewrite because we dont pull it into the map task yet.
-			int expectedNumCompiled = ((et==ExecType.CP) ? 2 : (rewrite ? 5 : 6));
+			//2 for CP due to reblock jobs for input and table
+			int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 5 : 6))+(withAgg ? 1 : 0);
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
 			
 		}

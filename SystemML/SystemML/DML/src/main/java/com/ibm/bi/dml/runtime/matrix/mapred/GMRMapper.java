@@ -19,6 +19,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixPackedCell;
@@ -115,7 +116,11 @@ implements Mapper<Writable, Writable, Writable, Writable>
 					continue;
 				
 				//prepare tagged output value
-				taggedValueBuffer.setBaseObject(result.getValue());
+				//(special case for conversion from matrixcell to taggedmatrixpackedcell, e.g., ctable)
+				if(valueClass.equals(MatrixCell.class))
+					taggedValueBuffer.getBaseObject().copy(result.getValue());
+				else
+					taggedValueBuffer.setBaseObject(result.getValue());
 				taggedValueBuffer.setTag(output);
 				
 				//collect output (exactly once)

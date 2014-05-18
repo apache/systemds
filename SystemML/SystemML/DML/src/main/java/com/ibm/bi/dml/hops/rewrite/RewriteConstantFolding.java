@@ -207,6 +207,12 @@ public class RewriteConstantFolding extends HopRewriteRule
 		pb.setInstructions(null);
 		ec.getVariables().removeAll();
 		
+		//set literal properties (scalar)
+ 		literal.set_dim1(0);
+		literal.set_dim2(0);
+		literal.set_rows_in_block(-1);
+		literal.set_cols_in_block(-1);
+		
 		//System.out.println("Constant folded in "+time.stop()+"ms.");
 		
 		return literal;

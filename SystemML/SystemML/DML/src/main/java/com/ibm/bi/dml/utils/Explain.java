@@ -12,8 +12,27 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.api.DMLException;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.ForStatement;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.FunctionStatement;
+import com.ibm.bi.dml.parser.FunctionStatementBlock;
+import com.ibm.bi.dml.parser.IfStatement;
+import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -33,8 +52,21 @@ public class Explain
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	//internal parameters
+	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;	
+	private static final boolean SHOW_MEM_ABOVE_BUDGET = true;
+	private static final boolean SHOW_LITERAL_HOPS = false;
 	
-	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;
+
+	//different explain levels
+	public enum ExplainType { 
+		NONE, 	  // explain disabled
+		HOPS,     // explain program and hops
+		RUNTIME,  // explain runtime program (default)
+	};
+	
+	//////////////
+	// public explain interface
 	
 	/**
 	 * 
@@ -52,6 +84,75 @@ public class Explain
 		return sb.toString();		 
 	}
 	
+	/**
+	 * 
+	 * @param prog
+	 * @param rtprog
+	 * @param type
+	 * @return
+	 * @throws LanguageException 
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
+	 */
+	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
+		throws HopsException, DMLRuntimeException, LanguageException
+	{
+		//dispatch to individual explain utils
+		switch( type ) {
+			case HOPS:     return explain(prog);
+			case RUNTIME:  return explain(rtprog);
+		}
+		
+		return null;
+	}
+
+
+	/**
+	 * 
+	 * @param dmlp
+	 * @return
+	 * @throws LanguageException 
+	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static String explain(DMLProgram prog) 
+		throws HopsException, DMLRuntimeException, LanguageException 
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		//create header
+		sb.append("\nPROGRAM\n");
+						
+		// Explain functions (if exists)
+		boolean firstFunction = true;
+		for (String namespace : prog.getNamespaces().keySet()){
+			for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()){
+				if (firstFunction) {
+					sb.append("--FUNCTIONS\n");
+					firstFunction = false;
+				}
+				
+				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
+				FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+				
+				if (fstmt instanceof ExternalFunctionStatement)
+					sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
+				else {
+					sb.append("----FUNCTION " + namespace + "::" + fname + "\n");
+					for (StatementBlock current : fstmt.getBody())
+						sb.append(explainStatementBlock(current, 3));
+				}
+			}
+		}
+		
+		// Explain main program
+		sb.append("--MAIN PROGRAM\n");
+		for( StatementBlock sblk : prog.getStatementBlocks() )
+			sb.append(explainStatementBlock(sblk, 2));
+	
+		return sb.toString();
+	}
+
 	/**
 	 * 
 	 * @param rtprog
@@ -86,7 +187,6 @@ public class Explain
 						sb.append( explainProgramBlock(pb,3) );
 				}
 			}
-			
 		}
 		
 		//explain main program
@@ -96,7 +196,7 @@ public class Explain
 		
 		return sb.toString();	
 	}
-	
+
 	/**
 	 * 
 	 * @param pb
@@ -128,6 +228,31 @@ public class Explain
 	}
 	
 	/**
+	 * 
+	 * @param sb
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
+	 */
+	public static String explain( StatementBlock sb ) 
+		throws HopsException, DMLRuntimeException
+	{
+		return explainStatementBlock(sb, 0);
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static String explain( Hop hop ) 
+		throws DMLRuntimeException
+	{
+		return explainHop(hop, 0);
+	}
+	
+	/**
 	 * Counts the number of compiled MRJob instructions in the
 	 * given runtime program.
 	 * 
@@ -141,6 +266,164 @@ public class Explain
 	
 	/**
 	 * 
+	 * @param arg
+	 * @return
+	 * @throws DMLException
+	 */
+	public static ExplainType parseExplainType( String arg ) 
+		throws DMLException
+	{
+		ExplainType ret = ExplainType.NONE;
+		
+		if( arg !=null )
+		{
+			if( arg.equalsIgnoreCase("hops") )
+				ret = ExplainType.HOPS;
+			else if( arg.equalsIgnoreCase("runtime") )
+				ret = ExplainType.RUNTIME;
+			else 
+				throw new DMLException("Failed to parse explain type: "+arg);
+		}
+		
+		return ret;
+	}
+	
+	
+	//////////////
+	// internal explain HOPS
+
+	private static String explainStatementBlock(StatementBlock sb, int level) 
+		throws HopsException, DMLRuntimeException 
+	{
+		StringBuilder builder = new StringBuilder();
+		String offset = createOffset(level);
+		
+		if (sb instanceof WhileStatementBlock) {
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			builder.append(offset);
+			builder.append("WHILE\n");
+			builder.append(explainHop(wsb.getPredicateHops(), level+1));
+			
+			WhileStatement ws = (WhileStatement)sb.getStatement(0);
+			for (StatementBlock current : ws.getBody())
+				builder.append(explainStatementBlock(current, level+1));
+			
+		} 
+		else if (sb instanceof IfStatementBlock) {
+			IfStatementBlock ifsb = (IfStatementBlock) sb;
+			builder.append(offset);
+			builder.append("IF\n");
+			builder.append(explainHop(ifsb.getPredicateHops(), level+1));
+			
+			IfStatement ifs = (IfStatement) sb.getStatement(0);
+			for (StatementBlock current : ifs.getIfBody())
+				builder.append(explainStatementBlock(current, level+1));
+			if (ifs.getElseBody().size() > 0) {
+				builder.append(offset);
+				builder.append("ELSE\n");
+			}
+			for (StatementBlock current : ifs.getElseBody())
+				builder.append(explainStatementBlock(current, level+1));
+			
+		} 
+		else if (sb instanceof ForStatementBlock) {
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			builder.append(offset);
+			if (sb instanceof ParForStatementBlock)
+				builder.append("PARFOR\n");
+			else
+				builder.append("FOR\n");
+			
+			if (fsb.getFromHops() != null) 
+				builder.append(explainHop(fsb.getFromHops(), level+1));
+			if (fsb.getToHops() != null) 
+				builder.append(explainHop(fsb.getToHops(), level+1));
+			if (fsb.getIncrementHops() != null) 
+				builder.append(explainHop(fsb.getIncrementHops(), level+1));
+			
+			ForStatement fs = (ForStatement)sb.getStatement(0);
+			for (StatementBlock current : fs.getBody())
+				builder.append(explainStatementBlock(current, level+1));
+			
+		} 
+		else if (sb instanceof FunctionStatementBlock) {
+			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
+			for (StatementBlock current : fsb.getBody())
+				builder.append(explainStatementBlock(current, level+1));
+			
+		} 
+		else {
+			// For generic StatementBlock
+			builder.append(offset);
+			builder.append("GENERIC [recompile=" + sb.requiresRecompilation() + "]\n");
+			ArrayList<Hop> hopsDAG = sb.get_hops();
+			if (hopsDAG != null && hopsDAG.size() > 0) {
+				Hop.resetVisitStatus(hopsDAG);
+				for (Hop hop : hopsDAG)
+					builder.append(explainHop(hop, level+1));
+				Hop.resetVisitStatus(hopsDAG);
+			}
+		}
+
+		return builder.toString();
+	}
+
+	/**
+	 * Do a post-order traverse through the HopDag and explain each Hop
+	 * 
+	 * @param hop
+	 * @param level
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static String explainHop(Hop hop, int level) 
+		throws DMLRuntimeException 
+	{
+		if(   hop.get_visited() == VISIT_STATUS.DONE 
+		   || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
+		{
+			return "";
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		String offset = createOffset(level);
+		
+		for( Hop input : hop.getInput() )
+			sb.append(explainHop(input, level));
+		
+		sb.append(offset);
+		sb.append(hop.getOpString());
+		
+		//matrix characteristics
+		sb.append(" [" + hop.get_dim1() + "," 
+		               + hop.get_dim2() + "," 
+				       + hop.get_rows_in_block() + "," 
+		               + hop.get_cols_in_block() + "," 
+				       + hop.getNnz() + "]");
+		
+		//memory estimates
+		sb.append(" [" + showMem(hop.getInputMemEstimate(), false) + "," 
+		               + showMem(hop.getIntermediateMemEstimate(), false) + "," 
+				       + showMem(hop.getOutputMemEstimate(), false) + " -> " 
+		               + showMem(hop.getMemEstimate(), true) + "]");
+		
+		//exec type
+		if (hop.getExecType() != null)
+			sb.append(", " + hop.getExecType());
+		
+		sb.append('\n');
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+		
+		return sb.toString();
+	}
+
+	
+	//////////////
+	// internal explain RUNTIME
+
+	/**
+	 * 
 	 * @param pb
 	 * @param level
 	 * @return
@@ -152,7 +435,6 @@ public class Explain
 		
 		if (pb instanceof FunctionProgramBlock )
 		{
-			
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				sb.append( explainProgramBlock( pbc, level+1) );
@@ -246,7 +528,6 @@ public class Explain
 		else
 			tmp = inst.toString();
 		
-		inst.toString();
 		if( REPLACE_SPECIAL_CHARACTERS ){
 			tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
 			tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
@@ -282,6 +563,19 @@ public class Explain
 		//instruction += offset+"]\n";
 		
 		return instruction;
+	}
+	
+	/**
+	 * 
+	 * @param mem
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	private static String showMem(double mem, boolean units) 
+	{
+		if( !SHOW_MEM_ABOVE_BUDGET && mem >= OptimizerUtils.DEFAULT_SIZE )
+			return "MAX";
+		return OptimizerUtils.toMB(mem) + (units?"MB":"");
 	}
 	
 	/**

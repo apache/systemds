@@ -267,6 +267,7 @@ public class DataOp extends Hop
 	public String getOpString() {
 		String s = new String("");
 		s += HopsData2String.get(_dataop);
+		s += " "+get_name();
 		return s;
 	}
 

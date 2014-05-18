@@ -146,7 +146,7 @@ public class LiteralOp extends Hop
 			val = Long.toString(value_long);
 			break;
 		}
-		return "LiteralOp" + val;
+		return "LiteralOp " + val;
 	}
 	
 	private SQLLopProperties getProperties()

@@ -66,6 +66,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.Explain;
+import com.ibm.bi.dml.utils.Explain.ExplainType;
 import com.ibm.bi.dml.utils.Statistics;
 // import com.ibm.bi.dml.utils.visualize.DotGraph;
 
@@ -89,7 +90,7 @@ public class DMLScript
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
-	public static boolean EXPLAIN = false; //default explain
+	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -104,7 +105,7 @@ public class DMLScript
 			+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ "   -explain: (optional) show the initially compiled runtime program\n"
+			+ "   -explain: <type> (optional) explain plan (hops, runtime)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, HDFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
@@ -210,7 +211,8 @@ public class DMLScript
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
 		boolean oldvisualize = VISUALIZE; //keep old visualize	
-		boolean oldexplain = EXPLAIN; //keep old explain	
+		ExplainType oldexplain = EXPLAIN; //keep old explain	
+		
 		try
 		{
 			String fnameOptConfig = null; //optional config filename
@@ -221,11 +223,14 @@ public class DMLScript
 			{
 				if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
 					VISUALIZE = true;
-				else if( args[i].equalsIgnoreCase("-explain") )
-					EXPLAIN = true;
+				else if( args[i].equalsIgnoreCase("-explain") ) { 
+					EXPLAIN = ExplainType.RUNTIME;
+					if( args.length > (i+1) && !args[i+1].startsWith("-") )
+						EXPLAIN = Explain.parseExplainType(args[++i]);
+				}
 				else if( args[i].equalsIgnoreCase("-stats") )
 					STATISTICS = true;
-				else if ( args[i].equalsIgnoreCase("-exec")){
+				else if ( args[i].equalsIgnoreCase("-exec")) {
 					rtplatform = parseRuntimePlatform(args[++i]);
 					if( rtplatform==null ) 
 						return ret;
@@ -594,13 +599,13 @@ public class DMLScript
 		int jobCount = Explain.countCompiledMRJobs(rtprog);
 		Statistics.setNoOfCompiledMRJobs( jobCount );				
 		
-		//explain runtime program
-		if( EXPLAIN ) {
-			LOG.info("EXPLAIN (runtime program):\n" 
+		//explain plan of program (hops or runtime)
+		if( EXPLAIN != ExplainType.NONE ) {
+			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
 					 + Explain.explainMemoryBudget()
-					 + Explain.explain( rtprog ) );
+					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
-		
+				
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
 		//System.out.println("Estimated costs: "+costs);
 				

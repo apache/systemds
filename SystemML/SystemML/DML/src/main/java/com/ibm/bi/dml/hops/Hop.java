@@ -266,14 +266,21 @@ public abstract class Hop
 		return (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
 
+	//wrappers for meaningful public names to memory estimates.
+	
+	public double getInputMemEstimate()
+	{
+		return getInputSize();
+	}
+	
 	public double getOutputMemEstimate()
 	{
-		return _outputMemEstimate;
+		return getOutputSize();
 	}
 
 	public double getIntermediateMemEstimate()
 	{
-		return _processingMemEstimate;
+		return getIntermediateSize();
 	}
 	
 	/**

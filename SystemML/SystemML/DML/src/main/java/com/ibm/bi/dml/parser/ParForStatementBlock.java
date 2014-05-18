@@ -590,33 +590,32 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		PDataPartitionFormat dpf = null;
 		
+		//1) get all bounds expressions for index access
 		Expression rowL = dat.getRowLowerBound();
 		Expression rowU = dat.getRowUpperBound();
 		Expression colL = dat.getColLowerBound();
 		Expression colU = dat.getColUpperBound();
-		boolean flag1=false, flag2=false; //, flag3=false;
 		
-		//flag1: true if row expr is colon
-		if( rowL == null && rowU == null )
-			flag1 = true;
-		//flag2: true if col expr is colon
-		if( colL == null && colU == null )
-			flag2 = true;
-		
-		//TODO block partitioning
-		//flag3: true if row and col expr
-		//if( rowL != null && rowU != null && colL != null && colU != null )
-		//	flag3 = true;
-			
-		if( flag1 && !flag2 )
+		//2) decided on access pattern		
+		//COLUMN_WISE iff row expr is colon (all rows) 
+		//   and access to single column
+		if( rowL == null && rowU == null && 
+			colL!=null && colU != null && colL.equals(colU) )
+		{
 			dpf = PDataPartitionFormat.COLUMN_WISE;
-		else if( !flag1 && flag2 )
+		}		
+		//ROW_WISE iff col expr is colon (all columns) 
+		//   and access to single row
+		else if( colL == null && colU == null &&
+				rowL!=null && rowU != null && rowL.equals(rowU) )
+		{
 			dpf = PDataPartitionFormat.ROW_WISE;
-		//TODO block partitioning
-		//else if (flag3)
-		//	dpf = PDataPartitionFormat.BLOCK_WISE_M_N; //subsumes col and row
+		}
+		//NONE otherwise (conservative)
 		else
 			dpf = PDataPartitionFormat.NONE;
+		
+		//TODO block partitioning
 		
 		return dpf;
 	}

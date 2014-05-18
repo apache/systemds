@@ -311,6 +311,21 @@ public abstract class Expression
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
+	@Override
+	public boolean equals(Object that)
+	{
+		//empty check for robustness
+		if( that == null )
+			return false;
+		
+		Expression thatExpr = (Expression) that;
+		
+		//approach is to compare string representation of expression
+		String thisStr = this.toString();
+		String thatStr = thatExpr.toString();
+		
+		return thisStr.equalsIgnoreCase(thatStr);
+	}
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for expressions

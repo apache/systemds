@@ -1,0 +1,27 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+args <- commandArgs(TRUE)
+options(digits=22)
+
+library("Matrix")
+
+V1 <- readMM(paste(args[1], "V.mtx", sep=""))
+V <- as.matrix(V1);
+n <- nrow(V); 
+
+R <- array(0,dim=c(1,n))
+
+for( i in 1:n-1 )
+{
+   X <- V[i:(i+1),];                 
+   R[1,i] <- sum(X);
+}   
+
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "Rout", sep=""));

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,7 +22,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class ParForColwiseDataPartitioningTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "parfor_cdatapartitioning";
@@ -172,7 +172,31 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, true);
 	}
 
+	//NOT colwise
 	
+	@Test
+	public void testParForNoDataPartitioningRemoteLocalLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, false, true);
+	}
+	
+	@Test
+	public void testParForNoDataPartitioningRemoteLocalLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, true, true);
+	}
+	
+	/**
+	 * 
+	 * @param partitioner
+	 * @param mode
+	 * @param small
+	 * @param sparse
+	 */
+	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse )
+	{
+		runParForDataPartitioningTest(partitioner, mode, small, sparse, false);
+	}
 	
 	/**
 	 * 
@@ -180,7 +204,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	 * @param inner execution mode of inner parfor loop
 	 * @param instType execution mode of instructions
 	 */
-	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse )
+	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse, boolean multiParts )
 	{
 		//inst exec type, influenced via rows
 		int rows = -1, cols = -1;
@@ -208,17 +232,15 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 				else
 					scriptNum=3;
 			case REMOTE_MR: 
-				if( mode==PExecMode.LOCAL )
-					scriptNum=4; 
+				if( mode==PExecMode.LOCAL ){
+					if( !multiParts )
+						scriptNum = 4; 
+					else 
+						scriptNum = 6;
+				}
 				else
-					scriptNum=5;	
+					scriptNum = 5;	
 				break; 
-			//case REMOTE_MR: 
-			//	if( mode==PExecMode.REMOTE_MR )
-			//		scriptNum=4;
-			//	else
-			//		scriptNum=5;
-			//	break; 
 		}
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -232,7 +254,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 				                        Integer.toString(rows),
 				                        Integer.toString(cols),
 				                        HOME + OUTPUT_DIR + "R" };
-		fullRScriptName = HOME + TEST_NAME + ".R";
+		fullRScriptName = HOME + TEST_NAME + (multiParts?"6":"") + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 		

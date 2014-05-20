@@ -2094,6 +2094,12 @@ public class MatrixBlockDSM extends MatrixValue
 		return (ret && (((double)ennz)/rlenm1/clenm1) < SPARCITY_TURN_POINT);
 	}
 	
+	private boolean estimateSparsityOnGroupedAgg( long rlen, long groups )
+	{
+		boolean ret = (groups>SKINNY_MATRIX_TURN_POINT);
+		
+		return (ret && (((double)rlen)/groups) < SPARCITY_TURN_POINT);
+	}
 	
 	////////
 	// Core block operations (called from instructions)
@@ -4802,7 +4808,7 @@ public class MatrixBlockDSM extends MatrixValue
 	
 		// Allocate result matrix
 		MatrixBlockDSM result = checkType(ret);
-		boolean result_sparsity = false;
+		boolean result_sparsity = estimateSparsityOnGroupedAgg(rlen, numGroups);
 		if(result==null)
 			result=new MatrixBlockDSM(numGroups, 1, result_sparsity);
 		else
@@ -4898,7 +4904,7 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 			else //DENSE target
 			{
-				for ( int i=0; i < this.getNumColumns(); i++ ) {
+				for ( int i=0; i < target.getNumColumns(); i++ ) {
 					double d = target.denseBlock[ i ];
 					if( d != 0 ) //sparse-safe
 					{

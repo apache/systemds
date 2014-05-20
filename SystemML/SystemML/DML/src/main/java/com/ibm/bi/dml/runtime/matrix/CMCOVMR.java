@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -106,7 +106,7 @@ public class CMCOVMR
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+			inst.printCompleteMRJobInstruction(stats);
 		
 		
 		// By default, the job executes in "cluster" mode.

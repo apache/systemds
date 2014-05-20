@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013, 2014
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,7 +14,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 public class CMOperator extends Operator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// supported aggregates
@@ -77,5 +77,32 @@ public class CMOperator extends Operator
 				return AggregateOperationTypes.INVALID;
 		}
 		return AggregateOperationTypes.INVALID;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isPartialAggregateOperator()
+	{
+		boolean ret = false;
+	
+		switch( aggOpType )
+		{
+			case COUNT:
+			case MEAN: 
+				ret = true; break;
+				
+			//NOTE: the following aggregation operators are not marked for partial aggregation 
+			//because they required multiple intermediate values and hence do not apply to the 
+			//grouped aggregate combiner which needs to work on value/weight pairs only.
+			case CM2:
+			case CM3:
+			case CM4:
+			case VARIANCE: 
+				ret = false; break;
+		}
+		
+		return ret;
 	}
 }

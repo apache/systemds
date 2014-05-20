@@ -14,6 +14,14 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 
+/**
+ * GENERAL NOTES:
+ * * Weights are always cast to long because based on discussions w/ SPSS weights always 
+ *   represent multiplicity and hence are used as integers. 
+ *   MB: This is fine for counts but what about mean and other aggregation functions? Furthermore,
+ *   why is this inconsistent to sum w/ weights which doesnt use casts? [non-conclusive].
+ * 
+ */
 public class CM extends ValueFunction 
 {
 	@SuppressWarnings("unused")

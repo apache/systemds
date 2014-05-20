@@ -12,14 +12,11 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.lops.CombineBinary;
-import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.ReBlock;
-import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -126,65 +123,38 @@ public class ParameterizedBuiltinOp extends Hop
 					// groupedAgg
 	
 					boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
-					if (isWeighted) {
-						// combineTertiary followed by groupedAgg
-						CombineTertiary combine = CombineTertiary
-								.constructCombineLop(
-										com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreGroupedAggWeighted,
-										inputlops.get(Statement.GAGG_TARGET),
-										inputlops.get(Statement.GAGG_GROUPS),
-										inputlops.get(Statement.GAGG_WEIGHTS),
-										DataType.MATRIX, get_valueType());
-	
-						// the dimensions of "combine" would be same as that of the
-						// input data
-						combine.getOutputParameters().setDimensions(
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_dim1(),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_dim2(),		
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_rows_in_block(),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_cols_in_block(), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.getNnz());
-	
+					if (isWeighted) 
+					{
+						Lop append = BinaryOp.constructAppendLopChain(
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
+								getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
+								getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
+								DataType.MATRIX, get_valueType(), 
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+		
 						// add the combine lop to parameter list, with a new name "combinedinput"
-						inputlops.put(GroupedAggregate.COMBINEDINPUT, combine);
+						inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
 						inputlops.remove(Statement.GAGG_TARGET);
 						inputlops.remove(Statement.GAGG_GROUPS);
 						inputlops.remove(Statement.GAGG_WEIGHTS);
 	
-					} else {
-						// combineBinary followed by groupedAgg
-						CombineBinary combine = CombineBinary.constructCombineLop(
-								OperationTypes.PreGroupedAggUnweighted,
-								inputlops.get(Statement.GAGG_TARGET), inputlops
-										.get(Statement.GAGG_GROUPS), DataType.MATRIX,
-								get_valueType());
-	
-						// the dimensions of "combine" would be same as that of the
-						// input data
-						combine.getOutputParameters().setDimensions(
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_dim1(),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_dim2(),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_rows_in_block(),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.get_cols_in_block(), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
-										.getNnz());
-	
+					} 
+					else 
+					{
+						Lop append = BinaryOp.constructAppendLop(
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
+								getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
+								DataType.MATRIX, get_valueType(), 
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+						
 						// add the combine lop to parameter list, with a new name
 						// "combinedinput"
-						inputlops.put(GroupedAggregate.COMBINEDINPUT, combine);
+						inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
 						inputlops.remove(Statement.GAGG_TARGET);
 						inputlops.remove(Statement.GAGG_GROUPS);
 	
 					}
+					
 					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
 							get_dataType(), get_valueType());
 					// output dimensions are unknown at compilation time

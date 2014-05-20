@@ -811,7 +811,7 @@ public class MRJobInstruction extends Instruction
 		}
 	}
 	
-	public void printCompelteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {
+	public void printCompleteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {
 		LOG.trace("jobtype" + jobType);
 		LOG.trace("Inputs: \n");
 		for(int i=0, mi=0; i < inputVars.length; i++ ) {

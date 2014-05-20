@@ -116,7 +116,7 @@ public class ReblockMR
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+			inst.printCompleteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];

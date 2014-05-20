@@ -1,0 +1,39 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A = read($1);
+B = read($2);
+fn = $3;
+
+if( fn==0 )
+{
+   C = aggregate(target=A, groups=B, fn="sum");
+}
+else if( fn==1 )
+{
+   C = aggregate(target=A, groups=B, fn="count");
+}
+else if( fn==2 )
+{
+   C = aggregate(target=A, groups=B, fn="mean");
+}
+else if( fn==3 )
+{
+   C = aggregate(target=A, groups=B, fn="variance");
+}
+else if( fn==4 )
+{
+   C = aggregate(target=A, groups=B, fn="centralmoment", order="3");
+}
+else if( fn==5 )
+{
+   C = aggregate(target=A, groups=B, fn="centralmoment", order="4");
+}
+
+write(C, $4, format="text");

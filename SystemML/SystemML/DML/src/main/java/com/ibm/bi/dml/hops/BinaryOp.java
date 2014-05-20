@@ -1266,6 +1266,7 @@ public class BinaryOp extends Hop
 	}
 	
 	/**
+	 * General case binary append.
 	 * 
 	 * @param left
 	 * @param right
@@ -1282,8 +1283,8 @@ public class BinaryOp extends Hop
 		long m1_dim2 = left.get_dim2();		
 		long m2_dim1 = right.get_dim1();
 		long m2_dim2 = right.get_dim2();
-		long m3_dim2 = m1_dim2 + m2_dim2; //output cols
-		long m3_nnz = left.getNnz() + right.getNnz(); //output nnz
+		long m3_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
+		long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
 		long brlen = left.get_rows_in_block();
 		long bclen = left.get_cols_in_block();
 		
@@ -1344,6 +1345,66 @@ public class BinaryOp extends Hop
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * Special case tertiary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
+	 * 
+	 * @param left
+	 * @param right
+	 * @param dt
+	 * @param vt
+	 * @param current
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, Hop current ) 
+		throws HopsException, LopsException
+	{
+		long m1_dim1 = left.get_dim1();
+		long m1_dim2 = left.get_dim2();		
+		long m2_dim1 = right1.get_dim1();
+		long m2_dim2 = right1.get_dim2();
+		long m3_dim1 = right2.get_dim1();
+		long m3_dim2 = right2.get_dim2();		
+		long m41_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
+		long m41_nnz = (left.getNnz()>0 && right1.getNnz()>0) ? 
+				      (left.getNnz() + right1.getNnz()) : -1; //output nnz
+		long m42_dim2 = (m1_dim2>0 && m2_dim2>0 && m3_dim2>0) ? (m1_dim2 + m2_dim2 + m3_dim2) : -1; //output cols
+		long m42_nnz = (left.getNnz()>0 && right1.getNnz()>0 && right2.getNnz()>0) ? 
+				      (left.getNnz() + right1.getNnz()+ right2.getNnz()) : -1; //output nnz
+		long brlen = left.get_rows_in_block();
+		long bclen = left.get_cols_in_block();
+		
+		//warn if assumption of blocksize>=3 does not hold
+		if( bclen < 3 )
+			throw new HopsException("MR_RAPPEND requires a blocksize of >= 3.");
+		
+		//case MR_RAPPEND:
+		//special case reduce append w/ one column block
+		
+		Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
+		group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, left.getNnz());
+		group1.setAllPositions(left.getBeginLine(), left.getBeginColumn(), left.getEndLine(), left.getEndColumn());
+		
+		Group group2 = new Group(right1.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
+		group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right1.getNnz());
+		group1.setAllPositions(right1.getBeginLine(), right1.getBeginColumn(), right1.getEndLine(), right1.getEndColumn());
+		
+		Group group3 = new Group(right2.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
+		group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, right2.getNnz());
+		group1.setAllPositions(right2.getBeginLine(), right2.getBeginColumn(), right2.getEndLine(), right2.getEndColumn());
+		
+		AppendR appR1 = new AppendR(group1, group2, dt, vt);
+		appR1.getOutputParameters().setDimensions(m1_dim1, m41_dim2, brlen, bclen, m41_nnz);
+		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+		
+		AppendR appR2 = new AppendR(appR1, group3, dt, vt);
+		appR1.getOutputParameters().setDimensions(m1_dim1, m42_dim2, brlen, bclen, m42_nnz);
+		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+	
+		return appR2;
 	}
 	
 	/**

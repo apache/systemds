@@ -254,7 +254,7 @@ public class GMR
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+			inst.printCompleteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] dimsUnknown = new byte[resultIndexes.length];

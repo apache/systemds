@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedInt;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedCell;
+import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -80,8 +81,7 @@ public class GroupedAggMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
-
+		
 		//set up what matrices are needed to pass from the mapper to reducer
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, null, null, 
 				grpAggInstructions, resultIndexes);
@@ -92,7 +92,7 @@ public class GroupedAggMR
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+			inst.printCompleteMRJobInstruction(stats);
 
 		byte[] resultDimsUnknown=new byte[resultIndexes.length];
 		// Update resultDimsUnknown based on computed "stats"
@@ -104,37 +104,20 @@ public class GroupedAggMR
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GroupedAggMRMapper.class);
-		
+		job.setCombinerClass(GroupedAggMRCombiner.class); 
 		job.setMapOutputKeyClass(TaggedInt.class);
 		job.setMapOutputValueClass(WeightedCell.class);
 		
 		//configure reducer
 		job.setReducerClass(GroupedAggMRReducer.class);
-		//job.setReducerClass(PassThroughReducer.class);
 		
-	//	MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-	//			null, null, grpAggInstructions, null, resultIndexes);
-		
-		//TODO: need to recompute the statistics
-		
-		// By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
-		//TODO: need to ask Shirish on how to set it
-	/*	ExecMode mode = RunMRJobs.getExecMode(LopProperties.CM_COV, stats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}*/
-		
-		
-		
-		ExecMode mode = ExecMode.CLUSTER; //default
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode); //TODO see above
+		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 
 		
-		
+		//execute job
 		RunningJob runjob=JobClient.runJob(job);
 		
+		//get important output statistics 
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
@@ -146,44 +129,6 @@ public class GroupedAggMR
 		stats = MapReduceTool.processDimsFiles(dir, stats);
 		MapReduceTool.deleteFileIfExistOnHDFS(dir);
 		
-/*		Counters counters = runjob.getCounters();
-		System.out.println("Counters size = " + counters.size());
-		System.out.println("All Counters = " +counters.toString());
-		Group maxrowGroup = counters.getGroup(MRJobConfiguration.MAX_ROW_DIMENSION);
-		Group maxcolGroup = counters.getGroup(MRJobConfiguration.MAX_COL_DIMENSION);
-		
-		for (int i=0; i < resultIndexes.length; i++) {
-			long r = maxrowGroup.getCounter(Integer.toString(i));
-			long c = maxcolGroup.getCounter(Integer.toString(i));
-			stats[i].numRows = (stats[i].numRows > r ? stats[i].numRows : r);
-			stats[i].numColumns = (stats[i].numColumns > c ? stats[i].numColumns : c);
-		}
-		
-		Group rowgroup, colgroup;
-		
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			// number of non-zeros
-			stats[i]=new MatrixCharacteristics();
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
-		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-			
-			rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);
-			colgroup = runjob.getCounters().getGroup("max_coldim_"+i);
-			int maxrow, maxcol;
-			maxrow = maxcol = 0;
-			for ( int rid=0; rid < numReducers; rid++ ) {
-				if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-					maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-				if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-					maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-			}
-			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-			stats[i].numRows = maxrow;
-			stats[i].numColumns = maxcol;
-			//System.out.println("stats: "+stats[i]);
-		}
-*/		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	

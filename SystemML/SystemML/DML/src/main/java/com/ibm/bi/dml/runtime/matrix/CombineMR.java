@@ -354,7 +354,7 @@ public class CombineMR
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+			inst.printCompleteMRJobInstruction(stats);
 		
 		// By default, the job executes in "cluster" mode.
 		// Determine if we can optimize and run it in "local" mode.

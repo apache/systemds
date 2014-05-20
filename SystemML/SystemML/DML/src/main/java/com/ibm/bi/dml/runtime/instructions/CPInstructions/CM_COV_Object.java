@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationType
 public class CM_COV_Object extends Data 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//for central moment
@@ -146,7 +146,47 @@ public class CM_COV_Object extends Data
 				return c2._sum/(w-1.0);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double getRequiredPartialResult(Operator op) 
+		throws DMLRuntimeException
+	{
+		if(op instanceof CMOperator)
+		{
+			AggregateOperationTypes agg=((CMOperator)op).aggOpType;
+			switch(agg)
+			{
+				case COUNT:
+					return 0;
+				case MEAN:
+					return mean._sum;
+				case CM2:					
+				case CM3:					
+				case CM4:
+				case VARIANCE:
+					throw new DMLRuntimeException("Aggregation operator '"+agg.toString()+"' does not apply to partial aggregation.");
+				default:
+					throw new DMLRuntimeException("Invalid aggreagte in CM_CV_Object: " + agg);
+			}
+		}
+		else
+			return c2._sum;
+	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public double getWeight() 
+	{
+		return w;
+	}
+	
 	@Override
 	public String getDebugName() {
 		// TODO Auto-generated method stub

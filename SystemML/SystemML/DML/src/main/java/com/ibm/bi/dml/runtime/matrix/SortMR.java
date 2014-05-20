@@ -297,7 +297,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(s);
+			inst.printCompleteMRJobInstruction(s);
 		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job, mode);

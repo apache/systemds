@@ -178,6 +178,25 @@ public class IndexingOp extends Hop
 	}
 	
 	@Override
+	protected void computeMemEstimate( MemoTable memo )
+	{
+		//default behavior
+		super.computeMemEstimate(memo);
+		
+		//try to infer via worstcase input statistics (for the case of dims known
+		//but nnz initially unknown)
+		MatrixCharacteristics mcM1 = memo.getAllInputStats(getInput().get(0));
+		if( dimsKnown() && mcM1.getNonZeros()>=0 ){
+			long lnnz = mcM1.getNonZeros(); //worst-case output nnz
+			double lOutMemEst = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+			if( lOutMemEst<_outputMemEstimate ){
+				_outputMemEstimate = lOutMemEst;
+				_memEstimate = getInputOutputSize();				
+			}
+		}		
+	}
+	
+	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
@@ -199,8 +218,9 @@ public class IndexingOp extends Hop
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc != null ) 
 		{
+			long lnnz = mc.dimsKnown()?Math.min(mc.get_rows()*mc.get_cols(), mc.getNonZeros()):-1;
 			//worst-case is input size, but dense
-			ret = new long[]{mc.get_rows(), mc.get_cols(), -1};
+			ret = new long[]{mc.get_rows(), mc.get_cols(), lnnz};
 			if( _rowLowerEqualsUpper ) ret[0]=1;
 			if( _colLowerEqualsUpper ) ret[1]=1;	
 		}

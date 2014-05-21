@@ -465,7 +465,7 @@ public class OptimizerUtils
 		if( dim1<=0 || dim2<=0 || nnz<0 )
 			return 1.0;
 		else
-			return ((double)nnz)/dim1/dim2;
+			return Math.min(((double)nnz)/dim1/dim2, 1.0);
 	}
 	
 	public static String toMB(double inB) {

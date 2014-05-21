@@ -292,13 +292,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				                   DataType.MATRIX : DataType.SCALAR;				
 				if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
 					checkMatchingDimensions(_first, _second);
-				long rlen = Math.max(_first.getOutput().getDim1(),_second.getOutput().getDim1());
-				long clen = Math.max(_first.getOutput().getDim2(),_second.getOutput().getDim2());
-				long brlen = Math.max(_first.getOutput().getRowsInBlock(),_second.getOutput().getRowsInBlock()); 
-				long bclen =  Math.max(_first.getOutput().getColumnsInBlock(),_second.getOutput().getColumnsInBlock()); 				
+				//determine output dimensions
+				long[] dims = getBinaryMatrixCharacteristics(_first, _second);
 				output.setDataType( dtOut );
-				output.setDimensions(rlen, clen);
-				output.setBlockDimensions (brlen, bclen);
+				output.setDimensions(dims[0], dims[1]);
+				output.setBlockDimensions (dims[2], dims[3]);
 			}
 			output.setValueType(id.getValueType());
 			
@@ -307,6 +305,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkNumParameters(1);
 			checkMatrixParam(_first);
 			if (( _first.getOutput().getDim1() != -1 && _first.getOutput().getDim1() !=1) || ( _first.getOutput().getDim2() != -1 && _first.getOutput().getDim2() !=1)) {
+				LOG.error(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2 " + _first.getOutput().getDim2());
 				throw new LanguageException(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2 " + _first.getOutput().getDim2(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDataType(DataType.SCALAR);
@@ -362,6 +361,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if (_first.getOutput().getDim1() > 0 && _second.getOutput().getDim1() > 0){
 				if (_first.getOutput().getDim1() != _second.getOutput().getDim1()){
 					
+					LOG.error(this.printErrorLocation() +
+							"inputs to append must have same number of rows: input 1 rows: " + 
+							_first.getOutput().getDim1() +  ", input 2 rows " + _second.getOutput().getDim1());
+					
 					throw new LanguageException(this.printErrorLocation() +
 							"inputs to append must have same number of rows: input 1 rows: " + 
 							_first.getOutput().getDim1() +  ", input 2 rows " + _second.getOutput().getDim1(),
@@ -383,25 +386,42 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
 			break;
 		case PPRED:
-			// ppred (X,Y, "<"); or ppred (X,y, "<");
+			// ppred (X,Y, "<"); ppred (X,y, "<"); ppred (y,X, "<");
 			checkNumParameters(3);
-			checkMatrixParam(_first);
 			
-			if (_second.getOutput().getDataType() == DataType.MATRIX) {
-			      checkMatrixParam(_second);
+			DataType dt1 = _first.getOutput().getDataType();
+			DataType dt2 = _second.getOutput().getDataType();
+			
+			//check input data types
+			if( dt1 == DataType.SCALAR && dt2 == DataType.SCALAR )
+			{
+				LOG.error(this.printErrorLocation() + "ppred() requires at least one matrix input.");				
+				throw new LanguageException(this.printErrorLocation() +
+						"ppred() requires at least one matrix input.",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}			
+			if( dt1 == DataType.MATRIX )
+				checkMatrixParam(_first);
+			if( dt2 == DataType.MATRIX )
+				checkMatrixParam(_second);
+			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) //dt1==dt2
 			      checkMatchingDimensions(_first, _second);
-			}
 			
+			//check operator
 			if (_third.getOutput().getDataType() != DataType.SCALAR || 
-				_third.getOutput().getValueType() != ValueType.STRING) {
-				
+				_third.getOutput().getValueType() != ValueType.STRING) 
+			{	
+					LOG.error(this.printErrorLocation() + "Third argument in ppred() is not an operator ");				
 					throw new LanguageException(this.printErrorLocation() +
 							"Third argument in ppred() is not an operator ",
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
+			
+			//determine output dimensions
+			long[] dims = getBinaryMatrixCharacteristics(_first, _second);
 			output.setDataType(DataType.MATRIX);
-			output.setDimensions(id.getDim1(), id.getDim2());
-			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
+			output.setDimensions(dims[0], dims[1]);
+			output.setBlockDimensions(dims[2], dims[3]);
 			output.setValueType(id.getValueType());
 			break;
 
@@ -425,6 +445,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else 
 			{
 				if (id.getDim1() != id.getDim2()) {
+					
+					LOG.error(this.printErrorLocation() +
+							"Invoking diag on matrix with dimensions ("
+							+ id.getDim1() + "," + id.getDim2()
+							+ ") in " + this.toString());
 					
 					throw new LanguageException(this.printErrorLocation() +
 							"Invoking diag on matrix with dimensions ("
@@ -584,6 +609,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if ((_third == null && _second.getOutput().getDataType() != DataType.SCALAR)
 					&& (_third != null && _third.getOutput().getDataType() != DataType.SCALAR)) {
 				
+				LOG.error(this.printErrorLocation() + "Invalid parameters to "
+						+ this.getOpCode());
+				
 				throw new LanguageException(this.printErrorLocation() + "Invalid parameters to "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -702,6 +730,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 			} else{
 				
+				LOG.error(this.printErrorLocation() + "Unsupported function "
+						+ this.getOpCode());
+				
 				throw new LanguageException(this.printErrorLocation() + "Unsupported function "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -777,6 +808,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		default:
 			
+			LOG.error(this.printErrorLocation() + "Unknown math function "
+					+ this.getOpCode());
+			
 			throw new LanguageException(this.printErrorLocation() + "Unknown math function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
@@ -823,6 +857,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			throws LanguageException {
 		if (_first == null){
 			
+			LOG.error(this.printErrorLocation()  + "Missing parameter for function "
+					+ this.getOpCode());
+			
 			throw new LanguageException(this.printErrorLocation()  + "Missing parameter for function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -830,14 +867,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
        	if (((count == 1) && (_second!= null || _third != null)) || 
         		((count == 2) && (_third != null))){ 
        		
-       			throw new LanguageException(this.printErrorLocation() + "Invalid number of parameters for function "
+       			LOG.error(this.printErrorLocation() + "Invalid number of parameters for function "
+  					  + this.getOpCode());
+       		
+			    throw new LanguageException(this.printErrorLocation() + "Invalid number of parameters for function "
 					  + this.getOpCode(),
 					  LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
        	}
        	else if (((count == 2) && (_second == null)) || 
 		             ((count == 3) && (_second == null || _third == null))){
        		
-       		throw new LanguageException(this.printErrorLocation()  + "Missing parameter for function "
+       		LOG.error(this.printErrorLocation()  + "Missing parameter for function "
+					+ this.getOpCode());
+       		
+			throw new LanguageException(this.printErrorLocation()  + "Missing parameter for function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
        	}
@@ -845,6 +888,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	protected void checkMatrixParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
+			
+			LOG.error(this.printErrorLocation()  + "Missing parameter for function "
+					+ this.getOpCode());
 			
 			throw new LanguageException(this.printErrorLocation() +
 					"Expecting matrix parameter for function "
@@ -855,6 +901,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private void checkScalarParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.SCALAR) {
+			
+			LOG.error(this.printErrorLocation() +
+					"Expecting scalar parameter for function "
+					+ this.getOpCode());
 			
 			throw new LanguageException(this.printErrorLocation() +
 					"Expecting scalar parameter for function "
@@ -879,6 +929,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		// the check must be performed only when the dimensions are known at compilation time
 		if ( dimsKnown(e) && !is1DMatrix(e)) {
 			
+			LOG.error(this.printErrorLocation() +
+					"Expecting one-dimensional matrix parameter for function "
+					+ this.getOpCode());
+			
 			throw new LanguageException(this.printErrorLocation() +
 					"Expecting one-dimensional matrix parameter for function "
 							+ this.getOpCode(),
@@ -898,6 +952,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else if (expr1.getOutput().getDim1() != expr2.getOutput().getDim1() 
 				|| expr1.getOutput().getDim2() != expr2.getOutput().getDim2() ) {
 				
+				LOG.error(this.printErrorLocation() +
+						"Mismatch in matrix dimensions of parameters for function "
+						+ this.getOpCode());
+				
 				throw new LanguageException(this.printErrorLocation() +
 						"Mismatch in matrix dimensions of parameters for function "
 								+ this.getOpCode(),
@@ -909,6 +967,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	private void checkMatchingDimensionsQuantile() throws LanguageException {
 		if (_first.getOutput().getDim1() != _second.getOutput().getDim1()) {
+			
+			LOG.error(this.printErrorLocation() + "Mismatch in matrix dimensions for "
+					+ this.getOpCode());
 			
 			throw new LanguageException(this.printErrorLocation() + "Mismatch in matrix dimensions for "
 					+ this.getOpCode(),
@@ -1071,4 +1132,36 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
+	/**
+	 * Returns the matrix characteristics for scalar-matrix, matrix-scalar, matrix-matrix
+	 * operations. Format: rlen, clen, brlen, bclen.
+	 * 
+	 * @param left
+	 * @param right
+	 * @return
+	 */
+	private static long[] getBinaryMatrixCharacteristics( Expression left, Expression right )
+	{
+		long[] ret = new long[]{ -1, -1, -1, -1 };
+		Identifier idleft = left.getOutput();
+		Identifier idright = right.getOutput();
+		
+		//rlen known
+		if( idleft.getDim1()>0 || idright.getDim1()>0 )
+			ret[ 0 ] = Math.max(idleft.getDim1(), idright.getDim1());
+		
+		//rlen known
+		if( idleft.getDim2()>0 || idright.getDim2()>0 )
+			ret[ 1 ] = Math.max(idleft.getDim2(), idright.getDim2());
+		
+		//brlen known
+		if( idleft.getRowsInBlock()>0 || idright.getRowsInBlock()>0 )
+			ret[ 2 ] = Math.max(idleft.getRowsInBlock(), idright.getRowsInBlock());
+		
+		//bclen known
+		if( idleft.getColumnsInBlock()>0 || idright.getColumnsInBlock()>0 )
+			ret[ 3 ] = Math.max(idleft.getColumnsInBlock(), idright.getColumnsInBlock());
+		
+		return ret;
+	}
 }

@@ -123,21 +123,33 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("min"), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(LessThan.getLessThanFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(LessThan.getLessThanFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(Equals.getEqualsFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(Equals.getEqualsFnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(NotEquals.getNotEqualsFnObject(), cst), in, out, str);
 		}
 		

@@ -336,7 +336,11 @@ public class Unary extends Lop
 			sb.append( getOpcode() );
 			sb.append( OPERAND_DELIMITOR );
 			
-			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS || operation == OperationTypes.POW )
+			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS || 
+				 operation == OperationTypes.POW || 
+				 operation == OperationTypes.GREATER_THAN || operation == OperationTypes.GREATER_THAN_OR_EQUALS ||
+				 operation == OperationTypes.LESS_THAN || operation == OperationTypes.LESS_THAN_OR_EQUALS ||
+				 operation == OperationTypes.EQUALS || operation == OperationTypes.NOT_EQUALS )
 			{
 				//TODO discuss w/ Shirish: we should consolidate the other operations (see ScalarInstruction.parseInstruction / BinaryCPInstruction.getScalarOperator)
 				//append both operands

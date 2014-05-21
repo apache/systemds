@@ -23,6 +23,7 @@ import org.junit.Before;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -303,6 +304,12 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR) 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
+	}
+	
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) 
 	{
 		writeInputMatrix(name, matrix, bIncludeR);

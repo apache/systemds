@@ -435,8 +435,8 @@ public class DataExpression extends DataIdentifier
 	 * @throws IOException 
 	 */
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars)
-			throws LanguageException {
-		
+			throws LanguageException 
+	{	
 		// validate all input parameters
 		Set<String> varParamKeySet = getVarParams().keySet();
 		for ( String s : varParamKeySet ) {
@@ -444,33 +444,28 @@ public class DataExpression extends DataIdentifier
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA)) {
 				LOG.error(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.");
 				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
-			Expression dataParam = getVarParam(RAND_DATA);
-			
-			// attempt to perform constant replacement on data param
-			if (dataParam != null && dataParam instanceof DataIdentifier && !(dataParam instanceof IndexedIdentifier) 
-					&& currConstVars.containsKey(((DataIdentifier) dataParam).getName()))
-			{
-				addVarParam(RAND_DATA, currConstVars.get(((DataIdentifier)dataParam).getName()));
-			}
-			
-			if (dataParam == null && getOpCode().equals(DataOp.MATRIX)){
-				LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
-				throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			if (dataParam != null && dataParam.getOutput().getDataType() == DataType.SCALAR /*&& dataParam instanceof ConstIdentifier*/ ){
-				//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
-				//variable input are routed to a reshape operation (but it works only on matrices and hence, crashes)
-				
-				// replace DataOp MATRIX with RAND -- Rand handles matrix generation for Scalar values
-				// replace data parameter with min / max within Rand case below
-				this.setOpCode(DataOp.RAND);
-			}		
-				
+			}	
 		}	
-					
+	
+		//general data expression constant propagation
+		performConstantPropagationRand( currConstVars );
+		
+		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
+		Expression dataParam1 = getVarParam(RAND_DATA);		
+		if (dataParam1 == null && getOpCode().equals(DataOp.MATRIX)){
+			LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
+			throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR /*&& dataParam instanceof ConstIdentifier*/ ){
+			//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
+			//variable input are routed to a reshape operation (but it works only on matrices and hence, crashes)
+			
+			// replace DataOp MATRIX with RAND -- Rand handles matrix generation for Scalar values
+			// replace data parameter with min / max within Rand case below
+			this.setOpCode(DataOp.RAND);
+		}		
+		
+		
 		// IMPORTANT: for each operation, one must handle unnamed parameters
 		
 		switch (this.getOpCode()) {
@@ -1148,7 +1143,7 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type");
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type or unsupported expression");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type");
 			}
 			
@@ -1740,6 +1735,28 @@ public class DataExpression extends DataIdentifier
 		}
 		return;
 	}
+	
+	/**
+	 * 
+	 * @param currConstVars
+	 */
+	private void performConstantPropagationRand( HashMap<String, ConstIdentifier> currConstVars )
+	{
+		//here, we propagate constants for all rand parameters that are required during validate.
+		String[] paramNamesForEval = new String[]{RAND_DATA, RAND_SPARSITY, RAND_MIN, RAND_MAX};
+		
+		//replace data identifiers with const identifiers
+		for( String paramName : paramNamesForEval )
+		{
+			Expression paramExp = getVarParam(paramName);
+			if (   paramExp != null && paramExp instanceof DataIdentifier && !(paramExp instanceof IndexedIdentifier) 
+				&& currConstVars.containsKey(((DataIdentifier) paramExp).getName()))
+			{
+				addVarParam(paramName, currConstVars.get(((DataIdentifier)paramExp).getName()));
+			}				
+		}
+	}
+	
 	
 	private String fileNameCat(BinaryExpression expr, HashMap<String, ConstIdentifier> currConstVars, String filename)throws LanguageException{
 		// Processing the left node first

@@ -186,21 +186,33 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction
 			return new RightScalarOperator(Builtin.getBuiltinFnObject("log"), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
 			return new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
 			return new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(LessThan.getLessThanFnObject(), default_constant);
 			return new RightScalarOperator(LessThan.getLessThanFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
 			return new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(Equals.getEqualsFnObject(), default_constant);
 			return new RightScalarOperator(Equals.getEqualsFnObject(), default_constant);
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
 			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
 		}
 		

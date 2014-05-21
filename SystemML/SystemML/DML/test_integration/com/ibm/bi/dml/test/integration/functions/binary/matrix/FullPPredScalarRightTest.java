@@ -18,13 +18,22 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class FullScalarPPredTest extends AutomatedTestBase 
+/**
+ * The main purpose of this test is to verify the internal optimization regarding
+ * sparse-safeness of ppred for various input combinations. (ppred is not sparse-safe 
+ * in general, but for certain instance involving 0 scalar it is).
+ * 
+ * Furthermore, it is used to test all combinations of matrix-scalar, scalar-matrix
+ * ppred operations in all execution types.
+ * 
+ */
+public class FullPPredScalarRightTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "ScalarPPredTest";
+	private final static String TEST_NAME1 = "PPredScalarRightTest";
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static double eps = 1e-10;
 	
@@ -38,7 +47,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 		GREATER,
 		LESS,
 		EQUALS,
-		NOT_EQAULS,
+		NOT_EQUALS,
 		GREATER_EQUALS,
 		LESS_EQUALS,
 	}
@@ -47,10 +56,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "B" })   ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   ); 
 	}
 
 	
@@ -75,7 +81,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsZeroDenseCP() 
 	{
-		runPPredTest(Type.NOT_EQAULS, true, false, ExecType.CP);
+		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.CP);
 	}
 	
 	@Test
@@ -111,7 +117,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsNonZeroDenseCP() 
 	{
-		runPPredTest(Type.NOT_EQAULS, false, false, ExecType.CP);
+		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.CP);
 	}
 	
 	@Test
@@ -147,7 +153,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsZeroSparseCP() 
 	{
-		runPPredTest(Type.NOT_EQAULS, true, true, ExecType.CP);
+		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.CP);
 	}
 	
 	@Test
@@ -183,7 +189,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsNonZeroSparseCP() 
 	{
-		runPPredTest(Type.NOT_EQAULS, false, true, ExecType.CP);
+		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.CP);
 	}
 	
 	@Test
@@ -219,7 +225,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsZeroDenseMR() 
 	{
-		runPPredTest(Type.NOT_EQAULS, true, false, ExecType.MR);
+		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.MR);
 	}
 	
 	@Test
@@ -255,7 +261,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsNonZeroDenseMR() 
 	{
-		runPPredTest(Type.NOT_EQAULS, false, false, ExecType.MR);
+		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.MR);
 	}
 	
 	@Test
@@ -291,7 +297,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsZeroSparseMR() 
 	{
-		runPPredTest(Type.NOT_EQAULS, true, true, ExecType.MR);
+		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -327,7 +333,7 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	@Test
 	public void testPPredNotEqualsNonZeroSparseMR() 
 	{
-		runPPredTest(Type.NOT_EQAULS, false, true, ExecType.MR);
+		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.MR);
 	}
 	
 	@Test
@@ -369,8 +375,6 @@ public class FullScalarPPredTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
 					                        Integer.toString(type.ordinal()),
 					                        Double.toString(constant),
 					                        HOME + OUTPUT_DIR + "B"    };
@@ -382,11 +386,10 @@ public class FullScalarPPredTest extends AutomatedTestBase
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 
-			writeInputMatrix("A", A, true);
+			writeInputMatrixWithMTD("A", A, true);
 			
-	
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			//run tests
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 

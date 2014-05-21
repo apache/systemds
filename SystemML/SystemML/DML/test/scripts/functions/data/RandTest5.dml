@@ -1,0 +1,20 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+rrows = $1;
+rcols = $2;
+rmin = $3;
+rmax = $4;
+rsparsity = $5;
+
+C = Rand(rows=rrows, cols=rcols, min=rmin, max=rmax, sparsity=rsparsity);
+
+write(C, $6);
+
+

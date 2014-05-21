@@ -5628,6 +5628,7 @@ public class MatrixBlockDSM extends MatrixValue
 				UniformPRNGenerator nnzPRNG = new UniformPRNGenerator(seed);
 				
 				// block-level sparsity, which may differ from overall sparsity in the matrix.
+				// (e.g., border blocks may fall under skinny matrix turn point)
 				boolean localSparse = sparse && !(blockcols<=SKINNY_MATRIX_TURN_POINT);
 				
 				if ( localSparse ) {
@@ -5635,10 +5636,10 @@ public class MatrixBlockDSM extends MatrixValue
 					for(int ind=0; ind<blocknnz; ind++) {
 						int i = nnzPRNG.nextInt(blockrows);
 						int j = nnzPRNG.nextInt(blockcols);
-						double v = nnzPRNG.nextDouble();
+						double val = min + (range * nnzPRNG.nextDouble());
 						if( sparseRows[rowoffset+i]==null )
 							sparseRows[rowoffset+i]=new SparseRow(estimatedNNzsPerRow, clen);
-						sparseRows[rowoffset+i].set(coloffset+j, v);
+						sparseRows[rowoffset+i].set(coloffset+j, val);
 					}
 				}
 				else {

@@ -1,0 +1,133 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+#
+# DML Script to compute univariate statistics for all attributes 
+# in a given data set
+#
+# Three inputs:
+#     $1) X - input data
+#     $2) TYPES - row matrix that denotes the "kind" for each 
+#              attribute
+#             kind=1 for scale, kind=2 for nominal,
+#             kind=3 for ordinal
+#
+# One output:
+#     $STATS) output directory in which following three statistics 
+#         files are created
+#         + base.stats - matrix with all 17 statistics (14 scale, 
+#         3 categorical) computed for all attributes
+#         + categorical.counts - matrix in which each column 
+#         gives the category-wise counts for all categories in 
+#         that attribute
+#
+#
+
+A = read($X); # data file
+K = read($TYPES); # attribute kind file
+
+# number of features/attributes
+n = ncol(A);
+
+# number of data records
+m = nrow(A);
+
+# number of statistics
+numBaseStats = 17; # (14 scale stats, 3 categorical stats)
+
+max_kind = max(K);
+
+# matrices to store computed statistics
+baseStats = matrix(0, rows=numBaseStats, cols=n);
+
+
+parfor(i in 1:n, check=0) {
+
+	# project out the i^th column
+	F = A[,i];
+
+	kind = castAsScalar(K[1,i]);
+
+	if ( kind == 1 ) {
+		print("[" + i + "] Scale");
+		# compute SCALE statistics on the projected column
+		minimum = min(F);
+		maximum = max(F);
+		rng = maximum - minimum;
+
+		mu = mean(F);
+		m2 = moment(F, 2);
+		m3 = moment(F, 3);
+		m4 = moment(F, 4);
+
+		var = m/(m-1.0)*m2;
+		std_dev = sqrt(var);
+		se = std_dev/sqrt(m);
+		cv = std_dev/mu;
+
+		g1 = m3/(std_dev^3);
+		g2 = m4/(std_dev^4) - 3;
+		#se_g1=sqrt( 6*m*(m-1.0) / ((m-2.0)*(m+1.0)*(m+3.0)) ); 
+		se_g1=sqrt( (6/(m-2.0)) * (m/(m+1.0)) * ((m-1.0)/(m+3.0)) ); 
+
+		#se_g2= sqrt( (4*(m^2-1)*se_g1^2)/((m+5.0)*(m-3.0)) );  
+		se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
+
+		md = quantile(F, 0.5);
+		iqm = interQuartileMean(F);
+
+		# place the computed statistics in output matrices
+		baseStats[1,i] = minimum;
+		baseStats[2,i] = maximum;
+		baseStats[3,i] = rng;
+
+		baseStats[4,i] = mu;
+		baseStats[5,i] = var;
+		baseStats[6,i] = std_dev;
+		baseStats[7,i] = se;
+		baseStats[8,i] = cv;
+
+		baseStats[9,i] = g1;
+		baseStats[10,i] = g2;
+		baseStats[11,i] = se_g1;
+		baseStats[12,i] = se_g2;
+
+		baseStats[13,i] = md;
+		baseStats[14,i] = iqm;
+	}
+	else {
+		if (kind == 2 | kind == 3) {
+			print("[" + i + "] Categorical");
+			
+			# check if the categorical column has valid values
+			minF = min(F);
+			if (minF <=0) {
+				print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
+			}
+			else {
+				# compute CATEGORICAL statistics on the projected column
+				cat_counts = table(F,1);  # counts for each category
+				num_cat = nrow(cat_counts); # number of categories
+
+				mode = rowIndexMax(t(cat_counts));
+				mx = max(cat_counts)
+				modeArr =  ppred(cat_counts, mx, "==")
+				numModes = sum(modeArr);
+
+				# place the computed statistics in output matrices
+				baseStats[15,i] = num_cat;
+				baseStats[16,i] = mode;
+				baseStats[17,i] = numModes;
+			}
+		}
+	}
+}
+
+write(baseStats, $STATS);
+

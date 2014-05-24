@@ -1,0 +1,166 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
+# Compares two categorical data vectors (presumed to be clusterings) and
+# counts matching/nonmatching same-cluster/different-cluster pairs of rows
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# spY   String  ---     Location to read a column-vector with the "specified"
+#                       assignment of records (rows) to categories (clusters)
+# prY   String  ---     Location to read a column-vector with the "predicted"
+#                       assignment of records (rows) to categories (clusters)
+#                       Note: the same category may be labeled differently in
+#                       each of the two vectors
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemML.jar -f Kmeans-score.dml -nvargs spY=Y.mtx prY=Yout.mtx
+
+print ("BEGIN K-MEANS SCORING SCRIPT");
+
+print ("Reading the specified Y...");
+spY = read ($spY);
+
+print ("Reading the predicted Y...");
+prY = read ($prY);
+
+num_records = nrow (spY);
+if (num_records != nrow (prY) | ncol (spY) != 1 | ncol (prY) != 1) {
+    print ("ERROR: Input size mismatch");
+    print ("nrow (spY) = " + nrow (spY) + ";  ncol (spY) = " + ncol (spY)
+      + ";  nrow (prY) = " + nrow (prY) + ";  ncol (prY) = " + ncol (prY));
+} else {
+
+    print ("Computing the pairs counts...");
+
+    orig_min_spY = min (spY);
+    orig_min_prY = min (prY);
+    spY = spY + (1 - orig_min_spY);
+    prY = prY + (1 - orig_min_prY);
+
+    spYprY_row_counts = table (spY, prY);
+    spY_row_counts = rowSums (spYprY_row_counts);
+    prY_row_counts = t(colSums (spYprY_row_counts));
+
+    # Count all pairs of rows having the same (spY, prY)-values
+    spYprY_pair_counts = spYprY_row_counts * (spYprY_row_counts - 1) / 2;
+
+    # Count all pairs of rows having the same spY-values
+    spY_pair_counts = spY_row_counts * (spY_row_counts - 1) / 2;
+    # Count all pairs of rows having the same prY-values
+    prY_pair_counts = prY_row_counts * (prY_row_counts - 1) / 2;
+
+    num_pairs = num_records * (num_records - 1.0) / 2.0;
+
+    num_TP_pairs = sum (spYprY_pair_counts);
+    num_FP_pairs = sum (prY_pair_counts) - num_TP_pairs;
+    num_FN_pairs = sum (spY_pair_counts) - num_TP_pairs;
+    num_TN_pairs = num_pairs - num_TP_pairs - num_FP_pairs - num_FN_pairs;
+    
+    pct_TP_pairs = round (num_TP_pairs / num_pairs * 1000000.0) / 10000.0;
+    pct_TN_pairs = round (num_TN_pairs / num_pairs * 1000000.0) / 10000.0;
+    pct_FP_pairs = round (num_FP_pairs / num_pairs * 1000000.0) / 10000.0;
+    pct_FN_pairs = round (num_FN_pairs / num_pairs * 1000000.0) / 10000.0;
+    
+    space_TP = "";  if (pct_TP_pairs < 100) {space_TP = " ";}  if (pct_TP_pairs < 10) {space_TP = "  ";}
+    space_TN = "";  if (pct_TN_pairs < 100) {space_TN = " ";}  if (pct_TN_pairs < 10) {space_TN = "  ";}
+    space_FP = "";  if (pct_FP_pairs < 100) {space_FP = " ";}  if (pct_FP_pairs < 10) {space_FP = "  ";}
+    space_FN = "";  if (pct_FN_pairs < 100) {space_FN = " ";}  if (pct_FN_pairs < 10) {space_FN = "  ";}
+
+    print ("Same-cluster pairs predicted as Same-cluster ( True Pos): " + space_TP
+        + pct_TP_pairs + "% of all pairs" + " (" + num_TP_pairs + ")");
+    print ("Diff-cluster pairs predicted as Diff-cluster ( True Neg): " + space_TN
+        + pct_TN_pairs + "% of all pairs" + " (" + num_TN_pairs + ")");
+    print ("Diff-cluster pairs predicted as Same-cluster (False Pos): " + space_FP
+        + pct_FP_pairs + "% of all pairs" + " (" + num_FP_pairs + ")");
+    print ("Same-cluster pairs predicted as Diff-cluster (False Neg): " + space_FN
+        + pct_FN_pairs + "% of all pairs" + " (" + num_FN_pairs + ")");
+        
+    [spY_cids, prY_cids, full_counts, matching_counts, rounded_percentages] =
+        get_best_assignments (spYprY_row_counts);
+        
+    print (" ");
+    print ("Specified Categories versus Predicted Clusters:");
+    
+    spY_cids = spY_cids + orig_min_spY - 1;
+    prY_cids = prY_cids + orig_min_prY - 1;
+    
+    for (i in 1 : nrow (spY_cids))
+    {
+        pct = castAsScalar (rounded_percentages [i, 1]);
+        space_pct = "";  if (pct < 100) {space_pct = " ";}  if (pct < 10) {space_pct = "  ";}
+        print ("Category " + as.integer (castAsScalar (spY_cids [i, 1])) + 
+            ":  best pred. cluster is " + as.integer (castAsScalar (prY_cids [i, 1])) + 
+            ";  full count = " + as.integer (castAsScalar (full_counts [i, 1])) + 
+            ",  matching count = " + space_pct + pct + "% (" +
+            as.integer (castAsScalar (matching_counts [i, 1])) + ")");
+    }
+
+    [prY_cids, spY_cids, full_counts, matching_counts, rounded_percentages] =
+        get_best_assignments (t(spYprY_row_counts));
+        
+    print (" ");
+    print ("Predicted Clusters versus Specified Categories:");
+    
+    prY_cids = prY_cids + orig_min_prY - 1;
+    spY_cids = spY_cids + orig_min_spY - 1;
+    
+    for (i in 1 : nrow (prY_cids))
+    {
+        pct = castAsScalar (rounded_percentages [i, 1]);
+        space_pct = "";  if (pct < 100) {space_pct = " ";}  if (pct < 10) {space_pct = "  ";}
+        print ("Cluster " + as.integer (castAsScalar (prY_cids [i, 1])) + 
+            ":  best spec. categ. is " + as.integer (castAsScalar (spY_cids [i, 1])) + 
+            ";  full count = " + as.integer (castAsScalar (full_counts [i, 1])) + 
+            ",  matching count = " + space_pct + pct + "% (" +
+            as.integer (castAsScalar (matching_counts [i, 1])) + ")");
+    }
+
+    print (" ");
+}
+
+print ("DONE: K-MEANS SCORING SCRIPT");
+
+
+
+
+get_best_assignments = function (Matrix[double] counts)
+return (Matrix[double] row_ids, Matrix[double] col_ids, Matrix[double] margins, 
+        Matrix[double] max_counts, Matrix[double] rounded_percentages)
+{
+    margins = rowSums (counts);
+    select_positive = diag (ppred (margins, 0, ">"));
+    select_positive = removeEmpty (target = select_positive, margin = "rows");
+    row_ids = select_positive %*% seq (1, nrow (margins), 1);
+    pos_counts = select_positive %*% counts;
+    pos_margins = select_positive %*% margins;
+    max_counts = rowMaxs (pos_counts);
+    one_per_column = matrix (1, rows = 1, cols = ncol (pos_counts));
+    max_counts_ppred = max_counts %*% one_per_column;
+    is_max_count = ppred (pos_counts, max_counts_ppred, "==");
+    aggr_is_max_count = sumup_cols (is_max_count);
+    col_ids = rowSums (ppred (aggr_is_max_count, 0, "==")) + 1;
+    rounded_percentages = round (1000000.0 * max_counts / pos_margins) / 10000.0;
+}
+
+sumup_cols = function (Matrix[double] A) return (Matrix[double] sum_A)
+{
+    shift = 1;
+    n_A = ncol(A);
+    sum_A = A;
+    while (shift < n_A) {
+        sum_A [, (shift+1):n_A] = sum_A [, (shift+1):n_A] + sum_A [, 1:(n_A-shift)];
+        shift = 2 * shift;
+    } 
+}
+
+

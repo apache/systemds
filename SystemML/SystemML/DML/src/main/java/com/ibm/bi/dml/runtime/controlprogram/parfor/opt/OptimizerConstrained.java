@@ -378,7 +378,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
 				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
 			{
-				int k = Math.min(_N,_rk2);
+				int k = (int)Math.min(_N,_rk2);
 				
 				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
 				pn.setK( k );

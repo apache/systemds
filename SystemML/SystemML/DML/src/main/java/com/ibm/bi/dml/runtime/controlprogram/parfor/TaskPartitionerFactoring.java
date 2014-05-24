@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,12 +30,12 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class TaskPartitionerFactoring extends TaskPartitioner
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private int _numThreads = -1;
 	
-	public TaskPartitionerFactoring( int taskSize, int numThreads, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
+	public TaskPartitionerFactoring( long taskSize, int numThreads, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		super(taskSize, iterVarName, fromVal, toVal, incrVal);
 		
@@ -48,17 +48,17 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	{
 		LinkedList<Task> tasks = new LinkedList<Task>();
 		
-		int lFrom  = _fromVal.getIntValue();
-		int lTo    = _toVal.getIntValue();
-		int lIncr  = _incrVal.getIntValue();
+		long lFrom  = _fromVal.getLongValue();
+		long lTo    = _toVal.getLongValue();
+		long lIncr  = _incrVal.getLongValue();
 		
 		int P = _numThreads;  // number of parallel workers
-		int N = _numIter;     // total number of iterations
-		int R = N;            // remaining number of iterations
-		int K = -1;           // next _numThreads task sizes	
+		long N = _numIter;     // total number of iterations
+		long R = N;            // remaining number of iterations
+		long K = -1;           // next _numThreads task sizes	
 		TaskType type = null; // type of iterations: range tasks (similar to run-length encoding) make only sense if taskSize>3
 		
-		for( int i = lFrom; i<=lTo;  )
+		for( long i = lFrom; i<=lTo;  )
 		{
 			K = determineNextBatchSize(R, P);
 			R -= (K * P);
@@ -80,7 +80,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 				if( type == TaskType.SET ) 
 				{
 					//value based tasks
-					for( int k=0; k<K && i<=lTo; k++, i+=lIncr )
+					for( long k=0; k<K && i<=lTo; k++, i+=lIncr )
 					{
 						lTask.addIteration(new IntObject(_iterVarName, i));				
 					}				
@@ -88,7 +88,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 				else 
 				{
 					//determine end of task
-					int to = Math.min( i+(K-1)*lIncr, lTo );
+					long to = Math.min( i+(K-1)*lIncr, lTo );
 					
 					//range based tasks
 					lTask.addIteration(new IntObject(_iterVarName, i));	    //from
@@ -104,24 +104,24 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	}
 
 	@Override
-	public int createTasks(LocalTaskQueue<Task> queue) 
+	public long createTasks(LocalTaskQueue<Task> queue) 
 		throws DMLRuntimeException 
 	{		
-		int numCreatedTasks=0;
+		long numCreatedTasks = 0;
 		
-		int lFrom  = _fromVal.getIntValue();
-		int lTo    = _toVal.getIntValue();
-		int lIncr  = _incrVal.getIntValue();
+		long lFrom  = _fromVal.getLongValue();
+		long lTo    = _toVal.getLongValue();
+		long lIncr  = _incrVal.getLongValue();
 		
 		int P = _numThreads;     // number of parallel workers
-		int N = _numIter;     // total number of iterations
-		int R = N;               // remaining number of iterations
-		int K = -1;              //next _numThreads task sizes	
+		long N = _numIter;     // total number of iterations
+		long R = N;               // remaining number of iterations
+		long K = -1;              //next _numThreads task sizes	
 	    TaskType type = null;    // type of iterations: range tasks (similar to run-length encoding) make only sense if taskSize>3
 		
 		try
 		{
-			for( int i = lFrom; i<=lTo;  )
+			for( long i = lFrom; i<=lTo;  )
 			{
 				K = determineNextBatchSize(R, P);
 				R -= (K * P);
@@ -142,7 +142,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 					if( type == TaskType.SET ) 
 					{
 						//value based tasks
-						for( int k=0; k<K && i<=lTo; k++, i+=lIncr )
+						for( long k=0; k<K && i<=lTo; k++, i+=lIncr )
 						{
 							lTask.addIteration(new IntObject(_iterVarName, i));				
 						}				
@@ -150,7 +150,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 					else 
 					{
 						//determine end of task
-						int to = Math.min( i+(K-1)*lIncr, lTo );
+						long to = Math.min( i+(K-1)*lIncr, lTo );
 						
 						//range based tasks
 						lTask.addIteration(new IntObject(_iterVarName, i));	    //from
@@ -187,10 +187,10 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	 * @param R
 	 * @return
 	 */
-	protected int determineNextBatchSize(int R, int P) 
+	protected long determineNextBatchSize(long R, int P) 
 	{
 		int x = 2;
-		int K = (int) Math.ceil((double)R / ( x * P )); //NOTE: round creates more tasks
+		long K = (long) Math.ceil((double)R / ( x * P )); //NOTE: round creates more tasks
 		
 		if( K < 1 ) //account for rounding errors
 			K = 1;

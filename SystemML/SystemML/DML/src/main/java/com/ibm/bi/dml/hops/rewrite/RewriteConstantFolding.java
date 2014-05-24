@@ -86,7 +86,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private Hop rule_ConstantFolding( Hop hop ) 
 		throws HopsException 
 	{
-		return rConstantFoldingBinaryExpression(hop);
+		return rConstantFoldingExpression(hop);
 	}
 	
 	/**
@@ -94,7 +94,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * @param root
 	 * @throws HopsException
 	 */
-	private Hop rConstantFoldingBinaryExpression( Hop root ) 
+	private Hop rConstantFoldingExpression( Hop root ) 
 		throws HopsException
 	{
 		if( root.get_visited() == VISIT_STATUS.DONE )
@@ -105,7 +105,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		for( int i=0; i<root.getInput().size(); i++ )
 		{
 			Hop h = root.getInput().get(i);
-			rConstantFoldingBinaryExpression(h);
+			rConstantFoldingExpression(h);
 		}
 		
 		//fold binary op if both are literals / unary op if literal
@@ -196,7 +196,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		LiteralOp literal = null;
 		switch( bop.get_valueType() ){
 			case DOUBLE:  literal = new LiteralOp(String.valueOf(so.getDoubleValue()),so.getDoubleValue()); break;
-			case INT:     literal = new LiteralOp(String.valueOf(so.getIntValue()),so.getIntValue()); break;
+			case INT:     literal = new LiteralOp(String.valueOf(so.getLongValue()),so.getLongValue()); break;
 			case BOOLEAN: literal = new LiteralOp(String.valueOf(so.getBooleanValue()),so.getBooleanValue()); break;
 			case STRING:  literal = new LiteralOp(String.valueOf(so.getStringValue()),so.getStringValue()); break;	
 		}

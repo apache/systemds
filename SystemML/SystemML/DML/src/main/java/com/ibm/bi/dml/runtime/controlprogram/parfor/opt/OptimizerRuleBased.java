@@ -113,8 +113,8 @@ public class OptimizerRuleBased extends Optimizer
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	
 	//problem and infrastructure properties
-	protected int _N    = -1; //problemsize
-	protected int _Nmax = -1; //max problemsize (including subproblems)
+	protected long _N    = -1; //problemsize
+	protected long _Nmax = -1; //max problemsize (including subproblems)
 	protected int _lk   = -1; //local par
 	protected int _lkmaxCP = -1; //local max par (if only CP inst)
 	protected int _lkmaxMR = -1; //local max par (if also MR inst)
@@ -274,7 +274,7 @@ public class OptimizerRuleBased extends Optimizer
 	 */
 	protected void analyzeProblemAndInfrastructure( OptNode pn )
 	{
-		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
+		_N     = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS)); 
 		_Nmax  = pn.getMaxProblemSize(); 
 		_lk    = InfrastructureAnalyzer.getLocalParallelism();
 		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
@@ -1045,7 +1045,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getExecType()==ExecType.MR )		
 		{
 			apply = true;
-			replication = Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_EXPORT) );
+			replication = (int)Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_EXPORT) );
 		}
 		
 		//modify the runtime plan 
@@ -1167,7 +1167,7 @@ public class OptimizerRuleBased extends Optimizer
 				kMax = 1;
 			
 			//distribute remaining parallelism 
-			int tmpK = (_N<kMax)? _N : kMax;
+			int tmpK = (int)((_N<kMax)? _N : kMax);
 			pfpb.setDegreeOfParallelism(tmpK);
 			n.setK(tmpK);	
 			rAssignRemainingParallelism( n,(int)Math.ceil(((double)(kMax-tmpK+1))/tmpK) ); //1 if tmpK=kMax, otherwise larger
@@ -1186,7 +1186,7 @@ public class OptimizerRuleBased extends Optimizer
 			else //not nested (default)
 			{
 				//determine remote max parallelism constraint
-				int tmpK = (_N<_rk)? _N : _rk;
+				int tmpK = (int)((_N<_rk)? _N : _rk);
 				pfpb.setDegreeOfParallelism(tmpK);
 				n.setK(tmpK);	
 				
@@ -1296,7 +1296,7 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagLIX = (partitioner == PTaskPartitioner.FACTORING_CMAX);
 		if( flagLIX ) 
 		{
-			int maxc = n.getMaxC( _N );
+			long maxc = n.getMaxC( _N );
 			pfpb.setTaskSize( maxc ); //used as constraint 
 			pfpb.disableJVMReuse();
 			n.addParam(ParamType.TASK_SIZE, String.valueOf(maxc));
@@ -1363,7 +1363,7 @@ public class OptimizerRuleBased extends Optimizer
 			   ((moDpf==PDataPartitionFormat.ROW_WISE && mo.getNumRows()==_N ) ||
 				(moDpf==PDataPartitionFormat.COLUMN_WISE && mo.getNumColumns()==_N)) )
 			{
-				int k = Math.min(_N,_rk2);
+				int k = (int)Math.min(_N,_rk2);
 				
 				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
 				pn.setK( k );
@@ -1851,7 +1851,7 @@ public class OptimizerRuleBased extends Optimizer
 		//get num tasks according to task partitioning 
 		PTaskPartitioner tp = PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER));
 		int k = pn.getK();
-		int W = estimateNumTasks(tp, _N, k); 
+		long W = estimateNumTasks(tp, _N, k); 
 		
 		for( String var : resultVars )
 		{
@@ -1883,9 +1883,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param k
 	 * @return
 	 */
-	protected int estimateNumTasks( PTaskPartitioner tp, int N, int k )
+	protected long estimateNumTasks( PTaskPartitioner tp, long N, int k )
 	{
-		int W = -1;
+		long W = -1;
 		
 		switch( tp )
 		{
@@ -1894,7 +1894,7 @@ public class OptimizerRuleBased extends Optimizer
 			case STATIC:           W = N / k; break;
 			case FACTORING:
 			case FACTORING_CMIN:
-			case FACTORING_CMAX:   W = k * (int)(Math.log(((double)N)/k)/Math.log(2.0)); break;
+			case FACTORING_CMAX:   W = k * (long)(Math.log(((double)N)/k)/Math.log(2.0)); break;
 			default:               W = N; break; //N as worst case estimate
 		}
 		

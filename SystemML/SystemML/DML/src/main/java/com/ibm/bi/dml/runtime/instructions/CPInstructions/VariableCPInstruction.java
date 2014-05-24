@@ -548,7 +548,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 		case CastAsIntegerVariable:{ 
 			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-			ec.setScalarOutput(output.get_name(), new IntObject(scalarInput.getIntValue()));
+			ec.setScalarOutput(output.get_name(), new IntObject(scalarInput.getLongValue()));
 			break;
 		}
 		case CastAsBooleanVariable:{ 
@@ -642,7 +642,7 @@ public class VariableCPInstruction extends CPInstruction
 					res = (ScalarObject) new DoubleObject(d);
 					break;
 				case INT:
-					int i = MapReduceTool.readIntegerFromHDFSFile(input2.get_name());
+					long i = MapReduceTool.readIntegerFromHDFSFile(input2.get_name());
 					res = (ScalarObject) new IntObject(i);
 					break;
 				case BOOLEAN:
@@ -848,7 +848,7 @@ public class VariableCPInstruction extends CPInstruction
 				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
 				break;
 			case INT:
-				MapReduceTool.writeIntToHDFS(scalar.getIntValue(), input2.get_name());
+				MapReduceTool.writeIntToHDFS(scalar.getLongValue(), input2.get_name());
 				break;
 			case BOOLEAN:
 				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());

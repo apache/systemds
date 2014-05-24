@@ -78,7 +78,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		LOG.trace("execute RemoteParWorkerMapper "+_stringID+" ("+_workerID+")");
 		
 		//state for jvm reuse and multiple iterations 
-		int numIters = getExecutedIterations(); 
+		long numIters = getExecutedIterations(); 
 		
 		try 
 		{

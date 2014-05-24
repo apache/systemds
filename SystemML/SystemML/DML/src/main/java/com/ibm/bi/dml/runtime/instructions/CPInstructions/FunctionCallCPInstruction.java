@@ -130,7 +130,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 					currFormalParamValue = new DoubleObject(defaultVal);
 				}
 				else if (valType == ValueType.INT){
-					int defaultVal = (i > this._boundInputParamNames.size()) ? new Integer(fpb.getInputParams().get(i).getDefaultValue()).intValue() : new Integer(this._boundInputParamNames.get(i)).intValue();
+					long defaultVal = (i > this._boundInputParamNames.size()) ? new Long(fpb.getInputParams().get(i).getDefaultValue()).intValue() : new Integer(this._boundInputParamNames.get(i)).intValue();
 					currFormalParamValue = new IntObject(defaultVal);
 				}
 				else if (valType == ValueType.STRING){

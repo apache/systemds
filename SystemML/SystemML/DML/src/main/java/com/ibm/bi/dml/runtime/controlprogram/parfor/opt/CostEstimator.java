@@ -34,7 +34,7 @@ public abstract class CostEstimator
 	
 	//default parameters
 	public static final double DEFAULT_EST_PARALLELISM = 1.0; //default degree of parallelism: serial
-	public static final int    FACTOR_NUM_ITERATIONS   = 10; //default problem size
+	public static final long   FACTOR_NUM_ITERATIONS   = 10; //default problem size
 	public static final double DEFAULT_TIME_ESTIMATE   = 5;  //default execution time: 5ms
 	public static final double DEFAULT_MEM_ESTIMATE_CP = 1024; //default memory consumption: 1KB 
 	public static final double DEFAULT_MEM_ESTIMATE_MR = 10*1024*1024; //default memory consumption: 20MB 
@@ -129,12 +129,12 @@ public abstract class CostEstimator
 							break;
 						case FOR:
 							tmp = node.getParam(ParamType.NUM_ITERATIONS);
-							N = (tmp!=null) ? (double)Integer.parseInt(tmp) : FACTOR_NUM_ITERATIONS; 
+							N = (tmp!=null) ? (double)Long.parseLong(tmp) : FACTOR_NUM_ITERATIONS; 
 							val = N * getSumEstimate(measure, node.getChilds(), et);
 							break; 
 						case PARFOR:
 							tmp = node.getParam(ParamType.NUM_ITERATIONS);
-							N = (tmp!=null) ? (double)Integer.parseInt(tmp) : FACTOR_NUM_ITERATIONS; 
+							N = (tmp!=null) ? (double)Long.parseLong(tmp) : FACTOR_NUM_ITERATIONS; 
 							val = N * getSumEstimate(measure, node.getChilds(), et) / node.getK(); 
 							break;						
 					}

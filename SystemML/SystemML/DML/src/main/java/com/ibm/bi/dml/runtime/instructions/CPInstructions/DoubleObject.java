@@ -27,32 +27,34 @@ public class DoubleObject extends ScalarObject
 		_value = val;
 	}
 
-	public double getDoubleValue(){
-		return _value;
+	@Override
+	public boolean getBooleanValue(){
+		return (_value != 0);
 	}
 
-	public int getIntValue(){
-		return UtilFunctions.toInt(_value);
-	}
-	
+	@Override
 	public long getLongValue() {
 		return UtilFunctions.toLong(_value);
 	}
 	
+	@Override
+	public double getDoubleValue(){
+		return _value;
+	}
+	
+	@Override
+	public String getStringValue(){
+		return Double.toString(_value);
+	}
+	
+	@Override
 	public Object getValue(){
 		return _value;
 	}
 	
-	public String getStringValue(){
-		return Double.toString(_value);
-	}
 
 	public String toString() { 
 		return getStringValue();
-	}
-
-	public boolean getBooleanValue(){
-		return (_value != 0);
 	}
 
 	@Override

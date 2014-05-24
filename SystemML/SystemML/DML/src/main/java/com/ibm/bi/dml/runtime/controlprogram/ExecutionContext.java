@@ -196,7 +196,7 @@ public class ExecutionContext
 		if ( isLiteral ) {
 			switch (vt) {
 			case INT:
-				int intVal = Integer.parseInt(name);
+				long intVal = Long.parseLong(name);
 				IntObject intObj = new IntObject(intVal);
 				return intObj;
 			case DOUBLE:

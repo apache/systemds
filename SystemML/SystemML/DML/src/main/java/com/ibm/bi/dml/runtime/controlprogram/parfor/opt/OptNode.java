@@ -405,9 +405,9 @@ public class OptNode
 	 * @param N
 	 * @return
 	 */
-	public int getMaxC( int N )
+	public long getMaxC( long N )
 	{
-		int maxc = N;
+		long maxc = N;
 		if( _childs != null )
 			for( OptNode n : _childs )
 				maxc = Math.min(maxc, n.getMaxC( N ) );
@@ -422,7 +422,7 @@ public class OptNode
 		if(    _ntype == NodeType.PARFOR 
 		    && _etype == ExecType.CP    )
 		{
-			maxc = (int)Math.floor(maxc / _k);
+			maxc = (long)Math.floor(maxc / _k);
 		}
 		
 		return maxc;
@@ -584,9 +584,9 @@ public class OptNode
 	 * 
 	 * @return
 	 */
-	public int getMaxProblemSize() 
+	public long getMaxProblemSize() 
 	{
-		int max = 0;
+		long max = 0;
 		if( _childs != null )
 			for( OptNode n : _childs )
 				max = Math.max(max, n.getMaxProblemSize());		
@@ -594,7 +594,7 @@ public class OptNode
 			max = 1;
 		
 		if( _ntype == NodeType.PARFOR )
-			max = max * Integer.parseInt(_params.get(ParamType.NUM_ITERATIONS));
+			max = max * Long.parseLong(_params.get(ParamType.NUM_ITERATIONS));
 
 		return max;
 	}

@@ -102,7 +102,7 @@ public class PreparedScript
 	 * @param scalar
 	 * @throws DMLException 
 	 */
-	public void setScalar(String varname, int scalar) 
+	public void setScalar(String varname, long scalar) 
 		throws DMLException
 	{
 		if( !_inVarnames.contains(varname) )

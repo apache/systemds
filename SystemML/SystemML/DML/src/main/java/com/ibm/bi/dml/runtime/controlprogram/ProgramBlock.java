@@ -274,7 +274,7 @@ public class ProgramBlock
 		if( ret.getValueType() != retType )
 			switch( retType ) {
 				case BOOLEAN: ret = new BooleanObject(ret.getName(),ret.getBooleanValue()); break;
-				case INT:	  ret = new IntObject(ret.getName(),ret.getIntValue()); break;
+				case INT:	  ret = new IntObject(ret.getName(),ret.getLongValue()); break;
 				case DOUBLE:  ret = new DoubleObject(ret.getName(),ret.getDoubleValue()); break;
 				case STRING:  ret = new StringObject(ret.getName(),ret.getStringValue()); break;
 			}

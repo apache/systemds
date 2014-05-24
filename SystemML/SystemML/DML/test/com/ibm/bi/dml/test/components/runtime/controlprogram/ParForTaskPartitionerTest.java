@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -38,7 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class ParForTaskPartitionerTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final int _par = 4;
@@ -1006,16 +1006,16 @@ public class ParForTaskPartitionerTest
 	{
 		boolean ret = true;
 		
-		int current = from;
+		long current = from;
 		for( Task t : tasks )
 		{
 			if( range && t.getType()==TaskType.RANGE )
 			{
-				int lfrom = t.getIterations().get(0).getIntValue();
-				int lto = t.getIterations().get(1).getIntValue();
-				int lincr = t.getIterations().get(2).getIntValue();
+				long lfrom = t.getIterations().get(0).getLongValue();
+				long lto = t.getIterations().get(1).getLongValue();
+				long lincr = t.getIterations().get(2).getLongValue();
 				
-				for( int i=lfrom; i<=lto; i+=lincr )
+				for( long i=lfrom; i<=lto; i+=lincr )
 				{
 					//System.out.println("expected:"+current+"  /  created:"+i);
 					
@@ -1035,7 +1035,7 @@ public class ParForTaskPartitionerTest
 					if( current > to )
 						return false;
 						
-					ret &= (o.getIntValue() == current);
+					ret &= (o.getLongValue() == current);
 					current += incr;
 				}
 			}
@@ -1044,15 +1044,15 @@ public class ParForTaskPartitionerTest
 		return ret;		
 	}
 
-	private int getNumIterations(Task t)
+	private long getNumIterations(Task t)
 	{
-		int ret = -1;
+		long ret = -1;
 		
 		if( t.getType()==TaskType.RANGE )
 		{
-			int from = t.getIterations().get(0).getIntValue();
-			int to = t.getIterations().get(1).getIntValue();
-			int incr = t.getIterations().get(2).getIntValue();
+			long from = t.getIterations().get(0).getLongValue();
+			long to = t.getIterations().get(1).getLongValue();
+			long incr = t.getIterations().get(2).getLongValue();
 			ret = (int)Math.ceil(((double)(to-from+1))/incr);
 		}
 		else

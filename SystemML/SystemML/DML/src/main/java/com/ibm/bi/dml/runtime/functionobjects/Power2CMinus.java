@@ -22,7 +22,7 @@ package com.ibm.bi.dml.runtime.functionobjects;
 public class Power2CMinus extends ValueFunction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static Power2CMinus singleObj = null;
@@ -48,17 +48,22 @@ public class Power2CMinus extends ValueFunction
 	}
 
 	@Override
-	public double execute(double in1, int in2) {
+	public double execute(double in1, long in2) {
 		return in1*(in2-in1); //in2 is the passed constant
 	}
 
 	@Override
-	public double execute(int in1, double in2) {
+	public double execute(long in1, double in2) {
 		return in1*(in2-in1); //in2 is the passed constant
 	}
 
 	@Override
-	public double execute(int in1, int in2) {
+	public double execute(long in1, long in2) {
+		//for robustness regarding long overflows (only used for scalar instructions)
+		double dval = ((double)in1*(in2-in1));
+		if( dval > Long.MAX_VALUE )
+			return dval;
+		
 		return in1*(in2-in1); //in2 is the passed constant
 	}
 

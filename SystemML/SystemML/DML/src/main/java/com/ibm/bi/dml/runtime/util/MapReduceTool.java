@@ -324,7 +324,7 @@ public class MapReduceTool
 		br.close();
 		return Double.parseDouble(line);
 	}
-	public static int readIntegerFromHDFSFile(String filename) throws IOException {
+	public static long readIntegerFromHDFSFile(String filename) throws IOException {
 		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
@@ -362,7 +362,7 @@ public class MapReduceTool
         br.close();
 	}
 	
-	public static void writeIntToHDFS ( int i, String filename ) throws IOException {
+	public static void writeIntToHDFS ( long i, String filename ) throws IOException {
         BufferedWriter br = setupOutputFile(filename);
         String line = "" + i;
         br.write(line);

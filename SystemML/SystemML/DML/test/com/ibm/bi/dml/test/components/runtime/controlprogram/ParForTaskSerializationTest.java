@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,13 +23,13 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class ParForTaskSerializationTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Test
 	public void testTaskSetStringSerilization() 
 	{ 
-		int i = 7;
+		long i = 7;
 		
 		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i));
@@ -39,14 +39,14 @@ public class ParForTaskSerializationTest
 		
 		IntObject val = t2.getIterations().getFirst(); 
 		
-		Assert.assertEquals(i, val.getIntValue());
+		Assert.assertEquals(i, val.getLongValue());
 	}
 	
 	@Test
 	public void testTaskSetStringSerilizationMultiple() 
 	{ 
-		int i1 = 3;
-		int i2 = 7;
+		long i1 = 3;
+		long i2 = 7;
 		
 		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i1));
@@ -58,16 +58,16 @@ public class ParForTaskSerializationTest
 		IntObject val1 = t2.getIterations().get(0); 
 		IntObject val2 = t2.getIterations().get(1);
 		
-		Assert.assertEquals(i1, val1.getIntValue());
-		Assert.assertEquals(i2, val2.getIntValue());
+		Assert.assertEquals(i1, val1.getLongValue());
+		Assert.assertEquals(i2, val2.getLongValue());
 	}
 	
 	@Test
 	public void testTaskRangeStringSerilization() 
 	{ 
-		int from = 1;
-		int to = 10;
-		int incr = 2;
+		long from = 1;
+		long to = 10;
+		long incr = 2;
 		
 		Task t1 = new Task(TaskType.RANGE);
 		t1.addIteration(new IntObject("i",from));
@@ -81,9 +81,9 @@ public class ParForTaskSerializationTest
 		IntObject val2 = t2.getIterations().get(1);
 		IntObject val3 = t2.getIterations().get(2);
 		
-		Assert.assertEquals(from, val1.getIntValue());
-		Assert.assertEquals(to, val2.getIntValue());
-		Assert.assertEquals(incr, val3.getIntValue());
+		Assert.assertEquals(from, val1.getLongValue());
+		Assert.assertEquals(to, val2.getLongValue());
+		Assert.assertEquals(incr, val3.getLongValue());
 	}
 
 	
@@ -91,7 +91,7 @@ public class ParForTaskSerializationTest
 	@Test
 	public void testTaskStringNumberLength() 
 	{ 
-		int val = 7;
+		long val = 7;
 		String valStr = "007";
 		
 		Task t1 = new Task(TaskType.RANGE);
@@ -102,6 +102,6 @@ public class ParForTaskSerializationTest
 		
 		Task t2 = Task.parseCompactString(str);		
 		IntObject valRet = t2.getIterations().get(0);
-		Assert.assertEquals(val, valRet.getIntValue());
+		Assert.assertEquals(val, valRet.getLongValue());
 	}
 }

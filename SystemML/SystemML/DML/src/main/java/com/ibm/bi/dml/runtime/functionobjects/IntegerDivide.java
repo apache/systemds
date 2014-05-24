@@ -38,17 +38,17 @@ public class IntegerDivide extends ValueFunction
 	}
 
 	@Override
-	public double execute(double in1, int in2) {
+	public double execute(double in1, long in2) {
 		return executeIntDiv( in1, (double)in2 );
 	}
 
 	@Override
-	public double execute(int in1, double in2) {
+	public double execute(long in1, double in2) {
 		return executeIntDiv( (double)in1, in2 );
 	}
 
 	@Override
-	public double execute(int in1, int in2) {
+	public double execute(long in1, long in2) {
 		return executeIntDiv( (double)in1, (double)in2 );
 	}
 

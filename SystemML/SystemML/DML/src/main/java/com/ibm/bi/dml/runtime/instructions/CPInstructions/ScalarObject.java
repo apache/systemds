@@ -27,16 +27,14 @@ public abstract class ScalarObject extends Data
 		return _name;
 	}
 
-	public abstract Object getValue();
-
 	public abstract boolean getBooleanValue();
-
-	public abstract int getIntValue();
 
 	public abstract long getLongValue();
 	
 	public abstract double getDoubleValue();
 
 	public abstract String getStringValue();
+	
+	public abstract Object getValue();
 	
 }

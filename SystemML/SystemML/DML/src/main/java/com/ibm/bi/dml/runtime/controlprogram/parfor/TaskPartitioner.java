@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,20 +23,20 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public abstract class TaskPartitioner 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	protected int            _taskSize     = -1;
+	protected long            _taskSize     = -1;
 	
 	protected String  		 _iterVarName  = null;
 	protected IntObject      _fromVal      = null;
 	protected IntObject      _toVal        = null;
 	protected IntObject      _incrVal      = null;
 	
-	protected int            _numIter      = -1;
+	protected long            _numIter      = -1;
 	
 	
-	protected TaskPartitioner( int taskSize, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
+	protected TaskPartitioner( long taskSize, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		_taskSize    = taskSize;
 		
@@ -45,7 +45,7 @@ public abstract class TaskPartitioner
 		_toVal       = toVal;
 		_incrVal     = incrVal;
 		
-		_numIter     = (int)Math.ceil(((double)(_toVal.getIntValue()-_fromVal.getIntValue()+1 )) / _incrVal.getIntValue()); 
+		_numIter     = (long)Math.ceil(((double)(_toVal.getLongValue()-_fromVal.getLongValue()+1 )) / _incrVal.getLongValue()); 
 	}
 	
 	/**
@@ -62,7 +62,7 @@ public abstract class TaskPartitioner
 	 * 
 	 * @return
 	 */
-	public abstract int createTasks( LocalTaskQueue<Task> queue )
+	public abstract long createTasks( LocalTaskQueue<Task> queue )
 		throws DMLRuntimeException;
 
 	
@@ -70,7 +70,7 @@ public abstract class TaskPartitioner
 	 * 
 	 * @return
 	 */
-	public int getNumIterations()
+	public long getNumIterations()
 	{
 		return _numIter;
 	}

@@ -27,8 +27,9 @@ public class BooleanObject extends ScalarObject
 		_value = val;
 	}
 
-	public int getIntValue(){
-		return _value ? 1 : 0;
+	@Override
+	public boolean getBooleanValue(){
+		return _value;
 	}
 	
 	@Override
@@ -36,20 +37,19 @@ public class BooleanObject extends ScalarObject
 		return _value ? 1 : 0;
 	}
 
+	@Override
 	public double getDoubleValue(){
 		return _value ? 1d : 0d;
 	}
 
-	public boolean getBooleanValue(){
-		return _value;
-	}
-
-	public Object getValue(){
-		return _value;
-	}
-
+	@Override
 	public String getStringValue(){
 		return Boolean.toString(_value).toUpperCase();
+	}
+	
+	@Override
+	public Object getValue(){
+		return _value;
 	}
 	
 	public String toString() { 

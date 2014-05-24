@@ -32,7 +32,7 @@ public class LiteralOp extends Hop
 	private String value_string;
 	private boolean value_boolean;
 
-	// INT, DOUBLE, STRING, BOOLEAN}
+	// INT, DOUBLE, STRING, BOOLEAN
 
 	private LiteralOp() {
 		//default constructor for clone

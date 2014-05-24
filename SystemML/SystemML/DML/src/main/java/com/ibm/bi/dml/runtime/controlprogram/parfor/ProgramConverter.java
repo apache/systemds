@@ -1952,7 +1952,7 @@ public class ProgramConverter
 				switch ( valuetype )
 				{
 					case INT:
-						int value1 = Integer.parseInt(valString);
+						long value1 = Long.parseLong(valString);
 						dat = new IntObject(name,value1);
 						break;
 					case DOUBLE:

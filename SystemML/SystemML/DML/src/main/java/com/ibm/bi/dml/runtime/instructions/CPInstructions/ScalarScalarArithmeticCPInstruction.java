@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ScalarScalarArithmeticCPInstruction(Operator op, 
@@ -49,12 +49,16 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		else if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
 			if ( dop.fn instanceof Divide || dop.fn instanceof Power ) {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				double rval = dop.fn.execute ( so1.getIntValue(), so2.getIntValue() );
+				double rval = dop.fn.execute ( so1.getLongValue(), so2.getLongValue() );
 				sores = (ScalarObject) new DoubleObject(rval);
 			}
 			else {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				int rval = (int) dop.fn.execute ( so1.getIntValue(), so2.getIntValue() );
+				double tmpVal = dop.fn.execute ( so1.getLongValue(), so2.getLongValue() );
+				//cast to long if no overflow, otherwise controlled exception
+				if( tmpVal > Long.MAX_VALUE )
+					throw new DMLRuntimeException("Integer operation created numerical result overflow ("+tmpVal+" > "+Long.MAX_VALUE+").");
+				long rval = (long) tmpVal; 
 				sores = (ScalarObject) new IntObject(rval);
 			}
 		}

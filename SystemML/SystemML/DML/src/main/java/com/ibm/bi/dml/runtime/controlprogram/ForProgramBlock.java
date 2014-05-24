@@ -152,18 +152,18 @@ public class ForProgramBlock extends ProgramBlock
 		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
 		IntObject incr = executePredicateInstructions( 3, _incrementInstructions, ec );
 		
-		if ( incr.getIntValue() <= 0 ) //would produce infinite loop
+		if ( incr.getLongValue() <= 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 				
 		// initialize iter var to from value
-		IntObject iterVar = new IntObject(iterVarName, from.getIntValue() );
+		IntObject iterVar = new IntObject(iterVarName, from.getLongValue() );
 		
 		// execute for loop
 		try 
 		{
 			// run for loop body as long as predicate is true 
 			// (for supporting dynamic TO, move expression execution to end of while loop)
-			while( iterVar.getIntValue() <= to.getIntValue() )
+			while( iterVar.getLongValue() <= to.getLongValue() )
 			{
 				ec.setVariable(iterVarName, iterVar); 
 				
@@ -176,7 +176,7 @@ public class ForProgramBlock extends ProgramBlock
 					throw new DMLRuntimeException("Iterable predicate variable " + iterVarName + " must remain of type scalar int.");
 				
 				//increment of iterVar (changes  in loop body get discarded)
-				iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
+				iterVar = new IntObject( iterVarName, iterVar.getLongValue()+incr.getLongValue() );
 			}
 		}
 		catch (Exception e)
@@ -216,7 +216,7 @@ public class ForProgramBlock extends ProgramBlock
 				if( ldat != null && ldat instanceof ScalarObject )
 					tmp = (ScalarObject)ldat;
 				else //handle literals
-					tmp = new IntObject( UtilFunctions.parseToInt(_iterablePredicateVars[pos]) );
+					tmp = new IntObject( UtilFunctions.parseToLong(_iterablePredicateVars[pos]) );
 			}		
 			else
 			{
@@ -263,7 +263,7 @@ public class ForProgramBlock extends ProgramBlock
 			if( tmp instanceof IntObject )
 				ret = (IntObject)tmp;
 			else //downcast to int if necessary
-				ret = new IntObject(tmp.getName(),tmp.getIntValue()); 
+				ret = new IntObject(tmp.getName(),tmp.getLongValue()); 
 		}
 		
 		return ret;

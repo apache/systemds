@@ -15,39 +15,43 @@ public class IntObject extends ScalarObject
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private int _value;
+	//we use consistently to the compiler long in terms of integer (8 byte)
+	private long _value;
 
-	public IntObject(int val){
+	public IntObject(long val)
+	{
 		this(null,val);
 	}
 
-	public IntObject(String name,int val){
+	public IntObject(String name, long val)
+	{
 		super(name, ValueType.INT);
 		_value = val;
 	}
 
-	public int getIntValue(){
+	@Override
+	public boolean getBooleanValue(){
+		return (_value!=0);
+	}
+	
+	@Override
+	public long getLongValue(){
 		return _value;
 	}
-
+	
+	@Override
 	public double getDoubleValue(){
 		return (double) _value;
 	}
 
-	public long getLongValue(){
-		return (long) _value;
+	@Override
+	public String getStringValue(){
+		return Long.toString(_value);
 	}
 	
+	@Override
 	public Object getValue(){
 		return _value;
-	}
-
-	public boolean getBooleanValue(){
-		return (_value!=0);
-	}
-
-	public String getStringValue(){
-		return Integer.toString(_value);
 	}
 
 	public String toString() { 
@@ -58,5 +62,4 @@ public class IntObject extends ScalarObject
 	public String getDebugName() {
 		return null;
 	}
-
 }

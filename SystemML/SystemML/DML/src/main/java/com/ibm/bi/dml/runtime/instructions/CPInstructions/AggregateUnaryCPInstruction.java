@@ -241,7 +241,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
 			ScalarObject ret = null;
 			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, (int) dims.getMatrixCharacteristics().get_rows());
+				ret = new IntObject(output_name, dims.getMatrixCharacteristics().get_rows());
 			}
 			else if ( output.get_valueType() == ValueType.DOUBLE ) {
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
@@ -253,7 +253,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
 			ScalarObject ret = null;
 			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, (int) dims.getMatrixCharacteristics().get_cols());
+				ret = new IntObject(output_name, dims.getMatrixCharacteristics().get_cols());
 			}
 			else if ( output.get_valueType() == ValueType.DOUBLE ) {
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
@@ -265,7 +265,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
 			ScalarObject ret = null;
 			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, (int) (dims.getMatrixCharacteristics().get_cols()
+				ret = new IntObject(output_name, (dims.getMatrixCharacteristics().get_cols()
 						 * dims.getMatrixCharacteristics().get_rows()));
 			}
 			else if ( output.get_valueType() == ValueType.DOUBLE ) {
@@ -290,7 +290,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			
 			CMOperator cm_op = ((CMOperator)optr); 
 			if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {
-				((CMOperator)optr).setCMAggOp(order.getIntValue());
+				((CMOperator)optr).setCMAggOp((int)order.getLongValue());
 			}
 			
 			CM_COV_Object cmobj = null; 

@@ -48,7 +48,7 @@ public class RemoteParForUtils
 	 * @param deltaTasks
 	 * @param deltaIterations
 	 */
-	public static void incrementParForMRCounters(Reporter reporter, int deltaTasks, int deltaIterations)
+	public static void incrementParForMRCounters(Reporter reporter, long deltaTasks, long deltaIterations)
 	{
 		//report parfor counters
 		if( deltaTasks>0 )

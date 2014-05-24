@@ -218,7 +218,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected HashMap<String,String> _params    = null;
 	protected int              _numThreads      = -1;
 	protected PTaskPartitioner _taskPartitioner = null; 
-	protected int              _taskSize        = -1;
+	protected long             _taskSize        = -1;
 	protected PDataPartitioner _dataPartitioner = null;
 	protected PResultMerge     _resultMerge     = null;
 	protected PExecMode        _execMode        = null;
@@ -229,7 +229,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	//specifics used for optimization
 	protected ParForStatementBlock _sb          = null;
-	protected int              _numIterations   = -1; 
+	protected long             _numIterations   = -1; 
 	
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
@@ -398,7 +398,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_params.put(ParForStatementBlock.TASK_PARTITIONER, String.valueOf(_taskPartitioner)); //kept up-to-date for copies
 	}
 	
-	public void setTaskSize( int tasksize )
+	public void setTaskSize( long tasksize )
 	{
 		_taskSize = tasksize;
 		_params.put(ParForStatementBlock.TASK_SIZE, String.valueOf(_taskSize)); //kept up-to-date for copies
@@ -455,7 +455,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_recompileMemoryBudget = localMem;
 	}
 	
-	public int getNumIterations()
+	public long getNumIterations()
 	{
 		return _numIterations;
 	}
@@ -488,7 +488,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
 		IntObject incr = executePredicateInstructions( 3, _incrementInstructions, ec );
 		
-		if ( incr.getIntValue() <= 0 ) //would produce infinite loop
+		if ( incr.getLongValue() <= 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 		
 		///////
@@ -558,7 +558,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 			
 		// initialize iter var to form value
-		IntObject iterVar = new IntObject(iterVarName, from.getIntValue() );
+		IntObject iterVar = new IntObject(iterVarName, from.getLongValue() );
 		
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
@@ -611,7 +611,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		
 		//set iteration var to TO value (+ increment) for FOR equivalence
-		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
+		iterVar = new IntObject( iterVarName, to.getLongValue() ); //consistent with for
 		ec.setVariable(iterVarName, iterVar);
 		
 		//ensure that subsequent program blocks never see partitioned data (invalid plans!)
@@ -702,8 +702,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			// Step 2) create tasks 
 			TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
-			int numIterations = partitioner.getNumIterations();
-			int numCreatedTasks = -1;
+			long numIterations = partitioner.getNumIterations();
+			long numCreatedTasks = -1;
 			if( USE_STREAMING_TASK_CREATION )
 			{
 				//put tasks into queue (parworker start work on first tasks while creating tasks) 
@@ -806,9 +806,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		String taskFile = constructTaskFileName();
 		String resultFile = constructResultFileName();
 		
-		int numIterations = partitioner.getNumIterations();
-		int maxDigits = (int)Math.log10(to.getIntValue()) + 1;
-		int numCreatedTasks = -1;
+		long numIterations = partitioner.getNumIterations();
+		int maxDigits = (int)Math.log10(to.getLongValue()) + 1;
+		long numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION )
 		{
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
@@ -903,8 +903,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 3) create tasks 
 		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
 		String resultFile = constructResultFileName();
-		int numIterations = partitioner.getNumIterations();
-		int numCreatedTasks = numIterations;//partitioner.createTasks().size();
+		long numIterations = partitioner.getNumIterations();
+		long numCreatedTasks = numIterations;//partitioner.createTasks().size();
 						
 		if( _monitor )
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
@@ -1397,7 +1397,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param results
 	 * @throws DMLRuntimeException
 	 */
-	private void consolidateAndCheckResults(ExecutionContext ec, int expIters, int expTasks, int numIters, int numTasks, LocalVariableMap [] results) 
+	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
 		//result merge
@@ -1521,7 +1521,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private void updateIterablePredicateVars(String iterVarName, IntObject from, IntObject to, IntObject incr) 
 	{
-		_numIterations = (int)Math.ceil(((double)(to.getIntValue() - from.getIntValue() + 1)) / incr.getIntValue()); 
+		_numIterations = (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 		
 		_iterablePredicateVars[0] = iterVarName;
 		_iterablePredicateVars[1] = from.getStringValue();

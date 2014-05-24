@@ -101,7 +101,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		try {
 			//create tasks for input data
 			Task lTask = new Task(TaskType.SET);
-			lTask.addIteration( new IntObject(_iterVar,(int)key.get()) );
+			lTask.addIteration( new IntObject(_iterVar,key.get()) );
 			
 			//execute program
 			executeTask( lTask );

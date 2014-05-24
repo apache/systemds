@@ -46,8 +46,8 @@ public abstract class ParWorker
 
 	protected boolean                   _monitor     = false;
 	
-	protected int                       _numTasks    = -1;
-	protected int                       _numIters    = -1;
+	protected long                      _numTasks    = -1;
+	protected long                      _numIters    = -1;
 	
 	public ParWorker()
 	{
@@ -87,7 +87,7 @@ public abstract class ParWorker
 	 * 
 	 * @return
 	 */
-	public int getExecutedTasks()
+	public long getExecutedTasks()
 	{
 		return _numTasks;
 	}
@@ -98,7 +98,7 @@ public abstract class ParWorker
 	 * 
 	 * @return
 	 */
-	public int getExecutedIterations()
+	public long getExecutedIterations()
 	{
 		return _numIters;
 	}
@@ -219,11 +219,11 @@ public abstract class ParWorker
 		//core execution
 		LinkedList<IntObject> tmp = task.getIterations();
 		String lVarName = tmp.get(0).getName();
-		int lFrom       = tmp.get(0).getIntValue();
-		int lTo         = tmp.get(1).getIntValue();
-		int lIncr       = tmp.get(2).getIntValue();
+		long lFrom       = tmp.get(0).getLongValue();
+		long lTo         = tmp.get(1).getLongValue();
+		long lIncr       = tmp.get(2).getLongValue();
 		
-		for( int i=lFrom; i<=lTo; i+=lIncr )
+		for( long i=lFrom; i<=lTo; i+=lIncr )
 		{
 			//set index values
 			_ec.setVariable(lVarName, new IntObject(lVarName,i));

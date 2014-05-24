@@ -231,7 +231,7 @@ public class OptTreeConverter
 			if(storeObjs)
 				_rtMap.putMapping(fpb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
-			int N = fpb.getNumIterations();
+			long N = fpb.getNumIterations();
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
 															  String.valueOf(CostEstimatorRuntime.FACTOR_NUM_ITERATIONS));
 			
@@ -452,7 +452,7 @@ public class OptTreeConverter
 			node = new OptNode( NodeType.PARFOR );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
-			int N = fpb.getNumIterations();
+			long N = fpb.getNumIterations();
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
 															  String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 

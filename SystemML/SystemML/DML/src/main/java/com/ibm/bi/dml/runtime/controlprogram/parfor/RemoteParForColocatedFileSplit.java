@@ -88,7 +88,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		{
 			for( IntObject val : t.getIterations() )
 			{
-				String fname = _fname+"/"+String.valueOf(((val.getIntValue()-1)/_blen+1));
+				String fname = _fname+"/"+String.valueOf(((val.getLongValue()-1)/_blen+1));
 				FileStatus status = fs.getFileStatus(new Path(fname)); 
 				BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
 				for( BlockLocation bl : tmp1 )
@@ -99,9 +99,9 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		{
 			//since this is a serial process, we use just the first iteration
 			//as a heuristic for location information
-			int lFrom  = t.getIterations().get(0).getIntValue();
-			int lTo  = t.getIterations().get(1).getIntValue();
-			for( int li : new int[]{lFrom,lTo} )
+			long lFrom  = t.getIterations().get(0).getLongValue();
+			long lTo  = t.getIterations().get(1).getLongValue();
+			for( long li : new long[]{lFrom,lTo} )
 			{
 				String fname = _fname+"/"+String.valueOf( ((li-1)/_blen+1) );
 				FileStatus status = fs.getFileStatus(new Path(fname)); 

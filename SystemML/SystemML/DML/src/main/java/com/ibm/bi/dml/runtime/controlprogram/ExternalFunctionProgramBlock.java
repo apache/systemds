@@ -711,7 +711,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				switch (type) {
 				case Integer:
 					scalarObject = new IntObject(tokens.get(1),
-							Integer.parseInt(s.getValue()));
+							Long.parseLong(s.getValue()));
 					break;
 				case Double:
 					scalarObject = new DoubleObject(tokens.get(1),

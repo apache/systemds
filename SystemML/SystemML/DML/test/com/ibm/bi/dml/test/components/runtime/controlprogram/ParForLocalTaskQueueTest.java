@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,10 +27,10 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class ParForLocalTaskQueueTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private static final int _N = 101;
+	private static final long _N = 101;
 	
 	@Test
 	public void testCompleteness() 
@@ -38,7 +38,7 @@ public class ParForLocalTaskQueueTest
 	{ 
 		//create N tasks
 		Collection<Task> tasks = new LinkedList<Task>();
-		for( int i=1; i<=_N; i++ )
+		for( long i=1; i<=_N; i++ )
 		{
 			Task ltask = new Task(TaskType.SET);
 			ltask.addIteration(new IntObject("i",i));
@@ -55,7 +55,7 @@ public class ParForLocalTaskQueueTest
 		for( int i=1; i<=_N; i++ )
 		{
 			Task ltask = q.dequeueTask();
-			int val = ltask.getIterations().getFirst().getIntValue();
+			long val = ltask.getIterations().getFirst().getLongValue();
 			ret &= (i == val);
  		}
 		

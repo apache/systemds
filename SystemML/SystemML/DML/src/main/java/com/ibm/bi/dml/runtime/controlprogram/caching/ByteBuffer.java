@@ -39,11 +39,16 @@ public class ByteBuffer
 		_serialized = false;
 	}
 	
+	/**
+	 * 
+	 * @param mb
+	 * @throws IOException
+	 */
 	public void serializeMatrix( MatrixBlock mb ) 
 		throws IOException
 	{	
 		boolean sparseSrc = mb.isInSparseFormat(); //current representation
-		boolean sparseTrgt = mb.isExactInSparseFormat(); //intended target representation
+		boolean sparseTrgt = mb.evalSparseFormatOnDisk(); //intended target representation
 		_sparse = sparseTrgt;
 		
 		try
@@ -61,6 +66,8 @@ public class ByteBuffer
 			else //SPARSE/DENSE -> DENSE
 			{
 				//change representation (if required), incl. free sparse
+				//(in-memory representation, if dense on disk than if will
+				//be guaranteed to be dense in memory as well)
 				if( sparseSrc ) 
 					mb.examSparsity(); 
 				
@@ -76,6 +83,11 @@ public class ByteBuffer
 		_serialized = true;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public MatrixBlock deserializeMatrix() 
 		throws IOException
 	{
@@ -96,6 +108,12 @@ public class ByteBuffer
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param fname
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public void evictBuffer( String fname ) 
 		throws FileNotFoundException, IOException
 	{

@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -192,10 +191,8 @@ public class ReblockMR
 		long blockSize = InfrastructureAnalyzer.getHDFSBlockSize()/(1024*1024);
 		long maxSize = -1; //in MB
 		for( int i=0; i<rlen.length; i++ )
-		{
-			double sparsity = OptimizerUtils.getSparsity(rlen[i], clen[i], nnz[i]);
-			long tmp = (int)(((sparsity<MatrixBlockDSM.SPARCITY_TURN_POINT && clen[i]>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT)?
-					           rlen[i]*4+nnz[i]*12 : rlen[i]*clen[i]*8 )/(1024*1024));
+		{			
+			long tmp = MatrixBlockDSM.estimateSizeOnDisk(rlen[i], clen[i], nnz[i]) / (1024*1024);
 			maxSize = Math.max(maxSize, tmp);
 		}
 		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)

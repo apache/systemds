@@ -297,7 +297,7 @@ public class OptimizerUtils
 	 */
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
-		return MatrixBlockDSM.estimateSize(nrows,ncols,sp);
+		return MatrixBlockDSM.estimateSizeInMemory(nrows,ncols,sp);
 	}
 	
 	/**

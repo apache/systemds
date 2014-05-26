@@ -38,12 +38,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.MatrixIndex;
 
@@ -1847,7 +1847,7 @@ public class TestUtils
 					}
 
 					if (value.isInSparseFormat()) {
-						SparseCellIterator iter = value.getSparseCellIterator();
+						SparseRowsIterator iter = value.getSparseRowsIterator();
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();

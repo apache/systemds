@@ -1056,7 +1056,7 @@ public class MatrixObject extends CacheableData
 		
 		//get in-memory size (assume dense, if nnz unknown)
 		double sparsity = OptimizerUtils.getSparsity( rlen, clen, nnz );
-		double size = MatrixBlock.estimateSize( rlen, clen, sparsity ); 
+		double size = MatrixBlock.estimateSizeInMemory( rlen, clen, sparsity ); 
 		
 		return ( size <= CACHING_THRESHOLD );
 	}

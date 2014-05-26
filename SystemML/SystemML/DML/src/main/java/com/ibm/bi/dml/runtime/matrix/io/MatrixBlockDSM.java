@@ -65,9 +65,7 @@ public class MatrixBlockDSM extends MatrixValue
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
-	public static final double SPARCITY_TURN_POINT = 0.4;
-	//sparsity column threshold, based on initial capacity of sparse representation 
-	public static final int SKINNY_MATRIX_TURN_POINT = 4;
+	public static final double SPARSITY_TURN_POINT = 0.4;
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	
@@ -285,10 +283,16 @@ public class MatrixBlockDSM extends MatrixValue
 	 */
 	public void allocateDenseBlock() 
 	{
+		allocateDenseBlock( true );
+	}
+	
+	public void allocateDenseBlock(boolean clearNNZ) 
+	{
 		int limit=rlen*clen;
 		if(denseBlock==null || denseBlock.length < limit )
 			denseBlock=new double[limit];
-		nonZeros = 0;
+		if( clearNNZ )
+			nonZeros = 0;
 	}
 	
 	/**
@@ -431,65 +435,11 @@ public class MatrixBlockDSM extends MatrixValue
 		return nonZeros;
 	}
 	
-	/**
-	 * Returns the current representation (true for sparse).
-	 */
-	public boolean isInSparseFormat()
-	{
-		return sparse;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public boolean isUltraSparse()
-	{
-		double sp = ((double)nonZeros/rlen)/clen;
-		//check for sparse representation in order to account for vectors in dense
-		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && nonZeros<40;
-	}
-	
-	/**
-	 * Returns the exact representation once it is written or
-	 * exam sparsity is called.
-	 * 
-	 * @return
-	 */
-	public boolean isExactInSparseFormat()
-	{
-		long lrlen = (long) rlen;
-		long lclen = (long) clen;
-		long lnonZeros = (long) nonZeros;
-			
-		//ensure exact size estimates for write
-		if( lnonZeros<=0 )
-		//if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
-		{
-			recomputeNonZeros();
-			lnonZeros = (long) nonZeros;
-		}
-		
-		return (lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT);
-	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param clen
-	 * @param nonZeros
-	 * @return
-	 */
-	public static boolean isExactInSparseFormat(long rlen, long clen, long nonZeros)
-	{		
-		return (nonZeros<(rlen*clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT);
-	}
-	
 	public boolean isVector() 
 	{
 		return (rlen == 1 || clen == 1);
 	}
-
+	
 	
 	/**
 	 * Return the maximum row encountered WITHIN the current block
@@ -572,11 +522,13 @@ public class MatrixBlockDSM extends MatrixValue
 		return sparseRows;
 	}
 	
-	public SparseCellIterator getSparseCellIterator()
+	public SparseRowsIterator getSparseRowsIterator()
 	{
-		if(!sparse)
+		//check for valid format, should have been checked from outside
+		if( !sparse )
 			throw new RuntimeException("getSparseCellInterator should not be called for dense format");
-		return new SparseCellIterator(rlen, sparseRows);
+		
+		return new SparseRowsIterator(rlen, sparseRows);
 	}
 	
 	@Override
@@ -1025,29 +977,164 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 
 	////////
-	// basic block handling functions
+	// sparsity handling functions
 	
+	/**
+	 * Returns the current representation (true for sparse).
+	 * 
+	 */
+	public boolean isInSparseFormat()
+	{
+		return sparse;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isUltraSparse()
+	{
+		double sp = ((double)nonZeros/rlen)/clen;
+		//check for sparse representation in order to account for vectors in dense
+		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && nonZeros<40;
+	}
+
+	/**
+	 * Evaluates if this matrix block should be in sparse format in
+	 * memory. Note that this call does not change the representation - 
+	 * for this please call examSparsity.
+	 * 
+	 * @return
+	 */
+	public boolean evalSparseFormatInMemory()
+	{
+		long lrlen = (long) rlen;
+		long lclen = (long) clen;
+		long lnonZeros = (long) nonZeros;
+			
+		//ensure exact size estimates for write
+		if( lnonZeros<=0 ) {
+			recomputeNonZeros();
+			lnonZeros = (long) nonZeros;
+		}	
+		
+		//decide on in-memory representation
+		return evalSparseFormatInMemory(lrlen, lclen, lnonZeros);
+	}
+	
+
+	private boolean evalSparseFormatInMemory(boolean transpose)
+	{
+		int lrlen = (transpose) ? clen : rlen;
+		int lclen = (transpose) ? rlen : clen;
+		long lnonZeros = (long) nonZeros;
+		
+		//ensure exact size estimates for write
+		if( lnonZeros<=0 ) {
+			recomputeNonZeros();
+			lnonZeros = (long) nonZeros;
+		}	
+		
+		//decide on in-memory representation
+		return evalSparseFormatInMemory(lrlen, lclen, lnonZeros);
+	}
+	
+	/**
+	 * Evaluates if this matrix block should be in sparse format on
+	 * disk. This applies to any serialized matrix representation, i.e.,
+	 * when writing to in-memory buffer pool pages or writing to local fs
+	 * or hdfs. 
+	 * 
+	 * @return
+	 */
+	public boolean evalSparseFormatOnDisk()
+	{
+		long lrlen = (long) rlen;
+		long lclen = (long) clen;
+		long lnonZeros = (long) nonZeros;
+			
+		//ensure exact size estimates for write
+		if( lnonZeros <= 0 ) {
+			recomputeNonZeros();
+			lnonZeros = (long) nonZeros;
+		}	
+		
+		//decide on in-memory representation
+		return evalSparseFormatOnDisk(lrlen, lclen, lnonZeros);
+	}
+	
+	/**
+	 * Evaluates if this matrix block should be in sparse format in
+	 * memory. Depending on the current representation, the state of the
+	 * matrix block is changed to the right representation if necessary. 
+	 * Note that this consumes for the time of execution memory for both 
+	 * representations.  
+	 * 
+	 * @throws DMLRuntimeException
+	 */
 	public void examSparsity() 
 		throws DMLRuntimeException
 	{
-		double sp = ((double)nonZeros/rlen)/clen;
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(sparse)
-		{
-			if(sp>=SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT) {
-				//System.out.println("Calling sparseToDense(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
-				sparseToDense();
-			}
-		}
-		else
-		{
-			if(sp<SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT) {
-				//System.out.println("Calling denseToSparse(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
-				denseToSparse();
-			}
-		}
-	}	
+		//determine target representation
+		boolean sparseDst = evalSparseFormatInMemory(); 
+				
+		//change representation if required
+		if( sparse && !sparseDst)
+			sparseToDense();
+		else if( !sparse && sparseDst )
+			denseToSparse();
+	}
+	
+	/**
+	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
+	 * in memory.
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param nnz
+	 * @return
+	 */
+	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
+	{		
+		//evaluate sparsity threshold
+		double lsparsity = ((double)nnz/nrows)/ncols;
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
+		
+		//compare size of sparse and dense representation in order to prevent
+		//that the sparse size exceed the dense size since we use the dense size
+		//as worst-case estimate if unknown (and it requires less io from 
+		//main memory).
+		double sizeSparse = estimateSizeSparseInMemory(nrows, ncols, lsparsity);
+		double sizeDense = estimateSizeDenseInMemory(nrows, ncols);
+		
+		return lsparse && (sizeSparse<sizeDense);
+	}
+	
+	/**
+	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
+	 * on disk (or in any other serialized representation).
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param nnz
+	 * @return
+	 */
+	public static boolean evalSparseFormatOnDisk( final long nrows, final long ncols, final long nnz )
+	{
+		//evaluate sparsity threshold
+		double lsparsity = ((double)nnz/nrows)/ncols;
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
+		
+		double sizeUltraSparse = estimateSizeUltraSparseOnDisk( nrows, ncols, nnz );
+		double sizeSparse = estimateSizeSparseOnDisk(nrows, ncols, nnz);
+		double sizeDense = estimateSizeDenseOnDisk(nrows, ncols);
+		
+		return lsparse && (sizeSparse<sizeDense || sizeUltraSparse<sizeDense);		
+	}
+	
+	
+	////////
+	// basic block handling functions	
 	
 	
 	private void denseToSparse() 
@@ -1201,9 +1288,9 @@ public class MatrixBlockDSM extends MatrixValue
 		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
 			throw new RuntimeException( "Copy must not overwrite itself!" );
 		
-		this.rlen=that.rlen;
-		this.clen=that.clen;
-		this.sparse=checkRealSparsity(that);
+		this.rlen = that.rlen;
+		this.clen = that.clen;
+		this.sparse = that.evalSparseFormatInMemory();
 		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
@@ -1637,9 +1724,12 @@ public class MatrixBlockDSM extends MatrixValue
 	public void readFields(DataInput in) 
 		throws IOException 
 	{
+		//read basic header (int rlen, int clen, byte type)
 		rlen = in.readInt();
 		clen = in.readInt();
 		byte bformat = in.readByte();
+		
+		//check type information
 		if( bformat<0 || bformat>=BlockType.values().length )
 			throw new IOException("invalid format: '"+bformat+"' (need to be 0-"+BlockType.values().length+".");
 						
@@ -1647,19 +1737,27 @@ public class MatrixBlockDSM extends MatrixValue
 		switch(format)
 		{
 			case ULTRA_SPARSE_BLOCK:
-				sparse = true;
+				nonZeros = in.readInt(); 
+				sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 				cleanupBlock(true, true); //clean all
-				readUltraSparseBlock(in);
+				if( sparse )
+					readUltraSparseBlock(in);
+				else
+					readUltraSparseToDense(in);
 				break;
 			case SPARSE_BLOCK:
-				sparse = true;
-				cleanupBlock(true, false); //reuse sparse
-				readSparseBlock(in);
+				nonZeros = in.readInt(); 
+				sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
+				cleanupBlock(sparse, !sparse); 
+				if( sparse )
+					readSparseBlock(in);
+				else
+					readSparseToDense(in);
 				break;
 			case DENSE_BLOCK:
 				sparse = false;
 				cleanupBlock(false, true); //reuse dense
-				readDenseBlock(in);
+				readDenseBlock(in); //always dense in-mem if dense on disk
 				break;
 			case EMPTY_BLOCK:
 				sparse = true;
@@ -1669,12 +1767,18 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 
-	private void readDenseBlock(DataInput in) throws IOException {
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length < limit )
-			denseBlock=new double[limit];
-		nonZeros=0;
-		for(int i=0; i<limit; i++)
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private void readDenseBlock(DataInput in) 
+		throws IOException 
+	{
+		allocateDenseBlock(true); //allocate block, clear nnz
+		
+		int limit = rlen*clen;
+		for( int i=0; i<limit; i++ )
 		{
 			denseBlock[i]=in.readDouble();
 			if(denseBlock[i]!=0)
@@ -1682,14 +1786,20 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
-	private void readSparseBlock(DataInput in) throws IOException {
-				
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private void readSparseBlock(DataInput in) 
+		throws IOException 
+	{			
 		adjustSparseRows(rlen-1);
-		nonZeros=0;
+		resetSparse(); //reset all sparse rows
+		
 		for(int r=0; r<rlen; r++)
 		{
 			int nr=in.readInt();
-			nonZeros+=nr;
 			if(nr==0)
 			{
 				if(sparseRows[r]!=null)
@@ -1705,13 +1815,39 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
-	private void readUltraSparseBlock(DataInput in) throws IOException 
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private void readSparseToDense(DataInput in) 
+		throws IOException 
+	{
+		allocateDenseBlock(false); //allocate block
+		Arrays.fill(denseBlock, 0);
+		
+		for(int r=0; r<rlen; r++)
+		{
+			int nr = in.readInt();
+			for( int j=0; j<nr; j++ )
+			{
+				int c = in.readInt();
+				double val = in.readDouble(); 
+				denseBlock[r*clen+c] = val;
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private void readUltraSparseBlock(DataInput in) 
+		throws IOException 
 	{	
 		adjustSparseRows(rlen-1); //adjust to size
 		resetSparse(); //reset all sparse rows
-		
-		//at least 1 nonZero, otherwise empty block
-		nonZeros = in.readInt(); 
 		
 		for(int i=0; i<nonZeros; i++)
 		{
@@ -1724,43 +1860,83 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private void readUltraSparseToDense(DataInput in) 
+		throws IOException 
+	{	
+		allocateDenseBlock(false); //allocate block
+		Arrays.fill(denseBlock, 0);
+		
+		for(int i=0; i<nonZeros; i++)
+		{
+			int r = in.readInt();
+			int c = in.readInt();
+			double val = in.readDouble();			
+			denseBlock[r*clen+c] = val;
+		}
+	}
+	
 	@Override
-	public void write(DataOutput out) throws IOException {
+	public void write(DataOutput out) 
+		throws IOException 
+	{
+		//determine format
+		boolean sparseSrc = sparse;
+		boolean sparseDst = evalSparseFormatOnDisk();
+		
+		//write first part of header
 		out.writeInt(rlen);
 		out.writeInt(clen);
 		
-		if(sparse)
+		if( sparseSrc )
 		{
-			if(sparseRows==null || nonZeros==0) //MB or cond
+			//write sparse to *
+			if( sparseRows==null || nonZeros==0 ) 
 				writeEmptyBlock(out);
-			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
-				writeSparseToUltraSparse(out); //MB new write
-			//if it should be dense, then write to the dense format
-			else if(nonZeros>=((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
-				writeSparseToDense(out);
-			else
+			else if( nonZeros<rlen && sparseDst ) 
+				writeSparseToUltraSparse(out); 
+			else if( sparseDst ) 
 				writeSparseBlock(out);
-		}else
+			else
+				writeSparseToDense(out);
+		}
+		else
 		{
-			if(denseBlock==null || nonZeros==0) //MB or cond
+			//write dense to *
+			if( denseBlock==null || nonZeros==0 ) 
 				writeEmptyBlock(out);
-			//if it should be sparse
-			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
+			else if( nonZeros<rlen && sparseDst )
 				writeDenseToUltraSparse(out);
-			else if(nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
+			else if( sparseDst )
 				writeDenseToSparse(out);
 			else
 				writeDenseBlock(out);
 		}
 	}
 	
-	private void writeEmptyBlock(DataOutput out) throws IOException
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
+	private void writeEmptyBlock(DataOutput out) 
+		throws IOException
 	{
 		//empty blocks do not need to materialize row information
 		out.writeByte( BlockType.EMPTY_BLOCK.ordinal() );
 	}
 	
-	private void writeDenseBlock(DataOutput out) throws IOException 
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
+	private void writeDenseBlock(DataOutput out) 
+		throws IOException 
 	{
 		out.writeByte( BlockType.DENSE_BLOCK.ordinal() );
 		
@@ -1772,9 +1948,16 @@ public class MatrixBlockDSM extends MatrixValue
 				out.writeDouble(denseBlock[i]);
 	}
 	
-	private void writeSparseBlock(DataOutput out) throws IOException 
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
+	private void writeSparseBlock(DataOutput out) 
+		throws IOException 
 	{
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
+		out.writeInt( nonZeros ); //for deciding in-memory format on read
 		
 		if( out instanceof MatrixBlockDSMDataOutput ) //fast serialize
 			((MatrixBlockDSMDataOutput)out).writeSparseRows(rlen, sparseRows);
@@ -1804,7 +1987,13 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
-	private void writeSparseToUltraSparse(DataOutput out) throws IOException 
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
+	private void writeSparseToUltraSparse(DataOutput out) 
+		throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
 		out.writeInt(nonZeros);
@@ -1824,6 +2013,11 @@ public class MatrixBlockDSM extends MatrixValue
 			}	
 	}
 	
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
 	private void writeSparseToDense(DataOutput out) 
 		throws IOException 
 	{
@@ -1884,8 +2078,9 @@ public class MatrixBlockDSM extends MatrixValue
 	
 	private void writeDenseToSparse(DataOutput out) 
 		throws IOException 
-	{		
-		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
+	{	
+		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() ); //block type
+		out.writeInt( nonZeros ); //for deciding in-memory format on read
 		
 		int start=0;
 		for(int r=0; r<rlen; r++)
@@ -1915,102 +2110,193 @@ public class MatrixBlockDSM extends MatrixValue
 	 */
 	public long getExactSizeOnDisk()
 	{
+		//determine format
+		boolean sparseSrc = sparse;
+		boolean sparseDst = evalSparseFormatOnDisk();
+		
 		long lrlen = (long) rlen;
 		long lclen = (long) clen;
 		long lnonZeros = (long) nonZeros;
 		
 		//ensure exact size estimates for write
-		if( lnonZeros<=0 )
-		//if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		if( lnonZeros <= 0 )
 		{
 			recomputeNonZeros();
 			lnonZeros = (long) nonZeros;
 		}
 				
 		//get exact size estimate (see write for the corresponding meaning)
-		if(sparse)
+		if( sparseSrc )
 		{
-			if(sparseRows==null || nonZeros==0)
+			//write sparse to *
+			if(sparseRows==null || lnonZeros==0)
 				return 9; //empty block
-			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
-				return 4 + nonZeros*16 + 9; //ultra sparse block
-			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
-				return lrlen*lclen*8 + 9;	//dense block
-			else
-				return lrlen*4 + lnonZeros*12 + 9; //sparse block
-		}else
+			else if( lnonZeros<lrlen && sparseDst )
+				return estimateSizeUltraSparseOnDisk(lrlen, lclen, lnonZeros); //ultra sparse block
+			else if( sparseDst )
+				return estimateSizeSparseOnDisk(lrlen, lclen, lnonZeros); //sparse block
+			else 
+				return estimateSizeDenseOnDisk(lrlen, lclen); //dense block
+		}
+		else
 		{
-			if(denseBlock==null || nonZeros==0)
+			//write dense to *
+			if(denseBlock==null || lnonZeros==0)
 				return 9; //empty block
-			else if( nonZeros<rlen && nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT )
-				return 4 + nonZeros*16 + 9; //ultra sparse block
-			else if(lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT)
-				return lrlen*4 + lnonZeros*12 + 9; //sparse block
+			else if( lnonZeros<lrlen && sparseDst )
+				return estimateSizeUltraSparseOnDisk(lrlen, lclen, lnonZeros); //ultra sparse block
+			else if( sparseDst )
+				return estimateSizeSparseOnDisk(lrlen, lclen, lnonZeros); //sparse block
 			else
-				return lrlen*lclen*8 + 9; //dense block
+				return estimateSizeDenseOnDisk(lrlen, lclen); //dense block
 		}
 	}
 	
 	////////
 	// Estimates size and sparsity
 	
-	public static long estimateSize(long nrows, long ncols, double sparsity)
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity)
 	{
-		long size=44;//the basic variables and references sizes
-		
 		//determine sparse/dense representation
-		boolean sparse=true;
-		if(ncols<=SKINNY_MATRIX_TURN_POINT)
-			sparse=false;
-		else
-			sparse= sparsity < SPARCITY_TURN_POINT;
+		boolean sparse = evalSparseFormatInMemory(nrows, ncols, (long)sparsity*nrows*ncols);
 		
 		//estimate memory consumption for sparse/dense
-		if(sparse)
-		{
-			//NOTES:
-			// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
-			//   12B (3 int members), 32B (overhead int array), 32B (overhead double array),
-			// * Each non-zero value requires 12B for the column-index/value pair.
-			// * Overheads for arrays, objects, and references refer to 64bit JVMs
-			// * If nnz < than rows we have only also empty rows.
-			
-			//account for sparsity and initial capacity
-			long cnnz = Math.max(SparseRow.initialCapacity, (long)Math.ceil(sparsity*ncols));
-			long rlen = Math.min(nrows, (long) Math.ceil(sparsity*nrows*ncols));
-			size += rlen * ( 116 + 12 * cnnz ); //sparse row
-			size += (nrows-rlen) * 8; //empty rows
-			
-			//OLD ESTIMATE: 
-			//int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
-			//size += nrows * (28 + 12 * len );
-		}
+		if( sparse )
+			return estimateSizeSparseInMemory(nrows, ncols, sparsity);
 		else
-		{
-			size += nrows*ncols*8;
-		}
+			return estimateSizeDenseInMemory(nrows, ncols);
+	}
+	
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @return
+	 */
+	private static long estimateSizeDenseInMemory(long nrows, long ncols)
+	{
+		// basic variables and references sizes
+		long size = 44;
+		
+		// core dense matrix block (double array)
+		size += nrows * ncols * 8;
 		
 		return size;
 	}
-		
+	
 	/**
 	 * 
-	 * @param lrlen
-	 * @param lclen
-	 * @param lnonZeros
-	 * @param sparse
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
 	 * @return
 	 */
-	public static long estimateSizeOnDisk( long lrlen, long lclen, long lnonZeros, boolean sparse )
-	{		
-		if(sparse)
-		{
-			return lrlen*4 + lnonZeros*12 + 9;	
-		}
+	private static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
+	{
+		// basic variables and references sizes
+		long size = 44;
+		
+		//NOTES:
+		// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
+		//   12B (3 int members), 32B (overhead int array), 32B (overhead double array),
+		// * Each non-zero value requires 12B for the column-index/value pair.
+		// * Overheads for arrays, objects, and references refer to 64bit JVMs
+		// * If nnz < than rows we have only also empty rows.
+		
+		//account for sparsity and initial capacity
+		long cnnz = Math.max(SparseRow.initialCapacity, (long)Math.ceil(sparsity*ncols));
+		long rlen = Math.min(nrows, (long) Math.ceil(sparsity*nrows*ncols));
+		size += rlen * ( 116 + 12 * cnnz ); //sparse row
+		size += (nrows-rlen) * 8; //empty rows
+		
+		//OLD ESTIMATE: 
+		//int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
+		//size += nrows * (28 + 12 * len );
+		
+		return size;
+	}
+	
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	public static long estimateSizeOnDisk( long nrows, long ncols, long nnz )
+	{
+		//determine sparse/dense representation
+		boolean sparse = evalSparseFormatOnDisk(nrows, ncols, nnz);
+		
+		//estimate memory consumption for sparse/dense 
+		if( sparse && nnz<nrows )
+			return estimateSizeUltraSparseOnDisk(nrows, ncols, nnz);
+		else if( sparse )
+			return estimateSizeSparseOnDisk(nrows, ncols, nnz);
 		else
-		{
-			return lrlen*lclen*8 + 9;
-		}
+			return estimateSizeDenseOnDisk(nrows, ncols);
+	}
+	
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	private static long estimateSizeDenseOnDisk( long nrows, long ncols)
+	{
+		//basic header (int rlen, int clen, byte type) 
+		long size = 9;
+		//data (all cells double)
+		size += nrows * ncols * 8;
+
+		return size;
+	}
+	
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	private static long estimateSizeSparseOnDisk( long nrows, long ncols, long nnz )
+	{
+		//basic header: (int rlen, int clen, byte type) 
+		long size = 9;
+		//extended head (int nnz)
+		size += 4;
+		//data: (int num per row, int-double pair per non-zero value)
+		size += nrows * 4 + nnz * 12;	
+
+		return size;
+	}
+	
+	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	private static long estimateSizeUltraSparseOnDisk( long nrows, long ncols, long nnz )
+	{
+		//basic header (int rlen, int clen, byte type) 
+		long size = 9;
+		//extended header (int nnz)
+		size += 4;
+		//data (int-int-double triples per non-zero value)
+		size += nnz * 16;	
+		
+		return size;
 	}
 	
 	public static SparsityEstimate estimateSparsityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2, AggregateBinaryOperator op)
@@ -2049,15 +2335,15 @@ public class MatrixBlockDSM extends MatrixValue
 	private static SparsityEstimate estimateSparsityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2, BinaryOperator op)
 	{
 		SparsityEstimate est=new SparsityEstimate();
-		double m=m1.getNumColumns();
-		//handle vectors specially
+		
 		//if result is a column vector, use dense format, otherwise use the normal process to decide 
-		if(!op.sparseSafe || m<=SKINNY_MATRIX_TURN_POINT)
+		if(!op.sparseSafe )
 		{
 			est.sparse=false;
 			return est;
 		}
 		
+		double m=m1.getNumColumns();
 		double n=m1.getNumRows();
 		double nz1=m1.getNonZeros();
 		double nz2=m2.getNonZeros();
@@ -2071,7 +2357,8 @@ public class MatrixBlockDSM extends MatrixValue
 		{
 			estimated=1-(1-nz1/n/m)*(1-nz2/n/m);
 		}
-		est.sparse= (estimated<SPARCITY_TURN_POINT);
+		
+		est.sparse = evalSparseFormatInMemory((long)m,(long)n,(long)(estimated*m*n));
 		est.estimatedNonZeros=(int)(estimated*n*m);
 		
 		return est;
@@ -2079,26 +2366,20 @@ public class MatrixBlockDSM extends MatrixValue
 	
 	private boolean estimateSparsityOnSlice(int selectRlen, int selectClen, int finalRlen, int finalClen)
 	{
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(finalClen<=SKINNY_MATRIX_TURN_POINT)
-			return false;
-		else
-			return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
+		long ennz = (long)((double)nonZeros/rlen/clen*selectRlen*selectClen);
+		return evalSparseFormatInMemory(finalRlen, finalClen, ennz); 
 	}
 	
 	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, int nnzm1, int nnzm2)
 	{
-		boolean ret = (clenm1>SKINNY_MATRIX_TURN_POINT);
 		long ennz = Math.min(rlenm1*clenm1, nnzm1+nnzm2);
-		return (ret && (((double)ennz)/rlenm1/clenm1) < SPARCITY_TURN_POINT);
+		return evalSparseFormatInMemory(rlenm1, clenm1, ennz);
 	}
 	
 	private boolean estimateSparsityOnGroupedAgg( long rlen, long groups )
 	{
-		boolean ret = (groups>SKINNY_MATRIX_TURN_POINT);
-		
-		return (ret && (((double)rlen)/groups) < SPARCITY_TURN_POINT);
+		long ennz = Math.min(groups, rlen);
+		return evalSparseFormatInMemory(groups, 1, ennz);
 	}
 	
 	////////
@@ -2889,7 +3170,7 @@ public class MatrixBlockDSM extends MatrixValue
 		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject()))
 			sps = true;
 		else
-			sps = checkRealSparsity(this, true);
+			sps = this.evalSparseFormatInMemory(true);
 		
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
@@ -2978,7 +3259,7 @@ public class MatrixBlockDSM extends MatrixValue
 		final int m = rlen;
 		final int n = clen+that.clen;
 		final int nnz = nonZeros+that.nonZeros;		
-		boolean sp = checkRealSparsity(m, n, nnz);
+		boolean sp = evalSparseFormatInMemory(m, n, nnz);
 		
 		//init result matrix 
 		if( result == null ) 
@@ -3024,9 +3305,9 @@ public class MatrixBlockDSM extends MatrixValue
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
-			sps=false;
+			sps = false;
 		else
-			sps=checkRealSparsity(this);
+			sps = this.evalSparseFormatInMemory();
 			
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
@@ -3224,13 +3505,13 @@ public class MatrixBlockDSM extends MatrixValue
 		//System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
-		boolean result_sparsity = this.sparse && ((cu-cl+1)>SKINNY_MATRIX_TURN_POINT);
 		MatrixBlockDSM result=checkType(ret);
-		int estnnzs=(int) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
+		int estnnz=(int) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
+		boolean result_sparsity = this.sparse && MatrixBlock.evalSparseFormatInMemory(ru-rl+1, cu-cl+1, estnnz);
 		if(result==null)
-			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
+			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity, estnnz);
 		else
-			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
+			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnz);
 		
 		// actual slice operation
 		if( rowLower==1 && rowUpper==rlen && colLower==1 && colUpper==clen ) {
@@ -3537,27 +3818,25 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
+	/**
+	 * 
+	 */
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		checkType(result);
-		boolean sps;
 		double currentSparsity=(double)nonZeros/(double)rlen/(double)clen;
 		double estimatedSps=currentSparsity*(double)(range.rowEnd-range.rowStart+1)
-		*(double)(range.colEnd-range.colStart+1)/(double)rlen/(double)clen;
+		                    *(double)(range.colEnd-range.colStart+1)/(double)rlen/(double)clen;
 		if(!complementary)
 			estimatedSps=currentSparsity-estimatedSps;
-		if(estimatedSps< SPARCITY_TURN_POINT)
-			sps=true;
-		else sps=false;
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(clen<=SKINNY_MATRIX_TURN_POINT)
-			sps=false;
-			
+		
+		boolean lsparse = evalSparseFormatInMemory(rlen, clen, (long)(estimatedSps*rlen*clen));
+		
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sps, (int)(estimatedSps*rlen*clen));
+			result=new MatrixBlockDSM(rlen, clen, lsparse, (int)(estimatedSps*rlen*clen));
 		else
-			result.reset(rlen, clen, sps, (int)(estimatedSps*rlen*clen));
+			result.reset(rlen, clen, lsparse, (int)(estimatedSps*rlen*clen));
 		
 		
 		if(sparse)
@@ -5559,11 +5838,9 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 		
 		// Determine the sparsity of output matrix
-		sparse = (sparsity < SPARCITY_TURN_POINT);
-		if(cols<=SKINNY_MATRIX_TURN_POINT) {
-			sparse=false;
-		}
-		this.reset(rows, cols, sparse);
+		final long estnnz = (long)(sparsity * rows * cols);
+		boolean lsparse = evalSparseFormatInMemory( rows, cols, estnnz );
+		this.reset(rows, cols, lsparse);
 		
 		// Special case shortcuts for efficiency
 		if ( pdf.equalsIgnoreCase("uniform")) {
@@ -5628,8 +5905,9 @@ public class MatrixBlockDSM extends MatrixValue
 				UniformPRNGenerator nnzPRNG = new UniformPRNGenerator(seed);
 				
 				// block-level sparsity, which may differ from overall sparsity in the matrix.
-				// (e.g., border blocks may fall under skinny matrix turn point)
-				boolean localSparse = sparse && !(blockcols<=SKINNY_MATRIX_TURN_POINT);
+				// (e.g., border blocks may fall under skinny matrix turn point, in CP this would be 
+				// irrelevant but we need to ensure consistency with MR)
+				boolean localSparse = evalSparseFormatInMemory(blockrows, blockcols, (long)(sparsity*blockrows*blockcols));  
 				
 				if ( localSparse ) {
 					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
@@ -5744,35 +6022,6 @@ public class MatrixBlockDSM extends MatrixValue
 		return (MatrixBlockDSM) block;
 	}
 	
-	private static boolean checkRealSparsity(long rlen, long clen, long nnz)
-	{
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if( clen<=SKINNY_MATRIX_TURN_POINT )
-			return false;
-		else
-			return (((double)nnz)/rlen/clen < SPARCITY_TURN_POINT);
-	}
-	
-	private static boolean checkRealSparsity(MatrixBlockDSM m)
-	{
-		return checkRealSparsity( m, false );
-	}
-	
-	private static boolean checkRealSparsity(MatrixBlockDSM m, boolean transpose)
-	{
-		int lrlen = (transpose) ? m.clen : m.rlen;
-		int lclen = (transpose) ? m.rlen : m.clen;
-		int lnnz = m.getNonZeros();
-		
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(lclen<=SKINNY_MATRIX_TURN_POINT)
-			return false;
-		else
-			return (((double)lnnz)/lrlen/lclen < SPARCITY_TURN_POINT);
-	}
-	
 	public void print()
 	{
 		System.out.println("sparse = "+sparse);
@@ -5859,91 +6108,5 @@ public class MatrixBlockDSM extends MatrixValue
 			estimatedNonZeros=nnzs;
 		}
 		public SparsityEstimate(){}
-	}
-
-	public static class IJV
-	{
-		public int i=-1;
-		public int j=-1;
-		public double v=0;
-		public IJV()
-		{}
-		public IJV(int i, int j, double v)
-		{
-			set(i, j, v);
-		}
-		public void set(int i, int j, double v)
-		{
-			this.i=i;
-			this.j=j;
-			this.v=v;
-		}
-		public String toString()
-		{
-			return "("+i+", "+j+"): "+v;
-		}
-	}
-	
-	public static class SparseCellIterator implements Iterator<IJV>
-	{
-		private int rlen=0;
-		private SparseRow[] sparseRows=null;
-		private int curRow=-1;
-		private int curColIndex=-1;
-		private int[] colIndexes=null;
-		private double[] values=null;
-		private boolean nothingLeft=false;
-		private IJV retijv=new IJV();
-		
-		public SparseCellIterator(int nrows, SparseRow[] mtx)
-		{
-			rlen=nrows;
-			sparseRows=mtx;
-			curRow=0;
-			
-			if(sparseRows==null)
-				nothingLeft=true;
-			else
-				findNextNonZeroRow();
-		}
-		
-		private void findNextNonZeroRow() {
-			while(curRow<Math.min(rlen, sparseRows.length) && (sparseRows[curRow]==null || sparseRows[curRow].size()==0))
-				curRow++;
-			if(curRow>=Math.min(rlen, sparseRows.length))
-				nothingLeft=true;
-			else
-			{
-				curColIndex=0;
-				colIndexes=sparseRows[curRow].getIndexContainer();
-				values=sparseRows[curRow].getValueContainer();
-			}
-		}
-		
-		@Override
-		public boolean hasNext() {
-			if(nothingLeft)
-				return false;
-			else
-				return true;
-		}
-
-		@Override
-		public IJV next() {
-			retijv.set(curRow, colIndexes[curColIndex], values[curColIndex]);
-			curColIndex++;
-			if(curColIndex>=sparseRows[curRow].size())
-			{
-				curRow++;
-				findNextNonZeroRow();
-			}
-			return retijv;
-		}
-
-		@Override
-		public void remove() {
-			throw new RuntimeException("SparseCellIterator.remove should not be called!");
-			
-		}		
 	}
 }

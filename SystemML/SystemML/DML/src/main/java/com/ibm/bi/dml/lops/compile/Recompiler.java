@@ -1064,7 +1064,7 @@ public class Recompiler
 				{
 					long nnz = mo.getNnz();
 					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
-					double mem = MatrixBlockDSM.estimateSize(rows, cols, sp);			
+					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, sp);			
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
@@ -1134,11 +1134,11 @@ public class Recompiler
 				if( InstructionUtils.getOpCode(lrandStr).equals(DataGen.RAND_OPCODE) )
 				{
 					//check recompile memory budget
-					//(don't account for sparsity due to dense generation approach)
 					RandInstruction lrandInst = (RandInstruction) RandInstruction.parseInstruction(lrandStr);
 					long rows = lrandInst.rows;
 					long cols = lrandInst.cols;
-					double mem = MatrixBlockDSM.estimateSize(rows, cols, 1.0d);				
+					double sparsity = lrandInst.sparsity;
+					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, sparsity);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
@@ -1152,7 +1152,7 @@ public class Recompiler
 					SeqInstruction lrandInst = (SeqInstruction) SeqInstruction.parseInstruction(lrandStr);
 					long rows = lrandInst.rows;
 					long cols = lrandInst.cols;
-					double mem = MatrixBlockDSM.estimateSize(rows, cols, 1.0d);				
+					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, 1.0d);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;

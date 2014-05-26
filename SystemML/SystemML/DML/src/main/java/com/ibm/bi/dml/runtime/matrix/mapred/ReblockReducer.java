@@ -21,11 +21,11 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
 
 
@@ -128,7 +128,7 @@ public class ReblockReducer extends ReduceBase
 					//merge copy other blocks
 					if( in.isInSparseFormat() ) //SPARSE
 					{
-						SparseCellIterator iter = in.getSparseCellIterator();
+						SparseRowsIterator iter = in.getSparseRowsIterator();
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();

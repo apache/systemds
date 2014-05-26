@@ -33,13 +33,13 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -458,7 +458,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						boolean sparse = value.isInSparseFormat();
 						if( sparse ) //SPARSE
 						{
-							SparseCellIterator iter = value.getSparseCellIterator();
+							SparseRowsIterator iter = value.getSparseRowsIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();

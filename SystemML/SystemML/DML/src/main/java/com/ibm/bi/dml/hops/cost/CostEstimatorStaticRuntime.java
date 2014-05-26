@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 
@@ -42,7 +43,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 public class CostEstimatorStaticRuntime extends CostEstimator
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//time-conversion
@@ -457,8 +458,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		for( int i=0; i<inputIx.length; i++ )
 		{
 			//input size
-			boolean sparse = (vs[inputIx[i]].getSparsity()<MatrixBlockDSM.SPARCITY_TURN_POINT && vs[inputIx[i]]._clen>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
-			mapInputSize += ((double)MatrixBlockDSM.estimateSizeOnDisk((long)vs[inputIx[i]]._rlen, (long)vs[inputIx[i]]._clen, (long)vs[inputIx[i]]._nnz, sparse)) / (1024*1024);	
+			mapInputSize += ((double)MatrixBlockDSM.estimateSizeOnDisk((long)vs[inputIx[i]]._rlen, (long)vs[inputIx[i]]._clen, (long)vs[inputIx[i]]._nnz)) / (1024*1024);	
 		
 			//num blocks
 			int lret =  (int) Math.ceil((double)vs[inputIx[i]]._rlen/vs[inputIx[i]]._brlen)
@@ -509,9 +509,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 */
 	private double getHDFSReadTime( long dm, long dn, double ds )
 	{
-		boolean sparse = (ds<MatrixBlockDSM.SPARCITY_TURN_POINT && dn>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
+		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn, sparse)) / (1024*1024);  		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE;
 		else //dense
@@ -529,9 +529,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 */
 	private double getHDFSWriteTime( long dm, long dn, double ds )
 	{
-		boolean sparse = (ds<MatrixBlockDSM.SPARCITY_TURN_POINT && dn>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn, sparse)) / (1024*1024);  		
+		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
@@ -552,9 +552,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 */
 	private double getFSReadTime( long dm, long dn, double ds )
 	{
-		boolean sparse = (ds<MatrixBlockDSM.SPARCITY_TURN_POINT && dn>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn, sparse)) / (1024*1024);  		
+		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE;
 		else //dense
@@ -572,9 +572,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 */
 	private double getFSWriteTime( long dm, long dn, double ds )
 	{
-		boolean sparse = (ds<MatrixBlockDSM.SPARCITY_TURN_POINT && dn>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn, sparse)) / (1024*1024);  		
+		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE;
@@ -663,8 +663,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//operation costs in FLOP on matrix block level (for CP and MR instructions)
 		//(excludes IO and parallelism; assumes known dims for all inputs, outputs )
 	
-		boolean leftSparse = (d1s<MatrixBlockDSM.SPARCITY_TURN_POINT && d1n>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
-		boolean rightSparse = (d2s<MatrixBlockDSM.SPARCITY_TURN_POINT && d2n>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+		boolean leftSparse = MatrixBlock.evalSparseFormatInMemory(d1m, d1n, (long)(d1s*d1m*d1n));
+		boolean rightSparse = MatrixBlock.evalSparseFormatInMemory(d2m, d2n, (long)(d2s*d2m*d2n));
 		boolean onlyLeft = (d1m>=0 && d1n>=0 && d2m<0 && d2n<0 );
 		boolean allExists = (d1m>=0 && d1n>=0 && d2m>=0 && d2n>=0 && d3m>=0 && d3n>=0 );
 		

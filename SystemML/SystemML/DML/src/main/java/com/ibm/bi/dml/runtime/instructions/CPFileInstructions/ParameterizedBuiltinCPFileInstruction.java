@@ -821,7 +821,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			{
 				if( _margin.equals("rows") ) 
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
+							                     MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
 					{
@@ -885,7 +886,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				else
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
+							                    MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
 					{
@@ -988,7 +990,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			{
 				if( _margin.equals("rows") ) 
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
+							                       MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;
@@ -1047,7 +1050,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				else //cols
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
+							                     MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;

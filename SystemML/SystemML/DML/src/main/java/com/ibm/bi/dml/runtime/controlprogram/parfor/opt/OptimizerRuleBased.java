@@ -1448,7 +1448,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			if(    dat !=null && dat instanceof MatrixObject 
 				&& moDpf == PDataPartitionFormat.COLUMN_WISE	
-				&& ((MatrixObject)dat).getSparsity()<= MatrixBlockDSM.SPARCITY_TURN_POINT  //check for sparse matrix
+				&& ((MatrixObject)dat).getSparsity()<= MatrixBlockDSM.SPARSITY_TURN_POINT  //check for sparse matrix
 				&& rIsTransposeSafePartition(pn, moVarname) ) //tranpose-safe
 			{
 				pfpb.setTransposeSparseColumnVector( true );
@@ -1975,7 +1975,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( !ParForProgramBlock.USE_PARALLEL_RESULT_MERGE )
 		{
 			//1/4 mem budget because: 2xout (incl sparse-dense change), 1xin, 1xcompare  
-			return ( rows>=0 && cols>=0 && MatrixBlockDSM.estimateSize(rows, cols, 1.0) < memBudget/4 );
+			return ( rows>=0 && cols>=0 && MatrixBlockDSM.estimateSizeInMemory(rows, cols, 1.0) < memBudget/4 );
 		}
 		else
 			return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hop.CPThreshold, 2) );

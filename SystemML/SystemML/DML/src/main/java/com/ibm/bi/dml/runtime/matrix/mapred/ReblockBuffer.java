@@ -16,15 +16,14 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 
 /**
  * 
@@ -102,7 +101,7 @@ public class ReblockBuffer
 	{
 		if( inBlk.isInSparseFormat() ) //SPARSE
 		{
-			SparseCellIterator iter = inBlk.getSparseCellIterator();
+			SparseRowsIterator iter = inBlk.getSparseRowsIterator();
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
@@ -191,9 +190,7 @@ public class ReblockBuffer
 		if( blocked ) //output binaryblock
 		{
 			//create intermediate blocks
-			boolean sparse = ( OptimizerUtils.getSparsity(_brlen,_bclen,_count/IX.size()) < MatrixBlockDSM.SPARCITY_TURN_POINT 
-					            && _clen > MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT );					      
-			
+			boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(_brlen, _bclen, _count/IX.size());					      
 			HashMap<MatrixIndexes,MatrixBlock> blocks = new HashMap<MatrixIndexes,MatrixBlock>();
 			
 			for( MatrixIndexes ix : IX )

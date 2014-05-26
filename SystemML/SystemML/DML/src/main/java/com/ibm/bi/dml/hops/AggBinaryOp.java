@@ -306,8 +306,8 @@ public class AggBinaryOp extends Hop
 		double ret = 0;
 		
 		//account for potential final dense-sparse transformation (worst-case sparse representation)
-		if( dim2 > MatrixBlock.SKINNY_MATRIX_TURN_POINT )
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARCITY_TURN_POINT);
+		if( dim2 >= 2 ) //vectors always dense
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARSITY_TURN_POINT);
 		
 		return ret;
 	}

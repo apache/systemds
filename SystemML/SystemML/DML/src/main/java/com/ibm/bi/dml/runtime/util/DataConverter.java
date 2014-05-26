@@ -42,15 +42,15 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 
@@ -347,16 +347,16 @@ public class DataConverter
 	{	
 		//Timing time = new Timing(true);
 		
-		//determine target representation (sparse/dense)
-		boolean sparse = (    prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
-				           && prop.clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
-		
 		long rlen = prop.rlen;
 		long clen = prop.clen;
 		InputInfo inputinfo = prop.inputInfo;
 		
+		//determine target representation (sparse/dense)
+		long estnnz = (long)(prop.expectedSparsity*rlen*clen);
+		boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, estnnz); 
+		
 		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(prop.expectedSparsity*rlen*clen));
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
 		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
 		else if( sparse )
@@ -438,11 +438,11 @@ public class DataConverter
 		if( !(inputinfo == InputInfo.TextCellInputInfo || inputinfo== InputInfo.MatrixMarketInputInfo) )
 			throw new IOException("Unsupported inputinfo for read from input stream: "+inputinfo);
 		
-		boolean sparse = ( expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
-		                   && clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
+		long estnnz = (long)(expectedSparsity*rlen*clen);
+		boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, estnnz); 
 
 		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(expectedSparsity*rlen*clen));
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
 		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
 		else if( sparse )
@@ -854,7 +854,7 @@ public class DataConverter
 			
 			if( sparse ) //SPARSE
 			{			   
-				SparseCellIterator iter = src.getSparseCellIterator();
+				SparseRowsIterator iter = src.getSparseRowsIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -950,7 +950,7 @@ public class DataConverter
             // output matrix cell
 			if( sparse ) //SPARSE
 			{			   
-				SparseCellIterator iter = src.getSparseCellIterator();
+				SparseRowsIterator iter = src.getSparseRowsIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -1039,7 +1039,7 @@ public class DataConverter
 			if( sparse ) //SPARSE
 			{
 				
-				SparseCellIterator iter = src.getSparseCellIterator();
+				SparseRowsIterator iter = src.getSparseRowsIterator();
 				while( iter.hasNext() )
 				{
 					IJV lcell = iter.next();
@@ -1695,7 +1695,7 @@ public class DataConverter
 		
 		if( mb.isInSparseFormat() )
 		{
-			SparseCellIterator iter = mb.getSparseCellIterator();
+			SparseRowsIterator iter = mb.getSparseRowsIterator();
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
@@ -1782,7 +1782,7 @@ public class DataConverter
 		int rlen = (int)nrows;
 		int clen = (int)ncols;
 		int nnz = map.size();
-		boolean sparse = MatrixBlock.isExactInSparseFormat(rlen, clen, nnz); 		
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
 		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
 		
 		// copy map values into new block

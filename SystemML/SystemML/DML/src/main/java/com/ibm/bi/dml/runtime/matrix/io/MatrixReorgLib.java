@@ -161,8 +161,7 @@ public class MatrixReorgLib
 		}
 	
 		//determine output representation
-	    double sp = ((double)in.nonZeros/rlen)/clen;
-	    out.sparse = (sp<MatrixBlockDSM.SPARCITY_TURN_POINT && cols>MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
+	    out.sparse = MatrixBlockDSM.evalSparseFormatInMemory(rows, cols, in.nonZeros);
 		
 		//core reshape (sparse or dense)	
 		if(!in.sparse && !out.sparse)
@@ -1023,8 +1022,8 @@ public class MatrixReorgLib
 			int lbclen = (int) Math.min(bclen2, cols2-(bj-1)*bclen2);
 			
 			//create result block
-			boolean sparse = (lbclen > MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT);
 			int estnnz = (int) (nnz/nBlocks); //force initialcapacity per row to 1, for many blocks
+			boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
 			MatrixBlockDSM block = null;
 			if( ALLOW_BLOCK_REUSE && reuse!=null && reuse.size()>0) {
 				block = (MatrixBlockDSM) reuse.get(count++).getValue();

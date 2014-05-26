@@ -216,9 +216,9 @@ public class DataGenOp extends Hop
 				}
 				else
 				{
-					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
-					//disabled sparsity-aware estimation due to dense generation, we can re-enable it once, we have a sparse generation method
-					//ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+					//sparsity-aware estimation (dependent on sparse generation approach); for pure dense generation
+					//we would need to disable sparsity-awareness and estimate via sparsity=1.0
+					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 				}
 			}
 			else {

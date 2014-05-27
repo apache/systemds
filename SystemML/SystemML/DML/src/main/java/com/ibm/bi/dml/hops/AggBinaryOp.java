@@ -132,7 +132,7 @@ public class AggBinaryOp extends Hop
 								getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
 								getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block(),
 								mmtsj);
-					// System.out.println("Method = " + method);
+					//System.out.println("Method = " + method);
 					
 					if ( method == MMultMethod.MAPMULT_L || method == MMultMethod.MAPMULT_R ) 
 					{
@@ -455,6 +455,7 @@ public class AggBinaryOp extends Hop
 				
 				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
 				//(compared to CP, we explicitly check that new transposes fit in memory)
+				//note: output size constraint for mapmult already checked by optfindmmultmethod
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
@@ -602,11 +603,14 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.TSMM;
 		}
 
-		// If the size of second input is small, choose a method that uses distributed cache
+		// If the size of one input is small, choose a method that uses distributed cache
+		// NOTE: be aware of output size because one input block might generate many output blocks
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols, 1.0); //output per m1 block if m2 in cache
+		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb), 1.0); //output per m2 block if m1 in cache
 		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true);
-		if (   m1Size < memBudget || m2Size < memBudget ) 
+		if ( (m1Size+m3m2OutSize) < memBudget || (m2Size+m3m1OutSize) < memBudget ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)

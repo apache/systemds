@@ -15,7 +15,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixReorgLib;
+import com.ibm.bi.dml.runtime.matrix.io.LibMatrixReorg;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 /**
@@ -85,7 +85,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 
 		//execute operations 
 		MatrixBlock out = new MatrixBlock();
-		out = (MatrixBlock)MatrixReorgLib.reshape(in, out, rows, cols, byRow.getBooleanValue());
+		out = (MatrixBlock)LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
 		
 		//set output and release inputs
 		ec.setMatrixOutput(output.get_name(), out);

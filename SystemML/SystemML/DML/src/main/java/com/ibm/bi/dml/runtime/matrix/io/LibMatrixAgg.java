@@ -43,7 +43,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * TODO next opcode extensions: a+, colindexmax
  * TODO low level optimization (potential 3x, sum non-conclusive yet)
  */
-public class MatrixAggLib 
+public class LibMatrixAgg 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

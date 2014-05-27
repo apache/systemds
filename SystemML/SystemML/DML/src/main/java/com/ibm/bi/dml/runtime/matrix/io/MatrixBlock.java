@@ -74,7 +74,7 @@ public class MatrixBlock extends MatrixBlockDSM
 	public static MatrixBlock randOperations(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, long seed) throws DMLRuntimeException {
 		Well1024a bigrand = RandCPInstruction.setupSeedsForRand(seed);
 		MatrixBlock m = new MatrixBlock();
-		if ( pdf.equalsIgnoreCase("normal") ) {
+		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
 			// for normally distributed values, min and max are specified as an invalid value NaN.
 			m.getRandomMatrix(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);
 		}
@@ -84,7 +84,17 @@ public class MatrixBlock extends MatrixBlockDSM
 		return m;
 	}
 	
-	public static MatrixBlock seqOperations(double from, double to, double incr) throws DMLRuntimeException {
+	/**
+	 * 
+	 * @param from
+	 * @param to
+	 * @param incr
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock seqOperations(double from, double to, double incr) 
+		throws DMLRuntimeException 
+	{
 		MatrixBlock m = new MatrixBlock();
 		m.getSequence(from, to, incr);
 		return m;

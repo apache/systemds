@@ -52,9 +52,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
-import com.ibm.bi.dml.runtime.util.PRNGenerator;
-import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -951,7 +948,7 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		//execute operation
 		MatrixBlockDSM out = new MatrixBlockDSM(1, 1, false);
-		MatrixAggLib.aggregateUnaryMatrix(this, out, auop);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
 		
 		return out.quickGetValue(0, 0);
 	}
@@ -971,7 +968,7 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		//execute operation
 		MatrixBlockDSM out = new MatrixBlockDSM(1, 1, false);
-		MatrixAggLib.aggregateUnaryMatrix(this, out, auop);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
 		
 		return out.quickGetValue(0, 0);
 	}
@@ -2966,7 +2963,7 @@ public class MatrixBlockDSM extends MatrixValue
 			//e.g., ak+ kahan plus as used in sum, mapmult, mmcj and tsmm
 			if(aggOp.increOp.fn instanceof KahanPlus)
 			{
-				MatrixAggLib.aggregateBinaryMatrix(newWithCor, this, cor);
+				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, cor);
 			}
 			else
 			{
@@ -3177,11 +3174,11 @@ public class MatrixBlockDSM extends MatrixValue
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
-		if( MatrixReorgLib.isSupportedReorgOperator(op) )
+		if( LibMatrixReorg.isSupportedReorgOperator(op) )
 		{
 			//SPECIAL case (operators with special performance requirements, 
 			//or size-dependent special behavior)
-			MatrixReorgLib.reorg(this, result, op);
+			LibMatrixReorg.reorg(this, result, op);
 		}
 		else 
 		{
@@ -3369,7 +3366,7 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		//compute matrix mult
 		boolean leftTranspose = ( tstype == MMTSJType.LEFT );
-		MatrixMultLib.matrixMultTransposeSelf(this, out, leftTranspose);
+		LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
 		
 		return out;
 	}
@@ -4046,9 +4043,9 @@ public class MatrixBlockDSM extends MatrixValue
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
 		
 		MatrixBlockDSM ret = (MatrixBlockDSM) result;
-		if( MatrixAggLib.isSupportedUnaryAggregateOperator(op) ) {
-			MatrixAggLib.aggregateUnaryMatrix(this, ret, op);
-			MatrixAggLib.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
+		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
+			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
+			LibMatrixAgg.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
 		}
 		else if(op.sparseSafe)
 			sparseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
@@ -4745,7 +4742,7 @@ public class MatrixBlockDSM extends MatrixValue
 		//matrix multiplication
 		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus && !partialMult)
 		{
-			MatrixMultLib.matrixMult(m1, m2, result);
+			LibMatrixMult.matrixMult(m1, m2, result);
 		}
 		else
 		{
@@ -4765,7 +4762,7 @@ public class MatrixBlockDSM extends MatrixValue
 	{
 		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus )
 		{
-			MatrixMultLib.matrixMult(m1, m2, result);
+			LibMatrixMult.matrixMult(m1, m2, result);
 		}
 		else
 		{
@@ -5722,47 +5719,6 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 	}
 	
-	////////////////////////////////////////////////////////////////////////////////
-/*	public MatrixBlockDSM getRandomDenseMatrix_normal(int rows, int cols, long seed)
-	{
-		Random random=new Random(seed);
-		this.allocateDenseBlock();
-		
-		RandNPair pair = new RandNPair();
-		int index = 0;
-		while ( index < rows*cols ) {
-			pair.compute(random);
-			this.denseBlock[index++] = pair.getFirst();
-			if ( index < rows*cols )
-				this.denseBlock[index++] = pair.getSecond();
-		}
-		this.updateNonZeros();
-		return this;
-	}
-	
-	public MatrixBlockDSM getRandomSparseMatrix_normal(int rows, int cols, double sparsity, long seed)
-	{
-		double val;
-		Random random = new Random(System.currentTimeMillis());
-		RandN rn = new RandN(seed);
-		
-		this.sparseRows=new SparseRow[rows];
-		for(int i=0; i<rows; i++)
-		{
-			this.sparseRows[i]=new SparseRow();	
-			for(int j=0; j<cols; j++)
-			{
-				if(random.nextDouble()>sparsity)
-					continue;
-				val = rn.nextDouble();
-				this.sparseRows[i].append(j, val );
-			}
-		}
-		this.updateNonZeros();
-		return this;
-	}
-	
-*/	
 	
 	////////
 	// Data Generation Methods
@@ -5786,7 +5742,9 @@ public class MatrixBlockDSM extends MatrixValue
 	 */
 	public MatrixBlockDSM getRandomMatrix(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed) throws DMLRuntimeException
 	{
-		return getRandomMatrix(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, null, seed);
+		LibMatrixDatagen.generateRandomMatrix( this, pdf, rows, cols, rowsInBlock, colsInBlock, 
+				                               sparsity, min, max, seed );
+		return this;
 	}
 	
 	/**
@@ -5803,6 +5761,7 @@ public class MatrixBlockDSM extends MatrixValue
 	 * distribution N(0,1). The range of generated values will always be
 	 * (-Inf,+Inf).
 	 * 
+	 * @param pdf
 	 * @param rows
 	 * @param cols
 	 * @param rowsInBlock
@@ -5815,157 +5774,11 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlockDSM getRandomMatrix(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) throws DMLRuntimeException
+	public MatrixBlockDSM getRandomMatrix(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) 
+		throws DMLRuntimeException
 	{
-		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
-		PRNGenerator valuePRNG = null;
-		if ( pdf.equalsIgnoreCase("uniform")) 
-			valuePRNG = new UniformPRNGenerator();
-		else if ( pdf.equalsIgnoreCase("normal"))
-			valuePRNG = new NormalPRNGenerator();
-		else
-			throw new DMLRuntimeException("Unsupported distribution function for Rand: " + pdf);
-		
-		/*
-		 * Setup min and max for distributions other than "uniform". Min and Max
-		 * are set up in such a way that the usual logic of
-		 * (max-min)*prng.nextDouble() is still valid. This is done primarily to
-		 * share the same code across different distributions.
-		 */
-		if ( pdf.equalsIgnoreCase("normal") ) {
-			min=0;
-			max=1;
-		}
-		
-		// Determine the sparsity of output matrix
-		final long estnnz = (long)(sparsity * rows * cols);
-		boolean lsparse = evalSparseFormatInMemory( rows, cols, estnnz );
-		this.reset(rows, cols, lsparse);
-		
-		// Special case shortcuts for efficiency
-		if ( pdf.equalsIgnoreCase("uniform")) {
-			//specific cases for efficiency
-			if ( min == 0.0 && max == 0.0 ) { //all zeros
-				// nothing to do here
-				return this;
-			} 
-			else if( !sparse && sparsity==1.0d && min == max ) //equal values
-			{
-				allocateDenseBlock();
-				Arrays.fill(denseBlock, 0, rlen*clen, min);
-				nonZeros = rlen*clen;
-				return this;
-			}
-		}
-		
-		// Allocate memory
-		if ( sparse ) {
-			sparseRows = new SparseRow[rows];
-			//note: individual sparse rows are allocated on demand,
-			//for consistentcy with memory estimates and prevent OOMs.
-		}
-		else {
-			this.allocateDenseBlock();
-		}
-
-		double range = max - min;
-
-		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
-		int ncb = (int) Math.ceil((double)cols/colsInBlock);
-		int blockrows, blockcols, rowoffset, coloffset;
-		int blocknnz;
-		// loop throught row-block indices
-		for(int rbi=0; rbi < nrb; rbi++) {
-			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
-			rowoffset = rbi*rowsInBlock;
-			
-			// loop throught column-block indices
-			for(int cbj=0; cbj < ncb; cbj++) {
-				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
-				coloffset = cbj*colsInBlock;
-				
-				// Generate a block (rbi,cbj) 
-				
-				// select the appropriate block-level seed
-				long seed = -1;
-				if ( bigrand == null ) {
-					// case of MR: simply use the passed-in value
-					seed = bSeed;
-				}
-				else {
-					// case of CP: generate a block-level seed from matrix-level Well1024a seed
-					seed = bigrand.nextLong();
-				}
-				// Initialize the PRNGenerator for cell values
-				valuePRNG.init(seed);
-				
-				// Initialize the PRNGenerator for determining cells that contain a non-zero value
-				// Note that, "pdf" parameter applies only to cell values and the individual cells 
-				// are always selected uniformly at random.
-				UniformPRNGenerator nnzPRNG = new UniformPRNGenerator(seed);
-				
-				// block-level sparsity, which may differ from overall sparsity in the matrix.
-				// (e.g., border blocks may fall under skinny matrix turn point, in CP this would be 
-				// irrelevant but we need to ensure consistency with MR)
-				boolean localSparse = evalSparseFormatInMemory(blockrows, blockcols, (long)(sparsity*blockrows*blockcols));  
-				
-				if ( localSparse ) {
-					blocknnz = (int) Math.ceil((blockrows*sparsity)*blockcols);
-					for(int ind=0; ind<blocknnz; ind++) {
-						int i = nnzPRNG.nextInt(blockrows);
-						int j = nnzPRNG.nextInt(blockcols);
-						double val = min + (range * nnzPRNG.nextDouble());
-						if( sparseRows[rowoffset+i]==null )
-							sparseRows[rowoffset+i]=new SparseRow(estimatedNNzsPerRow, clen);
-						sparseRows[rowoffset+i].set(coloffset+j, val);
-					}
-				}
-				else {
-					if (sparsity == 1.0) {
-						for(int ii=0; ii < blockrows; ii++) {
-							for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-								double val = min + (range * valuePRNG.nextDouble());
-								this.denseBlock[index] = val;
-							}
-						}
-					}
-					else {
-						if ( sparse ) {
-							/* This case evaluated only when this function is invoked from CP. 
-							 * In this case:
-							 *     sparse=true -> entire matrix is in sparse format and hence denseBlock=null
-							 *     localSparse=true -> local block is dense, and hence on MR side a denseBlock will be allocated
-							 * i.e., we need to generate data in a dense-style but set values in sparseRows
-							 * 
-							 */
-							// In this case, entire matrix is in sparse format but the current block is dense
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0; jj < blockcols; jj++) {
-									if(nnzPRNG.nextDouble() <= sparsity) {
-										double val = min + (range * valuePRNG.nextDouble());
-										if( sparseRows[ii+rowoffset]==null )
-											sparseRows[ii+rowoffset]=new SparseRow(estimatedNNzsPerRow, clen);
-										sparseRows[ii+rowoffset].set(jj+coloffset, val);
-									}
-								}
-							}
-						}
-						else {
-							for(int ii=0; ii < blockrows; ii++) {
-								for(int jj=0, index = ((ii+rowoffset)*cols)+coloffset; jj < blockcols; jj++, index++) {
-									if(nnzPRNG.nextDouble() <= sparsity) {
-										double val = min + (range * valuePRNG.nextDouble());
-										this.denseBlock[index] = val;
-									}
-								}
-							}
-						}
-					}
-				} // sparse or dense 
-			} // cbj
-		} // rbi
-		
-		recomputeNonZeros();
+		LibMatrixDatagen.generateRandomMatrix( this, pdf, rows, cols, rowsInBlock, colsInBlock, 
+				                               sparsity, min, max, bigrand, bSeed );
 		return this;
 	}
 	
@@ -5987,31 +5800,15 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlockDSM getSequence(double from, double to, double incr) throws DMLRuntimeException {
-		boolean neg = (from > to);
-		if (neg != (incr < 0))
-			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq()");
+	public MatrixBlockDSM getSequence(double from, double to, double incr) 
+		throws DMLRuntimeException 
+	{
+		LibMatrixDatagen.generateSequence( this, from, to, incr );
 		
-		//System.out.println(System.nanoTime() + ": begin of seq()");
-		int rows = 1 + (int)Math.floor((to-from)/incr);
-		int cols = 1;
-		sparse = false; // sequence matrix is always dense
-		this.reset(rows, cols, sparse);
-		
-		this.allocateDenseBlock();
-		
-		//System.out.println(System.nanoTime() + ": MatrixBlockDSM.seq(): seq("+from+","+to+","+incr+") rows = " + rows);
-		
-		this.denseBlock[0] = from;
-		for(int i=1; i < rows; i++) {
-			from += incr;
-			this.denseBlock[i] = from;
-		}
-		recomputeNonZeros();
-		//System.out.println(System.nanoTime() + ": end of seq()");
 		return this;
 	}
 
+	
 	////////
 	// Misc methods
 		

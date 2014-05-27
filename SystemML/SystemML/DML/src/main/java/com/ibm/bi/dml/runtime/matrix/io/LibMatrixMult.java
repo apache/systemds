@@ -38,7 +38,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
  *   
  *  
  */
-public class MatrixMultLib 
+public class LibMatrixMult 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
@@ -832,7 +832,7 @@ public class MatrixMultLib
 				
 				//note: reorg to similar layout as t(X)%*%X because faster than 
 				//direct computation with IJK (no dependencies/branches in inner loop)
-				MatrixBlockDSM tmpBlock = new MatrixBlock(n,m,m1.sparse);
+				MatrixBlockDSM tmpBlock = new MatrixBlockDSM(n,m,m1.sparse);
 				m1.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
 						       tmpBlock, 0, 0, -1);
 			
@@ -1532,7 +1532,7 @@ public class MatrixMultLib
 				
 				long t0 = System.nanoTime();
 				
-				MatrixMultLib.matrixMult(m1, m2, out);
+				LibMatrixMult.matrixMult(m1, m2, out);
 				//MatrixMultLib.matrixMult(m1, m2, out, 8);
 				
 				long t1 = System.nanoTime();

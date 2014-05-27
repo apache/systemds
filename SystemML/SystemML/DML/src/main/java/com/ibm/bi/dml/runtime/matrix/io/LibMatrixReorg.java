@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
  *  - reshape, r' (transpose)
  * 
  */
-public class MatrixReorgLib 
+public class LibMatrixReorg 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

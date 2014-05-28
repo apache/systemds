@@ -16,7 +16,7 @@ import com.ibm.bi.dml.parser.Expression.DataOp;
 public class OutputStatement extends Statement
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private DataIdentifier _id;
@@ -45,43 +45,48 @@ public class OutputStatement extends Statement
 		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
 	}
 	
-	OutputStatement(String fname, FunctionCallIdentifier fci) throws DMLParseException {
+	OutputStatement(String fname, FunctionCallIdentifier fci) 
+		throws DMLParseException 
+	{
 		
 		DataOp op = Expression.DataOp.WRITE;
 		ArrayList<ParameterExpression> passedExprs = fci.getParamExprs();
 		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
 		DMLParseException runningList = new DMLParseException(fname);
 		
+		//check number parameters and proceed only if this will not cause errors
 		if (passedExprs.size() < 2)
 			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "write method must specify both variable to write to file, and filename to write variable to"));
-	
-		ParameterExpression firstParam = passedExprs.get(0);
-		if (firstParam.getName() != null || (!(firstParam.getExpr() instanceof DataIdentifier)))
-			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "first argument to write method must be name of variable to be written out"));
 		else
-			_id = (DataIdentifier)firstParam.getExpr();
-		
-		ParameterExpression secondParam = passedExprs.get(1);
-		if (secondParam.getName() != null || (secondParam.getName() != null && secondParam.getName().equals(DataExpression.IO_FILENAME)))
-			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "second argument to write method must be filename of file variable written to"));
-		else
-			addExprParam(DataExpression.IO_FILENAME, secondParam.getExpr(), false);
+		{
+			ParameterExpression firstParam = passedExprs.get(0);
+			if (firstParam.getName() != null || (!(firstParam.getExpr() instanceof DataIdentifier)))
+				runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "first argument to write method must be name of variable to be written out"));
+			else
+				_id = (DataIdentifier)firstParam.getExpr();
 			
-		for (int i = 2; i< passedExprs.size(); i++){
-			ParameterExpression currParam = passedExprs.get(i);
-			try {
-				addExprParam(currParam.getName(), currParam.getExpr(), false);
-			} catch (DMLParseException e){
-				runningList.add(e);
+			ParameterExpression secondParam = passedExprs.get(1);
+			if (secondParam.getName() != null || (secondParam.getName() != null && secondParam.getName().equals(DataExpression.IO_FILENAME)))
+				runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "second argument to write method must be filename of file variable written to"));
+			else
+				addExprParam(DataExpression.IO_FILENAME, secondParam.getExpr(), false);
+				
+			for (int i = 2; i< passedExprs.size(); i++){
+				ParameterExpression currParam = passedExprs.get(i);
+				try {
+					addExprParam(currParam.getName(), currParam.getExpr(), false);
+				} catch (DMLParseException e){
+					runningList.add(e);
+				}
 			}
-		}
-		if (fname.equals("writeMM")){
-			StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET);
-			addExprParam(DataExpression.FORMAT_TYPE, writeMMExpr, false);
-		}
-		else if (fname.equals("write.csv")){
-			StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV);
-			addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
+			if (fname.equals("writeMM")){
+				StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET);
+				addExprParam(DataExpression.FORMAT_TYPE, writeMMExpr, false);
+			}
+			else if (fname.equals("write.csv")){
+				StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV);
+				addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
+			}
 		}
 		
 		if (runningList.size() > 0)

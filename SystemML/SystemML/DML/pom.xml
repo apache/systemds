@@ -5,11 +5,11 @@
 	<name>SystemML compiler</name>
 
 
-	<scm>
-		<connection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</connection>
-		<developerConnection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</developerConnection>
-	</scm>
-
+ <scm>
+    <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
+    <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
+  </scm>
+  
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
 		<artifactId>java-parent</artifactId>
@@ -143,18 +143,25 @@
 	</build>
 
 	<dependencies>
-		<dependency>
-			<groupId>FIXME.accelerator_development_libraries.biginsights.ihc</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>2.2.0-mr1</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-common</artifactId>
-			<version>2.2.0</version>
-			<scope>provided</scope>
-		</dependency>
+
+	<dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency>  
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>

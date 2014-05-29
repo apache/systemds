@@ -10,11 +10,11 @@
   <name>IBM BigInsights SystemML</name>
   <description />
 
-  <scm>
-    <connection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</connection>
-    <developerConnection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</developerConnection>
+ <scm>
+    <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
+    <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
   </scm>
-
+  
   <parent>
     <groupId>com.ibm.biginsights</groupId>
     <artifactId>multimodule-parent</artifactId>

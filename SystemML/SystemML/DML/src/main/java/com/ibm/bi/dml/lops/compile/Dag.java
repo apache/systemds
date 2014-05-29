@@ -25,8 +25,12 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.AggBinaryOp;
+import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
@@ -36,6 +40,7 @@ import com.ibm.bi.dml.lops.Lop.Type;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.OutputParameters;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.PartitionLop;
@@ -775,6 +780,63 @@ public class Dag<N extends Lop>
 	}
 	
 	/**
+	 * Computes the memory footprint required to execute <code>node</code> in the mapper.
+	 * It is used only for those nodes that use inputs from distributed cache. The returned 
+	 * value is utilized in limiting the number of instructions piggybacked onto a single GMR mapper.
+	 */
+	private double computeFootprintInMapper(N node) {
+		// Memory limits must be chcked only for nodes that use distributed cache
+		if ( ! node.usesDistributedCache() )
+			// default behavior
+			return 0.0;
+		
+		OutputParameters in1dims = node.getInputs().get(0).getOutputParameters();
+		OutputParameters in2dims = node.getInputs().get(1).getOutputParameters();
+		
+		double footprint = 0;
+		if ( node instanceof MapMult ) {
+			int dcInputIndex = node.distributedCacheInputIndex();
+			footprint = AggBinaryOp.footprintInMapper(
+					in1dims.getNum_rows(), in1dims.getNum_cols(), in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
+					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
+					dcInputIndex);
+		}
+		else if ( node instanceof AppendM ) {
+			footprint = BinaryOp.footprintInMapper(
+					in1dims.getNum_rows(), in1dims.getNum_cols(), 
+					in2dims.getNum_rows(), in2dims.getNum_cols(), 
+					in1dims.get_rows_in_block(), in1dims.get_cols_in_block());
+		}
+		else {
+			// default behavior
+			return 0.0;
+		}
+		return footprint;
+	}
+	
+	/**
+	 * Determines if <code>node</code> can be executed in current round of MR jobs or if it needs to be queued for later rounds.
+	 * If the total estimated footprint (<code>node</code> and previously added nodes in GMR) is less than available memory on 
+	 * the mappers then <code>node</code> can be executed in current round, and <code>true</code> is returned. Otherwise, 
+	 * <code>node</code> must be queued and <code>false</code> is returned. 
+	 */
+	private boolean checkMemoryLimits(N node, double footprintInMapper) {
+		boolean addNode = true;
+		
+		// Memory limits must be chcked only for nodes that use distributed cache
+		if ( ! node.usesDistributedCache() )
+			// default behavior
+			return addNode;
+		
+		double memBudget = Math.min(AggBinaryOp.MVMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudget(true);
+		//System.out.println("MapperMemBudget: " + memBudget);
+		if ( footprintInMapper <= memBudget ) 
+			return addNode;
+		else
+			return !addNode;
+	}
+	
+	/**
 	 * Method to group a vector of sorted lops.
 	 * 
 	 * @param node_v
@@ -799,6 +861,8 @@ public class Dag<N extends Lop>
 		Vector<N> queuedNodes = new Vector<N>();
 
 		ArrayList<Vector<N>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
+		
+		double gmrMapperFootprint = 0;
 
 		// list of instructions
 		ArrayList<Instruction> inst = new ArrayList<Instruction>();
@@ -828,6 +892,7 @@ public class Dag<N extends Lop>
 			execNodes.clear();
 			queuedNodes.clear();
 			clearNodeVectors(jobNodes);
+			gmrMapperFootprint=0;
 
 			for (int i = 0; i < node_v.size(); i++) {
 				N node = node_v.elementAt(i);
@@ -1063,13 +1128,19 @@ public class Dag<N extends Lop>
 				if (node.getExecLocation() == ExecLocation.Map) {
 					boolean queueThisNode = false;
 					if ( node.usesDistributedCache() ) {
-						// if an input to <code>node</code> must come from distributed cache
-						// then that input must get executed in one of previous jobs.
+						// if an input to <code>node</code> comes from distributed cache
+						// then that input must get executed in one of the previous jobs.
 						int dcInputIndex = node.distributedCacheInputIndex();
 						N dcInput = (N) node.getInputs().get(dcInputIndex-1);
-						if (     (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
+						if ( (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
 							  &&  execNodes.contains(dcInput) )
 						{
+							queueThisNode = true;
+						}
+						
+						// Limit the number of distributed cache inputs based on the available memory in mappers
+						gmrMapperFootprint += computeFootprintInMapper(node);
+						if ( !checkMemoryLimits(node, gmrMapperFootprint ) ) {
 							queueThisNode = true;
 						}
 					}

@@ -52,7 +52,7 @@ public class AggBinaryOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private static final double MVMULT_MEM_MULTIPLIER = 1.0;
+	public static final double MVMULT_MEM_MULTIPLIER = 1.0;
 	
 	private OpOp2 innerOp;
 	private AggOp outerOp;
@@ -589,6 +589,33 @@ public class AggBinaryOp extends Hop
 	}
 	
 	/**
+	 * Estimates the memory footprint of MapMult operation depending on which input is put into distributed cache.
+	 * This function is called by <code>optFindMMultMethod()</code> to decide the execution strategy, as well as by 
+	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
+	 */
+	public static double footprintInMapper (long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex) {
+		// If the size of one input is small, choose a method that uses distributed cache
+		// NOTE: be aware of output size because one input block might generate many output blocks
+		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
+		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb), 1.0);
+		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb), 1.0);
+		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols, 1.0); //output per m1 block if m2 in cache
+		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb), 1.0); //output per m2 block if m1 in cache
+	
+		double footprint = 0;
+		if ( cachedInputIndex == 1 ) {
+			// left input (m1) is in cache
+			footprint = m1Size+m2BlockSize+m3m2OutSize;
+		}
+		else {
+			// right input (m2) is in cache
+			footprint = m1BlockSize+m2Size+m3m1OutSize;
+		}
+		return footprint;
+	}
+	
+	/**
 	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce -- CPMM or RMM.
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
@@ -605,12 +632,17 @@ public class AggBinaryOp extends Hop
 
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
+		
+		// memory footprint if left input is put into cache
+		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1);
+		// memory footprint if right input is put into cache
+		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2);
+		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols, 1.0); //output per m1 block if m2 in cache
-		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb), 1.0); //output per m2 block if m1 in cache
 		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true);
-		if ( (m1Size+m3m2OutSize) < memBudget || (m2Size+m3m1OutSize) < memBudget ) 
+		
+		if ( footprint1 < memBudget || footprint2 < memBudget ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)

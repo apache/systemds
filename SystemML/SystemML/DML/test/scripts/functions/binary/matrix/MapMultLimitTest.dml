@@ -1,0 +1,11 @@
+
+A = read($1);
+B1 = read($2);
+B2 = read($3);
+
+C1 = A %*% B1;
+C2 = A %*% B2;
+
+write(C1, $4);
+write(C2, $5);
+

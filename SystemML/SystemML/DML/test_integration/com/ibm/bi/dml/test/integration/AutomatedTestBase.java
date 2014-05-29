@@ -843,7 +843,7 @@ public abstract class AutomatedTestBase
 		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
-				fail("Limit of MR jobs exceeded: expected: " + maxMRJobs + ", occured: "
+				fail("Limit of MR jobs is exceeded: expected: " + maxMRJobs + ", occured: "
 						+ Statistics.getNoOfCompiledMRJobs());
 
 			if (exceptionExpected)

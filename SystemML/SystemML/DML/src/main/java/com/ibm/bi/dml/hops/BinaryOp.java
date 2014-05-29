@@ -1289,7 +1289,7 @@ public class BinaryOp extends Hop
 		long bclen = left.get_cols_in_block();
 		
 		Lop offset = createAppendOffsetLop( left ); //offset 1st input
-		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, bclen);
+		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
 	
 		switch( am )
 		{
@@ -1408,6 +1408,29 @@ public class BinaryOp extends Hop
 	}
 	
 	/**
+	 * Estimates the memory footprint of MapMult operation depending on which input is put into distributed cache.
+	 * This function is called by <code>optFindAppendMethod()</code> to decide the execution strategy, as well as by 
+	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
+	 */
+	public static double footprintInMapper( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb ) {
+		double footprint = 0;
+		
+		// size of left input (matrix block)
+		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2, m1_cpb), 1.0);
+		
+		// size of right input (vector)
+		footprint += OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0);
+		
+		// size of the output
+		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2+m2_dim2, m1_cpb), 1.0);
+		if (m1_dim2+m2_dim2 > m1_cpb) {
+			footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), m1_dim2 + m2_dim2 - m1_cpb, 1.0);
+		}
+		
+		return footprint;
+	}
+	
+	/**
 	 * 
 	 * @param m1_dim1
 	 * @param m1_dim2
@@ -1415,20 +1438,22 @@ public class BinaryOp extends Hop
 	 * @param m2_dim2
 	 * @return
 	 */
-	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long bclen )
+	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
 	{
 		//check for best case (map-only)
+		
 		if(    m2_dim2 == 1  //rhs is vector
 		    && m2_dim1 >= 1 // rhs row dim known 
-		    && OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0) //vector fits in mapper mem
-		       < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) )
-		{
-			return AppendMethod.MR_MAPPEND;
+		    ) {
+			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
+			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) ) {
+				return AppendMethod.MR_MAPPEND;
+			}
 		}
 		
 		//check for in-block append (reduce-only)
 		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
-			&& m1_dim2+m2_dim2 <= bclen ) //output has one column block
+			&& m1_dim2+m2_dim2 <= m1_cpb ) //output has one column block
 		{
 			return AppendMethod.MR_RAPPEND;
 		}

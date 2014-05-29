@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ibm.biginsights</groupId>
-  <version>BI-3.0.0.0-SV-1.0.0-SNAPSHOT</version>
+  <version>BI-3.0.0.0-SV-1.0.0</version>
   <artifactId>systemml-reactor</artifactId>
   <packaging>pom</packaging>
 
@@ -11,8 +11,8 @@
   <description />
 
  <scm>
-    <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
-    <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
+    <connection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</connection>
+    <developerConnection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.0</developerConnection>
   </scm>
   
   <parent>

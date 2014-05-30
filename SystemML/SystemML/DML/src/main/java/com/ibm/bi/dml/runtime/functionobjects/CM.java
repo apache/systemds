@@ -15,11 +15,11 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationType
 
 
 /**
- * GENERAL NOTES:
- * * Weights are always cast to long because based on discussions w/ SPSS weights always 
- *   represent multiplicity and hence are used as integers. 
- *   MB: This is fine for counts but what about mean and other aggregation functions? Furthermore,
- *   why is this inconsistent to sum w/ weights which doesnt use casts? [non-conclusive].
+ * GENERAL NOTE:
+ * * 05/28/2014: We decided to do handle weights consistently to SPSS in an operation-specific manner, 
+ *   i.e., we (1) round instead of casting where required (e.g. count), and (2) consistently use
+ *   fractional weight values elsewhere. In case a count-base interpretation of weights is needed, just 
+ *   ensure rounding before calling CM/COV/KahanPlus.
  * 
  */
 public class CM extends ValueFunction 
@@ -195,12 +195,12 @@ public class CM extends ValueFunction
 		{
 			case COUNT:
 			{
-				cm1.w = (long)cm1.w + (long)w2;
+				cm1.w = Math.round(cm1.w + w2);
 				break;
 			}
 			case MEAN:
 			{
-				double w=(long)cm1.w+(long)w2;
+				double w = cm1.w + w2;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				cm1.w=w;			
@@ -208,7 +208,7 @@ public class CM extends ValueFunction
 			}
 			case CM2:
 			{
-				double w=(long)cm1.w+(long)w2;
+				double w = cm1.w + w2;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				double t1=cm1.w*w2/w*d;
@@ -221,7 +221,7 @@ public class CM extends ValueFunction
 			}
 			case CM3:
 			{
-				double w=(long)cm1.w+(long)w2;
+				double w = cm1.w + w2;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				double t1=cm1.w*w2/w*d;
@@ -240,7 +240,7 @@ public class CM extends ValueFunction
 			}
 			case CM4:
 			{
-				double w=(long)cm1.w+(long)w2;
+				double w = cm1.w + w2;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				double t1=cm1.w*w2/w*d;
@@ -261,7 +261,7 @@ public class CM extends ValueFunction
 			}
 			case VARIANCE:
 			{
-				double w=(long)cm1.w+(long)w2;
+				double w = cm1.w + w2;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				double t1=cm1.w*w2/w*d;
@@ -319,12 +319,12 @@ public class CM extends ValueFunction
 		{
 			case COUNT:
 			{
-				cm1.w=(long)cm1.w+(long)cm2.w;				
+				cm1.w = Math.round(cm1.w + cm2.w);				
 				break;
 			}
 			case MEAN:
 			{
-				double w=(long)cm1.w+(long)cm2.w;
+				double w = cm1.w + cm2.w;
 				double d=cm2.mean._sum-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				cm1.w=w;
@@ -332,7 +332,7 @@ public class CM extends ValueFunction
 			}
 			case CM2:
 			{
-				double w=(long)cm1.w+(long)cm2.w;
+				double w = cm1.w + cm2.w;
 				double d=cm2.mean._sum-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				double t1=cm1.w*cm2.w/w*d;
@@ -346,7 +346,7 @@ public class CM extends ValueFunction
 			}
 			case CM3:
 			{
-				double w=(long)cm1.w+(long)cm2.w;
+				double w = cm1.w + cm2.w;
 				double d=cm2.mean._sum-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				double t1=cm1.w*cm2.w/w*d;
@@ -368,7 +368,7 @@ public class CM extends ValueFunction
 			}
 			case CM4:
 			{
-				double w=(long)cm1.w+(long)cm2.w;
+				double w = cm1.w + cm2.w;
 				double d=cm2.mean._sum-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				double t1=cm1.w*cm2.w/w*d;
@@ -394,7 +394,7 @@ public class CM extends ValueFunction
 			}
 			case VARIANCE:
 			{
-				double w=(long)cm1.w+(long)cm2.w;
+				double w = cm1.w + cm2.w;
 				double d=cm2.mean._sum-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				double t1=cm1.w*cm2.w/w*d;

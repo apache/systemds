@@ -13,6 +13,14 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 
 
+/**
+ * GENERAL NOTE:
+ * * 05/28/2014: We decided to do handle weights consistently to SPSS in an operation-specific manner, 
+ *   i.e., we (1) round instead of casting where required (e.g. count), and (2) consistently use
+ *   fractional weight values elsewhere. In case a count-base interpretation of weights is needed, just 
+ *   ensure rounding before calling CM/COV/KahanPlus.
+ * 
+ */
 public class COV extends ValueFunction
 {
 	@SuppressWarnings("unused")
@@ -62,7 +70,7 @@ public class COV extends ValueFunction
 			return cov1;
 		}
 		
-		double w=(long)cov1.w+(long)w2;
+		double w = cov1.w + w2;
 		double du=u-cov1.mean._sum;
 		double dv=v-cov1.mean_v._sum;
 		cov1.mean=(KahanObject) _plus.execute(cov1.mean, w2*du/w);
@@ -116,7 +124,7 @@ public class COV extends ValueFunction
 		if(cov2.isCOVAllZeros())
 			return cov1;
 		
-		double w=(long)cov1.w+(long)cov2.w;
+		double w = cov1.w + cov2.w;
 		double du=cov2.mean._sum-cov1.mean._sum;
 		double dv=cov2.mean_v._sum-cov1.mean_v._sum;		
 		cov1.mean=(KahanObject) _plus.execute(cov1.mean, cov2.w*du/w);

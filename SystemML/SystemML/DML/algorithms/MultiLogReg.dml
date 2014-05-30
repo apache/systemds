@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2014
+# (C) Copyright IBM Corp. 2010, 2013
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -84,27 +84,50 @@ Nt = nrow (Xt);
 ones_N      = matrix (1.0, rows = N , cols = 1  );
 ones_Nt     = matrix (1.0, rows = Nt, cols = 1  );
 
+
+################################
+# Remark - Some Useful Rewrites:
+# sum (A %*% B) = sum (t(colSums(A)) * rowSums(B))
+# X * (u %*% t(v)) = diag(u) %*% X %*% diag(v)
+# X + (u %*% t(v)) = append(X, u) %*% t(append(I, v)), where I = diag(ones)
+# rowSums ((X + u %*% t(v)) ^ 2) = rowSums (X ^ 2) + 2 * u * (X %*% v) + (u ^ 2) * sum (v ^ 2)
+################################
+
+
 # Introduce the intercept, shift and rescale the columns of X if needed
-
-shift_X_cols = matrix (0, rows = 1, cols = D);
-scale_X_cols = matrix (1, rows = 1, cols = D);
-scale_lambda = matrix (1, rows = 1, cols = D);
-
-if (intercept_status == 1 | intercept_status == 2) {  # add the intercept column
-    if (intercept_status == 2) { # shift/rescale X columns to mean 0, variance 1
-        shift_X_cols = - colSums(X) / N;
-        X = X + ones_N %*% shift_X_cols;
-        scale_X_cols = sqrt ((N - 1) / colSums (X ^ 2));
-        X = X * (ones_N %*% scale_X_cols);
-    }
+if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
+{
     X  = append (X,  ones_N);
     Xt = append (Xt, ones_Nt);
     D = ncol (X);
-    zero_cell = matrix (0, rows = 1, cols = 1);
-    shift_X_cols = append (shift_X_cols, zero_cell);
-    scale_X_cols = append (scale_X_cols, zero_cell + 1);
-    scale_lambda = append (scale_lambda, zero_cell);
 }
+
+scale_lambda = matrix (1, rows = D, cols = 1);
+if (intercept_status == 1 | intercept_status == 2)
+{
+    scale_lambda [D, 1] = 0;
+}
+
+if (intercept_status == 2)  # shift/rescale X columns to mean 0, variance 1
+{                           # Important assumption: X [, D] = ones_N; Xt [, D] = ones_Nt
+    shift_X_cols = - t(colSums(X)) / N;
+    shift_X_cols [D, 1] = 0;
+    scale_X_cols_sq = (N - 1) / (t(colSums (X ^ 2)) - N * (shift_X_cols ^ 2));
+    scale_X_cols_sq [D, 1] = 1;
+    scale_X_cols = sqrt (scale_X_cols_sq);
+    transform_X_cols = matrix (0, rows = D, cols = D);
+    transform_X_cols [D, ] = t(shift_X_cols * scale_X_cols);
+    transform_X_cols = transform_X_cols + diag (scale_X_cols);
+    rowSums_X_sq = (X ^ 2) %*% scale_X_cols_sq + X %*% (2 * scale_X_cols_sq * shift_X_cols)
+        + sum (scale_X_cols_sq * shift_X_cols ^ 2);
+    is_transform_X_cols = 1;
+} else {
+    transform_X_cols = diag (matrix (1, rows = D, cols = 1));
+    rowSums_X_sq = rowSums (X ^ 2);
+    is_transform_X_cols = 0;
+}
+###  Whenever is_transform_X_cols == 1, we replaced X with (X %*% transform_X_cols)
+###  and rowSums(X ^ 2) with rowSums_X_sq in order to preserve the sparsity of X
 
 # Convert "Y_vec" and "Yt_vec" into indicator matrices
 if (min (Y_vec) <= 0) { 
@@ -113,8 +136,7 @@ if (min (Y_vec) <= 0) {
     Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * ppred (Y_vec , 0.0, "<=");
     Yt_vec = Yt_vec + (- Yt_vec + max_y + 1) * ppred (Yt_vec, 0.0, "<=");
 }
-seq_N = seq (1, N); # How to use seq: seq (from, to, increment)
-Y = ctable (seq_N, Y_vec);
+Y = table (seq (1, N, 1), Y_vec);
 K = ncol (Y) - 1;   # The number of  non-baseline categories
 Y = Y [, 1:K];      # Indicators for non-baseline categories
 
@@ -124,16 +146,20 @@ zeros_DK    = matrix (0.0, rows = D , cols = K  );
 zeros_N     = matrix (0.0, rows = N , cols = 1  );
 seqs_Nt_Kplus1 = ones_Nt %*% t(seq (1, K+1));
 
-lambda = (t(scale_lambda) %*% ones_K) * $reg;
-delta = 0.5 * sqrt (D) / max (sqrt (rowSums (X ^ 2)));
+lambda = (scale_lambda %*% ones_K) * $reg;
+delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
-B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% B
+B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% transform_X_cols %*% B
 LT = matrix (0.0, rows = N, cols = K);  ### P_raw = exp (LT);
 P  = matrix (1.0, rows = N, cols = K);  ### P_denom = 1.0 + rowSums (P_raw);
 P = P / (K + 1);                        ### P = P_raw / (P_denom %*% ones_K);
 obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (P_denom)) + 0.5 * sum (lambda * (B ^ 2));
 
-Grad = t(X) %*% (P - Y) + lambda * B;
+if (is_transform_X_cols == 1) {
+    Grad = t(transform_X_cols) %*% (t(X) %*% (P - Y)) + lambda * B;
+} else {
+    Grad = t(X) %*% (P - Y) + lambda * B;
+}
 norm_Grad = sqrt (sum (Grad ^ 2));
 norm_Grad_initial = norm_Grad;
 
@@ -163,8 +189,13 @@ while (! converge)
 	while (! innerconverge)
 	{
 	    inneriter = inneriter + 1;
-	    Q = P * (X %*% V);
-	    HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K)) + lambda * V;
+        if (is_transform_X_cols == 1) {
+            Q = P * (X %*% (transform_X_cols %*% V));
+            HV = t(transform_X_cols) %*% (t(X) %*% (Q - P * (rowSums (Q) %*% ones_K))) + lambda * V;
+        } else {
+            Q = P * (X %*% V);
+            HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K)) + lambda * V;
+        }
 		alpha = norm_R2 / sum (V * HV);
 		Snew = S + alpha * V;
 		norm_Snew2 = sum (Snew ^ 2);
@@ -202,7 +233,11 @@ while (! converge)
 	qk = - 0.5 * (gs - sum (S * R));
 	B_new = B + S;
 	
-    LT_new = X %*% B_new;
+	if (is_transform_X_cols == 1) {
+        LT_new = X %*% (transform_X_cols %*% B_new);
+    } else {
+        LT_new = X %*% B_new;
+    }
     P_raw_new = exp (LT_new);
     P_denom_new = 1.0 + rowSums (P_raw_new);
     P_new = P_raw_new / (P_denom_new %*% ones_K);
@@ -240,8 +275,12 @@ while (! converge)
 		B = B_new;
 		LT = LT_new;
 		P = P_new;
-		Grad = t(X) %*% (P - Y) + lambda * B;
-		norm_Grad = sqrt (sum (Grad * Grad));
+		if (is_transform_X_cols == 1) {
+		    Grad = t(transform_X_cols) %*% (t(X) %*% (P - Y)) + lambda * B;
+		} else {
+		    Grad = t(X) %*% (P - Y) + lambda * B;
+		}
+		norm_Grad = sqrt (sum (Grad ^ 2));
 		obj = obj_new;
 	}
 	
@@ -272,7 +311,11 @@ while (! converge)
 
 	if (is_test == 1) {
 	    LText_test = matrix (0.0, rows = Nt, cols = K+1);
-	    LText_test [, 1:K] = Xt %*% B;
+	    if (is_transform_X_cols == 1) {
+	        LText_test [, 1:K] = Xt %*% (transform_X_cols %*% B);
+	    } else {
+	        LText_test [, 1:K] = Xt %*% B;
+	    }
 	    Yt_vec_predicted = rowSums (seqs_Nt_Kplus1 
 		    * ppred (LText_test, rowMaxs (LText_test) %*% ones_Kplus1, "=="));
 	    correct = sum (ppred (Yt_vec_predicted, Yt_vec, "=="));
@@ -282,11 +325,7 @@ while (! converge)
 	}
 } 
 
-B_out = B;
-if (intercept_status == 2) {
-    B_out = (t(scale_X_cols) %*% ones_K) * B_out;
-    B_out [D, ] = B_out [D, ] + shift_X_cols %*% B_out;
+if (is_transform_X_cols == 1) {
+    B_out = transform_X_cols %*% B;
 }
-
-
 writeMM (B_out, $B);

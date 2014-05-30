@@ -6,10 +6,7 @@
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
-
-setwd ("test/scripts/applications/glm");
-source ("CGSteihaug.dml");
-
+# 
 # THIS SCRIPT SOLVES GLM REGRESSION USING NEWTON/FISHER SCORING WITH TRUST REGIONS
 #
 # INPUT PARAMETERS:
@@ -46,33 +43,34 @@ source ("CGSteihaug.dml");
 #     tol=0.00000001 disp=1.0 moi=100 mii=10 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
 #
 #
-# SUPPORTED GLM DISTRIBUTION FAMILIES AND LINKS:
-# ----------------------------------------------
-# INPUT PARAMETERS:    MEANING:           Cano-
-# dfam vpow link lpow  Distribution.link  nical?
-# ----------------------------------------------
+# SOME OF THE SUPPORTED GLM DISTRIBUTION FAMILIES
+# AND LINK FUNCTIONS:
+# -----------------------------------------------
+# INPUT PARAMETERS:    MEANING:            Cano-
+# dfam vpow link lpow  Distribution.link   nical?
+# -----------------------------------------------
 #  1   0.0   1  -1.0   Gaussian.inverse
 #  1   0.0   1   0.0   Gaussian.log
-#  1   0.0   1   1.0   Gaussian.id         Yes
-#  1   1.0   1   0.0   Poisson.log         Yes
+#  1   0.0   1   1.0   Gaussian.id          Yes
+#  1   1.0   1   0.0   Poisson.log          Yes
 #  1   1.0   1   0.5   Poisson.sqrt
 #  1   1.0   1   1.0   Poisson.id
-#  1   2.0   1  -1.0   Gamma.inverse       Yes
+#  1   2.0   1  -1.0   Gamma.inverse        Yes
 #  1   2.0   1   0.0   Gamma.log
 #  1   2.0   1   1.0   Gamma.id
-#  1   3.0   1  -2.0   InvGaussian.1/mu^2  Yes
+#  1   3.0   1  -2.0   InvGaussian.1/mu^2   Yes
 #  1   3.0   1  -1.0   InvGaussian.inverse
 #  1   3.0   1   0.0   InvGaussian.log
 #  1   3.0   1   1.0   InvGaussian.id
 #  1    *    1    *    AnyVariance.AnyLink
-# ----------------------------------------------
+# -----------------------------------------------
 #  2    *    1   0.0   Binomial.log
 #  2    *    1   0.5   Binomial.sqrt
-#  2    *    2    *    Binomial.logit      Yes
+#  2    *    2    *    Binomial.logit       Yes
 #  2    *    3    *    Binomial.probit
 #  2    *    4    *    Binomial.cloglog
 #  2    *    5    *    Binomial.cauchit
-# ----------------------------------------------
+# -----------------------------------------------
 
 
 # Default values for input parameters
@@ -104,25 +102,36 @@ ones_r = 1 + zeros_r;
 
 # Introduce the intercept, shift and rescale the columns of X if needed
 
-shift_X_cols = matrix (0, rows = 1, cols = num_features);
-scale_X_cols = matrix (1, rows = 1, cols = num_features);
-scale_lambda = matrix (1, rows = 1, cols = num_features);
-
-if (intercept_status == 1 | intercept_status == 2) {  # add the intercept column
-    if (intercept_status == 2) { # shift/rescale X columns to mean 0, variance 1
-        shift_X_cols = - colSums(X) / num_records;
-        X = X + ones_r %*% shift_X_cols;
-        scale_X_cols = sqrt ((num_records - 1) / colSums (X ^ 2));
-        X = X * (ones_r %*% scale_X_cols);
-#scale_lambda = colSums (X ^ 2) / (num_records - 1); # ALTERNATIVE: rescale regularization template
-    }
+if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
+{
     X = append (X, ones_r);
     num_features = ncol (X);
-    zero_cell = matrix (0, rows = 1, cols = 1);
-    shift_X_cols = append (shift_X_cols, zero_cell);
-    scale_X_cols = append (scale_X_cols, zero_cell + 1);
-    scale_lambda = append (scale_lambda, zero_cell);
 }
+
+scale_lambda = matrix (1, rows = num_features, cols = 1);
+if (intercept_status == 1 | intercept_status == 2)
+{
+    scale_lambda [num_features, 1] = 0;
+}
+
+if (intercept_status == 2)  # shift/rescale X columns to mean 0, variance 1
+{                           # Important assumption: X [, num_features] = ones_r
+    shift_X_cols = - t(colSums(X)) / num_records;
+    shift_X_cols [num_features, 1] = 0;
+    scale_X_cols_sq = (num_records - 1) / (t(colSums (X ^ 2)) - num_records * (shift_X_cols ^ 2));
+    scale_X_cols_sq [num_features, 1] = 1;
+    scale_X_cols = sqrt (scale_X_cols_sq);
+    transform_X_cols = matrix (0, rows = num_features, cols = num_features);
+    transform_X_cols [num_features, ] = t(shift_X_cols * scale_X_cols);
+    transform_X_cols = transform_X_cols + diag (scale_X_cols);
+    rowSums_X_sq = (X ^ 2) %*% scale_X_cols_sq + X %*% (2 * scale_X_cols_sq * shift_X_cols)
+        + sum (scale_X_cols_sq * shift_X_cols ^ 2);
+} else {
+    transform_X_cols = diag (matrix (1, rows = num_features, cols = 1));
+    rowSums_X_sq = rowSums (X ^ 2);
+}
+### Henceforth we replace X with (X %*% transform_X_cols) and rowSums(X ^ 2) with
+### rowSums_X_sq in order to preserve the sparsity of X under the column-transform
 
 # Initialize other input-dependent parameters
 
@@ -132,7 +141,7 @@ bernoulli_No_label = 0.0 + $yneg;
 link_type = $link;
 link_as_power_of_the_mean = 0.0 + $lpow;
 dispersion = 0.0 + $disp;
-lambda = t(scale_lambda) * $reg;
+lambda = scale_lambda * $reg;
 eps = 0.0 + $tol;
 max_iteration_IRLS = $moi;
 max_iteration_CG = $mii;
@@ -177,14 +186,16 @@ if (is_supported == 1)
 
 #####   INITIALIZE THE BETAS   #####
 
+sum_X_sq = sum (rowSums_X_sq);
 [beta, saturated_log_l, isNaN] = 
-    glm_initialize (X, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean, intercept_status);
+    glm_initialize (X, transform_X_cols, sum_X_sq, Y, 
+        distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean, intercept_status);
 if (isNaN == 0)
 {
 
 #####  START OF THE MAIN PART  #####
 
-trust_delta = 0.5 * sqrt (num_features) / max (sqrt (rowSums (X ^ 2)));
+trust_delta = 0.5 * sqrt (num_features) / max (sqrt (rowSums_X_sq));
 ###  max_trust_delta = trust_delta * 10000.0;
 g = matrix (0.0, rows = num_features, cols = 1);
 A = matrix (0.0, rows = num_features, cols = num_features);
@@ -201,7 +212,7 @@ i_IRLS = 0;
 
 print ("BEGIN IRLS ITERATIONS...");
 
-all_linear_terms = X %*% newbeta;
+all_linear_terms = X %*% (transform_X_cols %*% newbeta);
 
 [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part
     (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
@@ -262,19 +273,15 @@ print ("||y_residual|| = " + norm_y_residual + ";  ||y_var|| = " + norm_y_var + 
 print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs (link_grad)));                      
 */
                       
-        g = - t(X) %*% g_Y;
-#       A = t(X) %*% diag (w) %*% X;
+        g = - t(transform_X_cols) %*% (t(X) %*% g_Y);
     }
     
     [z, neg_log_l_change_predicted, reached_trust_boundary] = 
-        get_CG_Steihaug_point_Xw (X, w, g, beta, lambda, trust_delta, max_iteration_CG);
-
-#   [z, neg_log_l_change_predicted, reached_trust_boundary] = 
-#       get_CG_Steihaug_point_A (A, g, beta, lambda, trust_delta, max_iteration_CG);
+        get_CG_Steihaug_point (X, transform_X_cols, w, g, beta, lambda, trust_delta, max_iteration_CG);
 
     newbeta = beta + z;
     
-    all_linear_terms = X %*% newbeta;
+    all_linear_terms = X %*% (transform_X_cols %*% newbeta);
     
     [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part
         (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
@@ -326,21 +333,21 @@ if (converged_IRLS == 1) {
     print ("Did not converge.");
 }
 
-beta_out = beta;
 if (intercept_status == 2) {
-    beta_out = t(scale_X_cols) * beta_out;
-    beta_out [num_features, 1] = beta_out [num_features, 1] + shift_X_cols %*% beta_out;
+    beta_out = transform_X_cols %*% beta;
     beta_out = append (beta_out, beta);
+} else {
+    beta_out = transform_X_cols %*% beta;
 }
 
-if (nrow(beta) >= 1) {
-    print ("beta[1] = " + castAsScalar(beta_out [1, 1]));
+if (nrow (beta_out) >= 1) {
+    print ("beta[1] = " + castAsScalar (beta_out [1, 1]));
 }
-if (nrow(beta) >= 2) {
-    print ("beta[2] = " + castAsScalar(beta_out [2, 1]));
+if (nrow (beta_out) >= 2) {
+    print ("beta[2] = " + castAsScalar (beta_out [2, 1]));
 }
-if (nrow(beta) >= 3) {
-    print ("beta[3] = " + castAsScalar(beta_out [3, 1]));
+if (nrow (beta_out) >= 3) {
+    print ("beta[3] = " + castAsScalar (beta_out [3, 1]));
 }
 
 write (beta_out, $B, format="text");
@@ -349,7 +356,7 @@ write (beta_out, $B, format="text");
 
 #####  OVER-DISPERSION PART  #####
 
-all_linear_terms = X %*% beta;
+all_linear_terms = X %*% (transform_X_cols %*% beta);
 [g_Y, w] = glm_dist (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
     
 pearson_residual_sq = g_Y ^ 2 / w;
@@ -382,24 +389,28 @@ check_if_supported =
         is_supported = 1;
         if (var_power == 0.0 & link_power == -1.0) {print ("Gaussian.inverse");      } else {
         if (var_power == 0.0 & link_power ==  0.0) {print ("Gaussian.log");          } else {
+        if (var_power == 0.0 & link_power ==  0.5) {print ("Gaussian.sqrt");         } else {
         if (var_power == 0.0 & link_power ==  1.0) {print ("Gaussian.id");           } else {
         if (var_power == 0.0                     ) {print ("Gaussian.power_nonlog"); } else {
+        if (var_power == 1.0 & link_power == -1.0) {print ("Poisson.inverse");       } else {
         if (var_power == 1.0 & link_power ==  0.0) {print ("Poisson.log");           } else {
         if (var_power == 1.0 & link_power ==  0.5) {print ("Poisson.sqrt");          } else {
         if (var_power == 1.0 & link_power ==  1.0) {print ("Poisson.id");            } else {
         if (var_power == 1.0                     ) {print ("Poisson.power_nonlog");  } else {
         if (var_power == 2.0 & link_power == -1.0) {print ("Gamma.inverse");         } else {
         if (var_power == 2.0 & link_power ==  0.0) {print ("Gamma.log");             } else {
+        if (var_power == 2.0 & link_power ==  0.5) {print ("Gamma.sqrt");            } else {
         if (var_power == 2.0 & link_power ==  1.0) {print ("Gamma.id");              } else {
         if (var_power == 2.0                     ) {print ("Gamma.power_nonlog");    } else {
         if (var_power == 3.0 & link_power == -2.0) {print ("InvGaussian.1/mu^2");    } else {
         if (var_power == 3.0 & link_power == -1.0) {print ("InvGaussian.inverse");   } else {
         if (var_power == 3.0 & link_power ==  0.0) {print ("InvGaussian.log");       } else {
+        if (var_power == 3.0 & link_power ==  0.5) {print ("InvGaussian.sqrt");      } else {
         if (var_power == 3.0 & link_power ==  1.0) {print ("InvGaussian.id");        } else {
         if (var_power == 3.0                     ) {print ("InvGaussian.power_nonlog");}else{
         if (                   link_power ==  0.0) {print ("PowerDist.log");         } else {
                                                     print ("PowerDist.power_nonlog");
-    }   }}}}} }}}}} }}}}} }}}
+    }   }}}}} }}}}} }}}}} }}}}} }}
     if (ncol_y == 1 & dist_type == 2)
     {
         print ("Error: Bernoulli response matrix has not been converted into two-column format.");
@@ -407,20 +418,23 @@ check_if_supported =
     if (ncol_y == 2 & dist_type == 2 & link_type >= 1 & link_type <= 5)
     { # BINOMIAL/BERNOULLI DISTRIBUTION
         is_supported = 1;
-        if (link_type == 1 & link_power == 0.0) {print ("Binomial.log");             } else {
-        if (link_type == 1)                     {print ("Binomial.power_nonlog");    } else {
-        if (link_type == 2)                     {print ("Binomial.logit");           } else {
-        if (link_type == 3)                     {print ("Binomial.probit");          } else {
-        if (link_type == 4)                     {print ("Binomial.cloglog");         } else {
-        if (link_type == 5)                     {print ("Binomial.cauchit");         }
-    }   }}}}}
+        if (link_type == 1 & link_power == -1.0) {print ("Binomial.inverse");        } else {
+        if (link_type == 1 & link_power ==  0.0) {print ("Binomial.log");            } else {
+        if (link_type == 1 & link_power ==  0.5) {print ("Binomial.sqrt");           } else {
+        if (link_type == 1 & link_power ==  1.0) {print ("Binomial.id");             } else {
+        if (link_type == 1)                      {print ("Binomial.power_nonlog");   } else {
+        if (link_type == 2)                      {print ("Binomial.logit");          } else {
+        if (link_type == 3)                      {print ("Binomial.probit");         } else {
+        if (link_type == 4)                      {print ("Binomial.cloglog");        } else {
+        if (link_type == 5)                      {print ("Binomial.cauchit");        }
+    }   }}}}} }}}
     if (is_supported == 0) {
         print ("Response matrix with " + ncol_y + " columns, distribution family (" + dist_type + ", " + var_power
              + ") and link family (" + link_type + ", " + link_power + ") are NOT supported together.");
     }
 }
 
-glm_initialize = function (Matrix[double] X, Matrix[double] Y,
+glm_initialize = function (Matrix[double] X, Matrix[double] transform_X_cols, double sum_X_sq, Matrix[double] Y,
                  int dist_type, double var_power, int link_type, double link_power, int icept_status)
 return (Matrix[double] beta, double saturated_log_l, int isNaN)
 {
@@ -502,11 +516,11 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
             glm_log_likelihood_part (linear_terms, Y, dist_type, var_power, link_type, link_power);
     }
     
-    beta = matrix (0.0, rows = ncol(X), cols = 1);
+    beta = matrix (0.0, rows = ncol(transform_X_cols), cols = 1);
     if (icept_status == 1 | icept_status == 2) {
-        beta [ncol(X), 1] = 1.0;
-    } else {
-        beta = straightenX (X, 0.000001);   #  0.000000001);   #  avg(X %*% beta) = 1
+        beta [nrow(beta), 1] = 1.0;
+    } else {  # avg (X %*% transform_X_cols %*% beta) = 1
+        beta = straightenX (X, transform_X_cols, sum_X_sq, 0.000001);  
     }
 
     if (link_type == 1 & link_power == 0.0) {
@@ -838,29 +852,135 @@ binomial_probability_two_column =
 }   }            
 
 
+# THE CG-STEIHAUG PROCEDURE SCRIPT
 
-# Computes vector w such that  ||X %*% w - 1|| -> MIN  given  avg(X %*% w) = 1
-# We find z_LS such that ||X %*% z_LS - 1|| -> MIN unconditionally, then scale
-# it to compute  w = c * z_LS  such that  sum(X %*% w) = nrow(X).
+# Apply Conjugate Gradient - Steihaug algorithm in order to approximately minimize
+# 0.5 z^T (X^T diag(w) X + diag (lambda)) z + (g + lambda * beta)^T z
+# under constraint:  ||z|| <= trust_delta.
+# See Alg. 7.2 on p. 171 of "Numerical Optimization" 2nd ed. by Nocedal and Wright
+# IN THE ABOVE, "X" IS UNDERSTOOD TO BE "X %*% transform_X_cols"; THIS IS INTRODUCED
+# BECAUSE SPARSE "X" AND "transform_X_cols" MAY YIELD DENSE "X %*% transform_X_cols"
+#
+get_CG_Steihaug_point =
+    function (Matrix[double] X, Matrix[double] transform_X_cols, Matrix[double] w, Matrix[double] g,
+        Matrix[double] beta, Matrix[double] lambda, double trust_delta, int max_iter_CG)
+    return (Matrix[double] z, double neg_log_l_change, int reached_trust_boundary)
+{
+    trust_delta_sq = trust_delta ^ 2;
+    size_CG = nrow (g);
+    z = matrix (0.0, rows = size_CG, cols = 1);
+    neg_log_l_change = 0.0;
+    reached_trust_boundary = 0;
+    g_reg = g + lambda * beta;
+    r_CG = g_reg;
+    p_CG = -r_CG;
+    rr_CG = sum(r_CG * r_CG);
+    eps_CG = rr_CG * min (0.25, sqrt (rr_CG));
+    converged_CG = 0;
+    if (rr_CG < eps_CG) {
+        converged_CG = 1;
+    }
+    
+    max_iteration_CG = max_iter_CG;
+    if (max_iteration_CG <= 0) {
+        max_iteration_CG = size_CG;
+    }
+    i_CG = 0;
+    while (converged_CG == 0)
+    {
+        temp_CG = w * (X %*% (transform_X_cols %*% p_CG));
+        temp_CG = (t(temp_CG) %*% X) %*% transform_X_cols;
+        q_CG = t(temp_CG) + (lambda * p_CG);
+        pq_CG = sum (p_CG * q_CG);
+        if (pq_CG <= 0) {
+            pp_CG = sum (p_CG * p_CG);  
+            if (pp_CG > 0) {
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
+            } else {
+                neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
+            }
+            converged_CG = 1;
+        }
+        if (converged_CG == 0) {
+            alpha_CG = rr_CG / pq_CG;
+            new_z = z + alpha_CG * p_CG;
+            if (sum(new_z * new_z) >= trust_delta_sq) {
+                pp_CG = sum (p_CG * p_CG);  
+                [z, neg_log_l_change] = 
+                    get_trust_boundary_point (g_reg, z, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq);
+                reached_trust_boundary = 1;
+                converged_CG = 1;
+            }
+            if (converged_CG == 0) {
+                z = new_z;
+                old_rr_CG = rr_CG;
+                r_CG = r_CG + alpha_CG * q_CG;
+                rr_CG = sum(r_CG * r_CG);
+                i_CG = i_CG + 1;
+                if (i_CG == max_iteration_CG | rr_CG < eps_CG) {
+                    neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
+                    reached_trust_boundary = 0;
+                    converged_CG = 1;
+                }
+                if (converged_CG == 0) {
+                    p_CG = -r_CG + (rr_CG / old_rr_CG) * p_CG;
+}   }   }   }   }
+
+
+# An auxiliary function used twice inside the CG-STEIHAUG loop:
+get_trust_boundary_point = 
+    function (Matrix[double] g, Matrix[double] z, Matrix[double] p, 
+              Matrix[double] q, Matrix[double] r, double pp, double pq, 
+              double trust_delta_sq)
+    return (Matrix[double] new_z, double f_change)
+{
+    zz = sum (z * z);  pz = sum (p * z);
+    sq_root_d = sqrt (pz * pz - pp * (zz - trust_delta_sq));
+    tau_1 = (- pz + sq_root_d) / pp;
+    tau_2 = (- pz - sq_root_d) / pp;
+    zq = sum (z * q);  gp = sum (g * p);
+    f_extra = 0.5 * sum (z * (r + g));
+    f_change_1 = f_extra + (0.5 * tau_1 * pq + zq + gp) * tau_1;
+    f_change_2 = f_extra + (0.5 * tau_2 * pq + zq + gp) * tau_2;
+    if (f_change_1 < f_change_2) {
+        new_z = z + (tau_1 * p);
+        f_change = f_change_1;
+    }
+    else {
+        new_z = z + (tau_2 * p);
+        f_change = f_change_2;
+    }
+}
+
+
+# Computes vector w such that
+#     ||X %*% TC %*% w - 1|| -> MIN  given  avg(X %*% TC %*% w) = 1
+# We find z_LS such that ||X %*% TC %*% z_LS - 1|| -> MIN unconditionally,
+#     then scale it to compute  w = c * z_LS  such that
+#         sum(X %*% TC %*% w) = nrow(X).
+# Matrix TC is added because sparse X and TC may produce a dense X %*% TC.
 straightenX =
-    function (Matrix[double] X, double eps)
+    function (Matrix[double] X, Matrix[double] TC, double X_TC_sq, double eps)
     return   (Matrix[double] w)
 {
     eps_LS = eps * nrow(X);
-    lambda_LS = 0.000001 * sum(X ^ 2) / ncol(X);
-    w_X = t(colSums(X));
+    lambda_LS = (0.000001 / ncol(TC)) * X_TC_sq;  # X_TC_sq replaces sum(X ^ 2)
+    w_X = t(TC) %*% t(colSums(X));
 
     # BEGIN LEAST SQUARES
     
     r_LS = - w_X;
-    z_LS = matrix (0.0, rows = ncol(X), cols = 1);
+    z_LS = matrix (0.0, rows = ncol(TC), cols = 1);
     p_LS = - r_LS;
     norm_r2_LS = sum (r_LS ^ 2);
     i_LS = 0;
-    while (i_LS < 50 & i_LS < ncol(X) & norm_r2_LS >= eps_LS)
+    while (i_LS < 50 & i_LS < ncol(TC) & norm_r2_LS >= eps_LS)
     {
-        temp_LS = X %*% p_LS;
-        q_LS = (t(X) %*% temp_LS) + lambda_LS * p_LS;
+        temp_LS = X %*% (TC %*% p_LS);
+        temp_LS = (t(temp_LS) %*% X) %*% TC;
+        q_LS = t(temp_LS) + (lambda_LS * p_LS);
         alpha_LS = norm_r2_LS / sum (p_LS * q_LS);
         z_LS = z_LS + alpha_LS * p_LS;
         old_norm_r2_LS = norm_r2_LS;
@@ -876,4 +996,37 @@ straightenX =
 }
 
 
-        
+round_to_print = function (double x_to_truncate)
+return (double mantissa, int eee)
+{
+    mantissa = 1.0;
+    eee = 0;
+    positive_infinity = 1.0 / 0.0;
+    x = abs (x_to_truncate);
+    if (x != x / 2.0) {
+        log_ten = log (10.0);
+        d_eee = round (log (x) / log_ten - 0.5);
+        mantissa = round (x * exp (log_ten * (4.0 - d_eee))) / 10000;
+        if (mantissa == 10.0) {
+            mantissa = 1.0;
+            d_eee = d_eee + 1;
+        }
+        if (x_to_truncate < 0.0) {
+            mantissa = - mantissa;
+        }
+        eee = 0;
+        pow_two = 1;
+        res_eee = abs (d_eee);
+        while (res_eee != 0.0) {
+            new_res_eee = round (res_eee / 2.0 - 0.3);
+            if (new_res_eee * 2.0 < res_eee) {
+                eee = eee + pow_two;
+            }
+            res_eee = new_res_eee;
+            pow_two = 2 * pow_two;
+        }
+        if (d_eee < 0.0) {
+            eee = - eee;
+        }
+    } else { mantissa = x_to_truncate; }
+}

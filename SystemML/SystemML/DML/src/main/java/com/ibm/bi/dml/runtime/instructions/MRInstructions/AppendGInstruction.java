@@ -14,7 +14,6 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -123,7 +122,7 @@ public class AppendGInstruction extends AppendInstruction
 					ix1.setIndexes( tmpix.getRowIndex(), cix1);
 					tmpvalNew.reset( tmpval.getNumRows(), cols1 );
 					tmpvalNew.copy(0, tmpval.getNumRows()-1, (int)((_offset+1)%bclen)-1, cols1-1, 
-							       (MatrixBlockDSM)tmpval.sliceOperations(1, tmpval.getNumRows(), 1, 
+							       (MatrixBlock)tmpval.sliceOperations(1, tmpval.getNumRows(), 1, 
 							    		                     cols1-((_offset)%bclen), new MatrixBlock()), true);
 					data1.getIndexes().setIndexes(ix1);
 					
@@ -138,7 +137,7 @@ public class AppendGInstruction extends AppendInstruction
 						ix2.setIndexes( tmpix.getRowIndex(), cix2);
 						tmpvalNew2.reset( tmpval.getNumRows(), cols2 );
 						tmpvalNew2.copy(0, tmpval.getNumRows()-1, 0, cols2-1, 
-								       (MatrixBlockDSM)tmpval.sliceOperations(1, tmpval.getNumRows(), cols1-((_offset)%bclen)+1, 
+								       (MatrixBlock)tmpval.sliceOperations(1, tmpval.getNumRows(), cols1-((_offset)%bclen)+1, 
 								    		                     tmpval.getNumColumns(), new MatrixBlock()), true);
 						data2.getIndexes().setIndexes(ix2);
 					}

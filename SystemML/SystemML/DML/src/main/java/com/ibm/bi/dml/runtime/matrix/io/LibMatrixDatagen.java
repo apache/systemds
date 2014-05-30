@@ -46,7 +46,7 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateRandomMatrix(MatrixBlockDSM out, String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed) 
+	public static void generateRandomMatrix(MatrixBlock out, String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed) 
 		throws DMLRuntimeException
 	{
 		generateRandomMatrix(out, pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, null, seed);
@@ -78,7 +78,7 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateRandomMatrix(MatrixBlockDSM out, String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) throws DMLRuntimeException
+	public static void generateRandomMatrix(MatrixBlock out, String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) throws DMLRuntimeException
 	{
 		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
 		PRNGenerator valuePRNG = null;
@@ -102,7 +102,7 @@ public class LibMatrixDatagen
 		
 		// Determine the sparsity of output matrix
 		final long estnnz = (long)(sparsity * rows * cols);
-		boolean lsparse = MatrixBlockDSM.evalSparseFormatInMemory( rows, cols, estnnz );
+		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
 		out.reset(rows, cols, lsparse);
 		
 		// Special case shortcuts for efficiency
@@ -173,7 +173,7 @@ public class LibMatrixDatagen
 				// block-level sparsity, which may differ from overall sparsity in the matrix.
 				// (e.g., border blocks may fall under skinny matrix turn point, in CP this would be 
 				// irrelevant but we need to ensure consistency with MR)
-				boolean localSparse = MatrixBlockDSM.evalSparseFormatInMemory(blockrows, blockcols, (long)(sparsity*blockrows*blockcols));  
+				boolean localSparse = MatrixBlock.evalSparseFormatInMemory(blockrows, blockcols, (long)(sparsity*blockrows*blockcols));  
 				
 				if ( localSparse ) {
 					SparseRow[] c = out.sparseRows;
@@ -254,7 +254,7 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateSequence(MatrixBlockDSM out, double from, double to, double incr) 
+	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
 		throws DMLRuntimeException 
 	{
 		boolean neg = (from > to);

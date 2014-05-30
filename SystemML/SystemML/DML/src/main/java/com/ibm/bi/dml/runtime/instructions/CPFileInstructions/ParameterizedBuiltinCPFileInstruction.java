@@ -50,7 +50,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -822,7 +821,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				if( _margin.equals("rows") ) 
 				{
 					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
-							                     MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
+							                     MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
 					{
@@ -887,7 +886,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				else
 				{
 					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
-							                    MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
+							                    MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
 					{
@@ -991,7 +990,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				if( _margin.equals("rows") ) 
 				{
 					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
-							                       MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
+							                       MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;
@@ -1051,7 +1050,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				else //cols
 				{
 					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
-							                     MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
+							                     MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 					int currentSize = -1;

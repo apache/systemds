@@ -25,7 +25,7 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
@@ -192,7 +192,7 @@ public class ReblockMR
 		long maxSize = -1; //in MB
 		for( int i=0; i<rlen.length; i++ )
 		{			
-			long tmp = MatrixBlockDSM.estimateSizeOnDisk(rlen[i], clen[i], nnz[i]) / (1024*1024);
+			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], nnz[i]) / (1024*1024);
 			maxSize = Math.max(maxSize, tmp);
 		}
 		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)

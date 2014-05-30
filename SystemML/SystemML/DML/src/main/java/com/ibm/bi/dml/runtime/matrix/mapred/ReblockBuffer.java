@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
@@ -190,7 +189,7 @@ public class ReblockBuffer
 		if( blocked ) //output binaryblock
 		{
 			//create intermediate blocks
-			boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(_brlen, _bclen, _count/IX.size());					      
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/IX.size());					      
 			HashMap<MatrixIndexes,MatrixBlock> blocks = new HashMap<MatrixIndexes,MatrixBlock>();
 			
 			for( MatrixIndexes ix : IX )

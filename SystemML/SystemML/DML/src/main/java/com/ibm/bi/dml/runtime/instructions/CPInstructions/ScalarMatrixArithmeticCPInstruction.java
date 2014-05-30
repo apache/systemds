@@ -43,7 +43,7 @@ public class ScalarMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			mat = input2;
 		}
 		
-		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(mat.get_name());
+		MatrixBlock matBlock = ec.getMatrixInput(mat.get_name());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType(), scalar.isLiteral());
 
 		ScalarOperator sc_op = (ScalarOperator) optr;

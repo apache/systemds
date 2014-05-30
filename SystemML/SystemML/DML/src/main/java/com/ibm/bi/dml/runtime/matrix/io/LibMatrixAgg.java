@@ -79,7 +79,7 @@ public class LibMatrixAgg
 	 * @param aggCorr current aggregate correction (in/out)
 	 * @throws DMLRuntimeException 
 	 */
-	public static void aggregateBinaryMatrix(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 		throws DMLRuntimeException
 	{	
 		//Timing time = new Timing(true);
@@ -110,7 +110,7 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException
 	 */
-	public static void aggregateUnaryMatrix(MatrixBlockDSM in, MatrixBlockDSM out, AggregateUnaryOperator uaop) 
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) 
 		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
@@ -145,7 +145,7 @@ public class LibMatrixAgg
 	 * @param bclen
 	 * @param ix
 	 */
-	public static void recomputeIndexes( MatrixBlockDSM out, AggregateUnaryOperator op, int brlen, int bclen, MatrixIndexes ix )
+	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int brlen, int bclen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
 		if( type == AggType.MAX_INDEX && ix.getColumnIndex()!=1 ) //MAXINDEX
@@ -211,7 +211,7 @@ public class LibMatrixAgg
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixAllDense(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 			throws DMLRuntimeException
 	{
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
@@ -257,7 +257,7 @@ public class LibMatrixAgg
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixSparseDense(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 			throws DMLRuntimeException
 	{
 		if( in.sparseRows==null || in.isEmptyBlock(false) )
@@ -312,7 +312,7 @@ public class LibMatrixAgg
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 			throws DMLRuntimeException
 	{
 		if( in.sparseRows==null || in.isEmptyBlock(false) )
@@ -360,7 +360,7 @@ public class LibMatrixAgg
 	 * @param aggCorr
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlockDSM in, MatrixBlockDSM aggVal, MatrixBlockDSM aggCorr) 
+	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
 		throws DMLRuntimeException
 	{	
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
@@ -398,7 +398,7 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateUnaryMatrixDense(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
+	private static void aggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
 			throws DMLRuntimeException
 	{
 		if( in.denseBlock==null || in.isEmptyBlock(false) ){
@@ -490,7 +490,7 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateUnaryMatrixSparse(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
+	private static void aggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
 			throws DMLRuntimeException
 	{
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
@@ -582,7 +582,7 @@ public class LibMatrixAgg
 	 * @param optype
 	 * @param ixFn
 	 */
-	private static void aggregateUnaryMatrixEmpty(MatrixBlockDSM in, MatrixBlockDSM out, AggType optype, IndexFunction ixFn)
+	private static void aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn)
 	{
 		//do nothing for pseudo sparse-safe operations
 		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD)

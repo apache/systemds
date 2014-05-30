@@ -527,7 +527,7 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
-			MatrixBlock mBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
+			MatrixBlock mBlock = ec.getMatrixInput(input1.get_name());
 			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 			double value = mBlock.getValue(0,0);
@@ -581,7 +581,7 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case InMemValuePick:
-			MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
 
 			if ( input2.get_dataType() == DataType.SCALAR ) {
 				ScalarObject quantile = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
@@ -589,7 +589,7 @@ public class VariableCPInstruction extends CPInstruction
 				ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
 			} 
 			else {
-				MatrixBlock quantiles = (MatrixBlock) ec.getMatrixInput(input2.get_name());
+				MatrixBlock quantiles = ec.getMatrixInput(input2.get_name());
 				MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
 				quantiles = null;
 				ec.releaseMatrixInput(input2.get_name());

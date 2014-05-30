@@ -12,7 +12,6 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -59,7 +58,7 @@ public class AppendRInstruction extends AppendInstruction
 		MatrixBlock mbLeft = (MatrixBlock)left.getValue();
 		MatrixBlock mbRight = (MatrixBlock)right.getValue();
 		
-		MatrixBlockDSM ret = mbLeft.appendOperations(mbRight, new MatrixBlock());
+		MatrixBlock ret = mbLeft.appendOperations(mbRight, new MatrixBlock());
 		
 		//put result into cache
 		cachedValues.add(output, new IndexedMatrixValue(left.getIndexes(), ret));

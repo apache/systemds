@@ -12,7 +12,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSMDataOutput;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataOutput;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 
 /**
@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * - 3) specific support for writing double arrays in a blockwise fashion
  * 
  */
-public class FastBufferedDataOutputStream extends FilterOutputStream implements DataOutput, MatrixBlockDSMDataOutput
+public class FastBufferedDataOutputStream extends FilterOutputStream implements DataOutput, MatrixBlockDataOutput
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

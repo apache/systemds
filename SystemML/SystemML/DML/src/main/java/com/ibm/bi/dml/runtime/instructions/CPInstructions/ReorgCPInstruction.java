@@ -55,7 +55,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//acquire inputs
-		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());		
+		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());		
 		ReorgOperator r_op = (ReorgOperator) optr;
 		
 		//execute operation

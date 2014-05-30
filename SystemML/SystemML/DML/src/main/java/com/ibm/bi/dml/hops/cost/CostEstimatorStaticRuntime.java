@@ -34,7 +34,6 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 
 /**
@@ -458,7 +457,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		for( int i=0; i<inputIx.length; i++ )
 		{
 			//input size
-			mapInputSize += ((double)MatrixBlockDSM.estimateSizeOnDisk((long)vs[inputIx[i]]._rlen, (long)vs[inputIx[i]]._clen, (long)vs[inputIx[i]]._nnz)) / (1024*1024);	
+			mapInputSize += ((double)MatrixBlock.estimateSizeOnDisk((long)vs[inputIx[i]]._rlen, (long)vs[inputIx[i]]._clen, (long)vs[inputIx[i]]._nnz)) / (1024*1024);	
 		
 			//num blocks
 			int lret =  (int) Math.ceil((double)vs[inputIx[i]]._rlen/vs[inputIx[i]]._brlen)
@@ -510,7 +509,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private double getHDFSReadTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE;
@@ -531,7 +530,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
@@ -554,7 +553,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE;
 		else //dense
@@ -574,7 +573,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlockDSM.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE;

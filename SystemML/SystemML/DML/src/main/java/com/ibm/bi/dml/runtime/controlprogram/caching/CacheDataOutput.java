@@ -11,7 +11,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSMDataOutput;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataOutput;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 
 /**
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * 
  * 
  */
-public class CacheDataOutput implements DataOutput, MatrixBlockDSMDataOutput 
+public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

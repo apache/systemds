@@ -78,7 +78,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
 /**
  * 
@@ -1064,7 +1064,7 @@ public class Recompiler
 				{
 					long nnz = mo.getNnz();
 					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
-					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, sp);			
+					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
@@ -1138,7 +1138,7 @@ public class Recompiler
 					long rows = lrandInst.rows;
 					long cols = lrandInst.cols;
 					double sparsity = lrandInst.sparsity;
-					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, sparsity);				
+					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sparsity);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
@@ -1152,7 +1152,7 @@ public class Recompiler
 					SeqInstruction lrandInst = (SeqInstruction) SeqInstruction.parseInstruction(lrandStr);
 					long rows = lrandInst.rows;
 					long cols = lrandInst.cols;
-					double mem = MatrixBlockDSM.estimateSizeInMemory(rows, cols, 1.0d);				
+					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, 1.0d);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;

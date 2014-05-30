@@ -189,12 +189,12 @@ public class RandCPInstruction extends UnaryCPInstruction
 			LOG.trace("Process RandCPInstruction with seed = "+lSeed+".");
 			
 			//long begin = System.nanoTime();
-			soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed));
+			soresBlock = MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed);
 			//System.out.println("RandTime " + (System.nanoTime()-begin)*1e-6 + " msec.");
 		}
 		else if ( this.method == DataGenMethod.SEQ ) {
 			// (int)rows, (int)cols, rowsInBlock, colsInBlock, 
-			soresBlock = (MatrixBlock) (MatrixBlock.seqOperations(seq_from, seq_to, seq_incr));
+			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
 		}
 		ec.setMatrixOutput(output_name, soresBlock);
 	}

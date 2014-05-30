@@ -75,13 +75,13 @@ public class SortCPInstruction extends UnaryCPInstruction
 	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
 		MatrixBlock wtBlock = null, resultBlock = null;
  		
 		String output_name = output.get_name();
 		
 		if (input2 != null) {
-			wtBlock = (MatrixBlock) ec.getMatrixInput(input2.get_name());
+			wtBlock = ec.getMatrixInput(input2.get_name());
 		}
 		
 		resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());

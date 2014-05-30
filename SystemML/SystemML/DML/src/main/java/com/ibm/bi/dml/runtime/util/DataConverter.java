@@ -45,7 +45,6 @@ import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -353,7 +352,7 @@ public class DataConverter
 		
 		//determine target representation (sparse/dense)
 		long estnnz = (long)(prop.expectedSparsity*rlen*clen);
-		boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, estnnz); 
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
@@ -439,7 +438,7 @@ public class DataConverter
 			throw new IOException("Unsupported inputinfo for read from input stream: "+inputinfo);
 		
 		long estnnz = (long)(expectedSparsity*rlen*clen);
-		boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(rlen, clen, estnnz); 
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
 
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
@@ -1665,7 +1664,7 @@ public class DataConverter
 					}
 			
 					//copy block to result
-					dest.add(new IndexedMatrixValue(new MatrixIndexes(key), new MatrixBlockDSM(value)));
+					dest.add(new IndexedMatrixValue(new MatrixIndexes(key), new MatrixBlock(value)));
 				}
 			}
 			finally

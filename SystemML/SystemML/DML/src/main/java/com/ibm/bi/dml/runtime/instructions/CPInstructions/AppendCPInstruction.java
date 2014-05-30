@@ -76,7 +76,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 										  + "with unequal number of rows");
 		
 		//execute append operations (append both inputs to initially empty output)
-		MatrixBlock ret = (MatrixBlock) matBlock1.appendOperations(matBlock2, new MatrixBlock());
+		MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock());
 		
 		//set output
 		String output_name = output.get_name();

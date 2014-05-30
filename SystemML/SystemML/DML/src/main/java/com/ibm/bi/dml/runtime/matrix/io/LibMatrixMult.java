@@ -62,7 +62,7 @@ public class LibMatrixMult
 	 * @param ret result matrix
 	 * @throws DMLRuntimeException 
 	 */
-	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{		
 		//Timing time = new Timing(true);
@@ -90,7 +90,7 @@ public class LibMatrixMult
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static void matrixMultTransposeSelf( MatrixBlockDSM m1, MatrixBlockDSM ret, boolean leftTranspose )
+	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
@@ -116,7 +116,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultDenseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{	
 		//check inputs / outputs
@@ -238,7 +238,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultDenseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException 
 	{
 		//check inputs / outputs
@@ -308,7 +308,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultSparseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
@@ -420,7 +420,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultSparseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	private static void matrixMultSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException
 	{
 		//check inputs / outputs
@@ -508,7 +508,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException
 	 */
-	private static void matrixMultUltraSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+	private static void matrixMultUltraSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret) 
 		throws DMLRuntimeException 
 	{
 		//check inputs / outputs
@@ -586,7 +586,7 @@ public class LibMatrixMult
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private static void matrixMultTransposeSelfDense( MatrixBlockDSM m1, MatrixBlockDSM ret, boolean leftTranspose ) 
+	private static void matrixMultTransposeSelfDense( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//1) allocate output block
@@ -749,7 +749,7 @@ public class LibMatrixMult
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	private static void matrixMultTransposeSelfSparse( MatrixBlockDSM m1, MatrixBlockDSM ret, boolean leftTranspose ) 
+	private static void matrixMultTransposeSelfSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//1) allocate output block
@@ -832,7 +832,7 @@ public class LibMatrixMult
 				
 				//note: reorg to similar layout as t(X)%*%X because faster than 
 				//direct computation with IJK (no dependencies/branches in inner loop)
-				MatrixBlockDSM tmpBlock = new MatrixBlockDSM(n,m,m1.sparse);
+				MatrixBlock tmpBlock = new MatrixBlock(n,m,m1.sparse);
 				m1.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
 						       tmpBlock, 0, 0, -1);
 			
@@ -1247,7 +1247,7 @@ public class LibMatrixMult
 	 * 
 	 * @param ret
 	 */
-	private static void copyUpperToLowerTriangle( MatrixBlockDSM ret )
+	private static void copyUpperToLowerTriangle( MatrixBlock ret )
 	{
 		double[] c = ret.denseBlock;
 		final int m = ret.rlen;
@@ -1523,8 +1523,8 @@ public class LibMatrixMult
 		try 
 		{
 			int n = 1000;
-			MatrixBlockDSM m1 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.7, 0, 1, "uniform", 7);
-			MatrixBlockDSM m2 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.00001, 0, 1, "uniform", 3);
+			MatrixBlock m1 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.7, 0, 1, "uniform", 7);
+			MatrixBlock m2 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.00001, 0, 1, "uniform", 3);
 			MatrixBlock out = new MatrixBlock(n, n, false);
 			
 			for( int i=0; i<20; i++ )

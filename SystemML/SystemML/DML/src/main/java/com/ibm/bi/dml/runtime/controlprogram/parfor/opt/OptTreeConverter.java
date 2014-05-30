@@ -59,7 +59,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
 /**
  * Converter for creating an internal plan representation for a given runtime program
@@ -752,7 +752,7 @@ public class OptTreeConverter
 			if( inst instanceof RandCPInstruction )
 			{
 				RandCPInstruction linst = (RandCPInstruction) inst;
-				DataFormat df = (   MatrixBlockDSM.evalSparseFormatInMemory(linst.rows, linst.cols, (long)(linst.sparsity*linst.rows*linst.cols)) ? 
+				DataFormat df = (   MatrixBlock.evalSparseFormatInMemory(linst.rows, linst.cols, (long)(linst.sparsity*linst.rows*linst.cols)) ? 
 						            DataFormat.SPARSE : DataFormat.DENSE ); 
 				ret = new OptNodeStatistics(linst.rows, linst.cols, -1, -1, linst.sparsity, df);
 			}
@@ -776,7 +776,7 @@ public class OptTreeConverter
 							ret.setDim1( mc1.numRows );
 							ret.setDim2( mc1.numColumns );
 							ret.setSparsity( mc1.nonZero /(  ret.getDim1() * ret.getDim2() ) ); //sparsity
-							ret.setDataFormat( MatrixBlockDSM.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? 
+							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? 
 									            DataFormat.SPARSE : DataFormat.DENSE ); 
 							maxSize = mc1.numRows*mc1.numColumns;
 						}
@@ -803,7 +803,7 @@ public class OptTreeConverter
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );
 						ret.setSparsity( mc1.nonZero /( ret.getDim1() * ret.getDim2() ) ); //sparsity
-						ret.setDataFormat( MatrixBlockDSM.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero)? DataFormat.SPARSE : DataFormat.DENSE); 
+						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero)? DataFormat.SPARSE : DataFormat.DENSE); 
 					}
 					if( dat2 != null )
 					{
@@ -811,7 +811,7 @@ public class OptTreeConverter
 						MatrixCharacteristics mc2 = ((MatrixFormatMetaData)mdat2.getMetaData()).getMatrixCharacteristics();
 						ret.setDim3( mc2.numRows );
 						ret.setDim4( mc2.numColumns );
-						ret.setDataFormat( MatrixBlockDSM.evalSparseFormatInMemory(mc2.numRows, mc2.numColumns, mc2.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE ); 
+						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc2.numRows, mc2.numColumns, mc2.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE ); 
 					}
 				}
 				else //unary
@@ -825,7 +825,7 @@ public class OptTreeConverter
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );
 						ret.setSparsity( mc1.nonZero /( ret.getDim1() * ret.getDim2() ) ); //sparsity
-						ret.setDataFormat(MatrixBlockDSM.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
+						ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
 					}					
 				}
 			}

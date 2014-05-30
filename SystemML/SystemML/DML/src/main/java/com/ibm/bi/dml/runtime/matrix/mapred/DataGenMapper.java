@@ -43,7 +43,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		
 		long start = System.currentTimeMillis();
 		
-		//for each represenattive matrix, read the record and apply instructions
+		//for each representative matrix, read the record and apply instructions
 		for(int i = 0; i < representativeMatrixes.size(); i++)
 		{
 			//DataGenMRInstruction genInst = dataGen_instructions.get(i);
@@ -65,10 +65,10 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				
 				try {
 					if ( pdf.equalsIgnoreCase("normal") ) { 
-						block.getRandomMatrix(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, Double.NaN, Double.NaN, seed); 
+						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, Double.NaN, Double.NaN, seed); 
 					}
 					else {
-						block.getRandomMatrix(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
+						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
 					}
 				} catch(DMLRuntimeException e) {
 					throw new IOException(e);
@@ -84,7 +84,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				
 				try {
 					indexes.setIndexes(blockRowNumber, blockColNumber);
-					block.getSequence(from, to, incr);
+					block.seqOperationsInPlace(from, to, incr);
 				} catch (DMLRuntimeException e) {
 					throw new IOException(e);
 				}

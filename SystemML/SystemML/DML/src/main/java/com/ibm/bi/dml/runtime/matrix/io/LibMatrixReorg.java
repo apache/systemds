@@ -66,7 +66,7 @@ public class LibMatrixReorg
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlockDSM reorg( MatrixBlockDSM in, MatrixBlockDSM out, ReorgOperator op ) 
+	public static MatrixBlock reorg( MatrixBlock in, MatrixBlock out, ReorgOperator op ) 
 		throws DMLRuntimeException
 	{
 		ReorgType type = getReorgType(op);
@@ -88,7 +88,7 @@ public class LibMatrixReorg
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlockDSM transpose( MatrixBlockDSM in, MatrixBlockDSM out ) 
+	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) 
 		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
@@ -114,7 +114,7 @@ public class LibMatrixReorg
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlockDSM diag( MatrixBlockDSM in, MatrixBlockDSM out ) 
+	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) 
 			throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
@@ -144,7 +144,7 @@ public class LibMatrixReorg
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static MatrixBlockDSM reshape( MatrixBlockDSM in, MatrixBlockDSM out, int rows, int cols, boolean rowwise ) 
+	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
 		throws DMLRuntimeException
 	{
 		int rlen = in.rlen;
@@ -161,7 +161,7 @@ public class LibMatrixReorg
 		}
 	
 		//determine output representation
-	    out.sparse = MatrixBlockDSM.evalSparseFormatInMemory(rows, cols, in.nonZeros);
+	    out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
 		
 		//core reshape (sparse or dense)	
 		if(!in.sparse && !out.sparse)
@@ -209,11 +209,11 @@ public class LibMatrixReorg
 	{
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
-		MatrixBlockDSM mbIn = (MatrixBlockDSM) in.getValue();
+		MatrixBlock mbIn = (MatrixBlock) in.getValue();
 		
 		//prepare result blocks (no reuse in order to guarantee mem constraints)
 		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, rows1, cols1, brlen1, bclen1, rows2, cols2, brlen2, bclen2, rowwise);
-		HashMap<MatrixIndexes, MatrixBlockDSM> rblk = createAllResultBlocks(rix, mbIn.nonZeros, rows1, cols1, brlen1, bclen1, rows2, cols2, brlen2, bclen2, rowwise, out);
+		HashMap<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, rows1, cols1, brlen1, bclen1, rows2, cols2, brlen2, bclen2, rowwise, out);
 		
 		//basic algorithm
 		long row_offset = (ixIn.getRowIndex()-1)*brlen1;
@@ -225,7 +225,7 @@ public class LibMatrixReorg
 
 		//prepare output
 		out = new ArrayList<IndexedMatrixValue>();
-		for( Entry<MatrixIndexes, MatrixBlockDSM> e : rblk.entrySet() )
+		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
 			out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
 		
 		return out;
@@ -259,7 +259,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void transposeDenseToDense(MatrixBlockDSM in, MatrixBlockDSM out)
+	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out)
 	{
 		if( in.denseBlock == null )
 			return;
@@ -310,7 +310,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void transposeDenseToSparse(MatrixBlockDSM in, MatrixBlockDSM out)
+	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out)
 	{
 		if( in.denseBlock == null )
 			return;
@@ -356,7 +356,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void transposeSparseToSparse(MatrixBlockDSM in, MatrixBlockDSM out)
+	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out)
 	{
 		if( in.sparseRows == null )
 			return;
@@ -419,7 +419,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void transposeSparseToDense(MatrixBlockDSM in, MatrixBlockDSM out)
+	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out)
 	{
 		if( in.sparseRows == null )
 			return;
@@ -510,7 +510,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void diagV2M( MatrixBlockDSM in, MatrixBlockDSM out )
+	private static void diagV2M( MatrixBlock in, MatrixBlock out )
 	{
 		int rlen = in.rlen;
 		
@@ -532,7 +532,7 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 */
-	private static void diagM2V( MatrixBlockDSM in, MatrixBlockDSM out )
+	private static void diagM2V( MatrixBlock in, MatrixBlock out )
 	{
 		int rlen = in.rlen;
 		
@@ -552,7 +552,7 @@ public class LibMatrixReorg
 	 * @param cols
 	 * @param rowwise
 	 */
-	private static void reshapeDense( MatrixBlockDSM in, MatrixBlockDSM out, int rows, int cols, boolean rowwise )
+	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -616,7 +616,7 @@ public class LibMatrixReorg
 	 * @param cols
 	 * @param rowwise
 	 */
-	private static void reshapeSparse( MatrixBlockDSM in, MatrixBlockDSM out, int rows, int cols, boolean rowwise )
+	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -738,7 +738,7 @@ public class LibMatrixReorg
 	 * @param cols
 	 * @param rowwise
 	 */
-	private static void reshapeDenseToSparse( MatrixBlockDSM in, MatrixBlockDSM out, int rows, int cols, boolean rowwise )
+	private static void reshapeDenseToSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -820,7 +820,7 @@ public class LibMatrixReorg
 	 * @param cols
 	 * @param rowwise
 	 */
-	private static void reshapeSparseToDense( MatrixBlockDSM in, MatrixBlockDSM out, int rows, int cols, boolean rowwise )
+	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -1003,11 +1003,11 @@ public class LibMatrixReorg
 	 * @param reuse 
 	 * @return
 	 */
-	private static HashMap<MatrixIndexes, MatrixBlockDSM> createAllResultBlocks( Collection<MatrixIndexes> rix,
+	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix,
             long nnz, long rows1, long cols1, int brlen1, int bclen1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise, ArrayList<IndexedMatrixValue> reuse )
 	{
-		HashMap<MatrixIndexes, MatrixBlockDSM> ret = new HashMap<MatrixIndexes,MatrixBlockDSM>();
+		HashMap<MatrixIndexes, MatrixBlock> ret = new HashMap<MatrixIndexes,MatrixBlock>();
 		long nBlocks = rix.size();
 		int count = 0;
 		
@@ -1023,14 +1023,14 @@ public class LibMatrixReorg
 			
 			//create result block
 			int estnnz = (int) (nnz/nBlocks); //force initialcapacity per row to 1, for many blocks
-			boolean sparse = MatrixBlockDSM.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
-			MatrixBlockDSM block = null;
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
+			MatrixBlock block = null;
 			if( ALLOW_BLOCK_REUSE && reuse!=null && reuse.size()>0) {
-				block = (MatrixBlockDSM) reuse.get(count++).getValue();
+				block = (MatrixBlock) reuse.get(count++).getValue();
 				block.reset(lbrlen, lbclen, sparse, estnnz);
 			}
 			else
-				block = new MatrixBlockDSM(lbrlen, lbclen, sparse, estnnz); 
+				block = new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
 			
 			//System.out.println("create block ("+bi+","+bj+"): "+lbrlen+" "+lbclen);
 			//if( lbrlen<1 || lbclen<1 )
@@ -1056,8 +1056,8 @@ public class LibMatrixReorg
 	 * @param bclen2
 	 * @param rowwise
 	 */
-	private static void reshapeDense( MatrixBlockDSM in, long row_offset, long col_offset, 
-			HashMap<MatrixIndexes,MatrixBlockDSM> rix,
+	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, 
+			HashMap<MatrixIndexes,MatrixBlock> rix,
             long rows1, long cols1, 
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
     {
@@ -1076,7 +1076,7 @@ public class LibMatrixReorg
 				if( val !=0 ) {
 					long aj = col_offset+j;
 					computeResultBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-					MatrixBlockDSM out = rix.get(ixtmp);
+					MatrixBlock out = rix.get(ixtmp);
 					computeInBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
 					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), val);
 				}
@@ -1086,7 +1086,7 @@ public class LibMatrixReorg
 		//cleanup for sparse blocks
 		if( !rowwise )
 		{
-			for( MatrixBlockDSM block : rix.values() )
+			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
 		}				
@@ -1106,8 +1106,8 @@ public class LibMatrixReorg
 	 * @param bclen2
 	 * @param rowwise
 	 */
-	private static void reshapeSparse( MatrixBlockDSM in, long row_offset, long col_offset, 
-			HashMap<MatrixIndexes,MatrixBlockDSM> rix,
+	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
+			HashMap<MatrixIndexes,MatrixBlock> rix,
             long rows1, long cols1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
     {
@@ -1128,7 +1128,7 @@ public class LibMatrixReorg
 				{
 					long aj = col_offset+aix[j];
 					computeResultBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-					MatrixBlockDSM out = rix.get(ixtmp);
+					MatrixBlock out = rix.get(ixtmp);
 					computeInBlockIndex(ixtmp, ai, aj, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
 					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
 				}
@@ -1138,7 +1138,7 @@ public class LibMatrixReorg
 		//cleanup for sparse blocks
 		if( !rowwise )
 		{
-			for( MatrixBlockDSM block : rix.values() )
+			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
 		}				

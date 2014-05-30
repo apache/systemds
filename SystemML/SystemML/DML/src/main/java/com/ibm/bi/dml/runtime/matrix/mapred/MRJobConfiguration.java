@@ -69,7 +69,6 @@ import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.IdenticalConverter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -1918,7 +1917,7 @@ public class MRJobConfiguration
 		for(InputInfo input: inputInfos)
 		{
 			if(!(input.inputValueClass==MatrixBlock.class 
-					|| input.inputValueClass==MatrixBlockDSM.class))
+					|| input.inputValueClass==MatrixBlock.class))
 			{
 				return false;
 			}	

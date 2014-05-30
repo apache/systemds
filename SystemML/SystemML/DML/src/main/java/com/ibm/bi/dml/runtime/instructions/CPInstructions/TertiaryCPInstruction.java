@@ -73,7 +73,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		MatrixBlock matBlock1 = (MatrixBlock) ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
@@ -84,13 +84,13 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		switch(ctableOp) {
 		case CTABLE_TRANSFORM:
 			// F=ctable(A,B,W)
-			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
-			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
+			matBlock2 = ec.getMatrixInput(input2.get_name());
+			wtBlock = ec.getMatrixInput(input3.get_name());
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, wtBlock, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
-			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
+			matBlock2 = ec.getMatrixInput(input2.get_name());
 			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap);
 			break;
@@ -102,7 +102,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
-			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
+			wtBlock = ec.getMatrixInput(input3.get_name());
 			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap);
 			break;

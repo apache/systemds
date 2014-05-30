@@ -21,7 +21,7 @@ import java.io.IOException;
  *    - FastBufferedDataOutputStream (cache eviction to local file system)
  * 
  */
-public interface MatrixBlockDSMDataOutput 
+public interface MatrixBlockDataOutput 
 {
 	/**
 	 * Writes the double array of a dense block to the data output. 

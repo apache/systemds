@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -297,7 +297,7 @@ public class OptimizerUtils
 	 */
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
-		return MatrixBlockDSM.estimateSizeInMemory(nrows,ncols,sp);
+		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
 	}
 	
 	/**

@@ -42,7 +42,6 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -5769,7 +5768,7 @@ public class MatrixBlock extends MatrixValue
 	public static MatrixBlock randOperations(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, long seed) 
 		throws DMLRuntimeException 
 	{
-		Well1024a bigrand = RandCPInstruction.setupSeedsForRand(seed);
+		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 		MatrixBlock out = new MatrixBlock();
 		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
 			// for normally distributed values, min and max are specified as an invalid value NaN.

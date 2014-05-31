@@ -30,13 +30,13 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
@@ -78,7 +78,7 @@ public class DataGenMR
 	 * @param instructionsInMapper instruction for each random object
 	 * @param resultIndexes result indexes for each random object
 	 * @return matrix characteristics for each random object
-	 * @throws Exception if an error occurres in the MapReduce phase
+	 * @throws Exception if an error occurred in the MapReduce phase
 	 */
 	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
 	
@@ -142,7 +142,7 @@ public class DataGenMR
 				StringBuilder sb = new StringBuilder();
 				
 				//seed generation
-				Well1024a bigrand = RandCPInstruction.setupSeedsForRand(randInst.seed);
+				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.seed);
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
 					for(long c = 0; c < clens[i]; c += bclens[i])

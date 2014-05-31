@@ -779,11 +779,23 @@ public class Recompiler
 				//extract scalar constants for second constant propagation
 				else if( hop.get_dataType()==DataType.SCALAR )
 				{
+					//extract literal assignments
 					if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof LiteralOp )
 					{
 						ScalarObject constant = HopRewriteUtils.getScalarObject((LiteralOp)hop.getInput().get(0));
 						if( constant!=null )
 							vars.put(varName, constant);
+					}
+					//extract constant variable assignments
+					else if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof DataOp)
+					{
+						DataOp dop = (DataOp) hop.getInput().get(0);
+						String dopvarname = dop.get_name();
+						if( dop.isRead() && vars.keySet().contains(dopvarname) )
+						{
+							ScalarObject constant = (ScalarObject) vars.get(dopvarname);
+							vars.put(varName, constant); //no clone because constant
+						}
 					}
 				}
 			}

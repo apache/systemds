@@ -33,8 +33,8 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 
-/* Unary (cell operations): aij = -b
- * 		Semantic: given a value, perform the operation (in mapper or reducer)
+/* Unary (cell operations): e.g, b_ij = round(a_ij)
+ * 		Semantic: given a value, perform the operation (independent of other values)
  */
 
 public class UnaryOp extends Hop 
@@ -317,12 +317,6 @@ public class UnaryOp extends Hop
 					op = "ln";
 				sql = String.format(SQLLops.UNARYFUNCOP, op, input.get_sqllops().get_tableName());
 			}
-			//Currently there is only minus that is just added in front of the operand
-			else if(this._op == OpOp1.MINUS)
-			{
-				String op = Hop.HopsOpOp12String.get(this._op);
-				sql = String.format(SQLLops.UNARYOP, op, input.get_sqllops().get_tableName());
-			}
 			//Not is in SLQ not "!" but "NOT"
 			else if(this._op == OpOp1.NOT)
 			{
@@ -363,8 +357,6 @@ public class UnaryOp extends Hop
 				//Create correct string for operation
 				if(Hop.isFunction(this._op))
 					opr = Hop.HopsOpOp12String.get(this._op) + "( " + s + " )";
-				else if(this._op == OpOp1.MINUS)
-					opr = Hop.HopsOpOp12String.get(this._op) + s;
 				else if(this._op == OpOp1.NOT)
 					opr = "NOT " + s;
 
@@ -394,17 +386,6 @@ public class UnaryOp extends Hop
 				stmt.getColumns().add("row");
 				stmt.getColumns().add("col");
 				stmt.getColumns().add(op + "(value) AS value");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
-			}
-			//Currently there is only minus that is just added in front of the operand
-			else if(this._op == OpOp1.MINUS)
-			{
-				String op = Hop.HopsOpOp12String.get(this._op);
-				//SELECT alias_a.row AS row, alias_a.col AS col, %salias_a.value FROM \"%s\" alias_a";
-				
-				stmt.getColumns().add("row");
-				stmt.getColumns().add("col");
-				stmt.getColumns().add(op + "value AS value");
 				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
 			}
 			//Not is in SLQ not "!" but "NOT"
@@ -447,8 +428,6 @@ public class UnaryOp extends Hop
 				//Create correct string for operation
 				if(Hop.isFunction(this._op))
 					opr = Hop.HopsOpOp12String.get(this._op) + "( sval )";
-				else if(this._op == OpOp1.MINUS)
-					opr = Hop.HopsOpOp12String.get(this._op) + "sval";
 				else if(this._op == OpOp1.NOT)
 					opr = "NOT sval";
 				

@@ -680,9 +680,8 @@ public abstract class Hop
 		return _valueType;
 	}
 
-	// TODO BJR: I intend to remove OpOp1.MINUS, once we made the change
 	public enum OpOp1 {
-		MINUS, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
 		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
 	}
@@ -856,7 +855,6 @@ public abstract class Hop
 	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
 	static {
 		HopsOpOp1LopsU = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes>();
-		HopsOpOp1LopsU.put(OpOp1.MINUS, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.NOT, com.ibm.bi.dml.lops.Unary.OperationTypes.NOT);
 		HopsOpOp1LopsU.put(OpOp1.ABS, com.ibm.bi.dml.lops.Unary.OperationTypes.ABS);
 		HopsOpOp1LopsU.put(OpOp1.SIN, com.ibm.bi.dml.lops.Unary.OperationTypes.SIN);
@@ -876,7 +874,6 @@ public abstract class Hop
 	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
 	static {
 		HopsOpOp1LopsUS = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes>();
-		HopsOpOp1LopsUS.put(OpOp1.MINUS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsUS.put(OpOp1.NOT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOT);
 		HopsOpOp1LopsUS.put(OpOp1.ABS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ABS);
 		HopsOpOp1LopsUS.put(OpOp1.SIN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.SIN);
@@ -912,7 +909,6 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.IQM, "iqm");
 		HopsOpOp12String.put(OpOp1.LENGTH, "length");
 		HopsOpOp12String.put(OpOp1.LOG, "log");
-		HopsOpOp12String.put(OpOp1.MINUS, "-");
 		HopsOpOp12String.put(OpOp1.NCOL, "ncol");
 		HopsOpOp12String.put(OpOp1.NOT, "!");
 		HopsOpOp12String.put(OpOp1.NROW, "nrow");

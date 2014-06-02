@@ -101,6 +101,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyDiagMatrixMult(hop, hi, i);            //e.g., diag(X%*%Y)->rowSums(X*t(Y)); 
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
+			hi = reorderMinusMatrixMult(hop, hi, i);            //e.g., (-t(X))%*%y->-(t(X)%*%y)  
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			//hi = removeUnecessaryPPred(hop, hi, i);             //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
@@ -462,6 +463,92 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 					removeAllChildReferences( hi2 );
 				
 				hi = sum;
+			}	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * This is rewrite tries to reorder minus operators from inputs of matrix
+	 * multiply to its output because the output is (except for outer products)
+	 * usually significantly smaller. Furthermore, this rewrite is a precondition
+	 * for the important hops-lops rewrite of transpose-matrixmult if the transpose
+	 * is hidden under the minus. 
+	 * 
+	 * TODO conceptually this rewrite should become size-aware and part of hop-lops rewrites.
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop reorderMinusMatrixMult(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi instanceof AggBinaryOp && ((AggBinaryOp)hi).isMatrixMultiply() ) //X%*%Y
+		{
+			Hop hileft = hi.getInput().get(0);
+			Hop hiright = hi.getInput().get(1);
+			
+			if( hileft instanceof BinaryOp && ((BinaryOp)hileft).getOp()==OpOp2.MINUS  //X=-Z
+				&& hileft.getInput().get(0) instanceof LiteralOp 
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)hileft.getInput().get(0))==0.0 ) 
+			{
+				Hop hi2 = hileft.getInput().get(1);
+				
+				//remove link from parent to matrixmult
+				removeChildReference(parent, hi);
+				
+				//remove link from matrixmult to minus
+				removeChildReference(hi, hileft);
+				
+				//create new operators 
+				BinaryOp minus = new BinaryOp(hi.get_name(), hi.get_dataType(), hi.get_valueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
+				minus.set_rows_in_block(hi.get_rows_in_block());
+				minus.set_cols_in_block(hi.get_cols_in_block());
+				
+				//rehand minus under parent
+				addChildReference(parent, minus, pos);
+				
+				//rehang child of minus under matrix mult
+				addChildReference(hi, hi2, 0);
+				
+				//cleanup if only consumer of minus
+				if( hileft.getParent().size()<1 ) 
+					removeAllChildReferences( hileft );
+				
+				hi = minus;
+			}
+			else if( hiright instanceof BinaryOp && ((BinaryOp)hiright).getOp()==OpOp2.MINUS  //X=-Z
+					&& hiright.getInput().get(0) instanceof LiteralOp 
+					&& HopRewriteUtils.getDoubleValue((LiteralOp)hiright.getInput().get(0))==0.0 ) 
+			{
+				Hop hi2 = hiright.getInput().get(1);
+				
+				//remove link from parent to matrixmult
+				removeChildReference(parent, hi);
+				
+				//remove link from matrixmult to minus
+				removeChildReference(hi, hiright);
+				
+				//create new operators 
+				BinaryOp minus = new BinaryOp(hi.get_name(), hi.get_dataType(), hi.get_valueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
+				minus.set_rows_in_block(hi.get_rows_in_block());
+				minus.set_cols_in_block(hi.get_cols_in_block());
+				
+				//rehand minus under parent
+				addChildReference(parent, minus, pos);
+				
+				//rehang child of minus under matrix mult
+				addChildReference(hi, hi2, 1);
+				
+				//cleanup if only consumer of minus
+				if( hiright.getParent().size()<1 ) 
+					removeAllChildReferences( hiright );
+				
+				hi = minus;
 			}	
 		}
 		

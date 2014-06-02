@@ -62,6 +62,7 @@ public class LibMatrixAgg
 		MAX,
 		MEAN,
 		MAX_INDEX,
+		MIN_INDEX,
 		PROD,
 		INVALID,
 	}
@@ -136,7 +137,7 @@ public class LibMatrixAgg
 	}
 	
 	/**
-	 * Recompute outputs (e.g., maxindex) according to block indexes from MR.
+	 * Recompute outputs (e.g., maxindex or minindex) according to block indexes from MR.
 	 * TODO: this should not be part of block operations but of the MR instruction.
 	 * 
 	 * @param out
@@ -148,7 +149,7 @@ public class LibMatrixAgg
 	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int brlen, int bclen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
-		if( type == AggType.MAX_INDEX && ix.getColumnIndex()!=1 ) //MAXINDEX
+		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
 		{
 			int m = out.rlen;
 			double[] c = out.getDenseArray();
@@ -198,6 +199,7 @@ public class LibMatrixAgg
 				case MAX: return AggType.MAX;
 				case MIN: return AggType.MIN;
 				case MAXINDEX: return AggType.MAX_INDEX;
+				case MININDEX: return AggType.MIN_INDEX;
 			}
 		}
 		
@@ -456,6 +458,14 @@ public class LibMatrixAgg
 					d_uarimxx(a, c, m, n, init, (Builtin)vFn);
 				break;
 			}
+			case MIN_INDEX:
+			{
+				double init = Double.MAX_VALUE;
+				
+				if( ixFn instanceof ReduceCol ) //ROWINDEXMIN
+					d_uarimin(a, c, m, n, init, (Builtin)vFn);
+				break;
+			}
 			case MEAN: //MEAN
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
@@ -549,6 +559,14 @@ public class LibMatrixAgg
 					s_uarimxx(a, c, m, n, init, (Builtin)vFn);
 				break;
 			}
+			case MIN_INDEX:
+			{
+				double init = Double.MAX_VALUE;
+				
+				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
+					s_uarimin(a, c, m, n, init, (Builtin)vFn);
+				break;
+			}
 			case MEAN:
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
@@ -595,6 +613,12 @@ public class LibMatrixAgg
 			{
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
 					out.quickSetValue(0, 0, in.clen); //maxindex
+				break;
+			}
+			case MIN_INDEX:
+			{
+				if( ixFn instanceof ReduceCol ) //ROWINDEXMIN
+					out.quickSetValue(0, 0, in.clen); //minindex
 				break;
 			}
 			case MEAN:
@@ -758,6 +782,26 @@ public class LibMatrixAgg
 			int maxindex = indexmax(a, aix, init, n, builtin);
 			c[cix+0] = (double)maxindex + 1;
 			c[cix+1] = a[aix+maxindex]; //max value
+		}
+	}
+	
+	/**
+	 * ROWINDEXMIN, opcode: uarimin, dense input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param init
+	 * @param builtin
+	 */
+	private static void d_uarimin( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	{
+		for( int i=0, aix=0, cix=0; i<m; i++, aix+=n, cix+=2 )
+		{
+			int minindex = indexmin(a, aix, init, n, builtin);
+			c[cix+0] = (double)minindex + 1;
+			c[cix+1] = a[aix+minindex]; //min value
 		}
 	}
 	
@@ -1080,6 +1124,40 @@ public class LibMatrixAgg
 				//correction (not sparse-safe)	
 				c[cix+0] = n; //max index (last)
 				c[cix+1] = 0; //max value
+			}
+		}
+	}
+	
+	private static void s_uarimin( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	{
+		for( int i=0, cix=0; i<m; i++, cix+=2 )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				int minindex = indexmin(avals, 0, init, alen, builtin);
+				c[cix+0] = (double)aix[minindex] + 1;
+				c[cix+1] = avals[minindex]; //min value among non-zeros
+				
+				//correction (not sparse-safe)	
+				if(alen < n && (builtin.execute2( 0, c[cix+1] ) == 1))
+				{
+					int ix = n-1; //find last 0 value
+					for( int j=alen-1; j>=0; j--, ix-- )
+						if( aix[j]!=ix )
+							break;
+					c[cix+0] = ix + 1; //min index (last)
+					c[cix+1] = 0; //min value
+				}
+			}
+			else //if( arow==null )
+			{
+				//correction (not sparse-safe)	
+				c[cix+0] = n; //min index (last)
+				c[cix+1] = 0; //min value
 			}
 		}
 	}
@@ -1488,6 +1566,32 @@ public class LibMatrixAgg
 		}
 		
 		return maxindex;
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param ai
+	 * @param init
+	 * @param len
+	 * @param aggop
+	 * @return
+	 */
+	private static int indexmin( double[] a, int ai, final double init, final int len, Builtin aggop ) 
+	{
+		double minval = init;
+		int minindex = -1;
+		for( int i=0; i<len; i++ )
+		{
+			double val = a[ai+i];
+			if( aggop.execute2( val, minval ) == 1 )
+			{
+				minval = val;
+				minindex = i;
+			}
+		}
+		
+		return minindex;
 	}
 	
 	/**

@@ -34,6 +34,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "RowMaxs";
 	private final static String TEST_NAME4 = "RowMins";
 	private final static String TEST_NAME5 = "RowIndexMaxs";
+	private final static String TEST_NAME6 = "RowIndexMins";
 	
 	private final static String TEST_DIR = "functions/aggregate/";
 	private final static double eps = 1e-10;
@@ -50,6 +51,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		ROW_MAX,
 		ROW_MIN,
 		ROW_INDEXMAX,
+		ROW_INDEXMIN
 	}
 	
 	
@@ -61,6 +63,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"B"})); 
 		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"B"}));
 		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_DIR, TEST_NAME6,new String[]{"B"}));
 	}
 
 	
@@ -95,6 +98,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRowIndexMinDenseMatrixCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.CP);
+	}
+	
+	@Test
 	public void testRowSumsDenseVectorCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_SUMS, false, true, ExecType.CP);
@@ -122,6 +131,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	public void testRowIndexMaxDenseVectorCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testRowIndexMinDenseVectorCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.CP);
 	}
 	
 	@Test
@@ -155,6 +170,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRowIndexMinparseMatrixCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.CP);
+	}
+	
+	@Test
 	public void testRowSumsSparseVectorCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_SUMS, true, true, ExecType.CP);
@@ -182,6 +203,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	public void testRowIndexMaxSparseVectorCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testRowIndexMinSparseVectorCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP);
 	}
 	
 	@Test
@@ -215,6 +242,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRowIndexMinDenseMatrixMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR);
+	}
+	
+	@Test
 	public void testRowSumsDenseVectorMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_SUMS, false, true, ExecType.MR);
@@ -242,6 +275,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	public void testRowIndexMaxDenseVectorMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testRowIndexMinDenseVectorMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR);
 	}
 	
 	@Test
@@ -275,6 +314,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRowIndexMinSparseMatrixMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR);
+	}
+	
+	@Test
 	public void testRowSumsSparseVectorMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_SUMS, true, true, ExecType.MR);
@@ -302,6 +347,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	public void testRowIndexMaxSparseVectorMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testRowIndexMinSparseVectorMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -353,7 +404,57 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR, true);
 	}
+	//----
 	
+	@Test
+	public void testRowIndexMinDenseMatrixNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMinDenseVectorNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMinSparseMatrixNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMinSparseVectorNegCP() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRowIndexMinDenseMatrixNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR, true);
+	}
+	
+	@Test
+	public void testRowIndexMinDenseVectorNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR, true);
+	}
+	
+	
+	@Test
+	public void testRowIndexMinSparseMatrixNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR, true);
+	}
+	
+	
+	@Test
+	public void testRowIndexMinSparseVectorNegMR() 
+	{
+		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, true);
+	}
 	
 	/**
 	 * 
@@ -373,7 +474,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean negativeData)
+	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean specialData)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -389,6 +490,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 				case ROW_MAX: TEST_NAME = TEST_NAME3; break;
 				case ROW_MIN: TEST_NAME = TEST_NAME4; break;
 				case ROW_INDEXMAX: TEST_NAME = TEST_NAME5; break;
+				case ROW_INDEXMIN: TEST_NAME = TEST_NAME6; break;
 			}
 			
 			int rows = (vector) ? rows1 : rows2;
@@ -410,8 +512,22 @@ public class FullRowAggregateTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 	
 			//generate actual dataset
-			double min = negativeData ? -1 : -0.05;
-			double max = negativeData ? -0.05 : 1;
+			double min, max;
+			
+			// In case of ROW_INDEXMAX, generate all negative data 
+			// so that the value 0 is the maximum value. Similarly,
+			// in case of ROW_INDEXMIN, generate all positive data.
+			if ( type == OpType.ROW_INDEXMAX ) {
+				min = specialData ? -1 : -0.05;
+				max = specialData ? -0.05 : 1;
+			}
+			else if (type == OpType.ROW_INDEXMIN ){
+				min = specialData ? 0 : 0.05;
+				max = specialData ? 0.05 : 0;
+			} else {
+				min = -0.05;
+				max = 1;
+			}
 					
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 7); 
 			writeInputMatrix("A", A, true);

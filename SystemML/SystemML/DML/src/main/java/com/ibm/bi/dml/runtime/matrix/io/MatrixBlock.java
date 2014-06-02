@@ -2936,7 +2936,9 @@ public class MatrixBlock extends MatrixValue
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
-			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
+			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX
+			         || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX )
+			         ){
 					for(int r=0; r<rlen; r++){
 						double currMaxValue = cor.quickGetValue(r, 0);
 						long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
@@ -3079,7 +3081,9 @@ public class MatrixBlock extends MatrixValue
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
-			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
+			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
+			        || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
+			        ){
 				for(int r = 0; r < rlen; r++){
 					double currMaxValue = quickGetValue(r, 1);
 					long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
@@ -4127,7 +4131,9 @@ public class MatrixBlock extends MatrixValue
 				if(op.aggOp.correctionExists
 				   && op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN
 				   && op.aggOp.increOp.fn instanceof Builtin 
-				   && ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
+				   && ( ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX
+				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
+				        ){
 					double currMaxValue = result.quickGetValue(i, 1);
 					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, j);
 					double newMaxValue = quickGetValue(i, j);

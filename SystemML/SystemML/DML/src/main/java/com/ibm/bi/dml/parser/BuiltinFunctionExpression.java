@@ -225,6 +225,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ROWMAX:
 		case ROWINDEXMAX:
 		case ROWMIN:
+		case ROWINDEXMIN:
 		case ROWMEAN:
 			//rowSums(X);
 			checkNumParameters(1);
@@ -1056,6 +1057,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMAX;
 		else if (functionName.equals("rowIndexMax"))
 			bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;
+		else if (functionName.equals("rowIndexMin"))
+			bifop = Expression.BuiltinFunctionOp.ROWINDEXMIN;
 		else if (functionName.equals("colMaxs"))
 			bifop = Expression.BuiltinFunctionOp.COLMAX;
 		else if (functionName.equals("rowMeans"))

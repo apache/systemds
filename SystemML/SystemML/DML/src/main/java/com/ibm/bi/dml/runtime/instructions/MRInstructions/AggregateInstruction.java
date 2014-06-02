@@ -91,6 +91,10 @@ public class AggregateInstruction extends UnaryMRInstructionBase
 			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			return new AggregateInstruction(agg, in, out, str);
 		}
+		else if (opcode.equalsIgnoreCase("arimin")){
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+			return new AggregateInstruction(agg, in, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("amean") ) {
 			boolean corExists=Boolean.parseBoolean(parts[3]);
 			CorrectionLocationType loc;

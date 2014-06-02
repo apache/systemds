@@ -37,7 +37,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX  };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX, MININDEX  };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -56,6 +56,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "min"    , BuiltinFunctionCode.MIN);
 		String2BuiltinFunctionCode.put( "max"    , BuiltinFunctionCode.MAX);
 		String2BuiltinFunctionCode.put( "maxindex"    , BuiltinFunctionCode.MAXINDEX);
+		String2BuiltinFunctionCode.put( "minindex"    , BuiltinFunctionCode.MININDEX);
 		String2BuiltinFunctionCode.put( "abs"    , BuiltinFunctionCode.ABS);
 		String2BuiltinFunctionCode.put( "sqrt"   , BuiltinFunctionCode.SQRT);
 		String2BuiltinFunctionCode.put( "exp"    , BuiltinFunctionCode.EXP);
@@ -70,7 +71,7 @@ public class Builtin extends ValueFunction
 	
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
-	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null;
+	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, print2Obj = null;
 	
@@ -128,6 +129,10 @@ public class Builtin extends ValueFunction
 			if ( minObj == null )
 				minObj = new Builtin(BuiltinFunctionCode.MIN);
 			return minObj;
+		case MININDEX:
+			if ( minindexObj == null )
+				minindexObj = new Builtin(BuiltinFunctionCode.MININDEX);
+			return minindexObj;
 		case ABS:
 			if ( absObj == null )
 				absObj = new Builtin(BuiltinFunctionCode.ABS);
@@ -196,6 +201,7 @@ public class Builtin extends ValueFunction
 		case ROUND:
 		case PRINT2:
 		case MAXINDEX:
+		case MININDEX:
 			return (_arity == 1);
 		
 		case LOG:
@@ -279,6 +285,8 @@ public class Builtin extends ValueFunction
 			return (in1 <= in2 ? in1 : in2);
 		case MAXINDEX: 
 			return (in1 >= in2) ? 1 : 0;
+		case MININDEX: 
+			return (in1 <= in2) ? 1 : 0;
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
@@ -310,6 +318,8 @@ public class Builtin extends ValueFunction
 				return (in1 <= in2 ? in1 : in2);
 			case MAXINDEX: 
 				return (in1 >= in2) ? 1 : 0;	
+			case MININDEX: 
+				return (in1 <= in2) ? 1 : 0;	
 		}
 		return -1;
 	}
@@ -320,6 +330,7 @@ public class Builtin extends ValueFunction
 		case MAX:    return (in1 >= in2 ? in1 : in2); 
 		case MIN:    return (in1 <= in2 ? in1 : in2); 
 		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
+		case MININDEX: return (in1 <= in2) ? 1 : 0;
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");

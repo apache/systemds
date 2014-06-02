@@ -167,6 +167,7 @@ public class PartialAggregate extends Lop
 			break;
 			
 		case MaxIndex:
+		case MinIndex:
 			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
 			
@@ -252,6 +253,11 @@ public class PartialAggregate extends Lop
 		else if (operation == Aggregate.OperationTypes.MaxIndex
 				 && direction == DirectionTypes.Row){
 			return "uarimax";
+		}
+
+		else if (operation == Aggregate.OperationTypes.MinIndex
+				 && direction == DirectionTypes.Row){
+			return "uarimin";
 		}
 
 		else if (operation == Aggregate.OperationTypes.Min

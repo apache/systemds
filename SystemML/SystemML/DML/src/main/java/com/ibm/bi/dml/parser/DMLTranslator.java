@@ -2639,6 +2639,11 @@ public class DMLTranslator
 					Direction.Row, expr);
 			break;
 		
+		case ROWINDEXMIN:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MININDEX,
+					Direction.Row, expr);
+			break;
+		
 		case ROWMIN:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MIN,
 					Direction.Row, expr);

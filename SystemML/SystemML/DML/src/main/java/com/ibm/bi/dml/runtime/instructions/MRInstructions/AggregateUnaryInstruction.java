@@ -97,6 +97,13 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		}
 		
+		else if ( opcode.equalsIgnoreCase("uarimin") ) {
+			// returns col index of min in row
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+			return new AggregateUnaryInstruction(aggun, in, out, str);
+		}
+		
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);

@@ -700,7 +700,7 @@ public abstract class Hop
 		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
 	};
 	public enum AggOp {
-		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX
+		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX, MININDEX
 	};
 
 	public enum ReOrgOp {
@@ -757,6 +757,7 @@ public abstract class Hop
 		HopsAgg2Lops.put(AggOp.MIN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Min);
 		HopsAgg2Lops.put(AggOp.MAX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Max);
 		HopsAgg2Lops.put(AggOp.MAXINDEX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.MaxIndex);
+		HopsAgg2Lops.put(AggOp.MININDEX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.MinIndex);
 		HopsAgg2Lops.put(AggOp.PROD, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Product);
 		HopsAgg2Lops.put(AggOp.MEAN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Mean);
 	}
@@ -988,6 +989,7 @@ public abstract class Hop
 		HopsAgg2String.put(AggOp.MIN, "min");
 		HopsAgg2String.put(AggOp.MAX, "max");
 		HopsAgg2String.put(AggOp.MAXINDEX, "maxindex");
+		HopsAgg2String.put(AggOp.MININDEX, "minindex");
 		HopsAgg2String.put(AggOp.TRACE, "trace");
 		HopsAgg2String.put(AggOp.MEAN, "mean");
 	}

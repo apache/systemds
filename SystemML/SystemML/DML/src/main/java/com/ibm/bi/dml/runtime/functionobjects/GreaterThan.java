@@ -69,4 +69,8 @@ public class GreaterThan extends ValueFunction
 		return (in1 > in2);
 	}
 
+	@Override
+	public boolean compare(String in1, String in2) {
+		return (in1!=null && in1.compareTo(in2)>0 );
+	}
 }

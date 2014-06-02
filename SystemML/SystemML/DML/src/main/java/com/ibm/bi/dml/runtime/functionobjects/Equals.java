@@ -73,4 +73,9 @@ public class Equals extends ValueFunction
 	public boolean compare(long in1, double in2) {
 		return (in1 == in2);
 	}
+	
+	@Override
+	public boolean compare(String in1, String in2) {
+		return ( in1!=null && in1.equals(in2) );
+	}
 }

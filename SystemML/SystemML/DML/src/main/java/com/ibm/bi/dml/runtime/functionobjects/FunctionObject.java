@@ -116,6 +116,10 @@ public class FunctionObject
 	public boolean compare(boolean in1, boolean in2) throws DMLRuntimeException {
 		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
 	}
+	
+	public boolean compare(String in1, String in2) throws DMLRuntimeException {
+		throw new DMLRuntimeException("compare(): should not be invoked from base class.");
+	}
 
 	
 	/////////////////////////////////////////////////////////////////////////////////////

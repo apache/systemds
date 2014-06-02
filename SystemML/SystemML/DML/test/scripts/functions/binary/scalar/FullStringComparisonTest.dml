@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+string1 = $1;
+string2 = $2;
+type = $3;
+
+b = FALSE;
+if( type == 0 )
+{
+   b = (string1 > string2);
+}
+else if( type == 1 )
+{
+   b = (string1 < string2)
+}
+else if( $3 == 2 )
+{
+   b = (string1 == string2)
+}
+else if( type == 3 )
+{
+   b = (string1 != string2)
+}
+else if( type == 4 )
+{
+   b = (string1 >= string2)
+}
+else if( type == 5 )
+{
+   b = (string1 <= string2)
+}
+
+write(b, $4); 

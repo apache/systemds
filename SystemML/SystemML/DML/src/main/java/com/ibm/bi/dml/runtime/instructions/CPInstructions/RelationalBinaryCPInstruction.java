@@ -71,12 +71,14 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 		//for scalar relational operations we only allow boolean operands
 		//or when both operands are numeric (int or double)
 		if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
-			if (!((vt1 == ValueType.BOOLEAN && vt2 == ValueType.BOOLEAN)
-					|| ((vt1 == ValueType.DOUBLE || vt1 == ValueType.INT) 
-						&& (vt2 == ValueType.DOUBLE || vt2 == ValueType.INT))))
+			if (!(  (vt1 == ValueType.BOOLEAN && vt2 == ValueType.BOOLEAN)
+				  ||(vt1 == ValueType.STRING && vt2 == ValueType.STRING)
+				  ||( (vt1 == ValueType.DOUBLE || vt1 == ValueType.INT) && (vt2 == ValueType.DOUBLE || vt2 == ValueType.INT))))
+			{
 				throw new DMLRuntimeException("unexpected value-type in "
 											  + "Relational Binary Instruction "
 											  + "involving scalar operands.");
+			}
 			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, str);
 		
 		}else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){

@@ -77,6 +77,10 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 			boolean rval = dop.fn.compare ( so1.getBooleanValue(), so2.getBooleanValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
+		else if ( so1 instanceof StringObject && so2 instanceof StringObject ) {
+			boolean rval = dop.fn.compare ( so1.getStringValue(), so2.getStringValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
 		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
 		
 		ec.setScalarOutput(output.get_name(), sores);

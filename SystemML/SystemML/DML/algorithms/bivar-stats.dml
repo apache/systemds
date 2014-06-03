@@ -66,37 +66,37 @@ num_nominal_scale_tests = 0
 
 pair2row = matrix(0, rows=numPairs, cols=2)
 for( i in 1:s1size, check=0) {
-    a1 = castAsScalar(S1[1,i]);
-    k1 = castAsScalar(K1[1,i]);
+    pre_a1 = castAsScalar(S1[1,i]);
+    pre_k1 = castAsScalar(K1[1,i]);
 
     for( j in 1:s2size, check=0) {
-        pairID = (i-1)*s2size+j; 
-        a2 = castAsScalar(S2[1,j]);
-        k2 = castAsScalar(K2[1,j]);
+        pre_pairID = (i-1)*s2size+j; 
+        pre_a2 = castAsScalar(S2[1,j]);
+        pre_k2 = castAsScalar(K2[1,j]);
 	
-	if (k1 == k2) {
-            if (k1 == 1) {
+	if (pre_k1 == pre_k2) {
+            if (pre_k1 == 1) {
 	        num_scale_scale_tests = num_scale_scale_tests + 1
-		pair2row[pairID,1] = num_scale_scale_tests
+		pair2row[pre_pairID,1] = num_scale_scale_tests
             } else {
 	      	num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-		pair2row[pairID,1] = num_nominal_nominal_tests
+		pair2row[pre_pairID,1] = num_nominal_nominal_tests
 		
 
-                if ( k1 == 3 ) {
+                if ( pre_k1 == 3 ) {
 		    num_ordinal_ordinal_tests = num_ordinal_ordinal_tests + 1
-		    pair2row[pairID, 2] = num_ordinal_ordinal_tests
+		    pair2row[pre_pairID, 2] = num_ordinal_ordinal_tests
                 }
             }
         }
         else {
-            if (k1 == 1 | k2 == 1) {
+            if (pre_k1 == 1 | pre_k2 == 1) {
 	        num_nominal_scale_tests = num_nominal_scale_tests + 1
-		pair2row[pairID,1] = num_nominal_scale_tests
+		pair2row[pre_pairID,1] = num_nominal_scale_tests
             }
             else {
 	        num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-		pair2row[pairID,1] = num_nominal_nominal_tests 
+		pair2row[pre_pairID,1] = num_nominal_nominal_tests 
             }
 	}
     }

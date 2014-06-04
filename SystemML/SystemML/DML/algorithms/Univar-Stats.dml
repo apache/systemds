@@ -13,9 +13,9 @@
 #
 # Three inputs:
 #     $1) X - input data
-#     $2) TYPES - row matrix that denotes the "kind" for each 
-#              attribute
-#             kind=1 for scale, kind=2 for nominal,
+#     $2) TYPES - row matrix that denotes the "kind"/"type" of all attributes
+#             kind=1 for scale, 
+#             kind=2 for nominal,
 #             kind=3 for ordinal
 #
 # One output:
@@ -46,7 +46,6 @@ max_kind = max(K);
 # matrices to store computed statistics
 baseStats = matrix(0, rows=numBaseStats, cols=n);
 
-
 parfor(i in 1:n, check=0) {
 
 	# project out the i^th column
@@ -55,7 +54,7 @@ parfor(i in 1:n, check=0) {
 	kind = castAsScalar(K[1,i]);
 
 	if ( kind == 1 ) {
-		print("[" + i + "] Scale");
+		#print("[" + i + "] Scale");
 		# compute SCALE statistics on the projected column
 		minimum = min(F);
 		maximum = max(F);
@@ -103,7 +102,7 @@ parfor(i in 1:n, check=0) {
 	}
 	else {
 		if (kind == 2 | kind == 3) {
-			print("[" + i + "] Categorical");
+			#print("[" + i + "] Categorical");
 			
 			# check if the categorical column has valid values
 			minF = min(F);

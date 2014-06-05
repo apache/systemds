@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContext;
 import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.util.StringUtils;
 
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
@@ -27,141 +26,119 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 public class MultipleOutputCommitter extends FileOutputCommitter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// maintain the map of matrix index to its final output dir
 	// private HashMap<Byte, String> outputmap=new HashMap<Byte, String>();
 	private String[] outputs;
 
-	public void setupJob(JobContext context) throws IOException {
+	@Override
+	public void setupJob(JobContext context) 
+		throws IOException 
+	{
 		super.setupJob(context);
-		// get output file directories and creat directories
+		// get output file directories and create directories
 		JobConf conf = context.getJobConf();
 		String[] outputs = MRJobConfiguration.getOutputs(conf);
 		for (String dir : outputs) {
 			Path path = new Path(dir);
-			FileSystem fileSys = path.getFileSystem(conf);
-			if (!fileSys.mkdirs(path))
-			{
-				if (!fileSys.mkdirs(path))
-					LOG.error("Mkdirs failed to create " + path.toString());
-			}
+			FileSystem fs = path.getFileSystem(conf);
+			if( !fs.mkdirs(path) )
+				LOG.error("Mkdirs failed to create " + path.toString());
 		}
 	}
 
-	public void cleanupJob(JobContext context) throws IOException {
+	@Override
+	public void cleanupJob(JobContext context) 
+		throws IOException 
+	{
 		JobConf conf = context.getJobConf();
 		// do the clean up of temporary directory
 		Path outputPath = FileOutputFormat.getOutputPath(conf);
 		if (outputPath != null) {
-			FileSystem fileSys = outputPath.getFileSystem(conf);
+			FileSystem fs = outputPath.getFileSystem(conf);
 			context.getProgressible().progress();
-			if (fileSys.exists(outputPath)) {
-				fileSys.delete(outputPath, true);
-			}
+			if( fs.exists(outputPath) ) 
+				fs.delete(outputPath, true);
 		}
 	}
 
-	public void commitTask(TaskAttemptContext context) throws IOException {
+	@Override
+	public void commitTask(TaskAttemptContext context) 
+		throws IOException 
+	{
 		JobConf conf = context.getJobConf();
-
+		TaskAttemptID attemptId = context.getTaskAttemptID();
+		
 		// get the mapping between index to output filename
 		outputs = MRJobConfiguration.getOutputs(conf);
-		// byte[] indexes=MRJobConfiguration.getResultIndexes(conf);
-		// for(int i=0; i<indexes.length; i++)
-		// outputmap.put(indexes[i], outputs[i]);
-
-		// LOG.info("outputmap has # entries "+outputmap.size());
-		// for(Entry<Byte, String> e: outputmap.entrySet())
-		// LOG.info(e.getKey()+" <--> "+e.getValue());
-
-		Path taskOutputPath = getTempTaskOutputPath(context);
-		TaskAttemptID attemptId = context.getTaskAttemptID();
-		if (taskOutputPath != null) {
-			FileSystem fs = taskOutputPath.getFileSystem(conf);
-			context.getProgressible().progress();
-			if (fs.exists(taskOutputPath)) {
-				// Move the task outputs to their final places
-				moveFinalTaskOutputs(context, fs, taskOutputPath);
-				// Delete the temporary task-specific output directory
-				if (!fs.delete(taskOutputPath, true)) {
-					LOG.debug("Failed to delete the temporary output" + " directory of task: " + attemptId + " - "
-							+ taskOutputPath);
-				}
-			}
-		}
-	}
-
-	private void moveFinalTaskOutputs(TaskAttemptContext context, FileSystem fs, Path taskOutput) throws IOException {
-		TaskAttemptID attemptId = context.getTaskAttemptID();
+		
+		//get temp task output path (compatible with hadoop1 and hadoop2)
+		Path taskOutPath = FileOutputFormat.getWorkOutputPath(conf);
+		FileSystem fs = taskOutPath.getFileSystem(conf);
+		if( !fs.exists(taskOutPath) )
+			throw new IOException("Task output path "+ taskOutPath.toString() + "does not exist.");
+		
+		// Move the task outputs to their final places
 		context.getProgressible().progress();
-
-		if (fs.getFileStatus(taskOutput).isDir()) {
+		moveFinalTaskOutputs(context, fs, taskOutPath);
+		
+		// Delete the temporary task-specific output directory
+		if( !fs.delete(taskOutPath, true) ) 
+			LOG.debug("Failed to delete the temporary output directory of task: " + attemptId + " - " + taskOutPath);
+	}
+	
+	/**
+	 * 
+	 * @param context
+	 * @param fs
+	 * @param taskOutput
+	 * @throws IOException
+	 */
+	private void moveFinalTaskOutputs(TaskAttemptContext context, FileSystem fs, Path taskOutput)
+		throws IOException 
+	{
+		context.getProgressible().progress();
+		
+		if( fs.getFileStatus(taskOutput).isDir() ) 
+		{
 			FileStatus[] files = fs.listStatus(taskOutput);
-			if (files != null) {
-				for (FileStatus file : files) {
-					// only copy actual files
-					if (file.isDir())
-						continue;
-					moveFileToDestination(context, fs, file.getPath());
-				}
-			}
+			if (files != null)
+				for (FileStatus file : files) //for all files
+					if( !file.isDir() ) //skip directories
+						moveFileToDestination(context, fs, file.getPath());
 		}
 	}
-
-	private void moveFileToDestination(TaskAttemptContext context, FileSystem fs, Path file) throws IOException {
+	
+	/**
+	 * 
+	 * @param context
+	 * @param fs
+	 * @param file
+	 * @throws IOException
+	 */
+	private void moveFileToDestination(TaskAttemptContext context, FileSystem fs, Path file) 
+		throws IOException 
+	{
+		JobConf conf = context.getJobConf();
 		TaskAttemptID attemptId = context.getTaskAttemptID();
-		Path finalPath = getFinalDestination(file, attemptId);
-		// LOG.info("********** moving "+file+" to "+finalPath);
-	//	System.out.println("********** moving "+file+" to "+finalPath);
-		if (!fs.rename(file, finalPath)) {
-			if (!fs.delete(finalPath, true)) {
-				throw new IOException("Failed to delete earlier output " + finalPath + " so that can be rename with "
-						+ file + " in task " + attemptId);
-			}
-			if (!fs.rename(file, finalPath)) {
-				throw new IOException("Failed to save output " + finalPath + " so that can be rename with " + file
-						+ " in task: " + attemptId);
-			}
+		
+		//get output index and final destination
+		String taskType = (conf.getBoolean(JobContext.TASK_ISMAP, true)) ? "m" : "r";
+		String name =  file.getName(); 
+		int charIx = name.indexOf("-"+taskType+"-");
+		int index = Integer.parseInt(name.substring(0, charIx));
+		Path finalPath = new Path(outputs[index], file.getName());
+		
+		//move file from 'file' to 'finalPath'
+		if( !fs.rename(file, finalPath) ) 
+		{
+			if (!fs.delete(finalPath, true))
+				throw new IOException("Failed to delete earlier output " + finalPath + " for rename of " + file + " in task " + attemptId);
+			if (!fs.rename(file, finalPath)) 
+				throw new IOException("Failed to save output " + finalPath + " for rename of " + file + " in task: " + attemptId);
 		}
-		LOG.debug("Moved " + file + " to " + finalPath);
 	}
 
-	private Path getFinalDestination(Path file, TaskAttemptID attemptId) {
-		int index = getOutputIndex(file);
-		// LOG.info("filename: "+file+", index: "+index);
-		return new Path(outputs[index], file.getName());
-	}
-
-	// XXXbhargav -- modified to check mapper outputs also
-	// XXXbhargav -- Please check this yuanyuan.
-	private int getOutputIndex(Path file) {
-		String name = file.getName();
-		int i = name.indexOf("-r-");
-		if (i < 0)
-			i = name.indexOf("-m-");
-
-		if (i > 0)
-			return Integer.parseInt(name.substring(0, i));
-		else
-			return 0;
-	}
-
-	Path getTempTaskOutputPath(TaskAttemptContext taskContext) {
-		JobConf conf = taskContext.getJobConf();
-		Path outputPath = FileOutputFormat.getOutputPath(conf);
-		if (outputPath != null) {
-			Path p = new Path(outputPath, (FileOutputCommitter.TEMP_DIR_NAME + Path.SEPARATOR + "_" + taskContext
-					.getTaskAttemptID().toString()));
-			try {
-				FileSystem fs = p.getFileSystem(conf);
-				return p.makeQualified(fs);
-			} catch (IOException ie) {
-				LOG.warn(StringUtils.stringifyException(ie));
-				return p;
-			}
-		}
-		return null;
-	}
 }

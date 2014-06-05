@@ -54,8 +54,12 @@ print ("Generating record-to-cluster assignments...");
 # than "num_centroids" by the factor of "cluster_bias_factor"
 
 rnd = Rand (rows = num_records, cols = 1, min = 0.0, max = 1.0, pdf = "uniform");
-rnd_scaled = rnd * (1 - cluster_bias_factor ^ (- num_centroids / (num_centroids - 1)));
-Y = round (0.5 - log (1 - rnd_scaled) / log (cluster_bias_factor) * (num_centroids - 1));
+if (cluster_bias_factor == 1.0) {
+    Y = round (0.5 + rnd * num_centroids);
+} else {
+    rnd_scaled = rnd * (1 - cluster_bias_factor ^ (- num_centroids / (num_centroids - 1)));
+    Y = round (0.5 - (num_centroids - 1) * log (1 - rnd_scaled) / log (cluster_bias_factor));
+}
 
 print ("Generating within-cluster random shifts...");
 

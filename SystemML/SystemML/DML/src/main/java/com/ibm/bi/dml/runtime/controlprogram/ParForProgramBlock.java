@@ -1336,7 +1336,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		finally
 		{
-			br.close();
+			if( br !=null )
+				br.close();
 		}
 		
 		return fname;
@@ -1375,7 +1376,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		finally
 		{
-			br.close();
+			if( br !=null )
+				br.close();
 		}
 		
 		return fname;
@@ -1412,7 +1414,8 @@ public class ParForProgramBlock extends ForProgramBlock
 				//enqueue all result vars as tasks
 				LocalTaskQueue<String> q = new LocalTaskQueue<String>();
 				for( String var : _resultVars ) //foreach non-local write
-					q.enqueueTask(var);
+					if( ec.getVariable(var) instanceof MatrixObject ) //robustness scalars
+						q.enqueueTask(var);
 				q.closeInput();
 				
 				//run result merge workers
@@ -1434,22 +1437,25 @@ public class ParForProgramBlock extends ForProgramBlock
 			//execute result merge sequentially for all result vars
 			for( String var : _resultVars ) //foreach non-local write
 			{			
-				String varname = var;
-				MatrixObject out = (MatrixObject) ec.getVariable(varname);
-				MatrixObject[] in = new MatrixObject[ results.length ];
-				for( int i=0; i< results.length; i++ )
-					in[i] = (MatrixObject) results[i].get( varname ); 			
-				String fname = constructResultMergeFileName();
-				ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
-				MatrixObject outNew = null;
-				if( USE_PARALLEL_RESULT_MERGE )
-					outNew = rm.executeParallelMerge( _numThreads );
-				else
-					outNew = rm.executeSerialMerge(); 			
-				ec.setVariable(varname, outNew);
-		
-				//cleanup of intermediate result variables
-				cleanWorkerResultVariables( out, in );
+				Data dat = ec.getVariable(var);
+				if( dat instanceof MatrixObject ) //robustness scalars
+				{
+					MatrixObject out = (MatrixObject) dat;
+					MatrixObject[] in = new MatrixObject[ results.length ];
+					for( int i=0; i< results.length; i++ )
+						in[i] = (MatrixObject) results[i].get( var ); 			
+					String fname = constructResultMergeFileName();
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
+					MatrixObject outNew = null;
+					if( USE_PARALLEL_RESULT_MERGE )
+						outNew = rm.executeParallelMerge( _numThreads );
+					else
+						outNew = rm.executeSerialMerge(); 			
+					ec.setVariable(var, outNew);
+			
+					//cleanup of intermediate result variables
+					cleanWorkerResultVariables( out, in );
+				}
 			}
 		}
 		//handle unscoped variables (vars created in parfor, but potentially used afterwards)

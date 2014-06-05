@@ -1855,9 +1855,13 @@ public class OptimizerRuleBased extends Optimizer
 		
 		for( String var : resultVars )
 		{
-			MatrixObject mo = (MatrixObject) vars.get( var );
-			if( mo!=null ) //for local result var of child parfor potentially unknown (but we're only interested in top level)
+			//Potential unknowns: for local result var of child parfor (but we're only interested in top level)
+			//Potential scalars: for disabled dependency analysis and unbounded scoping			
+			Data dat = vars.get( var );
+			if( dat != null && dat instanceof MatrixObject ) 
 			{
+				MatrixObject mo = (MatrixObject) vars.get( var );
+				
 				long rows = mo.getNumRows();
 				long cols = mo.getNumColumns();	
 				long nnz = mo.getNnz();

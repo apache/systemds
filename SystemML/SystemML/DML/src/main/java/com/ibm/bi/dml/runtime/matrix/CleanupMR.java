@@ -119,7 +119,8 @@ public class CleanupMR
 		}
 		finally
 		{
-			br.close();
+			if( br != null )
+				br.close();
 		}
 	}
 	

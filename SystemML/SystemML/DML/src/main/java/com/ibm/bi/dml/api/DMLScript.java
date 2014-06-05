@@ -398,7 +398,7 @@ public class DMLScript
 			finally 
 			{
 				if( in != null )
-				in.close();
+					in.close();
 			}
 			
 			dmlScriptStr = sb.toString();

@@ -1331,7 +1331,7 @@ public class MatrixBlock extends MatrixValue
 	private void copySparseToSparse(MatrixBlock that)
 	{
 		this.nonZeros=that.nonZeros;
-		if(that.sparseRows==null)
+		if( that.isEmptyBlock(false) )
 		{
 			resetSparse();
 			return;
@@ -1355,7 +1355,7 @@ public class MatrixBlock extends MatrixValue
 	{
 		this.nonZeros=that.nonZeros;
 		
-		if(that.denseBlock==null)
+		if( that.isEmptyBlock(false) )
 		{
 			if(denseBlock!=null)
 				Arrays.fill(denseBlock, 0);
@@ -1370,7 +1370,7 @@ public class MatrixBlock extends MatrixValue
 	private void copySparseToDense(MatrixBlock that)
 	{
 		this.nonZeros=that.nonZeros;
-		if(that.sparseRows==null)
+		if( that.isEmptyBlock(false) )
 		{
 			if(denseBlock!=null)
 				Arrays.fill(denseBlock, 0);
@@ -1397,7 +1397,7 @@ public class MatrixBlock extends MatrixValue
 	private void copyDenseToSparse(MatrixBlock that)
 	{
 		nonZeros = that.nonZeros;
-		if(that.denseBlock==null)
+		if( that.isEmptyBlock(false) )
 		{
 			resetSparse();
 			return;
@@ -1455,7 +1455,7 @@ public class MatrixBlock extends MatrixValue
 	private void copySparseToSparse(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
 	{	
 		//handle empty src and dest
-		if(src.sparseRows==null)
+		if( src.isEmptyBlock(false) )
 		{
 			if( awareDestNZ && sparseRows != null )
 				copyEmptyToSparse(rl, ru, cl, cu, true);
@@ -1528,7 +1528,7 @@ public class MatrixBlock extends MatrixValue
 	private void copySparseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
 	{	
 		//handle empty src and dest
-		if(src.sparseRows==null)
+		if( src.isEmptyBlock(false) )
 		{
 			if( awareDestNZ && denseBlock != null ) {
 				nonZeros -= (int)recomputeNonZeros(rl, ru, cl, cu);
@@ -1570,7 +1570,7 @@ public class MatrixBlock extends MatrixValue
 	private void copyDenseToSparse(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
 	{
 		//handle empty src and dest
-		if(src.denseBlock==null)
+		if( src.isEmptyBlock(false) )
 		{
 			if( awareDestNZ && sparseRows != null )
 				copyEmptyToSparse(rl, ru, cl, cu, true);
@@ -1631,7 +1631,7 @@ public class MatrixBlock extends MatrixValue
 	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
 	{
 		//handle empty src and dest
-		if(src.denseBlock==null)
+		if( src.isEmptyBlock(false) )
 		{
 			if( awareDestNZ && denseBlock != null ) {
 				nonZeros -= (int)recomputeNonZeros(rl, ru, cl, cu);
@@ -2429,10 +2429,12 @@ public class MatrixBlock extends MatrixValue
 	private void sparseScalarOperationsInPlace(ScalarOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
+		//early abort possible since sparsesafe
+		if( isEmptyBlock(false) ) 
+			return; 
+		
 		if(sparse)
 		{
-			if(sparseRows==null)
-				return;
 			nonZeros=0;
 			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 			{
@@ -2455,9 +2457,6 @@ public class MatrixBlock extends MatrixValue
 			}
 		}else
 		{
-			//early abort possible since sparsesafe
-			if(denseBlock==null) 
-				return; 
 			int limit=rlen*clen;
 			nonZeros=0;
 			for(int i=0; i<limit; i++)
@@ -2539,10 +2538,12 @@ public class MatrixBlock extends MatrixValue
 	private void sparseUnaryOperationsInPlace(UnaryOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
+		//early abort possible since sparse-safe
+		if( isEmptyBlock(false) )
+			return;
+		
 		if(sparse)
 		{
-			if(sparseRows==null)
-				return;
 			nonZeros=0;
 			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 			{
@@ -2567,9 +2568,6 @@ public class MatrixBlock extends MatrixValue
 		}
 		else
 		{
-			//early abort possible since sparsesafe
-			if(denseBlock==null)
-				return;
 			int limit=rlen*clen;
 			nonZeros=0;
 			for(int i=0; i<limit; i++)
@@ -3280,7 +3278,9 @@ public class MatrixBlock extends MatrixValue
 		}
 		else //SPARSE
 		{
-			result.adjustSparseRows(rlen-1);
+			//adjust sparse rows if required
+			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) )
+				result.adjustSparseRows(rlen-1);
 			result.appendToSparse(this, 0, 0);
 			result.appendToSparse(that, 0, clen);
 		}		

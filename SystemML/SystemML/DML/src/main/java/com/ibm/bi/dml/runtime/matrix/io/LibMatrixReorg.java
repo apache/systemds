@@ -92,6 +92,10 @@ public class LibMatrixReorg
 		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
+	
+		//sparse-safe operation
+		if( in.isEmptyBlock(false) )
+			return out;
 		
 		if( !in.sparse && !out.sparse )
 			transposeDenseToDense( in, out );
@@ -118,6 +122,10 @@ public class LibMatrixReorg
 			throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
+		
+		//sparse-safe operation
+		if( in.isEmptyBlock(false) )
+			return out;
 		
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -261,9 +269,6 @@ public class LibMatrixReorg
 	 */
 	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out)
 	{
-		if( in.denseBlock == null )
-			return;
-		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
@@ -312,9 +317,6 @@ public class LibMatrixReorg
 	 */
 	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out)
 	{
-		if( in.denseBlock == null )
-			return;
-		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
@@ -358,9 +360,6 @@ public class LibMatrixReorg
 	 */
 	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out)
 	{
-		if( in.sparseRows == null )
-			return;
-		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
@@ -421,9 +420,6 @@ public class LibMatrixReorg
 	 */
 	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out)
 	{
-		if( in.sparseRows == null )
-			return;
-		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;

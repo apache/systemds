@@ -87,64 +87,75 @@ public class IndexingOp extends Hop
 		throws HopsException, LopsException 
 	{	
 		if (get_lops() == null) {
-			try {
-				ExecType et = optFindExecType();
-				if(et == ExecType.MR) {
-					Hop input = getInput().get(0);
-					IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
-							                                       input._dim1, input._dim2, _dim1, _dim2);
-					
-					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
-					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							get_dataType(), get_valueType(), et);
-	
-					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
-					
-					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					if( method == IndexingMethod.MR_RIX )
-					{
-						Group group1 = new Group(
-								reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-								get_valueType());
-						group1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			Hop input = getInput().get(0);
+			
+			//rewrite remove unnecessary right indexing
+			if( dimsKnown() && input.dimsKnown() 
+				&& get_dim1() == input.get_dim1() && get_dim2() == input.get_dim2() )
+			{
+				set_lops( input.constructLops() );
+			}
+			//actual lop construction, incl operator selection 
+			else
+			{
+				try {
+					ExecType et = optFindExecType();
+					if(et == ExecType.MR) {
+						IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
+								                                       input._dim1, input._dim2, _dim1, _dim2);
 						
-						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
+						RangeBasedReIndex reindex = new RangeBasedReIndex(
+								input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+								getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
+								get_dataType(), get_valueType(), et);
 		
-						Aggregate agg1 = new Aggregate(
-								group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-								get_valueType(), et);
-						agg1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
-						set_lops(agg1);
+						reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						if( method == IndexingMethod.MR_RIX )
+						{
+							Group group1 = new Group(
+									reindex, Group.OperationTypes.Sort, DataType.MATRIX,
+									get_valueType());
+							group1.getOutputParameters().setDimensions(get_dim1(),
+									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							
+							group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+							Aggregate agg1 = new Aggregate(
+									group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
+									get_valueType(), et);
+							agg1.getOutputParameters().setDimensions(get_dim1(),
+									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							
+							set_lops(agg1);
+						}
+						else //method == IndexingMethod.MR_VRIX
+						{
+							set_lops(reindex);
+						}
 					}
-					else //method == IndexingMethod.MR_VRIX
-					{
+					else {
+						Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
+						RangeBasedReIndex reindex = new RangeBasedReIndex(
+								input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+								getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
+								get_dataType(), get_valueType(), et);
+						reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_in_block(), get_cols_in_block(), getNnz());
+						reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						set_lops(reindex);
 					}
+				} catch (Exception e) {
+					throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops " , e);
 				}
-				else {
-					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
-					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							get_dataType(), get_valueType(), et);
-					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-							get_rows_in_block(), get_cols_in_block(), getNnz());
-					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(reindex);
-				}
-			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops " , e);
 			}
-
 		}
 		
 		return get_lops();

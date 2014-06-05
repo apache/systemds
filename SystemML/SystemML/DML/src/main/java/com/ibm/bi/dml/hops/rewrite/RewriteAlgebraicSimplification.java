@@ -21,6 +21,7 @@ import com.ibm.bi.dml.hops.Hop.Direction;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ReorgOp;
@@ -94,6 +95,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			//rule_AlgebraicSimplification(hi); //see below
 			
 			//apply actual simplification rewrites (of childs incl checks)
+			hi = removeUnnecessaryRightIndexing(hop, hi, i);    //e.g., y[,1] -> y
 			hi = removeUnnecessaryVectorizeOperation(hi);       //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);  //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
@@ -110,6 +112,35 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 		}
 
 		hop.set_visited(Hop.VISIT_STATUS.DONE);
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop removeUnnecessaryRightIndexing(Hop parent, Hop hi, int pos)
+	{
+		if( hi instanceof IndexingOp  ) //indexing op
+		{
+			Hop input = hi.getInput().get(0);
+			if(   hi.get_dim1()>0 && hi.get_dim2()>0  //dims output known
+			   && input.get_dim1()>0 && input.get_dim2()>0  //dims input known
+		       && hi.get_dim1()==input.get_dim1() && hi.get_dim2()==input.get_dim2()) //equal dims
+			{
+				//equal dims of right indexing input and output -> no need for indexing
+				
+				//remove unnecessary right indexing
+				removeChildReference(parent, hi);
+				
+				addChildReference(parent, input, pos);
+				hi = input;
+			}			
+		}
+		
+		return hi;
 	}
 	
 	/**

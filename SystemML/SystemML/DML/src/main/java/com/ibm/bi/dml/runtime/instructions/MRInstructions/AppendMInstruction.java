@@ -60,7 +60,7 @@ public class AppendMInstruction extends AppendInstruction
 		if( blkList == null ) 
 			return;
 		
-		//right now this only deals with appending matrix whith number of column <= blockColFactor
+		//right now this only deals with appending matrix with number of column <= blockColFactor
 		for(IndexedMatrixValue in1 : blkList)
 		{
 			if(in1==null)

@@ -1421,11 +1421,8 @@ public class BinaryOp extends Hop
 		// size of right input (vector)
 		footprint += OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0);
 		
-		// size of the output
+		// size of the output (only boundary block is merged)
 		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2+m2_dim2, m1_cpb), 1.0);
-		if (m1_dim2+m2_dim2 > m1_cpb) {
-			footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), m1_dim2 + m2_dim2 - m1_cpb, 1.0);
-		}
 		
 		return footprint;
 	}
@@ -1440,15 +1437,13 @@ public class BinaryOp extends Hop
 	 */
 	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
 	{
-		//check for best case (map-only)
-		
+		//check for best case (map-only)		
 		if(    m2_dim2 == 1  //rhs is vector
-		    && m2_dim1 >= 1 // rhs row dim known 
-		    ) {
+		    && m2_dim1 >= 1 ) // rhs row dim known 
+		{
 			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) ) {
+			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) )
 				return AppendMethod.MR_MAPPEND;
-			}
 		}
 		
 		//check for in-block append (reduce-only)

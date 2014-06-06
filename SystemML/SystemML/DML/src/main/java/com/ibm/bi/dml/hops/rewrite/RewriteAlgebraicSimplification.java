@@ -103,7 +103,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyDiagMatrixMult(hop, hi, i);            //e.g., diag(X%*%Y)->rowSums(X*t(Y)); 
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
-			//hi = reorderMinusMatrixMult(hop, hi, i);            //e.g., (-t(X))%*%y->-(t(X)%*%y)  
+			hi = reorderMinusMatrixMult(hop, hi, i);            //e.g., (-t(X))%*%y->-(t(X)%*%y)  
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			//hi = removeUnecessaryPPred(hop, hi, i);             //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
@@ -507,6 +507,9 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 	 * for the important hops-lops rewrite of transpose-matrixmult if the transpose
 	 * is hidden under the minus. 
 	 * 
+	 * NOTE: in this rewrite we need to modify the links to all parents because we 
+	 * remove existing links of subdags and hence affect all consumers.
+	 * 
 	 * TODO conceptually this rewrite should become size-aware and part of hop-lops rewrites.
 	 * 
 	 * @param parent
@@ -529,19 +532,23 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			{
 				Hop hi2 = hileft.getInput().get(1);
 				
-				//remove link from parent to matrixmult
-				removeChildReference(parent, hi);
-				
 				//remove link from matrixmult to minus
 				removeChildReference(hi, hileft);
+				
+				//get old parents (before creating minus over matrix mult)
+				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
 				
 				//create new operators 
 				BinaryOp minus = new BinaryOp(hi.get_name(), hi.get_dataType(), hi.get_valueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
 				minus.set_rows_in_block(hi.get_rows_in_block());
 				minus.set_cols_in_block(hi.get_cols_in_block());
 				
-				//rehand minus under parent
-				addChildReference(parent, minus, pos);
+				//rehang minus under all parents
+				for( Hop p : parents ) {
+					int ix = getChildReferencePos(p, hi);
+					removeChildReference(p, hi);
+					addChildReference(p, minus, ix);
+				}
 				
 				//rehang child of minus under matrix mult
 				addChildReference(hi, hi2, 0);
@@ -558,19 +565,23 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			{
 				Hop hi2 = hiright.getInput().get(1);
 				
-				//remove link from parent to matrixmult
-				removeChildReference(parent, hi);
-				
 				//remove link from matrixmult to minus
 				removeChildReference(hi, hiright);
+				
+				//get old parents (before creating minus over matrix mult)
+				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
 				
 				//create new operators 
 				BinaryOp minus = new BinaryOp(hi.get_name(), hi.get_dataType(), hi.get_valueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
 				minus.set_rows_in_block(hi.get_rows_in_block());
 				minus.set_cols_in_block(hi.get_cols_in_block());
 				
-				//rehand minus under parent
-				addChildReference(parent, minus, pos);
+				//rehang minus under all parents
+				for( Hop p : parents ) {
+					int ix = getChildReferencePos(p, hi);
+					removeChildReference(p, hi);
+					addChildReference(p, minus, ix);
+				}
 				
 				//rehang child of minus under matrix mult
 				addChildReference(hi, hi2, 1);
@@ -664,11 +675,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 	private int getChildReferencePos( Hop parent, Hop child )
 	{
 		ArrayList<Hop> childs = parent.getInput();
-		for(int i=0; i<childs.size(); i++)
-			if( childs.get( i ) == child ) 
-				return i;				
-		
-		return -1;
+		return childs.indexOf(child);
 	}
 	
 	private void removeChildReference( Hop parent, Hop child )

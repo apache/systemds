@@ -103,7 +103,7 @@ public class RewriteAlgebraicSimplification extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyDiagMatrixMult(hop, hi, i);            //e.g., diag(X%*%Y)->rowSums(X*t(Y)); 
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
-			hi = reorderMinusMatrixMult(hop, hi, i);            //e.g., (-t(X))%*%y->-(t(X)%*%y)  
+			//hi = reorderMinusMatrixMult(hop, hi, i);            //e.g., (-t(X))%*%y->-(t(X)%*%y)  
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			//hi = removeUnecessaryPPred(hop, hi, i);             //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			

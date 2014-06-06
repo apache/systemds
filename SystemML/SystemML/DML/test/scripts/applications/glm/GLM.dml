@@ -114,24 +114,33 @@ if (intercept_status == 1 | intercept_status == 2)
     scale_lambda [num_features, 1] = 0;
 }
 
-if (intercept_status == 2)  # shift/rescale X columns to mean 0, variance 1
+if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 {                           # Important assumption: X [, num_features] = ones_r
-    shift_X_cols = - t(colSums(X)) / num_records;
-    shift_X_cols [num_features, 1] = 0;
-    scale_X_cols_sq = (num_records - 1) / (t(colSums (X ^ 2)) - num_records * (shift_X_cols ^ 2));
-    scale_X_cols_sq [num_features, 1] = 1;
-    scale_X_cols = sqrt (scale_X_cols_sq);
-    transform_X_cols = matrix (0, rows = num_features, cols = num_features);
-    transform_X_cols [num_features, ] = t(shift_X_cols * scale_X_cols);
-    transform_X_cols = transform_X_cols + diag (scale_X_cols);
-    rowSums_X_sq = (X ^ 2) %*% scale_X_cols_sq + X %*% (2 * scale_X_cols_sq * shift_X_cols)
-        + sum (scale_X_cols_sq * shift_X_cols ^ 2);
+    avg_X_cols = t(colSums(X)) / num_records;
+    var_X_cols = (t(colSums (X ^ 2)) - num_records * (avg_X_cols ^ 2)) / (num_records - 1);
+    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+    scale_X [num_features, 1] = 1;
+    shift_X = - avg_X_cols * scale_X;
+    shift_X [num_features, 1] = 0;
+    rowSums_X_sq = (X ^ 2) %*% (scale_X ^ 2) + X %*% (2 * scale_X * shift_X) + sum (shift_X ^ 2);
 } else {
-    transform_X_cols = diag (matrix (1, rows = num_features, cols = 1));
+    scale_X = matrix (1, rows = num_features, cols = 1);
+    shift_X = matrix (0, rows = num_features, cols = 1);
     rowSums_X_sq = rowSums (X ^ 2);
 }
-### Henceforth we replace X with (X %*% transform_X_cols) and rowSums(X ^ 2) with
-### rowSums_X_sq in order to preserve the sparsity of X under the column-transform
+
+# Henceforth we replace "X" with "X %*% (SHIFT/SCALE TRANSFORM)" and rowSums(X ^ 2)
+# with "rowSums_X_sq" in order to preserve the sparsity of X under shift and scale.
+# The transform is then associatively applied to the other side of the expression,
+# and is rewritten via "scale_X" and "shift_X" as follows:
+#
+# ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
+# ssX_A  = diag (scale_X) %*% A;
+# ssX_A [num_features, ] = ssX_A [num_features, ] + t(shift_X) %*% A;
+#
+# tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
+# tssX_A = diag (scale_X) %*% A + shift_X %*% A [num_features, ];
 
 # Initialize other input-dependent parameters
 
@@ -188,7 +197,7 @@ if (is_supported == 1)
 
 sum_X_sq = sum (rowSums_X_sq);
 [beta, saturated_log_l, isNaN] = 
-    glm_initialize (X, transform_X_cols, sum_X_sq, Y, 
+    glm_initialize (X, scale_X, shift_X, sum_X_sq, Y, 
         distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean, intercept_status);
 if (isNaN == 0)
 {
@@ -198,7 +207,6 @@ if (isNaN == 0)
 trust_delta = 0.5 * sqrt (num_features) / max (sqrt (rowSums_X_sq));
 ###  max_trust_delta = trust_delta * 10000.0;
 g = matrix (0.0, rows = num_features, cols = 1);
-A = matrix (0.0, rows = num_features, cols = num_features);
 log_l = 0.0;
 deviance_nodisp = 0.0;
 new_deviance_nodisp = 0.0;
@@ -212,7 +220,9 @@ i_IRLS = 0;
 
 print ("BEGIN IRLS ITERATIONS...");
 
-all_linear_terms = X %*% (transform_X_cols %*% newbeta);
+ssX_newbeta = diag (scale_X) %*% newbeta;
+ssX_newbeta [num_features, ] = ssX_newbeta [num_features, ] + t(shift_X) %*% newbeta;
+all_linear_terms = X %*% ssX_newbeta;
 
 [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part
     (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
@@ -272,16 +282,19 @@ max_linear_term = max (all_linear_terms);
 print ("||y_residual|| = " + norm_y_residual + ";  ||y_var|| = " + norm_y_var + ";  ||link_grad|| = " + norm_link_grad + ";  max_linear_term = " + max_linear_term);
 print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs (link_grad)));                      
 */
-                      
-        g = - t(transform_X_cols) %*% (t(X) %*% g_Y);
+
+        gXY = - t(X) %*% g_Y;
+        g = diag (scale_X) %*% gXY + shift_X %*% gXY [num_features, ];
     }
     
     [z, neg_log_l_change_predicted, reached_trust_boundary] = 
-        get_CG_Steihaug_point (X, transform_X_cols, w, g, beta, lambda, trust_delta, max_iteration_CG);
+        get_CG_Steihaug_point (X, scale_X, shift_X, w, g, beta, lambda, trust_delta, max_iteration_CG);
 
     newbeta = beta + z;
     
-    all_linear_terms = X %*% (transform_X_cols %*% newbeta);
+    ssX_newbeta = diag (scale_X) %*% newbeta;
+    ssX_newbeta [num_features, ] = ssX_newbeta [num_features, ] + t(shift_X) %*% newbeta;
+    all_linear_terms = X %*% ssX_newbeta;
     
     [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part
         (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
@@ -333,11 +346,12 @@ if (converged_IRLS == 1) {
     print ("Did not converge.");
 }
 
+ssX_beta = diag (scale_X) %*% beta;
+ssX_beta [num_features, ] = ssX_beta [num_features, ] + t(shift_X) %*% beta;
 if (intercept_status == 2) {
-    beta_out = transform_X_cols %*% beta;
-    beta_out = append (beta_out, beta);
+    beta_out = append (ssX_beta, beta);
 } else {
-    beta_out = transform_X_cols %*% beta;
+    beta_out = ssX_beta;
 }
 
 if (nrow (beta_out) >= 1) {
@@ -356,7 +370,7 @@ write (beta_out, $B, format="text");
 
 #####  OVER-DISPERSION PART  #####
 
-all_linear_terms = X %*% (transform_X_cols %*% beta);
+all_linear_terms = X %*% ssX_beta;
 [g_Y, w] = glm_dist (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
     
 pearson_residual_sq = g_Y ^ 2 / w;
@@ -434,8 +448,8 @@ check_if_supported =
     }
 }
 
-glm_initialize = function (Matrix[double] X, Matrix[double] transform_X_cols, double sum_X_sq, Matrix[double] Y,
-                 int dist_type, double var_power, int link_type, double link_power, int icept_status)
+glm_initialize = function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X, double sum_X_sq,
+                 Matrix[double] Y, int dist_type, double var_power, int link_type, double link_power, int icept_status)
 return (Matrix[double] beta, double saturated_log_l, int isNaN)
 {
     saturated_log_l = 0.0;
@@ -516,11 +530,11 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
             glm_log_likelihood_part (linear_terms, Y, dist_type, var_power, link_type, link_power);
     }
     
-    beta = matrix (0.0, rows = ncol(transform_X_cols), cols = 1);
+    beta = matrix (0.0, rows = ncol(X), cols = 1);
     if (icept_status == 1 | icept_status == 2) {
         beta [nrow(beta), 1] = 1.0;
-    } else {  # avg (X %*% transform_X_cols %*% beta) = 1
-        beta = straightenX (X, transform_X_cols, sum_X_sq, 0.000001);  
+    } else {  # avg (X %*% ssX_transform %*% beta) = 1
+        beta = straightenX (X, scale_X, shift_X, sum_X_sq, 0.000001);  
     }
 
     if (link_type == 1 & link_power == 0.0) {
@@ -858,12 +872,12 @@ binomial_probability_two_column =
 # 0.5 z^T (X^T diag(w) X + diag (lambda)) z + (g + lambda * beta)^T z
 # under constraint:  ||z|| <= trust_delta.
 # See Alg. 7.2 on p. 171 of "Numerical Optimization" 2nd ed. by Nocedal and Wright
-# IN THE ABOVE, "X" IS UNDERSTOOD TO BE "X %*% transform_X_cols"; THIS IS INTRODUCED
-# BECAUSE SPARSE "X" AND "transform_X_cols" MAY YIELD DENSE "X %*% transform_X_cols"
+# IN THE ABOVE, "X" IS UNDERSTOOD TO BE "X %*% (SHIFT/SCALE TRANSFORM)"; this transform
+# is given separately because sparse "X" may become dense after applying the transform.
 #
 get_CG_Steihaug_point =
-    function (Matrix[double] X, Matrix[double] transform_X_cols, Matrix[double] w, Matrix[double] g,
-        Matrix[double] beta, Matrix[double] lambda, double trust_delta, int max_iter_CG)
+    function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X, Matrix[double] w,
+    Matrix[double] g, Matrix[double] beta, Matrix[double] lambda, double trust_delta, int max_iter_CG)
     return (Matrix[double] z, double neg_log_l_change, int reached_trust_boundary)
 {
     trust_delta_sq = trust_delta ^ 2;
@@ -888,9 +902,10 @@ get_CG_Steihaug_point =
     i_CG = 0;
     while (converged_CG == 0)
     {
-        temp_CG = w * (X %*% (transform_X_cols %*% p_CG));
-        temp_CG = (t(temp_CG) %*% X) %*% transform_X_cols;
-        q_CG = t(temp_CG) + (lambda * p_CG);
+        ssX_p_CG = diag (scale_X) %*% p_CG;
+        ssX_p_CG [size_CG, ] = ssX_p_CG [size_CG, ] + t(shift_X) %*% p_CG;
+        temp_CG = t(X) %*% (w * (X %*% ssX_p_CG));
+        q_CG = (lambda * p_CG) + diag (scale_X) %*% temp_CG + shift_X %*% temp_CG [size_CG, ];
         pq_CG = sum (p_CG * q_CG);
         if (pq_CG <= 0) {
             pp_CG = sum (p_CG * p_CG);  
@@ -960,27 +975,34 @@ get_trust_boundary_point =
 # We find z_LS such that ||X %*% TC %*% z_LS - 1|| -> MIN unconditionally,
 #     then scale it to compute  w = c * z_LS  such that
 #         sum(X %*% TC %*% w) = nrow(X).
-# Matrix TC is added because sparse X and TC may produce a dense X %*% TC.
+# Here "TC" is the shift/scale transform of X, added separately because  
+# applying it to a sparse X may produce a dense X %*% TC.
 straightenX =
-    function (Matrix[double] X, Matrix[double] TC, double X_TC_sq, double eps)
+    function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X,
+              double X_TC_sq, double eps)  # X_TC_sq replaces sum(X ^ 2)
     return   (Matrix[double] w)
 {
+    size_LS = ncol(X);
     eps_LS = eps * nrow(X);
-    lambda_LS = (0.000001 / ncol(TC)) * X_TC_sq;  # X_TC_sq replaces sum(X ^ 2)
-    w_X = t(TC) %*% t(colSums(X));
+    lambda_LS = (0.000001 / size_LS) * X_TC_sq;
+    
+    w_X = t(colSums(X));
+    w_X = diag (scale_X) %*% w_X + shift_X %*% w_X [size_LS, ];
 
     # BEGIN LEAST SQUARES
     
     r_LS = - w_X;
-    z_LS = matrix (0.0, rows = ncol(TC), cols = 1);
+    z_LS = matrix (0.0, rows = size_LS, cols = 1);
     p_LS = - r_LS;
     norm_r2_LS = sum (r_LS ^ 2);
     i_LS = 0;
-    while (i_LS < 50 & i_LS < ncol(TC) & norm_r2_LS >= eps_LS)
+    while (i_LS < 50 & i_LS < size_LS & norm_r2_LS >= eps_LS)
     {
-        temp_LS = X %*% (TC %*% p_LS);
-        temp_LS = (t(temp_LS) %*% X) %*% TC;
-        q_LS = t(temp_LS) + (lambda_LS * p_LS);
+        ssX_p_LS = diag (scale_X) %*% p_LS;
+        ssX_p_LS [size_LS, ] = ssX_p_LS [size_LS, ] + t(shift_X) %*% p_LS;
+        temp_LS = t(X) %*% (X %*% ssX_p_LS);
+        q_LS = (lambda_LS * p_LS) + diag (scale_X) %*% temp_LS + shift_X %*% temp_LS [size_LS, ];
+
         alpha_LS = norm_r2_LS / sum (p_LS * q_LS);
         z_LS = z_LS + alpha_LS * p_LS;
         old_norm_r2_LS = norm_r2_LS;

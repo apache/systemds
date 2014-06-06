@@ -13,8 +13,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -212,7 +216,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteDataColocation( pn, ec.getVariables() );
 			
 			// rewrite 6: rewrite set partition replication factor
-			rewriteSetPartitionReplicationFactor( pn, ec.getVariables() );
+			rewriteSetPartitionReplicationFactor( pn, partitionedMatrices, ec.getVariables() );
 			
 			// rewrite 7: rewrite set partition replication factor
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
@@ -285,7 +289,7 @@ public class OptimizerRuleBased extends Optimizer
 		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
 		_rkmax2 = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 		_lm   = OptimizerUtils.getLocalMemBudget();
-		_rm   = OptimizerUtils.getRemoteMemBudget(false); 		
+		_rm   = OptimizerUtils.getRemoteMemBudget(false); 	
 	}
 	
 	///////
@@ -991,10 +995,11 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @throws DMLRuntimeException 
 	 */
-	protected void rewriteSetPartitionReplicationFactor( OptNode n, LocalVariableMap vars ) 
+	protected void rewriteSetPartitionReplicationFactor( OptNode n, HashMap<String, PDataPartitionFormat> partitionedMatrices, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		boolean apply = false;
+		double sizeReplicated = 0;
 		int replication = ParForProgramBlock.WRITE_REPLICATION_FACTOR;
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
@@ -1006,8 +1011,35 @@ public class OptimizerRuleBased extends Optimizer
 		    && n.hasNestedPartitionReads(false) )		
 		{
 			apply = true;
-			replication = Math.max( ParForProgramBlock.WRITE_REPLICATION_FACTOR,
-					                Math.min(_rnk, MAX_REPLICATION_FACTOR_PARTITIONING) );
+			
+			//account for problem and cluster constraints
+			replication = (int)Math.min( _N, _rnk );
+			
+			//account for internal max constraint (note hadoop will warn if max > 10)
+			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
+			
+			//account for remaining hdfs capacity
+			try {
+				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+				long hdfsCapacityRemain = fs.getStatus().getRemaining();
+				long sizeInputs = 0; //sum of all input sizes (w/o replication)
+				for( String var : partitionedMatrices.keySet() )
+				{
+					MatrixObject mo = (MatrixObject)vars.get(var);
+					Path fname = new Path(mo.getFileName());
+					if( fs.exists( fname ) ) //non-existing (e.g., CP) -> small file
+						sizeInputs += fs.getContentSummary(fname).getLength();		
+				}
+				replication = (int) Math.min(replication, Math.floor(0.9*hdfsCapacityRemain/sizeInputs));
+				
+				//ensure at least replication 1
+				replication = Math.max( replication, ParForProgramBlock.WRITE_REPLICATION_FACTOR);
+				sizeReplicated = replication * sizeInputs;
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException("Failed to analyze remaining hdfs capacity.", ex);
+			}
 		}
 		
 		//modify the runtime plan 
@@ -1015,9 +1047,9 @@ public class OptimizerRuleBased extends Optimizer
 			pfpb.setPartitionReplicationFactor( replication );
 		
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'set partition replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
+		LOG.debug(getOptMode()+" OPT: rewrite 'set partition replication factor' - result="+apply+
+				                 ((apply)?" ("+replication+", "+toMB(sizeReplicated)+")":"") );
 	}
-
 
 	///////
 	//REWRITE set export replication factor
@@ -1031,6 +1063,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * NOTE: this rewrite requires 'set execution strategy' to be executed. 
 	 *  
 	 * @param n
+	 * @param partitionedMatrices 
 	 * @throws DMLRuntimeException 
 	 */
 	protected void rewriteSetExportReplicationFactor( OptNode n, LocalVariableMap vars ) 
@@ -1042,10 +1075,16 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
+		//decide on the replication factor 
 		if( n.getExecType()==ExecType.MR )		
 		{
 			apply = true;
-			replication = (int)Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_EXPORT) );
+			
+			//account for problem and cluster constraints
+			replication = (int)Math.min( _N, _rnk );
+			
+			//account for internal max constraint (note hadoop will warn if max > 10)
+			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
 		}
 		
 		//modify the runtime plan 

@@ -127,7 +127,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			super.rewriteDataColocation( pn, ec.getVariables() );
 			
 			// rewrite 6: rewrite set partition replication factor
-			super.rewriteSetPartitionReplicationFactor( pn, ec.getVariables() );
+			super.rewriteSetPartitionReplicationFactor( pn, partitionedMatrices, ec.getVariables() );
 			
 			// rewrite 7: rewrite set partition replication factor
 			super.rewriteSetExportReplicationFactor( pn, ec.getVariables() );

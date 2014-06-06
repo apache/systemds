@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
+import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -101,6 +102,37 @@ public class LibMatrixAgg
 		//		          "("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
 		//		          "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+"), ("+aggCorr.getNonZeros()+","+aggCorr.isInSparseFormat()+") " +
 		//		          "in "+time.stop()+"ms.");
+	}
+	
+	/**
+	 * Core incremental matrix aggregate (ak+) as used for uack+ and acrk+.
+	 * Embedded correction values.
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @throws DMLRuntimeException
+	 */
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, AggregateOperator aop) 
+		throws DMLRuntimeException
+	{	
+		//Timing time = new Timing(true);
+		//boolean saggVal = aggVal.isInSparseFormat(); 
+		//long naggVal = aggVal.getNonZeros();
+		
+		//core aggregation
+		boolean lastRowCorr = (aop.correctionLocation == CorrectionLocationType.LASTROW);
+		boolean lastColCorr = (aop.correctionLocation == CorrectionLocationType.LASTCOLUMN);
+		if( !in.sparse && lastRowCorr )
+			aggregateBinaryMatrixLastRowDenseGeneric(in, aggVal);
+		else if( in.sparse && lastRowCorr )
+			aggregateBinaryMatrixLastRowSparseGeneric(in, aggVal);
+		else if( !in.sparse && lastColCorr )
+			aggregateBinaryMatrixLastColDenseGeneric(in, aggVal);
+		else //if( in.sparse && lastColCorr )
+			aggregateBinaryMatrixLastColSparseGeneric(in, aggVal);
+		
+		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.getNonZeros()+","+in.sparse+"), ("+naggVal+","+saggVal+") -> " +
+		//                   "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -390,6 +422,172 @@ public class LibMatrixAgg
 		//note: nnz of aggVal/aggCorr maintained internally 
 		aggVal.examSparsity();
 		aggCorr.examSparsity();
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @throws DMLRuntimeException
+	 */
+	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) 
+			throws DMLRuntimeException
+	{
+		if( in.denseBlock==null || in.isEmptyBlock(false) )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int cix = (m-1)*n;
+		
+		double[] a = in.getDenseArray();
+		
+		KahanObject buffer = new KahanObject(0, 0);
+		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
+		
+		//incl implicit nnz maintenance
+		for(int i=0, ix=0; i<m-1; i++)
+			for(int j=0; j<n; j++, ix++)
+			{
+				buffer._sum = aggVal.quickGetValue(i, j);
+				buffer._correction = aggVal.quickGetValue(m-1, j);
+				akplus.execute(buffer, a[ix], a[cix+j]);
+				aggVal.quickSetValue(i, j, buffer._sum);
+				aggVal.quickSetValue(m-1, j, buffer._correction);
+			}
+		
+		//note: nnz of aggVal maintained internally 
+		aggVal.examSparsity();
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @throws DMLRuntimeException
+	 */
+	private static void aggregateBinaryMatrixLastRowSparseGeneric(MatrixBlock in, MatrixBlock aggVal) 
+			throws DMLRuntimeException
+	{
+		//sparse-safe operation
+		if( in.sparseRows==null || in.isEmptyBlock(false) )
+			return;
+		
+		SparseRow[] a = in.getSparseRows();
+		
+		KahanObject buffer1 = new KahanObject(0, 0);
+		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
+		
+		final int m = in.rlen;
+		final int rlen = Math.min(a.length, m);
+		
+		for( int i=0; i<rlen-1; i++ )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				int[] aix = arow.getIndexContainer();
+				double[] avals = arow.getValueContainer();
+				
+				for( int j=0; j<alen; j++ )
+				{
+					int jix = aix[j];
+					double corr = in.quickGetValue(m-1, jix);
+					buffer1._sum        = aggVal.quickGetValue(i, jix);
+					buffer1._correction = aggVal.quickGetValue(m-1, jix);
+					akplus.execute(buffer1, avals[j], corr);
+					aggVal.quickSetValue(i, jix, buffer1._sum);
+					aggVal.quickSetValue(m-1, jix, buffer1._correction);
+				}
+			}
+		}
+		
+		//note: nnz of aggVal/aggCorr maintained internally 
+		aggVal.examSparsity(); 
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @throws DMLRuntimeException
+	 */
+	private static void aggregateBinaryMatrixLastColDenseGeneric(MatrixBlock in, MatrixBlock aggVal) 
+			throws DMLRuntimeException
+	{
+		if( in.denseBlock==null || in.isEmptyBlock(false) )
+			return;
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		
+		double[] a = in.getDenseArray();
+		
+		KahanObject buffer = new KahanObject(0, 0);
+		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
+		
+		//incl implicit nnz maintenance
+		for(int i=0, ix=0; i<m; i++, ix+=n)
+			for(int j=0; j<n-1; j++)
+			{
+				buffer._sum = aggVal.quickGetValue(i, j);
+				buffer._correction = aggVal.quickGetValue(i, n-1);
+				akplus.execute(buffer, a[ix+j], a[ix+j+1]);
+				aggVal.quickSetValue(i, j, buffer._sum);
+				aggVal.quickSetValue(i, n-1, buffer._correction);
+			}
+		
+		//note: nnz of aggVal maintained internally 
+		aggVal.examSparsity();
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param aggVal
+	 * @throws DMLRuntimeException
+	 */
+	private static void aggregateBinaryMatrixLastColSparseGeneric(MatrixBlock in, MatrixBlock aggVal) 
+			throws DMLRuntimeException
+	{
+		//sparse-safe operation
+		if( in.sparseRows==null || in.isEmptyBlock(false) )
+			return;
+		
+		SparseRow[] a = in.getSparseRows();
+		
+		KahanObject buffer1 = new KahanObject(0, 0);
+		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
+		
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int rlen = Math.min(a.length, m);
+		
+		for( int i=0; i<rlen; i++ )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				int[] aix = arow.getIndexContainer();
+				double[] avals = arow.getValueContainer();
+				
+				for( int j=0; j<alen && aix[j]<n-1; j++ )
+				{
+					int jix = aix[j];
+					double corr = in.quickGetValue(i, n-1);
+					buffer1._sum        = aggVal.quickGetValue(i, jix);
+					buffer1._correction = aggVal.quickGetValue(i, n-1);
+					akplus.execute(buffer1, avals[j], corr);
+					aggVal.quickSetValue(i, jix, buffer1._sum);
+					aggVal.quickSetValue(i, n-1, buffer1._correction);
+				}
+			}
+		}
+		
+		//note: nnz of aggVal/aggCorr maintained internally 
+		aggVal.examSparsity(); 
 	}
 	
 	/**

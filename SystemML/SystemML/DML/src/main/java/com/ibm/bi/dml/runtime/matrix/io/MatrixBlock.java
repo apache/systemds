@@ -3064,19 +3064,26 @@ public class MatrixBlock extends MatrixValue
 		KahanObject buffer=new KahanObject(0, 0);
 		
 		if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)
-		{
-			for(int r=0; r<rlen-1; r++)
-				for(int c=0; c<clen; c++)
-				{
-					buffer._sum=this.quickGetValue(r, c);
-					buffer._correction=this.quickGetValue(r+1, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
-							newWithCor.quickGetValue(r+1, c));
-					quickSetValue(r, c, buffer._sum);
-					quickSetValue(r+1, c, buffer._correction);
-				}
-			
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+		{			
+			if( aggOp.increOp.fn instanceof KahanPlus )
+			{
+				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, aggOp);
+			}
+			else
+			{
+				for(int r=0; r<rlen-1; r++)
+					for(int c=0; c<clen; c++)
+					{
+						buffer._sum=this.quickGetValue(r, c);
+						buffer._correction=this.quickGetValue(r+1, c);
+						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
+								newWithCor.quickGetValue(r+1, c));
+						quickSetValue(r, c, buffer._sum);
+						quickSetValue(r+1, c, buffer._correction);
+					}
+			}	
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
@@ -3093,16 +3100,25 @@ public class MatrixBlock extends MatrixValue
 						quickSetValue(r, 1, newMaxValue);
 					}
 				}
-			}else{
-				for(int r=0; r<rlen; r++)
-					for(int c=0; c<clen-1; c++)
-					{
-						buffer._sum=this.quickGetValue(r, c);
-						buffer._correction=this.quickGetValue(r, c+1);
-						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
-						quickSetValue(r, c, buffer._sum);
-						quickSetValue(r, c+1, buffer._correction);
-					}
+			}
+			else
+			{
+				if(aggOp.increOp.fn instanceof KahanPlus)
+				{
+					LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, aggOp);
+				}
+				else
+				{
+					for(int r=0; r<rlen; r++)
+						for(int c=0; c<clen-1; c++)
+						{
+							buffer._sum=this.quickGetValue(r, c);
+							buffer._correction=this.quickGetValue(r, c+1);
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
+							quickSetValue(r, c, buffer._sum);
+							quickSetValue(r, c+1, buffer._correction);
+						}
+				}
 			}
 		}/*else if(aggOp.correctionLocation==0)
 		{

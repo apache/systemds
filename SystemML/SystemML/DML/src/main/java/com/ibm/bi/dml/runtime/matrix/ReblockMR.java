@@ -96,6 +96,11 @@ public class ReblockMR
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 
+		//disable automatic tasks timeouts and speculative task exec
+		job.setInt("mapred.task.timeout", 0);			
+		job.setMapSpeculativeExecution(false);
+		
+		//enable jvm reuse (based on SystemML configuration)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);
 		

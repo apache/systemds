@@ -9,9 +9,8 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -36,11 +35,10 @@ public class ReblockBuffer
 	
 	//default buffer size: 5M -> 5M * 3x8B = 120MB 
 	public static final int DEFAULT_BUFFER_SIZE = 5000000;
-	public static final int BLOCK_THRESHOLD = 16;
-	
-	private long[]   _buffRows = null;
-	private long[]   _buffCols = null;
-	private double[] _buffVals = null;
+
+	//buffer <long rowindex, long colindex, long value>
+	//(pure long buffer for sort on flush) 
+	private long[][] _buff = null;
 	
 	private int _bufflen = -1;
 	private int _count = -1;
@@ -62,9 +60,7 @@ public class ReblockBuffer
 		_bufflen = buffersize;
 		_count = 0;
 		
-		_buffRows = new long[ _bufflen ];
-		_buffCols = new long[ _bufflen ];
-		_buffVals = new double[ _bufflen ];
+		_buff = new long[ _bufflen ][3];
 		
 		_rlen = rlen;
 		_clen = clen;
@@ -80,9 +76,10 @@ public class ReblockBuffer
 	 */
 	public void appendCell( long r, long c, double v )
 	{
-		_buffRows[ _count ] = r;
-		_buffCols[ _count ] = c;
-		_buffVals[ _count ] = v;
+		long tmp = Double.doubleToRawLongBits(v);
+		_buff[_count][0] = r;
+		_buff[_count][1] = c;
+		_buff[_count][2] = tmp;
 		_count++;
 	}
 	
@@ -104,9 +101,10 @@ public class ReblockBuffer
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
-				_buffRows[ _count ] = r_offset + cell.i;
-				_buffCols[ _count ] = c_offset + cell.j;
-				_buffVals[ _count ] = cell.v;
+				long tmp = Double.doubleToRawLongBits(cell.v);
+				_buff[_count][0] = r_offset + cell.i;
+				_buff[_count][1] = c_offset + cell.j;
+				_buff[_count][2] = tmp;
 				_count++;
 				
 				//check and flush if required
@@ -125,9 +123,10 @@ public class ReblockBuffer
 					double val = inBlk.getValueDenseUnsafe(i, j);
 					if( val !=0 )
 					{
-						_buffRows[ _count ] = r_offset + i;
-						_buffCols[ _count ] = c_offset + j;
-						_buffVals[ _count ] = val;
+						long tmp = Double.doubleToRawLongBits(val);
+						_buff[_count][0] = r_offset + i;
+						_buff[_count][1] = c_offset + j;
+						_buff[_count][2] = tmp;
 						_count++;
 						
 						//check and flush if required
@@ -148,7 +147,6 @@ public class ReblockBuffer
 		return _bufflen;
 	}
 	
-	
 	/**
 	 * 
 	 * @param index
@@ -161,68 +159,68 @@ public class ReblockBuffer
 		if( _count == 0 )
 			return;
 		
-		//Step 1) scan for number of created blocks
-		HashSet<MatrixIndexes> IX = new HashSet<MatrixIndexes>();
-		MatrixIndexes tmpIx = new MatrixIndexes();
+		//Step 1) sort reblock buffer (blockwise, no in-block sorting!)
+		Arrays.sort( _buff, 0 ,_count, new ReblockBufferComparator() );
+		
+		//Step 2) scan for number of created blocks
+		long numBlocks = 0; //number of blocks in buffer
+		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buffRows[i], _brlen);
-			long bj = getBlockIndex(_buffCols[i], _bclen);
+			long bi = getBlockIndex(_buff[i][0], _brlen);
+			long bj = getBlockIndex(_buff[i][1], _bclen);
 			
-			tmpIx.setIndexes(bi, bj);
-			if( !IX.contains(tmpIx) ){ //probe
-				IX.add(tmpIx);
-				tmpIx = new MatrixIndexes();
+			//switch to next block
+			if( bi != cbi || bj != cbj ) {
+				cbi = bi;
+				cbj = bj;
+				numBlocks++;
 			}
 		}
 		
-		//Step 2) decide on intermediate representation
-		long blockedSize = ((long)IX.size())*_brlen*4 + 12*_count; //worstcase
-		long cellSize = 24 * _count;
-		boolean blocked = ( IX.size()<=BLOCK_THRESHOLD && blockedSize<=cellSize );
+		//Step 3) decide on intermediate representation (for entire buffer)
+		//decision based on binarycell vs binaryblock_ultrasparse (worstcase)
+		long blockedSize = 16 * numBlocks + 16 * _count; //<long,long>,#<int,int,double>
+		long cellSize = 24 * _count; //#<long,long>,<double>
+		boolean blocked = ( blockedSize <= cellSize );
 		
-		//Step 3)
+		//Step 4) output blocks / binary cell (one-at-a-time)
 		TaggedAdaptivePartialBlock outTVal = new TaggedAdaptivePartialBlock();
 		AdaptivePartialBlock outVal = new AdaptivePartialBlock();
+		MatrixIndexes tmpIx = new MatrixIndexes();
 		outTVal.setTag(index);
 		outTVal.setBaseObject(outVal); //setup wrapper writables
 		if( blocked ) //output binaryblock
 		{
 			//create intermediate blocks
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/IX.size());					      
-			HashMap<MatrixIndexes,MatrixBlock> blocks = new HashMap<MatrixIndexes,MatrixBlock>();
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/numBlocks);
+			MatrixBlock tmpBlock = new MatrixBlock();
 			
-			for( MatrixIndexes ix : IX )
-			{
-				blocks.put(ix, new MatrixBlock(
-						Math.min(_brlen, (int)(_rlen-(ix.getRowIndex()-1)*_brlen)),
-						Math.min(_bclen, (int)(_clen-(ix.getColumnIndex()-1)*_bclen)),
-						sparse));
-			}
-			
-			//put values into blocks
+			//put values into block and output
+			cbi = -1; cbj = -1; //current block indexes
 			for( int i=0; i<_count; i++ )
 			{
-				long bi = getBlockIndex(_buffRows[i], _brlen);
-				long bj = getBlockIndex(_buffCols[i], _bclen);
-				int ci = getIndexInBlock(_buffRows[i], _brlen);
-				int cj = getIndexInBlock(_buffCols[i], _bclen);
-				tmpIx.setIndexes(bi, bj);
-				MatrixBlock blk = blocks.get(tmpIx);
-				blk.appendValue(ci, cj, _buffVals[i]); //sort on output
+				long bi = getBlockIndex(_buff[i][0], _brlen);
+				long bj = getBlockIndex(_buff[i][1], _bclen);
+				
+				//output block and switch to next index pair
+				if( bi != cbi || bj != cbj ) {
+					outputBlock(out, tmpIx, outTVal, tmpBlock);
+					cbi = bi;
+					cbj = bj;					
+					tmpIx.setIndexes(bi, bj);
+					tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)),
+							       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
+				}
+				
+				int ci = getIndexInBlock(_buff[i][0], _brlen);
+				int cj = getIndexInBlock(_buff[i][1], _bclen);
+				double tmp = Double.longBitsToDouble(_buff[i][2]);
+				tmpBlock.appendValue(ci, cj, tmp); 
 			}
 			
-			//output blocks
-			for( Entry<MatrixIndexes,MatrixBlock> e : blocks.entrySet() )
-			{
-				MatrixIndexes ix = e.getKey();
-				MatrixBlock blk = e.getValue();
-				if( blk.isInSparseFormat() )
-					blk.sortSparseRows();
-				outVal.set(blk); //in outTVal;
-				out.collect(ix, outTVal);
-			}
-			
+			//output last block 
+			outputBlock(out, tmpIx, outTVal, tmpBlock);
 		}
 		else //output binarycell
 		{
@@ -230,12 +228,13 @@ public class ReblockBuffer
 			outVal.set(tmpVal);
 			for( int i=0; i<_count; i++ )
 			{
-				long bi = getBlockIndex(_buffRows[i], _brlen);
-				long bj = getBlockIndex(_buffCols[i], _bclen);
-				int ci = getIndexInBlock(_buffRows[i], _brlen);
-				int cj = getIndexInBlock(_buffCols[i], _bclen);
+				long bi = getBlockIndex(_buff[i][0], _brlen);
+				long bj = getBlockIndex(_buff[i][1], _bclen);
+				int ci = getIndexInBlock(_buff[i][0], _brlen);
+				int cj = getIndexInBlock(_buff[i][1], _bclen);
+				double tmp = Double.longBitsToDouble(_buff[i][2]);
 				tmpIx.setIndexes(bi, bj);
-				tmpVal.set(ci, cj, _buffVals[i]); //in outVal, in outTVal
+				tmpVal.set(ci, cj, tmp); //in outVal, in outTVal
 				out.collect(tmpIx, outTVal);
 			}
 		}
@@ -260,8 +259,54 @@ public class ReblockBuffer
 	 * @param blen
 	 * @return
 	 */
-	public static int getIndexInBlock( long ix, int blen )
+	private static int getIndexInBlock( long ix, int blen )
 	{
 		return (int)((ix-1)%blen);
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @param key
+	 * @param value
+	 * @param block
+	 * @throws IOException
+	 */
+	private static void outputBlock( OutputCollector<Writable, Writable> out, MatrixIndexes key, TaggedAdaptivePartialBlock value, MatrixBlock block ) 
+		throws IOException
+	{
+		//skip output of unassigned blocks
+		if( key.getRowIndex() == -1 || key.getColumnIndex() == -1 )
+			return;
+		
+		//sort sparse rows due to blockwise buffer sort and append  
+		if( block.isInSparseFormat() )
+			block.sortSparseRows();
+		
+		//output block
+		value.getBaseObject().set(block);
+		out.collect(key, value);
+	}
+	
+	
+	
+	/**
+	 * Comparator to sort the reblock buffer by block indexes, where we 
+	 * compute the block indexes on-the-fly based on the given cell indexes.
+	 * 
+	 */
+	private class ReblockBufferComparator implements Comparator<long[]> 
+	{	
+		@Override
+		public int compare(long[] arg0, long[] arg1) 
+		{
+			long bi0 = getBlockIndex( arg0[0], _brlen );
+			long bj0 = getBlockIndex( arg0[1], _bclen );
+			long bi1 = getBlockIndex( arg1[0], _brlen );
+			long bj1 = getBlockIndex( arg1[1], _bclen );
+			
+			return ( bi0 < bi1 || (bi0 == bi1 && bj0 < bj1) ) ? -1 :
+                   (( bi0 == bi1 && bj0 == bj1)? 0 : 1);		
+		}		
 	}
 }

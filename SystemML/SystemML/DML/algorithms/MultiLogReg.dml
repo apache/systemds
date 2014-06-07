@@ -17,9 +17,6 @@
 # X     String  ---     Location to read the matrix of feature vectors
 # Y     String  ---     Location to read the matrix with category labels
 # B     String  ---     Location to store estimated regression parameters (the betas)
-# test  Int     0       0 = just compute the betas; 1 = test them with Xt and Yt
-# Xt    String  "Xt"    location to read the test feature vectors
-# Yt    String  "Yt"    location to read the test category labels
 # icpt  Int     0       Intercept presence, shifting and rescaling X columns:
 #                       0 = no intercept, no shifting, no rescaling;
 #                       1 = add intercept, but neither shift nor rescale X;
@@ -30,22 +27,17 @@
 # mii   Int     0       max. number of inner (conjugate gradient) iterations, 0 = no max
 # --------------------------------------------------------------------------------------------
 
-
-$test = 0;
-$Xt   = "Xt";
-$Yt   = "Yt";
 $icpt = 0;
 $reg  = 0.0;
 $tol  = 0.000001;
 $moi  = 100;
 $mii  = 0;
 
-
 # The largest label represents the baseline category; if label -1 or 0 is present, then it is the baseline.
 # How to invoke this dml script?
 # Example:
-# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs test=1 icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
-#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 Xt=INPUT_DIR/Xt123 Yt=INPUT_DIR/Yt123 B=OUTPUT_DIR/B123
+# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
+#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123
 
 print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
 print ("Reading X...");
@@ -53,7 +45,6 @@ X = read ($X);
 print ("Reading Y...");
 Y_vec = read ($Y);
 
-is_test = $test;
 intercept_status = $icpt;
 tol = 0.0 + $tol;
 maxiter = $moi;
@@ -69,36 +60,13 @@ psi = 0.1;
 
 N = nrow (X);
 D = ncol (X);
-
-# Read the test data files, if required
-if (is_test == 1) {
-    print ("Reading Xt...");
-    Xt = read ($Xt);
-    print ("Reading Yt...");
-    Yt_vec = read ($Yt);
-} else {
-    Xt     = matrix (0.0, rows = 1, cols = D);
-    Yt_vec = matrix (0.0, rows = 1, cols = 1);
-}
-Nt = nrow (Xt);
-ones_N      = matrix (1.0, rows = N , cols = 1  );
-ones_Nt     = matrix (1.0, rows = Nt, cols = 1  );
-
-
-################################
-# Remark - Some Useful Rewrites:
-# sum (A %*% B) = sum (t(colSums(A)) * rowSums(B))
-# X * (u %*% t(v)) = diag(u) %*% X %*% diag(v)
-# X + (u %*% t(v)) = append(X, u) %*% t(append(I, v)), where I = diag(ones)
-# rowSums ((X + u %*% t(v)) ^ 2) = rowSums (X ^ 2) + 2 * u * (X %*% v) + (u ^ 2) * sum (v ^ 2)
-################################
+ones_N = matrix (1.0, rows = N, cols = 1);
 
 
 # Introduce the intercept, shift and rescale the columns of X if needed
 if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
 {
-    X  = append (X,  ones_N);
-    Xt = append (Xt, ones_Nt);
+    X = append (X, ones_N);
     D = ncol (X);
 }
 
@@ -108,33 +76,39 @@ if (intercept_status == 1 | intercept_status == 2)
     scale_lambda [D, 1] = 0;
 }
 
-if (intercept_status == 2)  # shift/rescale X columns to mean 0, variance 1
-{                           # Important assumption: X [, D] = ones_N; Xt [, D] = ones_Nt
-    shift_X_cols = - t(colSums(X)) / N;
-    shift_X_cols [D, 1] = 0;
-    scale_X_cols_sq = (N - 1) / (t(colSums (X ^ 2)) - N * (shift_X_cols ^ 2));
-    scale_X_cols_sq [D, 1] = 1;
-    scale_X_cols = sqrt (scale_X_cols_sq);
-    transform_X_cols = matrix (0, rows = D, cols = D);
-    transform_X_cols [D, ] = t(shift_X_cols * scale_X_cols);
-    transform_X_cols = transform_X_cols + diag (scale_X_cols);
-    rowSums_X_sq = (X ^ 2) %*% scale_X_cols_sq + X %*% (2 * scale_X_cols_sq * shift_X_cols)
-        + sum (scale_X_cols_sq * shift_X_cols ^ 2);
-    is_transform_X_cols = 1;
+if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
+{                           # Important assumption: X [, D] = ones_N
+    avg_X_cols = t(colSums(X)) / N;
+    var_X_cols = (t(colSums (X ^ 2)) - N * (avg_X_cols ^ 2)) / (N - 1);
+    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+    scale_X [D, 1] = 1;
+    shift_X = - avg_X_cols * scale_X;
+    shift_X [D, 1] = 0;
+    rowSums_X_sq = (X ^ 2) %*% (scale_X ^ 2) + X %*% (2 * scale_X * shift_X) + sum (shift_X ^ 2);
 } else {
-    transform_X_cols = diag (matrix (1, rows = D, cols = 1));
+    scale_X = matrix (1, rows = D, cols = 1);
+    shift_X = matrix (0, rows = D, cols = 1);
     rowSums_X_sq = rowSums (X ^ 2);
-    is_transform_X_cols = 0;
 }
-###  Whenever is_transform_X_cols == 1, we replaced X with (X %*% transform_X_cols)
-###  and rowSums(X ^ 2) with rowSums_X_sq in order to preserve the sparsity of X
 
-# Convert "Y_vec" and "Yt_vec" into indicator matrices
+# Henceforth we replace "X" with "X %*% (SHIFT/SCALE TRANSFORM)" and rowSums(X ^ 2)
+# with "rowSums_X_sq" in order to preserve the sparsity of X under shift and scale.
+# The transform is then associatively applied to the other side of the expression,
+# and is rewritten via "scale_X" and "shift_X" as follows:
+#
+# ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
+# ssX_A  = diag (scale_X) %*% A;
+# ssX_A [D, ] = ssX_A [D, ] + t(shift_X) %*% A;
+#
+# tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
+# tssX_A = diag (scale_X) %*% A + shift_X %*% A [D, ];
+
+# Convert "Y_vec" into indicator matrice:
 if (min (Y_vec) <= 0) { 
     # Category labels "0", "-1" etc. are converted into the largest label
     max_y = max (Y_vec);
     Y_vec  = Y_vec  + (- Y_vec  + max_y + 1) * ppred (Y_vec , 0.0, "<=");
-    Yt_vec = Yt_vec + (- Yt_vec + max_y + 1) * ppred (Yt_vec, 0.0, "<=");
 }
 Y = table (seq (1, N, 1), Y_vec);
 K = ncol (Y) - 1;   # The number of  non-baseline categories
@@ -144,22 +118,21 @@ ones_K      = matrix (1.0, rows = 1 , cols = K  );
 ones_Kplus1 = matrix (1.0, rows = 1 , cols = K+1);
 zeros_DK    = matrix (0.0, rows = D , cols = K  );
 zeros_N     = matrix (0.0, rows = N , cols = 1  );
-seqs_Nt_Kplus1 = ones_Nt %*% t(seq (1, K+1));
 
 lambda = (scale_lambda %*% ones_K) * $reg;
 delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
-B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% transform_X_cols %*% B
+B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B
 LT = matrix (0.0, rows = N, cols = K);  ### P_raw = exp (LT);
 P  = matrix (1.0, rows = N, cols = K);  ### P_denom = 1.0 + rowSums (P_raw);
 P = P / (K + 1);                        ### P = P_raw / (P_denom %*% ones_K);
 obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (P_denom)) + 0.5 * sum (lambda * (B ^ 2));
 
-if (is_transform_X_cols == 1) {
-    Grad = t(transform_X_cols) %*% (t(X) %*% (P - Y)) + lambda * B;
-} else {
-    Grad = t(X) %*% (P - Y) + lambda * B;
+Grad = t(X) %*% (P - Y);
+if (intercept_status == 2) {
+    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 }
+Grad = Grad + lambda * B;
 norm_Grad = sqrt (sum (Grad ^ 2));
 norm_Grad_initial = norm_Grad;
 
@@ -179,8 +152,8 @@ while (! converge)
 	# SOLVE TRUST REGION SUB-PROBLEM
 	S = zeros_DK;
 	R = - Grad;
-	V = R;     # d -> V
-	delta2 = delta * delta;
+	V = R;
+	delta2 = delta ^ 2;
 	inneriter = 0;
 	norm_R2 = sum (R ^ 2);
 	innerconverge = (sqrt (norm_R2) <= psi * norm_Grad);
@@ -189,13 +162,19 @@ while (! converge)
 	while (! innerconverge)
 	{
 	    inneriter = inneriter + 1;
-        if (is_transform_X_cols == 1) {
-            Q = P * (X %*% (transform_X_cols %*% V));
-            HV = t(transform_X_cols) %*% (t(X) %*% (Q - P * (rowSums (Q) %*% ones_K))) + lambda * V;
-        } else {
-            Q = P * (X %*% V);
-            HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K)) + lambda * V;
+	    
+	    if (intercept_status == 2) {
+	        ssX_V = diag (scale_X) %*% V;
+	        ssX_V [D, ] = ssX_V [D, ] + t(shift_X) %*% V;
+	    } else {
+	        ssX_V = V;
+	    }
+        Q = P * (X %*% ssX_V);
+        HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K));
+        if (intercept_status == 2) {
+            HV = diag (scale_X) %*% HV + shift_X %*% HV [D, ];
         }
+        HV = HV + lambda * V;
 		alpha = norm_R2 / sum (V * HV);
 		Snew = S + alpha * V;
 		norm_Snew2 = sum (Snew ^ 2);
@@ -232,25 +211,21 @@ while (! converge)
 	gs = sum (S * Grad);
 	qk = - 0.5 * (gs - sum (S * R));
 	B_new = B + S;
-	
-	if (is_transform_X_cols == 1) {
-        LT_new = X %*% (transform_X_cols %*% B_new);
+	if (intercept_status == 2) {
+	    ssX_B_new = diag (scale_X) %*% B_new;
+	    ssX_B_new [D, ] = ssX_B_new [D, ] + t(shift_X) %*% B_new;
     } else {
-        LT_new = X %*% B_new;
+        ssX_B_new = B_new;
     }
+    LT_new = X %*% ssX_B_new;
     P_raw_new = exp (LT_new);
     P_denom_new = 1.0 + rowSums (P_raw_new);
     P_new = P_raw_new / (P_denom_new %*% ones_K);
     obj_new = - sum (Y * LT_new) + sum (log (P_denom_new)) + 0.5 * sum (lambda * (B_new ^ 2));
 	
-	# Consider following Vikas's lead and updating LT_new in the inner loop
-	
-	
-	#######################################
-	###        C A U T I O N  !         ###
-	###  BOTH obj AND obj_new ARE BIG,  ###
-	###  BUT THEIR DIFFERENCE IS SMALL  ### 
-	#######################################
+	# Consider updating LT_new in the inner loop
+	# Consider the big "obj" and "obj_new" rounding-off their small difference below:
+
 	actred = (obj - obj_new);
 	
 	rho = actred / qk;
@@ -275,11 +250,11 @@ while (! converge)
 		B = B_new;
 		LT = LT_new;
 		P = P_new;
-		if (is_transform_X_cols == 1) {
-		    Grad = t(transform_X_cols) %*% (t(X) %*% (P - Y)) + lambda * B;
-		} else {
-		    Grad = t(X) %*% (P - Y) + lambda * B;
+		Grad = t(X) %*% (P - Y);
+		if (intercept_status == 2) {
+		    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 		}
+		Grad = Grad + lambda * B;
 		norm_Grad = sqrt (sum (Grad ^ 2));
 		obj = obj_new;
 	}
@@ -308,24 +283,12 @@ while (! converge)
 	print ("     Rho = "        + rho);
 	print ("     OuterIter =  " + iter);
 	print ("     Converge =  "  + converge);
-
-	if (is_test == 1) {
-	    LText_test = matrix (0.0, rows = Nt, cols = K+1);
-	    if (is_transform_X_cols == 1) {
-	        LText_test [, 1:K] = Xt %*% (transform_X_cols %*% B);
-	    } else {
-	        LText_test [, 1:K] = Xt %*% B;
-	    }
-	    Yt_vec_predicted = rowSums (seqs_Nt_Kplus1 
-		    * ppred (LText_test, rowMaxs (LText_test) %*% ones_Kplus1, "=="));
-	    correct = sum (ppred (Yt_vec_predicted, Yt_vec, "=="));
-	    accuracy = correct * 100.0 / Nt;
-        print ("     Accuracy =  "  + accuracy);
-        print ("     Correct =  "   + correct);
-	}
 } 
 
-if (is_transform_X_cols == 1) {
-    B_out = transform_X_cols %*% B;
+if (intercept_status == 2) {
+    B_out = diag (scale_X) %*% B;
+    B_out [D, ] = B_out [D, ] + t(shift_X) %*% B;
+} else {
+    B_out = B;
 }
 writeMM (B_out, $B);

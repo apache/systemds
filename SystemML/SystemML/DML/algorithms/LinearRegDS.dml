@@ -51,42 +51,72 @@ zero_cell = matrix (0, rows = 1, cols = 1);
 
 # Introduce the intercept, shift and rescale the columns of X if needed
 
-shift_X_cols = matrix (0, rows = 1, cols = m);
-scale_X_cols = matrix (1, rows = 1, cols = m);
-scale_lambda = matrix (1, rows = 1, cols = m);
-
-if (intercept_status == 2) {
-# Shift and scale the columns of X to mean = 0, variance = 1
-    shift_X_cols = - colSums(X) / n;
-    var_X_cols = (colSums (X ^ 2) - n * shift_X_cols ^ 2) / (n - 1);
-    is_unsafe = ppred (var_X_cols, 0.0, "<=");
-    scale_X_cols = 1 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
-    X = (X + ones_n %*% shift_X_cols) * (ones_n %*% scale_X_cols);
-}
-
 m_ext = m;
-if (intercept_status == 1 | intercept_status == 2) {
-# Add the intercept column to X
+if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
+{
     X = append (X, ones_n);
     m_ext = ncol (X);
-    shift_X_cols = append (shift_X_cols, zero_cell);
-    scale_X_cols = append (scale_X_cols, zero_cell + 1);
-    scale_lambda = append (scale_lambda, zero_cell);
 }
 
-lambda = t(scale_lambda) * $reg;
+scale_lambda = matrix (1, rows = m_ext, cols = 1);
+if (intercept_status == 1 | intercept_status == 2)
+{
+    scale_lambda [m_ext, 1] = 0;
+}
+
+if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
+{                           # Important assumption: X [, m_ext] = ones_n
+    avg_X_cols = t(colSums(X)) / n;
+    var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
+    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+    scale_X [m_ext, 1] = 1;
+    shift_X = - avg_X_cols * scale_X;
+    shift_X [m_ext, 1] = 0;
+} else {
+    scale_X = matrix (1, rows = m_ext, cols = 1);
+    shift_X = matrix (0, rows = m_ext, cols = 1);
+}
+
+# Henceforth, if intercept_status == 2, we use "X %*% (SHIFT/SCALE TRANSFORM)"
+# instead of "X".  However, in order to preserve the sparsity of X,
+# we apply the transform associatively to some other part of the expression
+# in which it occurs.  To avoid materializing a large matrix, we rewrite it:
+#
+# ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
+# ssX_A  = diag (scale_X) %*% A;
+# ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A;
+#
+# tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
+# tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+
+lambda = scale_lambda * $reg;
 
 # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
 
-A = t(X) %*% X + diag (lambda);
+A = t(X) %*% X;
 b = t(X) %*% y;
+if (intercept_status == 2) {
+    A = t(diag (scale_X) %*% A + shift_X %*% A [m_ext, ]);
+    A =   diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+    b =   diag (scale_X) %*% b + shift_X %*% b [m_ext, ];
+}
+A = A + diag (lambda);
+
 print ("Calling the Direct Solver...");
 
-beta = solve (A, b);
+beta_unscaled = solve (A, b);
 
 print ("The Direct Solver is done.");
 
 # END THE DIRECT SOLVE ALGORITHM
+
+if (intercept_status == 2) {
+    beta = scale_X * beta_unscaled;
+    beta [m_ext, ] = beta [m_ext, ] + t(shift_X) %*% beta_unscaled;
+} else {
+    beta = beta_unscaled;
+}
 
 y_residual = y - X %*% beta;
 res_bias = sum (y_residual) / n;
@@ -110,11 +140,10 @@ if (deg_freedom > 0) {
 # Prepare the output matrix
 print("Writing the output matrix...");
 
-beta_out = beta;
 if (intercept_status == 2) {
-    beta_out = t(scale_X_cols) * beta_out;
-    beta_out [m_ext, ] = beta_out [m_ext, ] + shift_X_cols %*% beta_out;
-    beta_out = append (beta_out, beta);
+    beta_out = append (beta, beta_unscaled);
+} else {
+    beta_out = beta;
 }
 write (beta_out, $B);
 print ("END LINEAR REGRESSION SCRIPT");

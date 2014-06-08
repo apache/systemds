@@ -981,7 +981,7 @@ public class ProgramConverter
 		for( String s : set )
 		{
 			if(count>0)
-				sb.append( ELEMENT_DELIM );
+				sb.append( ", " );
 			sb.append( s );
 			count++;
 		}

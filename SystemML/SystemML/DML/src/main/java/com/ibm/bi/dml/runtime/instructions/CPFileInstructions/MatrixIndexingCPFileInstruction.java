@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr)
@@ -121,7 +121,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 						mcNew = new MatrixCharacteristics( mc.get_rows(), 1, mc.get_rows_per_block(), 1 );
 						break;					
 					default:
-						throw new DMLRuntimeException("Unsupported partition format for CP_FILE rangeReIndex: "+ out.getPartitionFormat());
+						throw new DMLRuntimeException("Unsupported partition format for CP_FILE rangeReIndex: "+ mo.getPartitionFormat());
 				}
 				
 				MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,meta.getOutputInfo(),meta.getInputInfo());

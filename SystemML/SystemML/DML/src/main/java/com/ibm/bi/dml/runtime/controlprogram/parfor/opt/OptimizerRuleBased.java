@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -703,17 +704,57 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//recompile parent pb
 		long pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
+		OptNode nParent = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid);
 		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid);
 		StatementBlock sb = (StatementBlock) o[0];
 		ProgramBlock pb = (ProgramBlock) o[1];
+		
+		//keep modified estimated of partitioned rix (in same dag as lix)
+		HashMap<Hop, Double> estRix = getPartitionedRIXEstimates(nParent);
 		
 		//construct new instructions
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), vars, 0);
 		pb.setInstructions( newInst );   
 		
+		//reset all rix estimated (modified by recompile)
+		resetPartitionRIXEstimates( estRix );
+		
 		//set new mem estimate (last, otherwise overwritten from recompile)
 		h.setMemEstimate(_rm-1);
 	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @return
+	 */
+	protected HashMap<Hop, Double> getPartitionedRIXEstimates(OptNode parent)
+	{
+		HashMap<Hop, Double> estimates = new HashMap<Hop, Double>();
+		for( OptNode n : parent.getChilds() )
+			if( n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
+			{
+				Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				estimates.put( h, h.getMemEstimate() );
+			}
+		return estimates;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param estimates
+	 */
+	protected void resetPartitionRIXEstimates( HashMap<Hop, Double> estimates )
+	{
+		for( Entry<Hop, Double> e : estimates.entrySet() )
+		{
+			Hop h = e.getKey();
+			double val = e.getValue();
+			h.setMemEstimate(val);
+		}
+	}
+	
 	
 	///////
 	//REWRITE set execution strategy

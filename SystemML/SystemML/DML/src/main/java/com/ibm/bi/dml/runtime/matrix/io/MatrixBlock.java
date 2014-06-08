@@ -336,58 +336,6 @@ public class MatrixBlock extends MatrixValue
 	
 	
 	/**
-	 * This should be called only in the read and write functions for CP
-	 * This function should be called before calling any setValueSparseUnsafe() or appendValueSparseUnsafe()
-	 
-	 * @param rl
-	 * @param cl
-	 * @param estimatedmNNzs
-	 */
-	@Deprecated
-	public void allocateSparseRowsUnsafe(int rl, int cl, int estimatedmNNzs)
-	{
-		sparse=true;
-		rlen=rl;
-		clen=cl;
-		int nnzsPerRow=(int) Math.ceil((double)estimatedmNNzs/(double)rl);
-		if(sparseRows!=null)
-		{
-			if(sparseRows.length>=rlen)
-			{
-				for(int i=0; i<rlen; i++)
-				{
-					if(sparseRows[i]==null)
-						sparseRows[i]=new SparseRow(nnzsPerRow, cl);
-					else
-						sparseRows[i].reset(nnzsPerRow, cl);
-				}
-			}else
-			{
-				SparseRow[] temp=sparseRows;
-				sparseRows=new SparseRow[rlen];
-				int i=0;
-				for(; i<temp.length; i++)
-				{
-					if(temp[i]!=null)
-					{
-						sparseRows[i]=temp[i];
-						sparseRows[i].reset(nnzsPerRow, cl);
-					}else
-						sparseRows[i]=new SparseRow(nnzsPerRow, cl);
-				}
-				for(; i<rlen; i++)
-					sparseRows[i]=new SparseRow(nnzsPerRow, cl);
-			}
-			
-		}else
-		{
-			sparseRows=new SparseRow[rlen];
-			for(int i=0; i<rlen; i++)
-				sparseRows[i]=new SparseRow(nnzsPerRow, cl);
-		}
-	}
-	
-	/**
 	 * Allows to cleanup all previously allocated sparserows or denseblocks.
 	 * This is for example required in reading a matrix with many empty blocks 
 	 * via distributed cache into in-memory list of blocks - not cleaning blocks 
@@ -798,16 +746,6 @@ public class MatrixBlock extends MatrixValue
 			return 0;
 		return sparseRows[r].get(c);	
 	}
-
-	/**
-	 * This can be only called when you know you have properly allocated spaces for a sparse representation
-	 * and r and c are in the the range of the dimension
-	 * Note: this function won't keep track of the nozeros	
-	 */
-	public void setValueSparseUnsafe(int r, int c, double v) 
-	{
-		sparseRows[r].set(c, v);		
-	}
 	
 	/**
 	 * Append value is only used when values are appended at the end of each row for the sparse representation
@@ -835,17 +773,6 @@ public class MatrixBlock extends MatrixValue
 			sparseRows[r].append(c, v);
 			nonZeros++;
 		}
-	}
-
-	/**
-	 * This can be only called when you know you have properly allocated spaces for a sparse representation
-	 * and r and c are in the the range of the dimension
-	 * Note: this function won't keep track of the nozeros
-	 * This can only be called, when the caller knows the access pattern of the block
-	 */
-	public void appendValueSparseUnsafe(int r, int c, double v) 
-	{
-		sparseRows[r].append(c, v);		
 	}
 	
 	public void appendRow(int r, SparseRow values)
@@ -2632,96 +2559,69 @@ public class MatrixBlock extends MatrixValue
 		throws DMLRuntimeException 
 	{
 		//+, -, (*)
-		
+	
+		//estimate output sparsity
 		SparsityEstimate resultSparse=estimateSparsityOnBinary(this, that, op);
 		if(result==null)
 			result=new MatrixBlock(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		else
 			result.reset(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
+		//skip empty blocks (since sparse-safe)
+		if( this.isEmptyBlock(false) && that.isEmptyBlock(false) )
+			return result;
+		
 		if(this.sparse && that.sparse)
 		{
-			//special case, if both matrices are all 0s, just return
-			if(this.sparseRows==null && that.sparseRows==null)
-				return result;
-			
 			if(result.sparse)
-				result.adjustSparseRows(result.rlen-1);
-			if(this.sparseRows!=null)
-				this.adjustSparseRows(rlen-1);
-			if(that.sparseRows!=null)
-				that.adjustSparseRows(that.rlen-1);
-				
+				result.adjustSparseRows(result.rlen-1);	
+			
+			//both sparse blocks existing
 			if(this.sparseRows!=null && that.sparseRows!=null)
 			{
 				for(int r=0; r<rlen; r++)
 				{
-					if(this.sparseRows[r]==null && that.sparseRows[r]==null)
-						continue;
+					SparseRow lrow = (this.sparseRows.length>r && this.sparseRows[r]!=null) ? this.sparseRows[r] : null; 
+					SparseRow rrow = (that.sparseRows.length>r && that.sparseRows[r]!=null) ? that.sparseRows[r] : null; 
 					
-					if(result.sparse)
+					if( lrow!=null && rrow!=null)
 					{
-						int estimateSize=0;
-						if(this.sparseRows[r]!=null)
-							estimateSize+=this.sparseRows[r].size();
-						if(that.sparseRows[r]!=null)
-							estimateSize+=that.sparseRows[r].size();
-						estimateSize=Math.min(clen, estimateSize);
-						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(estimateSize, result.clen);
-						else if(result.sparseRows[r].capacity()<estimateSize)
-							result.sparseRows[r].recap(estimateSize);
+						mergeForSparseBinary(op, lrow.getValueContainer(), lrow.getIndexContainer(), lrow.size(),
+								rrow.getValueContainer(), rrow.getIndexContainer(), rrow.size(), r, result);	
+					}
+					else if( rrow!=null )
+					{
+						appendRightForSparseBinary(op, rrow.getValueContainer(), 
+								rrow.getIndexContainer(), rrow.size(), 0, r, result);
+					}
+					else if( lrow!=null )
+					{
+						appendLeftForSparseBinary(op, lrow.getValueContainer(), 
+								lrow.getIndexContainer(), lrow.size(), 0, r, result);
 					}
 					
-					if(this.sparseRows[r]!=null && that.sparseRows[r]!=null)
-					{
-						mergeForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
-								this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(),
-								that.sparseRows[r].getValueContainer(), 
-								that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), r, result);
-						
-					}else if(this.sparseRows[r]==null)
+					// do nothing if both not existing
+				}
+			}
+			//right sparse block existing
+			else if( that.sparseRows!=null )
+			{
+				for(int r=0; r<Math.min(rlen, that.sparseRows.length); r++)
+					if(that.sparseRows[r]!=null)
 					{
 						appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
 								that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, result);
-					}else
+					}
+			}
+			//left sparse block existing
+			else
+			{
+				for(int r=0; r<rlen; r++)
+					if( this.sparseRows[r]!=null )
 					{
 						appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
 								this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, result);
 					}
-				}
-			}else if(this.sparseRows==null)
-			{
-				for(int r=0; r<rlen; r++)
-				{
-					if(that.sparseRows[r]==null)
-						continue;
-					if(result.sparse)
-					{
-						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(that.sparseRows[r].size(), result.clen);
-						else if(result.sparseRows[r].capacity()<that.sparseRows[r].size())
-							result.sparseRows[r].recap(that.sparseRows[r].size());
-					}
-					appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
-							that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, result);
-				}
-			}else
-			{
-				for(int r=0; r<rlen; r++)
-				{
-					if(this.sparseRows[r]==null)
-						continue;
-					if(result.sparse)
-					{
-						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(this.sparseRows[r].size(), result.clen);
-						else if(result.sparseRows[r].capacity()<this.sparseRows[r].size())
-							result.sparseRows[r].recap(this.sparseRows[r].size());
-					}
-					appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
-							this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, result);
-				}
 			}
 		}
 		else if( !result.sparse && (this.sparse || that.sparse) &&
@@ -2851,36 +2751,48 @@ public class MatrixBlock extends MatrixValue
 		return result;
 	}
 	
-	/*
-	 * like a merge sort
+	/**
+	 * * like a merge sort
+	 * 
+	 * @param op
+	 * @param values1
+	 * @param cols1
+	 * @param size1
+	 * @param values2
+	 * @param cols2
+	 * @param size2
+	 * @param resultRow
+	 * @param result
+	 * @throws DMLRuntimeException
 	 */
 	private static void mergeForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int size1, 
 				double[] values2, int[] cols2, int size2, int resultRow, MatrixBlock result) 
 		throws DMLRuntimeException
 	{
 		int p1=0, p2=0, column;
-		double v;
-		//merge
-		while(p1<size1 && p2< size2)
+		while( p1<size1 && p2< size2 )
 		{
+			double value = 0;
 			if(cols1[p1]<cols2[p2])
 			{
-				v=op.fn.execute(values1[p1], 0);
-				column=cols1[p1];
+				value = op.fn.execute(values1[p1], 0);
+				column = cols1[p1];
 				p1++;
-			}else if(cols1[p1]==cols2[p2])
+			}
+			else if(cols1[p1]==cols2[p2])
 			{
-				v=op.fn.execute(values1[p1], values2[p2]);
-				column=cols1[p1];
+				value = op.fn.execute(values1[p1], values2[p2]);
+				column = cols1[p1];
 				p1++;
-				p2++;
-			}else
-			{
-				v=op.fn.execute(0, values2[p2]);
-				column=cols2[p2];
 				p2++;
 			}
-			result.appendValue(resultRow, column, v);	
+			else
+			{
+				value = op.fn.execute(0, values2[p2]);
+				column = cols2[p2];
+				p2++;
+			}
+			result.appendValue(resultRow, column, value);	
 		}
 		
 		//add left over
@@ -2888,6 +2800,17 @@ public class MatrixBlock extends MatrixValue
 		appendRightForSparseBinary(op, values2, cols2, size2, p2, resultRow, result);
 	}
 	
+	/**
+	 * 
+	 * @param op
+	 * @param values1
+	 * @param cols1
+	 * @param size1
+	 * @param pos
+	 * @param resultRow
+	 * @param result
+	 * @throws DMLRuntimeException
+	 */
 	private static void appendLeftForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int size1, 
 				int pos, int resultRow, MatrixBlock result) 
 		throws DMLRuntimeException
@@ -2899,6 +2822,17 @@ public class MatrixBlock extends MatrixValue
 		}
 	}
 	
+	/**
+	 * 
+	 * @param op
+	 * @param values2
+	 * @param cols2
+	 * @param size2
+	 * @param pos
+	 * @param resultRow
+	 * @param result
+	 * @throws DMLRuntimeException
+	 */
 	private static void appendRightForSparseBinary(BinaryOperator op, double[] values2, int[] cols2, int size2, 
 		int pos, int resultRow, MatrixBlock result) throws DMLRuntimeException
 	{

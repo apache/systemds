@@ -2270,23 +2270,27 @@ public class MatrixBlock extends MatrixValue
 			return est;
 		}
 		
-		double m=m1.getNumColumns();
-		double n=m1.getNumRows();
+		double m=m1.getNumRows();
+		double n=m1.getNumColumns();
 		double nz1=m1.getNonZeros();
 		double nz2=m2.getNonZeros();
 		
 		double estimated=0;
+		
 		if(op.fn instanceof And || op.fn instanceof Multiply)//p*q
 		{
-			estimated=nz1/n/m*nz2/n/m;
+			estimated = Math.min(nz1, nz2)/m/n; //worstcase wrt overlap
+			//estimated=nz1/n/m*nz2/n/m;
 			
-		}else //1-(1-p)*(1-q)
+		}
+		else //1-(1-p)*(1-q)
 		{
-			estimated=1-(1-nz1/n/m)*(1-nz2/n/m);
+			estimated = (nz1+nz2)/m/n; //worstcase wrt operation
+			//estimated=1-(1-nz1/n/m)*(1-nz2/n/m);
 		}
 		
 		est.sparse = evalSparseFormatInMemory((long)m,(long)n,(long)(estimated*m*n));
-		est.estimatedNonZeros=(int)(estimated*n*m);
+		est.estimatedNonZeros=(int)(estimated*m*n);
 		
 		return est;
 	}

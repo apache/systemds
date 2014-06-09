@@ -1214,7 +1214,7 @@ public class LibMatrixAgg
 			}
 		
 			//correction (not sparse-safe)
-			if( arow==null || arow.size()<m )
+			if( arow==null || arow.size()<n )
 				ret = builtin.execute2(ret, 0); 
 		}
 		c[0] = ret; 

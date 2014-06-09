@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
-	<version>BI-3.0.0.0-SV-1.0.2</version>
+	<version>1.0.0-bi3.0.0.0-SNAPSHOT</version>
 	<name>SystemML compiler</name>
 
   <scm>
-    <connection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.2</connection>
-    <developerConnection>scm:jazz:systemml-reactor-BI-3.0.0.0-SV-1.0.2</developerConnection>
+    <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
+    <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
   </scm>
   
 	<parent>

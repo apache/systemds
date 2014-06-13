@@ -35,6 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 /**
  * 
@@ -282,7 +283,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				else if( mrinst instanceof GroupedAggregateInstruction )
 				{
 					if( opcode.equals("groupedagg") )
-						attr = new String[]{String.valueOf(CMOperator.AggregateOperationTypes.valueOf(parts[parts.length-2].toUpperCase()).ordinal())};
+					{
+						AggregateOperationTypes type = CMOperator.getAggOpType(parts[2], parts[3]);
+						attr = new String[]{String.valueOf(type.ordinal())};
+					}
 					
 				}
 			}

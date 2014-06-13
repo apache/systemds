@@ -53,6 +53,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -103,7 +104,7 @@ public abstract class CostEstimator
 	{
 		double costs = 0;
 		
-		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(hops, vars, 0);
+		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(hops, vars, false, 0);
 		ProgramBlock pb = new ProgramBlock(null);
 		pb.setInstructions(linst);
 		costs = rGetTimeEstimate(pb, vars, stats, new HashSet<String>());
@@ -539,7 +540,13 @@ public abstract class CostEstimator
 			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 			String opcode = parts[0];
 			if( opcode.equals("groupedagg") )
-				attr = new String[]{String.valueOf(AggregateOperationTypes.valueOf(parts[parts.length-2].substring(3).toUpperCase()).ordinal())};
+			{				
+				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);
+				String fn = paramsMap.get("fn");
+				String order = paramsMap.get("order");
+				AggregateOperationTypes type = CMOperator.getAggOpType(fn, order);
+				attr = new String[]{String.valueOf(type.ordinal())};
+			}
 			else if( opcode.equals("rmempty") )
 			{
 				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);

@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopsException;
@@ -204,30 +205,18 @@ public class DataGenOp extends Hop
 	{		
 		double ret = 0;
 		
-		try
-		{
-			if ( method == DataGenMethod.RAND ) {
-				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
-				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
-				if(    min instanceof LiteralOp && ((LiteralOp)min).getDoubleValue()==0.0
-					&& max instanceof LiteralOp && ((LiteralOp)max).getDoubleValue()==0.0 )
-				{
-					ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
-				}
-				else
-				{
-					//sparsity-aware estimation (dependent on sparse generation approach); for pure dense generation
-					//we would need to disable sparsity-awareness and estimate via sparsity=1.0
-					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
-				}
+		if ( method == DataGenMethod.RAND ) {
+			if( hasConstantValue(0.0) ) { //if empty block
+				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
 			else {
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+				//sparsity-aware estimation (dependent on sparse generation approach); for pure dense generation
+				//we would need to disable sparsity-awareness and estimate via sparsity=1.0
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 			}
 		}
-		catch(HopsException he)
-		{
-			throw new RuntimeException(he);
+		else {
+			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
 		}
 		
 		return ret;
@@ -327,7 +316,9 @@ public class DataGenOp extends Hop
 		}
 		
 		//refresh nnz information
-		if( dimsKnown() )
+		if( method == DataGenMethod.RAND && hasConstantValue(0.0) )
+			_nnz = 0;
+		else if ( dimsKnown() ) //general case
 			_nnz = (long) (_dim1 * _dim2 * sparsity);
 	}
 	
@@ -342,12 +333,50 @@ public class DataGenOp extends Hop
 		return _paramIndexMap.get(key);
 	}
 	
-	public boolean hasConstantValue()
+	public boolean hasConstantValue() 
 	{
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
 		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
-		return min.equals(max);
+		
+		//literal value comparison
+		if( min instanceof LiteralOp && max instanceof LiteralOp){
+			try{
+				double minVal = HopRewriteUtils.getDoubleValue((LiteralOp)min);
+				double maxVal = HopRewriteUtils.getDoubleValue((LiteralOp)max);
+				return (minVal == maxVal);
+			}
+			catch(Exception ex)
+			{
+				return false;
+			}
+		}
+		
+		//reference comparison (based on common subexpression elimination)
+		return (min == max);
 	}
+	
+	public boolean hasConstantValue(double val) 
+	{
+		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
+		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
+		
+		//literal value comparison
+		if( min instanceof LiteralOp && max instanceof LiteralOp){
+			try{
+				double minVal = HopRewriteUtils.getDoubleValue((LiteralOp)min);
+				double maxVal = HopRewriteUtils.getDoubleValue((LiteralOp)max);
+				return (minVal == val && maxVal == val);
+			}
+			catch(Exception ex)
+			{
+				return false;
+			}
+		}
+		
+		return false;
+	}
+	
+	
 	
 	public void setIncrementValue(double incr)
 	{

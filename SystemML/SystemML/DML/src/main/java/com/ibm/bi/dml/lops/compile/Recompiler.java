@@ -37,6 +37,7 @@ import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.DataGen;
@@ -81,6 +82,13 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
 /**
+ * Dynamic recompilation of hop dags to runtime instructions, which includes the 
+ * following substeps:
+ * 
+ * (1) deep copy hop dag, (2) refresh matrix characteristics, (3) apply
+ * dynamic rewrites, (4) refresh memory estimates, (5) construct lops (incl
+ * operator selection), and (6) generate runtime program (incl piggybacking).  
+ * 
  * 
  */
 public class Recompiler 
@@ -94,10 +102,25 @@ public class Recompiler
 	//max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1024*1024*1024; 
-	private static final double CP_CSV_REBLOCK_FILESIZE_RATIO = 0.4;
+	
+	//reused rewriter for dynamic rewrites during recompile
+	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
 	
 	/**
+	 * Re-initializes the recompiler according to the current optimzier flags.
+	 */
+	public static void reinitRecompiler()
+	{
+		rewriter = new ProgramRewriter(false, true);
+	}
+	
+	/**
+	 * A) Recompile basic program block hop DAG.  
 	 * 	
+	 * We support to basic types inplace or via deep copy. Deep copy is the default and is required 
+	 * in order to apply non-reversible rewrites. In-place is required in order to modify the existing
+	 * hops (e.g., for parfor pre-recompilation). 
+	 * 
 	 * @param hops
 	 * @param vars
 	 * @return
@@ -107,7 +130,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hop> hops, LocalVariableMap vars, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hop> hops, LocalVariableMap vars, boolean inplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -118,30 +141,42 @@ public class Recompiler
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+	
+			// prepare hops dag for recompile
+			if( !inplace ){ 
+				// deep copy hop dag (for non-reversable rewrites)
+				hops = deepCopyHopsDag(hops);
+			}
+			else {
+				// clear existing lops
+				Hop.resetVisitStatus(hops);
+				for( Hop hopRoot : hops )
+					rClearLops( hopRoot );
+			}
 			
-			// clear existing lops
-			Hop.resetVisitStatus(hops);
-			for( Hop hopRoot : hops )
-				rClearLops( hopRoot );
-
-			// update statistics if unknown
+			// refresh matrix characteristics (update stats)			
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
 				rUpdateStatistics( hopRoot, vars );
+			
+			// dynamic hop rewrites
+			if( !inplace )
+				rewriter.rewriteHopDAGs( hops );
+			
+			// refresh memory estimates (based on updated stats)
 			Hop.resetVisitStatus(hops);
 			MemoTable memo = new MemoTable();
 			for( Hop hopRoot : hops )
 				hopRoot.refreshMemEstimates(memo); 
-						
+			
 			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
-			for( Hop hopRoot : hops )
-			{
+			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);	
 			}		
 			
-			// construct instructions
+			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(ConfigurationManager.getConfig());			
 		}
 		
@@ -153,6 +188,8 @@ public class Recompiler
 	}
 
 	/**
+	 * B) Recompile predicate hop DAG (single root): 
+	 * 
 	 * Note: This overloaded method is required for predicate instructions because
 	 * they have only a single hops DAG and we need to synchronize on the original 
 	 * (shared) hops object. Hence, we cannot create any wrapper arraylist for each
@@ -168,7 +205,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, boolean inplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -178,23 +215,37 @@ public class Recompiler
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
 					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
-			
-			// clear existing lops
-			hops.resetVisitStatus();
-			rClearLops( hops );
 
-			// update statistics if unknown
+			// prepare hops dag for recompile
+			if( !inplace ) {
+				// deep copy hop dag (for non-reversable rewrites)
+				//(this also clears existing lops in the created dag) 
+				hops = deepCopyHopsDag(hops);	
+			}
+			else {
+				// clear existing lops
+				hops.resetVisitStatus();
+				rClearLops( hops );	
+			}
+			
+			// refresh matrix characteristics (update stats)			
 			hops.resetVisitStatus();
 			rUpdateStatistics( hops, vars );
+			
+			// dynamic hop rewrites
+			if( !inplace )
+				rewriter.rewriteHopDAG( hops );
+			
+			// refresh memory estimates (based on updated stats)
 			hops.resetVisitStatus();
 			hops.refreshMemEstimates(new MemoTable()); 		
 			
-			// construct lops
+			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
 			Lop lops = hops.constructLops();
 			lops.addToDag(dag);		
 			
-			// construct instructions
+			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
 		}
 		
@@ -206,6 +257,10 @@ public class Recompiler
 	}
 	
 	/**
+	 * C) Recompile basic program block hop DAG, but forced to CP.  
+	 * 
+	 * This happens always 'inplace', without statistics updates, and 
+	 * without dynamic rewrites.
 	 * 
 	 * @param hops
 	 * @param tid
@@ -221,42 +276,47 @@ public class Recompiler
 	{
 		ArrayList<Instruction> newInst = null;
 
-		//long begin = System.nanoTime();
-		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		//need for synchronization as we do temp changes in shared hops/lops
+		//however, we create deep copies for most dags to allow for concurrent recompile
+		synchronized( hops ) 
 		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+	
 			// clear existing lops
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
 				rClearLops( hopRoot );
-
+			
 			// update exec type
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
 				rSetExecType( hopRoot, et );
 			Hop.resetVisitStatus(hops);
 			
-			// construct lops
+			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
-			for( Hop hopRoot : hops )
-			{
+			for( Hop hopRoot : hops ){
 				Lop lops = hopRoot.constructLops();
-				lops.addToDag(dag);
+				lops.addToDag(dag);	
 			}		
-
-			// construct instructions
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			
+			// generate runtime instructions (incl piggybacking)
+			newInst = dag.getJobs(ConfigurationManager.getConfig());			
 		}
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		//recompileTime += (System.nanoTime()-begin);
-		//recompileCount++;
 		return newInst;
 	}
 
 	/**
+	 * D) Recompile predicate hop DAG (single root), but forced to CP. 
+	 * 
+	 * This happens always 'inplace', without statistics updates, and 
+	 * without dynamic rewrites.
 	 * 
 	 * @param hops
 	 * @param tid
@@ -273,24 +333,27 @@ public class Recompiler
 	{
 		ArrayList<Instruction> newInst = null;
 
-		//long begin = System.nanoTime();
-		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		//need for synchronization as we do temp changes in shared hops/lops
+		synchronized( hops ) 
 		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+
 			// clear existing lops
 			hops.resetVisitStatus();
-			rClearLops( hops );
-
+			rClearLops( hops );	
+			
 			// update exec type
 			hops.resetVisitStatus();
 			rSetExecType( hops, et );
 			hops.resetVisitStatus();
 			
-			// construct lops
+			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
 			Lop lops = hops.constructLops();
-			lops.addToDag(dag);
+			lops.addToDag(dag);		
 			
-			// construct instructions
+			// generate runtime instructions (incl piggybacking)
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
 		}
 		
@@ -298,8 +361,6 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		//recompileTime += (System.nanoTime()-begin);
-		//recompileCount++;
 		return newInst;
 	}
 
@@ -399,28 +460,6 @@ public class Recompiler
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param insts
-	 * @return
-	 */
-	@Deprecated
-	public static boolean containsNonRecompileInstructions( ArrayList<Instruction> insts )
-	{
-		boolean ret = false;
-		
-		for( Instruction inst : insts )
-		{
-			//function call instuctions because those are currently generated outside
-			//hops/lops generation
-			if( inst instanceof FunctionCallCPInstruction ) {
-				ret = true;
-				break;
-			}
-		}
-		
-		return ret;
-	}
 
 	/**
 	 * Deep copy of hops dags for parallel recompilation.
@@ -430,15 +469,21 @@ public class Recompiler
 	 * @throws CloneNotSupportedException
 	 */
 	public static ArrayList<Hop> deepCopyHopsDag( ArrayList<Hop> hops ) 
-		throws CloneNotSupportedException 
+		throws HopsException 
 	{
 		ArrayList<Hop> ret = new ArrayList<Hop>();
 		
-		//note: need memo table over all independent DAGs in order to 
-		//account for shared transient reads (otherwise more instructions generated)
-		HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
-		for( Hop hopRoot : hops )
-			ret.add(rDeepCopyHopsDag(hopRoot, memo));
+		try {
+			//note: need memo table over all independent DAGs in order to 
+			//account for shared transient reads (otherwise more instructions generated)
+			HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
+			for( Hop hopRoot : hops )
+				ret.add(rDeepCopyHopsDag(hopRoot, memo));
+		}
+		catch(Exception ex)
+		{
+			throw new HopsException(ex);
+		}
 		
 		return ret;
 	}
@@ -451,10 +496,20 @@ public class Recompiler
 	 * @throws CloneNotSupportedException
 	 */
 	public static Hop deepCopyHopsDag( Hop hops ) 
-		throws CloneNotSupportedException 
+		throws HopsException 
 	{
-		HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
-		return rDeepCopyHopsDag(hops, memo);
+		Hop ret = null;
+		
+		try {
+			HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
+			ret = rDeepCopyHopsDag(hops, memo);
+		}
+		catch(Exception ex)
+		{
+			throw new HopsException(ex);
+		}
+		
+		return ret;
 	}
 	
 	/**
@@ -583,7 +638,7 @@ public class Recompiler
 				&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
-				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, tid);
+				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, true, tid);
 				pb.setInstructions( tmp );
 				
 				//propagate stats across hops (should be executed on clone of vars)
@@ -806,7 +861,7 @@ public class Recompiler
 				{
 					MatrixObject mo = (MatrixObject)dat;
 					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-					if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
+					if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
 					    < OptimizerUtils.estimateSize(hop.get_dim1(), hop.get_dim2(), 1.0d) )
 					{
 						//update statistics if necessary
@@ -895,7 +950,7 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rUpdateStatistics(c, vars);	
 		
-		//update statitics for transient reads according to current statistics
+		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
 		if(     hop instanceof DataOp 
 			&& ((DataOp)hop).get_dataop() != DataOpTypes.PERSISTENTREAD )
@@ -911,6 +966,7 @@ public class Recompiler
 					d.set_dim1(mo.getNumRows());
 					d.set_dim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
+					//System.out.println("Update statistics ("+d.getHopID()+") "+varName+": "+d.get_dim1()+" "+d.get_dim2()+" "+d.getNnz()+" "+d.getDataOpType());
 				}
 			}
 		}
@@ -975,7 +1031,7 @@ public class Recompiler
 				iop.set_dim2( (long)(cu-cl+1) );
 		}
 		
-		
+		//propagate statistics along inner nodes of DAG
 		hop.refreshSizeInformation();
 		
 		hop.set_visited(VISIT_STATUS.DONE);

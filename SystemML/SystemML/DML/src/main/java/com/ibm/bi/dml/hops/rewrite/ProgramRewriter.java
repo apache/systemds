@@ -41,29 +41,63 @@ public class ProgramRewriter
 	
 	public ProgramRewriter()
 	{
+		// by default which is used during initial compile 
+		// apply all (static and dynamic) rewrites
+		this( true, true );
+	}
+	
+	public ProgramRewriter( boolean staticRewrites, boolean dynamicRewrites )
+	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<HopRewriteRule>();
-			
-		_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
-		_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
-		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
-			_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
-		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
-			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependencies: common subexpression elimination
-		_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        );
-		if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
-			_dagRuleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
-		_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
-		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //reapply common subexpression elimination after simplification rewrites (no need to merge leafs again)
-			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
 		
 		//initialize StatementBlock rewrite ruleSet (with fixed rewrite order)
 		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
 		
-		if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
-			_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()      );
+		
+		//STATIC REWRITES (which do not rely on size information)
+		if( staticRewrites )
+		{
+			//add static HOP DAG rewrite rules
+			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
+			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
+			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
+			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
+			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
+				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
+			//TODO: matrix mult chain opt should also become part of dynamic recompilation
+			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); //dependency: cse 
+			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
+				_dagRuleSet.add(     new RewriteAlgebraicSimplificationStatic()  ); //dependencies: common subexpression elimination
+			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
+			
+			//add statment block rewrite rules
+ 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
+				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
+		}
+		
+		// DYNAMIC REWRITES (which do require size information)
+		//  (these )
+		if( dynamicRewrites )
+		{
+			//_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); 
+			
+			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
+				_dagRuleSet.add(     new RewriteAlgebraicSimplificationDynamic()        ); //dependencies: common subexpression elimination
+			
+			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
+			
+		}
 	}
 	
+	/**
+	 * Construct a program rewriter for a given rewrite which is passed from outside.
+	 * 
+	 * @param rewrite
+	 */
 	public ProgramRewriter( HopRewriteRule rewrite )
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
@@ -156,8 +190,8 @@ public class ProgramRewriter
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	private ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
-		throws LanguageException, HopsException
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
+		throws HopsException
 	{	
 		for( HopRewriteRule r : _dagRuleSet )
 		{
@@ -174,8 +208,8 @@ public class ProgramRewriter
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	private Hop rewriteHopDAG(Hop root) 
-		throws LanguageException, HopsException
+	public Hop rewriteHopDAG(Hop root) 
+		throws HopsException
 	{	
 		for( HopRewriteRule r : _dagRuleSet )
 		{

@@ -154,7 +154,7 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), true, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}
@@ -256,7 +256,7 @@ public class ProgramRecompiler
 			if( ret )
 			{
 				//construct new instructions
-				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), 0);
+				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), true, 0);
 			}
 		}
 		catch(Exception ex)

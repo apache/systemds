@@ -48,6 +48,7 @@ import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -92,6 +93,7 @@ public class DMLTranslator
 		DMLConfig conf = ConfigurationManager.getConfig();
 		DMLBlockSize = conf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE );	
 		OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
+		Recompiler.reinitRecompiler(); //reinit rewriter according to opt level flags
 	}
 
 	/**
@@ -241,8 +243,8 @@ public class DMLTranslator
 	public void rewriteHopsDAG(DMLProgram dmlp) 
 		throws ParseException, LanguageException, HopsException 
 	{
-		//apply hop rewrites (reinitialize with current set of flags)
-		ProgramRewriter rewriter = new ProgramRewriter();
+		//apply hop rewrites (static rewrites)
+		ProgramRewriter rewriter = new ProgramRewriter(true, false);
 		rewriter.rewriteProgramHopDAGs(dmlp);
 		resetHopsDAGVisitStatus(dmlp);
 		
@@ -252,6 +254,11 @@ public class DMLTranslator
 		    ipa.analyzeProgram(this, dmlp);
 		   	resetHopsDAGVisitStatus(dmlp);
 		}
+		
+		//apply hop rewrites (dynamic rewrites, after IPA)
+		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
+		rewriter2.rewriteProgramHopDAGs(dmlp);
+		resetHopsDAGVisitStatus(dmlp);
 		
 		// Compute memory estimates for all the hops. These estimates are used
 		// subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.

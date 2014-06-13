@@ -48,17 +48,31 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	
 	
 	@Test
-	public void testComplexAppendNoIPA() 
-			throws DMLRuntimeException, IOException 
+	public void testComplexAppendNoIPANoRewrites() 
+		throws DMLRuntimeException, IOException 
 	{
-		runIPAAppendTest(false);
+		runIPAAppendTest(false, false);
 	}
 	
 	@Test
-	public void testComplexAppendIPA() 
-			throws DMLRuntimeException, IOException 
+	public void testComplexAppendIPANoRewrites() 
+		throws DMLRuntimeException, IOException 
 	{
-		runIPAAppendTest(true);
+		runIPAAppendTest(true, false);
+	}
+	
+	@Test
+	public void testComplexAppendNoIPARewrites() 
+		throws DMLRuntimeException, IOException 
+	{
+		runIPAAppendTest(false, true);
+	}
+	
+	@Test
+	public void testComplexAppendIPARewrites() 
+		throws DMLRuntimeException, IOException 
+	{
+		runIPAAppendTest(true, true);
 	}
 
 	/**
@@ -69,10 +83,12 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	private void runIPAAppendTest( boolean IPA ) 
+	private void runIPAAppendTest( boolean IPA, boolean rewrites ) 
 		throws DMLRuntimeException, IOException
 	{	
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		
 		
 		try
 		{
@@ -89,6 +105,8 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+			
 			
 			//generate input data
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, OptimizerUtils.getSparsity(rows, cols, nnz), -1, 1, "uniform", 7);
@@ -100,8 +118,8 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = 3; //GMR mm, GMR append, GMR sum
-			int expectedNumExecuted = 1;			
+			int expectedNumCompiled = (rewrites&&IPA)?2:3; //(GMR mm,) GMR append, GMR sum
+			int expectedNumExecuted = rewrites?0:1; //(GMR mm) 			
 			
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
@@ -109,6 +127,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 		finally
 		{
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
 	}
 	

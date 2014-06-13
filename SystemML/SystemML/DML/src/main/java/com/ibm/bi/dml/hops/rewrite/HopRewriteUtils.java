@@ -7,9 +7,21 @@
 
 package com.ibm.bi.dml.hops.rewrite;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.AggOp;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
+import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
@@ -35,6 +47,9 @@ public class HopRewriteUtils
 				|| op == OpOp1.CAST_AS_INT 
 				|| op == OpOp1.CAST_AS_DOUBLE );
 	}
+	
+	//////////////////////////////////
+	// literal handling
 	
 	/**
 	 * 
@@ -120,4 +135,230 @@ public class HopRewriteUtils
 		
 		return ret;
 	}
+
+	///////////////////////////////////
+	// hop dag transformations
+	
+	
+
+	public static int getChildReferencePos( Hop parent, Hop child )
+	{
+		ArrayList<Hop> childs = parent.getInput();
+		return childs.indexOf(child);
+	}
+	
+	public static void removeChildReference( Hop parent, Hop child )
+	{
+		//remove child reference
+		parent.getInput().remove( child );
+		child.getParent().remove( parent );
+	}
+	
+	public static void removeAllChildReferences( Hop parent )
+	{
+		//remove parent reference from all childs
+		for( Hop child : parent.getInput() )
+			child.getParent().remove(parent);
+		
+		//remove all child references
+		parent.getInput().clear();
+	}
+	
+	public static void addChildReference( Hop parent, Hop child )
+	{
+		parent.getInput().add( child );
+		child.getParent().add( parent );
+	}
+	
+	public static void addChildReference( Hop parent, Hop child, int pos )
+	{
+		parent.getInput().add( pos, child );
+		child.getParent().add( parent );
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param value
+	 * @return
+	 * @throws HopsException
+	 */
+	public static Hop createDataGenOp( Hop input, double value ) 
+		throws HopsException
+	{		
+		Hop rows = (input.get_dim1()>0) ? new LiteralOp(String.valueOf(input.get_dim1()),input.get_dim1()) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		Hop cols = (input.get_dim2()>0) ? new LiteralOp(String.valueOf(input.get_dim2()),input.get_dim2()) :
+			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
+		Hop val = new LiteralOp(String.valueOf(value), value);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(DataExpression.RAND_ROWS, rows);
+		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		
+		//note internal refresh size information
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(input.get_rows_in_block());
+		datagen.set_cols_in_block(input.get_cols_in_block());
+		
+		if( value==0 )
+			datagen.setNnz(0);
+			
+		return datagen;
+	}
+	
+	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
+		throws HopsException
+	{		
+		Hop rows = (rowInput.get_dim1()>0) ? new LiteralOp(String.valueOf(rowInput.get_dim1()),rowInput.get_dim1()) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
+		Hop cols = (colInput.get_dim2()>0) ? new LiteralOp(String.valueOf(colInput.get_dim2()),colInput.get_dim2()) :
+			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
+		Hop val = new LiteralOp(String.valueOf(value), value);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(DataExpression.RAND_ROWS, rows);
+		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		
+		//note internal refresh size information
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(rowInput.get_rows_in_block());
+		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		
+		if( value==0 )
+			datagen.setNnz(0);
+			
+		return datagen;
+	}
+	
+	public static Hop createDataGenOp( Hop rowInput, boolean tRowInput, Hop colInput, boolean tColInput, double value ) 
+		throws HopsException
+	{		
+		long nrow = tRowInput ? rowInput.get_dim2() : rowInput.get_dim1();
+		long ncol = tColInput ? colInput.get_dim1() : rowInput.get_dim2();
+		
+		Hop rows = (nrow>0) ? new LiteralOp(String.valueOf(nrow), nrow) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
+		Hop cols = (ncol>0) ? new LiteralOp(String.valueOf(ncol), ncol) :
+			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
+		Hop val = new LiteralOp(String.valueOf(value), value);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(DataExpression.RAND_ROWS, rows);
+		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		
+		//note internal refresh size information
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(rowInput.get_rows_in_block());
+		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		
+		if( value==0 )
+			datagen.setNnz(0);
+			
+		return datagen;
+	}
+	
+	public static Hop createDataGenOpByVal( Hop rowInput, Hop colInput, double value ) 
+		throws HopsException
+	{		
+		Hop val = new LiteralOp(String.valueOf(value), value);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(DataExpression.RAND_ROWS, rowInput);
+		params.put(DataExpression.RAND_COLS, colInput);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		
+		//note internal refresh size information
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(rowInput.get_rows_in_block());
+		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		
+		if( value==0 )
+			datagen.setNnz(0);
+			
+		return datagen;
+	}
+	
+	public static Hop createValueHop( Hop hop, boolean row ) 
+		throws HopsException
+	{
+		Hop ret = null;
+		if( row ){
+			ret = (hop.get_dim1()>0) ? new LiteralOp(String.valueOf(hop.get_dim1()),hop.get_dim1()) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
+		}
+		else{
+			ret = (hop.get_dim2()>0) ? new LiteralOp(String.valueOf(hop.get_dim2()),hop.get_dim2()) :
+			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
+		}
+		
+		return ret;
+	}
+	
+	public static void setOutputParameters( Hop hop, long rlen, long clen, long brlen, long bclen, long nnz )
+	{
+		hop.set_dim1( rlen );
+		hop.set_dim2( clen );
+		hop.set_rows_in_block( brlen );
+		hop.set_cols_in_block( bclen );
+		hop.setNnz( nnz );
+	}
+	
+	///////////////////////////////////
+	// hop size information
+	
+	public static boolean isDimsKnown( Hop hop )
+	{
+		return ( hop.get_dim1()>0 && hop.get_dim2()>0 );
+	}
+	
+	public static boolean isEmpty( Hop hop )
+	{
+		return ( hop.getNnz()==0 );
+	}
+	
+	public static boolean isEqualSize( Hop hop1, Hop hop2 )
+	{
+		return (   hop1.get_dim1() == hop2.get_dim1()
+				&& hop1.get_dim2() == hop2.get_dim2());
+	}
+
+	//////////////////////////////////////
+	// utils for lookup tables
+	
+	public static boolean isValidOp( AggOp input, AggOp[] validTab )
+	{
+		for( AggOp valid : validTab )
+			if( valid == input )
+				return true;
+		return false;
+	}
+	
+	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab )
+	{
+		for( OpOp1 valid : validTab )
+			if( valid == input )
+				return true;
+		return false;
+	}
+	
 }

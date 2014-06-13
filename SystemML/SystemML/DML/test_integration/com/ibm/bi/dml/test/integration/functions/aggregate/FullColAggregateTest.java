@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -254,6 +255,210 @@ public class FullColAggregateTest extends AutomatedTestBase
 	{
 		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.MR);
 	}
+
+	@Test
+	public void testColSumsDenseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMeansDenseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, false, ExecType.CP, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMinDenseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColSumsDenseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMeansDenseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, true, ExecType.CP, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMinDenseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColSumsSparseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMeansSparseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, false, ExecType.CP, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMinSparseMatrixNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, false, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColSumsSparseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMeansSparseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, true, ExecType.CP, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColMinSparseVectorNoRewritesCP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testColSumsDenseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMeansDenseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, false, ExecType.MR, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMinDenseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColSumsDenseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMeansDenseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, true, ExecType.MR, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMinDenseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColSumsSparseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMeansSparseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, false, ExecType.MR, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMinSparseMatrixNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColSumsSparseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMeansSparseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, true, ExecType.MR, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, true, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testColMinSparseVectorNoRewritesMR() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.MR, false);
+	}
+	
+	/**
+	 * 
+	 * @param type
+	 * @param sparse
+	 * @param vector
+	 * @param instType
+	 */
+	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
+	{
+		runColAggregateOperationTest(type, sparse, vector, instType, true); //by default apply algebraic simplification
+	}
 	
 	
 	/**
@@ -262,12 +467,15 @@ public class FullColAggregateTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
+	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean rewrites)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 	
+		boolean oldRewritesFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+		
 		try
 		{
 			String TEST_NAME = null;
@@ -315,6 +523,7 @@ public class FullColAggregateTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewritesFlag;
 		}
 	}
 	

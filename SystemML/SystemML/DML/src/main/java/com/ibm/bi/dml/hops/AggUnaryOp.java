@@ -71,6 +71,11 @@ public class AggUnaryOp extends Hop
 	{
 		return _direction;
 	}
+	
+	public void setDirection(Direction direction)
+	{
+		_direction = direction;
+	}
 
 	@Override
 	public Lop constructLops()

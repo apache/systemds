@@ -438,27 +438,30 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkNumParameters(1);
 			checkMatrixParam(_first);
 			output.setDataType(DataType.MATRIX);
-			if ( id.getDim2() == 1 ) 
-			{
-				//diag V2M
-				output.setDimensions(id.getDim1(), id.getDim1());
-			} 
-			else 
-			{
-				if (id.getDim1() != id.getDim2()) {
-					
-					LOG.error(this.printErrorLocation() +
-							"Invoking diag on matrix with dimensions ("
-							+ id.getDim1() + "," + id.getDim2()
-							+ ") in " + this.toString());
-					
-					throw new LanguageException(this.printErrorLocation() +
-							"Invoking diag on matrix with dimensions ("
-									+ id.getDim1() + "," + id.getDim2()
-									+ ") in " + this.toString(),
-							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			if( id.getDim2() != -1 ) { //type known
+				if ( id.getDim2() == 1 ) 
+				{
+					//diag V2M
+					output.setDimensions(id.getDim1(), id.getDim1());
+				} 
+				else 
+				{
+					if (id.getDim1() != id.getDim2()) {
+						
+						LOG.error(this.printErrorLocation() +
+								"Invoking diag on matrix with dimensions ("
+								+ id.getDim1() + "," + id.getDim2()
+								+ ") in " + this.toString());
+						
+						throw new LanguageException(this.printErrorLocation() +
+								"Invoking diag on matrix with dimensions ("
+										+ id.getDim1() + "," + id.getDim2()
+										+ ") in " + this.toString(),
+								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+					//diag M2V
+					output.setDimensions(id.getDim1(), 1);
 				}
-				output.setDimensions(id.getDim1(), 1);
 			}
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(id.getValueType());

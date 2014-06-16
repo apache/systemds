@@ -48,7 +48,7 @@ sum_abs_y = sum(abs(Y))
 
 if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
   if (intercept == 1) {
-    ones  = Rand(rows=num_samples, cols=1, min=1, max=1)
+    ones  = matrix(1, rows=num_samples, cols=1)
     X = append(X, ones);
   }
 
@@ -56,7 +56,7 @@ if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
   if(intercept == 1){
     num_rows_in_w = num_rows_in_w + 1
   }
-  w = Rand(rows=num_rows_in_w, cols=1, min=0, max=0)
+  w = matrix(0, rows=num_rows_in_w, cols=1)
 
   g_old = t(X) %*% Y
   s = g_old

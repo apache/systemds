@@ -31,12 +31,12 @@ W = read($model);
 
 Nt = nrow(X);
 num_classes = ncol(W)
-b = Rand(rows=1, cols=num_classes, min=0, max=0, pdf="uniform")
+b = matrix(0, rows=1, cols=num_classes)
 n=ncol(X);
 if (intercept == 1) {
  b = W[n+1,]
 }
-ones = Rand(rows=Nt, cols=1, min=1, max=1, pdf="uniform")
+ones = matrix(1, rows=Nt, cols=1)
 scores = X %*% W[1:n,] + ones %*% b;
 write(scores, $scores, format="text");
 

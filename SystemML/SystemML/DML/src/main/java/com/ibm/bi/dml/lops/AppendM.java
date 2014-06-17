@@ -21,10 +21,21 @@ public class AppendM extends Lop
 	
 	public static final String OPCODE = "mappend";
 	
-	public AppendM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
+	public enum CacheType {
+		RIGHT,
+		RIGHT_PART,
+	}
+
+	private CacheType _cacheType = null;
+	
+	
+	public AppendM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean partitioned) 
 	{
 		super(Lop.Type.Append, dt, vt);
 		init(input1, input2, input3, dt, vt);
+		
+		//partitioned right input
+		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
@@ -49,7 +60,7 @@ public class AppendM extends Lop
 	@Override
 	public String toString() {
 
-		return " AppendM: ";
+		return "Operation = AppendM"; 
 	}
 
 	//called when append executes in MR
@@ -71,6 +82,9 @@ public class AppendM extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output_index+"") );
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheType);
 		
 		return sb.toString();	
 	}

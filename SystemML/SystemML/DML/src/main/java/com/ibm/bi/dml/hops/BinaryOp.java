@@ -19,6 +19,7 @@ import com.ibm.bi.dml.lops.CoVariance;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -31,7 +32,9 @@ import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
@@ -1293,18 +1296,28 @@ public class BinaryOp extends Hop
 	
 		switch( am )
 		{
-			case MR_MAPPEND: 
+			case MR_MAPPEND: //special case map-only append
 			{
-				//special case map-only append
-				AppendM appM = new AppendM(left.constructLops(), right.constructLops(),	offset, dt, vt);
+				boolean needPart = requiresPartitioning(right);
+				//pre partitioning 
+				Lop dcInput = right.constructLops();
+				if( needPart ) {
+					//right side in distributed cache
+					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(right.get_dim1(), right.get_dim2(), OptimizerUtils.getSparsity(right.get_dim1(), right.get_dim2(), right.getNnz())) 
+					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+					dcInput = new DataPartition(dcInput, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+					dcInput.getOutputParameters().setDimensions(right.get_dim1(), right.get_dim2(), right.get_rows_in_block(), right.get_cols_in_block(), right.getNnz());
+					dcInput.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
+				}					
+				
+				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, needPart);
 				appM.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				appM.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				ret = appM;
 				break;
 			}
-			case MR_RAPPEND:
+			case MR_RAPPEND: //special case reduce append w/ one column block
 			{
-				//special case reduce append w/ one column block
 				//group
 				Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
 				group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, left.getNnz());
@@ -1438,8 +1451,8 @@ public class BinaryOp extends Hop
 	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
 	{
 		//check for best case (map-only)		
-		if(    m2_dim2 == 1  //rhs is vector
-		    && m2_dim1 >= 1 ) // rhs row dim known 
+		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
+			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
 		{
 			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
 			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) )
@@ -1456,6 +1469,12 @@ public class BinaryOp extends Hop
 		//general case (map and reduce)
 		return AppendMethod.MR_GAPPEND; 
 	
+	}
+	
+	private static boolean requiresPartitioning( Hop rightInput )
+	{
+		return (   rightInput.dimsKnown() //known input size 
+                && rightInput.get_dim1()*rightInput.get_dim2() > DistributedCacheInput.PARTITION_SIZE);
 	}
 	
 	/**

@@ -40,6 +40,7 @@ public class AppendR extends Lop
 		boolean definesMRJob = false;
 		
 		lps.addCompatibility(JobType.GMR);
+		lps.addCompatibility(JobType.DATAGEN); //currently required for correctness		
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 	}
 	

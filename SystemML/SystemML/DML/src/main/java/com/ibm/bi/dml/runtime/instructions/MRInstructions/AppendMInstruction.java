@@ -9,14 +9,15 @@ package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.AppendM.CacheType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -28,16 +29,19 @@ public class AppendMInstruction extends AppendInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private long _offset; 
+	private long _offset = -1; 
+	private CacheType _cacheType = null;
 	
-	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, byte out, String istr)
+	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, String istr)
 	{
 		super(op, in1, in2, out, istr);
 		_offset = offset;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
-		InstructionUtils.checkNumFields ( str, 4 );
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
+		InstructionUtils.checkNumFields ( str, 5 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
@@ -45,8 +49,9 @@ public class AppendMInstruction extends AppendInstruction
 		byte in2 = Byte.parseByte(parts[2]);
 		long offset = (long)(Double.parseDouble(parts[3]));
 		byte out = Byte.parseByte(parts[4]);
-			
-		return new AppendMInstruction(null, in1, in2, offset, out, str);
+		CacheType type = CacheType.valueOf(parts[5]);
+		
+		return new AppendMInstruction(null, in1, in2, offset, type, out, str);
 	}
 	
 	
@@ -75,7 +80,7 @@ public class AppendMInstruction extends AppendInstruction
 			else
 			{
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-				MatrixValue value_in2 = dcInput.getDataBlock(in1.getIndexes().getRowIndex(), 1).getValue();
+				MatrixValue value_in2 = dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1).getValue();
 				
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);

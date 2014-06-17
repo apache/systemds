@@ -8,17 +8,18 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
 import com.ibm.bi.dml.lops.MapMult;
+import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -34,7 +35,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	
 	private String _opcode = null;
 	
-	private boolean _rightCache = true;
+	private CacheType _cacheType = null;
 	private boolean _outputEmptyBlocks = true;
 	
 	public AggregateBinaryInstruction(Operator op, String opcode, byte in1, byte in2, byte out, String istr)
@@ -50,9 +51,9 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	 * 
 	 * @param flag
 	 */
-	public void setRightCacheMapMult( boolean flag )
+	public void setCacheTypeMapMult( CacheType type )
 	{
-		_rightCache = flag;
+		_cacheType = type;
 	}
 	
 	/**
@@ -94,7 +95,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			AggregateBinaryInstruction inst = new AggregateBinaryInstruction(aggbin, opcode, in1, in2, out, str);
 			if( parts.length==6 ) {
-				inst.setRightCacheMapMult( Boolean.parseBoolean(parts[4]) );
+				inst.setCacheTypeMapMult( CacheType.valueOf(parts[4]) );
 				inst.setOutputEmptyBlocksMapMult( Boolean.parseBoolean(parts[5]) );
 			}
 			return inst;
@@ -112,14 +113,18 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
 		
-		if ( _opcode.equals(MapMult.OPCODE) && ((in1 == null && !_rightCache) || (in2 == null && _rightCache)) ) 
+		if ( _opcode.equals(MapMult.OPCODE) ) 
 		{
+			//check empty inputs (data for different instructions)
+			if( _cacheType.isRightCache() ? in1==null : in2==null )
+				return;
+			
 			// one of the input is from distributed cache.
 			processMapMultInstruction(valueClass, cachedValues, in1, in2, blockRowFactor, blockColFactor);
 		}
 		else //generic matrix mult
 		{
-			//check empty inputs
+			//check empty inputs (data for different instructions)
 			if(in1==null || in2==null)
 				return;
 			
@@ -160,7 +165,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	{
 		boolean removeOutput = true;
 		
-		if( _rightCache )
+		if( _cacheType.isRightCache() )
 		{
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
@@ -172,7 +177,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in2Block = dcInput.getDataBlock(in1.getIndexes().getColumnIndex(), bidx);
+				IndexedMatrixValue in2Block = dcInput.getDataBlock((int)in1.getIndexes().getColumnIndex(), bidx);
 							
 				MatrixValue in2BlockValue = in2Block.getValue(); 
 				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
@@ -200,7 +205,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, in2.getIndexes().getRowIndex());
+				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, (int)in2.getIndexes().getRowIndex());
 							
 				MatrixValue in1BlockValue = in1Block.getValue(); 
 				MatrixIndexes in1BlockIndex = in1Block.getIndexes();

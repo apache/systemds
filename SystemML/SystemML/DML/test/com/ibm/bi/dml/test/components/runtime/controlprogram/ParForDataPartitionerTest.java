@@ -33,7 +33,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class ParForDataPartitionerTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private int _brlen = 1000;
@@ -542,7 +542,7 @@ public class ParForDataPartitionerTest
 			if( dp == PDataPartitioner.LOCAL )
 				dpart = new DataPartitionerLocal(format, _n, 4);
 			else if( dp == PDataPartitioner.REMOTE_MR )
-				dpart = new DataPartitionerRemoteMR(format, _n, 4, 4, 3, 1, false);
+				dpart = new DataPartitionerRemoteMR(format, _n, 4, 4, 3, 1, false, false);
 			
 			MatrixObject mo2 = dpart.createPartitionedMatrixObject(mo1, _fname+"_dp", true);	
 			ii = ((MatrixFormatMetaData)mo2.getMetaData()).getInputInfo();

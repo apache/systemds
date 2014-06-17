@@ -9,6 +9,7 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
+import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -23,8 +24,10 @@ import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.Transform.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
@@ -121,7 +124,7 @@ public class AggBinaryOp extends Hop
 					}
 					
 					matmultCP.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					matmultCP.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setLineNumbers( matmultCP );
 					set_lops(matmultCP);
 				}
 				else if ( et == ExecType.MR ) {
@@ -141,29 +144,51 @@ public class AggBinaryOp extends Hop
 							set_lops( constructMRLopWithLeftTransposeRewrite() );
 						}
 						else //GENERAL CASE
-						{
-							//TODO revisit once it is taken into account in 'optFindMMultMethod'
-							//if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
-							//	smallMatrix = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
-							//}
-							
+						{	
 							// If number of columns is smaller than block size then explicit aggregation is not required.
 							// i.e., entire matrix multiplication can be performed in the mappers.
 							boolean needAgg = requiresAggregation(method); 
+							boolean needPart = requiresPartitioning(method, false);
 							boolean outputEmptyBlocks = !hasOnlyCPConsumers(); 
 							
-							MapMult mvmult = new MapMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-									                     get_dataType(), get_valueType(), (method==MMultMethod.MAPMULT_R), outputEmptyBlocks);
-							mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							//pre partitioning 
+							Lop leftInput = getInput().get(0).constructLops(); 
+							Lop rightInput = getInput().get(1).constructLops();
+							if( needPart ) {
+								if( (method==MMultMethod.MAPMULT_L) ) //left in distributed cache
+								{
+									Hop input = getInput().get(0);
+									ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), input.get_dim2(), OptimizerUtils.getSparsity(input.get_dim1(), input.get_dim2(), input.getNnz())) 
+									          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+									leftInput = new DataPartition(input.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
+									leftInput.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), get_rows_in_block(), get_cols_in_block(), input.getNnz());
+									setLineNumbers(leftInput);
+								}
+								else //right side in distributed cache
+								{
+									Hop input = getInput().get(1);
+									ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), input.get_dim2(), OptimizerUtils.getSparsity(input.get_dim1(), input.get_dim2(), input.getNnz())) 
+									          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+									rightInput = new DataPartition(input.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+									rightInput.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), get_rows_in_block(), get_cols_in_block(), input.getNnz());
+									setLineNumbers(rightInput);
+								}
+							}					
 							
+							//core matrix mult
+							MapMult mapmult = new MapMult( leftInput, rightInput, get_dataType(), get_valueType(), 
+									                (method==MMultMethod.MAPMULT_R), needPart, outputEmptyBlocks);
+							mapmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							setLineNumbers(mapmult);
+							
+							//post aggregation
 							if (needAgg) {
-								Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+								Group grp = new Group(mapmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
 								Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 								
 								grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 								agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-								
-								agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+								setLineNumbers(agg1);
 								
 								// aggregation uses kahanSum but the inputs do not have correction values
 								agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
@@ -171,7 +196,7 @@ public class AggBinaryOp extends Hop
 								set_lops(agg1);
 							}
 							else {
-								set_lops(mvmult);
+								set_lops(mapmult);
 							}
 						}
 					}
@@ -181,22 +206,19 @@ public class AggBinaryOp extends Hop
 										.constructLops(), get_dataType(), get_valueType());
 						mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
-						
-						mmcj.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(mmcj);
 						
 						Group grp = new Group(
 								mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
 						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
-						
-						grp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(grp);
 						
 						Aggregate agg1 = new Aggregate(
 								grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
-						
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(agg1);
 						
 						// aggregation uses kahanSum but the inputs do not have correction values
 						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
@@ -210,8 +232,7 @@ public class AggBinaryOp extends Hop
 						
 						rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 								get_rows_in_block(), get_cols_in_block(), getNnz());
-						
-						rmm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(rmm);
 						
 						set_lops(rmm);
 					}
@@ -221,14 +242,14 @@ public class AggBinaryOp extends Hop
 								              get_dataType(), get_valueType(),et, mmtsj);
 						tsmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 								get_rows_in_block(), get_cols_in_block(), getNnz());
-						tsmm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(tsmm);
 						
 						Aggregate agg1 = new Aggregate(
 								tsmm, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
 						agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(agg1);
 						
 						set_lops(agg1);
 					}
@@ -405,18 +426,7 @@ public class AggBinaryOp extends Hop
 		
 		return ret;
 	}
-	
-	/**
-	 * Function that determines whether or not to partition the vector that 
-	 * is in distributed cache. Returns <code>true</code> if the estimated 
-	 * size of the vector is greater than 80% of remote mapper's memory, and 
-	 * returns <code>false</code> otherwise. 
-	 */
-	private static boolean partitionVectorInDistCache(long rows, long cols) {
-		//return true;
-		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
-		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) );
-	}
+
 	
 	/**
 	 * Determines if the rewrite t(X)%*%Y -> t(t(Y)%*%X) is applicable
@@ -484,15 +494,16 @@ public class AggBinaryOp extends Hop
 		//right vector transpose
 		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
 		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
-		tY.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		setLineNumbers(tY);
 		
 		//matrix mult
 		Lop mult = new BinaryCP(tY, X.constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());	
 		mult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(mult);
 		
 		//result transpose (dimensions set outside)
 		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-	
+		
 		return out;
 	}
 	
@@ -511,29 +522,46 @@ public class AggBinaryOp extends Hop
 		//right vector transpose CP
 		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
 		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
-		tY.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		setLineNumbers(tY);
 		
 		//matrix mult
-		Lop mult = null;
+		
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
 		boolean needAgg = ( X.get_dim1() <= 0 || X.get_dim1() > X.get_rows_in_block() ); 
+		boolean needPart = requiresPartitioning(MMultMethod.MAPMULT_R, true); //R disregarding transpose rewrite
 		
-		MapMult mvmult = new MapMult(tY, X.constructLops(), get_dataType(), get_valueType(), false, false);
-		mvmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		//pre partitioning
+		Lop dcinput = null;
+		if( needPart ) {
+			ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(Y.get_dim2(), Y.get_dim1(), OptimizerUtils.getSparsity(Y.get_dim2(), Y.get_dim1(), Y.getNnz())) 
+					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+			dcinput = new DataPartition(tY, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
+			dcinput.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+			setLineNumbers(dcinput);
+		}
+		else
+			dcinput = tY;
 		
-		if (needAgg) {
-			Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+		MapMult mapmult = new MapMult(dcinput, X.constructLops(), get_dataType(), get_valueType(), false, needPart, false);
+		mapmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(mapmult);
+		
+		//post aggregation 
+		Lop mult = null;
+		if( needAgg ) {
+			Group grp = new Group(mapmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
 			grp.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(grp);
 			
 			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 			agg1.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(agg1);
 			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-			mult= agg1;
+			mult = agg1;
 		}
 		else
-			mult = mvmult;
+			mult = mapmult;
 		
 		//result transpose CP 
 		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
@@ -541,6 +569,7 @@ public class AggBinaryOp extends Hop
 		
 		return out;
 	}
+
 	
 	/**
 	 * 
@@ -583,6 +612,38 @@ public class AggBinaryOp extends Hop
              && getInput().get(1).get_dim1() <= getInput().get(1).get_rows_in_block() ) 
         {
        	    ret = false;
+        }
+        
+        return ret;
+	}
+	
+	/**
+	 * 
+	 * @param method
+	 * @return
+	 */
+	private boolean requiresPartitioning(MMultMethod method, boolean rewrite) 
+	{
+		boolean ret = true; //worst-case
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);
+		
+		//right side cached 
+		if(  method == MMultMethod.MAPMULT_R && input2.dimsKnown() ) { //known input size 
+            ret = (input2.get_dim1()*input2.get_dim2() > DistributedCacheInput.PARTITION_SIZE);
+            
+            //conservative: do not apply partitioning if this forces t(X) into separate job
+            //if( !rewrite && input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE )
+            //	ret = false;
+        }
+        
+		//left side cached (no agg if right has just one row block)
+		if(  method == MMultMethod.MAPMULT_L && input1.dimsKnown() ) { //known input size 
+            ret = (input1.get_dim1()*input1.get_dim2() > DistributedCacheInput.PARTITION_SIZE);
+            
+            //conservative: do not apply partitioning if this forces t(X) into separate job
+            //if( !rewrite && input2 instanceof ReorgOp && ((ReorgOp)input2).getOp()==ReOrgOp.TRANSPOSE )
+            //	ret = false;
         }
         
         return ret;
@@ -700,6 +761,16 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.RMM;
 	}
 
+	/**
+	 * Sets the linenumbers of this hop to a given lop.
+	 * 
+	 * @param lop
+	 */
+	private void setLineNumbers(Lop lop)
+	{
+		lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	}
+	
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 	

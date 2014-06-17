@@ -1,14 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 
 package com.ibm.bi.dml.runtime.matrix;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -17,17 +16,14 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 
 public class DataPartitionMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public static boolean partitioned = false;
-	public static PDataPartitionFormat pformat = PDataPartitionFormat.ROW_BLOCK_WISE_N;
-	public static int N = DMLTranslator.DMLBlockSize*4;
-	
 	public static JobReturn runJob(MRJobInstruction jobinst, MatrixObject[] inputMatrices, String shuffleInst, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication) throws DMLRuntimeException {
 		MatrixCharacteristics[] sts = new MatrixCharacteristics[outputMatrices.length];
 		
@@ -49,21 +45,36 @@ public class DataPartitionMR
 				MatrixObject in = inputMatrices[input_index];
 				MatrixObject out = outputMatrices[findResultIndex(resultIndices, output_index)];
 				
-				PDataPartitionFormat format = pformat;
-				int _n = N; //16000
+				PDataPartitionFormat pformat = PDataPartitionFormat.valueOf(parts[3]);
+				long rlen = in.getNumRows();
+				long clen = in.getNumColumns();
+				long brlen = in.getNumRowsPerBlock();
+				long bclen = in.getNumColumnsPerBlock();
+				long N = -1;
+				switch( pformat )
+				{
+					case ROW_BLOCK_WISE_N:
+					{
+						long numRowBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/clen/brlen); 
+						N = numRowBlocks * brlen;
+						break;
+					}
+					case COLUMN_BLOCK_WISE_N:
+					{
+						long numColBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/rlen/bclen); 
+						N = numColBlocks * bclen;
+						break;
+					}
+					
+					default: 
+						throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+pformat);
+				}
 				
-				DataPartitioner dpart = null;
-				//if( dp == PDataPartitioner.LOCAL )
-				//	dpart = new DataPartitionerLocal(format, _n);
-				//else if( dp == PDataPartitioner.REMOTE_MR )
-				dpart = new DataPartitionerRemoteMR(format, _n, 4, numReducers, replication, 1, false);
-				
+				DataPartitioner dpart = new DataPartitionerRemoteMR(pformat, (int)N, -1, numReducers, replication, 4, false, true);
 				out = dpart.createPartitionedMatrixObject(in, out, true);
 				
 				sts[i] = ((MatrixDimensionsMetaData)out.getMetaData()).getMatrixCharacteristics();
-				//System.out.println("Partioning complete: " + (System.currentTimeMillis()-begin)/1000 + " sec");
 				i++;
-				partitioned = true;
 			}
 		}
 	}

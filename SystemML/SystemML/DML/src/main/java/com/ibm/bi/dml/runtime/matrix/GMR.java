@@ -20,16 +20,14 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -78,50 +76,6 @@ public class GMR
 	 * outputInfos: output format information for the output matrices
 	 */
 	private static final Log LOG = LogFactory.getLog(GMR.class.getName());
-	
-	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) {
-		if ( instructionsInMapper != null && instructionsInMapper != "" && InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) {
-			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
-			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
-			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
-			
-			byte index;
-			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
-			for(int i=0; i < inst.length; i++) {
-				if ( inst[i].contains(MapMult.OPCODE) || inst[i].contains(AppendM.OPCODE) ) {
-					// example: MR.mvmult.0.1.2
-					
-					// Determine the index that points to a vector
-					String[] parts = inst[i].split(Instruction.OPERAND_DELIM);
-					byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-					byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-					boolean rightCache = inst[i].contains(MapMult.OPCODE)?Boolean.parseBoolean(parts[5]):true; //4 is out
-					if ( rightCache )
-						index = in2; // input2 is in dist cache
-					else 
-						index = in1; // input1 is in dist cache
-					
-					if ( !pathList.contains(index) ) {
-						pathList.add(inputs[index]);
-						if ( indexString.equalsIgnoreCase("") ) {
-							indexString += index;
-							pathString += inputs[index];
-						} 
-						else {
-							indexString += Instruction.INSTRUCTION_DELIM + index;
-							pathString += Instruction.INSTRUCTION_DELIM + inputs[index];
-						}
-					}
-				}
-			}
-			
-			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
-			
-			//clean in-memory cache (prevent job interference in local mode)
-			if( MRJobConfiguration.isLocalJobTracker(job) )
-				MRBaseForCommonInstructions.resetDistCache();
-		}
-	}
 	
 	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -213,9 +167,10 @@ public class GMR
 		setupDistributedCache(job, instructionsInMapper, realinputs, realrlens, realclens);
 
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, realbrlens, realbclens, 
-				true, inBlockRepresentation? ConvertTarget.BLOCK: ConvertTarget.CELL);
-		MRJobConfiguration.setInputPartitioningInfo(job, partitioned, pformats, psizes);
+		boolean[] distCacheOnly = getDistCacheOnlyInputs(realIndexes, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer);
+		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, realbrlens, realbclens, distCacheOnly, 
+				                             true, inBlockRepresentation? ConvertTarget.BLOCK: ConvertTarget.CELL);
+		MRJobConfiguration.setInputPartitioningInfo(job, pformats);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);
@@ -230,7 +185,7 @@ public class GMR
 		//set up the aggregate instructions that will happen in the combiner and reducer
 		MRJobConfiguration.setAggregateInstructions(job, aggInstructionsInReducer);
 		
-		//set up the instructions that will happen in the reducer, after the aggregation instrucions
+		//set up the instructions that will happen in the reducer, after the aggregation instructions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 		
 		//set up the replication factor for the results
@@ -364,72 +319,97 @@ public class GMR
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
-	private static String prepMVMult(byte in1, byte in2, byte out) {
-		return "MR" + Instruction.OPERAND_DELIM 
-						+ "mvmult" + Instruction.OPERAND_DELIM 
-						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-						+ in2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM;  
-	}
-	
-	private static String prepPartialAgg(byte in1, byte out) {
-		return "MR" + Instruction.OPERAND_DELIM 
-						+ "uak+" + Instruction.OPERAND_DELIM 
-						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM;  
-	}
-	
-	private static String prepAgg(byte in1, byte out) {
-		return "MR" + Instruction.OPERAND_DELIM 
-						+ "ak+" + Instruction.OPERAND_DELIM 
-						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
-						+ "true" + Instruction.OPERAND_DELIM + CorrectionLocationType.NONE;
-	}
-	
-	public static void main(String[] args) throws Exception {
-		/*runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-				int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
-				String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
-				String[] outputs, OutputInfo[] outputInfos)*/
-		
-		ConfigurationManager.setConfig(new DMLConfig("SystemML-config.xml"));
-		
-		/*MatrixBlock data = LocalFileUtils.readMatrixBlockFromLocal("data/mvmult/w.mtx");
-		System.out.println(data.getNumRows() + ", " + data.getNumColumns() + ", " + data.isInSparseFormat());
-		*/
-		String[] inputs = {"data/mvmult/X.mtx", "data/mvmult/ones.mtx", "data/mvmult/X.mtx", "data/mvmult/ones.mtx"};
-		InputInfo[] inputInfos = {InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo};
-		long[] rlens = { 4000, 2500, 4000, 2500 };
-		long[] clens = { 2500, 1, 2500, 1 };
-		int[] brlens = { 1000, 1000, 1000, 1000 };
-		int[] bclens = { 1000, 1000, 1000, 1000 };
-		
-		boolean[] partitioned = { false, false, false, false };
-		PDataPartitionFormat[] pformats = { PDataPartitionFormat.NONE, PDataPartitionFormat.NONE, PDataPartitionFormat.NONE, PDataPartitionFormat.NONE };
-		int[] psizes = { -1, -1, -1, -1 };
-		
-		String recordReaderInstruction = null;
-		String otherInstructionsInReducer = "";
-		int numReducers = 10;
-		int replication = 1;
-		String dimsUnknownFilePrefix = "data/mvmult/unknownPrefix";
-		String[] outputs = {"data/mvmult/out1.mtx", "data/mvmult/out2.mtx"};
-		OutputInfo[] outputInfos = {OutputInfo.TextCellOutputInfo, OutputInfo.TextCellOutputInfo};
-		
-        String instructionsInMapper = prepMVMult((byte)0, (byte)1, (byte)4) + Instruction.INSTRUCTION_DELIM + prepMVMult( (byte)2, (byte)3, (byte)5);
-        //String instructionsInMapper = prepPartialAgg((byte)0, (byte)1);
-        String aggInstructionsInReducer = prepAgg((byte)4, (byte)6) + Instruction.INSTRUCTION_DELIM + prepAgg((byte)5, (byte)7);
-		//System.out.println("Mapper Instructions: " + instructionsInMapper);
-		//System.out.println("Reduce Instructions: " + aggInstructionsInReducer);
 
-		byte[] resultIndexes = { 6, 7 };
-		
-		JobReturn ret = runJob(new MRJobInstruction(JobType.GMR), inputs, inputInfos, rlens, clens, brlens, bclens, 
-				partitioned, pformats, psizes, 
-				null, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
-				numReducers, replication, false, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
-		
+	
+	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) {
+		if ( instructionsInMapper != null && instructionsInMapper != "" && InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) {
+			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
+			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
+			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
+			
+			byte index;
+			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
+			for(int i=0; i < inst.length; i++) {
+				if ( inst[i].contains(MapMult.OPCODE) || inst[i].contains(AppendM.OPCODE) ) {
+					// example: MR.mvmult.0.1.2
+					
+					// Determine the index that points to a vector
+					String[] parts = inst[i].split(Instruction.OPERAND_DELIM);
+					byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
+					byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					boolean rightCache = inst[i].contains(MapMult.OPCODE)?CacheType.valueOf(parts[5]).isRightCache():true; //4 is out
+					if ( rightCache )
+						index = in2; // input2 is in dist cache
+					else 
+						index = in1; // input1 is in dist cache
+					
+					if ( !pathList.contains(index) ) {
+						pathList.add(inputs[index]);
+						if ( indexString.equalsIgnoreCase("") ) {
+							indexString += index;
+							pathString += inputs[index];
+						} 
+						else {
+							indexString += Instruction.INSTRUCTION_DELIM + index;
+							pathString += Instruction.INSTRUCTION_DELIM + inputs[index];
+						}
+					}
+				}
+			}
+			
+			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
+			
+			//clean in-memory cache (prevent job interference in local mode)
+			if( MRJobConfiguration.isLocalJobTracker(job) )
+				MRBaseForCommonInstructions.resetDistCache();
+		}
 	}
 
+	/**
+	 * Determine which indices are only used as inputs through distribtued cache and hence would
+	 * be redundant job inputs.
+	 * 
+	 * @param realIndexes
+	 * @param inst1
+	 * @param inst2
+	 * @param inst3
+	 * @param inst4
+	 * @return
+	 */
+	private static boolean[] getDistCacheOnlyInputs(byte[] realIndexes, String inst1, String inst2, String inst3, String inst4)
+	{
+		boolean[] ret = new boolean[realIndexes.length];
+		String[] inst = new String[]{inst1, inst2, inst3, inst4};
+		
+		//for all result indexes
+		for( int i=0; i<ret.length; i++ ){
+			byte index = realIndexes[i];
+			String indexStr = index+Lop.DATATYPE_PREFIX+DataType.MATRIX.toString();
+			
+			boolean distCacheOnly = true;
+			boolean use = false;
+			for( String linst : inst ){ //for all instruction categories
+				if(linst!=null){
+					String[] alinst = linst.split(Lop.INSTRUCTION_DELIMITOR);
+					for( String tmp : alinst ) //for each individual instruction
+					{
+						boolean lcache = false;
+						if ( tmp.contains(MapMult.OPCODE) || tmp.contains(AppendM.OPCODE) ) {
+							String[] parts = tmp.split(Instruction.OPERAND_DELIM);
+							byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
+							byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
+							boolean rightCache = tmp.contains(MapMult.OPCODE)?CacheType.valueOf(parts[5]).isRightCache():true; //4 is out
+							lcache = rightCache ? (index==in2 && index!=in1) : (index==in1&& index!=in2);
+						}	
+						distCacheOnly &= (lcache || !tmp.contains(indexStr));
+						use = tmp.contains(indexStr);
+					}
+				}
+			}
+			//probe for use in order to account for write only jobs
+			ret[i] = distCacheOnly && use;
+		}
+		
+		return ret;
+	}
 }

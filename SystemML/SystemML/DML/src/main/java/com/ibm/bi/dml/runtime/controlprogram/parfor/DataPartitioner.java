@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public abstract class DataPartitioner 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(DataPartitioner.class.getName());
@@ -173,8 +173,8 @@ public abstract class DataPartitioner
 		out.setPartitioned( _format, _n ); 
 		
 		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols,
-				                           (_format==PDataPartitionFormat.ROW_WISE || _format==PDataPartitionFormat.ROW_BLOCK_WISE_N)? 1 : (int)brlen, //for blockwise brlen anyway
-				                           (_format==PDataPartitionFormat.COLUMN_WISE || _format==PDataPartitionFormat.COLUMN_BLOCK_WISE_N)? 1 : (int)bclen ); //for blockwise bclen anyway
+				                           (_format==PDataPartitionFormat.ROW_WISE)? 1 : (int)brlen, //for blockwise brlen anyway
+				                           (_format==PDataPartitionFormat.COLUMN_WISE)? 1 : (int)bclen ); //for blockwise bclen anyway
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;

@@ -73,6 +73,7 @@ public class DataPartitionerRemoteMapper
 		OutputInfo oi = MRJobConfiguration.getPartitioningOutputInfo( job );
 		PDataPartitionFormat pdf = MRJobConfiguration.getPartitioningFormat( job );
 		int n = MRJobConfiguration.getPartitioningSizeN( job );
+		boolean keepIndexes =  MRJobConfiguration.getPartitioningIndexFlag( job );
 		
 		if( ii == InputInfo.TextCellInputInfo )
 			_mapper = new DataPartitionerMapperTextcell(rlen, clen, brlen, bclen, pdf, n);
@@ -81,14 +82,14 @@ public class DataPartitionerRemoteMapper
 		else if( ii == InputInfo.BinaryBlockInputInfo )
 		{
 			if( oi == OutputInfo.BinaryBlockOutputInfo )
-				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf, n);
+				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf, n, keepIndexes);
 			else if( oi == OutputInfo.BinaryCellOutputInfo )
 			{
 				boolean outputEmpty = MRJobConfiguration.getProgramBlocks(job)!=null; //fused parfor
-				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(job, rlen, clen, brlen, bclen, pdf, n, outputEmpty); 
+				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(job, rlen, clen, brlen, bclen, pdf, n, keepIndexes, outputEmpty); 
 			}
 			else
-				throw new RuntimeException("Paritioning from '"+ii+"' to '"+oi+"' not supported");
+				throw new RuntimeException("Partitioning from '"+ii+"' to '"+oi+"' not supported");
 		}
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
@@ -285,8 +286,9 @@ public class DataPartitionerRemoteMapper
 		private LongWritable _longKey = null;
 		private MatrixIndexes _pairKey = null;
 		private PairWritableBlock _pair = null;
+		private boolean _keepIndexes = false;
 		
-		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
+		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n, boolean keepIndexes) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
 		
@@ -299,6 +301,8 @@ public class DataPartitionerRemoteMapper
 			//prewire pair outputs
 			_pair.indexes = _pairKey;
 			_pair.block = _reuseBlk;
+			
+			_keepIndexes = keepIndexes;
 		}
 		
 		@Override
@@ -348,7 +352,10 @@ public class DataPartitionerRemoteMapper
 						break;
 					case ROW_BLOCK_WISE_N:
 						_longKey.set((row_offset/_n+1));
-						_pairKey.setIndexes(((row_offset%_n)/_brlen)+1, (col_offset/_bclen+1) );
+						if( _keepIndexes )
+							_pairKey.setIndexes(row_offset/_brlen+1, col_offset/_bclen+1 );
+						else
+							_pairKey.setIndexes(((row_offset%_n)/_brlen)+1, (col_offset/_bclen+1) );
 						_pair.block = value2;
 						out.collect(_longKey, _pair);
 						break;
@@ -371,7 +378,10 @@ public class DataPartitionerRemoteMapper
 						break;
 					case COLUMN_BLOCK_WISE_N:
 						_longKey.set(col_offset/_n+1);
-						_pairKey.setIndexes( row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1 );
+						if( _keepIndexes )
+							_pairKey.setIndexes( row_offset/_brlen+1, col_offset/_bclen+1 );
+						else
+							_pairKey.setIndexes( row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1 );
 						_pair.block = value2;
 						out.collect(_longKey, _pair);
 						break;	
@@ -392,13 +402,17 @@ public class DataPartitionerRemoteMapper
 		private JobConf _cachedJobConf = null;
 		private boolean _outputEmpty = false;
 		
+		private boolean _keepIndexes = false;
+		
 		private OutputCollector<Writable, Writable> _out = null;
 		
-		protected DataPartitionerMapperBinaryblock2Binarycell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n, boolean outputEmpty) 
+		protected DataPartitionerMapperBinaryblock2Binarycell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n, boolean keepIndexes, boolean outputEmpty) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
 			_outputEmpty = outputEmpty;
 			_cachedJobConf = job;
+			
+			_keepIndexes = keepIndexes;
 		}
 		
 		@Override
@@ -499,7 +513,10 @@ public class DataPartitionerRemoteMapper
 						break;
 					case ROW_BLOCK_WISE_N:
 						longKey.set((row_offset/_n+1));
-						rowBlockIndex = ((row_offset%_n)/_brlen)+1;
+						if( _keepIndexes )
+							rowBlockIndex = ((row_offset)/_brlen)+1;
+						else
+							rowBlockIndex = ((row_offset%_n)/_brlen)+1;
 						if( sparse )
 						{
 							SparseRowsIterator iter = value2.getSparseRowsIterator();
@@ -593,7 +610,10 @@ public class DataPartitionerRemoteMapper
 						break;
 					case COLUMN_BLOCK_WISE_N:
 						longKey.set(col_offset/_n+1);
-						colBlockIndex = ((col_offset%_n)/_bclen)+1;
+						if( _keepIndexes )
+							colBlockIndex = ((col_offset)/_bclen)+1;
+						else	
+							colBlockIndex = ((col_offset%_n)/_bclen)+1;
 						if( sparse )
 						{
 							SparseRowsIterator iter = value2.getSparseRowsIterator();

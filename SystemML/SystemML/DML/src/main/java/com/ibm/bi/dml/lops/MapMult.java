@@ -17,12 +17,23 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class MapMult extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String OPCODE = "mapmult";
 	
-	private boolean _rightCache = true;
+	public enum CacheType {
+		RIGHT,
+		RIGHT_PART,
+		LEFT,
+		LEFT_PART;
+		
+		public boolean isRightCache(){
+			return (this == RIGHT || this == RIGHT_PART);
+		}
+	}
+	
+	private CacheType _cacheType = null;
 	private boolean _outputEmptyBlocks = true;
 	
 	/**
@@ -32,33 +43,35 @@ public class MapMult extends Lop
 	 * @param op
 	 * @return 
 	 * @throws LopsException
-	 */
-	
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean emptyBlocks) throws LopsException {
+	 */	
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks) 
+		throws LopsException 
+	{
 		super(Lop.Type.MapMult, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		_rightCache = rightCache;
+		//setup mapmult parameters
+		if( rightCache )
+			_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
+		else
+			_cacheType = partitioned ? CacheType.LEFT_PART : CacheType.LEFT;
 		_outputEmptyBlocks = emptyBlocks;
 		
-		/*
-		 * This lop can be executed only in MMCJ job.
-		 */
-		
+		//setup MR parameters 
 		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.DATAGEN);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 
 
 	public String toString() {
-		return "Operation = MVMult";
+		return "Operation = MapMult";
 	}
 	
 	@Override
@@ -81,7 +94,7 @@ public class MapMult extends Lop
 		sb.append( this.prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_rightCache);
+		sb.append(_cacheType);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_outputEmptyBlocks);
@@ -90,16 +103,27 @@ public class MapMult extends Lop
 	}
 
 	@Override
-	public boolean usesDistributedCache() {
+	public boolean usesDistributedCache() 
+	{
 		return true;
 	}
 	
 	@Override
 	public int distributedCacheInputIndex() 
 	{
-		if( _rightCache )
-			return 2;  // second input is from distributed cache
-		else
-			return 1;  // first input is from distributed cache
+		switch( _cacheType )
+		{
+			// first input is from distributed cache
+			case LEFT:
+			case LEFT_PART: 
+				return 1;
+			
+			// second input is from distributed cache
+			case RIGHT:
+			case RIGHT_PART: 
+				return 2;
+		}
+				
+		return -1; //error
 	}
 }

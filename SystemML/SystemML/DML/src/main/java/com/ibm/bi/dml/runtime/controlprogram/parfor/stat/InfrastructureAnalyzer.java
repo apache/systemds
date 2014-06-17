@@ -201,6 +201,18 @@ public class InfrastructureAnalyzer
 		return _localJT;		
 	}
 	
+	public static boolean isLocalMode(JobConf job)
+	{
+		if( _remoteJVMMaxMem == -1 )
+		{
+			//analyze if local mode
+			String jobTracker = job.get("mapred.job.tracker", "local");
+			_localJT = jobTracker.equals("local");
+		}
+		
+		return _localJT;		
+	}
+	
 	///////
 	//methods for obtaining constraints or respective defaults
 	

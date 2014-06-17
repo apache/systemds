@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanUnaryCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DataPartitionCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
@@ -175,9 +176,12 @@ public class CPInstructionParser extends InstructionParser
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
 		
-		String2CPInstructionType.put( "qr"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
-		String2CPInstructionType.put( "lu"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
-		String2CPInstructionType.put( "eigen"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2CPInstructionType.put( "qr",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2CPInstructionType.put( "lu",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		
+		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
+		
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -288,6 +292,9 @@ public class CPInstructionParser extends InstructionParser
 			}
 		case MMTSJ:
 			return (CPInstruction) MMTSJCPInstruction.parseInstruction(str);
+		case Partition:
+			return (CPInstruction) DataPartitionCPInstruction.parseInstruction(str);	
+			
 		case INVALID:
 		default: 
 			throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

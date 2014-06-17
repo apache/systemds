@@ -1214,7 +1214,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
 						                          _replicationDP, 
 						                          MAX_RETRYS_ON_ERROR, 
-						                          ALLOW_REUSE_MR_JVMS );
+						                          ALLOW_REUSE_MR_JVMS, false );
 				break;
 			default:
 				throw new DMLRuntimeException("Undefined data partitioner: '" +dataPartitioner.toString()+"'.");

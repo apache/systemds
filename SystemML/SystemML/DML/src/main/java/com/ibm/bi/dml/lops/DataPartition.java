@@ -12,6 +12,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 
 
 /**
@@ -20,24 +21,29 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class DataPartition extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String OPCODE = "partition"; 
 	
-	public DataPartition(Lop input, DataType dt, ValueType vt) throws LopsException 
+	private PDataPartitionFormat _pformat = null;
+	
+	public DataPartition(Lop input, DataType dt, ValueType vt, ExecType et, PDataPartitionFormat pformat) 
+		throws LopsException 
 	{
 		super(Lop.Type.DataPartition, dt, vt);		
 		this.addInput(input);
 		input.addOutput(this);
 		
+		_pformat = pformat;
+		
+		//setup lop properties
+		ExecLocation eloc = (et==ExecType.MR)? ExecLocation.MapAndReduce : ExecLocation.ControlProgram;
 		boolean breaksAlignment = false;
 		boolean aligner = false;
-		boolean definesMRJob = true;
-		
-		// This lop executes only in DATA_PARTITION job
+		boolean definesMRJob = (et==ExecType.MR);
 		lps.addCompatibility(JobType.DATA_PARTITION);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et, eloc, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -46,8 +52,10 @@ public class DataPartition extends Lop
 		return "DataPartition";
 	}
 
+	//CP instruction generation
 	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException
+	public String getInstructions(String input_index, String output_index) 
+		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -65,9 +73,36 @@ public class DataPartition extends Lop
 		sb.append( get_dataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _pformat.toString() );
 		
 		return sb.toString();
 	}
 	
- 
+	//MR instruction generation
+	@Override
+	public String getInstructions(int input_index, int output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( OPCODE );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _pformat.toString() );
+		
+		return sb.toString();
+	}
 }

@@ -45,16 +45,17 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	private int  _replication = -1;
 	private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
-
+	private boolean _keepIndexes = false;
+	
 	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n) 
 	{
 		this( dpf, n, -1, 
 			  Math.min( ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS),
 						InfrastructureAnalyzer.getRemoteParallelReduceTasks() ),
-		      1, 3, false );
+		      1, 3, false, false );
 	}
 	
-	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse) 
+	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse, boolean keepIndexes) 
 	{
 		super(dpf, n);
 		
@@ -63,6 +64,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		_replication = replication;
 		_max_retry = max_retry;
 		_jvmReuse = jvmReuse;
+		_keepIndexes = keepIndexes;
 	}
 
 
@@ -89,7 +91,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			/////
 			//configure the MR job
-			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, _format, _n, fnameNew);
+			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, _format, _n, fnameNew, _keepIndexes);
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(DataPartitionerRemoteMapper.class); 
@@ -192,8 +194,8 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( DMLScript.STATISTICS ){
-			long t1 = System.nanoTime();
+		if( DMLScript.STATISTICS && _pfid >= 0 ){ 
+			long t1 = System.nanoTime(); //only for parfor 
 			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
 		}
 	}

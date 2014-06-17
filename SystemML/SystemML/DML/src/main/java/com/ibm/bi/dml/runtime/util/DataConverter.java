@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -37,8 +38,10 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
@@ -50,6 +53,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 
@@ -489,7 +493,7 @@ public class DataConverter
 			throw new IOException("Read matrix blocks from hdfs is only supported for binary blocked format.");
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = ConfigurationManager.getCachedJobConf();
 		FileSystem fs = (localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( ((localFS) ? "file:///" : "") + dir); 
 		if( !fs.exists(path) )	
@@ -1166,6 +1170,127 @@ public class DataConverter
 		}
 	}
 	
+	
+	public static void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
+		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		boolean sparse = src.isInSparseFormat();
+		FileSystem fs = FileSystem.get(job);
+		
+		//initialize blocks for reuse (at most 4 different blocks required)
+		MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
+		
+		switch( pformat )
+		{
+			case ROW_BLOCK_WISE_N:
+			{
+				long numBlocks = ((rlen-1)/brlen)+1;
+				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/clen/brlen);
+						
+				int count = 0;		
+				for( int k = 0; k<numBlocks; k+=numPartBlocks )
+				{
+					// 1) create sequence file writer, with right replication factor 
+					// (config via 'dfs.replication' not possible since sequence file internally calls fs.getDefaultReplication())
+					Path path2 = new Path(path.toString()+File.separator+(++count));
+					SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path2, MatrixIndexes.class, MatrixBlock.class);
+					
+					//3) reblock and write
+					try
+					{
+						MatrixIndexes indexes = new MatrixIndexes();
+			
+						//create and write subblocks of matrix
+						for(int blockRow = k; blockRow < Math.min((int)Math.ceil(src.getNumRows()/(double)brlen),k+numPartBlocks); blockRow++)
+							for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
+							{
+								int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
+								int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+						
+								int row_offset = blockRow*brlen;
+								int col_offset = blockCol*bclen;
+								
+								//get reuse matrix block
+								MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+			
+								//copy submatrix to block
+								src.sliceOperations( row_offset+1, row_offset+maxRow, 
+										             col_offset+1, col_offset+maxCol, 
+										             block );
+								
+								//append block to sequence file
+								indexes.setIndexes(blockRow+1, blockCol+1);
+								writer.append(indexes, block);
+								
+								//reset block for later reuse
+								block.reset();
+							}
+					}
+					finally
+					{
+						if( writer != null )
+							writer.close();
+					}
+				}
+				break;
+			}
+			case COLUMN_BLOCK_WISE_N:
+			{
+				long numBlocks = ((clen-1)/bclen)+1;
+				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/rlen/bclen);
+				
+				int count = 0;		
+				for( int k = 0; k<numBlocks; k+=numPartBlocks )
+				{
+					// 1) create sequence file writer, with right replication factor 
+					// (config via 'dfs.replication' not possible since sequence file internally calls fs.getDefaultReplication())
+					Path path2 = new Path(path.toString()+File.separator+(++count));
+					SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path2, MatrixIndexes.class, MatrixBlock.class);
+					
+					//3) reblock and write
+					try
+					{
+						MatrixIndexes indexes = new MatrixIndexes();
+			
+						//create and write subblocks of matrix
+						for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
+							for(int blockCol = k; blockCol < Math.min((int)Math.ceil(src.getNumColumns()/(double)bclen),k+numPartBlocks); blockCol++)
+							{
+								int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
+								int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+						
+								int row_offset = blockRow*brlen;
+								int col_offset = blockCol*bclen;
+								
+								//get reuse matrix block
+								MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+			
+								//copy submatrix to block
+								src.sliceOperations( row_offset+1, row_offset+maxRow, 
+										             col_offset+1, col_offset+maxCol, 
+										             block );
+								
+								//append block to sequence file
+								indexes.setIndexes(blockRow+1, blockCol+1);
+								writer.append(indexes, block);
+								
+								//reset block for later reuse
+								block.reset();
+							}
+					}
+					finally
+					{
+						if( writer != null )
+							writer.close();
+					}
+				}
+				break;
+			}
+				
+			default:
+				throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+pformat);
+		}
+	}
 	
 	/**
 	 * 

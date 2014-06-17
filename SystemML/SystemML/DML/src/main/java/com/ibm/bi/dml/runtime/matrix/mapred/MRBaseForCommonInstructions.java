@@ -28,7 +28,6 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstr
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
-import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;

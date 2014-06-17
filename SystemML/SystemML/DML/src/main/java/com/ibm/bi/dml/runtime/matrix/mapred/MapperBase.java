@@ -32,7 +32,6 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
-import com.ibm.bi.dml.runtime.matrix.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -92,32 +91,30 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		MAP_TIME 
 	};
 	
-	protected void commonMap(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, 
-	Reporter reporter) throws IOException 
+	
+	protected void commonMap(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, Reporter reporter) 
+		throws IOException 
 	{
 		long start=System.currentTimeMillis();
 		
 		//System.out.println("read in Mapper: "+rawKey+": "+rawValue);
 		
-		//for each represenattive matrix, read the record and apply instructions
+		//for each representative matrix, read the record and apply instructions
 		for(int i=0; i<representativeMatrixes.size(); i++)
 		{
 			byte thisMatrix=representativeMatrixes.get(i);
 			
-			//convert the record into the right format for the representatice matrix
+			//convert the record into the right format for the representative matrix
 			inputConverter.setBlockSize(brlens[i], bclens[i]);
 			inputConverter.convert(rawKey, rawValue);
 			
 			//apply unary instructions on the converted indexes and values
 			while(inputConverter.hasNext())
 			{
-				Pair<MatrixIndexes, MatrixValue> pair=inputConverter.next();
-			//	System.out.println("convert to: "+pair);
+				Pair<MatrixIndexes, MatrixValue> pair = inputConverter.next();
+				
 				MatrixIndexes indexes=pair.getKey();
-				
 				MatrixValue value=pair.getValue();
-				
-			//	System.out.println("after converter: "+indexes+" -- "+value);
 				
 				checkValidity(indexes, value, i);
 				
@@ -155,20 +152,18 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		}
 	}
 
-	private void loadDistCacheFiles(JobConf job, long[] rlens, long[] clens, int[] brlens, int[] bclens) throws IOException {
+	private void setupDistCacheFiles(JobConf job, long[] rlens, long[] clens, int[] brlens, int[] bclens) throws IOException {
 		
 		if ( MRJobConfiguration.getDistCacheInputIndices(job) == null )
 			return;
 		
 		//boolean isJobLocal = false;
-		isJobLocal = InfrastructureAnalyzer.isLocalMode();
+		isJobLocal = InfrastructureAnalyzer.isLocalMode(job);
 		
 		String[] inputIndices = MRJobConfiguration.getInputPaths(job);
 		String[] dcIndices = MRJobConfiguration.getDistCacheInputIndices(job).split(Instruction.INSTRUCTION_DELIM);
 		Path[] dcFiles = DistributedCache.getLocalCacheFiles(job);
-		boolean[] inputPartitionFlags = MRJobConfiguration.getInputPartitionFlags(job);
 		PDataPartitionFormat[] inputPartitionFormats = MRJobConfiguration.getInputPartitionFormats(job);
-		int[] inputPartitionSizes = MRJobConfiguration.getInputPartitionSizes(job);
 		
 		DistributedCacheInput[] dcInputs = new DistributedCacheInput[dcIndices.length];
 		for(int i=0; i < dcIndices.length; i++) {
@@ -191,9 +186,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 									MRJobConfiguration.getNumColumns(job, inputIndex), //clens[inputIndex],
 									MRJobConfiguration.getNumRowsPerBlock(job, inputIndex), //brlens[inputIndex],
 									MRJobConfiguration.getNumColumnsPerBlock(job, inputIndex), //bclens[inputIndex],
-									inputPartitionFlags[i],
-									inputPartitionFormats[i],
-									inputPartitionSizes[i]
+									inputPartitionFormats[inputIndex]
 								);
 	        	dcValues.put(inputIndex, dcInputs[i]);
         	}
@@ -296,7 +289,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			{
 				rbounds[i]=(long)Math.ceil((double)rlens[i]/(double)brlens[i]);
 				cbounds[i]=(long)Math.ceil((double)clens[i]/(double)bclens[i]);
-	
+				
 				lastblockrlens[i]=(int) (rlens[i]%brlens[i]);
 				lastblockclens[i]=(int) (clens[i]%bclens[i]);
 				if(lastblockrlens[i]==0)
@@ -324,7 +317,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		//load data from distributed cache (if required, reuse if jvm_reuse)
 		try
 		{
-			loadDistCacheFiles(job, rlens, clens, brlens, bclens);
+			setupDistCacheFiles(job, rlens, clens, brlens, bclens);
 		}
 		catch(IOException ex)
 		{

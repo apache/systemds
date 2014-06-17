@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
@@ -134,6 +135,7 @@ public class MRJobConfiguration
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	private static final String PARTITIONING_ITERVAR_CONFIG="partitioning.itervar";
 	private static final String PARTITIONING_TRANSPOSE_COL_CONFIG="partitioning.transposed.col";
+	private static final String PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG="partitioning.output.keep.indexes";
 	
 	//result merge info
 	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
@@ -198,10 +200,6 @@ public class MRJobConfiguration
 	private static final String DIMS_UNKNOWN_FILE_PREFIX = "dims.unknown.file.prefix";
 	
 	private static final String MMCJ_CACHE_SIZE="mmcj.cache.size";
-	
-	private static final String PARTITION_FLAGS   = "partition.flags";
-	private static final String PARTITION_FORMATS = "partition.formats";
-	private static final String PARTITION_SIZES   = "partition.sizes";
 	
 	private static final String DISTCACHE_INPUT_INDICES="distcache.input.indices";
 	private static final String DISTCACHE_INPUT_PATHS = "distcache.input.paths";
@@ -675,7 +673,18 @@ public class MRJobConfiguration
 		job.set(PARTITIONING_ITERVAR_CONFIG, itervar);
 		
 		//set transpose sparse column vector
-		job.setBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, tSparseCol);
+		job.setBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, tSparseCol);		
+	}
+	
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, boolean keepIndexes )
+			throws DMLRuntimeException
+	{
+		//set basic partitioning information
+		setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, dpf, n, fnameNew);
+		
+		//set transpose sparse column vector
+		job.setBoolean(PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG, keepIndexes);
+				
 	}
 	
 	public static long getPartitioningNumRows( JobConf job )
@@ -731,6 +740,11 @@ public class MRJobConfiguration
 	public static int getPartitioningSizeN( JobConf job )
 	{
 		return Integer.parseInt(job.get(PARTITIONING_OUTPUT_N_CONFIG));
+	}
+	
+	public static boolean getPartitioningIndexFlag( JobConf job )
+	{
+		return Boolean.parseBoolean(job.get(PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG));
 	}
 	
 	public static void setPartitioningFilename( JobConf job, String fname )
@@ -1157,12 +1171,10 @@ public class MRJobConfiguration
 		
 		for(String spath : paths) {
 			p = new Path(spath);
-			//System.out.println("Adding file DistCache: " + p.toString());
+			
 			DistributedCache.addCacheFile(p.toUri(), job);
 			DistributedCache.createSymlink(job);
 		}
-		
-		//createAllSymlink(job, jobCacheDir, workDir)
 	}
 	
 	public static String getDistCacheInputIndices(JobConf job) {
@@ -1217,10 +1229,8 @@ public class MRJobConfiguration
 		return s.toString();
 	}
 	
-	public static void setInputPartitioningInfo(JobConf job, boolean[] partitioned, PDataPartitionFormat[] pformats, int[] psizes) {
-		job.set(PARTITION_FLAGS,  MRJobConfiguration.getCSVString(partitioned));
-		job.set(PARTITION_FORMATS, MRJobConfiguration.getCSVString(pformats));
-		job.set(PARTITION_SIZES, MRJobConfiguration.getCSVString(psizes));
+	public static void setInputPartitioningInfo(JobConf job, PDataPartitionFormat[] pformats) {
+		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, MRJobConfiguration.getCSVString(pformats));
 	}
 	
 	private static boolean[] csv2boolean(String s) {
@@ -1249,17 +1259,10 @@ public class MRJobConfiguration
 		return arr;
 	}
 
-	public static boolean[] getInputPartitionFlags(JobConf job) {
-		return MRJobConfiguration.csv2boolean(job.get(PARTITION_FLAGS));
-	}
-	
 	public static PDataPartitionFormat[] getInputPartitionFormats(JobConf job) {
-		return MRJobConfiguration.csv2PFormat(job.get(PARTITION_FORMATS));
+		return MRJobConfiguration.csv2PFormat(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
 	}
 	
-	public static int[] getInputPartitionSizes(JobConf job) {
-		return MRJobConfiguration.csv2int(job.get(PARTITION_SIZES));
-	}
 /*	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			boolean inBlockRepresentation, int[] brlens, int[] bclens)
@@ -1278,6 +1281,17 @@ public class MRJobConfiguration
 	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			int[] brlens, int[] bclens, boolean setConverter, ConvertTarget target) 
+	throws Exception
+	{
+		//conservative initialize (all jobs except GMR)
+		boolean[] distCacheOnly = new boolean[inputIndexes.length];
+		Arrays.fill(distCacheOnly, false);
+		
+		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, distCacheOnly, setConverter, target);
+	}
+	
+	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
+			int[] brlens, int[] bclens, boolean[] distCacheOnly, boolean setConverter, ConvertTarget target) 
 	throws Exception
 	{
 		if(inputs.length!=inputInfos.length)
@@ -1299,20 +1313,16 @@ public class MRJobConfiguration
 		{
 			String name=inputs[i];
 			Path p=new Path(name);
-			boolean redundant=false;
-			for(Path ep: paths)
-				if(ep.equals(p))
-				{
-					redundant=true;
-					break;
-				}
-			if(redundant)
+			
+			//check redundant inputs
+			if(   paths.contains(p) //path already included
+			   || distCacheOnly[i] ) //input only required in dist cache
+			{
 				continue;
+			}
+			
+			//add input to job inputs
 			MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
-			///////////////////////////////////////////
-		//	FileInputFormat.addInputPath(job, p);
-		//	job.setInputFormat(inputInfos[i].inputFormatClass);
-			///////////////////////////////////////////
 			paths.add(p);
 		}
 		

@@ -513,7 +513,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private double getHDFSReadTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE;
@@ -534,7 +534,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
@@ -557,7 +557,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE;
 		else //dense
@@ -577,7 +577,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)ds*dm*dn)) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE;
@@ -914,6 +914,12 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}					
 					return 0;
 				
+				case Partition:
+					return d1m * d1n * d1s + //partitioning costs
+							MatrixBlock.estimateSizeOnDisk(d1m, d1n, (long)(d1m*d1n*d1s))
+							/ (1024*1024) //datasize [MB] 
+						   * DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE * DEFAULT_FLOPS;
+					
 				case INVALID:
 					return 0;
 				

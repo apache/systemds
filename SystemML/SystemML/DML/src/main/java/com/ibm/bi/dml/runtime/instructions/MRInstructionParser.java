@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstructi
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataPartitionMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -107,6 +108,9 @@ public class MRInstructionParser extends InstructionParser
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
 		
+		//String2MRInstructionType.put( "mapmultchain", MRINSTRUCTION_TYPE.MapMultChain);
+		
+		
 		// BINARY and SCALAR Instruction Opcodes 
 		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
@@ -181,12 +185,17 @@ public class MRInstructionParser extends InstructionParser
 		//misc
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 		
+		//partitioning
+		String2MRInstructionType.put( "partition", MRINSTRUCTION_TYPE.Partition);
+		
+		
 		//dummy (pseudo instructions)
 		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
 		
 		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
 		
 		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
+		
 		
 	}
 	
@@ -250,6 +259,9 @@ public class MRInstructionParser extends InstructionParser
 			
 		case MMTSJ:
 			return (MRInstruction) MMTSJMRInstruction.parseInstruction(str);
+		
+		//case MapMultChain:
+		//	return (MRInstruction) MapMultChainInstruction.parseInstruction(str);
 			
 		case CombineTertiary:
 			return (MRInstruction) CombineTertiaryInstruction.parseInstruction(str);
@@ -289,6 +301,9 @@ public class MRInstructionParser extends InstructionParser
 			
 		case ParameterizedBuiltin:
 			return (MRInstruction)ParameterizedBuiltinMRInstruction.parseInstruction(str);
+			
+		case Partition:
+			return (MRInstruction)DataPartitionMRInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

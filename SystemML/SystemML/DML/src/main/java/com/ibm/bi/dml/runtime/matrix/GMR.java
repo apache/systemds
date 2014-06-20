@@ -402,7 +402,7 @@ public class GMR
 							lcache = rightCache ? (index==in2 && index!=in1) : (index==in1&& index!=in2);
 						}	
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
-						use = tmp.contains(indexStr);
+						use |= tmp.contains(indexStr);
 					}
 				}
 			}

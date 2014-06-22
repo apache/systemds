@@ -29,7 +29,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 public class RewriteBlockSizeAndReblock extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -49,7 +49,9 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	public Hop rewriteHopDAG(Hop root) 
 		throws HopsException
 	{
-		// do nothing (does not apply to predicate hop DAGs) 
+		if( root != null )
+			rule_BlockSizeAndReblock(root, DMLTranslator.DMLBlockSize);
+		
 		return root;
 	}
 
@@ -62,13 +64,10 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				rule_BlockSizeAndReblock(hi, GLOBAL_BLOCKSIZE);
 		}
 
-		boolean canReblock = true;
+		boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE );
 		
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			canReblock = false;
-		
-		if (hop instanceof DataOp) {
-
+		if (hop instanceof DataOp) 
+		{
 			// if block size does not match
 			if (canReblock && hop.get_dataType() != DataType.SCALAR
 					&& (hop.get_rows_in_block() != GLOBAL_BLOCKSIZE || hop.get_cols_in_block() != GLOBAL_BLOCKSIZE)) {

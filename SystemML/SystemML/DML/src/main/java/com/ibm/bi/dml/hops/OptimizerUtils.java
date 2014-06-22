@@ -118,6 +118,12 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
 
+	/**
+	 * Enables sum product rewrites such as mapmultchains. In the future, this will cover 
+	 * all sum-product related rewrites.
+	 */
+	public static boolean ALLOW_SUM_PRODUCT_REWRITES = true;
+	
 	
 	//////////////////////
 	// Optimizer levels //

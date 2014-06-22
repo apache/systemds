@@ -242,6 +242,25 @@ public class Explain
 	
 	/**
 	 * 
+	 * @param hops
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static String explainHops( ArrayList<Hop> hops ) 
+		throws DMLRuntimeException
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		Hop.resetVisitStatus(hops);
+		for( Hop hop : hops )
+			sb.append(explainHop(hop, 0));
+		Hop.resetVisitStatus(hops);
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * 
 	 * @param hop
 	 * @return
 	 * @throws DMLRuntimeException 
@@ -249,7 +268,11 @@ public class Explain
 	public static String explain( Hop hop ) 
 		throws DMLRuntimeException
 	{
-		return explainHop(hop, 0);
+		hop.resetVisitStatus();
+		String ret = explainHop(hop, 0);
+		hop.resetVisitStatus();
+		
+		return ret;
 	}
 	
 	/**

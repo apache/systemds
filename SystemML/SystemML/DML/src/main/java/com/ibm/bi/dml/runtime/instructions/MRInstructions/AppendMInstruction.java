@@ -54,6 +54,35 @@ public class AppendMInstruction extends AppendInstruction
 		return new AppendMInstruction(null, in1, in2, offset, type, out, str);
 	}
 	
+	/**
+	 * Determines if the given index is only used via distributed cache in
+	 * the given instruction string (used during setup of distributed cache
+	 * to detect redundant job inputs).
+	 * 
+	 * @param inst
+	 * @param index
+	 * @return
+	 */
+	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	{
+		boolean ret = false;
+		
+		//parse instruction parts (with exec type)
+		String[] parts = inst.split(Instruction.OPERAND_DELIM);
+		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
+		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
+		ret = (index==in2 && index!=in1);
+		
+		return ret;
+	}
+	
+	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	{
+		//parse instruction parts (with exec type)
+		String[] parts = inst.split(Instruction.OPERAND_DELIM);
+		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
+		indexes.add(in2);
+	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,

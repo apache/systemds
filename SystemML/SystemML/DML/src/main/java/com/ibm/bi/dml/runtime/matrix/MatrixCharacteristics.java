@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -191,12 +192,22 @@ public class MatrixCharacteristics
 			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;
 			aggregateUnary(dims.get(realIns.input), 
 					(AggregateUnaryOperator)realIns.getOperator(), dim_out);
-		}else if(ins instanceof AggregateBinaryInstruction)
+		}
+		else if(ins instanceof AggregateBinaryInstruction)
 		{
 			AggregateBinaryInstruction realIns=(AggregateBinaryInstruction)ins;
 			aggregateBinary(dims.get(realIns.input1), dims.get(realIns.input2),
 					(AggregateBinaryOperator)realIns.getOperator(), dim_out);
-		}else if(ins instanceof ReblockInstruction)
+		}
+		else if(ins instanceof MapMultChainInstruction)
+		{
+			//output size independent of chain type
+			MapMultChainInstruction realIns=(MapMultChainInstruction)ins;
+			MatrixCharacteristics mc1 = dims.get(realIns._input1);
+			MatrixCharacteristics mc2 = dims.get(realIns._input2);
+			dim_out.set(mc1.numColumns, mc2.numColumns, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
+		}
+		else if(ins instanceof ReblockInstruction)
 		{
 			ReblockInstruction realIns=(ReblockInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);

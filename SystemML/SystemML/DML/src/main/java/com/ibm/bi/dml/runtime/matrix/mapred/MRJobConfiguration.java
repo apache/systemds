@@ -54,6 +54,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
@@ -1563,9 +1564,14 @@ public class MRJobConfiguration
 				else if(ins instanceof AggregateBinaryInstruction)
 				{
 					AggregateBinaryInstruction tempIns=(AggregateBinaryInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, 
-							dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1);
+					setIntermediateMatrixCharactristics(job, tempIns.input1, dims.get(tempIns.input1));
+					intermediateMatrixIndexes.add(tempIns.input1); //TODO
+				}
+				else if(ins instanceof MapMultChainInstruction)
+				{
+					MapMultChainInstruction tempIns=(MapMultChainInstruction) ins;
+					setIntermediateMatrixCharactristics(job, tempIns._input1, dims.get(tempIns._input1));	
+					intermediateMatrixIndexes.add(tempIns._input1);
 				}
 			}
 		}

@@ -23,7 +23,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.MapMult.CacheType;
+import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -32,6 +32,9 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -57,7 +60,7 @@ public class GMR
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	/*
+	/**
 	 * inBlockRepresentation: indicate whether to use block representation or cell representation
 	 * inputs: input matrices, the inputs are indexed by 0, 1, 2, .. based on the position in this string
 	 * inputInfos: the input format information for the input matrices
@@ -84,10 +87,9 @@ public class GMR
 			String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
 			String otherInstructionsInReducer, int numReducers, int replication, boolean jvmReuse, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
-	throws Exception
+		throws Exception
 	{
-		JobConf job;
-		job = new JobConf(GMR.class);
+		JobConf job = new JobConf(GMR.class);
 		job.setJobName("G-MR");
 		
 		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
@@ -263,9 +265,7 @@ public class GMR
 			job.set("mapred.job.tracker", "local");
 			MRJobConfiguration.setStagingDir( job );
 		}
-		
-		//System.out.println("Check mode = " + mode);
-		
+				
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job, mode);
 		
@@ -282,81 +282,52 @@ public class GMR
 		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";
 		stats = MapReduceTool.processDimsFiles(dir, stats);
 		MapReduceTool.deleteFileIfExistOnHDFS(dir);
-
-		/* Process different counters */
-		
-/*		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		Group rowgroup, colgroup;
-		
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
-		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-			
-			// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 )
-					throw new DMLRuntimeException("Unexpected error after executing GMR Job");
-			
-				rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);
-				colgroup = runjob.getCounters().getGroup("max_coldim_"+i);
-				int maxrow, maxcol;
-				maxrow = maxcol = 0;
-				for ( int rid=0; rid < numReducers; rid++ ) {
-					if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-						maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-					if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-						maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-				}
-				//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-				stats[i].numRows = maxrow;
-				stats[i].numColumns = maxcol;
-			}
-		}
-*/		
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
 
-	
-	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) {
-		if ( instructionsInMapper != null && instructionsInMapper != "" && InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) {
-			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
-			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
-			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
-			
-			byte index;
+	/**
+	 * 
+	 * @param job
+	 * @param instructionsInMapper
+	 * @param inputs
+	 * @param rlens
+	 * @param clens
+	 */
+	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) 
+	{
+		if(    instructionsInMapper != null && !instructionsInMapper.isEmpty() 
+			&& InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) 
+		{
+			//get all indexes of distributed cache inputs
+			ArrayList<Byte> indexList = new ArrayList<Byte>();
 			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
-			for(int i=0; i < inst.length; i++) {
-				if ( inst[i].contains(MapMult.OPCODE) || inst[i].contains(AppendM.OPCODE) ) {
-					// example: MR.mvmult.0.1.2
-					
-					// Determine the index that points to a vector
-					String[] parts = inst[i].split(Instruction.OPERAND_DELIM);
-					byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-					byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-					boolean rightCache = inst[i].contains(MapMult.OPCODE)?CacheType.valueOf(parts[5]).isRightCache():true; //4 is out
-					if ( rightCache )
-						index = in2; // input2 is in dist cache
-					else 
-						index = in1; // input1 is in dist cache
-					
-					if ( !pathList.contains(index) ) {
-						pathList.add(inputs[index]);
-						if ( indexString.equalsIgnoreCase("") ) {
-							indexString += index;
-							pathString += inputs[index];
-						} 
-						else {
-							indexString += Instruction.INSTRUCTION_DELIM + index;
-							pathString += Instruction.INSTRUCTION_DELIM + inputs[index];
-						}
-					}
-				}
+			for( String tmp : inst ){
+				if( tmp.contains(MapMultChain.OPCODE) )
+					MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
+				else if( tmp.contains(MapMult.OPCODE) )
+					AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
+				else if( tmp.contains(AppendM.OPCODE) )
+					AppendMInstruction.addDistCacheIndex(tmp, indexList);								
 			}
 			
+			//construct index and path strings
+			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
+			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
+			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
+			for( byte index : indexList )
+			{
+				if( pathList.size()>0 ) {
+					indexString += Instruction.INSTRUCTION_DELIM;
+					pathString += Instruction.INSTRUCTION_DELIM;
+				}
+				pathList.add( inputs[index] );
+				indexString += index;
+				pathString += inputs[index];
+			}
+			
+			//configure mr job with distcache indexes
 			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
 			
 			//clean in-memory cache (prevent job interference in local mode)
@@ -366,7 +337,7 @@ public class GMR
 	}
 
 	/**
-	 * Determine which indices are only used as inputs through distribtued cache and hence would
+	 * Determine which indices are only used as inputs through distributed cache and hence would
 	 * be redundant job inputs.
 	 * 
 	 * @param realIndexes
@@ -382,7 +353,8 @@ public class GMR
 		String[] inst = new String[]{inst1, inst2, inst3, inst4};
 		
 		//for all result indexes
-		for( int i=0; i<ret.length; i++ ){
+		for( int i=0; i<ret.length; i++ )
+		{
 			byte index = realIndexes[i];
 			String indexStr = index+Lop.DATATYPE_PREFIX+DataType.MATRIX.toString();
 			
@@ -394,13 +366,12 @@ public class GMR
 					for( String tmp : alinst ) //for each individual instruction
 					{
 						boolean lcache = false;
-						if ( tmp.contains(MapMult.OPCODE) || tmp.contains(AppendM.OPCODE) ) {
-							String[] parts = tmp.split(Instruction.OPERAND_DELIM);
-							byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-							byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-							boolean rightCache = tmp.contains(MapMult.OPCODE)?CacheType.valueOf(parts[5]).isRightCache():true; //4 is out
-							lcache = rightCache ? (index==in2 && index!=in1) : (index==in1&& index!=in2);
-						}	
+						if( tmp.contains(MapMultChain.OPCODE) )
+							lcache = MapMultChainInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(MapMult.OPCODE) )
+							lcache = AggregateBinaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(AppendM.OPCODE) )
+							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);								
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);
 					}

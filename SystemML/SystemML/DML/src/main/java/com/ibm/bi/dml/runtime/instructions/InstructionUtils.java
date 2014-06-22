@@ -11,6 +11,7 @@ import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.MapMult;
+import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -40,6 +41,27 @@ public class InstructionUtils
 		
 		if ( numFields != expected ) 
 			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected + ") != is not equal to actual number (" + numFields + ").");
+		
+		return numFields; 
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @param expected1
+	 * @param expected2
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static int checkNumFields( String str, int expected1, int expected2 ) 
+		throws DMLRuntimeException 
+	{
+		//note: split required for empty tokens
+		int numParts = str.split(Instruction.OPERAND_DELIM).length;
+		int numFields = numParts - 2; // -2 accounts for execType and opcode
+		
+		if ( numFields != expected1 && numFields != expected2 ) 
+			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
 		
 		return numFields; 
 	}
@@ -163,7 +185,8 @@ public class InstructionUtils
 		{
 			String opcode = getOpCode(inst);
 			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
-			    	|| opcode.equalsIgnoreCase(MapMult.OPCODE) ) 
+			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
+			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE) ) 
 			{
 				return true;
 			}

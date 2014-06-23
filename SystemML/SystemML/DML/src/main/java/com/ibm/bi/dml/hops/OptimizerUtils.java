@@ -200,15 +200,20 @@ public class OptimizerUtils
 				_optLevel = OptimizationLevel.O0_LOCAL_STATIC;
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
+				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_SUM_PRODUCT_REWRITES = false;
 				break;
 			// opt level 1: memory-based (no advanced rewrites)	
 			case 1:
 				_optLevel = OptimizationLevel.O1_LOCAL_MEMORY_MIN;
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
+				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_SUM_PRODUCT_REWRITES = false;
 				break;
 			// opt level 2: memory-based (all advanced rewrites)
 			case 2:

@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -209,6 +210,11 @@ public class Statistics
 		Long oldCnt = _cpInstCounts.get(key);
 		Long newCnt = 1 + ((oldCnt!=null) ? oldCnt : 0);
 		_cpInstCounts.put(key, newCnt);
+	}
+	
+	public static Set<String> getCPHeavyHitterOpCodes()
+	{
+		return _cpInstTime.keySet();
 	}
 	
 	/**

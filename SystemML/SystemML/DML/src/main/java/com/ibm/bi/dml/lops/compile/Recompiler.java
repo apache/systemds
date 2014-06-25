@@ -102,6 +102,7 @@ public class Recompiler
 	//max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1024*1024*1024; 
+	private static final long CP_CSV_REBLOCK_THRESHOLD_SIZE = 256*1024*1024;
 	
 	//reused rewriter for dynamic rewrites during recompile
 	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
@@ -1113,19 +1114,14 @@ public class Recompiler
 				// however, we do a conservative check with the CSV filesize
 				if ( rows == -1 || cols == -1 ) 
 				{
-					/* TODO for this feature we need csv read with unknown size 
 					JobConf job = ConfigurationManager.getCachedJobConf();
 					FileSystem fs = FileSystem.get(job);
 					FileStatus fstatus = fs.getFileStatus(new Path(mo.getFileName()));
-					if( fstatus.getLen() > CP_CSV_REBLOCK_FILESIZE_RATIO * OptimizerUtils.getLocalMemBudget() )
+					if( fstatus.getLen() > CP_CSV_REBLOCK_THRESHOLD_SIZE || CP_CSV_REBLOCK_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;
 					}			
-					*/
-					
-					ret = false;
-					break;
 				}
 				//default case (known dimensions)
 				else

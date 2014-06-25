@@ -1,0 +1,7 @@
+
+# DML script that tests read csv
+
+A = read($1);
+x = sum(A);
+write(x, $2);
+

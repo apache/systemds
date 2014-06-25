@@ -714,7 +714,7 @@ public class MatrixObject extends CacheableData
 			// b) write the matrix 
 			try
 			{
-				writeMetaData( fName, outputFormat );
+				writeMetaData( fName, outputFormat, formatProperties );
 				writeMatrixToHDFS( fName, outputFormat, replication, formatProperties );
 				if ( !pWrite )
 					_dirtyFlag = false;
@@ -735,7 +735,7 @@ public class MatrixObject extends CacheableData
 			{
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				writeMetaData( fName, outputFormat );
+				writeMetaData( fName, outputFormat, formatProperties );
 				MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
 			}
 			catch (Exception e)
@@ -1267,7 +1267,7 @@ public class MatrixObject extends CacheableData
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private void writeMetaData (String filePathAndName, String outputFormat)
+	private void writeMetaData (String filePathAndName, String outputFormat, FileFormatProperties formatProperties)
 		throws DMLRuntimeException, IOException
 	{
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
@@ -1287,7 +1287,7 @@ public class MatrixObject extends CacheableData
 						(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
 					mc = new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
 				}
-				MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo);
+				MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo, formatProperties);
 			}
 		}
 		else {

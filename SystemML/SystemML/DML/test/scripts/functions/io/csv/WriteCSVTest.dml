@@ -1,0 +1,8 @@
+
+# DML script that tests read/write csv
+
+A = read($1+".data");
+x = sum(A);
+write(x, $2);
+
+write(A, $3, format="csv", header=$4, sep=$5, sparse=$6);

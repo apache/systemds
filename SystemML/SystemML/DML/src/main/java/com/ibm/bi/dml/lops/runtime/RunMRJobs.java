@@ -357,10 +357,12 @@ public class RunMRJobs
 						}
 						outputMatrices[i].setFileExists(true);
 						
-						// write out metadata file
-						// Currently, valueType information in not stored in MR instruction, 
-						// since only DOUBLE matrices are supported ==> hard coded the value type information for now
-						MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+						if ( inst.getJobType() != JobType.CSV_WRITE ) {
+							// write out metadata file
+							// Currently, valueType information in not stored in MR instruction, 
+							// since only DOUBLE matrices are supported ==> hard coded the value type information for now
+							MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+						}
 					}
 				}
 				return ret;

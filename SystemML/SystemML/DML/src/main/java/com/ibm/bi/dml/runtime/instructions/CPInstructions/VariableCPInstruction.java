@@ -798,7 +798,7 @@ public class VariableCPInstruction extends CPInstruction
 				}
 				
 				// Write Metadata file
-				MapReduceTool.writeMetaDataFile (input2.get_name() + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo);
+				MapReduceTool.writeMetaDataFile (input2.get_name() + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
@@ -944,10 +944,6 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(mc.get_cols_per_block());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
-		
-		if ( format.equalsIgnoreCase("csv") ) {
-			
-		}
 		
 		String str = sb.toString();
 

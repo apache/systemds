@@ -1,0 +1,18 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Script that checks reading of MatrixMarket file
+# format="mm" is not provided in read() statement to test the 
+# code that infers the MM format
+
+A = read($1);
+x = sum(A);
+write(x, $2);
+
+

@@ -576,6 +576,13 @@ public class Dag<N extends Lop>
 			}
 		}
 
+		if ( eliminate ) {
+			// Eliminated lops are directly added to GMR queue. 
+			// Note that eliminate flag is set only for 'group' lops
+			arr.get(JobType.GMR.getId()).add(node);
+			return;
+		}
+		
 		/*
 		 * If this lop does not define a job, check if it uses the output of any
 		 * specialized job. i.e., if this lop has a child node in any of the
@@ -586,7 +593,7 @@ public class Dag<N extends Lop>
 		int numAdded = 0;
 		for ( JobType j : JobType.values() ) {
 			if ( j.getId() > 0 && hasChildNode(node, arr.get(j.getId()))) {
-				if (eliminate || isCompatible(node, j)) {
+				if (isCompatible(node, j)) {
 					arr.get(j.getId()).add(node);
 					numAdded += 1;
 				}
@@ -1264,6 +1271,25 @@ public class Dag<N extends Lop>
 
 				// first process scalar instructions
 				generateControlProgramJobs(execNodes, inst, writeInst, deleteInst);
+
+				// copy unassigned lops in execnodes to gmrnodes
+				for (int i = 0; i < execNodes.size(); i++) {
+					N node = execNodes.elementAt(i);
+					if (jobType(node, jobNodes) == -1) {
+						if ( isCompatible(node,  JobType.GMR) ) {
+							jobNodes.get(JobType.GMR.getId()).add(node);
+							addChildren(node, jobNodes.get(JobType.GMR.getId()), execNodes);
+						}
+						else {
+							LOG.trace(indent + "Queueing -" + node.toString() + " (code 10)");
+							execNodes.remove(i);
+							finishedNodes.remove(node);
+							queuedNodes.add(node);
+							removeNodesForNextIteration(node, finishedNodes,
+								execNodes, queuedNodes, jobNodes);
+						}
+					}
+				}
 
 				// next generate MR instructions
 				if (execNodes.size() > 0)
@@ -2314,7 +2340,7 @@ public class Dag<N extends Lop>
 
 	{
 
-		// copy unassigned lops in execnodes to gmrnodes
+		/*// copy unassigned lops in execnodes to gmrnodes
 		for (int i = 0; i < execNodes.size(); i++) {
 			N node = execNodes.elementAt(i);
 			if (jobType(node, jobNodes) == -1) {
@@ -2322,7 +2348,7 @@ public class Dag<N extends Lop>
 				addChildren(node, jobNodes.get(JobType.GMR.getId()),
 						execNodes);
 			}
-		}
+		}*/
 
 		printJobNodes(jobNodes);
 		

@@ -1,0 +1,16 @@
+
+# Script to reproduce a piggybacking bug related to "eliminated" group lops.
+# The bug appears only when MMultMethod=CPMM was chosen (or forced) for the 
+# operation t(A)%*%E.
+
+A = read("DML/data/A"); #matrix(1,rows=10,cols=10) #
+B = read("DML/data/B"); #matrix(1,rows=10,cols=10) #
+E = read("DML/data/E"); #matrix(1,rows=10,cols=10) #
+
+F = t(A) + B 
+G = t(A) %*% E
+
+H = F + G
+
+write(H, "DML/data/H")
+

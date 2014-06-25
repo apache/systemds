@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBas
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
@@ -251,6 +252,9 @@ public class MatrixCharacteristics
 		else if (ins instanceof CombineTertiaryInstruction ) {
 			TertiaryInstruction realIns=(TertiaryInstruction)ins;
 			dim_out.set(dims.get(realIns.input1));
+		}
+		else if (ins instanceof CombineUnaryInstruction ) {
+			dim_out.set( dims.get(((CombineUnaryInstruction) ins).input));
 		}
 		else if(ins instanceof CM_N_COVInstruction || ins instanceof GroupedAggregateInstruction )
 		{

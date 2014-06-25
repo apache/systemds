@@ -1,0 +1,12 @@
+
+# DML script to reproduce a piggybacking bug that caused
+# combineunary lop to (eagerly) piggbacked into GMR that performs A[,4].
+# However, combineunary can only be piggybacked into SortMR.
+
+A = matrix(1,rows=10,cols=10);
+
+F = A[,4];
+x = interQuartileMean(F);
+
+#print("IQM = " + x );
+write(x, $1);

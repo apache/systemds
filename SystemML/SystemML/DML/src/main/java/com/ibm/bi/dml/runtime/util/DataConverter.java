@@ -354,16 +354,25 @@ public class DataConverter
 		long clen = prop.clen;
 		InputInfo inputinfo = prop.inputInfo;
 		
-		//determine target representation (sparse/dense)
-		long estnnz = (long)(prop.expectedSparsity*rlen*clen);
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
+		MatrixBlock ret = null;
+		boolean sparse = false;
 		
-		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
-		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
-			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
-		else if( sparse )
-			ret.adjustSparseRows((int)rlen-1);
+		if ( inputinfo == InputInfo.CSVInputInfo && (rlen==-1 || clen==-1) ) {
+			// CP-side CSV reblock based on file size for matrix w/ unknown dimensions
+			ret = null;
+		}
+		else {
+			//determine target representation (sparse/dense)
+			long estnnz = (long)(prop.expectedSparsity*rlen*clen);
+			sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
+			
+			//prepare result matrix block
+			ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
+			if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
+				ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+			else if( sparse )
+				ret.adjustSparseRows((int)rlen-1);
+		}
 		
 		//prepare file access
 		JobConf job = new JobConf();	
@@ -401,7 +410,7 @@ public class DataConverter
 			} 
 			else if ( inputinfo == InputInfo.CSVInputInfo ) {
 				CSVFileFormatProperties csvprop = (CSVFileFormatProperties) prop.formatProperties;
-				readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, csvprop.isHasHeader(), csvprop.getDelim(), csvprop.isFill(), csvprop.getFillValue());
+				ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, csvprop.isHasHeader(), csvprop.getDelim(), csvprop.isFill(), csvprop.getFillValue());
 			}
 			else {
 				throw new IOException("Can not read files with format = " + InputInfo.inputInfoToString(inputinfo));
@@ -1429,10 +1438,18 @@ public class DataConverter
 			if ( !value.startsWith("%%") ) {
 				throw new IOException("Error while reading file in MatrixMarket format. Expecting a header line, but encountered, \"" + value +"\".");
 			}
-			value = br.readLine(); // line with matrix dimensions
+			
+			// skip until end-of-comments
+			do {
+				value = br.readLine();
+			} while(value.charAt(0) == '%');
+			
+			// the first line after comments is the one w/ matrix dimensions
+			
+			//value = br.readLine(); // line with matrix dimensions
 			
 			// validate (rlen clen nnz)
-			String[] fields = value.split(" "); 
+			String[] fields = value.trim().split("\\s+"); 
 			long mm_rlen = Long.parseLong(fields[0]);
 			long mm_clen = Long.parseLong(fields[1]);
 			if ( rlen != mm_rlen || clen != mm_clen ) {
@@ -1492,6 +1509,41 @@ public class DataConverter
 	}
 	
 	
+	private static MatrixBlock computeCSVSize ( Path path, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) throws IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
+
+		int nrow = -1;
+		int ncol = -1;
+		String value = null;
+		
+		String escapedDelim = Pattern.quote(delim);
+		MatrixBlock dest = new MatrixBlock();
+		try
+		{
+			// Read the header line, if there is one.
+			String headerLine = null, cellStr = null;
+			if ( hasHeader ) 
+				headerLine = br.readLine();
+			
+			value = br.readLine();
+			cellStr = value.toString().trim();
+			ncol = cellStr.split(escapedDelim,-1).length;
+			nrow = 1;
+			
+			while ( (value = br.readLine()) != null ) {
+				nrow++;
+			}
+			
+			dest = new MatrixBlock(nrow, ncol, true);
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
+		}
+		return dest;
+	}
+	
 	/**
 	 * 
 	 * @param path
@@ -1505,9 +1557,16 @@ public class DataConverter
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private static void readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
+	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
+		
+		if ( dest == null ) {
+			dest = computeCSVSize(path, job, fs, hasHeader, delim, fill, fillValue);
+			rlen = dest.getNumRows();
+			clen = dest.getNumColumns();
+		}
+		
 		boolean sparse = dest.isInSparseFormat();
 		//FileSystem fs = FileSystem.get(job);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
@@ -1595,6 +1654,8 @@ public class DataConverter
 			if( br != null )
 				br.close();
 		}
+		
+		return dest;
 	}
 
 	

@@ -66,11 +66,12 @@ public class DataExpression extends DataIdentifier
 	public static final String VALUETYPEPARAM = "value_type";
 	public static final String DESCRIPTIONPARAM = "description"; 
 	
+	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
 	public static final String DELIM_HAS_HEADER_ROW = "header";
 	public static final String DELIM_FILL = "fill";
 	public static final String DELIM_FILL_VALUE = "default";
-	public static final String DELIM_SPARSE = "sparse";
+	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
 		{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF}; 
@@ -78,13 +79,19 @@ public class DataExpression extends DataIdentifier
 	public static final String[] MATRIX_VALID_PARAM_NAMES = 
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS};
 	
+	// Valid parameter names in a metadata file
 	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
 		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE, 
-			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM }; 
+			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM,
+			// Parameters related to delimited/csv files.
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW
+		}; 
 
 	public static final String[] READ_VALID_PARAM_NAMES = 
 	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM,
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW }; 
+			// Parameters related to delimited/csv files.
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW 
+	}; 
 		
 	/* Default Values for delimited (CSV) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -426,6 +433,53 @@ public class DataExpression extends DataIdentifier
 		_varParams.remove(name);
 	}
 	
+	private String processInputFileName(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+		String filename = null;
+		
+		Expression fileNameExpr = getVarParam(IO_FILENAME);
+		if (fileNameExpr instanceof ConstIdentifier){
+			return fileNameExpr.toString();
+		}
+		else if (fileNameExpr instanceof BinaryExpression){
+			BinaryExpression expr = (BinaryExpression)fileNameExpr;
+							
+			if (expr.getKind()== Expression.Kind.BinaryOp){
+				Expression.BinaryOp op = expr.getOpCode();
+				switch (op){
+				case PLUS:
+						filename = "";
+						filename = fileNameCat(expr, currConstVars, filename);
+						// Since we have computed the value of filename, we update
+						// varParams with a const string value
+						StringIdentifier fileString = new StringIdentifier(filename);
+						fileString.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						removeVarParam(IO_FILENAME);
+						addVarParam(IO_FILENAME, fileString);
+					break;
+				default:
+					LOG.error(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
+					throw new LanguageException(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
+				}
+			}
+		}
+		else {
+			LOG.error(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+			throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+		}
+		
+		return filename;
+	}
+	
+	private String getMTDFileName(String inputFileName) throws LanguageException {
+		String mtdName = inputFileName + ".mtd";
+		
+		//validate read filename
+		if( !LocalFileUtils.validateExternalFilename(mtdName, true) )
+			throw new LanguageException("Invalid (non-trustworthy) hdfs read filename.");
+
+		return mtdName;
+	}
+	
 	/**
 	 * Validate parse tree : Process Data Expression in an assignment
 	 * statement
@@ -505,46 +559,13 @@ public class DataExpression extends DataIdentifier
 			
 			JSONObject configObject = null;	
 
-			// read the configuration file
-			String filename = null;
+			// Process expressions in input filename
+			String inputFileName = processInputFileName(currConstVars);
 			
-			if (getVarParam(IO_FILENAME) instanceof ConstIdentifier){
-				filename = getVarParam(IO_FILENAME).toString() +".mtd";
-			}
-			else if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
-				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
-								
-				if (expr.getKind()== Expression.Kind.BinaryOp){
-					Expression.BinaryOp op = expr.getOpCode();
-					switch (op){
-					case PLUS:
-							filename = "";
-							filename = fileNameCat(expr, currConstVars, filename);
-							// Since we have computed the value of filename, we update
-							// varParams with a const string value
-							StringIdentifier fileString = new StringIdentifier(filename);
-							fileString.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							removeVarParam(IO_FILENAME);
-							addVarParam(IO_FILENAME, fileString);
-							filename = filename + ".mtd";
-												
-						break;
-					default:
-						LOG.error(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
-						throw new LanguageException(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
-					}
-				}
-			}
-			else {
-				LOG.error(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
-				throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
-			}
+			// Obtain and validate metadata filename
+			String mtdFileName = getMTDFileName(inputFileName);
 			
-			//validate read filename
-			if( !LocalFileUtils.validateExternalFilename(filename, true) )
-				throw new LanguageException("Invalid (non-trustworthy) hdfs read filename.");
-	    	
-			
+
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = true;
 			
@@ -559,8 +580,7 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is matrix market format
 			if (formatTypeString == null){
-				String origFilename = getVarParam(IO_FILENAME).toString();
-				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(origFilename); 
+				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(inputFileName, mtdFileName); 
 				if (isMatrixMarketFormat){
 					
 					formatTypeString = FORMAT_TYPE_VALUE_MATRIXMARKET;
@@ -572,9 +592,7 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is delimited format
 			if (formatTypeString == null) {
-					
-				String origFilename = getVarParam(IO_FILENAME).toString();
-				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
+				boolean isDelimitedFormat = checkHasDelimitedFormat(inputFileName); 
 				
 				if (isDelimitedFormat){
 					addVarParam(FORMAT_TYPE,new StringIdentifier(FORMAT_TYPE_VALUE_CSV));
@@ -613,7 +631,7 @@ public class DataExpression extends DataIdentifier
 				shouldReadMTD = false;
 				
 				// get metadata from MatrixMarket format file
-				String[] headerLines = readMatrixMarketFile(getVarParam(IO_FILENAME).toString());
+				String[] headerLines = readMatrixMarketFile(inputFileName);
 				
 				// process 1st line of MatrixMarket format -- must be identical to legal header
 				String legalHeaderMM = "%%MatrixMarket matrix coordinate real general";
@@ -697,48 +715,14 @@ public class DataExpression extends DataIdentifier
 			configObject = null;
 			
 			if (shouldReadMTD){
-				configObject = readMetadataFile(filename);
+				configObject = readMetadataFile(mtdFileName);
 		        		    
 		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
 		        if (configObject != null){
-		        		    
-		        	for (Object key : configObject.keySet()){
-						
-		        		boolean isValidName = false;
-		        		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
-		    				if (paramName.equals(key))
-		    					isValidName = true;
-		    			}
-		        		
-						if (!isValidName){
-							LOG.error(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
-							throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
-						}
-						
-						// if the read method parameter is a constant, then verify value matches MTD metadata file
-						if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
-								&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
-							
-							LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
-							
-							throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
-						}
-						else {
-							// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
-							if (getVarParam(key.toString()) == null){
-								if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
-									StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
-									strId.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-									addVarParam(key.toString(), strId);
-								}
-							}
-						}
-					}
+		        	parseMetaDataFileParameters(mtdFileName, configObject);
 		        }
 		        else {
-		        	LOG.warn("Metadata file: " + new Path(filename) + " not provided");
+		        	LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
 		        }
 			} 
 	        
@@ -767,24 +751,18 @@ public class DataExpression extends DataIdentifier
 								|| key.equals(READNUMNONZEROPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
 								)){
 							
+							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
+									   + DELIM_HAS_HEADER_ROW   + "," 
+									   + DELIM_DELIMITER 	+ ","
+									   + DELIM_FILL 		+ ","
+									   + DELIM_FILL_VALUE 	+ ","
+									   + READROWPARAM     + "," 
+									   + READCOLPARAM;
 							LOG.error(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + IO_FILENAME     + "," 
-																				   + DELIM_HAS_HEADER_ROW   + "," 
-																				   + DELIM_DELIMITER 	+ ","
-																				   + DELIM_FILL 		+ ","
-																				   + DELIM_FILL_VALUE 	+ ","
-																				   + READROWPARAM     + "," 
-																				   + READCOLPARAM);
+									toString() + ". " + msg);
 							
 							throw new LanguageException(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + IO_FILENAME      + "," 
-																				   + DELIM_HAS_HEADER_ROW   + ","
-																				   + DELIM_DELIMITER + "," 
-																				   + DELIM_FILL 		+ ","
-																				   + DELIM_FILL_VALUE 	+ ","
-																				   + READROWPARAM     + "," 
-																				   + READCOLPARAM,
-																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+									toString() + ". " + msg, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
@@ -797,12 +775,9 @@ public class DataExpression extends DataIdentifier
 					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
 						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_DELIMITER) 
-								+  " must be a string value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_DELIMITER) 
-								+  " must be a string value ");
+						String msg = "For delimited file '" + getVarParam(DELIM_DELIMITER) +  "' must be a string value ";
+						LOG.error(this.printErrorLocation() + msg);
+						throw new LanguageException(this.printErrorLocation() + msg);
 					}
 				} 
 				
@@ -814,12 +789,9 @@ public class DataExpression extends DataIdentifier
 					if ( (getVarParam(DELIM_FILL_VALUE) instanceof ConstIdentifier)
 							&& (! (getVarParam(DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
 					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
+						String msg = "For delimited file '" + getVarParam(DELIM_FILL_VALUE)  +  "' must be a numeric value ";
+						LOG.error(this.printErrorLocation() + msg);
+						throw new LanguageException(this.printErrorLocation() + msg);
 					}
 				} 
 				
@@ -831,12 +803,9 @@ public class DataExpression extends DataIdentifier
 					if ((getVarParam(DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
 						&& (! (getVarParam(DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
 					{
-	
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
+						String msg = "For delimited file '" + getVarParam(DELIM_HAS_HEADER_ROW) + "' must be a boolean value ";
+						LOG.error(this.printErrorLocation() + msg);
+						throw new LanguageException(this.printErrorLocation() + msg);
 					}
 				}
 				
@@ -849,12 +818,9 @@ public class DataExpression extends DataIdentifier
 					if ((getVarParam(DELIM_FILL) instanceof ConstIdentifier)
 							&& (! (getVarParam(DELIM_FILL) instanceof BooleanIdentifier)))
 					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_FILL) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(DELIM_FILL) 
-								+  " must be a boolean value ");
+						String msg = "For delimited file '" + getVarParam(DELIM_FILL) + "' must be a boolean value ";
+						LOG.error(this.printErrorLocation() + msg);
+						throw new LanguageException(this.printErrorLocation() + msg);
 					}
 				}		
 			} 
@@ -880,7 +846,7 @@ public class DataExpression extends DataIdentifier
 				
 				if ( !isCSV && (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null)){
 					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
-					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + filename, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + mtdFileName, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
 				}
 				if (getVarParam(READROWPARAM) instanceof ConstIdentifier && getVarParam(READCOLPARAM) instanceof ConstIdentifier)  {
@@ -1015,11 +981,11 @@ public class DataExpression extends DataIdentifier
 					Expression.BinaryOp op = expr.getOpCode();
 					switch (op){
 						case PLUS:
-							filename = "";
-							filename = fileNameCat(expr, currConstVars, filename);
+							mtdFileName = "";
+							mtdFileName = fileNameCat(expr, currConstVars, mtdFileName);
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value
-							StringIdentifier fileString = new StringIdentifier(filename);
+							StringIdentifier fileString = new StringIdentifier(mtdFileName);
 							fileString.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							removeVarParam(IO_FILENAME);
 							addVarParam(IO_FILENAME, fileString);
@@ -1832,6 +1798,73 @@ public class DataExpression extends DataIdentifier
 		return result;
 	}
 
+	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject) throws LanguageException {
+    	for (Object key : configObject.keySet()){
+			
+    		boolean isValidName = false;
+    		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
+				if (paramName.equals(key))
+					isValidName = true;
+			}
+    		
+			if (!isValidName){
+				LOG.error(this.printErrorLocation() + "MTD file " + mtdFileName + " contains invalid parameter name: " + key);
+				throw new LanguageException(this.printErrorLocation() + "MTD file " + mtdFileName + " contains invalid parameter name: " + key);
+			}
+			
+			// if the read method parameter is a constant, then verify value matches MTD metadata file
+			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
+					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+				
+				LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+						"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
+				
+				throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+						"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
+			}
+			else {
+				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
+				if (getVarParam(key.toString()) == null){
+					if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
+						StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
+						strId.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
+								|| key.toString().equalsIgnoreCase(DELIM_FILL)
+								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)) {
+							// parse these parameters as boolean values
+							BooleanIdentifier boolId = null; 
+							if ( strId.toString().equalsIgnoreCase("true") ) {
+								boolId = new BooleanIdentifier(true);
+							}
+							else if ( strId.toString().equalsIgnoreCase("false") ) {
+								boolId = new BooleanIdentifier(false);
+							}
+							else {
+								String msg = "Invalid value provided for '" + DELIM_HAS_HEADER_ROW + "' in metadata file '" + mtdFileName + "'. Must be either TRUE or FALSE.";
+								LOG.error(this.printErrorLocation() + msg);
+								throw new LanguageException(this.printErrorLocation() + msg);	
+							}
+							boolId.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							removeVarParam(key.toString());
+							addVarParam(key.toString(), boolId);
+						}
+						else if ( key.toString().equalsIgnoreCase(DELIM_FILL_VALUE)) {
+							// parse these parameters as numeric values
+							DoubleIdentifier doubleId = new DoubleIdentifier( Double.parseDouble(strId.toString()) ); 
+							doubleId.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							removeVarParam(key.toString());
+							addVarParam(key.toString(), doubleId);
+						}
+						else {
+							// by default, treat a parameter as a string
+							addVarParam(key.toString(), strId);
+						}
+					}
+				}
+			}
+    	}
+	}
 	
 	public JSONObject readMetadataFile(String filename) throws LanguageException {
 	
@@ -1965,7 +1998,10 @@ public class DataExpression extends DataIdentifier
 			else if (exists) {
 				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
 				retVal[0] = in.readLine();
-				retVal[1] = in.readLine();
+				// skip all commented lines
+				do {
+					retVal[1] = in.readLine();
+				} while ( retVal[1].charAt(0) == '%' );
 				
 				if ( !retVal[0].startsWith("%%") ) {
 					LOG.error(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
@@ -1987,10 +2023,10 @@ public class DataExpression extends DataIdentifier
 		return retVal;
 	}
 	
-	public boolean checkHasMatrixMarketFormat(String filename) throws LanguageException {
+	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName) throws LanguageException {
 		
 		// Check the MTD file exists. if there is an MTD file, return false.
-		JSONObject mtdObject = readMetadataFile(filename +".mtd");
+		JSONObject mtdObject = readMetadataFile(mtdFileName);
 	    
 		if (mtdObject != null)
 			return false;
@@ -2006,14 +2042,14 @@ public class DataExpression extends DataIdentifier
 			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
 		}
 		
-		Path pt = new Path(filename);
+		Path pt = new Path(inputFileName);
 		try {
 			if (fs.exists(pt)){
 				exists = true;
 			}
 		} catch (Exception e){
-			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
-			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
+			LOG.error(this.printErrorLocation() + "file " + inputFileName + " not found");
+			throw new LanguageException(this.printErrorLocation() + "file " + inputFileName + " not found");
 		}
 	
 		try {

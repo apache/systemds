@@ -37,7 +37,9 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
+import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
@@ -439,7 +441,11 @@ public class MapReduceTool
 		return stats;
 	}
 	
-	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {
+	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo) throws IOException {
+		writeMetaDataFile(mtdfile, v, mc, outinfo, null);
+	}
+	
+	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo, FileFormatProperties formatProperties ) throws IOException {
 		//MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
         Path pt=new Path(mtdfile);
         FileSystem fs = FileSystem.get(_rJob);
@@ -487,7 +493,13 @@ public class MapReduceTool
         	line += "\"csv\"\n"; 
           } else {
         	line += "\"specialized\"\n"; 
-        }
+          }
+          
+          if ( outinfo == OutputInfo.CSVOutputInfo) {
+        	  CSVFileFormatProperties csvProperties = (CSVFileFormatProperties) formatProperties;
+              line += "    ,\"" +  DataExpression.DELIM_HAS_HEADER_ROW 	+  "\": " + csvProperties.isHasHeader() + "\n";
+              line += "    ,\"" +  DataExpression.DELIM_DELIMITER 	+  "\": \"" + csvProperties.getDelim() + "\"\n";
+          }
         
 		line += "    ,\"description\": { \"author\": \"SystemML\" } \n" + "}" ;
         

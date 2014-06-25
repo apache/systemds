@@ -55,7 +55,8 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				long blockColNumber = Long.parseLong(params[1]);
 				int blockRowSize = Integer.parseInt(params[2]);
 				int blockColSize = Integer.parseInt(params[3]);
-				long seed=Long.parseLong(params[4]);
+				long blockNNZ = Integer.parseInt(params[4]);
+				long seed=Long.parseLong(params[5]);
 				double minValue = randInst.minValue;
 				double maxValue = randInst.maxValue;
 				double sparsity = randInst.sparsity;
@@ -65,10 +66,10 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				
 				try {
 					if ( pdf.equalsIgnoreCase("normal") ) { 
-						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, Double.NaN, Double.NaN, seed); 
+						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, Double.NaN, Double.NaN, null, seed); 
 					}
 					else {
-						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
+						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, minValue, maxValue, null, seed);
 					}
 				} catch(DMLRuntimeException e) {
 					throw new IOException(e);

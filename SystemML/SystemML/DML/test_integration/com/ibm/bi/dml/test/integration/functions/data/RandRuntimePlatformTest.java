@@ -43,8 +43,8 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	
 	private final static double eps = 1e-10;
 	
-	private static final int _dim1=1, _dim2=500, _dim3=1000, _dim4=1001, _dim5=1500, _dim6=2500;
-	private static final double _sp1=0.2, _sp2=0.4, _sp3=1.0;
+	private static final int _dim1=1, _dim2=500, _dim3=1000, _dim4=1001, _dim5=1500, _dim6=2500, _dim7=10000;
+	private static final double _sp1=0.2, _sp2=0.4, _sp3=1.0, _sp4=1e-6;
 	private static final long _seed = 1L;
 	
 	private int rows, cols;
@@ -63,7 +63,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	@Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][] { 
-				// ---- Normal distribution ----
+				// ---- Uniform distribution ----
 				{_dim1, _dim1, _sp2, _seed, "uniform"},
 				{_dim1, _dim1, _sp3, _seed, "uniform"},
 				// vectors
@@ -94,6 +94,9 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				{_dim6, _dim6, _sp1, _seed, "uniform"},
 				{_dim6, _dim6, _sp2, _seed, "uniform"},
 				{_dim6, _dim6, _sp3, _seed, "uniform"},
+				
+				// Ultra-sparse data
+				{_dim7, _dim7, _sp4, _seed, "uniform"},
 
 				// ---- Normal distribution ----
 				{_dim1, _dim1, _sp2, _seed, "normal"},
@@ -121,7 +124,10 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				{_dim6, _dim4, _sp3, _seed, "normal"},
 				{_dim6, _dim6, _sp1, _seed, "normal"},
 				{_dim6, _dim6, _sp2, _seed, "normal"},
-				{_dim6, _dim6, _sp3, _seed, "normal"}
+				{_dim6, _dim6, _sp3, _seed, "normal"},
+				// Ultra-sparse data
+				{_dim7, _dim7, _sp4, _seed, "uniform"}
+				
 				};
 		return Arrays.asList(data);
 	}

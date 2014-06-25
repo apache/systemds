@@ -5730,39 +5730,17 @@ public class MatrixBlock extends MatrixValue
 	{
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 		MatrixBlock out = new MatrixBlock();
+		long nnzInBlock[] = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+
 		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
 			// for normally distributed values, min and max are specified as an invalid value NaN.
-			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);
+			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, nnzInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);
 		}
 		else {
-			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, sparsity, min, max, bigrand, -1);
+			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, nnzInBlock, sparsity, min, max, bigrand, -1);
 		}
 		
 		return out;
-	}
-	
-	
-	/**
-	 * Function to generate a matrix of random numbers. This is invoked from maptasks of 
-	 * DataGen MR job.  The parameter <code>seed</code> denotes the block-level seed.
-	 * 
-	 * @param pdf
-	 * @param rows
-	 * @param cols
-	 * @param rowsInBlock
-	 * @param colsInBlock
-	 * @param sparsity
-	 * @param min
-	 * @param max
-	 * @param seed
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public MatrixBlock randOperationsInPlace(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, long seed) throws DMLRuntimeException
-	{
-		LibMatrixDatagen.generateRandomMatrix( this, pdf, rows, cols, rowsInBlock, colsInBlock, 
-				                               sparsity, min, max, seed );
-		return this;
 	}
 	
 	/**
@@ -5792,11 +5770,11 @@ public class MatrixBlock extends MatrixValue
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlock randOperationsInPlace(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) 
+	public MatrixBlock randOperationsInPlace(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, long[] nnzInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) 
 		throws DMLRuntimeException
 	{
 		LibMatrixDatagen.generateRandomMatrix( this, pdf, rows, cols, rowsInBlock, colsInBlock, 
-				                               sparsity, min, max, bigrand, bSeed );
+				                               nnzInBlock, sparsity, min, max, bigrand, bSeed );
 		return this;
 	}
 	

@@ -305,9 +305,11 @@ public class InterProceduralAnalysis
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : wstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVars);
-			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ) //second pass if required
+			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ){ //second pass if required
+				propagateStatisticsAcrossPredicateDAG(wsb.getPredicateHops(), callVars);
 				for (StatementBlock sbi : wstmt.getBody())
 					propagateStatisticsAcrossBlock(sbi, fcand, callVars);
+			}
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 		}	
@@ -377,9 +379,13 @@ public class InterProceduralAnalysis
 		if( root == null )
 			return;
 		
+		//reset visit status because potentially called multiple times
+		root.resetVisitStatus();
+		
 		try
 		{
 			Recompiler.rUpdateStatistics( root, vars );
+			
 			//note: for predicates no output statistics
 			//Recompiler.extractDAGOutputStatistics(root, vars);
 		}

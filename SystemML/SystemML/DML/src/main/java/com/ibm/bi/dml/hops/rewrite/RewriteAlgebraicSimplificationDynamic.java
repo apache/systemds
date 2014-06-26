@@ -117,7 +117,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				rule_AlgebraicSimplification(hi, descendFirst); //see below
 			
 			//apply actual simplification rewrites (of childs incl checks)
+			hi = removeEmptyRightIndexing(hop, hi, i);        //e.g., X[,1] -> matrix(0,ru-rl+1,cu-cl+1), if nnz(X)==0 
 			hi = removeUnnecessaryRightIndexing(hop, hi, i);  //e.g., X[,1] -> X, if output == input size 
+			hi = removeEmptyLeftIndexing(hop, hi, i);         //e.g., X[,1]=Y -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0 and nnz(Y)==0 
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input size 
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
@@ -145,6 +147,37 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param hi
 	 * @param pos
 	 * @return
+	 * @throws HopsException
+	 */
+	private Hop removeEmptyRightIndexing(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi instanceof IndexingOp  ) //indexing op
+		{	
+			Hop input = hi.getInput().get(0);
+			if( input.getNnz()==0 && //nnz input known and empty
+			    HopRewriteUtils.isDimsKnown(hi)) //output dims known
+			{
+				//remove unnecessary right indexing
+				HopRewriteUtils.removeChildReference(parent, hi);
+				
+				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(String.valueOf(hi.get_dim1()), hi.get_dim1()), 
+						                                         new LiteralOp(String.valueOf(hi.get_dim2()), hi.get_dim2()), 0);
+				HopRewriteUtils.addChildReference(parent, hnew, pos);
+				parent.refreshSizeInformation();
+				hi = hnew;
+			}			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
 	 */
 	private Hop removeUnnecessaryRightIndexing(Hop parent, Hop hi, int pos)
 	{
@@ -162,6 +195,37 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, input, pos);
 				parent.refreshSizeInformation();
 				hi = input;
+			}			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop removeEmptyLeftIndexing(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi instanceof LeftIndexingOp  ) //left indexing op
+		{
+			Hop input1 = hi.getInput().get(1); //lhs matrix
+			Hop input2 = hi.getInput().get(1); //rhs matrix
+			
+			if(   input1.getNnz()==0 //nnz original known and empty
+			   && input2.getNnz()==0  ) //nnz input known and empty
+			{
+				//remove unnecessary right indexing
+				HopRewriteUtils.removeChildReference(parent, hi);		
+				Hop hnew = HopRewriteUtils.createDataGenOp( input1, 0);
+				HopRewriteUtils.addChildReference(parent, hnew, pos);
+				parent.refreshSizeInformation();
+				hi = hnew;
 			}			
 		}
 		
@@ -672,7 +736,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						break;
 					}
 					case MINUS: {
-						if( HopRewriteUtils.isEmpty(right) ) //empty and size known
+						if( HopRewriteUtils.isEmpty(left) ) { //empty left
+							HopRewriteUtils.removeChildReference(hi, left);
+							HopRewriteUtils.addChildReference(hi, new LiteralOp("0",0), 0);
+							hnew = hi;
+						}
+						else if( HopRewriteUtils.isEmpty(right) ) //empty and size known
 							hnew = left;
 					}
 				}

@@ -9,8 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -20,6 +19,14 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.Statistics;
 
+/**
+ * INTERESTING NOTE: see MINUS_RIGHT; if '(X+1)-X' instead of '(X+2)-X'
+ * R's writeMM returns (and hence the test fails)
+ *   - MatrixMarket matrix coordinate pattern symmetric
+ * instead of 
+ *   - MatrixMarket matrix coordinate integer symmetric 
+ * 
+ */
 public class RemoveEmptyRecompileTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
@@ -39,11 +46,16 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 		SUM, //aggregate unary
 		ROUND, //unary
 		TRANSPOSE, //reorg
-		MULT, //binary
-		PLUS, //binary
-		MM, //aggregate binary
-		//RIX, //right indexing
-		//LIX, //left indexing
+		MULT_LEFT, //binary, left empty
+		MULT_RIGHT, //binary, right empty
+		PLUS_LEFT, //binary, left empty
+		PLUS_RIGHT, //binary, right empty
+		MINUS_LEFT, //binary, left empty
+		MINUS_RIGHT, //binary, right empty
+		MM_LEFT, //aggregate binary, left empty
+		MM_RIGHT, //aggregate binary, right empty
+		RIX, //right indexing
+		LIX, //left indexing
 	}
 	
 	
@@ -74,21 +86,63 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRemoveEmptyMultNonEmpty() 
+	public void testRemoveEmptyMultLeftNonEmpty() 
 	{
-		runRemoveEmptyTest(OpType.MULT, false);
+		runRemoveEmptyTest(OpType.MULT_LEFT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusNonEmpty() 
+	public void testRemoveEmptyMultRightNonEmpty() 
 	{
-		runRemoveEmptyTest(OpType.PLUS, false);
+		runRemoveEmptyTest(OpType.MULT_RIGHT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultNonEmpty() 
+	public void testRemoveEmptyPlusLeftNonEmpty() 
 	{
-		runRemoveEmptyTest(OpType.MM, false);
+		runRemoveEmptyTest(OpType.PLUS_LEFT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyPlusRightNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.PLUS_RIGHT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyMinusLeftNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MINUS_LEFT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyMinusRightNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MINUS_RIGHT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyMatMultLeftNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MM_LEFT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyMatMultRightNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MM_RIGHT, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyRIXNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.RIX, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyLIXNonEmpty() 
+	{
+		runRemoveEmptyTest(OpType.LIX, false);
 	}
 
 	@Test
@@ -110,21 +164,63 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRemoveEmptyMultEmpty() 
+	public void testRemoveEmptyMultLeftEmpty() 
 	{
-		runRemoveEmptyTest(OpType.MULT, true);
+		runRemoveEmptyTest(OpType.MULT_LEFT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusEmpty() 
+	public void testRemoveEmptyMultRightEmpty() 
 	{
-		runRemoveEmptyTest(OpType.PLUS, true);
+		runRemoveEmptyTest(OpType.MULT_RIGHT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultEmpty() 
+	public void testRemoveEmptyPlusLeftEmpty() 
 	{
-		runRemoveEmptyTest(OpType.MM, true);
+		runRemoveEmptyTest(OpType.PLUS_LEFT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyPlusRightEmpty() 
+	{
+		runRemoveEmptyTest(OpType.PLUS_RIGHT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyMinusLeftEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MINUS_LEFT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyMinusRightEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MINUS_RIGHT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyMatMultLeftEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MM_LEFT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyMatMultRightEmpty() 
+	{
+		runRemoveEmptyTest(OpType.MM_RIGHT, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyRIXEmpty() 
+	{
+		runRemoveEmptyTest(OpType.RIX, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyLIXEmpty() 
+	{
+		runRemoveEmptyTest(OpType.LIX, true);
 	}
 	
 
@@ -151,7 +247,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-stats","-args", HOME + INPUT_DIR + "X" , 
+			programArgs = new String[]{"-explain","-stats","-args", HOME + INPUT_DIR + "X" , 
 					                        Integer.toString(type.ordinal()),
 					                        HOME + OUTPUT_DIR + "R" };
 			fullRScriptName = HOME + TEST_NAME + ".R";
@@ -168,7 +264,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//CHECK compiled MR jobs
-			int expectNumCompiled = 9; //reblock, 5xGMR, MMCJ+GMR, write
+			int expectNumCompiled = 18; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 			//CHECK executed MR jobs
@@ -176,16 +272,17 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 			
-			//CHECK rewrite application
-			String opcode = getOpcode(type);
-			Assert.assertEquals(empty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
-			
+			//CHECK rewrite application 
+			//(for minus_left we replace X-Y with 0-Y and hence still execute -)
+			if( type != OpType.MINUS_LEFT ){
+				String opcode = getOpcode(type);
+				Assert.assertEquals(empty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+			}
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");		
-			
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
 		}
 		finally
 		{
@@ -197,12 +294,19 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	private static String getOpcode( OpType type )
 	{
 		switch(type){
-			case SUM: 		return "uak+";
-			case ROUND: 	return "round";
-			case TRANSPOSE: return "r'";
-			case MULT: 		return "*";
-			case PLUS: 		return "+";
-			case MM: 		return "ba+*";			
+			case SUM: 		  return "uak+";
+			case ROUND: 	  return "round";
+			case TRANSPOSE:   return "r'";
+			case MULT_LEFT:
+			case MULT_RIGHT:  return "*";
+			case PLUS_LEFT:
+			case PLUS_RIGHT:  return "+";
+			case MINUS_LEFT:
+			case MINUS_RIGHT: return "-";
+			case MM_LEFT:
+			case MM_RIGHT: 	  return "ba+*";		
+			case RIX:		  return "rangeReIndex";
+			case LIX:		  return "leftIndex";
 		}
 		
 		return null;

@@ -31,11 +31,32 @@ if( type==3 ){
   R = X*(X-1);
 }
 if( type==4 ){
-  R = X+(X-1);
+  R = (X-1)*X;
 }
 if( type==5 ){
+  R = X+(X-1);
+}
+if( type==6 ){
+  R = (X-1)+X;
+}
+if( type==7 ){
+  R = X-(X+2);
+}
+if( type==8 ){
+  R = (X+2)-X;
+}
+if( type==9 ){
   R = X%*%(X-1);
 }
-
+if( type==10 ){
+  R = (X-1)%*%X;
+}
+if( type==11 ){
+  R = X[1:(nrow(X)-1), 1:(ncol(X)-1)];
+}
+if( type==12 ){
+  X[1,] = X[2,];
+  R = X;
+}
 
 writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep="")); 

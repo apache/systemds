@@ -35,7 +35,6 @@
 #                                                    index2=<Feature Index Set 2>
 #                                                    types1=<Feature Types 1>
 #                                                    types2=<Feature Types 2>
-#                                                    numvals=<Maximum Domain Size>
 #                                                    OUTDIR=<Output Location>
 
 D = read($X);  # input data set
@@ -43,7 +42,6 @@ S1 = read($index1); # attribute set 1
 S2 = read($index2); # attribute set 2
 K1 = read($types1); # kind for attributes in S1
 K2 = read($types2); # kind for attributes in S2
-maxC = $numvals;     # max number of categories in any categorical attribute
 
 s1size = ncol(S1);
 s2size = ncol(S2);
@@ -55,9 +53,6 @@ numPairs = s1size * s2size;
 # R, (chisq, df, pval, cramersv,) spearman, eta, anovaf, feature_col_index1, feature_col_index2, test
 numstats = 11;
 basestats = matrix(0, rows=numstats, cols=numPairs);
-#cat_counts = matrix(0, rows=maxC, cols=numPairs);
-#cat_means = matrix(0, rows=maxC, cols=numPairs);
-#cat_vars = matrix(0, rows=maxC, cols=numPairs);
 
 num_scale_scale_tests = 0
 num_nominal_nominal_tests = 0
@@ -193,9 +188,6 @@ parfor( i in 1:s1size, check=0) {
                 basestats_nominal_scale[2,rowid1] = a2;
                 basestats_nominal_scale[3,rowid1] = eta;
                 basestats_nominal_scale[4,rowid1] = f;
-                #cat_counts[,pairID] = counts;
-                #cat_means[,pairID] = means;
-                #cat_vars[,pairID] = vars; 
             }
             else {
                 # nominal-ordinal or ordinal-nominal
@@ -228,12 +220,6 @@ if(num_nominal_nominal_tests == size_nominal_nominal_tests){
 if(num_ordinal_ordinal_tests == size_ordinal_ordinal_tests){
   write(basestats_ordinal_ordinal, $OUTDIR + "/bivar.ordinal.ordinal.stats");
 }
-
-#write(basestats, $OUTDIR + "/bivar.stats");
-#write(cat_counts, $OUTDIR + "/category.counts");
-#write(cat_means, $OUTDIR + "/category.means");
-#write(cat_vars, $OUTDIR + "/category.variances");
-
 
 # -----------------------------------------------------------------------------------------------------------
 

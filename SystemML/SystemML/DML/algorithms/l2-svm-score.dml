@@ -26,6 +26,17 @@ $icpt = 0
 
 X = read($X)
 y = read($Y)
+
+check_min = min(y)
+check_max = max(y)
+num_min = sum(ppred(y, check_min, "=="))
+num_max = sum(ppred(y, check_max, "=="))
+if(num_min + num_max != nrow(y)) print("please check y, it should contain only 2 labels")
+else{
+	if(check_min != -1 | check_max != +1) 
+		y = 2/(check_max - check_min)*y - (check_min + check_max)/(check_max - check_min)
+}
+
 intercept = $icpt
 w = read($model)
 b = 0.0

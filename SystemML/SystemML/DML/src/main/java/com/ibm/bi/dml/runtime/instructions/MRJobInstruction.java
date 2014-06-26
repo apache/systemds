@@ -49,7 +49,7 @@ PARTITION
 public class MRJobInstruction extends Instruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//public enum JobType {MMCJ, MMRJ, GMR, Partition, RAND, ReBlock, SortKeys, Combine, CMCOV, GroupedAgg}; 
@@ -875,6 +875,10 @@ public class MRJobInstruction extends Instruction
 				String[] instSet = rndinst.split( Lop.INSTRUCTION_DELIMITOR );
 				for( String dginst : instSet )
 				{
+					if( rndinst2.length()>0 )
+						rndinst2 += Lop.INSTRUCTION_DELIMITOR;
+					
+					//handle single instruction
 					String[] parts = dginst.split(Lop.OPERAND_DELIMITOR);
 					int pos = -1;
 					if( parts[1].equals("Rand") ) pos = 13;
@@ -884,19 +888,19 @@ public class MRJobInstruction extends Instruction
 						StringBuilder sb = new StringBuilder();
 						for( int i=0; i<parts.length; i++ )
 						{
-							if( i>0 ) sb.append(Lop.OPERAND_DELIMITOR);
-							
+							if( i>0 ) 
+								sb.append(Lop.OPERAND_DELIMITOR);
 							if( i==pos )
 								sb.append(ProgramConverter.saveReplaceFilenameThreadID(parts[i], pattern, replace));
 							else
 								sb.append(parts[i]);
 						}
-						rndinst2 = sb.toString();
+						rndinst2 += sb.toString();
 					}
 					else
-						rndinst2 = rndinst2 + dginst;		
-					
+						rndinst2 += dginst;		
 				}
+				
 				setRandInstructions(rndinst2);
 			}		
 		}

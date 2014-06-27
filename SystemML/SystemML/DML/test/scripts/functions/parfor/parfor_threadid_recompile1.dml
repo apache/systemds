@@ -1,0 +1,37 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+A = read($1)
+
+num_bin_defns = sum(A)
+bin_defns = matrix(0, rows=num_bin_defns, cols=2)
+
+attr2pos = matrix(0, rows=nrow(A), cols=2)
+pos = 1
+for(i in 1:nrow(A)){
+	number_of_bins = castAsScalar(A[i,1])
+	attr2pos[i,1] = pos
+	attr2pos[i,2] = pos + number_of_bins - 1
+	pos = pos + number_of_bins
+}
+
+for(i in 1:nrow(A), check=0){
+	num_bins = castAsScalar(A[i,1])
+	
+	start_position = castAsScalar(attr2pos[i,1])
+	end_position = castAsScalar(attr2pos[i,2])
+	
+	#SEQ CALL 1
+	bin_defns[start_position:end_position,1] = seq(1, num_bins, 1)
+	
+	#SEQ CALL 2
+	bin_defns[start_position:end_position,2] = seq(1, 1+num_bins-1, 1)
+}
+write(bin_defns, $2)

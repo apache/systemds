@@ -46,7 +46,7 @@ public class DataGenOp extends Hop
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	
-	private DataGenMethod method; // defines the specific data generation method -- random matrix or sequence
+	private DataGenMethod _method; // defines the specific data generation method -- random matrix or sequence
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -57,15 +57,15 @@ public class DataGenOp extends Hop
 	 * that is associated with parameterName.
 	 */
 	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
-	
-	/** target identifier which will hold the random object */
-	private DataIdentifier id;
-	
 		
+
+	/** target identifier which will hold the random object */
+	private DataIdentifier _id;
+	
 	//Rand-specific attributes
 	
 	/** sparsity of the random object, this is used for mem estimate */
-	private double sparsity;
+	private double _sparsity = -1;
 	/** base directory for temp file (e.g., input seeds)*/
 	private String _baseDir;
 	
@@ -83,11 +83,13 @@ public class DataGenOp extends Hop
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters){
+	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters)
+	{
 		super(Kind.DataGenOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
-		this.id = id;
-		this.method = mthd;
-				
+		
+		_id = id;
+		_method = mthd;
+
 		int index = 0;
 		for (String s : inputParameters.keySet()) {
 			Hop input = inputParameters.get(s);
@@ -98,7 +100,7 @@ public class DataGenOp extends Hop
 			index++;
 		}
 		if ( mthd == DataGenMethod.RAND )
-			sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).get_name());
+			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).get_name());
 
 		//generate base dir
 		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
@@ -111,11 +113,11 @@ public class DataGenOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		return "dg(" + method +")";
+		return "dg(" + _method +")";
 	}
 	
 	public DataGenMethod getDataGenMethod() {
-		return method;
+		return _method;
 	}
 	
 	@Override
@@ -136,7 +138,7 @@ public class DataGenOp extends Hop
 					inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 			}
 			
-			DataGen rnd = new DataGen(method, id, inputLops,_baseDir,
+			DataGen rnd = new DataGen(_method, _id, inputLops,_baseDir,
 					get_dataType(), get_valueType(), et);
 			
 			rnd.getOutputParameters().setDimensions(
@@ -171,7 +173,7 @@ public class DataGenOp extends Hop
 		if(this.get_sqllops() == null)
 		{
 			
-			SQLLops sqllop = new SQLLops("Random" + this.id.getName(), GENERATES.PROC,
+			SQLLops sqllop = new SQLLops("Random" + _id.getName(), GENERATES.PROC,
 					this.get_valueType(),
 					this.get_dataType());
 
@@ -205,14 +207,14 @@ public class DataGenOp extends Hop
 	{		
 		double ret = 0;
 		
-		if ( method == DataGenMethod.RAND ) {
+		if ( _method == DataGenMethod.RAND ) {
 			if( hasConstantValue(0.0) ) { //if empty block
 				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
 			else {
 				//sparsity-aware estimation (dependent on sparse generation approach); for pure dense generation
 				//we would need to disable sparsity-awareness and estimate via sparsity=1.0
-				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, _sparsity);
 			}
 		}
 		else {
@@ -225,7 +227,7 @@ public class DataGenOp extends Hop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		if ( method == DataGenMethod.RAND ) {
+		if ( _method == DataGenMethod.RAND && dimsKnown() ) {
 			int numBlocks = (int) (Math.ceil((double)dim1/DMLTranslator.DMLBlockSize) * Math.ceil((double)dim2/DMLTranslator.DMLBlockSize));
 			return 32 + numBlocks*8.0; // 32 bytes of overhead for an array of long & numBlocks long values.
 		}
@@ -236,12 +238,12 @@ public class DataGenOp extends Hop
 	@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
-		if( method == DataGenMethod.RAND &&
+		if( _method == DataGenMethod.RAND &&
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
 		{
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
 			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
-			long nnz = (long)(sparsity * dim1 * dim2);
+			long nnz = (long)(_sparsity * dim1 * dim2);
 			if( dim1>0 && dim2>0 )
 				return new long[]{ dim1, dim2, nnz };
 		}
@@ -280,7 +282,7 @@ public class DataGenOp extends Hop
 		Hop input2 = null; 
 		Hop input3 = null;
 
-		if ( method == DataGenMethod.RAND ) 
+		if ( _method == DataGenMethod.RAND ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
 			input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
@@ -291,7 +293,7 @@ public class DataGenOp extends Hop
 			//refresh cols information
 			refreshColsParameterInformation(input2);
 		}
-		else if (method == DataGenMethod.SEQ ) 
+		else if (_method == DataGenMethod.SEQ ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
 			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
@@ -320,11 +322,11 @@ public class DataGenOp extends Hop
 			}
 		}
 		
-		//refresh nnz information
-		if( method == DataGenMethod.RAND && hasConstantValue(0.0) )
+		//refresh nnz information (for seq, sparsity is always -1)
+		if( _method == DataGenMethod.RAND && hasConstantValue(0.0) )
 			_nnz = 0;
-		else if ( dimsKnown() ) //general case
-			_nnz = (long) (_dim1 * _dim2 * sparsity);
+		else if ( dimsKnown() && _sparsity>=0 ) //general case
+			_nnz = (long) (_sparsity * _dim1 * _dim2);
 	}
 	
 
@@ -381,8 +383,6 @@ public class DataGenOp extends Hop
 		return false;
 	}
 	
-	
-	
 	public void setIncrementValue(double incr)
 	{
 		_incr = incr;
@@ -409,9 +409,9 @@ public class DataGenOp extends Hop
 		ret.clone(this, false);
 		
 		//copy specific attributes
-		ret.method = method;
-		ret.id = id;
-		ret.sparsity = sparsity;
+		ret._method = _method;
+		ret._id = _id;
+		ret._sparsity = _sparsity;
 		ret._baseDir = _baseDir;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
@@ -426,8 +426,8 @@ public class DataGenOp extends Hop
 			return false;
 		
 		DataGenOp that2 = (DataGenOp)that;	
-		boolean ret = (  method == that2.method
-				      && sparsity == that2.sparsity
+		boolean ret = (  _method == that2._method
+				      && _sparsity == that2._sparsity
 				      && _baseDir.equals(that2._baseDir)
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
 		
@@ -444,7 +444,7 @@ public class DataGenOp extends Hop
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
 			//note: if min and max is constant, we can safely merge those hops
-			if( method == DataGenMethod.RAND ){
+			if( _method == DataGenMethod.RAND ){
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));

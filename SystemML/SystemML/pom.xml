@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ibm.biginsights</groupId>
-  <version>2.0-SNAPSHOT</version>
+  <version>3.0-SNAPSHOT</version>
   <artifactId>systemml-reactor</artifactId>
   <packaging>pom</packaging>
 

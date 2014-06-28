@@ -26,6 +26,7 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -402,7 +403,7 @@ public class ProgramConverter
 	{
 		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
 		String fnameNew = (plain)? oldName :(oldName+CP_CHILD_THREAD+pid); 
-		String fnameNewKey = namespace+Program.KEY_DELIM+fnameNew;
+		String fnameNewKey = DMLProgram.constructFunctionKey(namespace,fnameNew);
 
 		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
 			return; //prevent redundant deep copy if already existent
@@ -745,7 +746,7 @@ public class ProgramConverter
 					if( inst instanceof FunctionCallCPInstruction )
 					{
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
-						String fkey = fci.getNamespace() + Program.KEY_DELIM + fci.getFunctionName();
+						String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(), fci.getFunctionName());
 						if( !cand.contains(fkey) ) //memoization for multiple calls, recursion
 						{
 							cand.add( fkey ); //add to candidates

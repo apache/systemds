@@ -550,11 +550,11 @@ public abstract class Hop
 		return (dimsKnown() && _dim1 <= Hop.CPThreshold && _dim2 <= Hop.CPThreshold );
 	}
 	
-	protected boolean dimsKnown() {
+	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0) );
 	}
 	
-	protected boolean dimsKnown(boolean includeNnz) {
+	public boolean dimsKnown(boolean includeNnz) {
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)) );
 	}
 

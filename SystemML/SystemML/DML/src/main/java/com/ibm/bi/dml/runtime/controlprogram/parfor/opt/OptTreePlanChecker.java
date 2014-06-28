@@ -201,7 +201,7 @@ public class OptTreePlanChecker
 				FunctionCallCPInstruction flinst = (FunctionCallCPInstruction) linst;
 				String fnamespace = flinst.getNamespace();
 				String fname = flinst.getFunctionName();
-				String key = fnamespace+Program.KEY_DELIM+fname;
+				String key = DMLProgram.constructFunctionKey(fnamespace, fname);
 				
 				//check 1: instruction name equal to hop name
 				if( !fops.containsKey(key) )
@@ -237,7 +237,7 @@ public class OptTreePlanChecker
 		if( hop instanceof FunctionOp )
 		{
 			FunctionOp fop = (FunctionOp) hop;
-			String key = fop.getFunctionNamespace()+Program.KEY_DELIM+fop.getFunctionName();
+			String key = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(),fop.getFunctionName());
 			memo.put(key, fop);
 		}
 		

@@ -817,5 +817,15 @@ public class DMLProgram
 		}
 	}
 	
+	/**
+	 * 
+	 * @param fnamespace
+	 * @param fname
+	 * @return
+	 */
+	public static String constructFunctionKey(String fnamespace, String fname)
+	{
+		return fnamespace + Program.KEY_DELIM + fname;
+	}
 }
 

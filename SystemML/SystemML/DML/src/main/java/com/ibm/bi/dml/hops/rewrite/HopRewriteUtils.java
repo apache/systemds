@@ -341,6 +341,22 @@ public class HopRewriteUtils
 		return (   hop1.get_dim1() == hop2.get_dim1()
 				&& hop1.get_dim2() == hop2.get_dim2());
 	}
+	
+	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
+		throws HopsException
+	{
+		//check for string (no defined double value)
+		if(    hop1.get_valueType()==ValueType.STRING 
+			|| hop2.get_valueType()==ValueType.STRING )
+		{
+			return false;
+		}
+		
+		double val1 = getDoubleValue(hop1);
+		double val2 = getDoubleValue(hop2);
+		
+		return ( val1 == val2 );
+	}
 
 	//////////////////////////////////////
 	// utils for lookup tables

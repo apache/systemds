@@ -93,7 +93,7 @@ public class FunctionStatementBlock extends StatementBlock
 									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue());
 									constVars.put(curr.getName(), currDoubleValue);
 								}
-								LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " but was safely cast");
+								LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " but was safely cast");
 								curr.setValueType(ValueType.DOUBLE);
 								ids.addVariable(curr.getName(), curr);
 							}

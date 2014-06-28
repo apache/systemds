@@ -44,6 +44,7 @@ import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -62,7 +63,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -739,7 +739,7 @@ public class Recompiler
 						FunctionCallCPInstruction func = (FunctionCallCPInstruction)inst;
 						String fname = func.getFunctionName();
 						String fnamespace = func.getNamespace();
-						String fKey = fnamespace+Program.KEY_DELIM+fname;
+						String fKey = DMLProgram.constructFunctionKey(fnamespace, fname);
 						
 						if( !fnStack.contains(fKey) ) //memoization for multiple calls, recursion
 						{

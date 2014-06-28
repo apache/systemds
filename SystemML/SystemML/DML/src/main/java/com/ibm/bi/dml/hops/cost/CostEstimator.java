@@ -22,6 +22,7 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
@@ -194,7 +195,7 @@ public abstract class CostEstimator
 					if( inst instanceof FunctionCallCPInstruction ) //functions
 					{
 						FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
-						String fkey = finst.getNamespace()+Program.KEY_DELIM+finst.getFunctionName();
+						String fkey = DMLProgram.constructFunctionKey(finst.getNamespace(), finst.getFunctionName());
 						//awareness of recursive functions, missing program
 						if( !memoFunc.contains(fkey) && pb.getProgram()!=null ) 
 						{

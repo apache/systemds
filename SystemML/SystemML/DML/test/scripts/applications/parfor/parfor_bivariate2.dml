@@ -151,7 +151,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double chisq, Do
 
     # Assign return values
     chisq = chi_squared;
-    df = degFreedom;
+    df = as.double(degFreedom);
     pval = pValue;
     cramersv = cramers_v;
 }

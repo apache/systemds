@@ -1,0 +1,36 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# conditional propagate size, because called multiple times
+foo1 = function(Matrix[Double] Xin) return (Matrix[Double] Xout) 
+{
+   X = Xin;
+   if( nrow(Xin)>5 )
+      X = X + 5; 
+   
+   Xout = X;
+}
+
+# to be removed because never called
+foo2 = function(Matrix[Double] Xin) return (Matrix[Double] Xout) 
+{
+   X = Xin;
+   if( nrow(Xin)<5 )
+      X = X - 5; 
+   
+   Xout = X;
+}
+
+V = read($1);
+
+R1 = foo1(V);
+R2 = foo1(V);
+R = R1+R2;
+
+write(R, $2);   

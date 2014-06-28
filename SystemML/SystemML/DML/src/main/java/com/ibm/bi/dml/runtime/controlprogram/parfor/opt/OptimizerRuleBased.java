@@ -2315,7 +2315,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( fname.equals(oldName) || fname.equals(newName) ) //newName if shared hop
 			{
 				//set opttree function name
-				n.addParam(ParamType.OPSTRING, fnamespace+Program.KEY_DELIM+newName);
+				n.addParam(ParamType.OPSTRING, DMLProgram.constructFunctionKey(fnamespace,newName));
 				
 				//set instruction function name
 				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());	

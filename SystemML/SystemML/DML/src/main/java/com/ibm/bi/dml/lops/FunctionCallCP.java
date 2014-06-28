@@ -18,7 +18,6 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
 
 
 /**
@@ -27,7 +26,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 public class FunctionCallCP extends Lop  
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private String _fnamespace;
@@ -75,9 +74,7 @@ public class FunctionCallCP extends Lop
 	
 	@Override
 	public String toString() {
-
-		return "function call: " + _fname+Program.KEY_DELIM+_fnamespace;
-
+		return "function call: " + DMLProgram.constructFunctionKey(_fnamespace, _fname);
 	}
 
 	private String getInstructionsMultipleReturnBuiltins(String[] inputs, String[] outputs) {

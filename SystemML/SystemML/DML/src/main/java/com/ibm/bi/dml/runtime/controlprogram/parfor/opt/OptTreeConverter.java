@@ -576,7 +576,7 @@ public class OptTreeConverter
 			FunctionOp fhop = (FunctionOp) hop;
 			String fname = fhop.getFunctionName();
 			String fnspace = fhop.getFunctionNamespace();
-			String fKey = fnspace + Program.KEY_DELIM + fname;
+			String fKey = DMLProgram.constructFunctionKey(fnspace, fname);
 			Object[] prog = _hlMap.getRootProgram();
 
 			OptNode node = new OptNode(NodeType.FUNCCALL);

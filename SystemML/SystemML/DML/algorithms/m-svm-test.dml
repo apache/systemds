@@ -14,11 +14,12 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs X=data 
-#  	     		     		     	     			 icpt=intercept 
+# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs X=data
+#  	     		     		     	     			 Y=labels
+#						     						 icpt=intercept 
 #						     						 model=model 
 #						     						 scores=scores
-#
+#													 
 
 $icpt=0
 
@@ -37,3 +38,10 @@ if (intercept == 1)
 ones = matrix(1, rows=N, cols=1)
 scores = X %*% W[1:m,] + ones %*% b;
 write(scores, $scores, format="text");
+
+y = read($Y);
+pred = rowIndexMax(scores);
+correct_percentage = sum(ppred(pred - y, 0, "==")) / N * 100;
+	
+#TODO: replace with fprintf when its available
+print("%CORRECT: " + correct_percentage)

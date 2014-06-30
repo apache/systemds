@@ -7,50 +7,29 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# This script can be used to compute label predictions
+# This script can be used to compute scores
 # Meant for use with a model learnt using l2-svm.dml
 #
-# Given ground truth labels, the script will compute an 
-# accuracy (%) for the predictions
-#
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs X=X 
-#  	     		     			    	      	  	  Y=Y 
-#							    	  				  icpt=0 
-#							    	  				  model=w
-#
+# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs X=data
+#  	     		     			    	      	  	  icpt=0 
+#							    	  				  model=model
+#													  scores=scores
+#													  
 # Note about inputs: 
-# Assumes that labels (entries in Y) are set to either -1 or +1
+# labels (entries in Y) should either be set to +1/-1
+# or be the result of recoding
+# anything else will prompt an error message from this script
 
 $icpt = 0
 
 X = read($X)
-y = read($Y)
-
-check_min = min(y)
-check_max = max(y)
-num_min = sum(ppred(y, check_min, "=="))
-num_max = sum(ppred(y, check_max, "=="))
-if(num_min + num_max != nrow(y)) print("please check y, it should contain only 2 labels")
-else{
-	if(check_min != -1 | check_max != +1) 
-		y = 2/(check_max - check_min)*y - (check_min + check_max)/(check_max - check_min)
-}
-
 intercept = $icpt
 w = read($model)
-b = 0.0
-if(intercept == 1){
-  b = castAsScalar(w[nrow(w),1])
-}
-scores = b + (X %*% w[1:ncol(X),])
-pred = 2*ppred(scores, 0, ">") - 1
-num_correct = sum(ppred(pred, y, "=="))
-acc = 100*num_correct/nrow(X)
-print("CORRECT PERCENTAGE: " + acc)
 
-#in case you want to write the predictions to hdfs
-#uncomment the following line
-#write(pred, $PREDICTIONS, format="text")
-#for the above to work, one will need to pass in an
-#extra arg PREDICTIONS=<HDFS Dir> during invocation
+b = 0.0
+if(intercept == 1)
+	b = castAsScalar(w[nrow(w),1])
+
+scores = b + (X %*% w[1:ncol(X),])
+write(scores, $scores, format="text")

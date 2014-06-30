@@ -10,10 +10,10 @@
 # Implements scoring with a naive Bayes model learnt using
 # naive-bayes.dml
 #
-# hadoop jar SystemML.jar -f naive-bayes-score.dml -nvargs X=<DATA>
-#							   							   Y=<LABELS>
-#							   							   prior=<Model file1>
-#							   							   conditionals=<Model file2>
+# hadoop jar SystemML.jar -f naive-bayes-score.dml -nvargs X=data
+#							   							   prior=model_file1
+#							   							   conditionals=model_file2
+#														   probabilities=probabilities
 
 D = read($X)
 prior = read($prior)
@@ -25,15 +25,6 @@ ones = matrix(1, rows=numRows, cols=1)
 D_w_ones = append(D, ones)
 model = append(conditionals, prior)
 
-scores = D_w_ones %*% t(log(model))
-
-C = read($Y)
-pred = rowIndexMax(scores)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
-print("Accuracy (%): " + acc)
-
-#in case you want to write the predictions to hdfs
-#uncomment the following line
-#write(pred, $PREDICTED, format="text")
-#for the above to work, one will need to pass
-#in an extra arg PREDICTED=path/file during invocation
+log_probs = D_w_ones %*% t(log(model))
+probs = exp(log_probs)
+write(probs, $probabilities, format="text")

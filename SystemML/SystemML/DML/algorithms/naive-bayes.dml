@@ -11,11 +11,11 @@
 #
 # Example Usage:
 # hadoop jar SystemML.jar -f NaiveBayes.dml -nvargs X=<Data> 
-# 	     		     		    	    Y=<labels>
-#						    classes=<Num Classes> 
-#						    laplace=<Laplace Correction>
-#						    prior=<Model file1>
-#						    conditionals=<Model file2>
+# 	     		     		    	    			Y=<labels>
+#						    						classes=<Num Classes> 
+#						    						laplace=<Laplace Correction>
+#						    						prior=<Model file1>
+#						    						conditionals=<Model file2>
 
 # defaults
 $laplace = 1
@@ -51,6 +51,16 @@ class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
 # Compute class priors
 class_counts = aggregate(target=C, groups=C, fn="count")
 class_prior = class_counts / numRows;
+
+# Compute accuracy on training set
+ones = matrix(1, rows=numRows, cols=1)
+D_w_ones = append(D, ones)
+model = append(class_conditionals, class_prior)
+log_probs = D_w_ones %*% t(log(model))
+pred = rowIndexMax(log_probs)
+acc = sum(ppred(pred, C, "==")) / numRows * 100
+#TODO: replace with fprintf when its available
+print("Training Accuracy (%): " + acc)
 
 # write out the model
 write(class_prior, $prior, format="text");

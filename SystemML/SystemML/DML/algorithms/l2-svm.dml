@@ -21,9 +21,13 @@
 #							    							reg=1 
 #							    							maxiter=100 
 #							    							model=$OUPUT_DIR/w
+#															support_vectors=$OUTPUT_DIR/support_vectors
 #
 # Note about inputs: 
-# Assumes that labels (entries in Y) are set to either -1 or +1
+# Assumes that labels (entries in Y) 
+# are set to either -1 or +1
+# or the result of recoding
+#
 
 $icpt=0
 $tol=0.001
@@ -51,46 +55,40 @@ maxiterations = $maxiter
 num_samples = nrow(X)
 dimensions = ncol(X)
 
-#checking Y's correctness
-max_y = max(Y)
-min_y = min(Y)
-sum_abs_y = sum(abs(Y))
+if (intercept == 1) {
+	ones  = matrix(1, rows=num_samples, cols=1)
+	X = append(X, ones);
+}
 
-if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
-  if (intercept == 1) {
-    ones  = matrix(1, rows=num_samples, cols=1)
-    X = append(X, ones);
-  }
+num_rows_in_w = dimensions
+if(intercept == 1){
+	num_rows_in_w = num_rows_in_w + 1
+}
+w = matrix(0, rows=num_rows_in_w, cols=1)
 
-  num_rows_in_w = dimensions
-  if(intercept == 1){
-    num_rows_in_w = num_rows_in_w + 1
-  }
-  w = matrix(0, rows=num_rows_in_w, cols=1)
+g_old = t(X) %*% Y
+s = g_old
 
-  g_old = t(X) %*% Y
-  s = g_old
-
-  iter = 0
-  continue = 1
-  while(continue == 1 & iter < maxiterations)  {
-    # minimizing primal obj along direction s
+iter = 0
+continue = 1
+while(continue == 1 & iter < maxiterations)  {
+	# minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s
     wd = lambda * sum(w * s)
     dd = lambda * sum(s * s)
     continue1 = 1
     while(continue1 == 1){
-      tmp_w = w + step_sz*s
-      out = 1 - Y * (X %*% tmp_w)
-      sv = ppred(out, 0, ">")
-      out = out * sv
-      g = wd + step_sz*dd - sum(out * Y * Xd)
-      h = dd + sum(Xd * sv * Xd)
-      step_sz = step_sz - g/h
-      if (g*g/h < 0.0000000001){
-        continue1 = 0
-      }
+		tmp_w = w + step_sz*s
+      	out = 1 - Y * (X %*% tmp_w)
+      	sv = ppred(out, 0, ">")
+      	out = out * sv
+      	g = wd + step_sz*dd - sum(out * Y * Xd)
+      	h = dd + sum(Xd * sv * Xd)
+      	step_sz = step_sz - g/h
+      	if (g*g/h < 0.0000000001){
+        	continue1 = 0
+      	}
     }
 
     #update weights
@@ -106,7 +104,7 @@ if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
 	
     tmp = sum(s * g_old)
     if(step_sz*tmp < epsilon*obj){
-      continue = 0
+    	continue = 0
     }
 
     #non-linear CG step
@@ -115,10 +113,12 @@ if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
     g_old = g_new
 
     iter = iter + 1
-  }
-
-  write(w, $model, format="text")
-}else{
-  print("Training labels (Y) can only be -1 or +1 (binary classification). "
-  	+ "Please ensure that before invoking L2SVM.dml");
 }
+
+write(w, $model, format="text")
+
+sv = ppred(1 - Y * (X %*% w), 0, ">")
+num_sv = sum(sv)
+write(sv, $support_vectors)
+#TODO: replace with fprintf when available
+print("#Support Vectors: " + num_sv)

@@ -154,7 +154,7 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), true, 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), ec.getVariables(), true, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}
@@ -416,7 +416,7 @@ public class ProgramRecompiler
 			}
 			
 			//construct new instructions
-			ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig());
+			ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getConfig());
 			
 			
 			//exchange instructions
@@ -471,7 +471,7 @@ public class ProgramRecompiler
 				}
 				
 				//construct new instructions
-				ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig());
+				ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getConfig());
 				
 				//exchange instructions
 				pbNew = new ProgramBlock(pbOld.getProgram());

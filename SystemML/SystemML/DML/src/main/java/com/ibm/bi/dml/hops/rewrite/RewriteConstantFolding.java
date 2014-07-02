@@ -182,7 +182,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		Dag<Lop> dag = new Dag<Lop>();
 		Lop lops = tmpWrite.constructLops();
 		lops.addToDag( dag );	
-		ArrayList<Instruction> inst = dag.getJobs(ConfigurationManager.getConfig());
+		ArrayList<Instruction> inst = dag.getJobs(null, ConfigurationManager.getConfig());
 		
 		//execute instructions
 		ExecutionContext ec = getExecutionContext();

@@ -713,7 +713,7 @@ public class OptimizerRuleBased extends Optimizer
 		HashMap<Hop, Double> estRix = getPartitionedRIXEstimates(nParent);
 		
 		//construct new instructions
-		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), vars, false, 0);
+		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, false, 0);
 		pb.setInstructions( newInst );   
 		
 		//reset all rix estimated (modified by recompile)

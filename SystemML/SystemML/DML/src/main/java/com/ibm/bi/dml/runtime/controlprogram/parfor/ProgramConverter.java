@@ -32,6 +32,7 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -595,7 +596,12 @@ public class ProgramConverter
 				&& sb != null 
 				&& Recompiler.requiresRecompilation( sb.get_hops() )  )
 			{
+				//create new statement and copy livein/liveout for recompile
 				ret = new StatementBlock();
+				ret.setLiveIn( new VariableSet(sb.liveIn()) );
+				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				
+				//deep copy hops dag for concurrent recompile
 				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );

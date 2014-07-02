@@ -37,6 +37,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate
  * for checking/setting optional parfor parameters and running the loop dependency analysis.
  * 
+ * TODO range bounds which depend on iteration variable (currently too conservative)
  * 
  */
 public class ParForStatementBlock extends ForStatementBlock 
@@ -164,18 +165,16 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars)
 		throws LanguageException, ParseException, IOException 
 	{	
 		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");		
 		
 		//create parent variable set via cloning
-		_vsParent = new VariableSet();
-		_vsParent._variables = (HashMap<String, DataIdentifier>) ids.getVariables().clone();
-				
+		_vsParent = new VariableSet( ids );
+		
 		if(LOG.isTraceEnabled()) //note: A is matrix, and A[i,1] is scalar  
-			for( DataIdentifier di : _vsParent._variables.values() )
+			for( DataIdentifier di : _vsParent.getVariables().values() )
 				LOG.trace("PARFOR: non-local "+di._name+": "+di.getDataType().toString()+" with rowDim = "+di.getDim1()); 
 		
 		//normal validate via ForStatement (sequential)

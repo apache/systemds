@@ -131,7 +131,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hop> hops, LocalVariableMap vars, boolean inplace, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, boolean inplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -178,7 +178,7 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(ConfigurationManager.getConfig());			
+			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());			
 		}
 		
 		// replace thread ids in new instructions
@@ -196,6 +196,8 @@ public class Recompiler
 	 * (shared) hops object. Hence, we cannot create any wrapper arraylist for each
 	 * recompilation - this would result in race conditions for concurrent recompilation 
 	 * in a parfor body. 	
+	 * 
+	 * Note: no statementblock passed because for predicate dags we dont have separate live variable analysis information.
 	 * 
 	 * @param hops
 	 * @param vars
@@ -247,7 +249,7 @@ public class Recompiler
 			lops.addToDag(dag);		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -272,7 +274,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag2Forced( ArrayList<Hop> hops, long tid, ExecType et ) 
+	public static ArrayList<Instruction> recompileHopsDag2Forced( StatementBlock sb, ArrayList<Hop> hops, long tid, ExecType et ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -303,7 +305,7 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(ConfigurationManager.getConfig());			
+			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());			
 		}
 		
 		// replace thread ids in new instructions
@@ -355,7 +357,7 @@ public class Recompiler
 			lops.addToDag(dag);		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -639,7 +641,7 @@ public class Recompiler
 				&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
-				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, true, tid);
+				tmp = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, true, tid);
 				pb.setInstructions( tmp );
 				
 				//propagate stats across hops (should be executed on clone of vars)
@@ -725,7 +727,7 @@ public class Recompiler
 			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb, true)) )
 			{
 				ArrayList<Instruction> tmp = pb.getInstructions();
-				tmp = Recompiler.recompileHopsDag2Forced(sb.get_hops(), tid, et);
+				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.get_hops(), tid, et);
 				pb.setInstructions( tmp );
 			}
 			

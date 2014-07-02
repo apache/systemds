@@ -195,15 +195,14 @@ if (is_supported == 1)
 
 #####   INITIALIZE THE BETAS   #####
 
-sum_X_sq = sum (rowSums_X_sq);
 [beta, saturated_log_l, isNaN] = 
-    glm_initialize (X, scale_X, shift_X, sum_X_sq, Y, 
-        distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean, intercept_status);
+    glm_initialize (X, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean, intercept_status, max_iteration_CG);
 if (isNaN == 0)
 {
 
 #####  START OF THE MAIN PART  #####
 
+sum_X_sq = sum (rowSums_X_sq);
 trust_delta = 0.5 * sqrt (num_features) / max (sqrt (rowSums_X_sq));
 ###  max_trust_delta = trust_delta * 10000.0;
 g = matrix (0.0, rows = num_features, cols = 1);
@@ -448,8 +447,7 @@ check_if_supported =
     }
 }
 
-glm_initialize = function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X, double sum_X_sq,
-                 Matrix[double] Y, int dist_type, double var_power, int link_type, double link_power, int icept_status)
+glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, double var_power, int link_type, double link_power, int icept_status, int max_iter_CG)
 return (Matrix[double] beta, double saturated_log_l, int isNaN)
 {
     saturated_log_l = 0.0;
@@ -530,21 +528,30 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
             glm_log_likelihood_part (linear_terms, Y, dist_type, var_power, link_type, link_power);
     }
     
-    beta = matrix (0.0, rows = ncol(X), cols = 1);
-    if (icept_status == 1 | icept_status == 2) {
-        beta [nrow(beta), 1] = 1.0;
-    } else {  # avg (X %*% ssX_transform %*% beta) = 1
-        beta = straightenX (X, scale_X, shift_X, sum_X_sq, 0.000001);  
-    }
-
-    if (link_type == 1 & link_power == 0.0) {
-        beta = beta * log (0.5);
+    if ((dist_type == 1 & link_type == 1 & link_power == 0.0) |
+        (dist_type == 2 & link_type >= 2))
+    {    
+        desired_eta = 0.0;
+    } else { if (link_type == 1 & link_power == 0.0) {
+        desired_eta = log (0.5);
     } else { if (link_type == 1) {
-        beta = beta * (0.5 ^ link_power);
+        desired_eta = 0.5 ^ link_power;
     } else {
-        beta = beta * 0.5;
-    }}
-}
+        desired_eta = 0.5;
+    }}}
+    
+    beta = matrix (0.0, rows = ncol(X), cols = 1);
+    
+    if (desired_eta != 0.0) {
+        if (icept_status == 1 | icept_status == 2) {
+            beta [nrow(beta), 1] = desired_eta;
+        } else {
+            # We want: avg (X %*% ssX_transform %*% beta) = desired_eta
+            # Note that "ssX_transform" is trivial here, hence ignored
+            
+            beta = straightenX (X, 0.000001, max_iter_CG);  
+            beta = beta * desired_eta;
+}   }   }
 
 
 glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
@@ -970,39 +977,28 @@ get_trust_boundary_point =
 }
 
 
-# Computes vector w such that
-#     ||X %*% TC %*% w - 1|| -> MIN  given  avg(X %*% TC %*% w) = 1
-# We find z_LS such that ||X %*% TC %*% z_LS - 1|| -> MIN unconditionally,
-#     then scale it to compute  w = c * z_LS  such that
-#         sum(X %*% TC %*% w) = nrow(X).
-# Here "TC" is the shift/scale transform of X, added separately because  
-# applying it to a sparse X may produce a dense X %*% TC.
+# Computes vector w such that  ||X %*% w - 1|| -> MIN  given  avg(X %*% w) = 1
+# We find z_LS such that ||X %*% z_LS - 1|| -> MIN unconditionally, then scale
+# it to compute  w = c * z_LS  such that  sum(X %*% w) = nrow(X).
 straightenX =
-    function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X,
-              double X_TC_sq, double eps)  # X_TC_sq replaces sum(X ^ 2)
+    function (Matrix[double] X, double eps, int max_iter_CG)
     return   (Matrix[double] w)
 {
-    size_LS = ncol(X);
-    eps_LS = eps * nrow(X);
-    lambda_LS = (0.000001 / size_LS) * X_TC_sq;
-    
     w_X = t(colSums(X));
-    w_X = diag (scale_X) %*% w_X + shift_X %*% w_X [size_LS, ];
+    lambda_LS = 0.000001 * sum(X ^ 2) / ncol(X);
+    eps_LS = eps * nrow(X);
 
     # BEGIN LEAST SQUARES
     
     r_LS = - w_X;
-    z_LS = matrix (0.0, rows = size_LS, cols = 1);
+    z_LS = matrix (0.0, rows = ncol(X), cols = 1);
     p_LS = - r_LS;
     norm_r2_LS = sum (r_LS ^ 2);
     i_LS = 0;
-    while (i_LS < 50 & i_LS < size_LS & norm_r2_LS >= eps_LS)
+    while (i_LS < max_iter_CG & i_LS < ncol(X) & norm_r2_LS >= eps_LS)
     {
-        ssX_p_LS = diag (scale_X) %*% p_LS;
-        ssX_p_LS [size_LS, ] = ssX_p_LS [size_LS, ] + t(shift_X) %*% p_LS;
-        temp_LS = t(X) %*% (X %*% ssX_p_LS);
-        q_LS = (lambda_LS * p_LS) + diag (scale_X) %*% temp_LS + shift_X %*% temp_LS [size_LS, ];
-
+        q_LS = t(X) %*% X %*% p_LS;
+        q_LS = q_LS + lambda_LS * p_LS;
         alpha_LS = norm_r2_LS / sum (p_LS * q_LS);
         z_LS = z_LS + alpha_LS * p_LS;
         old_norm_r2_LS = norm_r2_LS;

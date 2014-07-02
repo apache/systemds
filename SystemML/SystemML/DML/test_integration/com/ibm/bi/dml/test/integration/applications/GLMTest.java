@@ -94,7 +94,45 @@ public class GLMTest extends AutomatedTestBase
 				
 		// Both DML and R work and compute close results:
 
-			{ 100000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // Gaussian.log     // CHECK DEVIANCE !!!
+/*				
+        // THIS IS TO TEST "NO INTERCEPT" OPTION ("icpt=0"):
+			{ 100000,   50,  1,  0.0,  1,  0.0,  0.0,  3.0,  10.0,  2.0,  2.5 },   // Gaussian.log
+			{  10000,  100,  1,  0.0,  1,  1.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gaussian.id
+			{  20000,  100,  1,  0.0,  1, -1.0,  0.0,  0.0,   0.2,  0.03, 2.5 },   // Gaussian.inverse
+			{  10000,  100,  1,  1.0,  1,  0.0,  0.0,  3.0,   0.0,  1.0,  2.5 },   // Poisson.log
+			{ 100000,   10,  1,  1.0,  1,  0.0,  0.0,  3.0,   0.0, 50.0,  2.5 },   // Poisson.log             // Pr[0|x] gets near 1
+			{  20000,  100,  1,  1.0,  1,  0.5,  0.0,  3.0,  10.0,  2.0,  2.5 },   // Poisson.sqrt
+			{  20000,  100,  1,  1.0,  1,  1.0,  0.0,  3.0,  50.0, 10.0,  2.5 },   // Poisson.id
+			{ 100000,   50,  1,  2.0,  1,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gamma.log
+			{ 100000,   50,  1,  2.0,  1, -1.0,  0.0,  1.0,   2.0,  0.4,  1.5 },   // Gamma.inverse
+			{  10000,  100,  1,  3.0,  1, -2.0,  0.0,  3.0,  50.0,  7.0,  1.7 },   // InvGaussian.1/mu^2
+			{  10000,  100,  1,  3.0,  1, -1.0,  0.0,  3.0,  10.0,  2.0,  2.5 },   // InvGaussian.inverse			
+			{ 100000,   50,  1,  3.0,  1,  0.0,  0.0,  2.0,  -2.0,  1.0,  1.7 },   // InvGaussian.log
+			{ 100000,   50,  1,  3.0,  1,  1.0,  0.0,  1.0,   0.2,  0.04, 1.7 },   // InvGaussian.id
+
+			{ 100000,   50,  2, -1.0,  1,  0.0,  0.0,  3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
+			{ 100000,   50,  2, -1.0,  1,  1.0,  0.0,  1.0,   0.6,  0.1,  1.0 },   // Bernoulli {-1, 1}.id
+			{ 100000,   50,  2, -1.0,  1,  0.5,  0.0,  0.0,   0.4,  0.05, 1.0 },   // Bernoulli {-1, 1}.sqrt
+			{  10000,  100,  2, -1.0,  2,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.logit
+			{  10000,  100,  2, -1.0,  2,  0.0,  0.0,  3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.logit   // Pr[y|x] near 0, 1
+			{  20000,  100,  2, -1.0,  3,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.probit
+			{ 100000,   10,  2, -1.0,  3,  0.0,  0.0,  3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.probit  // Pr[y|x] near 0, 1
+			{  10000,  100,  2, -1.0,  4,  0.0,  0.0,  3.0,  -2.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.cloglog
+			{  50000,   20,  2, -1.0,  4,  0.0,  0.0,  3.0,  -2.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.cloglog // Pr[y|x] near 0, 1
+			{  50000,  100,  2, -1.0,  5,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.cauchit
+				
+			{ 100000,   50,  2,  1.0,  1,  0.0,  0.0,  3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
+			{  10000,  100,  2,  1.0,  1,  1.0,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.id
+			{ 100000,   50,  2,  1.0,  1,  0.5,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.sqrt
+			{  10000,  100,  2,  1.0,  2,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
+			{  20000,  100,  2,  1.0,  3,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
+			{  10000,  100,  2,  1.0,  4,  0.0,  0.0,  3.0,  -2.0,  1.0,  2.5 },   // Binomial two-column.cloglog
+			{  20000,  100,  2,  1.0,  5,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
+*/				
+				
+
+        // THIS IS TO TEST "INTERCEPT AND SHIFT/SCALE" OPTION ("icpt=2"):
+			{ 200000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // Gaussian.log     // CHECK DEVIANCE !!!
 			{  10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Gaussian.id
 			{  20000,  100,  1,  0.0,  1, -1.0,  0.01, 0.0,   0.2,  0.03, 2.5 },   // Gaussian.inverse
 			{  10000,  100,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0,  1.0,  2.5 },   // Poisson.log
@@ -126,6 +164,7 @@ public class GLMTest extends AutomatedTestBase
 			{  20000,  100,  2,  1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
 			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5 },   // Binomial two-column.cloglog
 			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
+			
 
 
 		//  DML WORKS, BUT R FAILS:
@@ -260,7 +299,7 @@ public class GLMTest extends AutomatedTestBase
 				((distFamilyType == 2 && distParam != 1.0) ? "vpow=0.0" : "yneg=0.0"),
 				"link=" + String.format ("%d", linkType),
 				"lpow=" + String.format ("%f", linkPower),
-				"icpt=2",
+				"icpt=2",  // "icpt=0",  // INTERCEPT - CHANGE THIS AS NEEDED
 				"disp=0.0",    // DISPERSION (0.0: ESTIMATE)
 				"reg=0.0",            // LAMBDA REGULARIZER
 				"tol=0.000000000001", // TOLERANCE (EPSILON)
@@ -278,8 +317,8 @@ public class GLMTest extends AutomatedTestBase
 	         +  String.format ("%f", distParam)       + " "
 	         +  String.format ("%d", linkType)        + " "
 	         +  String.format ("%f", linkPower)       + " "
-	         +  "1" + " " // INTERCEPT - CHANGE THIS LATER
-	         +  "0.000000000001" + " " // TOLERANCE (EPSILON)
+	         +  "1" + " " // "0" + " "  // INTERCEPT - CHANGE THIS AS NEEDED
+	         +  "0.000000000001" + " "  // TOLERANCE (EPSILON)
 	         +  GLMR_HOME + EXPECTED_DIR + "betas_R";
 
 		

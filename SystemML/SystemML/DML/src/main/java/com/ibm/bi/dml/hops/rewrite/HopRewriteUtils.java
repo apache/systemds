@@ -10,10 +10,12 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.DataGenOp;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -152,6 +154,20 @@ public class HopRewriteUtils
 		//remove child reference
 		parent.getInput().remove( child );
 		child.getParent().remove( parent );
+	}
+	
+	public static void removeChildReferenceByPos( Hop parent, Hop child, int posChild )
+	{
+		//remove child reference
+		parent.getInput().remove( posChild );
+		child.getParent().remove( parent );
+	}
+	
+	public static void removeChildReferenceByPos( Hop parent, Hop child, int posChild, int posParent )
+	{
+		//remove child reference
+		parent.getInput().remove( posChild );
+		child.getParent().remove( posParent );
 	}
 	
 	public static void removeAllChildReferences( Hop parent )
@@ -323,6 +339,11 @@ public class HopRewriteUtils
 		hop.setNnz( nnz );
 	}
 	
+	public static void copyLineNumbers( Hop src, Hop dest )
+	{
+		dest.setAllPositions(src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
+	}
+	
 	///////////////////////////////////
 	// hop size information
 	
@@ -356,6 +377,17 @@ public class HopRewriteUtils
 		double val2 = getDoubleValue(hop2);
 		
 		return ( val1 == val2 );
+	}
+	
+	public static boolean hasOnlyTransientWriteParents( Hop hop )
+	{
+		boolean ret = true;
+		
+		ArrayList<Hop> parents = hop.getParent();
+		for( Hop p : parents )
+			ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE );
+				
+		return ret;
 	}
 
 	//////////////////////////////////////

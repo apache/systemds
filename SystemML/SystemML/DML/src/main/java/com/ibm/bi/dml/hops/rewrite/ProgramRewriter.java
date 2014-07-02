@@ -76,6 +76,8 @@ public class ProgramRewriter
 			//add statment block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
+ 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
+ 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock			
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

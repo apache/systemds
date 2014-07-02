@@ -86,7 +86,7 @@ public class OptimizerUtils
 	/**
 	 * 
 	 */
-	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
+	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true; 
 	
 	/**
 	 * Enables if-else branch removal for constant predicates (original literals or 
@@ -123,6 +123,12 @@ public class OptimizerUtils
 	 * all sum-product related rewrites.
 	 */
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES = true;
+	
+	/**
+	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 
+	 * unknown size in order to allow for recompile.
+	 */
+	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
 	
 	
 	//////////////////////

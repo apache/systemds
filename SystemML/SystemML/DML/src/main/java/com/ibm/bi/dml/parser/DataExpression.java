@@ -729,14 +729,13 @@ public class DataExpression extends DataIdentifier
 			boolean isCSV = false;
 			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV));
 			if (isCSV){
-				
 				 // Handle delimited file format
 				 // 
 				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
 				 //  
 				 // 2) open the file
 				 //
-				
+			
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = true;
 				
@@ -855,7 +854,7 @@ public class DataExpression extends DataIdentifier
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : new Long (getVarParam(READROWPARAM).toString());
 					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : new Long(getVarParam(READCOLPARAM).toString());
 					
-					if ( (dim1 <= 0 || dim2 <= 0) && REJECT_READ_UNKNOWN_SIZE )
+					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && REJECT_READ_UNKNOWN_SIZE )
 					{
 						LOG.error(this.printErrorLocation() + "Invalid dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);

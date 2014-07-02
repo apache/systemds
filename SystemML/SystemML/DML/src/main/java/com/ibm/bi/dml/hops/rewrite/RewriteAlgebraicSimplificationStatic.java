@@ -254,14 +254,16 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					bop.setOp(OpOp2.MULT);
 					LiteralOp tmp = new LiteralOp("2", 2);
-					hi.getInput().remove(1);
+					bop.getInput().remove(1);
+					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
 				}
 				else if ( bop.getOp()==OpOp2.MULT ) //X*X -> X^2
 				{
 					bop.setOp(OpOp2.POW);
 					LiteralOp tmp = new LiteralOp("2", 2);
-					hi.getInput().remove(1);
+					bop.getInput().remove(1);
+					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
 				}
 			}

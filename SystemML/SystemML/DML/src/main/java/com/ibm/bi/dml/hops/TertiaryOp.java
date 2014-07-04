@@ -717,30 +717,24 @@ public class TertiaryOp extends Hop
 	{
 		//only quantile and ctable produce matrices
 		
-		double sparsity = 1.0;
-		
 		switch(op) 
 		{
 			case CTABLE:
 				// since the dimensions of both inputs must be the same, checking for one input is sufficient
 				//   worst case dimensions of C = [m,m]
 				//   worst case #nnz in C = m => sparsity = 1/m
-				sparsity = OptimizerUtils.getSparsity(dim1, dim2, (nnz<=dim1)?nnz:dim1); 
-				break;
-			
+				// for ctable_histogram also one dimension is known
+				double sparsity = OptimizerUtils.getSparsity(dim1, dim2, (nnz<=dim1)?nnz:dim1); 
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+				
 			case QUANTILE:
 				// This part of the code is executed only when a vector of quantiles are computed
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
-				sparsity = 1.0;
-				break;
-			
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
+				
 			default:
 				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
 		}
-		
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
-
-		
 	}
 	
 	@Override
@@ -779,6 +773,8 @@ public class TertiaryOp extends Hop
 					long m = (mc[0].dimsKnown())
 					          ? (mc[0].get_rows() > 1 ? mc[0].get_rows() : mc[0].get_cols() )
 							  : (mc[1].get_rows() > 1 ? mc[1].get_rows() : mc[1].get_cols() );
+					
+					//note: for ctable histogram dim2 known but automatically replaces m         
 					ret = new long[]{m, m, m};
 				}
 				break;
@@ -837,17 +833,28 @@ public class TertiaryOp extends Hop
 			{
 				case CTABLE:
 					//in general, do nothing because the output size is data dependent
-					//however, for ctable_expand at least one dimension is known
+					Hop input1 = getInput().get(0);
+					Hop input2 = getInput().get(1);
+					Hop input3 = getInput().get(2);
+					
+					//for ctable_expand at least one dimension is known
 					if( isSequenceRewriteApplicable() )
 					{
-						Hop input1 = getInput().get(0);
-						Hop input2 = getInput().get(1);
-						
 						if( input1 instanceof DataGenOp && ((DataGenOp)input1).getDataGenMethod()==DataGenMethod.SEQ )
 							set_dim1( input1._dim1 );
 						else //if( input2 instanceof DataGenOp && ((DataGenOp)input2).getDataGenMethod()==DataGenMethod.SEQ )
 							set_dim2( input2._dim1 );
 					}
+					
+					//for ctable_histogram also one dimension is known
+					Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(
+															input1.get_dataType(), input2.get_dataType(), input3.get_dataType());
+					if(  tertiaryOp==Tertiary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
+						&& input2 instanceof LiteralOp )
+					{
+						set_dim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input2) );
+					}
+					
 					break;
 				
 				case QUANTILE:

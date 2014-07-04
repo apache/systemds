@@ -114,6 +114,29 @@ public class HopRewriteUtils
 	 * 
 	 * @param op
 	 * @return
+	 */
+	public static long getIntValueSafe( LiteralOp op )
+	{
+		try
+		{
+			switch( op.get_valueType() )
+			{
+				case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
+				case INT:	  return op.getLongValue();
+				case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			}
+		}
+		catch(Exception ex){
+			//silently ignore error
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
 	 * @throws HopsException
 	 */
 	public static ScalarObject getScalarObject( LiteralOp op )
@@ -378,6 +401,7 @@ public class HopRewriteUtils
 		
 		return ( val1 == val2 );
 	}
+	
 	
 	public static boolean hasOnlyTransientWriteParents( Hop hop )
 	{

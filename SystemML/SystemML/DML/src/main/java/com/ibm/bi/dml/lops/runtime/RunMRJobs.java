@@ -243,77 +243,6 @@ public class RunMRJobs
 				throw new DMLRuntimeException("Invalid jobtype: " + inst.getJobType());
 			}
 			
-			/*if (inst.getJobType() == JobType.PARTITION) {
-				boolean blocked_rep = true;
-
-				String input = updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping())[0];	//the hdfs filepath! not the varbl name!
-				InputInfo inputInfo = inst.getIv_inputInfos()[0];
-				int numReducers = inst.getIv_numReducers();  
-				int replication = inst.getIv_replication();
-				long nr = inst.getIv_rows()[0];
-				long nc = inst.getIv_cols()[0];
-				int bnr = inst.getIv_num_rows_per_block()[0];
-				int bnc = inst.getIv_num_cols_per_block()[0];
-				PartitionParams pp = inst.getPartitionParams();
-
-				// pp.setScratchPrefix(scratch);
-				//TODO: fix output filepathnames (preprend "./data/" to outputs in submatrix and cell!) 
-				if (pp.isEL == false && pp.pt == PartitionParams.PartitionType.submatrix) {
-					if (inputInfo == InputInfo.BinaryBlockInputInfo && nr > bnr && nc > bnc) {
-						ret = PartitionBlockMR.runJob(input, inputInfo, numReducers, replication, nr, nc, bnr, bnc, pp);
-					} else {
-						if (inputInfo != InputInfo.BinaryBlockInputInfo) {
-							bnr =  DMLConfig.DEFAULT_BLOCK_SIZE; //config.getTextValue("defaultblocksize"); //pp.get_rows_in_block();
-							bnc = DMLConfig.DEFAULT_BLOCK_SIZE; //config.getTextValue("defaultblocksize"); //pp.get_columns_in_block();
-						}
-						ret = PartitionSubMatrixMR.runJob(blocked_rep, input, inputInfo, numReducers, replication, nr,
-								nr, bnr, bnc, pp);
-					}
-				}
-				else if (pp.isEL == false && pp.pt == PartitionParams.PartitionType.cell) {
-					PartitionCellMR.runJob(numReducers, nr, nc, replication,pp) ;
-				}
-				
-				else if (pp.isEL == true || (pp.isEL == false && pp.pt == PartitionParams.PartitionType.row)) {
-					if(pp.apt == PartitionParams.AccessPath.HM) {	//we can simply use the hashmap MR job!
-						ret = PartitionBlockHashMapMR.runJob(input, InputInfo.BinaryBlockInputInfo, numReducers, replication,
-								nr, nc, bnr, bnc, pp);
-					}
-					else if(pp.apt == PartitionParams.AccessPath.JR) {	//JR method
-							ret = PartitionBlockJoinMR.runJob(input, InputInfo.BinaryBlockInputInfo, numReducers, 
-																replication, nr, nc, bnr, bnc, pp);
-							//TODO: need to reblock all the output fold matrices later from subrowblk format to blk format
-					} 
-					else {	//RB method	- usually this path is never chosen!
-							//TODO: DRB: THIS IS BROKEN Call reblock here since it is required for this; need to reblock bef partng
-							String inputre = input + "re";	//again, the hdfs file path - not the varbl name!
-							if(pp.isColumn == false) {	//row-wise, so output as rowblk matrix
-								ret = ReblockMR.runJob(new String[] { input }, new InputInfo[] { inputInfo },
-										new long[] { nr }, new long[] { nc }, new int[] { bnr }, new int[] { bnc }, "",
-										"rblk:::0:DOUBLE:::1:DOUBLE:::1:::"+nc,		//TODO #### can cause underflow!! from long to int in cpb!
-										"", numReducers, replication, new byte[] { 1 }, new byte[] {0}, 
-										new String[] { inputre }, new OutputInfo[] { OutputInfo.BinaryBlockOutputInfo });
-								ret.checkReturnStatus();
-								System.out.println("$$$$ Finished first reblocking in RB method $$$$$");
-								ret = PartitionBlockMR.runJob(inputre, InputInfo.BinaryBlockInputInfo, numReducers, replication,
-										nr, nc, 1, (int) nc, pp);	//the inputre is in rowblock format
-							}
-							else {	//col-wise, so output as colblk matrix
-								ret = ReblockMR.runJob(new String[] { input }, new InputInfo[] { inputInfo },
-										new long[] { nr }, new long[] { nc }, new int[] { bnr }, new int[] { bnc }, "",
-										"rblk:::0:DOUBLE:::1:DOUBLE:::"+nr+":::1", 
-										"", numReducers, replication, new byte[] { 1 }, new byte[] {0}, 
-										new String[] { inputre }, new OutputInfo[] { OutputInfo.BinaryBlockOutputInfo });
-								ret.checkReturnStatus();
-								ret = PartitionBlockMR.runJob(inputre, InputInfo.BinaryBlockInputInfo, numReducers, replication,
-										nr, nc, (int) nr, 1, pp);	//the inputre is in colblk format
-							}
-							//TODO: need to reblock all the output fold matrices later from subrowblk format to blk format
-					}//end if on access paths
-				}//end if on row type
-			}//end partition stmt
-			*/
-			
 		} // end of try block
 		catch (Exception e) {
 			throw new DMLRuntimeException( e );
@@ -322,39 +251,53 @@ public class RunMRJobs
 		if (ret.checkReturnStatus()) {
 			/*
 			 * Check if any output is empty. If yes, create a dummy file. Needs
-			 * to be done only in case of CellOutputInfo and if not CP.
+			 * to be done only in case of (1) CellOutputInfo and if not CP, or 
+			 * (2) BinaryBlockOutputInfo if not CP and output empty blocks disabled.
 			 */
 			try {
 				if( !execCP )
 				{
 					for (int i = 0; i < outputMatrices.length; i++) {
-						OutputInfo outinfo = ((MatrixFormatMetaData)outputMatrices[i].getMetaData()).getOutputInfo();
+						//get output meta data
+						MatrixFormatMetaData meta = (MatrixFormatMetaData)outputMatrices[i].getMetaData();
+						MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+						OutputInfo outinfo = meta.getOutputInfo();
 						String fname = outputMatrices[i].getFileName();
-						if (outinfo == OutputInfo.TextCellOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo) {
-							if (MapReduceTool.isHDFSFileEmpty(fname)) {
-								// createNewFile(Path f)
-								if (outinfo == OutputInfo.TextCellOutputInfo) {
-									FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-									Path filepath = new Path(fname, "0-m-00000");
-									FSDataOutputStream writer = fs.create(filepath);
-									writer.writeBytes("1 1 0");
-									writer.sync();
-									writer.flush();
-									writer.close();
-								} else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
-									Configuration conf = new Configuration();
-									FileSystem fs = FileSystem.get(conf);
-									Path filepath = new Path(fname, "0-r-00000");
-									SequenceFile.Writer writer = new SequenceFile.Writer(
-											fs, conf, filepath,
-											MatrixIndexes.class, MatrixCell.class);
-									MatrixIndexes index = new MatrixIndexes(1, 1);
-									MatrixCell cell = new MatrixCell(0);
-									writer.append(index, cell);
-									writer.close();
-								}
+						
+						if (MapReduceTool.isHDFSFileEmpty(fname)) 
+						{
+							//prepare output file
+							Path filepath = new Path(fname, "0-m-00000");
+							
+							if (outinfo == OutputInfo.TextCellOutputInfo) {
+								FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+								FSDataOutputStream writer = fs.create(filepath);
+								writer.writeBytes("1 1 0");
+								writer.close();
+							} 
+							else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
+								Configuration conf = new Configuration();
+								FileSystem fs = FileSystem.get(conf);
+								SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
+										                        MatrixIndexes.class, MatrixCell.class);
+								MatrixIndexes index = new MatrixIndexes(1, 1);
+								MatrixCell cell = new MatrixCell(0);
+								writer.append(index, cell);
+								writer.close();
+							}
+							else if( outinfo == OutputInfo.BinaryBlockOutputInfo ){
+								Configuration conf = new Configuration();
+								FileSystem fs = FileSystem.get(conf);
+								SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
+										                        MatrixIndexes.class, MatrixBlock.class);
+								MatrixIndexes index = new MatrixIndexes(1, 1);
+								MatrixBlock block = new MatrixBlock((int)Math.min(mc.get_rows(), mc.get_rows_per_block()),
+																	(int)Math.min(mc.get_cols(), mc.get_cols_per_block()), true);
+								writer.append(index, block);
+								writer.close();
 							}
 						}
+						
 						outputMatrices[i].setFileExists(true);
 						
 						if ( inst.getJobType() != JobType.CSV_WRITE ) {

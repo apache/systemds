@@ -226,8 +226,8 @@ public abstract class CacheableData extends Data
 				throw new CacheStatusException ("MODIFY-MODIFY not allowed.");
 		}
 
-		LOG.trace("Acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
-		
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );		
 	}
 
 	
@@ -262,7 +262,8 @@ public abstract class CacheableData extends Data
 			    break;
 		}
 		
-		LOG.trace("Released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
 		
 	}
 

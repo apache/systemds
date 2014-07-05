@@ -55,7 +55,8 @@ public class LazyWriteBuffer
 		throws FileNotFoundException, IOException
 	{	
 		long lSize = mb.getExactSizeOnDisk(); 
-		boolean requiresWrite = ( lSize >= _limit || lSize >= Integer.MAX_VALUE );
+		boolean requiresWrite = (   lSize > _limit  //global buffer limit
+				                 || !ByteBuffer.isValidCapacity(lSize, mb) ); //local buffer limit
 	
 		if( !requiresWrite ) //if it fits in writebuffer
 		{			
@@ -85,7 +86,7 @@ public class LazyWriteBuffer
 				}
 				
 				//create buffer (reserve mem), and lock
-				bbuff = new ByteBuffer((int)lSize);
+				bbuff = new ByteBuffer( lSize );
 				
 				//put placeholder into buffer pool
 				_mData.put(fname, bbuff);

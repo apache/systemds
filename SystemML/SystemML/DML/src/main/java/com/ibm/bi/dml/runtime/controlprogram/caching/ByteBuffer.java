@@ -28,12 +28,12 @@ public class ByteBuffer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	private boolean _serialized;	
 	private boolean _sparse;
-	private int _size;
+	private long _size;
 	
 	protected byte[]       _bdata = null; //sparse matrix
 	protected MatrixBlock  _mdata = null; //dense matrix
 	
-	public ByteBuffer( int size )
+	public ByteBuffer( long size )
 	{
 		_size = size;
 		_serialized = false;
@@ -57,9 +57,9 @@ public class ByteBuffer
 			{
 				//deep serialize (for compression)
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage(_size);
+					_bdata = PageCache.getPage((int)_size);
 				if( _bdata==null )
-					_bdata = new byte[_size];
+					_bdata = new byte[(int)_size];
 				DataOutput dout = new CacheDataOutput(_bdata);
 				mb.write(dout);
 			}
@@ -134,7 +134,7 @@ public class ByteBuffer
 	 * 
 	 * @return
 	 */
-	public int getSize()
+	public long getSize()
 	{
 		return _size;
 	}
@@ -174,6 +174,33 @@ public class ByteBuffer
 		while( !_serialized )
 		{
 			try{Thread.sleep(1);} catch(Exception e) {}
+		}
+	}
+	
+	/**
+	 * Determines if byte buffer can hold the given size given this specific matrix block.
+	 * This call is consistent with 'serializeMatrix' and allows for internal optimization
+	 * according to dense/sparse representation.
+	 * 
+	 * @param size
+	 * @param mb
+	 * @return
+	 */
+	public static boolean isValidCapacity( long size, MatrixBlock mb )
+	{
+		boolean sparseTrgt = mb.evalSparseFormatOnDisk(); //intended target representation
+		
+		if( sparseTrgt ) //SPARSE
+		{
+			// since sparse matrix blocks are serialized into a byte representation
+			// the buffer buffer can hold at most 2GB in size 
+			return ( size <= Integer.MAX_VALUE );
+		}
+		else //DENSE
+		{
+			// since for dense matrix blocks we use a shallow serialize (strong reference), 
+			// the byte buffer can hold any size (currently upper bounded by 16GB) 
+			return true;
 		}
 	}
 }

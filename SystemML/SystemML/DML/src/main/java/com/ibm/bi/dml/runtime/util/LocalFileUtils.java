@@ -124,14 +124,39 @@ public class LocalFileUtils
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public static void writeByteArrayToLocal (String filePathAndName, byte[] data)
+	public static void writeByteArrayToLocal( String filePathAndName, byte[] data )
 		throws FileNotFoundException, IOException
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		
 		try 
 		{
-			fos.write(data);
+			fos.write( data );
+		}
+		finally
+		{
+			if( fos != null )
+				fos.close ();	
+		}	
+	}
+	
+	/**
+	 * 
+	 * @param filePathAndName
+	 * @param data
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public static void writeByteArrayToLocal( String filePathAndName, byte[][] data )
+		throws FileNotFoundException, IOException
+	{		
+		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		
+		try 
+		{
+			for( int i=0; i<data.length; i++ )
+				if( data[i]!=null )
+					fos.write( data[i] );
 		}
 		finally
 		{

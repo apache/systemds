@@ -12,6 +12,7 @@ import java.util.HashSet;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -29,6 +30,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -51,7 +53,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final long UNKNOWN_TIME = -1;
 	
 	//floating point operations
-	private static final double DEFAULT_NFLOP_RAND = 2;
 	private static final double DEFAULT_NFLOP_NOOP = 10; 
 	private static final double DEFAULT_NFLOP_UNKNOWN = 1; 
 	private static final double DEFAULT_NFLOP_CP = 1; 	
@@ -60,15 +61,16 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_MR_LATENCY_LOCAL = 2;
 	private static final double DEFAULT_MR_LATENCY_REMOTE = 10;
 	
-	//IO throughput //TODO different formats
-	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_DENSE = 150;
-	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_DENSE = 100;
-	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_DENSE = 90;
-	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE = 60;
-	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE = 75;
-	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE = 50;
-	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE = 45;
-	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE = 30;
+	//IO READ throughput
+	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_DENSE = 200;
+	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE = 100;
+	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_DENSE = 150;
+	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE = 75;
+	//IO WRITE throughput
+	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_DENSE = 150;
+	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE = 75;
+	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE = 120;
+	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE = 60;
 	
 	@Override
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
@@ -323,6 +325,21 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				PickByCountInstruction pinst = (PickByCountInstruction) mrinst;
 				vs[0] = stats[ pinst.input1 ];
 				vs[2] = stats[ pinst.output ];
+				if( vs[0] == null ) //scalar input, 
+					vs[0] = _scalarStats;
+				if( vs[1] == null ) //scalar input, 
+					vs[1] = _scalarStats;
+				if( vs[2] == null ) //scalar input
+					vs[2] = _scalarStats;
+			}
+			else if( mrinst instanceof MapMultChainInstruction)
+			{
+				MapMultChainInstruction minst = (MapMultChainInstruction) mrinst;
+				vs[0] = stats[ minst._input1 ];
+				vs[1] = stats[ minst._input2 ];
+				if( minst._input3>=0 )
+					vs[2] = stats[ minst._input3 ];
+				
 				if( vs[0] == null ) //scalar input, 
 					vs[0] = _scalarStats;
 				if( vs[1] == null ) //scalar input, 
@@ -604,8 +621,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private double getInstTimeEstimate(String instStr, VarStats[] vs, String[] args) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		String opcode = InstructionUtils.getOpCode(instStr);
-		return getInstTimeEstimate(opcode, 
+		String[] parts = instStr.split(Instruction.OPERAND_DELIM);
+		boolean inMR = (ExecType.valueOf( parts[0] ) == ExecType.MR);
+		String opcode = parts[1];
+		return getInstTimeEstimate(opcode, inMR,  
 				                   vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen, 
 						           vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen, 
 						           vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen,
@@ -632,9 +651,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private double getInstTimeEstimate( String opcode, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	private double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		double nflops = getNFLOP(opcode, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s, args);
+		double nflops = getNFLOP(opcode, inMR, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s, args);
 		double time = nflops / DEFAULT_FLOPS;
 		
 		if( LOG.isDebugEnabled() )
@@ -660,7 +679,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private double getNFLOP( String optype, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) 
+	private double getNFLOP( String optype, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//operation costs in FLOP on matrix block level (for CP and MR instructions)
@@ -683,7 +702,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case AggregateBinary: //opcodes: ba+*, cov
 					if( optype.equals("ba+*") ) { //matrix mult
 						if( !leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n);
+							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n);
 						else if( !leftSparse && rightSparse )
 							return 2 * (d1m * d1n * d1s * d2n * d2s);
 						else if( leftSparse && !rightSparse )
@@ -774,8 +793,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return d3m*d3n;
 
 					
-				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sqrt, plogp, print, print2, round
-					if( optype.equals("print") || optype.equals("print2") ) //scalar only
+				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sqrt, plogp, print, round
+					if( optype.equals("print") ) //scalar only
 						return 1;
 					else
 					{
@@ -831,11 +850,19 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			
 				case Rand: //opcodes: Rand, seq
 					if( optype.equals("Rand") ){
+						int nflopRand = 32; //per random number
 						switch(Integer.parseInt(args[0])) {
 							case 0: return DEFAULT_NFLOP_NOOP; //empty matrix
-							case 1: return d3m * d3n * DEFAULT_NFLOP_CP; //arrayfill
-							case 2: return d3m * d3n * DEFAULT_NFLOP_RAND + 
-								           d3m * d3n * d3s * (DEFAULT_NFLOP_RAND + 2);
+							case 1: return d3m * d3n * 8; //allocate, arrayfill
+							case 2: //full rand
+							{
+								if( d3s==1.0 )
+									return d3m * d3n * nflopRand + d3m * d3n * 8; //DENSE gen (incl allocate)    
+								else 
+									return (d3s>=MatrixBlock.SPARSITY_TURN_POINT)? 
+										    2 * d3m * d3n * nflopRand + d3m * d3n * 8: //DENSE gen (incl allocate)    
+									        3 * d3m * d3n * d3s * nflopRand + d3m * d3n * d3s * 24; //SPARSE gen (incl allocate)
+							}
 						}
 					}
 					else //seq
@@ -916,9 +943,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				
 				case Partition:
 					return d1m * d1n * d1s + //partitioning costs
-							MatrixBlock.estimateSizeOnDisk(d1m, d1n, (long)(d1m*d1n*d1s))
-							/ (1024*1024) //datasize [MB] 
-						   * DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE * DEFAULT_FLOPS;
+						   (inMR ? 0 : //include write cost if in CP  	
+							getHDFSWriteTime(d1m, d1n, d1s)* DEFAULT_FLOPS);
 					
 				case INVALID:
 					return 0;
@@ -943,11 +969,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				    else 
 						return numMap * d1m * d1n * d1s;
 					
-				case AggregateBinary: //opcodes: cpmm, rmm, mvmult
+				case AggregateBinary: //opcodes: cpmm, rmm, mapmult
 					//note: copy from CP costs
-					if( optype.equals("cpmm") || optype.equals("rmm") || optype.equals("mvmult") ) { //matrix mult
+					if(    optype.equals("cpmm") || optype.equals("rmm") 
+						|| optype.equals("mapmult") ) //matrix mult
+					{ 
 						if( !leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n);
+							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n);
 						else if( !leftSparse && rightSparse )
 							return 2 * (d1m * d1n * d1s * d2n * d2s);
 						else if( leftSparse && !rightSparse )
@@ -956,6 +984,14 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 							return 2 * (d1m * d1n * d1s * d2n * d2s);
 					}
 					return 0;
+					
+				case MapMultChain: //opcodes: mapmultchain	
+					//assume dense input2 and input3
+					return   2 * d1m * d2n * d1n * ((d2n>1)?d1s:1.0) //ba(+*) 
+						   + d1m * d2n //cellwise b(*) 
+					       + d1m * d2n //r(t)
+					       + 2 * d2n * d1n * d1m * (leftSparse?d1s:1.0) //ba(+*)
+					       + d2n * d1n; //r(t)
 					
 				case ArithmeticBinary: //opcodes: s-r, so, max, min, 
 					                   //         >, >=, <, <=, ==, != 

@@ -788,9 +788,12 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else //unary
 						return d3m * d3n;
 					
-				case BuiltinBinary: //opcodes: max, min
+				case BuiltinBinary: //opcodes: max, min, solve
 					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
-					return d3m*d3n;
+					if( optype.equals("solve") ) //see also MultiReturnBuiltin
+						return d1m * d1n * d1n; //for 1kx1k ~ 1GFLOP -> 0.5s
+					else //default
+						return d3m * d3n;
 
 					
 				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sqrt, plogp, print, round
@@ -871,6 +874,15 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case External: //opcodes: extfunct
 					//note: should be invoked independently for multiple outputs
 					return d1m * d1n * d1s * DEFAULT_NFLOP_UNKNOWN;
+				
+				case MultiReturnBuiltin: //opcodes: qr, lu, eigen
+					//note: they all have cubic complexity, the scaling factor refers to commons.math
+					double xf = 2; //default e.g, qr
+					if( optype.equals("eigen") ) 
+						xf = 32;
+					else if ( optype.equals("lu") )
+						xf = 16;
+					return xf * d1m * d1n * d1n; //for 1kx1k ~ 2GFLOP -> 1s
 					
 				case ParameterizedBuiltin: //opcodes: cdf, groupedagg, rmempty
 					if( optype.equals("cdf") )

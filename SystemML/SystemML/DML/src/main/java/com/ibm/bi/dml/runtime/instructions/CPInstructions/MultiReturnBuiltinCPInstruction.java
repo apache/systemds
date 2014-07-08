@@ -33,7 +33,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	int arity;
@@ -49,6 +49,11 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 
 	public int getArity() {
 		return arity;
+	}
+	
+	public CPOperand getOutput(int i)
+	{
+		return _outputs.get(i);
 	}
 	
 	public static HashMap<String, String> constructParameterMap(String[] params) {

@@ -47,6 +47,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.UnaryCPInstruction;
@@ -562,6 +563,14 @@ public abstract class CostEstimator
 				vs[0] = _scalarStats;
 			if( vs[2] == null ) //scalar output
 				vs[2] = _scalarStats;
+		}
+		else if( inst instanceof MultiReturnBuiltinCPInstruction )
+		{
+			//applies to qr, lu, eigen (cost computation on input1)
+			MultiReturnBuiltinCPInstruction minst = (MultiReturnBuiltinCPInstruction) inst;
+			vs[0] = stats.get( minst.input1.get_name() );
+			vs[1] = stats.get( minst.getOutput(0).get_name() );
+			vs[2] = stats.get( minst.getOutput(1).get_name() );
 		}
 		else
 		{

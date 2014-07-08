@@ -683,7 +683,7 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM
 	}
 
 	// Operations that require two operands
@@ -895,7 +895,6 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LENGTH);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.PRINT);
-		HopsOpOp1LopsUS.put(OpOp1.PRINT2, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.PRINT2);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ROUND);
 	}
 
@@ -914,7 +913,6 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.NOT, "!");
 		HopsOpOp12String.put(OpOp1.NROW, "nrow");
 		HopsOpOp12String.put(OpOp1.PRINT, "print");
-		HopsOpOp12String.put(OpOp1.PRINT2, "print2");
 		HopsOpOp12String.put(OpOp1.ROUND, "round");
 		HopsOpOp12String.put(OpOp1.SIN, "sin");
 		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");
@@ -1067,7 +1065,7 @@ public abstract class Hop
 						break;
 					}
 				}
-				else if(h instanceof UnaryOp && ((UnaryOp)h).get_op() == OpOp1.PRINT2)
+				else if(h instanceof UnaryOp && ((UnaryOp)h).get_op() == OpOp1.PRINT)
 				{
 					hasWriteOutput = true;
 					break;

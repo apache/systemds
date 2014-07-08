@@ -1603,7 +1603,7 @@ public class DMLTranslator
 				Hop ae = processExpression(source, target, ids);
 			
 				try {
-					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.PRINT2, ae);
+					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.PRINT, ae);
 					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 					output.add(printHop);
 				} catch ( HopsException e ) {

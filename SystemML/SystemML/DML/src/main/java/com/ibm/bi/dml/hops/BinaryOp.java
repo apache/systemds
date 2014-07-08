@@ -365,8 +365,12 @@ public class BinaryOp extends Hop
 				ExecType et = optFindExecType();
 				DataType dt1 = getInput().get(0).get_dataType();
 				DataType dt2 = getInput().get(1).get_dataType();
-				if(dt1!=DataType.MATRIX || dt2!=DataType.MATRIX)
-					throw new HopsException("Append can only apply to two matrices!");
+				ValueType vt1 = getInput().get(0).get_valueType();
+				ValueType vt2 = getInput().get(1).get_valueType();
+				if( !((dt1==DataType.MATRIX && dt2==DataType.MATRIX)
+					 ||(dt1==DataType.SCALAR && dt2==DataType.SCALAR
+					   && vt1==ValueType.STRING && vt2==ValueType.STRING )) )
+					throw new HopsException("Append can only apply to two matrices or two scalar strings!");
 						
 				if( et == ExecType.MR )
 				{
@@ -1253,8 +1257,11 @@ public class BinaryOp extends Hop
 			}
 		
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) 
+				|| (op == OpOp2.APPEND && get_dataType()!=DataType.SCALAR) ) )
+			{
 				setRequiresRecompile();
+			}
 		}
 		
 		if ( op == OpOp2.SOLVE ) {

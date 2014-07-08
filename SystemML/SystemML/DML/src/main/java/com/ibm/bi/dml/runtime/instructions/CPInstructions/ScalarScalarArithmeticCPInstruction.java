@@ -42,8 +42,14 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		BinaryOperator dop = (BinaryOperator) optr;
 		
 		if ( input1.get_valueType() == ValueType.STRING 
-			 || input2.get_valueType() == ValueType.STRING ) {
-			String rval = dop.fn.execute(so1.getStringValue(), so2.getStringValue());
+			 || input2.get_valueType() == ValueType.STRING ) 
+		{
+			//pre-check (for robustness regarding too long strings)
+			String val1 = so1.getStringValue();
+			String val2 = so2.getStringValue();
+			StringObject.checkMaxStringLength(val1.length() + val2.length());
+			
+			String rval = dop.fn.execute(val1, val2);
 			sores = (ScalarObject) new StringObject(rval);
 		}
 		else if ( so1 instanceof IntObject && so2 instanceof IntObject ) {

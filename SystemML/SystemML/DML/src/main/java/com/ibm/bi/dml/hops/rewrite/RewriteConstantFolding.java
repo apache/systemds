@@ -15,6 +15,7 @@ import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
@@ -252,7 +253,11 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof BinaryOp 
 				&& in.get(0) instanceof LiteralOp 
-				&& in.get(1) instanceof LiteralOp ); 
+				&& in.get(1) instanceof LiteralOp
+				&& ((BinaryOp)hop).getOp()!=OpOp2.APPEND );
+		
+		//string append is rejected although possible because it
+		//messes up the explain runtime output due to introduced \n 
 	}
 	
 	/**

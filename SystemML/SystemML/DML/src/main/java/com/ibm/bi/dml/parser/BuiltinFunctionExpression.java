@@ -351,9 +351,22 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;	
 		case APPEND:
 			checkNumParameters(2);
-			checkMatrixParam(_first);
-			checkMatrixParam(_second);
-			//checkMatchingDimensions();
+			
+			//scalar string append (string concatenation with \n)
+			if( _first.getOutput().getDataType()==DataType.SCALAR )
+			{
+				checkScalarParam(_first);
+				checkScalarParam(_second);
+				checkValueTypeParam(_first, ValueType.STRING);
+				checkValueTypeParam(_second, ValueType.STRING);
+			}
+			//matrix append (cbind)
+			else
+			{				
+				checkMatrixParam(_first);
+				checkMatrixParam(_second);
+			}
+			
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
 			
@@ -903,16 +916,30 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private void checkScalarParam(Expression e) throws LanguageException {
-		if (e.getOutput().getDataType() != DataType.SCALAR) {
+	private void checkScalarParam(Expression e) 
+		throws LanguageException 
+	{
+		if (e.getOutput().getDataType() != DataType.SCALAR) 
+		{
+			String msg = this.printErrorLocation() +
+					"Expecting scalar parameter for function " + this.getOpCode(); 
 			
-			LOG.error(this.printErrorLocation() +
-					"Expecting scalar parameter for function "
-					+ this.getOpCode());
+			LOG.error( msg );			
+			throw new LanguageException( msg,
+					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
+	private void checkValueTypeParam(Expression e, ValueType vt) 
+		throws LanguageException 
+	{
+		if (e.getOutput().getValueType() != vt) 
+		{
+			String msg = this.printErrorLocation() +
+					"Expecting scalar string parameter for function " + this.getOpCode(); 
 			
-			throw new LanguageException(this.printErrorLocation() +
-					"Expecting scalar parameter for function "
-							+ this.getOpCode(),
+			LOG.error( msg );			
+			throw new LanguageException( msg,
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}

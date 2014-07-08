@@ -37,7 +37,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX, MININDEX  };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX  };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -62,7 +62,6 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "exp"    , BuiltinFunctionCode.EXP);
 		String2BuiltinFunctionCode.put( "plogp"  , BuiltinFunctionCode.PLOGP);
 		String2BuiltinFunctionCode.put( "print"  , BuiltinFunctionCode.PRINT);
-		String2BuiltinFunctionCode.put( "print2" , BuiltinFunctionCode.PRINT2);
 		String2BuiltinFunctionCode.put( "nrow"   , BuiltinFunctionCode.NROW);
 		String2BuiltinFunctionCode.put( "ncol"   , BuiltinFunctionCode.NCOL);
 		String2BuiltinFunctionCode.put( "length" , BuiltinFunctionCode.LENGTH);
@@ -73,7 +72,7 @@ public class Builtin extends ValueFunction
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
-	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, print2Obj = null;
+	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
@@ -153,10 +152,6 @@ public class Builtin extends ValueFunction
 			if ( printObj == null )
 				printObj = new Builtin(BuiltinFunctionCode.PRINT);
 			return printObj;
-		case PRINT2:
-			if ( print2Obj == null )
-				print2Obj = new Builtin(BuiltinFunctionCode.PRINT2);
-			return print2Obj;
 		case NROW:
 			if ( nrowObj == null )
 				nrowObj = new Builtin(BuiltinFunctionCode.NROW);
@@ -199,13 +194,12 @@ public class Builtin extends ValueFunction
 		case NCOL:
 		case LENGTH:
 		case ROUND:
-		case PRINT2:
+		case PRINT:
 		case MAXINDEX:
 		case MININDEX:
 			return (_arity == 1);
 		
 		case LOG:
-		case PRINT:
 			return (_arity == 1 || _arity == 2);
 			
 		case MAX:
@@ -346,50 +340,11 @@ public class Builtin extends ValueFunction
 	}
 
 	// currently, it is used only for PRINT 
-	public void execute (String in1, double in2) throws DMLRuntimeException {
+	public String execute (String in1) 
+		throws DMLRuntimeException 
+	{
 		switch (bFunc) {
 		case PRINT:
-			System.out.println(in1 + " " + in2);
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
-		}
-	}
-
-	// currently, it is used only for PRINT 
-	public void execute (String in1, int in2) throws DMLRuntimeException {
-		switch (bFunc) {
-		case PRINT:
-			System.out.println(in1 + " " + in2);
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
-		}
-	}
-
-	// currently, it is used only for PRINT 
-	public void execute (String in1, boolean in2) throws DMLRuntimeException {
-		switch (bFunc) {
-		case PRINT:
-			System.out.println(in1 + " " + in2);
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
-		}
-	}
-
-	// currently, it is used only for PRINT 
-	public String execute (String in1, String in2) throws DMLRuntimeException {
-		switch (bFunc) {
-		case PRINT:
-			System.out.println(in1 + " " + in2);
-			return null;
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
-		}
-	}
-
-	// currently, it is used only for PRINT 
-	public String execute (String in1) throws DMLRuntimeException {
-		switch (bFunc) {
-		case PRINT2:
 			System.out.println(in1);
 			return null;
 		default:

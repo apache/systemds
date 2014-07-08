@@ -1,0 +1,19 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+numIter = $1;
+
+s = "# Name Value";
+for( i in 1:numIter )
+{
+   # more than 100 bytes (will throw an error for more than 10000 iterations)
+   s = append(s, "A["+i+"] = ABCDEFGHIJKLMNOPQRSTUVWXYZ ABCDEFGHIJKLMNOPQRSTUVWXYZ ABCDEFGHIJKLMNOPQRSTUVWXYZ ABCDEFGHIJKLMNOPQRSTUVWXYZ, " +i);
+}
+
+write(s, $2);

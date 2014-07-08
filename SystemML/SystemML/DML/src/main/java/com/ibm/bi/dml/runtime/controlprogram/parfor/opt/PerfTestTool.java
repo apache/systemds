@@ -485,7 +485,7 @@ public class PerfTestTool
 		
 		
 		
-		//extend list to all (expensive) instructions; maybe also: createvar, assignvar, cpvar, rm, mv, setfilename, rmfilevar, print2
+		//extend list to all (expensive) instructions; maybe also: createvar, assignvar, cpvar, rm, mv, setfilename, rmfilevar
 		
 	}
 	

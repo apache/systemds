@@ -260,7 +260,7 @@ public class UnaryOp extends Hop
 			//Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();
 			
-			if(this._op == OpOp1.PRINT2 || this._op == OpOp1.PRINT)
+			if( this._op == OpOp1.PRINT )
 				gen = GENERATES.PRINT;
 			else if(this.get_dataType() == DataType.SCALAR && gen != GENERATES.DML_PERSISTENT 
 					&& gen != GENERATES.DML_TRANSIENT)
@@ -336,7 +336,7 @@ public class UnaryOp extends Hop
 				table = " FROM " + squoted;
 				s = squoted + "." + SQLLops.SCALARVALUECOLUMN;
 			}
-			if(this._op == OpOp1.PRINT2 || this._op == OpOp1.PRINT)
+			if( this._op == OpOp1.PRINT )
 			{
 				//sqllop.set_flag(GENERATES.PRINT);
 				String tname = input.get_sqllops().get_tableName();
@@ -405,7 +405,7 @@ public class UnaryOp extends Hop
 		{
 			String opr = null;
 
-			if(this._op == OpOp1.PRINT2 || this._op == OpOp1.PRINT)
+			if( this._op == OpOp1.PRINT )
 			{
 				//sqllop.set_flag(GENERATES.PRINT);
 				String tname = input.get_sqllops().get_tableName();

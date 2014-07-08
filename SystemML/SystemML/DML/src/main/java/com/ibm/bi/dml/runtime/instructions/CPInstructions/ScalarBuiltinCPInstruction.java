@@ -17,7 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr)
@@ -39,16 +39,10 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
-			String outString = "";
-			outString = so.getStringValue();
+			String outString = so.getStringValue();
 			System.out.println(outString);
 			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
 			sores = new StringObject(outString);
-		}
-		else if (opcode.equalsIgnoreCase("print2")) {
-			System.out.println(so.getStringValue());
-			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
-			sores = new StringObject(so.getStringValue());
 		}
 		else {
 			//Inputs for all builtins other than PRINT are treated as DOUBLE.

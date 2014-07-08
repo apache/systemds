@@ -28,6 +28,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME1 = "remove_empty_potpourri1";
+	private final static String TEST_NAME2 = "remove_empty_potpourri2";
 	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static double eps = 1e-10;
@@ -38,12 +39,19 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	{
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }));
 	}
 	
 	@Test
 	public void testRemoveEmptySequenceReshape() 
 	{
 		runRemoveEmptyTest(TEST_NAME1);
+	}
+	
+	@Test
+	public void testRemoveEmptySumColSum() 
+	{
+		runRemoveEmptyTest(TEST_NAME2);
 	}
 
 	/**

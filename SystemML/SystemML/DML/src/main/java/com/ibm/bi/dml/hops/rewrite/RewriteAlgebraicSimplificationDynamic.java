@@ -268,8 +268,10 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param hi
 	 * @param pos
 	 * @return
+	 * @throws HopsException 
 	 */
-	private Hop simplifyColwiseAggregate( Hop parent, Hop hi, int pos )
+	private Hop simplifyColwiseAggregate( Hop parent, Hop hi, int pos ) 
+		throws HopsException
 	{
 		if( hi instanceof AggUnaryOp  ) 
 		{
@@ -289,8 +291,25 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					}
 					else if( input.get_dim2() == 1 )
 					{
+						//get old parents (before creating cast over aggregate)
+						ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+
 						//simplify col-aggregate to full aggregate
 						uhi.setDirection(Direction.RowCol);
+						uhi.set_dataType(DataType.SCALAR);
+						
+						//create cast to keep same output datatype
+						UnaryOp cast = new UnaryOp(uhi.get_name(), DataType.MATRIX, ValueType.DOUBLE, 
+				                   OpOp1.CAST_AS_MATRIX, uhi);
+						
+						//rehang cast under all parents
+						for( Hop p : parents ) {
+							int ix = HopRewriteUtils.getChildReferencePos(p, hi);
+							HopRewriteUtils.removeChildReference(p, hi);
+							HopRewriteUtils.addChildReference(p, cast, ix);
+						}
+						
+						hi = cast;
 					}
 				}			
 			}
@@ -328,8 +347,25 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					}
 					else if( input.get_dim1() == 1 )
 					{
-						//simplify col-aggregate to full aggregate		
+						//get old parents (before creating cast over aggregate)
+						ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+
+						//simplify row-aggregate to full aggregate
 						uhi.setDirection(Direction.RowCol);
+						uhi.set_dataType(DataType.SCALAR);
+						
+						//create cast to keep same output datatype
+						UnaryOp cast = new UnaryOp(uhi.get_name(), DataType.MATRIX, ValueType.DOUBLE, 
+				                   OpOp1.CAST_AS_MATRIX, uhi);
+						
+						//rehang cast under all parents
+						for( Hop p : parents ) {
+							int ix = HopRewriteUtils.getChildReferencePos(p, hi);
+							HopRewriteUtils.removeChildReference(p, hi);
+							HopRewriteUtils.addChildReference(p, cast, ix);
+						}
+						
+						hi = cast;
 					}
 				}	
 			}			

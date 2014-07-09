@@ -19,8 +19,12 @@
 #						     						 icpt=intercept 
 #						     						 model=model 
 #						     						 scores=scores
+#													 accuracy=accuracy
+#													 confusion=confusion
+#													 fmt="csv"|"text"
 #													 
 
+$fmt="text"
 $icpt=0
 
 X = read($X);
@@ -37,11 +41,15 @@ if (intercept == 1)
 
 ones = matrix(1, rows=N, cols=1)
 scores = X %*% W[1:m,] + ones %*% b;
-write(scores, $scores, format="text");
+write(scores, $scores, format=$fmt);
 
 y = read($Y);
 pred = rowIndexMax(scores);
 correct_percentage = sum(ppred(pred - y, 0, "==")) / N * 100;
 	
-#TODO: replace with fprintf when its available
-print("%CORRECT: " + correct_percentage)
+acc_str = "Accuracy (%): " + correct_percentage
+print(acc_str)
+write(acc_str, $accuracy)
+
+confusion_mat = table(pred, y)
+write(confusion_mat, $confusion, format="csv")

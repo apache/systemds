@@ -18,8 +18,10 @@
 #  	     		     		     	     			 icpt=intercept 
 #						     						 model=model 
 #						     						 scores=scores
+#													 fmt="csv"|"text"
 #
 
+$fmt="text"
 $icpt=0
 
 X = read($X);
@@ -36,4 +38,4 @@ if (intercept == 1)
 
 ones = matrix(1, rows=N, cols=1)
 scores = X %*% W[1:m,] + ones %*% b;
-write(scores, $scores, format="text");
+write(scores, $scores, format=$fmt);

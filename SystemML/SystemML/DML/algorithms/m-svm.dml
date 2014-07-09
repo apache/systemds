@@ -23,9 +23,11 @@
 #							 							 reg=1.0 
 #							 							 maxiter=100 
 #							 							 model=$OUTPUT_DIR/w
-#														 support_vectors=$OUTPUT_DIR/support_vectors
+#														 debug_output=$OUTPUT_DIR/debug_output
+#														 fmt="csv"|"text"
 #
 
+$fmt="text"
 $icpt = 0
 $tol=0.001
 $reg=1.0
@@ -58,7 +60,8 @@ if(intercept == 1){
   num_rows_in_w = num_rows_in_w + 1
 }
 w = matrix(0, rows=num_rows_in_w, cols=num_classes)
-all_sv = matrix(0, rows=num_samples, cols=num_classes)
+
+debug_str = "# Class, Iter, Obj"
 
 parfor(iter_class in 1:num_classes){		  
  Y_local = 2 * ppred(Y, iter_class, "==") - 1
@@ -106,6 +109,7 @@ parfor(iter_class in 1:num_classes){
   
   train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
   print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
+  #debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
    
   if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
    continue = 0
@@ -120,15 +124,8 @@ parfor(iter_class in 1:num_classes){
  }
 
  w[,iter_class] = w_class
- 
- sv = ppred(1 - Y_local * (X %*% w_class), 0, ">")
- all_sv[,iter_class] = sv
- num_sv = sum(sv)
- 
- #TODO: replace with fprintf when available
- print("#Support Vectors for class " + iter_class + ": " + num_sv)
 }
 
-write(w, $model, format="text")
-write(all_sv, $support_vectors)
+write(w, $model, format=$fmt)
+write(debug_str, $debug_output)
 }

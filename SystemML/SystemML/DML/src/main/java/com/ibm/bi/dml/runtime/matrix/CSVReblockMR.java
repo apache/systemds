@@ -11,6 +11,8 @@ package com.ibm.bi.dml.runtime.matrix;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,13 +22,16 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
@@ -44,8 +49,8 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -78,36 +83,74 @@ public class CSVReblockMR
 	public static final String NUM_ROWS_IN_MATRIX="num.rows.in.matrix.";
 	public static final String NUM_COLS_IN_MATRIX="num.cols.in.matrix.";
 	public static final String ROWID_FILE_NAME="rowid.file.name";
+	public static final String SMALLEST_FILE_NAME_PER_INPUT="smallest.file.name.per.input";
 	
-	static class OffsetCount implements Writable
+	public static final PathFilter hiddenFileFilter = new PathFilter(){
+	      public boolean accept(Path p){
+	        String name = p.getName(); 
+	        return !name.startsWith("_") && !name.startsWith("."); 
+	      }
+	    }; 
+	
+	static class OffsetCount implements WritableComparable
 	{
+		public String filename;
+		public long fileOffset;
+		public long count;
+		
 		public OffsetCount()
 		{
+			filename="";
 			fileOffset=0;
 			count=0;
 		}
 		
-		public OffsetCount(long off, long cnt)
+		public OffsetCount(String fname, long off, long cnt)
 		{
+			filename=fname;
 			fileOffset=off;
 			count=cnt;
 		}
-		public long fileOffset;
-		public long count;
+		
+		public OffsetCount(OffsetCount that)
+		{
+			this.filename=that.filename;
+			this.fileOffset=that.fileOffset;
+			this.count=that.count;
+		}
+		
 		@Override
 		public void readFields(DataInput in) throws IOException {
+			filename=in.readLine();
 			fileOffset=in.readLong();
 			count=in.readLong();
 		}
 		@Override
 		public void write(DataOutput out) throws IOException {
+			out.writeBytes(filename+'\n');
 			out.writeLong(fileOffset);
 			out.writeLong(count);
 		}
 		
 		public String toString()
 		{
-			return fileOffset+", "+count;
+			return filename+", "+fileOffset+", "+count;
+		}
+
+		
+		public int compareTo(OffsetCount that) {
+			int ret=this.filename.compareTo(that.filename);
+			if(ret!=0)
+				return ret;
+			else if(this.fileOffset<that.fileOffset)
+				return -1;
+			else if(this.fileOffset>that.fileOffset)
+				return 1;
+			else return 0;
+		}
+		
+		public int compareTo(Object that) {
+			return compareTo((OffsetCount)that);
 		}
 		
 	}
@@ -122,13 +165,23 @@ public class CSVReblockMR
 		String delim=" ";
 		boolean ignoreFirstLine=false;
 		boolean realFirstLine=false;
+		String filename="";
+		boolean headerFile=false;
+		
 		public void configure(JobConf job)
-		{
+		{	
 			byte thisIndex;
 			try {
 				//it doesn't make sense to have repeated file names in the input, since this is for reblock
 				thisIndex=MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
 				outKey.set(thisIndex);
+				FileSystem fs=FileSystem.get(job);
+				Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+				filename=thisPath.toString();
+				String[] strs=job.getStrings(SMALLEST_FILE_NAME_PER_INPUT);
+				Path headerPath=new Path(strs[thisIndex]).makeQualified(fs);
+				if(headerPath.toString().equals(filename))
+					headerFile=true;
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -161,7 +214,7 @@ public class CSVReblockMR
 				fileOffset=key.get();
 				outCache=out;
 			}
-			if(key.get()==0)//getting the number of colums
+			if(key.get()==0 && headerFile)//getting the number of colums
 			{
 				if(!ignoreFirstLine)
 				{
@@ -186,20 +239,26 @@ public class CSVReblockMR
 		
 		public void close() throws IOException
 		{
-			outCache.collect(outKey, new OffsetCount(fileOffset, num));
+			outCache.collect(outKey, new OffsetCount(filename, fileOffset, num));
 		}
 	}
 	
 	static class AssignRowIDReducer extends MapReduceBase implements Reducer<ByteWritable, OffsetCount, ByteWritable, OffsetCount>
 	{
+		ArrayList<OffsetCount> list=new ArrayList<OffsetCount>();
 		@Override
 		public void reduce(ByteWritable key, Iterator<OffsetCount> values,
 				OutputCollector<ByteWritable, OffsetCount> out, Reporter report)
 				throws IOException {
-			long lineOffset=0;
+			
+			//need to sort the values by filename and fileoffset
 			while(values.hasNext())
+				list.add(new OffsetCount(values.next()));
+			Collections.sort(list);
+			
+			long lineOffset=0;
+			for(OffsetCount oc: list)
 			{
-				OffsetCount oc=values.next();
 				long count=oc.count;
 				oc.count=lineOffset;
 				out.collect(key, oc);
@@ -207,6 +266,7 @@ public class CSVReblockMR
 				lineOffset+=count;
 			}
 			report.incrCounter(NUM_ROWS_IN_MATRIX, key.toString(), lineOffset);
+			list.clear();
 		}
 	}
 	
@@ -254,6 +314,7 @@ public class CSVReblockMR
 		String delim=" ";
 		boolean ignoreFirstLine=false;
 		//double missingValue=0;
+		boolean headerFile=false;
 		
 		public void configure(JobConf job)
 		{
@@ -263,15 +324,22 @@ public class CSVReblockMR
 			//load the offset mapping
 			byte matrixIndex=representativeMatrixes.get(0);
 			try {
-				Path[] paths=DistributedCache.getLocalCacheFiles(job);
+				
+				//Path[] paths=DistributedCache.getLocalCacheFiles(job);
 				FileSystem fs = FileSystem.get(job);
+				Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+				String filename=thisPath.toString();
+				Path headerPath=new Path(job.getStrings(SMALLEST_FILE_NAME_PER_INPUT)[matrixIndex]).makeQualified(fs);
+				if(headerPath.toString().equals(filename))
+					headerFile=true;
+				
 				ByteWritable key=new ByteWritable();
 				OffsetCount value=new OffsetCount();
 				Path p=new Path(job.get(ROWID_FILE_NAME));
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
 				try {
 					while (reader.next(key, value)) {
-						if(key.get()==matrixIndex)
+						if(key.get()==matrixIndex && filename.equals(value.filename))
 							offsetMap.put(value.fileOffset, value.count);
 					}
 				} catch (Exception e) {
@@ -279,6 +347,7 @@ public class CSVReblockMR
 				} 
 				
 				reader.close();
+				
 				/*for(Path p: paths)
 				{
 					SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
@@ -325,7 +394,7 @@ public class CSVReblockMR
 				first=false;
 			}
 			
-			if(key.get()==0 && ignoreFirstLine)
+			if(key.get()==0 && headerFile && ignoreFirstLine)
 				return;
 			
 			String[] cells=value.toString().split(delim, -1);
@@ -479,7 +548,7 @@ public class CSVReblockMR
 	}
 	
 	private static AssignRowIDMRReturn runAssignRowIDMRJob(String[] inputs, InputInfo[] inputInfos, int[] brlens, int[] bclens, 
-			String reblockInstructions, int replication) 
+			String reblockInstructions, int replication, String[] smallestFiles) 
 	throws Exception
 	{
 		AssignRowIDMRReturn ret=new AssignRowIDMRReturn();
@@ -494,6 +563,8 @@ public class CSVReblockMR
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, 
 				brlens, bclens, false, ConvertTarget.CELL);
+		
+		job.setStrings(SMALLEST_FILE_NAME_PER_INPUT, smallestFiles);
 		
 		//set up the aggregate instructions that will happen in the combiner and reducer
 		MRJobConfiguration.setCSVReblockInstructions(job, reblockInstructions);
@@ -555,7 +626,7 @@ public class CSVReblockMR
 	private static JobReturn runCSVReblockJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String reblockInstructions, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
-			String[] outputs, OutputInfo[] outputInfos, Path counterFile) 
+			String[] outputs, OutputInfo[] outputInfos, Path counterFile, String[] smallestFiles) 
 	throws Exception
 	{
 		JobConf job;
@@ -568,6 +639,8 @@ public class CSVReblockMR
 		
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, brlens, bclens, false, ConvertTarget.CELL);
+		
+		job.setStrings(SMALLEST_FILE_NAME_PER_INPUT, smallestFiles);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);
@@ -674,18 +747,59 @@ public class CSVReblockMR
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) throws Exception 
 	{
-		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
+		String[] smallestFiles=new String[inputs.length];
+		JobConf job=new JobConf();
+		for(int i=0; i<inputs.length; i++)
+		{
+			Path p=new Path(inputs[i]);
+			FileSystem fs = p.getFileSystem(job);
+			if(!fs.isDirectory(p))
+				smallestFiles[i]=p.makeQualified(fs).toString();
+			else
+			{
+				FileStatus[] stats=fs.listStatus(p, hiddenFileFilter);
+				if(stats.length==0)
+					smallestFiles[i]="";
+				else
+				{
+					smallestFiles[i]=stats[0].getPath().toString();
+					for(int j=1; j<stats.length; j++)
+					{
+						String f=stats[j].getPath().toString();
+						if(f.compareTo(smallestFiles[i])<0)
+							smallestFiles[i]=f;
+					}
+				}
+			}
+		}
+		
+		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, 
+				replication, smallestFiles);
 		for(int i=0; i<rlens.length; i++)
 			if( (rlens[i]>0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>0 && clens[i]!=ret1.clens[i]) )
 				throw new RuntimeException("Dimension doesn't mach for input matrix "+i+", expected ("+rlens[i]+", "+clens[i]+") but real ("+ret1.rlens[i]+", "+ret1.clens[i]+")");
 		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
-				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile);
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile, smallestFiles);
 		return ret;
 	}
 	
 	public static void main(String[] args) throws Exception {
+
+		/*OffsetCount off1=new OffsetCount("A", 1, 12);
+		OffsetCount off2=new OffsetCount("lwakajs", 2, 12);
+		DataOutputStream out=new DataOutputStream(new FileOutputStream("temp.txt", false));
+		off1.write(out);
+		off2.write(out);
+		out.close();
+		DataInput in=new DataInputStream(new FileInputStream("temp.txt"));
+		OffsetCount off3=new OffsetCount();
+		off3.readFields(in);
+		System.out.println(off3);
+		off3.readFields(in);
+		System.out.println(off3);*/
+		
 		ConfigurationManager.setConfig(new DMLConfig("SystemML-config.xml"));
-		String[] inputs = {"data/csv/test1.csv", "data/csv/test2.csv"};
+		String[] inputs = {"test1.csv", "test2.csv"};
 		InputInfo[] inputInfos = {InputInfo.CSVInputInfo, InputInfo.CSVInputInfo};
 		String[] outputs = {"data/A.out", "data/B.out"};
 		OutputInfo[] outputInfos = {OutputInfo.TextCellOutputInfo, OutputInfo.TextCellOutputInfo};
@@ -694,8 +808,8 @@ public class CSVReblockMR
 		
 		String ins1= "MR" + Instruction.OPERAND_DELIM 
 		+ "csvrblk" + Instruction.OPERAND_DELIM 
-		+ 0 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
+		+ 0 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.Double + Instruction.OPERAND_DELIM  
+		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.Double + Instruction.OPERAND_DELIM
 		+ brlens[0] + Instruction.OPERAND_DELIM
 		+ bclens[0] + Instruction.OPERAND_DELIM
 		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
@@ -705,8 +819,8 @@ public class CSVReblockMR
 		
 		String ins2= "MR" + Instruction.OPERAND_DELIM 
 		+ "csvrblk" + Instruction.OPERAND_DELIM 
-		+ 1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
-		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
+		+ 1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.Double + Instruction.OPERAND_DELIM  
+		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.Double + Instruction.OPERAND_DELIM
 		+ brlens[1] + Instruction.OPERAND_DELIM
 		+ bclens[1] + Instruction.OPERAND_DELIM
 		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM

@@ -91,7 +91,7 @@ public class ReadCSVTest extends AutomatedTestBase
 		programArgs = new String[]{"-args", inputMatrixName, dmlOutput};
 		
 		fullRScriptName = HOME + "csv_verify.R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixName + " " + rOutput;
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixName + ".single " + rOutput;
 		
 		runTest(true, false, null, -1);
 		runRScript(true);

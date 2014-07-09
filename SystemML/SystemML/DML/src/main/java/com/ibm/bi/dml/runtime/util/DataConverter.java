@@ -19,8 +19,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,10 +40,12 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
@@ -1508,8 +1512,48 @@ public class DataConverter
 		}
 	}
 	
+	private static MatrixBlock computeCSVSize ( List<Path> files, JobConf job, FileSystem fs, boolean hasHeader, String delim, 
+			boolean fill, double fillValue) throws IOException {
+		
+		int nrow = -1;
+		int ncol = -1;
+		String value = null;
+		
+		String escapedDelim = Pattern.quote(delim);
+		MatrixBlock dest = new MatrixBlock();
+		String headerLine = null, cellStr = null;
+		for(int fileNo=0; fileNo<files.size(); fileNo++)
+		{
+			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));	
+			try
+			{
+				// Read the header line, if there is one.
+				if(fileNo==0)
+				{
+					if ( hasHeader ) 
+						headerLine = br.readLine();
+					value = br.readLine();
+					cellStr = value.toString().trim();
+					ncol = cellStr.split(escapedDelim,-1).length;
+					nrow = 1;
+				}
+				
+				while ( (value = br.readLine()) != null ) {
+					nrow++;
+				}
+			}
+			finally
+			{
+				if( br != null )
+					br.close();
+			}
+		}
+		dest = new MatrixBlock(nrow, ncol, true);
+		return dest;
+	}
 	
-	private static MatrixBlock computeCSVSize ( Path path, JobConf job, FileSystem fs, boolean hasHeader, String delim, boolean fill, double fillValue) throws IOException {
+	/*private static MatrixBlock computeCSVSize ( Path path, JobConf job, FileSystem fs, boolean hasHeader, String delim, 
+			boolean fill, double fillValue) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
 
 		int nrow = -1;
@@ -1542,7 +1586,7 @@ public class DataConverter
 				br.close();
 		}
 		return dest;
-	}
+	}*/
 	
 	/**
 	 * 
@@ -1557,17 +1601,113 @@ public class DataConverter
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
+	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
+			long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
+		ArrayList<Path> files=new ArrayList<Path>();
+		if(fs.isDirectory(path))
+		{
+			for(FileStatus stat: fs.listStatus(path, CSVReblockMR.hiddenFileFilter))
+				files.add(stat.getPath());
+			Collections.sort(files);
+		}else
+			files.add(path);
 		
 		if ( dest == null ) {
-			dest = computeCSVSize(path, job, fs, hasHeader, delim, fill, fillValue);
+			dest = computeCSVSize(files, job, fs, hasHeader, delim, fill, fillValue);
 			rlen = dest.getNumRows();
 			clen = dest.getNumColumns();
 		}
 		
 		boolean sparse = dest.isInSparseFormat();
+		
+		/////////////////////////////////////////
+		String value = null;
+		int row = 0;
+		int col = -1;
+		double cellValue = 0;
+		
+		String escapedDelim = Pattern.quote(delim);
+		String headerLine = null, cellStr = null;
+		
+		for(int fileNo=0; fileNo<files.size(); fileNo++)
+		{
+			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
+			if(fileNo==0 && hasHeader ) 
+					headerLine = br.readLine();
+			
+			// Read the data
+			boolean emptyValuesFound = false;
+			try{
+				if( sparse ) //SPARSE<-value
+				{
+					while( (value=br.readLine())!=null )
+					{
+						col = 0;
+						cellStr = value.toString().trim();
+						emptyValuesFound = false;
+						for(String part : cellStr.split(escapedDelim, -1)) {
+							part = part.trim();
+							if ( part.isEmpty() ) {
+								emptyValuesFound = true;
+								cellValue = fillValue;
+							}
+							else {
+								cellValue = Double.parseDouble(part);
+							}
+							if ( Double.compare(cellValue, 0.0) != 0 )
+								dest.appendValue(row, col, cellValue);
+							col++;
+						}
+						if ( !fill && emptyValuesFound) {
+							throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
+						}
+						if ( col != clen ) {
+							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
+						}
+						row++;
+					}
+				} 
+				else //DENSE<-value
+				{
+					while( (value=br.readLine())!=null )
+					{
+						cellStr = value.toString().trim();
+						col = 0;
+						for(String part : cellStr.split(escapedDelim, -1)) {
+							part = part.trim();
+							if ( part.isEmpty() ) {
+								if ( !fill ) {
+									throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
+								}
+								else {
+									cellValue = fillValue;
+								}
+							}
+							else {
+								cellValue = Double.parseDouble(part);
+							}
+							dest.setValueDenseUnsafe(row, col, cellValue);
+							col++;
+						}
+						if ( col != clen ) {
+							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
+						}
+						row++;
+					}
+				}
+			}
+			finally
+			{
+				if( br != null )
+					br.close();
+			}
+		}
+		
+		dest.recomputeNonZeros();
+		return dest;
+		/*
 		//FileSystem fs = FileSystem.get(job);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
 		
@@ -1654,8 +1794,7 @@ public class DataConverter
 			if( br != null )
 				br.close();
 		}
-		
-		return dest;
+		*/
 	}
 
 	

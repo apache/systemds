@@ -15,7 +15,12 @@
 #							   							   prior=model_file1
 #							   							   conditionals=model_file2
 #														   probabilities=probabilities
-#														   
+#														   accuracy=accuracy
+#														   confusion=confusion
+#														   fmt="csv"|"text"
+#
+
+$fmt="text"
 
 D = read($X)
 prior = read($prior)
@@ -32,8 +37,16 @@ log_probs = D_w_ones %*% t(log(model))
 C = read($Y)
 pred = rowIndexMax(log_probs)
 acc = sum(ppred(pred, C, "==")) / numRows * 100
-#TODO: replace with fprintf when its available
-print("Accuracy (%): " + acc)
 
-probs = exp(log_probs)
-write(probs, $probabilities, format="text")
+acc_str = "Accuracy (%): " + acc
+print(acc_str)
+write(acc_str, $accuracy)
+
+mx = rowMaxs(log_probs)
+ones = matrix(1, rows=1, cols=nrow(prior))
+probs = log_probs - mx %*% ones
+probs = exp(log_probs)/(rowSums(exp(log_probs)) %*% ones)
+write(probs, $probabilities, format=$fmt)
+
+confusion_mat = table(pred, C)
+write(confusion_mat, $confusion, format="csv")

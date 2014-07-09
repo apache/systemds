@@ -21,7 +21,8 @@
 #							    							reg=1 
 #							    							maxiter=100 
 #							    							model=$OUPUT_DIR/w
-#															support_vectors=$OUTPUT_DIR/support_vectors
+#															debug_output=$OUTPUT_DIR/debug_output
+#															fmt="csv"|"text"
 #
 # Note about inputs: 
 # Assumes that labels (entries in Y) 
@@ -29,6 +30,7 @@
 # or the result of recoding
 #
 
+$fmt="text"
 $icpt=0
 $tol=0.001
 $reg=1.0
@@ -69,6 +71,7 @@ w = matrix(0, rows=num_rows_in_w, cols=1)
 g_old = t(X) %*% Y
 s = g_old
 
+debug_str = "# Iter, Obj"
 iter = 0
 continue = 1
 while(continue == 1 & iter < maxiterations)  {
@@ -101,6 +104,7 @@ while(continue == 1 & iter < maxiterations)  {
     g_new = t(X) %*% (out * Y) - lambda * w
 
     print("ITER " + iter + ": OBJ=" + obj)
+	debug_str = append(debug_str, iter + "," + obj)
 	
     tmp = sum(s * g_old)
     if(step_sz*tmp < epsilon*obj){
@@ -115,10 +119,6 @@ while(continue == 1 & iter < maxiterations)  {
     iter = iter + 1
 }
 
-write(w, $model, format="text")
+write(w, $model, format=$fmt)
+write(debug_str, $debug_output)
 
-sv = ppred(1 - Y * (X %*% w), 0, ">")
-num_sv = sum(sv)
-write(sv, $support_vectors)
-#TODO: replace with fprintf when available
-print("#Support Vectors: " + num_sv)

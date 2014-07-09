@@ -14,6 +14,10 @@
 #							   							   prior=model_file1
 #							   							   conditionals=model_file2
 #														   probabilities=probabilities
+#														   fmt="csv"|"text"
+#
+
+$fmt = "text"
 
 D = read($X)
 prior = read($prior)
@@ -26,5 +30,9 @@ D_w_ones = append(D, ones)
 model = append(conditionals, prior)
 
 log_probs = D_w_ones %*% t(log(model))
-probs = exp(log_probs)
-write(probs, $probabilities, format="text")
+
+mx = rowMaxs(log_probs)
+ones = matrix(1, rows=1, cols=nrow(prior))
+probs = log_probs - mx %*% ones
+probs = exp(log_probs)/(rowSums(exp(log_probs)) %*% ones)
+write(probs, $probabilities, format=$fmt)

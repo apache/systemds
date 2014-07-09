@@ -15,12 +15,14 @@
 #  	     		     			    	      	  	  icpt=0 
 #							    	  				  model=model
 #													  scores=scores
+#													  fmt="csv"|"text"
 #													  
 # Note about inputs: 
 # labels (entries in Y) should either be set to +1/-1
 # or be the result of recoding
 # anything else will prompt an error message from this script
 
+$fmt="text"
 $icpt = 0
 
 X = read($X)
@@ -32,4 +34,4 @@ if(intercept == 1)
 	b = castAsScalar(w[nrow(w),1])
 
 scores = b + (X %*% w[1:ncol(X),])
-write(scores, $scores, format="text")
+write(scores, $scores, format=$fmt)

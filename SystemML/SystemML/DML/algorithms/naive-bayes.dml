@@ -16,9 +16,13 @@
 #						    						laplace=<Laplace Correction>
 #						    						prior=<Model file1>
 #						    						conditionals=<Model file2>
+#													accuracy=<accuracy file>
+#													fmt="csv"|"text"
+#
 
 # defaults
 $laplace = 1
+$fmt = "text"
 
 # reading input args
 numClasses = $classes
@@ -59,9 +63,11 @@ model = append(class_conditionals, class_prior)
 log_probs = D_w_ones %*% t(log(model))
 pred = rowIndexMax(log_probs)
 acc = sum(ppred(pred, C, "==")) / numRows * 100
-#TODO: replace with fprintf when its available
-print("Training Accuracy (%): " + acc)
+
+acc_str = "Training Accuracy (%): " + acc
+print(acc_str)
+write(acc_str, $accuracy)
 
 # write out the model
-write(class_prior, $prior, format="text");
-write(class_conditionals, $conditionals, format="text");
+write(class_prior, $prior, format=$fmt);
+write(class_conditionals, $conditionals, format=$fmt);

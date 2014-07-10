@@ -31,16 +31,19 @@ public class IfStatementBlock extends StatementBlock
 	private Lop _predicateLops = null;
 	private boolean _requiresPredicateRecompile = false;
 	
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
+	@Override
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException, ParseException, IOException 
+	{
 		
 		if (_statements.size() > 1){
-			throw new LanguageException(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
+			raiseValidateError("IfStatementBlock should only have 1 statement (IfStatement)", conditional);
 		}
 		
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
 			
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
-		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
+		predicate.getPredicate().validateExpression(ids.getVariables(), constVars, conditional);
 			
 		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier> ();
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> ();
@@ -65,15 +68,15 @@ public class IfStatementBlock extends StatementBlock
 		// handle if stmt body
 		this._dmlProg = dmlProg;
 		ArrayList<StatementBlock> ifBody = ifstmt.getIfBody();
-		for(StatementBlock sb : ifBody){
-			idsIfCopy = sb.validate(dmlProg, idsIfCopy, constVarsIfCopy);
+		for(StatementBlock sb : ifBody){ //conditional exec
+			idsIfCopy = sb.validate(dmlProg, idsIfCopy, constVarsIfCopy, true);
 			constVarsIfCopy = sb.getConstOut();
 		}
 		
 		// handle else stmt body
 		ArrayList<StatementBlock> elseBody = ifstmt.getElseBody();
-		for(StatementBlock sb : elseBody){
-			idsElseCopy = sb.validate(dmlProg,idsElseCopy, constVarsElseCopy);
+		for(StatementBlock sb : elseBody){ //conditional exec
+			idsElseCopy = sb.validate(dmlProg,idsElseCopy, constVarsElseCopy, true);
 			constVarsElseCopy = sb.getConstOut();
 		}
 		
@@ -92,15 +95,13 @@ public class IfStatementBlock extends StatementBlock
 			if( ifVersion != null && elseVersion != null ) //both branches exist
 			{
 				if (!ifVersion.getOutput().getDataType().equals(elseVersion.getOutput().getDataType())){
-					String error = printErrorLocation() + "IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if/else branch.";
-					LOG.error(error); throw new LanguageException(error);
+					raiseValidateError("IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if/else branch.", conditional);
 				}	
 			}
 			else if( origVersion !=null ) //only if branch exists
 			{
 				if (!ifVersion.getOutput().getDataType().equals(origVersion.getOutput().getDataType())){
-					String error = ifstmt.printErrorLocation() + "IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if branch.";
-					LOG.error(error); throw new LanguageException(error);
+					raiseValidateError("IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if branch.", conditional);
 				}
 			}
 			
@@ -293,6 +294,7 @@ public class IfStatementBlock extends StatementBlock
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
+			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		_read = new VariableSet();
@@ -426,6 +428,7 @@ public class IfStatementBlock extends StatementBlock
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
+			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		VariableSet currentLiveOutIf = new VariableSet();
@@ -459,6 +462,7 @@ public class IfStatementBlock extends StatementBlock
 	public ArrayList<Hop> get_hops() throws HopsException{
 	
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 		}
 			

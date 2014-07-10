@@ -45,11 +45,12 @@ public class ForStatementBlock extends StatementBlock
 		return ((ForStatement)_statements.get(0)).getIterablePredicate();
 	}
 
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) 
+	@Override
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
 	{	
 		if (_statements.size() > 1){
-			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
+			raiseValidateError("ForStatementBlock should have only 1 statement (for statement)", conditional);
 		}
 		ForStatement fs = (ForStatement) _statements.get(0);
 		IterablePredicate predicate = fs.getIterablePredicate();
@@ -73,7 +74,7 @@ public class ForStatementBlock extends StatementBlock
 			if( constVars.containsKey( var ) )
 				constVars.remove( var );
 		
-		predicate.validateExpression(ids.getVariables(), constVars);
+		predicate.validateExpression(ids.getVariables(), constVars, conditional);
 		ArrayList<StatementBlock> body = fs.getBody();
 		
 		//perform constant propagation for ( from, to, incr )
@@ -84,7 +85,7 @@ public class ForStatementBlock extends StatementBlock
 		_dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
-			ids = sb.validate(dmlProg, ids, constVars);
+			ids = sb.validate(dmlProg, ids, constVars, true);
 			constVars = sb.getConstOut();
 		}
 		
@@ -104,8 +105,7 @@ public class ForStatementBlock extends StatementBlock
 			{
 				//handle data type change (reject) 
 				if (!startVersion.getOutput().getDataType().equals(endVersion.getOutput().getDataType())){
-					String error = printErrorLocation() + "ForStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.";
-					LOG.error(error); throw new LanguageException(error);
+					raiseValidateError("ForStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.", conditional);
 				}	
 				
 				//handle size change
@@ -156,14 +156,14 @@ public class ForStatementBlock extends StatementBlock
 			//(e.g., useful for reducing false positives in parfor dependency analysis)
 			performConstantPropagation(constVars);
 			
-			predicate.validateExpression(ids.getVariables(), constVars);
+			predicate.validateExpression(ids.getVariables(), constVars, conditional);
 			body = fs.getBody();
 			
 			//validate body
 			_dmlProg = dmlProg;
 			for(StatementBlock sb : body)
 			{
-				ids = sb.validate(dmlProg, ids, constVars);
+				ids = sb.validate(dmlProg, ids, constVars, true);
 				constVars = sb.getConstOut();
 			}
 			if (body.size() > 0){
@@ -179,6 +179,7 @@ public class ForStatementBlock extends StatementBlock
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		}
 		
@@ -260,6 +261,7 @@ public class ForStatementBlock extends StatementBlock
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 		}
 		

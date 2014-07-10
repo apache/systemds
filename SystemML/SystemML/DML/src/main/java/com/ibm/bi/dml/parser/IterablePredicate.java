@@ -90,15 +90,15 @@ public class IterablePredicate extends Expression
 	}
 
 	@Override
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException 
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException 
 	{		
 		//1) VALIDATE ITERATION VARIABLE (index)
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
 		if (ids.containsKey(_iterVar.getName())){
 			DataIdentifier otherDI = ids.get(_iterVar.getName());
 			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT ){
-				LOG.error(this.printErrorLocation() + "iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer");
-				throw new LanguageException(this.printErrorLocation() + "iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer");
+				raiseValidateError("iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer", conditional);
 			}	
 		}
 		
@@ -111,9 +111,9 @@ public class IterablePredicate extends Expression
 		
 		//2) VALIDATE FOR PREDICATE in (from, to, increment)		
 		//recursively validate the individual expression
-		_fromExpr.validateExpression(ids, constVars);
-		_toExpr.validateExpression(ids, constVars);
-		_incrementExpr.validateExpression(ids, constVars);
+		_fromExpr.validateExpression(ids, constVars, conditional);
+		_toExpr.validateExpression(ids, constVars, conditional);
+		_incrementExpr.validateExpression(ids, constVars, conditional);
 		
 		//check for scalar expression output
 		checkNumericScalarOutput( _fromExpr );

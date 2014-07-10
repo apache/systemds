@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class BooleanExpression extends Expression
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private Expression _left;
@@ -88,12 +88,12 @@ public class BooleanExpression extends Expression
 	/**
 	 * Validate parse tree : Process Boolean Expression  
 	 */
-	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
+	@Override
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) throws LanguageException{
 		 	 
-		this.getLeft().validateExpression(ids, constVars);
-		if (this.getRight() != null) {
-			this.getRight().validateExpression(ids, constVars);
-		}
+		this.getLeft().validateExpression(ids, constVars, conditional);
+		if (this.getRight() != null)
+			this.getRight().validateExpression(ids, constVars, conditional);
 			
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
@@ -102,8 +102,9 @@ public class BooleanExpression extends Expression
 		output.setBooleanProperties();
 		this.setOutput(output);
 		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) ||
-				(_opcode == Expression.BooleanOp.CONDITIONALOR)) {
-			throw new LanguageException(this.printErrorLocation() + "Unsupported boolean operation " + _opcode.toString(), LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+				(_opcode == Expression.BooleanOp.CONDITIONALOR)) 
+		{   //always unconditional (because unsupported operation)
+			raiseValidateError("Unsupported boolean operation " + _opcode.toString(), false, LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}		
 	

@@ -90,7 +90,10 @@ public class RelationalExpression extends Expression
 	 * Validate parse tree : Process Relational Expression  
 	 * @throws LanguageException 
 	 */
-	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
+	@Override
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException
+	{
 		
 		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
 		if ((_left != null && _left instanceof BooleanIdentifier) || (_right != null && _right instanceof BooleanIdentifier)){
@@ -112,8 +115,8 @@ public class RelationalExpression extends Expression
 		
 		
 		//recursive validate
-		_left.validateExpression(ids, constVars);
-		_right.validateExpression(ids, constVars);
+		_left.validateExpression(ids, constVars, conditional);
+		_right.validateExpression(ids, constVars, conditional);
 		
 		//constant propagation (precondition for more complex constant folding rewrite)
 		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )

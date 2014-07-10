@@ -165,7 +165,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	@Override
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars)
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional)
 		throws LanguageException, ParseException, IOException 
 	{	
 		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");		
@@ -182,7 +182,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		// * validate/dependency checking of nested parfor-loops happens at this point
 		// * validate includes also constant propagation for from, to, incr expressions
 		// * this includes also function inlining
-		VariableSet vs = super.validate(dmlProg, ids, constVars);
+		VariableSet vs = super.validate(dmlProg, ids, constVars, conditional);
 		
 		//check of correctness of specified parfor parameter names and 
 		//set default parameter values for all not specified parameters 
@@ -193,8 +193,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			//check for valid parameter types
 			for( String key : params.keySet() )
-				if( !_paramNames.contains(key) ){
-					throw new LanguageException("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.");
+				if( !_paramNames.contains(key) ){ //always unconditional
+					raiseValidateError("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.", false);
 				}
 			//set defaults for all non-specified values
 			//(except if CONSTRAINT optimizer, in order to distinguish specified parameters)
@@ -227,9 +227,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				String optStr = params.get( OPT_MODE );
 				if(    optStr.equals(POptMode.HEURISTIC.toString()) 
 					|| optStr.equals(POptMode.GREEDY.toString()) 
-					|| optStr.equals(POptMode.FULL_DP.toString())   )
-				{
-					throw new LanguageException("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.");
+					|| optStr.equals(POptMode.FULL_DP.toString())   ) 
+				{ //always unconditional
+					raiseValidateError("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.", false);
 				}
 			}
 			
@@ -327,11 +327,11 @@ public class ParForStatementBlock extends ForStatementBlock
 					depVars.append(c._var);
 				}
 				
-				throw new LanguageException( "PARFOR loop dependency analysis: " +
-						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
-						                     depVars.toString() +". (lines "+getBeginLine()+" - "+getEndLine()+")\n " +
-						                    // "in lines"+this.+"\n" +
-						                     "Please, ensure independence of iterations." );				
+				//always unconditional (to ensure we always raise dependency issues)
+				raiseValidateError("PARFOR loop dependency analysis: " +
+				                   "inter-iteration (loop-carried) dependencies detected for variable(s): " +
+				                   depVars.toString() +". \n " +
+				                   "Please, ensure independence of iterations.", false);
 			}
 			else
 			{

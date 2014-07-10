@@ -22,6 +22,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
+import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.json.java.JSONObject;
@@ -488,16 +489,16 @@ public class DataExpression extends DataIdentifier
 	 * @throws ParseException 
 	 * @throws IOException 
 	 */
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars)
+	@Override
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional)
 			throws LanguageException 
 	{	
 		// validate all input parameters
 		Set<String> varParamKeySet = getVarParams().keySet();
 		for ( String s : varParamKeySet ) {
-			getVarParam(s).validateExpression(ids, currConstVars);
+			getVarParam(s).validateExpression(ids, currConstVars, conditional);
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA)) {
-				LOG.error(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.");
-				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}	
 		}	
 	
@@ -507,8 +508,7 @@ public class DataExpression extends DataIdentifier
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
 		Expression dataParam1 = getVarParam(RAND_DATA);		
 		if (dataParam1 == null && getOpCode().equals(DataOp.MATRIX)){
-			LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
-			throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("for matrix, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR /*&& dataParam instanceof ConstIdentifier*/ ){
 			//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
@@ -527,12 +527,8 @@ public class DataExpression extends DataIdentifier
 		case READ:
 					
 			if (getVarParam(DATATYPEPARAM) != null && !(getVarParam(DATATYPEPARAM) instanceof StringIdentifier)){
-				
-				LOG.error(this.printErrorLocation() + "for read statement, parameter " + DATATYPEPARAM + " can only be a string. " +
-						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
-				
-				throw new LanguageException(this.printErrorLocation() + "for read statement, parameter " + DATATYPEPARAM + " can only be a string. " +
-						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
+				raiseValidateError("for read statement, parameter " + DATATYPEPARAM + " can only be a string. " +
+						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE, conditional);
 			}
 			
 			String dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
@@ -547,13 +543,10 @@ public class DataExpression extends DataIdentifier
 						|| getVarParam(DELIM_DELIMITER) != null	
 						|| getVarParam(DELIM_HAS_HEADER_ROW) != null
 						|| getVarParam(DELIM_FILL) != null
-						|| getVarParam(DELIM_FILL_VALUE) != null){
-					
-					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
-							toString() + ". Only " + VALUETYPEPARAM + " is allowed.");
-					
-					throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
-							toString() + ". Only " + VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						|| getVarParam(DELIM_FILL_VALUE) != null)
+				{
+					raiseValidateError("Invalid parameters in read statement of a scalar: " +
+							toString() + ". Only " + VALUETYPEPARAM + " is allowed.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 			
@@ -617,12 +610,8 @@ public class DataExpression extends DataIdentifier
 				
 				for (String key : _varParams.keySet()){
 					if ( !(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) ) ){
-						
-						LOG.error(this.printErrorLocation() + "Invalid parameters in readMM statement: " +
-								toString() + ". Only " + IO_FILENAME + " is allowed.");
-						
-						throw new LanguageException(this.printErrorLocation() + "Invalid parameters in readMM statement: " +
-								toString() + ". Only " + IO_FILENAME + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("Invalid parameters in readMM statement: " +
+								toString() + ". Only " + IO_FILENAME + " is allowed.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 				}
 				
@@ -639,13 +628,10 @@ public class DataExpression extends DataIdentifier
 				if (headerLines != null && headerLines.length >= 2){
 					String firstLine = headerLines[0].trim();
 					if (!firstLine.equals(legalHeaderMM)){
-						
-						LOG.error(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-								headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM);
-						
-						throw new LanguageException(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-								headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-					}
+						raiseValidateError("Unsupported format in MatrixMarket file: " +
+								headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, 
+								conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
 				
 					// process 2nd line of MatrixMarket format -- must have size information
 				
@@ -653,12 +639,8 @@ public class DataExpression extends DataIdentifier
 					String secondLine = headerLines[1];
 					String[] sizeInfo = secondLine.trim().split("\\s+");
 					if (sizeInfo.length != 3){
-						
-						LOG.error(this.printErrorLocation() + "Unsupported size line in MatrixMarket file: " +
-								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.");
-						
-						throw new LanguageException(this.printErrorLocation() + "Unsupported size line in MatrixMarket file: " +
-								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.");
+						raiseValidateError("Unsupported size line in MatrixMarket file: " +
+								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
 					}
 				
 					long rowsCount = -1, colsCount = -1, nnzCount = -1;
@@ -669,13 +651,8 @@ public class DataExpression extends DataIdentifier
 						addVarParam(READROWPARAM, new IntIdentifier(rowsCount));
 					}
 					catch(Exception e){
-						
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
-						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME) 
+								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1], conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 				
 					try {
@@ -685,13 +662,8 @@ public class DataExpression extends DataIdentifier
 						addVarParam(READCOLPARAM, new IntIdentifier(colsCount));
 					}
 					catch(Exception e){
-						
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
-						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME) 
+								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1], conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					
 					try {
@@ -701,13 +673,8 @@ public class DataExpression extends DataIdentifier
 						addVarParam("nnz", new IntIdentifier(nnzCount));
 					}
 					catch(Exception e){
-					
-						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
-						
-						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(IO_FILENAME) 
-								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
+						raiseValidateError("In MatrixMarket file " + getVarParam(IO_FILENAME) 
+								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1], conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
 				}
 			}
@@ -757,11 +724,9 @@ public class DataExpression extends DataIdentifier
 									   + DELIM_FILL_VALUE 	+ ","
 									   + READROWPARAM     + "," 
 									   + READCOLPARAM;
-							LOG.error(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". " + msg);
 							
-							throw new LanguageException(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". " + msg, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+							raiseValidateError("Invalid parameter " + key + " in read.csv statement: " +
+									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
@@ -774,9 +739,7 @@ public class DataExpression extends DataIdentifier
 					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
 						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
 					{
-						String msg = "For delimited file '" + getVarParam(DELIM_DELIMITER) +  "' must be a string value ";
-						LOG.error(this.printErrorLocation() + msg);
-						throw new LanguageException(this.printErrorLocation() + msg);
+						raiseValidateError("For delimited file '" + getVarParam(DELIM_DELIMITER) +  "' must be a string value ", conditional);
 					}
 				} 
 				
@@ -788,9 +751,7 @@ public class DataExpression extends DataIdentifier
 					if ( (getVarParam(DELIM_FILL_VALUE) instanceof ConstIdentifier)
 							&& (! (getVarParam(DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
 					{
-						String msg = "For delimited file '" + getVarParam(DELIM_FILL_VALUE)  +  "' must be a numeric value ";
-						LOG.error(this.printErrorLocation() + msg);
-						throw new LanguageException(this.printErrorLocation() + msg);
+						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL_VALUE)  +  "' must be a numeric value ", conditional);
 					}
 				} 
 				
@@ -802,9 +763,7 @@ public class DataExpression extends DataIdentifier
 					if ((getVarParam(DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
 						&& (! (getVarParam(DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
 					{
-						String msg = "For delimited file '" + getVarParam(DELIM_HAS_HEADER_ROW) + "' must be a boolean value ";
-						LOG.error(this.printErrorLocation() + msg);
-						throw new LanguageException(this.printErrorLocation() + msg);
+						raiseValidateError("For delimited file '" + getVarParam(DELIM_HAS_HEADER_ROW) + "' must be a boolean value ", conditional);
 					}
 				}
 				
@@ -817,9 +776,7 @@ public class DataExpression extends DataIdentifier
 					if ((getVarParam(DELIM_FILL) instanceof ConstIdentifier)
 							&& (! (getVarParam(DELIM_FILL) instanceof BooleanIdentifier)))
 					{
-						String msg = "For delimited file '" + getVarParam(DELIM_FILL) + "' must be a boolean value ";
-						LOG.error(this.printErrorLocation() + msg);
-						throw new LanguageException(this.printErrorLocation() + msg);
+						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL) + "' must be a boolean value ", conditional);
 					}
 				}		
 			} 
@@ -844,9 +801,7 @@ public class DataExpression extends DataIdentifier
 				getOutput().setDimensions(-1, -1);
 				
 				if ( !isCSV && (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null)){
-					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
-					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + mtdFileName, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-				
+					raiseValidateError("Missing or incomplete dimension information in read statement: " + mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);				
 				}
 				if (getVarParam(READROWPARAM) instanceof ConstIdentifier && getVarParam(READCOLPARAM) instanceof ConstIdentifier)  {
 				
@@ -856,15 +811,13 @@ public class DataExpression extends DataIdentifier
 					
 					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && REJECT_READ_UNKNOWN_SIZE )
 					{
-						LOG.error(this.printErrorLocation() + "Invalid dimension information in read statement");
-						throw new LanguageException(this.printErrorLocation() + "Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
 						getOutput().setDimensions(dim1, dim2);
 					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
-						LOG.error(this.printErrorLocation() + "Partial dimension information in read statement");
-						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("Partial dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
 				}
 				
@@ -882,8 +835,7 @@ public class DataExpression extends DataIdentifier
 				{
 					format = 1;
 				} else {
-					LOG.error(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
-					throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE)+ " in statement: " + this.toString());
+					raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)+ " in statement: " + this.toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -894,8 +846,7 @@ public class DataExpression extends DataIdentifier
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
 					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
-						LOG.error(this.printErrorLocation() + "Partial block dimension information in read statement");
-						throw new LanguageException(this.printErrorLocation() + "Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						raiseValidateError("Partial block dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					} else {
 						 getOutput().setBlockDimensions(-1, -1);
 					}
@@ -905,9 +856,7 @@ public class DataExpression extends DataIdentifier
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
 				if ( (format == 1 && (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1))	){
-					
-					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".");
-					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					raiseValidateError("Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			
 			}
@@ -918,19 +867,13 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			else{		
-				LOG.error(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE);
-				throw new LanguageException(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// handle value type parameter
 			if (getVarParam(VALUETYPEPARAM) != null && !(getVarParam(VALUETYPEPARAM) instanceof StringIdentifier)){
-				
-				LOG.error(this.printErrorLocation() + "for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
-						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE);
-				
-				throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
-						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
+						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
 			}
 			// Identify the value type (used only for read method)
 			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
@@ -944,13 +887,8 @@ public class DataExpression extends DataIdentifier
 				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
 					getOutput().setValueType(ValueType.BOOLEAN);
 				} else {
-					
-					LOG.error(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
-							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE);
-					
-					throw new LanguageException(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
-							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
-							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					raiseValidateError("Unknown Value Type " + valueTypeString
+							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
 				}
 			} else {
 				getOutput().setValueType(ValueType.DOUBLE);
@@ -991,16 +929,15 @@ public class DataExpression extends DataIdentifier
 												
 							break;
 						default:
-							LOG.error(this.printErrorLocation() + "for OutputStatement, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
-							throw new LanguageException(this.printErrorLocation() + "for OutputStatement, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+							raiseValidateError("for OutputStatement, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ", conditional);
 					}
 				}
 			}
 			
 			//validate read filename
 			String fnameWrite = getVarParam(IO_FILENAME).toString();
-			if( !LocalFileUtils.validateExternalFilename(fnameWrite, true) )
-				throw new LanguageException("Invalid (non-trustworthy) hdfs write filename.");
+			if( !LocalFileUtils.validateExternalFilename(fnameWrite, true) ) //always unconditional
+				raiseValidateError("Invalid (non-trustworthy) hdfs write filename.", false);
 	    	
 			
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
@@ -1011,8 +948,7 @@ public class DataExpression extends DataIdentifier
 				getOutput().setBlockDimensions(-1, -1);
 			
 			else{
-				LOG.error(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString());
-				throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(FORMAT_TYPE) + " in statement: " + this.toString());
+				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString(), conditional);
 			}
 			break;
 
@@ -1022,10 +958,8 @@ public class DataExpression extends DataIdentifier
 			if (dataParam != null){
 				if( dataParam instanceof DataIdentifier )
 				{
-					String errmsg = this.printErrorLocation() + "for matrix statement, parameter " 
-							        + RAND_DATA + " must be a matrix or a scalar literal.";
-					LOG.error( errmsg );
-					throw new LanguageException( errmsg );
+					raiseValidateError("for matrix statement, parameter " 
+							        + RAND_DATA + " must be a matrix or a scalar literal.", conditional);
 					//addVarParam(RAND_MIN, dataParam);
 					//addVarParam(RAND_MAX, dataParam);
 				}
@@ -1049,12 +983,8 @@ public class DataExpression extends DataIdentifier
 					addVarParam(RAND_MAX, minExpr);				
 				}
 				else {
-					LOG.error(this.printErrorLocation() + "for matrix statement, parameter " 
-							+ RAND_DATA + " cannot have value type String or Boolean. ");
-							
-					 
-					throw new LanguageException(this.printErrorLocation() + "for matrix statement, parameter " 
-							+ RAND_DATA + " cannot have value type String or Boolean. ");
+					raiseValidateError("for matrix statement, parameter " 
+							+ RAND_DATA + " cannot have value type String or Boolean. ", conditional);
 				}
 				removeVarParam(RAND_DATA);
 				removeVarParam(RAND_BY_ROW);
@@ -1070,56 +1000,41 @@ public class DataExpression extends DataIdentifier
 					found = true;
 				}
 				if (!found){
-					
-					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
+					raiseValidateError("unexpected parameter \"" + key +
 							"\". Legal parameters for Rand statement are " 
 							+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 							+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
-					
-					
-					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
-						"\". Legal parameters for Rand statement are " 
-						+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
-						+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-						+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
+							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF, conditional);
 				}
 			}
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
 			if (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier){
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_ROWS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_ROWS + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_ROWS + " has incorrect data type", conditional);
 			}
 				
 			if (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier){
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_COLS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_COLS + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_COLS + " has incorrect data type", conditional);
 			}
 				
 			if (getVarParam(RAND_MAX) instanceof StringIdentifier || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_MAX + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_MAX + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect data type", conditional);
 			}
 			
 			if (getVarParam(RAND_MIN) instanceof StringIdentifier || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_MIN + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_MIN + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect data type", conditional);
 			}
 			
 			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type or unsupported expression");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_SPARSITY + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect data type", conditional);
 			}
 			
 			if (!(getVarParam(RAND_SEED) instanceof IntIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_SEED + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_SEED + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_SEED + " has incorrect data type", conditional);
 			}
 			
 			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for Rand statement " + RAND_PDF + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_PDF + " has incorrect data type");
+				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect data type", conditional);
 			}
 	
 			long rowsLong = -1L, colsLong = -1L;
@@ -1133,12 +1048,8 @@ public class DataExpression extends DataIdentifier
 					rowsLong = ((IntIdentifier)rowsExpr).getValue();
 				}
 				else {
-					
-					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
-					
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+					raiseValidateError("In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue(), conditional);
 				}
 			}
 			else if (rowsExpr instanceof DoubleIdentifier) {
@@ -1146,12 +1057,8 @@ public class DataExpression extends DataIdentifier
 					rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
 				}
 				else {
-					
-					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
-					
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
+					raiseValidateError("In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString(), conditional);
 				}		
 			}
 			else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
@@ -1166,11 +1073,8 @@ public class DataExpression extends DataIdentifier
 						
 						// check rows is >= 1 --- throw exception
 						if (((IntIdentifier)constValue).getValue() < 1){
-							LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							
-							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update row expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
@@ -1183,11 +1087,8 @@ public class DataExpression extends DataIdentifier
 					else if (constValue instanceof DoubleIdentifier){
 						
 						if (((DoubleIdentifier)constValue).getValue() < 1.0){
-							LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							
-							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update row expr with new IntIdentifier (rounded down)
 						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
@@ -1199,21 +1100,18 @@ public class DataExpression extends DataIdentifier
 					}
 					else {
 						// exception -- rows must be integer or double constant
-						LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						raiseValidateError("In rand statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 					}
 				}
 				else {
 					// handle general expression
-					rowsExpr.validateExpression(ids, currConstVars);
+					rowsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 			}	
 			else {
 				// handle general expression
-				rowsExpr.validateExpression(ids, currConstVars);
+				rowsExpr.validateExpression(ids, currConstVars, conditional);
 			}
 				
 	
@@ -1227,11 +1125,8 @@ public class DataExpression extends DataIdentifier
 					colsLong = ((IntIdentifier)colsExpr).getValue();
 				}
 				else {
-					LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
-					
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+					raiseValidateError("In rand statement, can only assign cols a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
 				}
 			}
 			else if (colsExpr instanceof DoubleIdentifier) {
@@ -1239,11 +1134,8 @@ public class DataExpression extends DataIdentifier
 					colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 				}
 				else {
-					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
-					
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+					raiseValidateError("In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
 				}		
 			}
 			else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
@@ -1258,10 +1150,8 @@ public class DataExpression extends DataIdentifier
 						
 						// check cols is >= 1 --- throw exception
 						if (((IntIdentifier)constValue).getValue() < 1){
-							LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update col expr with new IntIdentifier 
 						long roundedValue = ((IntIdentifier)constValue).getValue();
@@ -1274,11 +1164,8 @@ public class DataExpression extends DataIdentifier
 					else if (constValue instanceof DoubleIdentifier){
 						
 						if (((DoubleIdentifier)constValue).getValue() < 1){
-							LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							
-							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update col expr with new IntIdentifier (rounded down)
 						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
@@ -1290,22 +1177,19 @@ public class DataExpression extends DataIdentifier
 					}
 					else {
 						// exception -- rows must be integer or double constant
-						LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						raiseValidateError("In rand statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 					}
 				}
 				else {
 					// handle general expression
-					colsExpr.validateExpression(ids, currConstVars);
+					colsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 					
 			}	
 			else {
 				// handle general expression
-				colsExpr.validateExpression(ids, currConstVars);
+				colsExpr.validateExpression(ids, currConstVars, conditional);
 			}
 			
 			///////////////////////////////////////////////////////////////////
@@ -1342,22 +1226,19 @@ public class DataExpression extends DataIdentifier
 					}
 					else {
 						// exception -- rows must be integer or double constant
-						LOG.error(this.printErrorLocation() + "In rand statement, can only assign min a numerical " +
-								"value -- attempted to assign: " + constValue.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign min a numerical " +
-								"value -- attempted to assign: " + constValue.toString());
+						raiseValidateError("In rand statement, can only assign min a numerical " +
+								"value -- attempted to assign: " + constValue.toString(), conditional);
 					}
 				}
 				else {
 					// handle general expression
-					minExpr.validateExpression(ids, currConstVars);
+					minExpr.validateExpression(ids, currConstVars, conditional);
 				}
 					
 			}	
 			else {
 				// handle general expression
-				minExpr.validateExpression(ids, currConstVars);
+				minExpr.validateExpression(ids, currConstVars, conditional);
 			}
 			
 			
@@ -1395,21 +1276,18 @@ public class DataExpression extends DataIdentifier
 					}
 					else {
 						// exception -- rows must be integer or double constant
-						LOG.error(this.printErrorLocation() + "In rand statement, can only assign max a numerical " +
-								"value -- attempted to assign: " + constValue.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign max a numerical " +
-								"value -- attempted to assign: " + constValue.toString());
+						raiseValidateError("In rand statement, can only assign max a numerical " +
+								"value -- attempted to assign: " + constValue.toString(), conditional);
 					}
 				}
 				else {
 					// handle general expression
-					maxExpr.validateExpression(ids, currConstVars);
+					maxExpr.validateExpression(ids, currConstVars, conditional);
 				}		
 			}	
 			else {
 				// handle general expression
-				maxExpr.validateExpression(ids, currConstVars);
+				maxExpr.validateExpression(ids, currConstVars, conditional);
 			}
 		
 			getOutput().setFormatType(FormatType.BINARY);
@@ -1421,8 +1299,7 @@ public class DataExpression extends DataIdentifier
 				// process the "target" being indexed
 				DataIdentifier targetAsSeen = ids.get(((DataIdentifier)getOutput()).getName());
 				if (targetAsSeen == null){
-					LOG.error(getOutput().printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)getOutput()).getName() + " without first initializing " + ((DataIdentifier)getOutput()).getName());
-					throw new LanguageException(getOutput().printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)getOutput()).getName() + " without first initializing " + ((DataIdentifier)getOutput()).getName());
+					raiseValidateError("cannot assign value to indexed identifier " + ((DataIdentifier)getOutput()).getName() + " without first initializing " + ((DataIdentifier)getOutput()).getName(), conditional);
 				}
 				//_output.setProperties(targetAsSeen);
 				((IndexedIdentifier) getOutput()).setOriginalDimensions(targetAsSeen.getDim1(), targetAsSeen.getDim2());
@@ -1447,40 +1324,28 @@ public class DataExpression extends DataIdentifier
 					found = true;
 				}
 				if (!found){
-					
-					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
+					raiseValidateError("unexpected parameter \"" + key +
 							"\". Legal parameters for matrix statement are " 
 							+ "(capitalization-sensitive): " 	+ RAND_DATA 	
 							+ ", " + RAND_ROWS		+ ", " + RAND_COLS
-							+ ", " + RAND_BY_ROW ); //  + ", " + RAND_DIMNAMES);
-					
-					
-					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
-							"\". Legal parameters for matrix statement are " 
-							+ "(capitalization-sensitive): " 	+ RAND_DATA 	
-							+ ", " + RAND_ROWS		+ ", " + RAND_COLS
-							+ ", " + RAND_BY_ROW );//   + ", " + RAND_DIMNAMES);
+							+ ", " + RAND_BY_ROW, conditional);
 				}
 			}
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
 			if (!(getVarParam(RAND_DATA) instanceof DataIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_DATA + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_DATA + " has incorrect data type");
+				raiseValidateError("for matrix statement " + RAND_DATA + " has incorrect data type", conditional);
 			}
 			if (getVarParam(RAND_ROWS) != null && (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_ROWS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_ROWS + " has incorrect data type");
+				raiseValidateError("for matrix statement " + RAND_ROWS + " has incorrect data type", conditional);
 			}
 				
 			if (getVarParam(RAND_COLS) != null && (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier)){
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_COLS + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RAND_COLS + " has incorrect data type");
+				raiseValidateError("for matrix statement " + RAND_COLS + " has incorrect data type", conditional);
 			}
 				
 			if ( !(getVarParam(RAND_BY_ROW) instanceof BooleanIdentifier)) {
-				LOG.error(this.printErrorLocation() + "for matrix statement " + RAND_BY_ROW + " has incorrect data type");
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RAND_BY_ROW + " has incorrect data type");
+				raiseValidateError("for matrix statement " + RAND_BY_ROW + " has incorrect data type", conditional);
 			}
 			
 			rowsLong = -1L; 
@@ -1496,12 +1361,8 @@ public class DataExpression extends DataIdentifier
 						rowsLong = ((IntIdentifier)rowsExpr).getValue();
 					}
 					else {
-						
-						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
-						
-						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+						raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue(), conditional);
 					}
 				}
 				else if (rowsExpr instanceof DoubleIdentifier) {
@@ -1509,12 +1370,8 @@ public class DataExpression extends DataIdentifier
 						rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
 					}
 					else {
-						
-						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
+						raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString(), conditional);
 					}		
 				}
 				else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
@@ -1529,11 +1386,8 @@ public class DataExpression extends DataIdentifier
 							
 							// check rows is >= 1 --- throw exception
 							if (((IntIdentifier)constValue).getValue() < 1){
-								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-								
-								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								raiseValidateError("In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 							}
 							// update row expr with new IntIdentifier 
 							long roundedValue = ((IntIdentifier)constValue).getValue();
@@ -1546,11 +1400,8 @@ public class DataExpression extends DataIdentifier
 						else if (constValue instanceof DoubleIdentifier){
 							
 							if (((DoubleIdentifier)constValue).getValue() < 1.0){
-								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-								
-								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								raiseValidateError("In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 							}
 							// update row expr with new IntIdentifier (rounded down)
 							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
@@ -1562,21 +1413,18 @@ public class DataExpression extends DataIdentifier
 						}
 						else {
 							// exception -- rows must be integer or double constant
-							LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							
-							throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In matrix statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 					}
 					else {
 						// handle general expression
-						rowsExpr.validateExpression(ids, currConstVars);
+						rowsExpr.validateExpression(ids, currConstVars, conditional);
 					}
 				}	
 				else {
 					// handle general expression
-					rowsExpr.validateExpression(ids, currConstVars);
+					rowsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 			}
 	
@@ -1591,11 +1439,8 @@ public class DataExpression extends DataIdentifier
 						colsLong = ((IntIdentifier)colsExpr).getValue();
 					}
 					else {
-						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+						raiseValidateError("In matrix statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
 					}
 				}
 				else if (colsExpr instanceof DoubleIdentifier) {
@@ -1603,11 +1448,8 @@ public class DataExpression extends DataIdentifier
 						colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 					}
 					else {
-						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
-						
-						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
-								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+						raiseValidateError("In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString(), conditional);
 					}		
 				}
 				else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
@@ -1622,10 +1464,8 @@ public class DataExpression extends DataIdentifier
 							
 							// check cols is >= 1 --- throw exception
 							if (((IntIdentifier)constValue).getValue() < 1){
-								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								raiseValidateError("In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 							}
 							// update col expr with new IntIdentifier 
 							long roundedValue = ((IntIdentifier)constValue).getValue();
@@ -1638,11 +1478,8 @@ public class DataExpression extends DataIdentifier
 						else if (constValue instanceof DoubleIdentifier){
 							
 							if (((DoubleIdentifier)constValue).getValue() < 1){
-								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-								
-								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								raiseValidateError("In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 							}
 							// update col expr with new IntIdentifier (rounded down)
 							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
@@ -1654,22 +1491,19 @@ public class DataExpression extends DataIdentifier
 						}
 						else {
 							// exception -- rows must be integer or double constant
-							LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-							
-							throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
-									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							raiseValidateError("In matrix statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 					}
 					else {
 						// handle general expression
-						colsExpr.validateExpression(ids, currConstVars);
+						colsExpr.validateExpression(ids, currConstVars, conditional);
 					}
 						
 				}	
 				else {
 					// handle general expression
-					colsExpr.validateExpression(ids, currConstVars);
+					colsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 			}	
 			getOutput().setFormatType(FormatType.BINARY);
@@ -1690,13 +1524,7 @@ public class DataExpression extends DataIdentifier
 			
 	
 		default:
-			LOG.error(this.printErrorLocation() + "Unsupported Data expression"
-					+ this.getOpCode());
-			
-			
-			throw new LanguageException(this.printErrorLocation() + "Unsupported Data expression"
-						+ this.getOpCode(),
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Unsupported Data expression"+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}
 		return;
 	}

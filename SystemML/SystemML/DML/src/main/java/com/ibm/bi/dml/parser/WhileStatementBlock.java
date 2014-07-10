@@ -30,12 +30,12 @@ public class WhileStatementBlock extends StatementBlock
 	private Lop _predicateLops = null;
 	private boolean _requiresPredicateRecompile = false;
 	
-	
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) 
+	@Override
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
 	{	
 		if (_statements.size() > 1){
-			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
+			raiseValidateError("WhileStatementBlock should have only 1 statement (while statement)", conditional);
 		}
 		
 		WhileStatement wstmt = (WhileStatement) _statements.get(0);
@@ -61,13 +61,14 @@ public class WhileStatementBlock extends StatementBlock
 				constVars.remove( var );
 		
 		// process the statement blocks in the body of the while statement
-		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
+		predicate.getPredicate().validateExpression(ids.getVariables(), constVars, conditional);
 		ArrayList<StatementBlock> body = wstmt.getBody();
 		
 		_dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
-			ids = sb.validate(dmlProg, ids, constVars);
+			//always conditional
+			ids = sb.validate(dmlProg, ids, constVars, true);
 			constVars = sb.getConstOut();
 		}
 				
@@ -87,9 +88,7 @@ public class WhileStatementBlock extends StatementBlock
 			{	
 				//handle data type change (reject) 
 				if (!startVersion.getOutput().getDataType().equals(endVersion.getOutput().getDataType())){
-					String error = printErrorLocation() + "WhileStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.";
-					LOG.error(error); 
-					throw new LanguageException(error);
+					raiseValidateError("WhileStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.", conditional);
 				}
 				
 				//handle size change
@@ -138,13 +137,14 @@ public class WhileStatementBlock extends StatementBlock
 					constVars.remove( var );
 			
 			// process the statement blocks in the body of the while statement
-			predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
+			predicate.getPredicate().validateExpression(ids.getVariables(), constVars, conditional);
 			body = wstmt.getBody();
 			
 			_dmlProg = dmlProg;
 			for(StatementBlock sb : body)
 			{
-				ids = sb.validate(dmlProg, ids, constVars);
+				//always conditional
+				ids = sb.validate(dmlProg, ids, constVars, true);
 				constVars = sb.getConstOut();
 			}
 					
@@ -162,6 +162,7 @@ public class WhileStatementBlock extends StatementBlock
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
 		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		}
 		
@@ -242,6 +243,7 @@ public class WhileStatementBlock extends StatementBlock
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 			throw new HopsException(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 		}
 		

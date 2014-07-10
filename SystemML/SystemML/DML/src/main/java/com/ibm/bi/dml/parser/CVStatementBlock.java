@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,7 +17,7 @@ import com.ibm.bi.dml.hops.Hop;
 public class CVStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public String toString() {
@@ -32,17 +32,18 @@ public class CVStatementBlock extends StatementBlock
 	}
 		
 	@Override
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException 
+	{
 
 		if (this.getNumStatements() > 1){
-			LOG.error(this.printBlockErrorLocation() + "CV statement block can only have single statement");
-			throw new LanguageException(this.printBlockErrorLocation() + "CV statement block can only have single statement");
+			raiseValidateError("CV statement block can only have single statement", conditional);
 		}
 		CVStatement cvs = (CVStatement) this.getStatement(0);
 		
 		// check the input datasets are available
 		for (ParameterExpression inputExpr : cvs.get_inputs().getParamExprs()){
-			inputExpr.getExpr().validateExpression(ids.getVariables(),constVars);
+			inputExpr.getExpr().validateExpression(ids.getVariables(),constVars, conditional);
 		}	
 		
 		// build list of partition outputs
@@ -63,13 +64,11 @@ public class CVStatementBlock extends StatementBlock
 		FunctionCallIdentifier trainFCI = cvs.get_trainFunctionCall();
 		HashMap<String, FunctionStatementBlock> tempNS = dmlProg.getFunctionStatementBlocks(trainFCI.getNamespace());
 		if (tempNS == null){
-			LOG.error(this.printBlockErrorLocation() + "Namespace " + trainFCI.getNamespace() + " is undefined ");
-			throw new LanguageException(this.printBlockErrorLocation() + "Namespace " + trainFCI.getNamespace() + " is undefined ");
+			raiseValidateError("Namespace " + trainFCI.getNamespace() + " is undefined ", conditional);
 		}
 		FunctionStatementBlock trainFSB = tempNS.get(trainFCI.getName());
 		if (trainFSB == null){
-			LOG.error(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " is not available ");
-			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " is not available ");
+			raiseValidateError("CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " is not available ", conditional);
 		}
 		
 		// check train function has correct number of parameters AND
@@ -80,7 +79,7 @@ public class CVStatementBlock extends StatementBlock
 		tempIds.addVariables(ids);
 		tempIds.addVariables(partitionOutputList);
 		try {
-			trainFCI.validateExpression(dmlProg,tempIds.getVariables(), constVars);
+			trainFCI.validateExpression(dmlProg,tempIds.getVariables(), constVars, conditional);
 		} catch(IOException e){
 			throw new LanguageException(e);
 		}
@@ -89,10 +88,7 @@ public class CVStatementBlock extends StatementBlock
 		// check training function call has correct number of parameters		
 		FunctionStatement trainFS = (FunctionStatement)trainFSB.getStatement(0);
 		if (cvs.get_trainFunctionOutputs().getParamExprs().size() != trainFS.getOutputParams().size()){
-			
-			LOG.error(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " has wrong number parameters ");
-			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " has wrong number parameters ");
-
+			raiseValidateError("CV training function " + trainFCI.getNamespace() + "::" + trainFCI.getName() + " has wrong number parameters ", conditional);
 		}
 		
 		// for each train function parameter, set datatype and valuetype
@@ -116,13 +112,11 @@ public class CVStatementBlock extends StatementBlock
 		FunctionCallIdentifier testFCI = cvs.get_testFunctionCall();
 		tempNS = dmlProg.getFunctionStatementBlocks(testFCI.getNamespace());
 		if (tempNS == null){
-			LOG.error(this.printBlockErrorLocation() + "Namespace " + testFCI.getNamespace() + " is undefined ");
-			throw new LanguageException(this.printBlockErrorLocation() + "Namespace " + testFCI.getNamespace() + " is undefined ");
+			raiseValidateError("Namespace " + testFCI.getNamespace() + " is undefined ", conditional);
 		}
 		FunctionStatementBlock testFSB = tempNS.get(testFCI.getName());
 		if (testFSB == null){
-			LOG.error(this.printBlockErrorLocation() + "CV training function " + testFCI.getNamespace() + "::" + testFCI.getName() + " is not available ");
-			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + testFCI.getNamespace() + "::" + testFCI.getName() + " is not available ");
+			raiseValidateError("CV training function " + testFCI.getNamespace() + "::" + testFCI.getName() + " is not available ", conditional);
 		}
 		
 		// check test function has correct number of parameters AND
@@ -135,7 +129,7 @@ public class CVStatementBlock extends StatementBlock
 		tempIds.addVariables(partitionOutputList);
 		tempIds.addVariables(trainOutputList);
 		try {
-			testFCI.validateExpression(dmlProg,tempIds.getVariables(), constVars);
+			testFCI.validateExpression(dmlProg,tempIds.getVariables(), constVars, conditional);
 		} catch(IOException e){
 			throw new LanguageException(e);
 		}
@@ -144,9 +138,7 @@ public class CVStatementBlock extends StatementBlock
 		// check test function call has correct number of parameters		
 		FunctionStatement testFS = (FunctionStatement)testFSB.getStatement(0);
 		if (cvs.get_testFunctionOutputs().getParamExprs().size() != testFS.getOutputParams().size()){
-			LOG.error(this.printBlockErrorLocation() + "CV test function " + testFCI.getNamespace() + "::" + testFCI.getName() + " has wrong number parameters ");
-			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + testFCI.getNamespace() + "::" + testFCI.getName() + " has wrong number parameters ");
-
+			raiseValidateError("CV test function " + testFCI.getNamespace() + "::" + testFCI.getName() + " has wrong number parameters ", conditional);
 		}
 		
 		// for each test function parameter, set datatype and valuetype
@@ -175,14 +167,11 @@ public class CVStatementBlock extends StatementBlock
 		
 			tempNS = dmlProg.getFunctionStatementBlocks(((FunctionCallIdentifier)aggFCI).getNamespace());
 			if (tempNS == null){
-				LOG.error(this.printBlockErrorLocation() + "Namespace " + ((FunctionCallIdentifier)aggFCI).getNamespace() + " is undefined ");
-				
-				throw new LanguageException(this.printBlockErrorLocation() + "Namespace " + testFCI.getNamespace() + " is undefined ");
+				raiseValidateError("Namespace " + ((FunctionCallIdentifier)aggFCI).getNamespace() + " is undefined ", conditional);
 			}
 			FunctionStatementBlock aggFSB = tempNS.get(((FunctionCallIdentifier)aggFCI).getName());
 			if (aggFSB == null){
-				LOG.error(this.printBlockErrorLocation() + "CV aggregation function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " is not available ");
-				throw new LanguageException(this.printBlockErrorLocation() + "CV aggregation function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " is not available ");
+				raiseValidateError("CV aggregation function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " is not available ", conditional);
 			}
 		}
 		
@@ -201,13 +190,11 @@ public class CVStatementBlock extends StatementBlock
 		try {
 			if (aggFCI instanceof FunctionCallIdentifier){
 				FunctionCallIdentifier aggFCI_fci = ((FunctionCallIdentifier)aggFCI);
-				aggFCI_fci.validateExpression(dmlProg,tempIds.getVariables(), constVars);
+				aggFCI_fci.validateExpression(dmlProg,tempIds.getVariables(), constVars, conditional);
 				FunctionStatementBlock aggFSB = dmlProg.getFunctionStatementBlock(aggFCI_fci.getNamespace(), aggFCI_fci.getName());
 				FunctionStatement aggFS = (FunctionStatement)aggFSB.getStatement(0);
 				if (cvs.get_aggFunctionOutputs().getParamExprs().size() != aggFS.getOutputParams().size()){
-					LOG.error(this.printBlockErrorLocation() + "CV aggregate function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " has wrong number parameters ");
-					throw new LanguageException(this.printBlockErrorLocation() + "CV aggregate function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getNamespace()  + " has wrong number parameters ");
-			
+					raiseValidateError("CV aggregate function " + ((FunctionCallIdentifier)aggFCI).getNamespace() + "::" + ((FunctionCallIdentifier)aggFCI).getName() + " has wrong number parameters ", conditional);
 				}
 				
 				for (int i = 0; i < cvs.get_aggFunctionOutputs().getParamExprs().size(); i++){
@@ -222,7 +209,7 @@ public class CVStatementBlock extends StatementBlock
 			}
 			else {
 				BuiltinFunctionExpression aggBFE = (BuiltinFunctionExpression)aggFCI;
-				aggBFE.validateExpression(tempIds.getVariables(), constVars);
+				aggBFE.validateExpression(tempIds.getVariables(), constVars, conditional);
 				DataIdentifier output = (DataIdentifier)cvs.get_aggFunctionOutputs().getParamExprs().get(0).getExpr();
 				try {
 					output.setTypeInfo(aggBFE.getOutput().getValueType().toString(), aggBFE.getOutput().getDataType().toString());

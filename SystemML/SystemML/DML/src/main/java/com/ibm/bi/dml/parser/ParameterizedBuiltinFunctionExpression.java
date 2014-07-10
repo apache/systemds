@@ -10,6 +10,8 @@ package com.ibm.bi.dml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
+
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
 {
@@ -107,12 +109,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
-			throws LanguageException {
-		
+	@Override
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
+			throws LanguageException 
+	{		
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
-			getVarParam(s).validateExpression(ids, constVars);
+			getVarParam(s).validateExpression(ids, constVars, conditional);
 		}
 		
 		String outputName = getTempName();
@@ -127,7 +130,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case GROUPEDAGG:
 			
 			if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
-				throw new LanguageException(this.printErrorLocation() + "Must define both target and groups and both must have same dimensions");
+				raiseValidateError("Must define both target and groups and both must have same dimensions", conditional);
 			}
 			if (getVarParam(Statement.GAGG_TARGET) instanceof DataIdentifier && getVarParam(Statement.GAGG_GROUPS) instanceof DataIdentifier && (getVarParam(Statement.GAGG_WEIGHTS) == null || getVarParam(Statement.GAGG_WEIGHTS) instanceof DataIdentifier))
 			{
@@ -143,21 +146,21 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				if( targetid.dimsKnown() && groupsid.dimsKnown() &&
 					(rowsTarget != groupsid.getDim1() || colsTarget != groupsid.getDim2()) )
 				{					
-					throw new LanguageException(this.printErrorLocation() + "target and groups must have same dimensions -- " 
-							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
+					raiseValidateError("target and groups must have same dimensions -- " 
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols ", conditional);
 				}
 				
 				if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
 					(rowsTarget != weightsid.getDim1() || colsTarget != weightsid.getDim2() ))
-				{					
-					throw new LanguageException(this.printErrorLocation() + "target and weights must have same dimensions -- "
-							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols " );
+				{		
+					raiseValidateError("target and weights must have same dimensions -- "
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols ", conditional);
 				}
 			}
 			
 			
 			if (getVarParam(Statement.GAGG_FN) == null){
-				throw new LanguageException(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");
+				raiseValidateError("must define function name (fname=<function name>) for groupedAggregate()", conditional);
 			}
 			
 			Expression functParam = getVarParam(Statement.GAGG_FN);
@@ -173,15 +176,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				if(fnameStr.equals(Statement.GAGG_FN_CM)){
 					String orderStr = getVarParam(Statement.GAGG_FN_CM_ORDER) == null ? null : getVarParam(Statement.GAGG_FN_CM_ORDER).toString();
 					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4"))){
-						throw new LanguageException(this.printErrorLocation() + "for centralmoment, must define order.  Order must be equal to 2,3, or 4");
+						raiseValidateError("for centralmoment, must define order.  Order must be equal to 2,3, or 4", conditional);
 					}
 				}
 				else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
 						|| fnameStr.equals(Statement.GAGG_FN_SUM) 
 						|| fnameStr.equals(Statement.GAGG_FN_MEAN)
 						|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
-				else {
-					throw new LanguageException(this.printErrorLocation() + "fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
+				else { 
+					raiseValidateError("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance", conditional);
 				}
 			}
 			
@@ -203,9 +206,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			
 			// check if quantile is of type SCALAR
 			if ( getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
-				
-				throw new LanguageException(this.printErrorLocation() + "Quantile to cumulativeProbability() must be a scalar value.",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Quantile to cumulativeProbability() must be a scalar value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// Output is a scalar
@@ -220,24 +221,18 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			//check existence and correctness of arguments
 			Expression target = getVarParam("target");
 			if( target==null ) {
-				
-				throw new LanguageException(this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( target.getOutput().getDataType() != DataType.MATRIX ){
-				
-				throw new LanguageException(this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
-			}			
+				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
 			Expression margin = getVarParam("margin");
-			if( margin==null )
-			{
-				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' missing. Please specify 'rows' or 'cols'.",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			if( margin==null ){
+				raiseValidateError("Named parameter 'margin' missing. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( !(margin instanceof DataIdentifier) && !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
-				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+				raiseValidateError("Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// Output is a matrix with unknown dims
@@ -253,38 +248,26 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			//check existence and correctness of arguments
 			Expression target = getVarParam("target");
 			if( target==null ) {				
-				String error = this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.";
-				LOG.error( error );
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( target.getOutput().getDataType() != DataType.MATRIX ){
-				String error = this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.";
-				LOG.error( error );	
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}	
 			
 			Expression pattern = getVarParam("pattern");
 			if( pattern==null ) {
-				String error = this.printErrorLocation() + "Named parameter 'pattern' missing. Please specify the replacement pattern.";
-				LOG.error( error );
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Named parameter 'pattern' missing. Please specify the replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( pattern.getOutput().getDataType() != DataType.SCALAR ){				
-				String error = this.printErrorLocation() + "Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.";
-				LOG.error( error );	
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+				raiseValidateError("Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}	
 			
 			Expression replacement = getVarParam("replacement");
 			if( replacement==null ) {
-				String error = this.printErrorLocation() + "Named parameter 'replacement' missing. Please specify the replacement value.";
-				LOG.error( error );
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Named parameter 'replacement' missing. Please specify the replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			else if( replacement.getOutput().getDataType() != DataType.SCALAR ){				
-				String error = this.printErrorLocation() + "Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.";
-				LOG.error( error );	
-				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			else if( replacement.getOutput().getDataType() != DataType.SCALAR ){	
+				raiseValidateError("Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}	
 			
 			// Output is a matrix with same dims as input
@@ -296,11 +279,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 
 			
-		default:
-			
-			throw new LanguageException(this.printErrorLocation() + "Unsupported parameterized function "
-						+ this.getOpCode(),
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		default: //always unconditional (because unsupported operation)
+			raiseValidateError("Unsupported parameterized function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		return;
 	}

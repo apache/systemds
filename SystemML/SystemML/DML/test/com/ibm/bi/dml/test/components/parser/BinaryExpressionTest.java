@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.parser.Expression.BinaryOp;
 public class BinaryExpressionTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     @Test
@@ -41,7 +41,7 @@ public class BinaryExpressionTest
         BinaryExpression beToTest = new BinaryExpression(BinaryOp.PLUS);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids, dummyConst);
+        beToTest.validateExpression(ids, dummyConst, false);
         assertEquals(-1, beToTest.getOutput().getDim1());
         assertEquals(-1, beToTest.getOutput().getDim2());
         
@@ -50,7 +50,7 @@ public class BinaryExpressionTest
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
         try {
-            beToTest.validateExpression(ids, dummyConst);
+            beToTest.validateExpression(ids, dummyConst, false);
             fail("dimensions do not match for matrix multiplication");
         } catch(Exception e) { }
         
@@ -59,21 +59,21 @@ public class BinaryExpressionTest
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids, dummyConst);
+        beToTest.validateExpression(ids, dummyConst, false);
         assertEquals(100, beToTest.getOutput().getDim1());
         assertEquals(102, beToTest.getOutput().getDim2());
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("right", right);
         try {
-            beToTest.validateExpression(ids, dummyConst);
+            beToTest.validateExpression(ids, dummyConst, false);
             fail("left expression not validated");
         } catch(Exception e) { }
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("left", left);
         try {
-            beToTest.validateExpression(ids, dummyConst);
+            beToTest.validateExpression(ids, dummyConst, false);
             fail("right expression not validated");
         } catch(Exception e) { }
     }

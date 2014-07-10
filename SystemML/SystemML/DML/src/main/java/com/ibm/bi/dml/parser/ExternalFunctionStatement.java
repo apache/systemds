@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -15,7 +15,7 @@ import java.util.Vector;
 public class ExternalFunctionStatement extends FunctionStatement
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	//valid attribute names
@@ -66,7 +66,9 @@ public class ExternalFunctionStatement extends FunctionStatement
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateParameters() throws LanguageException {
+	public void validateParameters(StatementBlock sb) //always unconditional  
+		throws LanguageException 
+	{
 		
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
@@ -76,10 +78,10 @@ public class ExternalFunctionStatement extends FunctionStatement
 		
 		//class name (required)
 		if( !_otherParams.containsKey(CLASS_NAME) ){
-			throw new LanguageException(this.printErrorLocation() + "External function does not specify the required attribute '"+CLASS_NAME+"'.");
+			sb.raiseValidateError("External function does not specify the required attribute '"+CLASS_NAME+"'.", false);
 		}
 		else if ( _otherParams.get(CLASS_NAME)==null ) {
-			throw new LanguageException(this.printErrorLocation() + "External function specifies empty '"+CLASS_NAME+"'.");
+			sb.raiseValidateError("External function specifies empty '"+CLASS_NAME+"'.", false);
 		}
 		
 		//exec type (optional, default: file)
@@ -87,8 +89,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 		{
 			//check specified values
 			String execType = _otherParams.get(EXEC_TYPE);
-			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) ) {
-				throw new LanguageException(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").");
+			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) ) { //always unconditional (invalid parameter)
+				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"+EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").", false);
 			}
 		}
 		else
@@ -102,9 +104,8 @@ public class ExternalFunctionStatement extends FunctionStatement
 		{
 			//check specified values
 			String execLocation = _otherParams.get(EXEC_LOCATION);
-			if( !(execLocation.equals(MASTER) || execLocation.equals(WORKER)) ){
-				throw new LanguageException(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_LOCATION+"' (valid values: "+MASTER+","+WORKER+").");
-		
+			if( !(execLocation.equals(MASTER) || execLocation.equals(WORKER)) ){ //always unconditional (invalid parameter)
+				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"+EXEC_LOCATION+"' (valid values: "+MASTER+","+WORKER+").", false);
 			}
 		}
 		else
@@ -153,11 +154,13 @@ public class ExternalFunctionStatement extends FunctionStatement
 
 	@Override
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 	}
 	
 	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		
 	}

@@ -9,6 +9,8 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
+
 public abstract class Identifier extends Expression
 {
 	@SuppressWarnings("unused")
@@ -158,7 +160,10 @@ public abstract class Identifier extends Expression
 		return _nnz;
 	}
 	
-	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException {
+	@Override
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException 
+	{
 		//Identifier out = this.getOutput();
 		
 		if (this.getOutput() instanceof DataIdentifier){
@@ -167,10 +172,7 @@ public abstract class Identifier extends Expression
 			String name = ((DataIdentifier)this.getOutput()).getName();
 			Identifier id = ids.get(name);
 			if ( id == null ){
-				//LiveVariableAnalysis.throwUndefinedVar(name, null);
-				
-				throw new LanguageException(this.printErrorLocation() + "Undefined Variable (" + name + ") used in statement",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Undefined Variable (" + name + ") used in statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			this.getOutput().setProperties(id);
 			
@@ -181,50 +183,44 @@ public abstract class Identifier extends Expression
 				IndexedIdentifier indexedIdentiferOut = (IndexedIdentifier)this.getOutput();
 				
 				if (indexedIdentiferOut.getRowLowerBound() != null) {
-					indexedIdentiferOut.getRowLowerBound().validateExpression(ids, constVars);
+					indexedIdentiferOut.getRowLowerBound().validateExpression(ids, constVars, conditional);
 					
 					Expression tempExpr = indexedIdentiferOut.getRowLowerBound(); 
 					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
-						LOG.error(this.printErrorLocation() + "Matrix values for row lower index bound are not supported, which includes indexed identifiers.");
-						throw new LanguageException(this.printErrorLocation() + "Matrix values for row lower index bound are not supported, which includes indexed identifiers.");
+						raiseValidateError("Matrix values for row lower index bound are not supported, which includes indexed identifiers.", conditional);
 					}
 					
 				}
 				if (indexedIdentiferOut.getRowUpperBound() != null) {
-					indexedIdentiferOut.getRowUpperBound().validateExpression(ids, constVars);
+					indexedIdentiferOut.getRowUpperBound().validateExpression(ids, constVars, conditional);
 					
 					Expression tempExpr = indexedIdentiferOut.getRowUpperBound(); 
 					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
-						LOG.error(this.printErrorLocation() + "Matrix values for row upper index bound are not supported, which includes indexed identifiers.");
-						throw new LanguageException(this.printErrorLocation() + "Matrix values for row upper index bound are not supported, which includes indexed identifiers.");
+						raiseValidateError("Matrix values for row upper index bound are not supported, which includes indexed identifiers.", conditional);
 					}
 				
 				}
 				if (indexedIdentiferOut.getColLowerBound() != null) {
-					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars);	
+					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars, conditional);	
 				
 					Expression tempExpr = indexedIdentiferOut.getColLowerBound(); 
 					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
-						LOG.error(this.printErrorLocation() + "Matrix values for column lower index bound are not supported, which includes indexed identifiers.");
-						throw new LanguageException(this.printErrorLocation() + "Matrix values for column lower index bound are not supported, which includes indexed identifiers.");
+						raiseValidateError("Matrix values for column lower index bound are not supported, which includes indexed identifiers.", conditional);
 					}
 				
 				}
 				if (indexedIdentiferOut.getColUpperBound() != null) {
-					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars);
+					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars, conditional);
 					
 					Expression tempExpr = indexedIdentiferOut.getColUpperBound(); 
 					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
-						LOG.error(this.printErrorLocation() + "Matrix values for column upper index bound are not supported, which includes indexed identifiers.");
-						throw new LanguageException(this.printErrorLocation() + "Matrix values column upper index bound are not supported, which includes indexed identifiers.");
+						raiseValidateError("Matrix values for column upper index bound are not supported, which includes indexed identifiers.", conditional);
 					}
 				
 				}
 				
 				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars);
 				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
-				
-				
 				
 			}
 							

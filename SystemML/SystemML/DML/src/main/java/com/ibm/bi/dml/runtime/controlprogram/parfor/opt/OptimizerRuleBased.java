@@ -1497,7 +1497,8 @@ public class OptimizerRuleBased extends Optimizer
 					break;
 			}
 			
-			ret &= inMatrix.equals(varName) && indexAccess.equals(iterVarname);
+			ret &= (   (inMatrix!=null && inMatrix.equals(varName)) 
+				    && (indexAccess!=null && indexAccess.equals(iterVarname)));
 		}
 		
 		return ret;

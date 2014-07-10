@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,7 +27,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class IdentifierTest
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     @Test
@@ -121,7 +121,7 @@ public class IdentifierTest
         HashMap<String,ConstIdentifier> dummyConst = new HashMap<String,ConstIdentifier>();
         
         try {
-			idToTest.validateExpression(ids, dummyConst);
+			idToTest.validateExpression(ids, dummyConst, false);
 		} catch (LanguageException e) {
 			fail("unable to validate expression");
 		}
@@ -129,7 +129,7 @@ public class IdentifierTest
         assertEquals(101, idToTest.getDim2());
         
         try {
-            idToTest.validateExpression(new HashMap<String, DataIdentifier>(), dummyConst);
+            idToTest.validateExpression(new HashMap<String, DataIdentifier>(), dummyConst, false);
             fail("validation should have failed");
         } catch(NullPointerException e) {
         	
@@ -138,7 +138,7 @@ public class IdentifierTest
         }
         
         try {
-            idToTest.validateExpression(null, dummyConst);
+            idToTest.validateExpression(null, dummyConst, false);
             fail("validation should have failed");
         } catch(NullPointerException e) {
         	

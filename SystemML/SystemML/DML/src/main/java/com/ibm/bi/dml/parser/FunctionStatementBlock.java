@@ -34,7 +34,8 @@ public class FunctionStatementBlock extends StatementBlock
 	 *    2)  The other parameters for External Functions
 	 * @throws IOException 
 	 */
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) 
+	@Override
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
 	{
 		
@@ -50,7 +51,7 @@ public class FunctionStatementBlock extends StatementBlock
 			this._dmlProg = dmlProg;
 			for(StatementBlock sb : fstmt.getBody())
 			{
-				ids = sb.validate(dmlProg, ids, constVars);
+				ids = sb.validate(dmlProg, ids, constVars, conditional);
 				constVars = sb.getConstOut();
 			}
 			if (fstmt.getBody().size() > 0)
@@ -65,21 +66,19 @@ public class FunctionStatementBlock extends StatementBlock
 			for (DataIdentifier returnValue : returnValues){
 				DataIdentifier curr = ids.getVariable(returnValue.getName());
 				if (curr == null){
-					LOG.error(this.printBlockErrorLocation() + "for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ");
-					throw new LanguageException(this.printBlockErrorLocation() + "for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ");
+					raiseValidateError("for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ", conditional);
 				}
 				
 				if (curr.getDataType() == DataType.UNKNOWN){
-					LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " may not match data type in function signature of " + returnValue.getDataType());
+					raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " may not match data type in function signature of " + returnValue.getDataType(), true);
 				}
 				
 				if (curr.getValueType() == ValueType.UNKNOWN){
-					LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getValueType() + " may not match data type in function signature of " + returnValue.getValueType());
+					raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getValueType() + " may not match data type in function signature of " + returnValue.getValueType(), true);
 				}
 				
 				if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
-					LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType());
-					throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType());
+					raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType(), conditional);
 				}
 				
 				if (curr.getValueType() != ValueType.UNKNOWN && !curr.getValueType().equals(returnValue.getValueType())){
@@ -121,13 +120,13 @@ public class FunctionStatementBlock extends StatementBlock
 		else {
 			//validate specified attributes and attribute values
 			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
-			efstmt.validateParameters();
+			efstmt.validateParameters(this);
 			
 			//validate child statements
 			this._dmlProg = dmlProg;
 			for(StatementBlock sb : efstmt.getBody()) 
 			{
-				ids = sb.validate(dmlProg, ids, constVars);
+				ids = sb.validate(dmlProg, ids, constVars, conditional);
 				constVars = sb.getConstOut();
 			}
 		}

@@ -129,7 +129,7 @@ public class DMLTranslator
 					
 					vs.addVariable(currVar.getName(), currVar);
 				}
-				fblock.validate(dmlp, vs, constVars);
+				fblock.validate(dmlp, vs, constVars, false);
 			} 
 		
 		}	
@@ -142,7 +142,7 @@ public class DMLTranslator
 		HashMap<String, ConstIdentifier> constVars = new HashMap<String, ConstIdentifier>();
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock sb = dmlp.getStatementBlock(i);
-			vs = sb.validate(dmlp, vs, constVars);
+			vs = sb.validate(dmlp, vs, constVars, false);
 			constVars = sb.getConstOut();
 		}
 

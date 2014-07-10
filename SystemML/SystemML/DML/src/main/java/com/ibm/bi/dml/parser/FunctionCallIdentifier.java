@@ -15,7 +15,7 @@ import java.io.IOException;
 public class FunctionCallIdentifier extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ArrayList<ParameterExpression> _paramExprs;
@@ -86,19 +86,21 @@ public class FunctionCallIdentifier extends DataIdentifier
 	 * Validate parse tree : Process ExtBuiltinFunction Expression is an
 	 * assignment statement
 	 * 
+	 * NOTE: this does not override the normal validateExpression because it needs to pass dmlp!
+	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException, IOException{
+	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
+		throws LanguageException, IOException
+	{
 		
 		// check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null){
-			LOG.error(this.printErrorLocation() + "namespace " + _namespace + " is not defined ");
-			throw new LanguageException(this.printErrorLocation() + "namespace " + _namespace + " is not defined ");
+			raiseValidateError("namespace " + _namespace + " is not defined ", conditional);
 		}
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 		if (fblock == null){
-			LOG.error(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + _namespace );
-			throw new LanguageException(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + _namespace );
+			raiseValidateError("function " + _name + " is undefined in namespace " + _namespace, conditional);
 		}
 		// set opcode (whether internal or external function) -- based on whether FunctionStatement
 		// in FunctionStatementBlock is ExternalFunctionStatement or FunctionStatement
@@ -117,18 +119,13 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		
 		if (hasNamed && hasUnnamed){
-			
-			LOG.error(this.printErrorLocation() + " In DML, functions can only have named parameters " +
+			raiseValidateError(" In DML, functions can only have named parameters " +
 					"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
-					_name + " has both parameter types.");
-			
-			throw new LanguageException(this.printErrorLocation() + " In DML, functions can only have named parameters " +
-						"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
-						_name + " has both parameter types.");
+					_name + " has both parameter types.", conditional);
 		}
 		// validate expressions for each passed parameter
 		for (ParameterExpression paramExpr : _paramExprs) {
-			paramExpr.getExpr().validateExpression(ids, constVars);
+			paramExpr.getExpr().validateExpression(ids, constVars, conditional);
 		}
 	
 		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
@@ -136,14 +133,9 @@ public class FunctionCallIdentifier extends DataIdentifier
 		// TODO: DRB: FIX THIS
 		// check correctness of number of arguments and their types 
 		if (fstmt.getInputParams().size() < _paramExprs.size()){ 
-			
-			LOG.error(this.printErrorLocation() + "function " + _name 
+			raiseValidateError("function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
-					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size());
-			
-			throw new LanguageException(this.printErrorLocation() + "function " + _name 
-					+ " has incorrect number of parameters. Function requires " 
-					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size());
+					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size(), conditional);
 		}
 		
 		/*

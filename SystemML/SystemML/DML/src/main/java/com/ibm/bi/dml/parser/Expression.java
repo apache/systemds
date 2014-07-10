@@ -132,6 +132,7 @@ public abstract class Expression
 	public enum FormatType {
 		TEXT, BINARY, MM, CSV, UNKNOWN
 	};
+	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 
 	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
@@ -168,14 +169,17 @@ public abstract class Expression
 		return _outputs;
 	}
 	
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
-		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
-	};
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+		throws LanguageException 
+	{
+		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
+	}
 	
-	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
-		LOG.error(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
-		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
-	};
+	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+		throws LanguageException 
+	{
+		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
+	}
 	
 	public static BinaryOp getBinaryOp(String val) {
 		if (val.equalsIgnoreCase("+"))
@@ -281,6 +285,8 @@ public abstract class Expression
 				return DataType.MATRIX;
 		}
 
+		LOG.error(id1.printErrorLocation() + "Invalid Datatypes for operation");
+		
 		throw new LanguageException(id1.printErrorLocation() + "Invalid Datatypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
@@ -308,6 +314,8 @@ public abstract class Expression
 				return ValueType.STRING;
 		}
 
+		LOG.error(id1.printErrorLocation() + "Invalid Valuetypes for operation");
+		
 		throw new LanguageException(id1.printErrorLocation() + "Invalid Valuetypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
@@ -327,6 +335,50 @@ public abstract class Expression
 		
 		return thisStr.equalsIgnoreCase(thatStr);
 	}
+	
+	///////////////////////////////////////////////////////////////
+	// validate error handling (consistent for all expressions)
+	
+	/**
+	 * 
+	 * @param msg
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	public void raiseValidateError( String msg, boolean conditional ) 
+		throws LanguageException
+	{
+		raiseValidateError(msg, conditional, null);
+	}
+	
+	/**
+	 * 
+	 * @param msg
+	 * @param conditional
+	 * @param code
+	 * @throws LanguageException
+	 */
+	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
+		throws LanguageException
+	{
+		if( conditional )  //warning if conditional
+		{
+			String fullMsg = this.printWarningLocation() + msg;
+			
+			LOG.warn( fullMsg );
+		}
+		else  //error and exception if unconditional
+		{
+			String fullMsg = this.printErrorLocation() + msg;
+			
+			LOG.error( fullMsg );			
+			if( errorCode != null )
+				throw new LanguageException( fullMsg, errorCode );
+			else 
+				throw new LanguageException( fullMsg );
+		}
+	}
+	
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for expressions

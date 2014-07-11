@@ -42,7 +42,7 @@ if($probabilities != " "){
 	mx = rowMaxs(log_probs)
 	ones = matrix(1, rows=1, cols=nrow(prior))
 	probs = log_probs - mx %*% ones
-	probs = exp(log_probs)/(rowSums(exp(log_probs)) %*% ones)
+	probs = exp(probs)/(rowSums(exp(probs)) %*% ones)
 	write(probs, $probabilities, format=$fmt)
 }
 

@@ -61,8 +61,7 @@ if(intercept == 1){
 }
 w = matrix(0, rows=num_rows_in_w, cols=num_classes)
 
-debug_str = "# Class, Iter, Obj"
-
+debug_mat = matrix(-1, rows=max_iterations, cols=num_classes)
 parfor(iter_class in 1:num_classes){		  
  Y_local = 2 * ppred(Y, iter_class, "==") - 1
  w_class = matrix(0, rows=num_features, cols=1)
@@ -109,7 +108,7 @@ parfor(iter_class in 1:num_classes){
   
   train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
   print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
-  #debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
+  debug_mat[iter+1,iter_class] = obj	   
    
   if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
    continue = 0
@@ -127,5 +126,14 @@ parfor(iter_class in 1:num_classes){
 }
 
 write(w, $model, format=$fmt)
+
+debug_str = "# Class, Iter, Obj"
+for(iter_class in 1:ncol(debug_mat)){
+	for(iter in 1:nrow(debug_mat)){
+		obj = castAsScalar(debug_mat[iter, iter_class])
+		if(obj != -1) 
+			debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
+	}
+}
 write(debug_str, $debug_output)
 }

@@ -28,23 +28,14 @@
 # or be the result of recoding
 # anything else will prompt an error message from this script
 
+$Y = " "
+$confusion = " "
+$accuracy = " "
+$scores = " "
 $fmt = "text"
 $icpt = 0
 
 X = read($X)
-y = read($Y)
-
-# checking labels in y
-# there should be only 2 distinct values in y
-check_min = min(y)
-check_max = max(y)
-num_min = sum(ppred(y, check_min, "=="))
-num_max = sum(ppred(y, check_max, "=="))
-if(num_min + num_max != nrow(y)) print("please check y, it should contain only 2 labels")
-else{
-	if(check_min != -1 | check_max != +1) 
-		y = 2/(check_max - check_min)*y - (check_min + check_max)/(check_max - check_min)
-}
 
 intercept = $icpt
 w = read($model)
@@ -54,28 +45,48 @@ if(intercept == 1)
 	b = castAsScalar(w[nrow(w),1])
 
 scores = b + (X %*% w[1:ncol(X),])
-pred = 2*ppred(scores, 0, ">") - 1
 
-num_correct = sum(ppred(pred, y, "=="))
-acc = 100*num_correct/nrow(X)
+if($scores != " ")
+	write(scores, $scores, format=$fmt)
 
-acc_str = "Accuracy (%): " + acc
-print(acc_str)
-write(acc_str, $accuracy)
+if($Y != " "){
+	y = read($Y)
 
-write(scores, $scores, format=$fmt)
+	# checking labels in y
+	# there should be only 2 distinct values in y
+	check_min = min(y)
+	check_max = max(y)
+	num_min = sum(ppred(y, check_min, "=="))
+	num_max = sum(ppred(y, check_max, "=="))
+	if(num_min + num_max != nrow(y)) print("please check y, it should contain only 2 labels")
+	else{
+		if(check_min != -1 | check_max != +1) 
+			y = 2/(check_max - check_min)*y - (check_min + check_max)/(check_max - check_min)
+	}
 
-pred_is_minus = ppred(pred, -1, "==")
-pred_is_plus = 1 - pred_is_minus
-y_is_minus = ppred(y, -1, "==")
-y_is_plus = 1 - y_is_minus
+	pred = 2*ppred(scores, 0, ">") - 1
+	num_correct = sum(ppred(pred, y, "=="))
+	acc = 100*num_correct/nrow(X)
 
-check_min_y_minus = sum(pred_is_minus*y_is_minus)
-check_min_y_plus = sum(pred_is_minus*y_is_plus)
-check_max_y_minus = sum(pred_is_plus*y_is_minus)
-check_max_y_plus = sum(pred_is_plus*y_is_plus)
+	acc_str = "Accuracy (%): " + acc
+	print(acc_str)
+	if($accuracy != " ")
+		write(acc_str, $accuracy)
 
-s = check_min_y_minus + "," + check_min_y_plus
-s = append(s, check_max_y_minus + "," + check_max_y_plus)
-s = append(s, "")
-write(s, $confusion)
+	if($confusion != " "){
+		pred_is_minus = ppred(pred, -1, "==")
+		pred_is_plus = 1 - pred_is_minus
+		y_is_minus = ppred(y, -1, "==")
+		y_is_plus = 1 - y_is_minus
+
+		check_min_y_minus = sum(pred_is_minus*y_is_minus)
+		check_min_y_plus = sum(pred_is_minus*y_is_plus)
+		check_max_y_minus = sum(pred_is_plus*y_is_minus)
+		check_max_y_plus = sum(pred_is_plus*y_is_plus)
+
+		s = check_min_y_minus + "," + check_min_y_plus
+		s = append(s, check_max_y_minus + "," + check_max_y_plus)
+		s = append(s, "")
+		write(s, $confusion)
+	}
+}

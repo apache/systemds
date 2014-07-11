@@ -20,6 +20,10 @@
 #														   fmt="csv"|"text"
 #
 
+$Y = " "
+$accuracy = " "
+$confusion = " "
+$probabilities = " "
 $fmt="text"
 
 D = read($X)
@@ -34,19 +38,26 @@ model = append(conditionals, prior)
 
 log_probs = D_w_ones %*% t(log(model))
 
-C = read($Y)
-pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+if($probabilities != " "){
+	mx = rowMaxs(log_probs)
+	ones = matrix(1, rows=1, cols=nrow(prior))
+	probs = log_probs - mx %*% ones
+	probs = exp(log_probs)/(rowSums(exp(log_probs)) %*% ones)
+	write(probs, $probabilities, format=$fmt)
+}
 
-acc_str = "Accuracy (%): " + acc
-print(acc_str)
-write(acc_str, $accuracy)
+if($Y != " "){
+	C = read($Y)
+	pred = rowIndexMax(log_probs)
+	acc = sum(ppred(pred, C, "==")) / numRows * 100
 
-mx = rowMaxs(log_probs)
-ones = matrix(1, rows=1, cols=nrow(prior))
-probs = log_probs - mx %*% ones
-probs = exp(log_probs)/(rowSums(exp(log_probs)) %*% ones)
-write(probs, $probabilities, format=$fmt)
+	acc_str = "Accuracy (%): " + acc
+	print(acc_str)
+	if($accuracy != " ")
+		write(acc_str, $accuracy)
 
-confusion_mat = table(pred, C)
-write(confusion_mat, $confusion, format="csv")
+	if($confusion != " "){
+		confusion_mat = table(pred, C)
+		write(confusion_mat, $confusion, format="csv")
+	}
+}

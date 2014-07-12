@@ -242,7 +242,7 @@ public class MatrixCharacteristics
 			MatrixCharacteristics mc = dims.get(mmtsj.input);
 			dim_out.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
-					     mc.numRowsPerBlock, mc.numColumnsPerBlock, mc.nonZero );
+					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof CombineBinaryInstruction )
 		{

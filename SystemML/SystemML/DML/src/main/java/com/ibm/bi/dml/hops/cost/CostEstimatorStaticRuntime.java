@@ -78,14 +78,18 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		//load time into mem
 		double ltime = 0;
-		if( !vs[0]._inmem )
+		if( !vs[0]._inmem ){
 			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen );
-		if( !vs[1]._inmem )
+			vs[0]._inmem = true;
+		}
+		if( !vs[1]._inmem ){
 			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen );
+			vs[1]._inmem = true;
+		}
 				
 		//exec time CP instruction
 		double etime = getInstTimeEstimate(inst.toString(), vs, args);
-	
+		
 		//write time caching
 		double wtime = 0;
 		//double wtime = getFSWriteTime( vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen );
@@ -128,6 +132,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		int numPMap = Math.min(numMap, maxPMap);
 		int numRed = computeNumReduceTasks( vs, mapOutIx, jinst.getJobType() );
 		int numPRed = Math.min(numRed, maxPRed);
+		LOG.debug("Meta nmap = "+numMap+", nred = "+numRed);
+		
 		
 		//step 0: export if inputs in mem
 		double exportCosts = 0; 

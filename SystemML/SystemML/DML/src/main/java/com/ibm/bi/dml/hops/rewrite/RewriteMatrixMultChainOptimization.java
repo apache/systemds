@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -81,31 +82,34 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	/**
 	 * mmChainDP(): Core method to perform dynamic programming on a given array
 	 * of matrix dimensions.
+	 * 
+	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
+	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
 	private int[][] mmChainDP(long dimArray[], int size) 
 	{
+		long dpMatrix[][] = new long[size][size]; //min cost table
+		int split[][] = new int[size][size]; //min cost index table
 
-		long dpMatrix[][] = new long[size][size];
-
-		int split[][] = new int[size][size];
-		int i, j, k, l;
-
-		for (i = 0; i < size; i++) {
-			for (j = 0; j < size; j++) {
-				dpMatrix[i][j] = 0;
-				split[i][j] = -1;
-			}
+		//init minimum costs for chains of length 1
+		for (int i = 0; i < size; i++) {
+			Arrays.fill(dpMatrix[i], 0);
+			Arrays.fill(split[i], -1);
 		}
 
-		long cost;
-		long MAX = Long.MAX_VALUE;
-		for (l = 2; l <= size; l++) { // chain length
-			for (i = 0; i < size - l + 1; i++) {
-				j = i + l - 1;
+		//compute cost-optimal chains for increasing chain sizes 
+		for (int l = 2; l <= size; l++) { // chain length
+			for (int i = 0; i < size - l + 1; i++) {
+				int j = i + l - 1;
 				// find cost of (i,j)
-				dpMatrix[i][j] = MAX;
-				for (k = i; k <= j - 1; k++) {
-					cost = dpMatrix[i][k] + dpMatrix[k + 1][j] + (dimArray[i] * dimArray[k + 1] * dimArray[j + 1]);
+				dpMatrix[i][j] = Long.MAX_VALUE;
+				for (int k = i; k <= j - 1; k++) 
+				{
+					//recursive cost computation
+					long cost = dpMatrix[i][k] + dpMatrix[k + 1][j] 
+							  + (dimArray[i] * dimArray[k + 1] * dimArray[j + 1]);
+					
+					//prune suboptimal
 					if (cost < dpMatrix[i][j]) {
 						dpMatrix[i][j] = cost;
 						split[i][j] = k;

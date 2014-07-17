@@ -21,10 +21,9 @@
 #    4) types1 - kind for attributes in S1 
 #    5) types2 - kind for attributes in S2
 #             kind=1 for scale, kind=2 for nominal, kind=3 for ordinal
-#    6) numvals - maximum number of categories in any categorical attribute
 # 
 # One output:    
-#    7) output directory in which following (maximum of) four statistics files are created
+#    6) output directory in which following (maximum of) four statistics files are created
 #        + bivar.scale.scale.stats - matrix containing scale-scale correlations
 #        + bivar.nominal.nominal.stats - 
 #        + bivar.nominal.scale.stats - 

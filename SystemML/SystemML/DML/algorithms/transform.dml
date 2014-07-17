@@ -1,0 +1,142 @@
+X = read($X)
+missing_index = read($missing_index)
+binning_index = read($binning_index)
+dummy_coding_index = read($dummy_coding_index)
+normalization = read($normalize_index) # 1 is mean subtraction, 2 is z-scoring
+
+last_data_col = ncol(X)-nrow(missing_index)
+missing_indicator_mat = X[,(last_data_col+1):ncol(X)]
+X = X[,1:last_data_col]
+
+num_missing = colSums(missing_indicator_mat)
+col_sums = colSums(X)
+ 
+# col 1: col index of missing indicator col
+#		 0 otherwise
+# col 2: num bins if binning is to be performed
+#		 0 otherwise
+# col 3: begin col index after dummy coding
+# col 4: end col index after dummy coding
+attrinfo = matrix(0, rows=ncol(X), cols=5)
+
+parfor(i in 1:nrow(missing_index), check=0){
+	attr_index_mv = castAsScalar(missing_index[i,1])
+	attrinfo[attr_index_mv, 1] = i
+}
+
+parfor(i in 1:nrow(binning_index), check=0){
+	attr_index_bin = castAsScalar(binning_index[i,1])
+	attrinfo[attr_index_bin,2] = castAsScalar(binning_index[i,2])
+}
+
+parfor(i in 1:nrow(normalization), check=0){
+	attr_index_normalization = castAsScalar(normalization[i,1])
+	attrinfo[attr_index_normalization,5] = castAsScalar(normalization[i,2])
+}
+
+# computing number of distinct vals using table
+count_distinct = matrix(0, rows=ncol(X), cols=1)
+parfor(i in 1:nrow(dummy_coding_index), check=0){
+	attr_index_dc = castAsScalar(dummy_coding_index[i,1])
+	
+	# if this attr is being binned also, then #bins defines dom size
+	this_attr_number_of_bins = castAsScalar(attrinfo[attr_index_dc,2])
+	
+	attrinfo[attr_index_dc,3] = 1
+	if(this_attr_number_of_bins > 0) count_distinct[attr_index_dc,1] = this_attr_number_of_bins
+	else{
+		hist = table(X[,attr_index_dc], 1)
+		count_distinct[attr_index_dc,1] = nrow(hist)
+	}
+}
+
+for(i in 1:ncol(X)){
+	# if this attr is being binned also, then #bins defines dom size
+	number_of_bins_this_attr = castAsScalar(attrinfo[i,2])
+	
+	if(i == 1) id_of_last_filled_col = 0
+	else id_of_last_filled_col = castAsScalar(attrinfo[(i-1),4])
+	
+	dummy_coding_indicator = castAsScalar(attrinfo[i,3])
+	
+	if(dummy_coding_indicator == 1){
+		if(number_of_bins_this_attr > 0) num_distinct_vals = number_of_bins_this_attr
+		else num_distinct_vals = castAsScalar(count_distinct[i,1])
+	
+		attrinfo[i,3] = id_of_last_filled_col + 1
+		attrinfo[i,4] = num_distinct_vals + id_of_last_filled_col
+	}else{
+		attrinfo[i,3] = id_of_last_filled_col + 1
+		attrinfo[i,4] = id_of_last_filled_col + 1
+	}
+}
+
+#write(attrinfo, "binning/attrinfo.mtx", format="csv")
+
+cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),4])
+new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
+parfor(i in 1:ncol(X), check=0){
+	col = X[,i]
+	
+	mv_col_id = castAsScalar(attrinfo[i,1])
+	num_bins = castAsScalar(attrinfo[i,2])
+	dummy_coding_beg_col = castAsScalar(attrinfo[i,3])
+	dummy_coding_end_col = castAsScalar(attrinfo[i,4])
+	normalization_type = castAsScalar(attrinfo[i,5])
+	
+	if(mv_col_id > 0){ 
+		# fill-in with global mean
+		num_vals = nrow(X) - castAsScalar(num_missing[1,mv_col_id])
+		global_mean = castAsScalar(col_sums[1,i])/num_vals
+		col = col + missing_indicator_mat[,mv_col_id] * global_mean
+	}
+	
+	if(num_bins > 0){
+		# generating equiwidth bins
+	
+		min_val = min(col)
+		max_val = max(col)
+	
+		bin_width = (max_val - min_val)/num_bins
+		
+		# note that max_val entries will get assigned num_bins+1
+		col = round((col - min_val)/bin_width - 0.5) + 1
+		out_of_range = ppred(col, num_bins, ">")
+		
+		col = (1-out_of_range)*col + out_of_range*num_bins
+		
+		#reusing attrinfo to store bin_defns
+		attrinfo[i,1] = bin_width
+		attrinfo[i,2] = min_val
+	}
+	
+	if(dummy_coding_beg_col == dummy_coding_end_col){
+		if(normalization_type == 1) col = col - avg(col)
+		if(normalization_type == 2) col = (col - avg(col))/sqrt(moment(col,2)*nrow(X)/(nrow(X)-1))
+		
+		new_X[,dummy_coding_beg_col] = col
+	}else
+		new_X[,dummy_coding_beg_col:dummy_coding_end_col] = table(seq(1, nrow(X), 1), col)
+}
+write(new_X, $transformed_X, format="csv")
+
+# col 1 contains attr index
+# col 2 contains the bin width
+# col 3 contains the min val in this dataset
+bin_defns = matrix(0, rows=nrow(binning_index), cols=3)
+parfor(i in 1:nrow(binning_index)){
+	attr_index = castAsScalar(binning_index[i,1])
+	bin_defns[i,1] = attr_index
+	bin_defns[i,2] = castAsScalar(attrinfo[attr_index,1])
+	bin_defns[i,3] = castAsScalar(attrinfo[attr_index,2])
+}
+write(bin_defns, $bin_defns, format="csv")
+
+# col 1 is col index in original data (X)
+# col 2 is begin col in transformed data
+# col 3 is end col in transformed data
+dummy_code_maps = matrix(0, rows=ncol(X), cols=3)
+dummy_code_maps[,1] = seq(1, ncol(X), 1)
+dummy_code_maps[,2] = attrinfo[,3]
+dummy_code_maps[,3] = attrinfo[,4]
+write(dummy_code_maps, $dummy_code_maps, format="csv")

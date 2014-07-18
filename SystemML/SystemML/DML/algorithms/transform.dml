@@ -12,12 +12,17 @@ num_missing = colSums(missing_indicator_mat)
 col_sums = colSums(X)
  
 # col 1: col index of missing indicator col
-#		 0 otherwise
+#		 0 otherwise (later used to store bin_width)
 # col 2: num bins if binning is to be performed
-#		 0 otherwise
+#		 0 otherwise (later used to store min_val)
 # col 3: begin col index after dummy coding
 # col 4: end col index after dummy coding
-attrinfo = matrix(0, rows=ncol(X), cols=5)
+# col 5: type of normalization
+#		 1: mean subtraction
+#		 2: z-scoring
+#		 (later used to store col mean)
+# col 6: (used later to store col std) 
+attrinfo = matrix(0, rows=ncol(X), cols=6)
 
 parfor(i in 1:nrow(missing_index), check=0){
 	attr_index_mv = castAsScalar(missing_index[i,1])
@@ -29,8 +34,11 @@ parfor(i in 1:nrow(binning_index), check=0){
 	attrinfo[attr_index_bin,2] = castAsScalar(binning_index[i,2])
 }
 
+# matrix to store mean and std for columns that require normalization
+normalization_map = matrix(0, rows=nrow(normalization), cols=3)
 parfor(i in 1:nrow(normalization), check=0){
 	attr_index_normalization = castAsScalar(normalization[i,1])
+	normalization_map[i,1] = attr_index_normalization
 	attrinfo[attr_index_normalization,5] = castAsScalar(normalization[i,2])
 }
 
@@ -111,8 +119,20 @@ parfor(i in 1:ncol(X), check=0){
 	}
 	
 	if(dummy_coding_beg_col == dummy_coding_end_col){
-		if(normalization_type == 1) col = col - avg(col)
-		if(normalization_type == 2) col = (col - avg(col))/sqrt(moment(col,2)*nrow(X)/(nrow(X)-1))
+		if(normalization_type == 1){
+			mu = avg(col)
+			col = col - mu
+			attrinfo[i,5] = mu
+			attrinfo[i,6] = -1
+		}
+		
+		if(normalization_type == 2){
+			mu = avg(col)
+			std = sqrt(moment(col,2)*nrow(X)/(nrow(X)-1))
+			col = (col - mu)/std
+			attrinfo[i,5] = mu
+			attrinfo[i,6] = std
+		}
 		
 		new_X[,dummy_coding_beg_col] = col
 	}else
@@ -140,3 +160,10 @@ dummy_code_maps[,1] = seq(1, ncol(X), 1)
 dummy_code_maps[,2] = attrinfo[,3]
 dummy_code_maps[,3] = attrinfo[,4]
 write(dummy_code_maps, $dummy_code_maps, format="csv")
+
+parfor(i in 1:nrow(normalization)){
+	attr_index_mu_std = castAsScalar(normalization[i,1])
+	normalization_map[i,2] = castAsScalar(attrinfo[attr_index_mu_std,5])
+	normalization_map[i,3] = castAsScalar(attrinfo[attr_index_mu_std,6])
+}
+write(normalization_map, $normalization_maps, format="csv")

@@ -8,7 +8,7 @@
 #-------------------------------------------------------------
 
 # Implements multiclass C-SVM with squared slack variables, 
-# uses one-against-the-rest binary-class classifiers
+# learns one-against-the-rest binary-class classifiers
 # 
 # Example Usage:
 # Assume SVM_HOME is set to the home of the dml script
@@ -36,104 +36,105 @@ $maxiter=100
 print("icpt=" + $icpt + " tol=" + $tol + " reg=" + $reg + " maxiter=" + $maxiter)
 
 X = read($X)
+
 check_X = sum(X)
 if(check_X == 0){
 	print("X has no non-zeros")
 }else{
-Y = read($Y)
-intercept = $icpt
-num_classes = $classes
-epsilon = $tol
-lambda = $reg
-max_iterations = $maxiter
+	Y = read($Y)
+	intercept = $icpt
+	num_classes = $classes
+	epsilon = $tol
+	lambda = $reg
+	max_iterations = $maxiter
  
-num_samples = nrow(X)
-num_features = ncol(X)
+	num_samples = nrow(X)
+	num_features = ncol(X)
 
-if (intercept == 1) {
- ones  = matrix(1, rows=num_samples, cols=1);
- X = append(X, ones);
-}
-
-num_rows_in_w = num_features
-if(intercept == 1){
-  num_rows_in_w = num_rows_in_w + 1
-}
-w = matrix(0, rows=num_rows_in_w, cols=num_classes)
-
-debug_mat = matrix(-1, rows=max_iterations, cols=num_classes)
-parfor(iter_class in 1:num_classes){		  
- Y_local = 2 * ppred(Y, iter_class, "==") - 1
- w_class = matrix(0, rows=num_features, cols=1)
- if (intercept == 1) {
- 	zero_matrix = matrix(0, rows=1, cols=1);
- 	w_class = t(append(t(w_class), zero_matrix));
- }
- 
- g_old = t(X) %*% Y_local
- s = g_old
-
- iter = 0
- continue = 1
- while(continue == 1)  {
-  # minimizing primal obj along direction s
-  step_sz = 0
-  Xd = X %*% s
-  wd = lambda * sum(w_class * s)
-  dd = lambda * sum(s * s)
-  continue1 = 1
-  while(continue1 == 1){
-   tmp_w = w_class + step_sz*s
-   out = 1 - Y_local * (X %*% tmp_w)
-   sv = ppred(out, 0, ">")
-   out = out * sv
-   g = wd + step_sz*dd - sum(out * Y_local * Xd)
-   h = dd + sum(Xd * sv * Xd)
-   step_sz = step_sz - g/h
-   if (g*g/h < 0.0000000001){
-    continue1 = 0
-   }
-  }
- 
-  #update weights
-  w_class = w_class + step_sz*s
- 
-  out = 1 - Y_local * (X %*% w_class)
-  sv = ppred(out, 0, ">")
-  out = sv * out
-  obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
-  g_new = t(X) %*% (out * Y_local) - lambda * w_class
-
-  tmp = sum(s * g_old)
-  
-  train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
-  print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
-  debug_mat[iter+1,iter_class] = obj	   
-   
-  if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
-   continue = 0
-  }
- 
-  #non-linear CG step
-  be = sum(g_new * g_new)/sum(g_old * g_old)
-  s = be * s + g_new
-  g_old = g_new
-
-  iter = iter + 1
- }
-
- w[,iter_class] = w_class
-}
-
-write(w, $model, format=$fmt)
-
-debug_str = "# Class, Iter, Obj"
-for(iter_class in 1:ncol(debug_mat)){
-	for(iter in 1:nrow(debug_mat)){
-		obj = castAsScalar(debug_mat[iter, iter_class])
-		if(obj != -1) 
-			debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
+	if (intercept == 1) {
+ 		ones  = matrix(1, rows=num_samples, cols=1);
+ 		X = append(X, ones);
 	}
-}
-write(debug_str, $debug_output)
+
+	num_rows_in_w = num_features
+	if(intercept == 1){
+		num_rows_in_w = num_rows_in_w + 1
+	}
+	w = matrix(0, rows=num_rows_in_w, cols=num_classes)
+
+	debug_mat = matrix(-1, rows=max_iterations, cols=num_classes)
+	parfor(iter_class in 1:num_classes){		  
+		Y_local = 2 * ppred(Y, iter_class, "==") - 1
+		w_class = matrix(0, rows=num_features, cols=1)
+		if (intercept == 1) {
+			zero_matrix = matrix(0, rows=1, cols=1);
+ 			w_class = t(append(t(w_class), zero_matrix));
+ 		}
+ 
+		g_old = t(X) %*% Y_local
+ 		s = g_old
+
+		iter = 0
+ 		continue = 1
+ 		while(continue == 1)  {
+  			# minimizing primal obj along direction s
+  			step_sz = 0
+  			Xd = X %*% s
+  			wd = lambda * sum(w_class * s)
+  			dd = lambda * sum(s * s)
+  			continue1 = 1
+  			while(continue1 == 1){
+   				tmp_w = w_class + step_sz*s
+   				out = 1 - Y_local * (X %*% tmp_w)
+   				sv = ppred(out, 0, ">")
+   				out = out * sv
+   				g = wd + step_sz*dd - sum(out * Y_local * Xd)
+   				h = dd + sum(Xd * sv * Xd)
+   				step_sz = step_sz - g/h
+   				if (g*g/h < 0.0000000001){
+    				continue1 = 0
+   				}
+  			}
+ 
+  			#update weights
+  			w_class = w_class + step_sz*s
+ 
+  			out = 1 - Y_local * (X %*% w_class)
+  			sv = ppred(out, 0, ">")
+  			out = sv * out
+  			obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
+  			g_new = t(X) %*% (out * Y_local) - lambda * w_class
+
+  			tmp = sum(s * g_old)
+  
+  			train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+  			print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
+  			debug_mat[iter+1,iter_class] = obj	   
+   
+  			if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
+   				continue = 0
+  			}
+ 
+  			#non-linear CG step
+  			be = sum(g_new * g_new)/sum(g_old * g_old)
+  			s = be * s + g_new
+  			g_old = g_new
+
+  			iter = iter + 1
+ 		}
+
+		w[,iter_class] = w_class
+	}
+
+	write(w, $model, format=$fmt)
+
+	debug_str = "# Class, Iter, Obj"
+	for(iter_class in 1:ncol(debug_mat)){
+		for(iter in 1:nrow(debug_mat)){
+			obj = castAsScalar(debug_mat[iter, iter_class])
+			if(obj != -1) 
+				debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
+		}
+	}
+	write(debug_str, $debug_output)
 }

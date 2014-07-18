@@ -70,29 +70,27 @@ for( i in 1:s1size, check=0) {
 	
 	if (pre_k1 == pre_k2) {
             if (pre_k1 == 1) {
-	        num_scale_scale_tests = num_scale_scale_tests + 1
-		pair2row[pre_pairID,1] = num_scale_scale_tests
+	        	num_scale_scale_tests = num_scale_scale_tests + 1
+				pair2row[pre_pairID,1] = num_scale_scale_tests
             } else {
-	      	num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-		pair2row[pre_pairID,1] = num_nominal_nominal_tests
+	      		num_nominal_nominal_tests = num_nominal_nominal_tests + 1
+				pair2row[pre_pairID,1] = num_nominal_nominal_tests
 		
-
                 if ( pre_k1 == 3 ) {
-		    num_ordinal_ordinal_tests = num_ordinal_ordinal_tests + 1
-		    pair2row[pre_pairID, 2] = num_ordinal_ordinal_tests
+		    		num_ordinal_ordinal_tests = num_ordinal_ordinal_tests + 1
+		    		pair2row[pre_pairID, 2] = num_ordinal_ordinal_tests
                 }
             }
         }
         else {
             if (pre_k1 == 1 | pre_k2 == 1) {
-	        num_nominal_scale_tests = num_nominal_scale_tests + 1
-		pair2row[pre_pairID,1] = num_nominal_scale_tests
+	        	num_nominal_scale_tests = num_nominal_scale_tests + 1
+				pair2row[pre_pairID,1] = num_nominal_scale_tests
+            } else {
+	        	num_nominal_nominal_tests = num_nominal_nominal_tests + 1
+				pair2row[pre_pairID,1] = num_nominal_nominal_tests 
             }
-            else {
-	        num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-		pair2row[pre_pairID,1] = num_nominal_nominal_tests 
-            }
-	}
+		}
     }
 }
 
@@ -136,7 +134,7 @@ parfor( i in 1:s1size, check=0) {
         k2 = castAsScalar(K2[1,j]);
         A2 = D[,a2];
 
-	rowid1 = castAsScalar(pair2row[pairID, 1])
+		rowid1 = castAsScalar(pair2row[pairID, 1])
     	rowid2 = castAsScalar(pair2row[pairID, 2])
 
         if (k1 == k2) {
@@ -145,8 +143,8 @@ parfor( i in 1:s1size, check=0) {
                 print("[" + i + "," + j + "] scale-scale");
                 r = bivar_ss(A1,A2);   
 		
-    		basestats_scale_scale[1,rowid1] = a1;
-		basestats_scale_scale[2,rowid1] = a2;	
+    			basestats_scale_scale[1,rowid1] = a1;
+				basestats_scale_scale[2,rowid1] = a2;	
                 basestats_scale_scale[3,rowid1] = r;
             } else {
                 # nominal-nominal or ordinal-ordinal
@@ -154,7 +152,7 @@ parfor( i in 1:s1size, check=0) {
                 [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
 
                 basestats_nominal_nominal[1,rowid1] = a1;
-		basestats_nominal_nominal[2,rowid1] = a2;	
+				basestats_nominal_nominal[2,rowid1] = a2;	
                 basestats_nominal_nominal[3,rowid1] = chisq;
                 basestats_nominal_nominal[4,rowid1] = df;
                 basestats_nominal_nominal[5,rowid1] = pval;
@@ -170,16 +168,14 @@ parfor( i in 1:s1size, check=0) {
                     basestats_ordinal_ordinal[3,rowid2] = sp;
                 }
             }
-        }
-        else {
+        } else {
             if (k1 == 1 | k2 == 1) {
                 # Scale-nominal/ordinal     
                 print("[" + i + "," + j + "] scale-categorical");
                 
-               if ( k1 == 1 ) {
-                    [eta,f, counts, means, vars] = bivar_sc(A1,A2);
-                }
-                else {
+               	if ( k1 == 1 ) {
+                	[eta,f, counts, means, vars] = bivar_sc(A1,A2);
+                } else {
                     [eta,f, counts, means, vars] = bivar_sc(A2,A1);
                 }
 		
@@ -187,14 +183,13 @@ parfor( i in 1:s1size, check=0) {
                 basestats_nominal_scale[2,rowid1] = a2;
                 basestats_nominal_scale[3,rowid1] = eta;
                 basestats_nominal_scale[4,rowid1] = f;
-            }
-            else {
+            } else {
                 # nominal-ordinal or ordinal-nominal
                 print("[" + i + "," + j + "] categorical-categorical");
                 [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
 
-		basestats_nominal_nominal[1,rowid1] = a1;
-		basestats_nominal_nominal[2,rowid1] = a2;
+				basestats_nominal_nominal[1,rowid1] = a1;
+				basestats_nominal_nominal[2,rowid1] = a2;
                 basestats_nominal_nominal[3,rowid1] = chisq;
                 basestats_nominal_nominal[4,rowid1] = df;
                 basestats_nominal_nominal[5,rowid1] = pval;

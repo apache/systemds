@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
@@ -105,12 +106,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//apply actual simplification rewrites (of childs incl checks)
 			hi = removeUnnecessaryVectorizeOperation(hi);       //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);  //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
-			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
+			hi = fuseDatagenAndBinaryOperation(hop, hi, i);     //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
+ 			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
 			hi = fuseBinarySubDAGToUnaryOperation(hi);          //e.g., X*(1-X)-> pow2mc(1)
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
-			//hi = removeUnecessaryPPred(hop, hi, i);             //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
+			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -228,6 +230,83 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * handle removal of unnecessary binary operations over rand data
+	 * 
+	 * rand*7 -> rand(min*7,max*7); rand+7 -> rand(min+7,max+7);
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop fuseDatagenAndBinaryOperation( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		if( hi instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			//left input rand and hence output matrix double, right scalar literal
+			if( left instanceof DataGenOp && ((DataGenOp)left).getDataGenMethod()==DataGenMethod.RAND &&
+				right instanceof LiteralOp )
+			{
+				DataGenOp inputGen = (DataGenOp)left;
+				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				Hop min = left.getInput().get(params.get(DataExpression.RAND_MIN));
+				Hop max = left.getInput().get(params.get(DataExpression.RAND_MAX));
+				double sval = ((LiteralOp)right).getDoubleValue();
+				
+				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
+					&& min instanceof LiteralOp && max instanceof LiteralOp )
+				{
+					//create fused data gen opterator
+					DataGenOp gen = null;
+					if( bop.getOp()==OpOp2.MULT )
+						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
+					else if( bop.getOp()==OpOp2.PLUS )		
+						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
+						
+					HopRewriteUtils.removeChildReference(parent, bop);
+					HopRewriteUtils.addChildReference(parent, gen, pos);
+					
+					hi = gen;
+				}
+			}
+			//right input rand and hence output matrix double, left scalar literal
+			else if( right instanceof DataGenOp && ((DataGenOp)right).getDataGenMethod()==DataGenMethod.RAND &&
+				left instanceof LiteralOp )
+			{
+				DataGenOp inputGen = (DataGenOp)right;
+				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				Hop min = right.getInput().get(params.get(DataExpression.RAND_MIN));
+				Hop max = right.getInput().get(params.get(DataExpression.RAND_MAX));
+				double sval = ((LiteralOp)left).getDoubleValue();
+				
+				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
+					&& min instanceof LiteralOp && max instanceof LiteralOp )
+				{
+					//create fused data gen opterator
+					DataGenOp gen = null;
+					if( bop.getOp()==OpOp2.MULT )
+						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
+					else if( bop.getOp()==OpOp2.PLUS )		
+						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
+						
+					HopRewriteUtils.removeChildReference(parent, bop);
+					HopRewriteUtils.addChildReference(parent, gen, pos);
+					
+					hi = gen;
+				}
+			}
 		}
 		
 		return hi;

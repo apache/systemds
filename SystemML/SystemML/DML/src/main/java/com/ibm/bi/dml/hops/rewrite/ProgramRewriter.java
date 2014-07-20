@@ -69,9 +69,9 @@ public class ProgramRewriter
 			//TODO: matrix mult chain opt should also become part of dynamic recompilation
 			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); //dependency: cse 
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
-				_dagRuleSet.add(     new RewriteAlgebraicSimplificationStatic()  ); //dependencies: common subexpression elimination
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: common subexpression elimination
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
-				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     ); 
 			
 			//add statment block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			

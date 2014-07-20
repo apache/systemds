@@ -251,6 +251,60 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	/**
+	 * Assumes that min and max are literal ops, needs to be checked from outside.
+	 * 
+	 * @param inputGen
+	 * @param scale
+	 * @param intercept
+	 * @return
+	 * @throws HopsException
+	 */
+	public static DataGenOp copyDataGenOp( DataGenOp inputGen, double scale, double shift ) 
+		throws HopsException
+	{		
+		HashMap<String, Integer> params = inputGen.getParamIndexMap();
+		Hop rows = inputGen.getInput().get(params.get(DataExpression.RAND_ROWS));
+		Hop cols = inputGen.getInput().get(params.get(DataExpression.RAND_COLS));
+		Hop min = inputGen.getInput().get(params.get(DataExpression.RAND_MIN));
+		Hop max = inputGen.getInput().get(params.get(DataExpression.RAND_MAX));
+		Hop pdf = inputGen.getInput().get(params.get(DataExpression.RAND_PDF));
+		Hop sparsity = inputGen.getInput().get(params.get(DataExpression.RAND_SPARSITY));
+		Hop seed = inputGen.getInput().get(params.get(DataExpression.RAND_SEED));
+		
+		//check for literal ops
+		if( !(min instanceof LiteralOp) || !(max instanceof LiteralOp))
+			return null;
+		
+		//scale and shift
+		double smin = getDoubleValue((LiteralOp) min);
+		double smax = getDoubleValue((LiteralOp) max);
+		smin = smin * scale + shift;
+		smax = smax * scale + shift;
+		
+		Hop sminHop = new LiteralOp(String.valueOf(smin), smin);
+		Hop smaxHop = new LiteralOp(String.valueOf(smax), smax);
+		
+		HashMap<String, Hop> params2 = new HashMap<String, Hop>();
+		params2.put(DataExpression.RAND_ROWS, rows);
+		params2.put(DataExpression.RAND_COLS, cols);
+		params2.put(DataExpression.RAND_MIN, sminHop);
+		params2.put(DataExpression.RAND_MAX, smaxHop);
+		params2.put(DataExpression.RAND_PDF, pdf);
+		params2.put(DataExpression.RAND_SPARSITY, sparsity);		
+		params2.put(DataExpression.RAND_SEED, seed );
+		
+		//note internal refresh size information
+		DataGenOp datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params2);
+		datagen.set_rows_in_block(inputGen.get_rows_in_block());
+		datagen.set_cols_in_block(inputGen.get_cols_in_block());
+		
+		if( smin==0 && smax==0 )
+			datagen.setNnz(0);
+			
+		return datagen;
+	}
+	
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		

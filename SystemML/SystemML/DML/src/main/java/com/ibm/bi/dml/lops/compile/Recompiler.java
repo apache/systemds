@@ -160,6 +160,13 @@ public class Recompiler
 			for( Hop hopRoot : hops )
 				rUpdateStatistics( hopRoot, vars );
 			
+			// replace scalar reads with literals 
+			if( !inplace ) {
+				Hop.resetVisitStatus(hops);
+				for( Hop hopRoot : hops )
+					rReplaceLiterals( hopRoot, vars );
+			}
+			
 			// dynamic hop rewrites
 			if( !inplace )
 				rewriter.rewriteHopDAGs( hops );
@@ -1039,7 +1046,55 @@ public class Recompiler
 		
 		hop.set_visited(VISIT_STATUS.DONE);
 	}
-	
+
+	/**
+	 * 
+	 * @param hop
+	 * @param vars
+	 * @throws DMLRuntimeException
+	 */
+	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
+		throws DMLRuntimeException
+	{
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return;
+
+		if( hop.getInput() != null )
+			for( int i=0; i<hop.getInput().size(); i++ )
+			{
+				Hop c = hop.getInput().get(i);
+				
+				if( c instanceof DataOp && ((DataOp)c).get_dataop() != DataOpTypes.PERSISTENTREAD 
+					&& c.get_dataType()==DataType.SCALAR )
+				{
+					ScalarObject dat = (ScalarObject)vars.get(c.get_name());
+					Hop literal = null;
+					switch( dat.getValueType() ) {
+						case INT:
+							literal = new LiteralOp(String.valueOf(dat.getLongValue()), dat.getLongValue());		
+							break;
+						case DOUBLE:
+							literal = new LiteralOp(String.valueOf(dat.getDoubleValue()), dat.getDoubleValue());		
+							break;						
+						case BOOLEAN:
+							literal = new LiteralOp(String.valueOf(dat.getBooleanValue()), dat.getBooleanValue());		
+							break;
+						//otherwise: do nothing
+					}
+					
+					//replace on demand 
+					if( literal != null )
+					{
+						HopRewriteUtils.removeChildReference(hop, c);
+						HopRewriteUtils.addChildReference(hop, literal, i);
+					}	
+				}
+				
+				rReplaceLiterals(c, vars);	
+			}
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+	}
 	
 	/**
 	 * 

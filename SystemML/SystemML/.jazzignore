@@ -1,0 +1,32 @@
+### Jazz Ignore 0
+# Ignored files and folders will not be committed, but may be modified during 
+# accept or update.  
+# - Ignore properties should contain a space separated list of filename patterns.  
+# - Each pattern is case sensitive and surrounded by braces ('{' and '}').  
+# - "*" matches zero or more characters.  
+# - "?" matches a single character.  
+# - The pattern list may be split across lines by ending the line with a 
+#     backslash and starting the next line with a tab.  
+# - Patterns in core.ignore prevent matching resources in the same 
+#     directory from being committed.  
+# - Patterns in core.ignore.recursive matching resources in the current 
+#     directory and all subdirectories from being committed.  
+# - The default value of core.ignore.recursive is *.class 
+# - The default value for core.ignore is bin 
+# 
+# To ignore shell scripts and hidden files in this subtree: 
+#     e.g: core.ignore.recursive = {*.sh} {\.*} 
+# 
+# To ignore resources named 'bin' in the current directory (but allow 
+#  them in any sub directorybelow): 
+#     e.g: core.ignore.recursive = {*.sh} {\.*} 
+# 
+# NOTE: modifying ignore files will not change the ignore status of 
+#     Eclipse derived resources.
+
+core.ignore.recursive= \
+	{*.class} 
+
+core.ignore= \
+	{.classpath} \
+	{bin} 

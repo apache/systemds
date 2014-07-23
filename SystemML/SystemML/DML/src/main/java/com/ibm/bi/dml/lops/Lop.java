@@ -681,8 +681,8 @@ public abstract class Lop
 		return false;
 	}
 	
-	public int distributedCacheInputIndex() {
-		return -1;
+	public int[] distributedCacheInputIndex() {
+		return new int[]{-1};
 	}
 
 }

@@ -802,7 +802,7 @@ public class Dag<N extends Lop>
 		
 		double footprint = 0;
 		if ( node instanceof MapMult ) {
-			int dcInputIndex = node.distributedCacheInputIndex();
+			int dcInputIndex = node.distributedCacheInputIndex()[0];
 			footprint = AggBinaryOp.footprintInMapper(
 					in1dims.getNum_rows(), in1dims.getNum_cols(), in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
 					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
@@ -1137,12 +1137,14 @@ public class Dag<N extends Lop>
 					if ( node.usesDistributedCache() ) {
 						// if an input to <code>node</code> comes from distributed cache
 						// then that input must get executed in one of the previous jobs.
-						int dcInputIndex = node.distributedCacheInputIndex();
-						N dcInput = (N) node.getInputs().get(dcInputIndex-1);
-						if ( (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
-							  &&  execNodes.contains(dcInput) )
-						{
-							queueThisNode = true;
+						int[] dcInputIndexes = node.distributedCacheInputIndex();
+						for( int dcInputIndex : dcInputIndexes ){
+							N dcInput = (N) node.getInputs().get(dcInputIndex-1);
+							if ( (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
+								  &&  execNodes.contains(dcInput) )
+							{
+								queueThisNode = true;
+							}
 						}
 						
 						// Limit the number of distributed cache inputs based on the available memory in mappers

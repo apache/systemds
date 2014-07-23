@@ -93,7 +93,7 @@ public class AppendM extends Lop
 		return true;
 	}
 	
-	public int distributedCacheInputIndex() {
-		return 2; // second input is from distributed cache
+	public int[] distributedCacheInputIndex() {
+		return new int[]{2}; // second input is from distributed cache
 	}
 }

@@ -155,8 +155,14 @@ public class MapMultChain extends Lop
 	}
 	
 	@Override
-	public int distributedCacheInputIndex() 
+	public int[] distributedCacheInputIndex() 
 	{
-		return 2;
+		if( _chainType == ChainType.XtXv )
+			return new int[]{2};
+		else if( _chainType == ChainType.XtwXv )
+			return new int[]{2,3};
+		
+		//error
+		return new int[]{-1};
 	}
 }

@@ -109,21 +109,21 @@ public class MapMult extends Lop
 	}
 	
 	@Override
-	public int distributedCacheInputIndex() 
-	{
+	public int[] distributedCacheInputIndex() 
+	{	
 		switch( _cacheType )
 		{
 			// first input is from distributed cache
 			case LEFT:
 			case LEFT_PART: 
-				return 1;
+				return new int[]{1};
 			
 			// second input is from distributed cache
 			case RIGHT:
 			case RIGHT_PART: 
-				return 2;
+				return new int[]{2};
 		}
 				
-		return -1; //error
+		return new int[]{-1}; //error
 	}
 }

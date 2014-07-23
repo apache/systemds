@@ -71,6 +71,7 @@ w = matrix(0, rows=num_rows_in_w, cols=1)
 g_old = t(X) %*% Y
 s = g_old
 
+Xw = matrix(0, rows=nrow(X), cols=1)
 debug_str = "# Iter, Obj"
 iter = 0
 continue = 1
@@ -82,8 +83,8 @@ while(continue == 1 & iter < maxiterations)  {
     dd = lambda * sum(s * s)
     continue1 = 1
     while(continue1 == 1){
-		tmp_w = w + step_sz*s
-      	out = 1 - Y * (X %*% tmp_w)
+		tmp_Xw = Xw + step_sz*Xd
+      	out = 1 - Y * (tmp_Xw)
       	sv = ppred(out, 0, ">")
       	out = out * sv
       	g = wd + step_sz*dd - sum(out * Y * Xd)
@@ -96,8 +97,9 @@ while(continue == 1 & iter < maxiterations)  {
 
     #update weights
     w = w + step_sz*s
-
-    out = 1 - Y * (X %*% w)
+	Xw = Xw + step_sz*Xd
+	
+    out = 1 - Y * Xw
     sv = ppred(out, 0, ">")
     out = sv * out
     obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)

@@ -1,16 +1,15 @@
-X = read($X)
+original_X = read($X)
 missing_index = read($missing_index)
 binning_index = read($binning_index)
 dummy_coding_index = read($dummy_coding_index)
 normalization = read($normalize_index) # 1 is mean subtraction, 2 is z-scoring
 
-last_data_col = ncol(X)-nrow(missing_index)
-missing_indicator_mat = X[,(last_data_col+1):ncol(X)]
-X = X[,1:last_data_col]
+isMissingValueImputationRequired = sum(missing_index)
 
-num_missing = colSums(missing_indicator_mat)
-col_sums = colSums(X)
- 
+last_data_col = ncol(original_X)-nrow(missing_index)
+if(isMissingValueImputationRequired == 0) X = original_X
+else X = original_X[,1:last_data_col]
+	
 # col 1: col index of missing indicator col
 #		 0 otherwise (later used to store bin_width)
 # col 2: num bins if binning is to be performed
@@ -24,22 +23,30 @@ col_sums = colSums(X)
 # col 6: (used later to store col std) 
 attrinfo = matrix(0, rows=ncol(X), cols=6)
 
+if(isMissingValueImputationRequired > 0){	
+	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
+	num_missing = colSums(missing_indicator_mat)
+	col_sums = colSums(X)
+}
+
 parfor(i in 1:nrow(missing_index), check=0){
 	attr_index_mv = castAsScalar(missing_index[i,1])
-	attrinfo[attr_index_mv, 1] = i
+	if(attr_index_mv > 0) attrinfo[attr_index_mv, 1] = i
 }
 
 parfor(i in 1:nrow(binning_index), check=0){
 	attr_index_bin = castAsScalar(binning_index[i,1])
-	attrinfo[attr_index_bin,2] = castAsScalar(binning_index[i,2])
+	if(attr_index_bin > 0) attrinfo[attr_index_bin,2] = castAsScalar(binning_index[i,2])
 }
 
 # matrix to store mean and std for columns that require normalization
 normalization_map = matrix(0, rows=nrow(normalization), cols=3)
 parfor(i in 1:nrow(normalization), check=0){
 	attr_index_normalization = castAsScalar(normalization[i,1])
-	normalization_map[i,1] = attr_index_normalization
-	attrinfo[attr_index_normalization,5] = castAsScalar(normalization[i,2])
+	if(attr_index_normalization > 0){
+		normalization_map[i,1] = attr_index_normalization
+		attrinfo[attr_index_normalization,5] = castAsScalar(normalization[i,2])
+	}
 }
 
 # computing number of distinct vals using table
@@ -47,14 +54,16 @@ count_distinct = matrix(0, rows=ncol(X), cols=1)
 parfor(i in 1:nrow(dummy_coding_index), check=0){
 	attr_index_dc = castAsScalar(dummy_coding_index[i,1])
 	
-	# if this attr is being binned also, then #bins defines dom size
-	this_attr_number_of_bins = castAsScalar(attrinfo[attr_index_dc,2])
-	
-	attrinfo[attr_index_dc,3] = 1
-	if(this_attr_number_of_bins > 0) count_distinct[attr_index_dc,1] = this_attr_number_of_bins
-	else{
-		hist = table(X[,attr_index_dc], 1)
-		count_distinct[attr_index_dc,1] = nrow(hist)
+	if(attr_index_dc > 0){	
+		# if this attr is being binned also, then #bins defines dom size
+		this_attr_number_of_bins = castAsScalar(attrinfo[attr_index_dc,2])
+
+		attrinfo[attr_index_dc,3] = 1
+		if(this_attr_number_of_bins > 0) count_distinct[attr_index_dc,1] = this_attr_number_of_bins
+		else{
+			hist = table(X[,attr_index_dc], 1)
+			count_distinct[attr_index_dc,1] = nrow(hist)
+		}
 	}
 }
 
@@ -117,7 +126,7 @@ parfor(i in 1:ncol(X), check=0){
 		attrinfo[i,1] = bin_width
 		attrinfo[i,2] = min_val
 	}
-	
+
 	if(dummy_coding_beg_col == dummy_coding_end_col){
 		if(normalization_type == 1){
 			mu = avg(col)
@@ -140,30 +149,39 @@ parfor(i in 1:ncol(X), check=0){
 }
 write(new_X, $transformed_X, format="csv")
 
-# col 1 contains attr index
-# col 2 contains the bin width
-# col 3 contains the min val in this dataset
-bin_defns = matrix(0, rows=nrow(binning_index), cols=3)
-parfor(i in 1:nrow(binning_index)){
-	attr_index = castAsScalar(binning_index[i,1])
-	bin_defns[i,1] = attr_index
-	bin_defns[i,2] = castAsScalar(attrinfo[attr_index,1])
-	bin_defns[i,3] = castAsScalar(attrinfo[attr_index,2])
+isBinningRequired = sum(binning_index[,1])
+if(isBinningRequired > 0){
+	# col 1 contains attr index
+	# col 2 contains the bin width
+	# col 3 contains the min val in this dataset
+	bin_defns = matrix(0, rows=nrow(binning_index), cols=3)
+	parfor(i in 1:nrow(binning_index)){
+		attr_index = castAsScalar(binning_index[i,1])
+		bin_defns[i,1] = attr_index
+		bin_defns[i,2] = castAsScalar(attrinfo[attr_index,1])
+		bin_defns[i,3] = castAsScalar(attrinfo[attr_index,2])
+	}
+	write(bin_defns, $bin_defns, format="csv")
 }
-write(bin_defns, $bin_defns, format="csv")
 
-# col 1 is col index in original data (X)
-# col 2 is begin col in transformed data
-# col 3 is end col in transformed data
-dummy_code_maps = matrix(0, rows=ncol(X), cols=3)
-dummy_code_maps[,1] = seq(1, ncol(X), 1)
-dummy_code_maps[,2] = attrinfo[,3]
-dummy_code_maps[,3] = attrinfo[,4]
-write(dummy_code_maps, $dummy_code_maps, format="csv")
-
-parfor(i in 1:nrow(normalization)){
-	attr_index_mu_std = castAsScalar(normalization[i,1])
-	normalization_map[i,2] = castAsScalar(attrinfo[attr_index_mu_std,5])
-	normalization_map[i,3] = castAsScalar(attrinfo[attr_index_mu_std,6])
+isDummyCodingRequired = sum(dummy_coding_index)
+if(isDummyCodingRequired > 0){
+	# col 1 is col index in original data (X)
+	# col 2 is begin col in transformed data
+	# col 3 is end col in transformed data
+	dummy_code_maps = matrix(0, rows=ncol(X), cols=3)
+	dummy_code_maps[,1] = seq(1, ncol(X), 1)
+	dummy_code_maps[,2] = attrinfo[,3]
+	dummy_code_maps[,3] = attrinfo[,4]
+	write(dummy_code_maps, $dummy_code_maps, format="csv")
 }
-write(normalization_map, $normalization_maps, format="csv")
+
+isNormalizationRequired = sum(normalization[,1])
+if(isNormalizationRequired > 0){
+	parfor(i in 1:nrow(normalization)){
+		attr_index_mu_std = castAsScalar(normalization[i,1])
+		normalization_map[i,2] = castAsScalar(attrinfo[attr_index_mu_std,5])
+		normalization_map[i,3] = castAsScalar(attrinfo[attr_index_mu_std,6])
+	}
+	write(normalization_map, $normalization_maps, format="csv")
+}

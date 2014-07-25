@@ -18,7 +18,7 @@
 #                           ncol(X)   x k: do not add intercept
 #                           ncol(X)+1 x k: add intercept as given by the last B-row
 #                           if k > 1, use only B[, 1] unless it is Multinomial Logit (dfam=3)
-# M     String  ---     Location to write the matrix of predicted response means/probabilities:
+# M     String  " "     Location to write the matrix of predicted response means/probabilities:
 #                           nrow(X) x 1  : for Power-type distributions (dfam=1)
 #                           nrow(X) x 2  : for Binomial distribution (dfam=2), column 2 is "No"
 #                           nrow(X) x k+1: for Multinomial Logit (dfam=3), col# k+1 is baseline
@@ -26,6 +26,7 @@
 #                           nrow(X) x 1  : for all distributions (dfam=1 or 2 or 3)
 #                           nrow(X) x 2  : for Binomial (dfam=2) given by (#pos, #neg) counts
 #                           nrow(X) x k+1: for Multinomial (dfam=3) given by category counts
+# O     String  " "     Location to write the printed statistics; by default is standard output
 # dfam  Int     1       GLM distribution family: 1 = Power, 2 = Binomial, 3 = Multinomial Logit
 # vpow  Double  0.0     Power for Variance defined as (mean)^power (ignored if dfam != 1):
 #                       0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
@@ -34,23 +35,51 @@
 # lpow  Double  1.0     Power for Link function defined as (mean)^power (ignored if link != 1):
 #                       -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
 # disp  Double  1.0     Dispersion value, when available
+# fmt   String "text"   Matrix output format, usually "text" or "csv" (for matrices only)
 # ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix M of predicted means/probabilities, some printed statistics (see the script)
-# TO DO : CONVERT THE PRINTED STATISTICS INTO BIG-R FORMAT 
-#     
+# OUTPUT: Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
+# The statistics are printed one per each line, in the following CSV format:
+# NAME,[COLUMN],[SCALED T/F],VALUE
+#   NAME   is the string identifier for the statistic, see the table below.
+#   COLUMN is an optional integer value that specifies the Y-column for per-column statistics;
+#          note that a Binomial/Multinomial one-column Y input is converted into multi-column.
+#   SCALED is an optional Boolean value (T=TRUE, F=FALSE) that tells whether or not scaling by
+#          the input dispersion parameter (disp) has been applied to this statistic.
+#   VALUE  is the value of the statistic.
 #
-# Example with distribution = "Binomial.logit":
-# hadoop jar SystemML.jar -f GLM_HOME/GLM-score.dml -nvargs dfam=2 link=2
-#     X=INPUT_DIR/X_test B=INPUT_DIR/betas Y=INPUT_DIR/Y_test M=OUTPUT_DIR/means 
+# NAME                  COLUMN  SCALED  MEANING
+# ---------------------------------------------------------------------------------------------
+# LOGLHOOD_Z                      +     Log-Likelihood Z-score (in st.dev's from mean)
+# LOGLHOOD_Z_PVAL                 +     Log-Likelihood Z-score p-value
+# PEARSON_X2                      +     Pearson residual X^2 statistic
+# PEARSON_X2_BY_DF                +     Pearson X^2 divided by degrees of freedom
+# PEARSON_X2_PVAL                 +     Pearson X^2 p-value
+# DEVIANCE_G2                     +     Deviance from saturated model G^2 statistic
+# DEVIANCE_G2_BY_DF               +     Deviance G^2 divided by degrees of freedom
+# DEVIANCE_G2_PVAL                +     Deviance G^2 p-value
+# AVG_TOT_Y               +             Average of Y column for a single response value
+# STDEV_TOT_Y             +             St.Dev. of Y column for a single response value
+# AVG_RES_Y               +             Average of column residual, i.e. of Y - mean(Y|X)
+# STDEV_RES_Y             +             St.Dev. of column residual, i.e. of Y - mean(Y|X)
+# PRED_STDEV_RES          +       +     Model-predicted St.Dev. of column residual
+# PLAIN_R2                +             Plain R^2 statistic for Y column
+# ADJUSTED_R2             +             Adjusted R^2 statistic for Y column
+# ---------------------------------------------------------------------------------------------
 #
-# Default values for input parameters
+# Example with distribution = "Poisson.log":
+# hadoop jar SystemML.jar -f GLM_HOME/GLM-predict.dml -nvargs dfam=1 vpow=1.0 link=1 lpow=0.0
+#   disp=3.0 fmt=csv X=INPUT_DIR/X B=INPUT_DIR/B Y=INPUT_DIR/Y M=OUTPUT_DIR/M O=OUTPUT_DIR/out.csv
 
+# Default values for input parameters:
+$M = " ";
 $Y = " ";
+$O = " ";
 $dfam = 1;
 $vpow = 0.0;
 $link = 0;
 $lpow = 1.0;
 $disp = 1.0;
+$fmt = "text";
 
 dist_type  = $dfam;
 var_power  = 0.0 + $vpow;
@@ -92,7 +121,10 @@ ones_rec = matrix (1, rows = num_records, cols = 1);
 linear_terms = X %*% beta + ones_rec %*% intercept;
 [means, vars] =
     glm_means_and_vars (linear_terms, dist_type, var_power, link_type, link_power);
-write (means, $M, format="text");
+    
+if ($M != " ") {
+    write (means, $M, format=$fmt);
+}
 
 if ($Y != " ")
 {
@@ -101,11 +133,18 @@ if ($Y != " ")
     
     # Statistics To Compute:
     
-    X2_pearson  = 0.0 / 0.0;
-    df_pearson  = -1;
-    G2_deviance = 0.0 / 0.0;
-    df_deviance = -1;
-    Z_logl      = 0.0 / 0.0;  #  Only for Binomial and Multinomial
+    Z_logl             = 0.0 / 0.0;
+    Z_logl_pValue      = 0.0 / 0.0;
+    X2_pearson         = 0.0 / 0.0;
+    df_pearson         = -1;
+    G2_deviance        = 0.0 / 0.0;
+    df_deviance        = -1;
+    X2_pearson_pValue  = 0.0 / 0.0;
+    G2_deviance_pValue = 0.0 / 0.0;
+    X2_scaled          = 0.0 / 0.0;
+    X2_scaled_pValue   = 0.0 / 0.0;
+    G2_scaled          = 0.0 / 0.0;
+    G2_scaled_pValue   = 0.0 / 0.0;
     
     if (dist_type == 1 & link_type == 1) {
     #
@@ -177,37 +216,25 @@ if ($Y != " ")
         G2_deviance = 2 * sum (Y * log ((Y + zero_Y) / (means + zero_Y)));
         df_deviance = (num_records - num_features) * (ncol(Y) - 1);
     }}
-
+    
+    
     if (Z_logl == Z_logl) {
         Z_logl_pValue = cumulativeProbability (target = Z_logl, dist = "normal", mean = 0, sd = 1);
-        print ("Bi/Multinomial Log-Likelihood Deviation = " + Z_logl);
-        print ("Bi/Multinomial Log-Likelihood Deviation p-value = " + Z_logl_pValue);
-    } else {
-        print ("Bi/Multinomial Log-Likelihood Deviation is not available");
     }
-        
-    print ("Residual statistics: Degrees of Freedom for Pearson = " + df_pearson + ", for deviance = " + df_deviance);
-
-    X2_pearson_pValue  = 1 - cumulativeProbability (target = X2_pearson,  dist = "chisq", df = df_pearson);
-    G2_deviance_pValue = 1 - cumulativeProbability (target = G2_deviance, dist = "chisq", df = df_deviance);
-
-    print ("Residual statistics for dispersion = 1.0 :");
-    print ("  Pearson  X^2 = " + X2_pearson  + ",  X^2 / DF = " + (X2_pearson  / df_pearson));
-    print ("  Pearson  X^2 p-value = " + X2_pearson_pValue);
-    print ("  Deviance G^2 = " + G2_deviance + ",  G^2 / DF = " + (G2_deviance / df_deviance));
-    print ("  Deviance G^2 p-value = " + G2_deviance_pValue);
-
-    if (dispersion != 1.0) {
-        X2_scaled = X2_pearson / dispersion;
-        G2_scaled = G2_deviance / dispersion;
+    if (X2_pearson == X2_pearson) {
+        X2_pearson_pValue = 1 - cumulativeProbability (target = X2_pearson, dist = "chisq", df = df_pearson);
+    }
+    if (G2_deviance == G2_deviance) {
+        G2_deviance_pValue = 1 - cumulativeProbability (target = G2_deviance, dist = "chisq", df = df_deviance);
+    }
+    
+    X2_scaled = X2_pearson / dispersion;
+    G2_scaled = G2_deviance / dispersion;
+    if (X2_scaled == X2_scaled) {
         X2_scaled_pValue = 1 - cumulativeProbability (target = X2_scaled, dist = "chisq", df = df_pearson);
+    }
+    if (G2_scaled == G2_scaled) {
         G2_scaled_pValue = 1 - cumulativeProbability (target = G2_scaled, dist = "chisq", df = df_deviance);
-
-        print ("Residual statistics for dispersion = " + dispersion + " :");
-        print ("  Pearson  X^2 = " + X2_scaled + ",  X^2 / DF = " + (X2_scaled / df_pearson));
-        print ("  Pearson  X^2 p-value = " + X2_scaled_pValue);
-        print ("  Deviance G^2 = " + G2_scaled + ",  G^2 / DF = " + (G2_scaled / df_deviance));
-        print ("  Deviance G^2 p-value = " + G2_scaled_pValue);
     }
     
     avg_tot_Y = colSums (    Y    ) / sum (Y_counts);
@@ -228,16 +255,37 @@ if ($Y != " ")
     
     predicted_avg_var_res_Y = dispersion * colSums (vars) / sum (Y_counts);
     
-    # print ("Average Y_counts = " + (sum (Y_counts) / num_records));
+    # PREPARING THE OUTPUT CSV STATISTICS FILE
+    
+    str = "LOGLHOOD_Z,,F," + Z_logl;
+    str = append (str, "LOGLHOOD_Z_PVAL,,F," + Z_logl_pValue);
+    str = append (str, "PEARSON_X2,,F," + X2_pearson);
+    str = append (str, "PEARSON_X2_BY_DF,,F," + (X2_pearson / df_pearson));
+    str = append (str, "PEARSON_X2_PVAL,,F," + X2_pearson_pValue);
+    str = append (str, "DEVIANCE_G2,,F," + G2_deviance);
+    str = append (str, "DEVIANCE_G2_BY_DF,,F," + (G2_deviance / df_deviance));
+    str = append (str, "DEVIANCE_G2_PVAL,,F," + G2_deviance_pValue);
+    str = append (str, "PEARSON_X2,,T," + X2_scaled);
+    str = append (str, "PEARSON_X2_BY_DF,,T," + (X2_scaled / df_pearson));
+    str = append (str, "PEARSON_X2_PVAL,,T," + X2_scaled_pValue);
+    str = append (str, "DEVIANCE_G2,,T," + G2_scaled);
+    str = append (str, "DEVIANCE_G2_BY_DF,,T," + (G2_scaled / df_deviance));
+    str = append (str, "DEVIANCE_G2_PVAL,,T," + G2_scaled_pValue);
 
     for (i in 1:ncol(Y)) {
-        print ("Overall statistics for column " + i + " of Y :");
-        print ("  Average of Y (in single response) = " + castAsScalar (avg_tot_Y [1, i]));
-        print ("  St.Dev. of Y (in single response) = " + castAsScalar (sqrt (var_tot_Y [1, i])));
-        print ("  Average of residual Y - mean(Y|X) = " + castAsScalar (avg_res_Y [1, i]));
-        print ("  St.Dev. of residual Y - mean(Y|X) = " + castAsScalar (sqrt (var_res_Y [1, i])));
-        print ("  GLM-Predicted St.Dev. of residual = " + castAsScalar (sqrt (predicted_avg_var_res_Y [1, i])));
-        print ("  R^2: plain = " + castAsScalar (plain_R2 [1, i]) + "; adjusted = " + castAsScalar (adjust_R2 [1, i]));
+        str = append (str, "AVG_TOT_Y," + i + ",," + castAsScalar (avg_tot_Y [1, i]));
+        str = append (str, "STDEV_TOT_Y," + i + ",," + castAsScalar (sqrt (var_tot_Y [1, i])));
+        str = append (str, "AVG_RES_Y," + i + ",," + castAsScalar (avg_res_Y [1, i]));
+        str = append (str, "STDEV_RES_Y," + i + ",," + castAsScalar (sqrt (var_res_Y [1, i])));
+        str = append (str, "PRED_STDEV_RES," + i + ",T," + castAsScalar (sqrt (predicted_avg_var_res_Y [1, i])));
+        str = append (str, "PLAIN_R2," + i + ",," + castAsScalar (plain_R2 [1, i]));
+        str = append (str, "ADJUSTED_R2," + i + ",," + castAsScalar (adjust_R2 [1, i]));
+    }
+    
+    if ($O != " ") {
+        write (str, $O);
+    } else {
+        print (str);
     }
 }
 

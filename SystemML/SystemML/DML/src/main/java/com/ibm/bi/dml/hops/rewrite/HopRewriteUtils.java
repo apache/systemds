@@ -16,6 +16,7 @@ import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -416,6 +417,15 @@ public class HopRewriteUtils
 		hop.setNnz( nnz );
 	}
 	
+	public static void refreshOutputParameters( Hop hnew, Hop hold )
+	{
+		hnew.set_dim1( hold.get_dim1() );
+		hnew.set_dim2( hold.get_dim2() );
+		hnew.set_rows_in_block(hold.get_rows_in_block());
+		hnew.set_cols_in_block(hold.get_cols_in_block());
+		hnew.refreshSizeInformation();
+	}
+	
 	public static void copyLineNumbers( Hop src, Hop dest )
 	{
 		dest.setAllPositions(src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
@@ -482,6 +492,14 @@ public class HopRewriteUtils
 	public static boolean isValidOp( OpOp1 input, OpOp1[] validTab )
 	{
 		for( OpOp1 valid : validTab )
+			if( valid == input )
+				return true;
+		return false;
+	}
+	
+	public static boolean isValidOp( OpOp2 input, OpOp2[] validTab )
+	{
+		for( OpOp2 valid : validTab )
 			if( valid == input )
 				return true;
 		return false;

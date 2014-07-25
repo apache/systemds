@@ -10,6 +10,9 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
@@ -25,6 +28,7 @@ import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions
@@ -40,6 +44,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationDynamic.class.getName());
+	
+	
+	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
+	
+	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 
+	
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
@@ -108,6 +120,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);  //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);     //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
  			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
+ 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
+ 			hi = simplifyBushyBinaryOperation(hop, hi, i);      //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
 			hi = fuseBinarySubDAGToUnaryOperation(hi);          //e.g., X*(1-X)-> pow2mc(1)
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
@@ -149,6 +163,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					//cleanup if only consumer of intermediate
 					if( dright.getParent().size()<1 ) 
 						HopRewriteUtils.removeAllChildReferences( dright );
+					
+					LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
 				}
 			}
 			//check and remove left vectorized scalar
@@ -163,6 +179,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					//cleanup if only consumer of intermediate
 					if( dleft.getParent().size()<1 ) 
 						HopRewriteUtils.removeAllChildReferences( dleft );
+					
+					LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
 				}
 			}
 			
@@ -205,6 +223,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
+
+					LOG.debug("Applied removeUnnecessaryBinaryOperation1");
 				}
 			}
 			//X-0 -> X 
@@ -216,6 +236,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
+
+					LOG.debug("Applied removeUnnecessaryBinaryOperation2");
 				}
 			}
 			//1*X -> X
@@ -227,6 +249,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, right, pos);
 					hi = right;
+
+					LOG.debug("Applied removeUnnecessaryBinaryOperation3");
 				}
 			}
 			
@@ -279,6 +303,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, gen, pos);
 					
 					hi = gen;
+					
+					LOG.debug("Applied fuseDatagenAndBinaryOperation1");
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
@@ -305,6 +331,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, gen, pos);
 					
 					hi = gen;
+					
+					LOG.debug("Applied fuseDatagenAndBinaryOperation2");
 				}
 			}
 		}
@@ -336,6 +364,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					bop.getInput().remove(1);
 					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
+
+					LOG.debug("Applied simplifyBinaryToUnaryOperation1");
 				}
 				else if ( bop.getOp()==OpOp2.MULT ) //X*X -> X^2
 				{
@@ -344,8 +374,177 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					bop.getInput().remove(1);
 					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
+					
+					LOG.debug("Applied simplifyBinaryToUnaryOperation2");
 				}
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * (X-Y*X) -> (1-Y)*X,    (Y*X-X) -> (Y-1)*X
+	 * (X+Y*X) -> (1+Y)*X,    (Y*X+X) -> (Y+1)*X
+	 * 
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifyDistributiveBinaryOperation( Hop parent, Hop hi, int pos )
+	{
+		
+		if( hi instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			//(X+Y*X) -> (1+Y)*X,    (Y*X+X) -> (Y+1)*X
+			//(X-Y*X) -> (1-Y)*X,    (Y*X-X) -> (Y-1)*X
+			boolean applied = false;
+			if( left.get_dataType()==DataType.MATRIX && right.get_dataType()==DataType.MATRIX 
+				&& HopRewriteUtils.isValidOp(bop.getOp(), LOOKUP_VALID_DISTRIBUTIVE_BINARY) )
+			{
+				Hop X = null; Hop Y = null;
+				if( left instanceof BinaryOp && ((BinaryOp)left).getOp()==OpOp2.MULT ) //(Y*X-X) -> (Y-1)*X
+				{
+					Hop leftC1 = left.getInput().get(0);
+					Hop leftC2 = left.getInput().get(1);
+					//System.out.println("aOp2:"+((BinaryOp)left).getOp()+": "+leftC1.get_name()+" "+leftC2.get_name());
+						
+					if( leftC1.get_dataType()==DataType.MATRIX && leftC2.get_dataType()==DataType.MATRIX &&
+						(right == leftC1 || right == leftC2) && leftC1 !=leftC2 ){ //any mult order
+						X = right;
+						Y = ( right == leftC1 ) ? leftC2 : leftC1;
+					}
+					if( X != null ){ //rewrite 'binary +/-' 
+						HopRewriteUtils.removeChildReference(parent, hi);
+						LiteralOp literal = new LiteralOp("1",1);
+						BinaryOp plus = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), bop.getOp(), Y, literal);
+						HopRewriteUtils.refreshOutputParameters(plus, right);						
+						BinaryOp mult = new BinaryOp(left.get_name(), left.get_dataType(), left.get_valueType(), OpOp2.MULT, plus, X);
+						HopRewriteUtils.refreshOutputParameters(mult, left);
+						
+						HopRewriteUtils.addChildReference(parent, mult, pos);							
+						hi = mult;
+						applied = true;
+						
+						LOG.debug("Applied simplifyDistributiveBinaryOperation1");
+					}					
+				}	
+				
+				if( !applied && right instanceof BinaryOp && ((BinaryOp)right).getOp()==OpOp2.MULT ) //(X-Y*X) -> (1-Y)*X
+				{
+					Hop rightC1 = right.getInput().get(0);
+					Hop rightC2 = right.getInput().get(1);
+					if( rightC1.get_dataType()==DataType.MATRIX && rightC2.get_dataType()==DataType.MATRIX &&
+						(left == rightC1 || left == rightC2) && rightC1 !=rightC2 ){ //any mult order
+						X = left;
+						Y = ( left == rightC1 ) ? rightC2 : rightC1;
+					}
+					if( X != null ){ //rewrite '+/- binary'
+						HopRewriteUtils.removeChildReference(parent, hi);
+						LiteralOp literal = new LiteralOp("1",1);
+						BinaryOp plus = new BinaryOp(left.get_name(), left.get_dataType(), left.get_valueType(), bop.getOp(), literal, Y);
+						HopRewriteUtils.refreshOutputParameters(plus, left);						
+						BinaryOp mult = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), OpOp2.MULT, plus, X);
+						HopRewriteUtils.refreshOutputParameters(mult, right);
+						
+						HopRewriteUtils.addChildReference(parent, mult, pos);	
+						hi = mult;
+
+						LOG.debug("Applied simplifyDistributiveBinaryOperation2");
+					}
+				}	
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
+	 * (X+(Y+(Z%*%v))) -> (X+Y)+(Z%*%v)
+	 * 
+	 * Note: Restriction ba() at leaf and root instead of data at leaf to not reorganize too
+	 * eagerly, which would loose additional rewrite potential. This rewrite has two goals
+	 * (1) enable XtwXv, and increase piggybacking potential by creating bushy trees.
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifyBushyBinaryOperation( Hop parent, Hop hi, int pos )
+	{
+		if( hi instanceof BinaryOp && parent instanceof AggBinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			OpOp2 op = bop.getOp();
+			
+			if( left.get_dataType()==DataType.MATRIX && right.get_dataType()==DataType.MATRIX &&
+				HopRewriteUtils.isValidOp(op, LOOKUP_VALID_ASSOCIATIVE_BINARY) )
+			{
+				boolean applied = false;
+				
+				if( right instanceof BinaryOp )
+				{
+					BinaryOp bop2 = (BinaryOp)right;
+					Hop left2 = bop2.getInput().get(0);
+					Hop right2 = bop2.getInput().get(1);
+					OpOp2 op2 = bop2.getOp();
+					
+					if( op==op2 && right2.get_dataType()==DataType.MATRIX 
+						&& (right2 instanceof AggBinaryOp) )
+					{
+						//(X*(Y*op()) -> (X*Y)*op()
+						HopRewriteUtils.removeChildReference(parent, bop);
+						
+						BinaryOp bop3 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, op, left, left2);
+						HopRewriteUtils.refreshOutputParameters(bop3, bop);
+						BinaryOp bop4 = new BinaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, op, bop3, right2);
+						HopRewriteUtils.refreshOutputParameters(bop4, bop2);
+						
+						HopRewriteUtils.addChildReference(parent, bop4, pos);	
+						hi = bop4;
+						
+						applied = true;
+						
+						LOG.debug("Applied simplifyBushyBinaryOperation1");
+					}
+				}
+				
+				if( !applied && left instanceof BinaryOp )
+				{
+					BinaryOp bop2 = (BinaryOp)left;
+					Hop left2 = bop2.getInput().get(0);
+					Hop right2 = bop2.getInput().get(1);
+					OpOp2 op2 = bop2.getOp();
+					
+					if( op==op2 && left2.get_dataType()==DataType.MATRIX 
+						&& (left2 instanceof AggBinaryOp) )
+					{
+						//((op()*X)*Y) -> op()*(X*Y)
+						HopRewriteUtils.removeChildReference(parent, bop);
+						
+						BinaryOp bop3 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, op, right, right2);
+						HopRewriteUtils.refreshOutputParameters(bop3, bop2);
+						BinaryOp bop4 = new BinaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, op, left2, bop3);
+						HopRewriteUtils.refreshOutputParameters(bop4, bop);
+						
+						HopRewriteUtils.addChildReference(parent, bop4, pos);	
+						hi = bop4;
+						
+						LOG.debug("Applied simplifyBushyBinaryOperation2");
+					}
+				}
+			}
+			
 		}
 		
 		return hi;
@@ -392,6 +591,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeChildReference(left, left1);
 							HopRewriteUtils.removeChildReference(left, left2);
 						}
+						
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation1");
 					}
 				}				
 				if( right instanceof BinaryOp ) //X*(1-X)
@@ -412,6 +613,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeChildReference(right, right1);
 							HopRewriteUtils.removeChildReference(right, right2);
 						}
+						
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation2");
 					}
 				}
 			}
@@ -447,6 +650,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					//cleanup if only consumer of intermediate
 					if( hi2.getParent().size()<1 ) 
 						HopRewriteUtils.removeAllChildReferences( hi2 );
+					
+					LOG.debug("Applied simplifySumDiagToTrace");
 				}
 			}
 				
@@ -501,6 +706,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				hi = sum;
+				
+				LOG.debug("Applied simplifyTraceMatrixMult");
 			}	
 		}
 		
@@ -531,6 +738,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi );
 				if( hi2.getParent().size()<1 ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
+				
+				LOG.debug("Applied removeUnecessaryTranspose");
 			}
 		}
 		

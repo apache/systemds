@@ -9,6 +9,9 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -36,8 +39,19 @@ public class ProgramRewriter
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final boolean LDEBUG = false; //internal local debug level
+	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
+	
+	static{
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("com.ibm.bi.dml.hops.rewrite")
+				  .setLevel((Level) Level.DEBUG);
+		}
+		
+	}
 	
 	public ProgramRewriter()
 	{
@@ -87,10 +101,13 @@ public class ProgramRewriter
 			//_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); 
 			
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
-				_dagRuleSet.add(     new RewriteAlgebraicSimplificationDynamic()        ); //dependencies: common subexpression elimination
+			{
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: common subexpression elimination
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: common subexpression elimination
+			}
 			
-			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
-				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false)); 
+			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false) ); //dependency: simplifications (no need to merge leafs again) 
 			
 		}
 	}

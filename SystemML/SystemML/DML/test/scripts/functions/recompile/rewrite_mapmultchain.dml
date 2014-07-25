@@ -1,0 +1,22 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+X = read($1);
+P = read($2);
+v = read($3);
+k = ncol(P);
+
+if(1==1){}
+
+Q = P * (X %*% v);
+HV = t(X) %*% (Q - P * (rowSums (Q) %*% matrix(1, rows=1, cols=k)));
+
+if(1==1){}
+
+write(HV, $4);       

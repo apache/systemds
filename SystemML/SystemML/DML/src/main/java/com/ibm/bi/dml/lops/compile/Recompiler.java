@@ -25,6 +25,7 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.CSVReBlock;
@@ -108,7 +110,7 @@ public class Recompiler
 	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
 	
 	/**
-	 * Re-initializes the recompiler according to the current optimzier flags.
+	 * Re-initializes the recompiler according to the current optimizer flags.
 	 */
 	public static void reinitRecompiler()
 	{
@@ -154,18 +156,18 @@ public class Recompiler
 				for( Hop hopRoot : hops )
 					rClearLops( hopRoot );
 			}
-			
-			// refresh matrix characteristics (update stats)			
-			Hop.resetVisitStatus(hops);
-			for( Hop hopRoot : hops )
-				rUpdateStatistics( hopRoot, vars );
-			
+
 			// replace scalar reads with literals 
 			if( !inplace ) {
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
 					rReplaceLiterals( hopRoot, vars );
 			}
+			
+			// refresh matrix characteristics (update stats)			
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
+				rUpdateStatistics( hopRoot, vars );
 			
 			// dynamic hop rewrites
 			if( !inplace )
@@ -191,6 +193,9 @@ public class Recompiler
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
+		//System.out.println("RECOMPILATION");
+		//System.out.println(Explain.explain(newInst));
 		
 		return newInst;
 	}
@@ -236,6 +241,12 @@ public class Recompiler
 				// clear existing lops
 				hops.resetVisitStatus();
 				rClearLops( hops );	
+			}
+			
+			// replace scalar reads with literals 
+			if( !inplace ) {
+				hops.resetVisitStatus();
+				rReplaceLiterals( hops, vars );
 			}
 			
 			// refresh matrix characteristics (update stats)			
@@ -285,7 +296,7 @@ public class Recompiler
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
-
+		
 		//need for synchronization as we do temp changes in shared hops/lops
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) 
@@ -1064,6 +1075,7 @@ public class Recompiler
 			{
 				Hop c = hop.getInput().get(i);
 				
+				//scalar read - literal replacement
 				if( c instanceof DataOp && ((DataOp)c).get_dataop() != DataOpTypes.PERSISTENTREAD 
 					&& c.get_dataType()==DataType.SCALAR )
 				{
@@ -1089,8 +1101,32 @@ public class Recompiler
 						HopRewriteUtils.addChildReference(hop, literal, i);
 					}	
 				}
-				
-				rReplaceLiterals(c, vars);	
+				//as.scalar/matrix read - literal replacement
+				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
+					&& c.getInput().get(0) instanceof DataOp )
+				{
+					String varname = c.getInput().get(0).get_name();
+					
+					//cast as scalar (see VariableCPInstruction)
+					MatrixObject mo = ((MatrixObject)vars.get(varname));
+					MatrixBlock mBlock = mo.acquireRead();
+					if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
+						throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
+					double value = mBlock.getValue(0,0);
+					mo.release();
+					
+					//literal substitution (always double)
+					Hop literal = new LiteralOp(String.valueOf(value), value);
+					
+					//replace on demand 
+					HopRewriteUtils.removeChildReference(hop, c);
+					HopRewriteUtils.addChildReference(hop, literal, i);	
+				}
+				//recursively process childs
+				else 
+				{
+					rReplaceLiterals(c, vars);	
+				}
 			}
 		
 		hop.set_visited(VISIT_STATUS.DONE);

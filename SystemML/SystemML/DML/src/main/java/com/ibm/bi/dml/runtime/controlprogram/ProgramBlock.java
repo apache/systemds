@@ -416,12 +416,18 @@ public class ProgramBlock
 				{
 					MatrixBlock mb = mo.acquireRead();	
 					boolean sparse1 = mb.isInSparseFormat();
+					long nnz1 = mb.getNonZeros();
 					synchronized( mb ) { //potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
 					}
 					boolean sparse2 = mb.isInSparseFormat();
+					long nnz2 = mb.getNonZeros();
 					mo.release();
+					
+					if( nnz1 != nnz2 )
+						throw new DMLRuntimeException("Matrix nnz meta data was incorrect: ("+varname+", actual="+nnz1+", expected="+nnz2+", inst="+lastInst+")");
+							
 					
 					if( sparse1 != sparse2 )
 						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2+", inst="+lastInst+")");

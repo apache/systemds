@@ -221,7 +221,8 @@ public class LibMatrixDatagen
 		// if invoked from CP: estimated NNZ is for entire matrix
 		// if invoked from CP: estimated NNZ is for one block
 		final long estnnz = (invokedFromCP ? (long)(sparsity * rows * cols) : nnzInBlocks[0]);
-		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
+		boolean lsparse = (MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz )
+				           || (min==0.0 && max==0.0) );
 		out.reset(rows, cols, lsparse);
 		
 		// Special case shortcuts for efficiency
@@ -229,6 +230,7 @@ public class LibMatrixDatagen
 			//specific cases for efficiency
 			if ( min == 0.0 && max == 0.0 ) { //all zeros
 				// nothing to do here
+				out.nonZeros = 0;
 				return;
 			} 
 			else if( !out.sparse && sparsity==1.0d && min == max ) //equal values

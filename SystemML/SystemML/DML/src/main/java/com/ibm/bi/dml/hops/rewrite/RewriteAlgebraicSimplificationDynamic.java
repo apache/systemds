@@ -226,7 +226,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		if( hi instanceof LeftIndexingOp  ) //left indexing op
 		{
-			Hop input1 = hi.getInput().get(1); //lhs matrix
+			Hop input1 = hi.getInput().get(0); //lhs matrix
 			Hop input2 = hi.getInput().get(1); //rhs matrix
 			
 			if(   input1.getNnz()==0 //nnz original known and empty

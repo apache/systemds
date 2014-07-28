@@ -512,6 +512,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		Timing time = _monitor ? new Timing(true) : null;
 		
+		//partitioning on demand (note: for fused data partitioning and execute the optimizer set 
+		//the data partitioner to NONE in order to prevent any side effects)
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
 			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
@@ -545,8 +547,11 @@ public class ParForProgramBlock extends ForProgramBlock
 						
 						//store original and partitioned matrix (for reuse if applicable)
 						_variablesDPOriginal.put(var, moVar);
-						if( ALLOW_REUSE_PARTITION_VARS &&  ProgramRecompiler.isApplicableForReusePartitionedMatrix(_sb.getDMLProg(), _sb, var))
+						if(    ALLOW_REUSE_PARTITION_VARS 
+							&& ProgramRecompiler.isApplicableForReusePartitionedMatrix(_sb.getDMLProg(), _sb, var) ) 
+						{
 							_variablesDPReuse.put(var, dpdatNew);
+						}
 						
 						LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
 					}
@@ -637,6 +642,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		//reset flags/modifications made by optimizer
 		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
 		    ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, dpvar, ec, false);
+		if( _execMode == PExecMode.REMOTE_MR_DP ) //release forced exectypes for fused dp/exec
+			ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, _colocatedDPMatrix, ec, false); 
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
 		//execute exit instructions (usually empty)

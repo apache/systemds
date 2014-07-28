@@ -7,24 +7,27 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 #
-# STRATIFIED BIVARIATE STATISTICS, VERSION 3
+# STRATIFIED BIVARIATE STATISTICS, VERSION 4
 # 
 # INPUT PARAMETERS:
 # -----------------------------------------------------------------------------
 # NAME  TYPE   DEFAULT  MEANING
 # -----------------------------------------------------------------------------
 # X     String  ---     Location to read matrix X that has all 1-st covariates
-# Y     String  ""      Location to read matrix Y that has all 2-nd covariates
-# YisX  Int     0       0 = matrix Y is provided; 1 = Y is the same as X
-# S     String  ""      Location to read matrix S that has the stratum column
-# SisX  Int     0       0 = matrix S is provided; 1 = S is the same as X
-# Xcid  String  ---     Location to read the 1-st covariate X-column indices
-# Ycid  String  ---     Location to read the 2-nd covariate Y-column indices
-# Scid  Int     1       Column index of the stratum column in S
-# Out   String  ---     Location to store the output matrix (see below)
+# Y     String  " "     Location to read matrix Y that has all 2-nd covariates
+#                       the default value " " means "use X in place of Y"
+# S     String  " "     Location to read matrix S that has the stratum column
+#                       the default value " " means "use X in place of S"
+# Xcid  String  " "     Location to read the 1-st covariate X-column indices
+#                       the default value " " means "use columns 1 : ncol(X)"
+# Ycid  String  " "     Location to read the 2-nd covariate Y-column indices
+#                       the default value " " means "use columns 1 : ncol(Y)"
+# Scid  Int      1      Column index of the stratum column in S
+# O     String  ---     Location to store the output matrix (see below)
+# fmt   String "text"   Matrix output format, usually "text" or "csv"
 # -----------------------------------------------------------------------------
 # Note: the stratum column must contain small positive integers; all fractional
-# values are rounded; strata with ID <= 0 or  are treated as missing.
+# values are rounded; strata with ID <= 0 or NaN are treated as missing.
 #
 # OUTPUT MATRIX:
 # One row per each distinct pair (1st covariate, 2nd covariate)
@@ -69,18 +72,18 @@
 #
 # EXAMPLES:
 #
-# hadoop jar SystemML.jar -f PATH/stratstats.dml -nvargs X=PATH/stratstats_test_data.mtx YisX=1 SisX=1
-#     Xcid=PATH/stratstats_test_X.mtx Ycid=PATH/stratstats_test_Y.mtx Scid=1 Out=PATH/stratstats_test_output.mtx
+# hadoop jar SystemML.jar -f stratstats.dml -nvargs X=INPUT_DIR/X.mtx Xcid=INPUT_DIR/Xcid.mtx
+#     Y=INPUT_DIR/Y.mtx Ycid=INPUT_DIR/Ycid.mtx S=INPUT_DIR/S.mtx Scid=1 O=OUTPUT_DIR/Out.mtx fmt=csv
 #
-# hadoop jar SystemML.jar -f PATH/stratstats.dml -nvargs X=hdfs:/user/admin/X.mtx Y=hdfs:/user/admin/Y.mtx
-#     S=hdfs:/user/admin/S.mtx Xcid=hdfs:/user/admin/Xcid.mtx Ycid=hdfs:/user/admin/Ycid.mtx Scid=1
-#     Out=hdfs:/user/admin/Out.mtx
+# hadoop jar SystemML.jar -f stratstats.dml -nvargs X=INPUT_DIR/Data.mtx Xcid=INPUT_DIR/Xcid.mtx
+#     Ycid=INPUT_DIR/Ycid.mtx Scid=1 O=OUTPUT_DIR/Out.mtx
 
-$Y = "";
-$YisX = 0;
-$S = "";
-$SisX = 0;
+$Y = " ";
+$S = " ";
+$Xcid = " ";
+$Ycid = " ";
 $Scid = 1;
+$fmt = "text";
 
 print ("BEGIN STRATIFIED STATISTICS SCRIPT");
 
@@ -88,26 +91,34 @@ print ("Reading the input matrices...");
 
 XwithNaNs = read ($X);
 stratum_column_id = $Scid;
-if ($YisX == 0) {
+if ($Y != " ") {
     YwithNaNs = read ($Y);
 } else {
     YwithNaNs = XwithNaNs;
 }
-if ($SisX == 0) {
+if ($S != " ") {
     SwithNaNsFull = read ($S);
     SwithNaNs = SwithNaNsFull [, stratum_column_id];
 } else {
     SwithNaNs = XwithNaNs [, stratum_column_id];
 }
-Xcols = read ($Xcid);
-Ycols = read ($Ycid);
+if ($Xcid != " ") {
+    Xcols = read ($Xcid);
+} else {
+    Xcols = t(seq (1, ncol (XwithNaNs), 1));
+}
+if ($Ycid != " ") {
+    Ycols = read ($Ycid);
+} else {
+    Ycols = t(seq (1, ncol (YwithNaNs), 1));
+}
 tXcols = t(Xcols);
 tYcols = t(Ycols);
 
-num_records  = nrow(XwithNaNs);
-num_attrs    = ncol(XwithNaNs);
-num_attrs_X  = ncol(Xcols);
-num_attrs_Y  = ncol(Ycols);
+num_records  = nrow (XwithNaNs);
+num_attrs    = ncol (XwithNaNs);
+num_attrs_X  = ncol (Xcols);
+num_attrs_Y  = ncol (Ycols);
 num_attrs_XY = num_attrs_X * num_attrs_Y;
 
 print ("Preparing the covariates...");
@@ -116,16 +127,16 @@ XnoNaNs = replace (target = XwithNaNs, pattern = 0.0/0.0, replacement = 0);
 YnoNaNs = replace (target = YwithNaNs, pattern = 0.0/0.0, replacement = 0);
 XNaNmask = ppred (XwithNaNs, XwithNaNs, "==");
 YNaNmask = ppred (YwithNaNs, YwithNaNs, "==");
-one_to_num_attrs_X = seq (1, num_attrs_X);
-one_to_num_attrs_Y = seq (1, num_attrs_Y);
+one_to_num_attrs_X = seq (1, num_attrs_X, 1);
+one_to_num_attrs_Y = seq (1, num_attrs_Y, 1);
 ProjX = matrix (0, rows = num_attrs, cols = num_attrs_X);
 ProjY = matrix (0, rows = num_attrs, cols = num_attrs_Y);
 
-ProjX_ctable = ctable (tXcols, one_to_num_attrs_X);
-ProjX [1:nrow(ProjX_ctable), ] = ProjX_ctable;
+ProjX_ctable = table (tXcols, one_to_num_attrs_X);
+ProjX [1 : nrow (ProjX_ctable), ] = ProjX_ctable;
 
-ProjY_ctable = ctable (tYcols, one_to_num_attrs_Y);
-ProjY [1:nrow(ProjY_ctable), ] = ProjY_ctable;
+ProjY_ctable = table (tYcols, one_to_num_attrs_Y);
+ProjY [1 : nrow (ProjY_ctable), ] = ProjY_ctable;
 
 X = XnoNaNs %*% ProjX;
 Y = YnoNaNs %*% ProjY;
@@ -141,13 +152,13 @@ Proj_good_stratumID = removeEmpty (target = Proj_good_stratumID, margin = "rows"
 vector_of_good_stratumIDs = Proj_good_stratumID %*% S;
 vector_of_good_stratumIDs = vector_of_good_stratumIDs + (1 - min (vector_of_good_stratumIDs));
 num_records_with_good_stratumID = nrow (Proj_good_stratumID);
-one_to_num_records_with_good_stratumID = seq (1, num_records_with_good_stratumID);
+one_to_num_records_with_good_stratumID = seq (1, num_records_with_good_stratumID, 1);
 
 # Create a group-by summation matrix for records over stratum IDs
 # "with_empty" means with stratum IDs that never occur in records
 
 num_strata_with_empty = max (vector_of_good_stratumIDs);
-StrataSummator_with_empty = ctable (vector_of_good_stratumIDs, one_to_num_records_with_good_stratumID);
+StrataSummator_with_empty = table (vector_of_good_stratumIDs, one_to_num_records_with_good_stratumID);
 StrataSummator = removeEmpty (target = StrataSummator_with_empty, margin = "rows");
 StrataSummator = StrataSummator %*% Proj_good_stratumID;
 num_strata = nrow (StrataSummator);
@@ -219,12 +230,12 @@ sum_XX_forXY_rectangle = t(X * X)  %*% Y_mask;
 sum_Y_forXY_rectangle  = t(X_mask) %*% Y;
 sum_YY_forXY_rectangle = t(X_mask) %*% (Y * Y);
 sum_XY_rectangle       = t(X)      %*% Y;
-cnt_XY_global       = matrix (cnt_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = true);
-sum_X_forXY_global  = matrix (sum_X_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = true);
-sum_XX_forXY_global = matrix (sum_XX_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = true);
-sum_Y_forXY_global  = matrix (sum_Y_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = true);
-sum_YY_forXY_global = matrix (sum_YY_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = true);
-sum_XY_global       = matrix (sum_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = true);
+cnt_XY_global       = matrix (cnt_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_X_forXY_global  = matrix (sum_X_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_XX_forXY_global = matrix (sum_XX_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_Y_forXY_global  = matrix (sum_Y_forXY_rectangle,  rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_YY_forXY_global = matrix (sum_YY_forXY_rectangle, rows = 1, cols = num_attrs_XY, byrow = TRUE);
+sum_XY_global       = matrix (sum_XY_rectangle,       rows = 1, cols = num_attrs_XY, byrow = TRUE);
 ones_XY = matrix (1.0, rows = 1, cols = num_attrs_XY);
 
 # Compute the global bivariate statistics for output
@@ -340,7 +351,7 @@ OutMtx [39, ] = colSums (ppred (Cnt_XY_per_stratum, 2, ">="));  # Number of stra
 OutMtx = t(OutMtx);
 
 print ("Writing the output matrix...");
-write (OutMtx, $Out, format="text");
+write (OutMtx, $O, format=$fmt);
 print ("END STRATIFIED STATISTICS SCRIPT");
 
 

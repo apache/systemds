@@ -52,14 +52,14 @@ public class OptimizerHeuristic extends OptimizerRuleBased
 	 * MR execution makes sense if all the other constraints are given. 
 	 */
 	@Override
-	protected boolean isLargeProblem(OptNode pn)
+	protected boolean isLargeProblem(OptNode pn, double M)
 	{
 		boolean ret = false;
 		
 		try 
 		{
 			double T = _cost.getEstimate(TestMeasure.EXEC_TIME, pn);
-			ret = (T >= EXEC_TIME_THRESHOLD);
+			ret = (T >= EXEC_TIME_THRESHOLD) && (M > PROB_SIZE_THRESHOLD_MB );
 		} 
 		catch (DMLRuntimeException e) 
 		{

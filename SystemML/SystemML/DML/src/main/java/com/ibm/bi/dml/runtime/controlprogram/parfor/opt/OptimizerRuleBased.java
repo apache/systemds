@@ -107,8 +107,9 @@ public class OptimizerRuleBased extends Optimizer
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
-	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
+	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations (min)
+	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
+	public static final double PROB_SIZE_THRESHOLD_MB = 8*1024*1024; //wrt overall memory consumption (min)
 	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;     
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 5;    
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
@@ -785,7 +786,7 @@ public class OptimizerRuleBased extends Optimizer
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
 			//MR if problem is large enough and remote parallelism is larger than local   
-			else if( _lk < _N && _lk < _rk && isLargeProblem(n) )
+			else if( _lk < _N && _lk < _rk && isLargeProblem(n, M) )
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
@@ -837,9 +838,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param pn
 	 * @return
 	 */
-	protected boolean isLargeProblem(OptNode pn)
+	protected boolean isLargeProblem(OptNode pn, double M)
 	{
-		return (_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE );
+		return ((_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE )
+				&& M > PROB_SIZE_THRESHOLD_MB ); //operations at least larger than 8MB
 	}
 	
 	/**

@@ -264,29 +264,36 @@ public class RemoteDPParWorkerReducer extends ParWorker
 	private MatrixBlock collectBinaryBlock( Iterator<Writable> valueList ) 
 		throws IOException 
 	{
-		//reset reuse block, keep configured representation
-		_partition.reset(_rlen, _clen);	
-
-		while( valueList.hasNext() )
+		try
 		{
-			PairWritableBlock pairValue = (PairWritableBlock)valueList.next();
-			int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
-			int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
-			MatrixBlock block = pairValue.block;
-			if( !_partition.isInSparseFormat() ) //DENSE
-			{
-				_partition.copy( row_offset, row_offset+block.getNumRows()-1, 
-						   col_offset, col_offset+block.getNumColumns()-1,
-						   pairValue.block, false ); 
-			}
-			else //SPARSE 
-			{
-				_partition.appendToSparse(pairValue.block, row_offset, col_offset);
-			}
-		}
+			//reset reuse block, keep configured representation
+			_partition.reset(_rlen, _clen);	
 
-		//final partition cleanup
-		cleanupCollectedMatrixPartition( _partition.isInSparseFormat() );
+			while( valueList.hasNext() )
+			{
+				PairWritableBlock pairValue = (PairWritableBlock)valueList.next();
+				int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
+				int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
+				MatrixBlock block = pairValue.block;
+				if( !_partition.isInSparseFormat() ) //DENSE
+				{
+					_partition.copy( row_offset, row_offset+block.getNumRows()-1, 
+							   col_offset, col_offset+block.getNumColumns()-1,
+							   pairValue.block, false ); 
+				}
+				else //SPARSE 
+				{
+					_partition.appendToSparse(pairValue.block, row_offset, col_offset);
+				}
+			}
+
+			//final partition cleanup
+			cleanupCollectedMatrixPartition( _partition.isInSparseFormat() );
+		}
+		catch(DMLRuntimeException ex)
+		{
+			throw new IOException(ex);
+		}
 		
 		return _partition;
 	}

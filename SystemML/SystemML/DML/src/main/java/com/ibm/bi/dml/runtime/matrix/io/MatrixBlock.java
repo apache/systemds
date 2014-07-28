@@ -279,20 +279,40 @@ public class MatrixBlock extends MatrixValue
 	}
 	
 	/**
+	 * @throws DMLRuntimeException 
 	 * 
 	 */
 	public void allocateDenseBlock() 
+		throws DMLRuntimeException 
 	{
 		allocateDenseBlock( true );
 	}
 	
+	/**
+	 * 
+	 * @param clearNNZ
+	 * @throws DMLRuntimeException
+	 */
 	public void allocateDenseBlock(boolean clearNNZ) 
+		throws DMLRuntimeException 
 	{
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length < limit )
-			denseBlock=new double[limit];
-		if( clearNNZ )
+		long limit = (long)rlen * clen;
+		
+		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
+		if( limit >= Integer.MAX_VALUE ) {
+			throw new DMLRuntimeException("Dense in-memory matrix block exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
+					                      "Please, reduce the JVM heapsize to execute this in MR.");
+		}
+		
+		//allocate block if non-existing or too small
+		if(denseBlock == null || denseBlock.length < limit ) {
+			denseBlock = new double[(int)limit];
+		}
+		
+		//clear nnz if necessary
+		if( clearNNZ ) {
 			nonZeros = 0;
+		}
 	}
 	
 	/**
@@ -1366,8 +1386,10 @@ public class MatrixBlock extends MatrixValue
 	 *                 destination if not present in src and (2) to internally maintain nnz
 	 *           false, assume empty index range in destination and do not maintain nnz
 	 *                  (the invoker is responsible to recompute nnz after all copies are done) 
+	 * @throws DMLRuntimeException 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ ) 
+		throws DMLRuntimeException 
 	{	
 		if(sparse && src.sparse)
 			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ);
@@ -1452,7 +1474,8 @@ public class MatrixBlock extends MatrixValue
 		}
 	}
 	
-	private void copySparseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
+	private void copySparseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ) 
+		throws DMLRuntimeException
 	{	
 		//handle empty src and dest
 		if( src.isEmptyBlock(false) )
@@ -1555,7 +1578,8 @@ public class MatrixBlock extends MatrixValue
 		}
 	}
 	
-	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
+	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ) 
+		throws DMLRuntimeException
 	{
 		//handle empty src and dest
 		if( src.isEmptyBlock(false) )
@@ -1583,7 +1607,8 @@ public class MatrixBlock extends MatrixValue
 	}
 	
 	
-	public void copyRowArrayToDense(int destRow, double[] src, int sourceStart)
+	public void copyRowArrayToDense(int destRow, double[] src, int sourceStart) 
+		throws DMLRuntimeException
 	{
 		//handle empty dest
 		if(denseBlock==null)
@@ -1659,38 +1684,45 @@ public class MatrixBlock extends MatrixValue
 		//check type information
 		if( bformat<0 || bformat>=BlockType.values().length )
 			throw new IOException("invalid format: '"+bformat+"' (need to be 0-"+BlockType.values().length+".");
-						
+			
 		BlockType format=BlockType.values()[bformat];
-		switch(format)
+		try 
 		{
-			case ULTRA_SPARSE_BLOCK:
-				nonZeros = in.readInt(); 
-				sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
-				cleanupBlock(true, true); //clean all
-				if( sparse )
-					readUltraSparseBlock(in);
-				else
-					readUltraSparseToDense(in);
-				break;
-			case SPARSE_BLOCK:
-				nonZeros = in.readInt(); 
-				sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
-				cleanupBlock(sparse, !sparse); 
-				if( sparse )
-					readSparseBlock(in);
-				else
-					readSparseToDense(in);
-				break;
-			case DENSE_BLOCK:
-				sparse = false;
-				cleanupBlock(false, true); //reuse dense
-				readDenseBlock(in); //always dense in-mem if dense on disk
-				break;
-			case EMPTY_BLOCK:
-				sparse = true;
-				cleanupBlock(true, true); //clean all
-				nonZeros = 0;
-				break;
+			switch(format)
+			{
+				case ULTRA_SPARSE_BLOCK:
+					nonZeros = in.readInt(); 
+					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
+					cleanupBlock(true, true); //clean all
+					if( sparse )
+						readUltraSparseBlock(in);
+					else
+						readUltraSparseToDense(in);
+					break;
+				case SPARSE_BLOCK:
+					nonZeros = in.readInt(); 
+					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
+					cleanupBlock(sparse, !sparse); 
+					if( sparse )
+						readSparseBlock(in);
+					else
+						readSparseToDense(in);
+					break;
+				case DENSE_BLOCK:
+					sparse = false;
+					cleanupBlock(false, true); //reuse dense
+					readDenseBlock(in); //always dense in-mem if dense on disk
+					break;
+				case EMPTY_BLOCK:
+					sparse = true;
+					cleanupBlock(true, true); //clean all
+					nonZeros = 0;
+					break;
+			}
+		}
+		catch(DMLRuntimeException ex)
+		{
+			throw new IOException("Error reading block of type '"+format.toString()+"'.", ex);
 		}
 	}
 
@@ -1698,18 +1730,28 @@ public class MatrixBlock extends MatrixValue
 	 * 
 	 * @param in
 	 * @throws IOException
+	 * @throws DMLRuntimeException 
 	 */
 	private void readDenseBlock(DataInput in) 
-		throws IOException 
+		throws IOException, DMLRuntimeException 
 	{
 		allocateDenseBlock(true); //allocate block, clear nnz
 		
 		int limit = rlen*clen;
-		for( int i=0; i<limit; i++ )
+		
+		if( in instanceof MatrixBlockDataInput ) //fast deserialize
 		{
-			denseBlock[i]=in.readDouble();
-			if(denseBlock[i]!=0)
-				nonZeros++;
+			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
+			nonZeros = mbin.readDoubleArray(limit, denseBlock);
+		}
+		else //default deserialize
+		{
+			for( int i=0; i<limit; i++ )
+			{
+				denseBlock[i]=in.readDouble();
+				if(denseBlock[i]!=0)
+					nonZeros++;
+			}
 		}
 	}
 	
@@ -1724,21 +1766,29 @@ public class MatrixBlock extends MatrixValue
 		adjustSparseRows(rlen-1);
 		resetSparse(); //reset all sparse rows
 		
-		for(int r=0; r<rlen; r++)
+		if( in instanceof MatrixBlockDataInput ) //fast deserialize
 		{
-			int nr=in.readInt();
-			if(nr==0)
+			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
+			nonZeros = mbin.readSparseRows(rlen, sparseRows);
+		}
+		else //default deserialize
+		{
+			for(int r=0; r<rlen; r++)
 			{
-				if(sparseRows[r]!=null)
-					sparseRows[r].reset(estimatedNNzsPerRow, clen);
-				continue;
+				int nr=in.readInt();
+				if(nr==0)
+				{
+					if(sparseRows[r]!=null)
+						sparseRows[r].reset(estimatedNNzsPerRow, clen);
+					continue;
+				}
+				if(sparseRows[r]==null)
+					sparseRows[r]=new SparseRow(nr);
+				else
+					sparseRows[r].reset(nr, clen);
+				for(int j=0; j<nr; j++)
+					sparseRows[r].append(in.readInt(), in.readDouble());
 			}
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(nr);
-			else
-				sparseRows[r].reset(nr, clen);
-			for(int j=0; j<nr; j++)
-				sparseRows[r].append(in.readInt(), in.readDouble());
 		}
 	}
 	
@@ -1746,9 +1796,10 @@ public class MatrixBlock extends MatrixValue
 	 * 
 	 * @param in
 	 * @throws IOException
+	 * @throws DMLRuntimeException 
 	 */
 	private void readSparseToDense(DataInput in) 
-		throws IOException 
+		throws IOException, DMLRuntimeException 
 	{
 		allocateDenseBlock(false); //allocate block
 		Arrays.fill(denseBlock, 0);
@@ -1791,9 +1842,10 @@ public class MatrixBlock extends MatrixValue
 	 * 
 	 * @param in
 	 * @throws IOException
+	 * @throws DMLRuntimeException 
 	 */
 	private void readUltraSparseToDense(DataInput in) 
-		throws IOException 
+		throws IOException, DMLRuntimeException 
 	{	
 		allocateDenseBlock(false); //allocate block
 		Arrays.fill(denseBlock, 0);
@@ -3496,8 +3548,10 @@ public class MatrixBlock extends MatrixValue
 	 * @param cl
 	 * @param cu
 	 * @param dest
+	 * @throws DMLRuntimeException 
 	 */
-	private void sliceSparse(int rl, int ru, int cl, int cu, MatrixBlock dest)
+	private void sliceSparse(int rl, int ru, int cl, int cu, MatrixBlock dest) 
+		throws DMLRuntimeException
 	{
 		if ( sparseRows == null ) 
 			return;
@@ -3538,8 +3592,10 @@ public class MatrixBlock extends MatrixValue
 	 * @param cl
 	 * @param cu
 	 * @param dest
+	 * @throws DMLRuntimeException 
 	 */
-	private void sliceDense(int rl, int ru, int cl, int cu, MatrixBlock dest)
+	private void sliceDense(int rl, int ru, int cl, int cu, MatrixBlock dest) 
+		throws DMLRuntimeException
 	{
 		if( denseBlock == null )
 			return;

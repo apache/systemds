@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -75,7 +75,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class CSVReblockMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static final Log LOG = LogFactory.getLog(CSVReblockMR.class.getName());
@@ -487,30 +487,35 @@ public class CSVReblockMR
 		}
 		
 		protected void processCSVReblock(TaggedFirstSecondIndexes indexes, Iterator<BlockRow> values, 
-				HashMap<Byte, MatrixCharacteristics> dimensions)
+				HashMap<Byte, MatrixCharacteristics> dimensions) throws IOException
 		{
-//			System.out.println("in Reducer: "+indexes+": "+partial);
-			Byte tag=indexes.getTag();
-			//there only one block in the cache for this output
-			IndexedMatrixValue block=cachedValues.getFirst(tag);
-			while(values.hasNext())
+			try
 			{
-				BlockRow row=values.next();
-				if(block==null)
+				Byte tag=indexes.getTag();
+				//there only one block in the cache for this output
+				IndexedMatrixValue block=cachedValues.getFirst(tag);
+				while(values.hasNext())
 				{
-					block=cachedValues.holdPlace(tag, valueClass);
-					int brlen=dimensions.get(tag).numRowsPerBlock;
-					int bclen=dimensions.get(tag).numColumnsPerBlock;
-					int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getFirstIndex()-1)*brlen);
-					int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getSecondIndex()-1)*bclen);
-					block.getValue().reset(realBrlen, realBclen, false);
-					block.getIndexes().setIndexes(indexes.getFirstIndex(), indexes.getSecondIndex());
+					BlockRow row=values.next();
+					if(block==null)
+					{
+						block=cachedValues.holdPlace(tag, valueClass);
+						int brlen=dimensions.get(tag).numRowsPerBlock;
+						int bclen=dimensions.get(tag).numColumnsPerBlock;
+						int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getFirstIndex()-1)*brlen);
+						int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getSecondIndex()-1)*bclen);
+						block.getValue().reset(realBrlen, realBclen, false);
+						block.getIndexes().setIndexes(indexes.getFirstIndex(), indexes.getSecondIndex());
+					}
+					
+					((MatrixBlock) block.getValue()).copyRowArrayToDense((int)row.indexInBlock, row.container, 0);
 				}
-				
-				((MatrixBlock) block.getValue()).copyRowArrayToDense((int)row.indexInBlock, row.container, 0);
+				((MatrixBlock) block.getValue()).recomputeNonZeros();
 			}
-			((MatrixBlock) block.getValue()).recomputeNonZeros();
-			//System.out.println("block+\n"+block);
+			catch(DMLRuntimeException ex)
+			{
+				throw new IOException(ex);
+			}			
 		}
 		
 		public void configure(JobConf job) {

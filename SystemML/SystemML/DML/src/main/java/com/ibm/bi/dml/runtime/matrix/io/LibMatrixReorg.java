@@ -266,8 +266,10 @@ public class LibMatrixReorg
 	 * 
 	 * @param in
 	 * @param out
+	 * @throws DMLRuntimeException 
 	 */
-	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out)
+	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out) 
+		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -417,8 +419,10 @@ public class LibMatrixReorg
 	 * 
 	 * @param in
 	 * @param out
+	 * @throws DMLRuntimeException 
 	 */
-	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out)
+	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out) 
+		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;

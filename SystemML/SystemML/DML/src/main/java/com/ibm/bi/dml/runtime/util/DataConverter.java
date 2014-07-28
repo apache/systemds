@@ -1899,9 +1899,10 @@ public class DataConverter
 	 * @throws IOException
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
+	 * @throws DMLRuntimeException 
 	 */
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
-		throws IOException, IllegalAccessException, InstantiationException
+		throws IOException, IllegalAccessException, InstantiationException, DMLRuntimeException
 	{
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 

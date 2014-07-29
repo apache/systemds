@@ -333,6 +333,11 @@ public class AggUnaryOp extends Hop
 				else if( _direction == Direction.Row ) //(always dense)
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
 				break;
+			case MAXINDEX:
+			case MININDEX:
+				//worst-case correction LASTCOLUMN 
+				val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
+				break;
 		}
 		
 		return val;

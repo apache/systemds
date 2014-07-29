@@ -91,8 +91,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarimax") ) {
-			// returns col index of max in row
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		}

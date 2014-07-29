@@ -329,6 +329,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				OperationsOnMatrixValues.startAggregation(out.getValue(), correction.getValue(), aggOp, 
 						value.getNumRows(), value.getNumColumns(),
 						value.isInSparseFormat(), imbededCorrection);
+				
 			}else
 				OperationsOnMatrixValues.startAggregation(out.getValue(), null, aggOp, 
 						value.getNumRows(), value.getNumColumns(),
@@ -337,8 +338,11 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		}
 		//System.out.println("value to add: "+value);
 		if(aggOp.correctionExists)// && !imbededCorrection)
+		{
+			//System.out.println("incremental aggregation maxindex/minindex");
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), correction.getValue(), 
 					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
+		}
 		else
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), null, 
 					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
@@ -347,7 +351,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	
 	//process all the aggregate instructions for one group of values
 	protected void processAggregateInstructions(MatrixIndexes indexes, Iterator<TaggedMatrixValue> values) 
-	throws IOException
+		throws IOException
 	{
 		processAggregateInstructions(indexes, values, false);
 	}
@@ -356,16 +360,15 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	protected void processAggregateInstructions(MatrixIndexes indexes, Iterator<TaggedMatrixValue> values, boolean imbededCorrection) 
 	throws IOException
 	{
-		while(values.hasNext())
-		{
-			TaggedMatrixValue value=values.next();
-			byte input=value.getTag();
-			Vector<AggregateInstruction> instructions=agg_instructions.get(input);
-			
-		//	System.out.println("value to aggregate: "+value);
-			
-			//if there is no specified aggregate operation on an input, by default apply sum
-			try{
+		try
+		{			
+			while(values.hasNext())
+			{
+				TaggedMatrixValue value=values.next();
+				byte input=value.getTag();
+				Vector<AggregateInstruction> instructions=agg_instructions.get(input);
+				
+				//if there is no specified aggregate operation on an input, by default apply sum
 				if(instructions==null)
 				{
 					defaultAggIns.input=input;
@@ -378,11 +381,11 @@ public class ReduceBase extends MRBaseForCommonInstructions
 						processAggregateHelp(indexes.getRowIndex(), indexes.getColumnIndex(), 
 								value.getBaseObject(), ins, imbededCorrection);
 				}
-			}catch(Exception e)
-			{
-				throw new IOException(e);
 			}
-		//	System.out.println("current cachedValues: \n"+cachedValues);
+		}
+		catch(Exception e)
+		{
+			throw new IOException(e);
 		}
 	}
 	

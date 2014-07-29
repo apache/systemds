@@ -33,64 +33,40 @@ public class OperationsOnMatrixValues
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		value_in.scalarOperations(op, value_out);
 	}
 	
 	public static void performScalarIgnoreIndexesInPlace(MatrixValue value_in, ScalarOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		value_in.scalarOperationsInPlace(op);
 	}
 	
 	public static void performUnaryIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, UnaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		value_in.unaryOperations(op, value_out);
 	}
 	
 	public static void performUnaryIgnoreIndexesInPlace(MatrixValue value_in, UnaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		value_in.unaryOperationsInPlace(op);
 	}
-
-/*	public static void performBuiltinIgnoreIndexes(MatrixValue value_in, double constant, 
-			MatrixValue value_out, Builtin.SupportedOperation op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		boolean sparseSafe=false;
-		if(op==Builtin.SupportedOperation.ABS || op==Builtin.SupportedOperation.SIN 
-				|| op==Builtin.SupportedOperation.SQRT || op==Builtin.SupportedOperation.TAN)
-			sparseSafe=true;
-		value_in.builtinOperations(op, constant, value_out, sparseSafe);
-	}*/
-
 	
-	public static void performReorg(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, ReorgOperator op, 
-			int startRow, int startColumn, int length) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	public static void performReorg(MatrixIndexes indexes_in, MatrixValue value_in, MatrixIndexes indexes_out, 
+			         MatrixValue value_out, ReorgOperator op, int startRow, int startColumn, int length) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operate on the value indexes first
 		op.fn.execute(indexes_in, indexes_out);
 		
 		//operation on the cells inside the value
 		value_out=value_in.reorgOperations(op, value_out, startRow, startColumn, length);
-		
 	}
-/*	public static void performAppend(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, ReorgOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//operates only on indexes
-		op.fn.execute(indexes_in, indexes_out);
-		
-		//operation on the cells inside the value
-		value_out=value_in.reorgOperations(op, value_out, 0, 0, 0);
-	}*/
-	
+
 	public static void performAppend(MatrixValue value_in1, MatrixValue value_in2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -169,9 +145,21 @@ public class OperationsOnMatrixValues
 		value_out=value1.binaryOperations(op, value2, value_out);
 	}
 	
+	/**
+	 * 
+	 * @param value_out
+	 * @param correction
+	 * @param op
+	 * @param rlen
+	 * @param clen
+	 * @param sparseHint
+	 * @param imbededCorrection
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	public static void startAggregation(MatrixValue value_out, MatrixValue correction, AggregateOperator op, 
 			int rlen, int clen, boolean sparseHint, boolean imbededCorrection)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		int outRow=0, outCol=0, corRow=0, corCol=0;
 		if(op.correctionExists)
@@ -195,13 +183,14 @@ public class OperationsOnMatrixValues
 				case LASTCOLUMN:
 					if(op.increOp.fn instanceof Builtin 
 					   && ( ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
-					        || ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
-					        ){
+					        || ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) )
+					{
 						outRow = rlen;
 						outCol = 1;
 						corRow = rlen;
 						corCol = 1;
-					}else{
+					}
+					else{
 						outRow=rlen;
 						outCol=clen-1;
 						corRow=rlen;
@@ -231,32 +220,18 @@ public class OperationsOnMatrixValues
 				corCol=clen;
 			}
 			
-	/*		if(op.correctionLocation==1)
-			{
-				outRow=rlen-1;
-				outCol=clen;
-				corRow=1;
-				corCol=clen;
-			}else if(op.correctionLocation==2)
-			{
-				outRow=rlen;
-				outCol=clen-1;
-				corRow=rlen;
-				corCol=1;
-			}else if(op.correctionLocation==0)
-			{
-				outRow=rlen;
-				outCol=clen;
-				corRow=rlen;
-				corCol=clen;
+			//set initial values according to operator
+			if(op.initialValue==0) {
+				value_out.reset(outRow, outCol, sparseHint);
+				correction.reset(corRow, corCol, false);
 			}
-			else
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);	*/
+			else {
+				value_out.resetDenseWithValue(outRow, outCol, op.initialValue);
+				correction.resetDenseWithValue(corRow, corCol, op.initialValue);
+			}
 			
-			value_out.reset(outRow, outCol, sparseHint);
-			correction.reset(corRow, corCol, false);
-			
-		}else
+		}
+		else
 		{
 			if(op.initialValue==0)
 				value_out.reset(rlen, clen, sparseHint);

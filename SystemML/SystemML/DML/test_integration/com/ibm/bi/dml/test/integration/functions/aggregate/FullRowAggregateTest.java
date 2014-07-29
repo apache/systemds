@@ -747,6 +747,9 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, false, false);
 	}
 	
+
+	//additional testcases for rowindexmax/rowindexmin with special data
+	
 	@Test
 	public void testRowIndexMaxDenseMatrixNegNoRewritesCP() 
 	{
@@ -798,51 +801,51 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRowIndexMinDenseMatrixNegNoRewritesCP() 
+	public void testRowIndexMinDenseMatrixPosNoRewritesCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.CP, true, false);
 	}
 	
 	@Test
-	public void testRowIndexMinDenseVectorNegNoRewritesCP() 
+	public void testRowIndexMinDenseVectorPosNoRewritesCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.CP, true, false);
 	}
 	
 	@Test
-	public void testRowIndexMinSparseMatrixNegNoRewritesCP() 
+	public void testRowIndexMinSparseMatrixPosNoRewritesCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.CP, true, false);
 	}
 	
 	@Test
-	public void testRowIndexMinSparseVectorNegNoRewritesCP() 
+	public void testRowIndexMinSparseVectorPosNoRewritesCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP, true, false);
 	}
 	
 	@Test
-	public void testRowIndexMinDenseMatrixNegNoRewritesMR() 
+	public void testRowIndexMinDenseMatrixPosNoRewritesMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR, true, false);
 	}
 	
 	@Test
-	public void testRowIndexMinDenseVectorNegNoRewritesMR() 
+	public void testRowIndexMinDenseVectorPosNoRewritesMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR, true, false);
 	}
 	
 	
 	@Test
-	public void testRowIndexMinSparseMatrixNegNoRewritesMR() 
+	public void testRowIndexMinSparseMatrixPosNoRewritesMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR, true, false);
 	}
 	
 	
 	@Test
-	public void testRowIndexMinSparseVectorNegNoRewritesMR() 
+	public void testRowIndexMinSparseVectorPosNoRewritesMR() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, true, false);
 	}
@@ -925,12 +928,14 @@ public class FullRowAggregateTest extends AutomatedTestBase
 			// so that the value 0 is the maximum value. Similarly,
 			// in case of ROW_INDEXMIN, generate all positive data.
 			if ( type == OpType.ROW_INDEXMAX ) {
+				//special data: negative, 0 is actual max
 				min = specialData ? -1 : -0.05;
 				max = specialData ? -0.05 : 1;
 			}
 			else if (type == OpType.ROW_INDEXMIN ){
-				min = specialData ? 0 : 0.05;
-				max = specialData ? 0.05 : 0;
+				//special data: positive, 0 is actual min
+				min = specialData ? 0.05 : -1;
+				max = specialData ? 1 : 0.05;
 			} else {
 				min = -0.05;
 				max = 1;

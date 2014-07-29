@@ -1531,7 +1531,7 @@ public class BinaryOp extends Hop
 		else //MATRIX OUTPUT
 		{
 			//TODO quantile
-			if( op== OpOp2.APPEND )
+			if( op == OpOp2.APPEND )
 			{
 				set_dim1( (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1() );
 				
@@ -1541,6 +1541,13 @@ public class BinaryOp extends Hop
 				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getNnz()>0 && input2.getNnz()>0 )
 					setNnz( input1.getNnz() + input2.getNnz() );
+			}
+			else if ( op == OpOp2.SOLVE )
+			{
+				//normally the second input would be of equal size as the output 
+				//however, since we use qr internally, it also supports squared first inputs
+				set_dim1( input1.get_dim2() );
+				set_dim2( input2.get_dim2() );
 			}
 			else //general case
 			{

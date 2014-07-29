@@ -16,7 +16,8 @@
 # X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
 # Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
 # B     String  ---     Location to store estimated regression parameters (the betas)
-# icpt  Int     0       Intercept presence, shifting and rescaling the columns of X:
+# O     String  " "     Location to write the printed statistics; by default is standard output
+# icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
 #                       0 = no intercept, no shifting, no rescaling;
 #                       1 = add intercept, but neither shift nor rescale X;
 #                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
@@ -24,7 +25,8 @@
 #                       for highly dependend/sparse/numerous features
 # tol   Double 0.000001 Tolerance (epsilon); conjugate graduent procedure terminates early if
 #                       L2 norm of the beta-residual is less than tolerance * its initial norm
-# maxi  Int     0       Maximum number of conjugate gradient iterations, 0 = no maximum
+# maxi  Int      0      Maximum number of conjugate gradient iterations, 0 = no maximum
+# fmt   String "text"   Matrix output format for B (the betas) only, usually "text" or "csv"
 # --------------------------------------------------------------------------------------------
 # OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
 #         OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
@@ -33,14 +35,34 @@
 # icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
 #                        Col.2: betas for shifted/rescaled X and intercept
 #
+# In addition, some regression statistics are provided in CSV format, one comma-separated
+# name-value pair per each line, as follows:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------
+# AVG_TOT_Y             Average of the response value Y
+# STDEV_TOT_Y           Standard Deviation of the response value Y
+# AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
+# STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
+# PLAIN_R2              Plain R^2 of residual with bias included vs. total average
+# ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
+# PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
+# ADJUSTED_R2_NOBIAS    Adjusted R^2 of residual with bias subtracted vs. total average
+# PLAIN_R2_VS_0         * Plain R^2 of residual with bias included vs. zero constant
+# ADJUSTED_R2_VS_0      * Adjusted R^2 of residual with bias included vs. zero constant
+# -------------------------------------------------------------------------------------
+# * The last two statistics are only printed if there is no intercept (icpt=0)
+#
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f LR_HOME_DIR/LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y
-#     B=OUTPUT_DIR/B icpt=2 reg=1.0 tol=0.001 maxi=100
+# hadoop jar SystemML.jar -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
+#     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv
 
+$O=" ";
 $icpt=0;
 $reg=0.000001;
 $tol=0.000001;
 $maxi=0;
+$fmt="text";
 
 print ("BEGIN LINEAR REGRESSION SCRIPT");
 print ("Reading X and Y...");
@@ -159,32 +181,68 @@ if (intercept_status == 2) {
     beta = beta_unscaled;
 }
 
+print ("Computing the statistics...");
+
+avg_tot = sum (y) / n;
+ss_tot = sum (y ^ 2);
+ss_avg_tot = ss_tot - n * avg_tot ^ 2;
+var_tot = ss_avg_tot / (n - 1);
 y_residual = y - X %*% beta;
-res_bias = sum (y_residual) / n;
-ss_error = sum (y_residual ^ 2) - n * res_bias ^ 2;
-ss_total = sum (y ^ 2) - sum (y) ^ 2 / n;
-plain_R2 = 1 - ss_error / ss_total;
+avg_res = sum (y_residual) / n;
+ss_res = sum (y_residual ^ 2);
+ss_avg_res = ss_res - n * avg_res ^ 2;
 
-print ("Residual bias = " + res_bias);
-print ("R^2 (bias subtracted) = " + plain_R2);    
+plain_R2 = 1 - ss_res / ss_avg_tot;
+if (n > m_ext) {
+    adjusted_R2 = 1 - (ss_res / (n - m_ext)) / (ss_avg_tot / (n - 1));
+} else {
+    adjusted_R2 = 0.0 / 0.0;
+}
 
+plain_R2_nobias = 1 - ss_avg_res / ss_avg_tot;
 deg_freedom = n - m - 1;
 if (deg_freedom > 0) {
-    res_var = ss_error / deg_freedom;
-    adjusted_R2 = 1 - res_var / (ss_total / (n - 1));
-    print ("Adjusted R^2 = " + adjusted_R2);
-    print ("Residual st.dev. = " + sqrt (res_var));
+    var_res = ss_avg_res / deg_freedom;
+    adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
 } else {
-    print ("Warning: zero or negative degrees of freedom.");
+    var_res = 0.0 / 0.0;
+    adjusted_R2_nobias = 0.0 / 0.0;
+    print ("Warning: zero or negative number of degrees of freedom.");
+}
+
+plain_R2_vs_0 = 1 - ss_res / ss_tot;
+if (n > m) {
+    adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
+} else {
+    adjusted_R2_vs_0 = 0.0 / 0.0;
+}
+
+str = "AVG_TOT_Y," + avg_tot;                                    #  Average of the response value Y
+str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y
+str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
+str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
+str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
+str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
+str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average
+str = append (str, "ADJUSTED_R2_NOBIAS," + adjusted_R2_nobias);  #  Adjusted R^2 of residual with bias subtracted vs. total average
+if (intercept_status == 0) {
+    str = append (str, "PLAIN_R2_VS_0," + plain_R2_vs_0);        #  Plain R^2 of residual with bias included vs. zero constant
+    str = append (str, "ADJUSTED_R2_VS_0," + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
+}
+
+if ($O != " ") {
+    write (str, $O);
+} else {
+    print (str);
 }
 
 # Prepare the output matrix
-print("Writing the output matrix...");
+print ("Writing the output matrix...");
 
 if (intercept_status == 2) {
     beta_out = append (beta, beta_unscaled);
 } else {
     beta_out = beta;
 }
-write (beta_out, $B);
+write (beta_out, $B, format=$fmt);
 print ("END LINEAR REGRESSION SCRIPT");

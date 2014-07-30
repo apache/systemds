@@ -39,12 +39,12 @@
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
 # The statistics are printed one per each line, in the following CSV format:
-# NAME,[COLUMN],[SCALED T/F],VALUE
+# NAME,[COLUMN],[SCALED],VALUE
 #   NAME   is the string identifier for the statistic, see the table below.
 #   COLUMN is an optional integer value that specifies the Y-column for per-column statistics;
 #          note that a Binomial/Multinomial one-column Y input is converted into multi-column.
-#   SCALED is an optional Boolean value (T=TRUE, F=FALSE) that tells whether or not scaling by
-#          the input dispersion parameter (disp) has been applied to this statistic.
+#   SCALED is an optional Boolean value (TRUE or FALSE) that tells us whether or not the input
+#          dispersion parameter (disp) scaling has been applied to this statistic.
 #   VALUE  is the value of the statistic.
 #
 # NAME                  COLUMN  SCALED  MEANING
@@ -62,8 +62,10 @@
 # AVG_RES_Y               +             Average of column residual, i.e. of Y - mean(Y|X)
 # STDEV_RES_Y             +             St.Dev. of column residual, i.e. of Y - mean(Y|X)
 # PRED_STDEV_RES          +       +     Model-predicted St.Dev. of column residual
-# PLAIN_R2                +             Plain R^2 statistic for Y column
-# ADJUSTED_R2             +             Adjusted R^2 statistic for Y column
+# PLAIN_R2                +             Plain R^2 of Y column residual with bias included
+# ADJUSTED_R2             +             Adjusted R^2 of Y column residual with bias included
+# PLAIN_R2_NOBIAS         +             Plain R^2 of Y column residual with bias subtracted
+# ADJUSTED_R2_NOBIAS      +             Adjusted R^2 of Y column residual with bias subtracted
 # ---------------------------------------------------------------------------------------------
 #
 # Example with distribution = "Poisson.log":
@@ -221,65 +223,80 @@ if ($Y != " ")
     if (Z_logl == Z_logl) {
         Z_logl_pValue = cumulativeProbability (target = Z_logl, dist = "normal", mean = 0, sd = 1);
     }
-    if (X2_pearson == X2_pearson) {
+    if (X2_pearson == X2_pearson & df_pearson > 0) {
         X2_pearson_pValue = 1 - cumulativeProbability (target = X2_pearson, dist = "chisq", df = df_pearson);
     }
-    if (G2_deviance == G2_deviance) {
+    if (G2_deviance == G2_deviance & df_deviance > 0) {
         G2_deviance_pValue = 1 - cumulativeProbability (target = G2_deviance, dist = "chisq", df = df_deviance);
     }
     
     X2_scaled = X2_pearson / dispersion;
     G2_scaled = G2_deviance / dispersion;
-    if (X2_scaled == X2_scaled) {
+    if (X2_scaled == X2_scaled & df_pearson > 0) {
         X2_scaled_pValue = 1 - cumulativeProbability (target = X2_scaled, dist = "chisq", df = df_pearson);
     }
-    if (G2_scaled == G2_scaled) {
+    if (G2_scaled == G2_scaled & df_deviance > 0) {
         G2_scaled_pValue = 1 - cumulativeProbability (target = G2_scaled, dist = "chisq", df = df_deviance);
     }
     
     avg_tot_Y = colSums (    Y    ) / sum (Y_counts);
     avg_res_Y = colSums (Y - means) / sum (Y_counts);
     
-    ssq_tot_Y = colSums ((    Y     - Y_counts %*% avg_tot_Y) ^ 2);
-    ssq_res_Y = colSums ((Y - means - Y_counts %*% avg_res_Y) ^ 2);
+    ss_avg_tot_Y = colSums ((    Y     - Y_counts %*% avg_tot_Y) ^ 2);
+    ss_res_Y     = colSums ((Y - means) ^ 2);
+    ss_avg_res_Y = colSums ((Y - means - Y_counts %*% avg_res_Y) ^ 2);
     
-    var_tot_Y = ssq_tot_Y / (sum (Y_counts) - 1);
+    df_ss_res_Y  = sum (Y_counts) - num_features;
     if (is_intercept) {
-        var_res_Y = ssq_res_Y / (sum (Y_counts) - num_features);
+        df_ss_avg_res_Y = df_ss_res_Y;
     } else {
-        var_res_Y = ssq_res_Y / (sum (Y_counts) - num_features - 1);
+        df_ss_avg_res_Y = df_ss_res_Y - 1;
     }
     
-    plain_R2  = 1 - ssq_res_Y / ssq_tot_Y;
-    adjust_R2 = 1 - var_res_Y / var_tot_Y;
+    var_tot_Y = ss_avg_tot_Y / (sum (Y_counts) - 1);
+    if (df_ss_avg_res_Y > 0) {
+        var_res_Y = ss_avg_res_Y / df_ss_avg_res_Y;
+    } else {
+        var_res_Y = 0.0 / 0.0;
+    }
+    plain_R2_nobias  = 1 - ss_avg_res_Y / ss_avg_tot_Y;
+    adjust_R2_nobias = 1 - var_res_Y / var_tot_Y;
+    plain_R2  = 1 - ss_res_Y / ss_avg_tot_Y;
+    if (df_ss_res_Y > 0) {
+        adjust_R2 = 1 - (ss_res_Y / df_ss_res_Y) / var_tot_Y;
+    } else {
+        adjust_R2 = 0.0 / 0.0;
+    }
     
     predicted_avg_var_res_Y = dispersion * colSums (vars) / sum (Y_counts);
     
     # PREPARING THE OUTPUT CSV STATISTICS FILE
     
-    str = "LOGLHOOD_Z,,F," + Z_logl;
-    str = append (str, "LOGLHOOD_Z_PVAL,,F," + Z_logl_pValue);
-    str = append (str, "PEARSON_X2,,F," + X2_pearson);
-    str = append (str, "PEARSON_X2_BY_DF,,F," + (X2_pearson / df_pearson));
-    str = append (str, "PEARSON_X2_PVAL,,F," + X2_pearson_pValue);
-    str = append (str, "DEVIANCE_G2,,F," + G2_deviance);
-    str = append (str, "DEVIANCE_G2_BY_DF,,F," + (G2_deviance / df_deviance));
-    str = append (str, "DEVIANCE_G2_PVAL,,F," + G2_deviance_pValue);
-    str = append (str, "PEARSON_X2,,T," + X2_scaled);
-    str = append (str, "PEARSON_X2_BY_DF,,T," + (X2_scaled / df_pearson));
-    str = append (str, "PEARSON_X2_PVAL,,T," + X2_scaled_pValue);
-    str = append (str, "DEVIANCE_G2,,T," + G2_scaled);
-    str = append (str, "DEVIANCE_G2_BY_DF,,T," + (G2_scaled / df_deviance));
-    str = append (str, "DEVIANCE_G2_PVAL,,T," + G2_scaled_pValue);
+    str = "LOGLHOOD_Z,,FALSE," + Z_logl;
+    str = append (str, "LOGLHOOD_Z_PVAL,,FALSE," + Z_logl_pValue);
+    str = append (str, "PEARSON_X2,,FALSE," + X2_pearson);
+    str = append (str, "PEARSON_X2_BY_DF,,FALSE," + (X2_pearson / df_pearson));
+    str = append (str, "PEARSON_X2_PVAL,,FALSE," + X2_pearson_pValue);
+    str = append (str, "DEVIANCE_G2,,FALSE," + G2_deviance);
+    str = append (str, "DEVIANCE_G2_BY_DF,,FALSE," + (G2_deviance / df_deviance));
+    str = append (str, "DEVIANCE_G2_PVAL,,FALSE," + G2_deviance_pValue);
+    str = append (str, "PEARSON_X2,,TRUE," + X2_scaled);
+    str = append (str, "PEARSON_X2_BY_DF,,TRUE," + (X2_scaled / df_pearson));
+    str = append (str, "PEARSON_X2_PVAL,,TRUE," + X2_scaled_pValue);
+    str = append (str, "DEVIANCE_G2,,TRUE," + G2_scaled);
+    str = append (str, "DEVIANCE_G2_BY_DF,,TRUE," + (G2_scaled / df_deviance));
+    str = append (str, "DEVIANCE_G2_PVAL,,TRUE," + G2_scaled_pValue);
 
     for (i in 1:ncol(Y)) {
         str = append (str, "AVG_TOT_Y," + i + ",," + castAsScalar (avg_tot_Y [1, i]));
         str = append (str, "STDEV_TOT_Y," + i + ",," + castAsScalar (sqrt (var_tot_Y [1, i])));
         str = append (str, "AVG_RES_Y," + i + ",," + castAsScalar (avg_res_Y [1, i]));
         str = append (str, "STDEV_RES_Y," + i + ",," + castAsScalar (sqrt (var_res_Y [1, i])));
-        str = append (str, "PRED_STDEV_RES," + i + ",T," + castAsScalar (sqrt (predicted_avg_var_res_Y [1, i])));
+        str = append (str, "PRED_STDEV_RES," + i + ",TRUE," + castAsScalar (sqrt (predicted_avg_var_res_Y [1, i])));
         str = append (str, "PLAIN_R2," + i + ",," + castAsScalar (plain_R2 [1, i]));
         str = append (str, "ADJUSTED_R2," + i + ",," + castAsScalar (adjust_R2 [1, i]));
+        str = append (str, "PLAIN_R2_NOBIAS," + i + ",," + castAsScalar (plain_R2_nobias [1, i]));
+        str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + castAsScalar (adjust_R2_nobias [1, i]));
     }
     
     if ($O != " ") {

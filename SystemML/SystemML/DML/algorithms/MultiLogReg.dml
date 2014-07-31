@@ -17,27 +17,29 @@
 # X     String  ---     Location to read the matrix of feature vectors
 # Y     String  ---     Location to read the matrix with category labels
 # B     String  ---     Location to store estimated regression parameters (the betas)
-# icpt  Int     0       Intercept presence, shifting and rescaling X columns:
+# icpt  Int      0      Intercept presence, shifting and rescaling X columns:
 #                       0 = no intercept, no shifting, no rescaling;
 #                       1 = add intercept, but neither shift nor rescale X;
 #                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
 # reg   Double  0.0     regularization parameter (lambda = 1/C); intercept is not regularized
 # tol   Double 0.000001 tolerance ("epsilon")
 # moi   Int     100     max. number of outer (Newton) iterations
-# mii   Int     0       max. number of inner (conjugate gradient) iterations, 0 = no max
+# mii   Int      0      max. number of inner (conjugate gradient) iterations, 0 = no max
+# fmt   String "text"   Matrix output format, usually "text" or "csv" (for matrices only)
 # --------------------------------------------------------------------------------------------
+# The largest label represents the baseline category; if label -1 or 0 is present, then it is
+# the baseline label (and it is converted to the largest label).
+# 
+# Script invocation example:
+# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
+#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv
 
 $icpt = 0;
 $reg  = 0.0;
 $tol  = 0.000001;
 $moi  = 100;
 $mii  = 0;
-
-# The largest label represents the baseline category; if label -1 or 0 is present, then it is the baseline.
-# How to invoke this dml script?
-# Example:
-# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
-#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123
+$fmt = "text";
 
 print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
 print ("Reading X...");
@@ -60,13 +62,11 @@ psi = 0.1;
 
 N = nrow (X);
 D = ncol (X);
-ones_N = matrix (1.0, rows = N, cols = 1);
-
 
 # Introduce the intercept, shift and rescale the columns of X if needed
 if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
 {
-    X = append (X, ones_N);
+    X = append (X, matrix (1, rows = N, cols = 1));
     D = ncol (X);
 }
 
@@ -77,7 +77,7 @@ if (intercept_status == 1 | intercept_status == 2)
 }
 
 if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
-{                           # Important assumption: X [, D] = ones_N
+{                           # Important assumption: X [, D] = matrix (1, rows = N, cols = 1)
     avg_X_cols = t(colSums(X)) / N;
     var_X_cols = (t(colSums (X ^ 2)) - N * (avg_X_cols ^ 2)) / (N - 1);
     is_unsafe = ppred (var_X_cols, 0.0, "<=");
@@ -112,23 +112,17 @@ if (min (Y_vec) <= 0) {
 }
 Y = table (seq (1, N, 1), Y_vec);
 K = ncol (Y) - 1;   # The number of  non-baseline categories
-Y = Y [, 1:K];      # Indicators for non-baseline categories
 
-ones_K      = matrix (1.0, rows = 1 , cols = K  );
-ones_Kplus1 = matrix (1.0, rows = 1 , cols = K+1);
-zeros_DK    = matrix (0.0, rows = D , cols = K  );
-zeros_N     = matrix (0.0, rows = N , cols = 1  );
-
-lambda = (scale_lambda %*% ones_K) * $reg;
+lambda = (scale_lambda %*% matrix (1, rows = 1, cols = K)) * $reg;
 delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
-B  = matrix (0.0, rows = D, cols = K);  ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B
-LT = matrix (0.0, rows = N, cols = K);  ### P_raw = exp (LT);
-P  = matrix (1.0, rows = N, cols = K);  ### P_denom = 1.0 + rowSums (P_raw);
-P = P / (K + 1);                        ### P = P_raw / (P_denom %*% ones_K);
-obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (P_denom)) + 0.5 * sum (lambda * (B ^ 2));
+B = matrix (0, rows = D, cols = K);     ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B;
+                                        ### LT = append (LT, matrix (0, rows = N, cols = 1));
+P = matrix (1, rows = N, cols = K+1);   ### exp_LT = exp (LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1));
+P = P / (K + 1);                        ### P =  exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
+obj = N * log (K + 1);                  ### obj = - sum (log (rowSums (Y * P))) + 0.5 * sum (lambda * (B ^ 2));
 
-Grad = t(X) %*% (P - Y);
+Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
 if (intercept_status == 2) {
     Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 }
@@ -139,38 +133,35 @@ norm_Grad_initial = norm_Grad;
 if (maxinneriter == 0) {
     maxinneriter = D * K;
 }
-iter = 0;
+iter = 1;
 
 # boolean for convergence check
 converge = (norm_Grad < tol) | (iter > maxiter);
 
+print ("-- Initially:  Objective = " + obj + ",  Gradient Norm = " + norm_Grad + ",  Trust Delta = " + delta);
+	
 while (! converge)
 {
-	print ("-- Outer Iteration = " + iter);
-	print ("   Objective = " + obj + ",  Gradient Norm = " + norm_Grad);
-	
 	# SOLVE TRUST REGION SUB-PROBLEM
-	S = zeros_DK;
+	S = matrix (0, rows = D, cols = K);
 	R = - Grad;
 	V = R;
 	delta2 = delta ^ 2;
-	inneriter = 0;
+	inneriter = 1;
 	norm_R2 = sum (R ^ 2);
 	innerconverge = (sqrt (norm_R2) <= psi * norm_Grad);
 	is_trust_boundary_reached = 0;
-	
+
 	while (! innerconverge)
 	{
-	    inneriter = inneriter + 1;
-	    
 	    if (intercept_status == 2) {
 	        ssX_V = diag (scale_X) %*% V;
 	        ssX_V [D, ] = ssX_V [D, ] + t(shift_X) %*% V;
 	    } else {
 	        ssX_V = V;
 	    }
-        Q = P * (X %*% ssX_V);
-        HV = t(X) %*% (Q - P * (rowSums (Q) %*% ones_K));
+        Q = P [, 1:K] * (X %*% ssX_V);
+        HV = t(X) %*% (Q - P [, 1:K] * (rowSums (Q) %*% matrix (1, rows = 1, cols = K)));
         if (intercept_status == 2) {
             HV = diag (scale_X) %*% HV + shift_X %*% HV [D, ];
         }
@@ -185,9 +176,8 @@ while (! converge)
 			old_norm_R2 = norm_R2 
 			norm_R2 = sum (R ^ 2);
 			V = R + (norm_R2 / old_norm_R2) * V;
-			innerconverge = (sqrt (norm_R2) <= psi * norm_Grad) | (inneriter > maxinneriter);
+			innerconverge = (sqrt (norm_R2) <= psi * norm_Grad);
 		} else {
-		   	print ("      --- cg reaches trust region boundary");
 	        is_trust_boundary_reached = 1;
 			sv = sum (S * V);
 			v2 = sum (V ^ 2);
@@ -202,9 +192,10 @@ while (! converge)
 			R = R - alpha * HV;
 			innerconverge = TRUE;
 		}
+	    inneriter = inneriter + 1;
+	    innerconverge = innerconverge | (inneriter > maxinneriter);
 	}  
 	
-	print ("      --- Inner CG Iteration =  " + inneriter);
 	# END TRUST REGION SUB-PROBLEM
 	
 	# compute rho, update B, obtain delta
@@ -217,23 +208,21 @@ while (! converge)
     } else {
         ssX_B_new = B_new;
     }
-    LT_new = X %*% ssX_B_new;
-    P_raw_new = exp (LT_new);
-    P_denom_new = 1.0 + rowSums (P_raw_new);
-    P_new = P_raw_new / (P_denom_new %*% ones_K);
-    obj_new = - sum (Y * LT_new) + sum (log (P_denom_new)) + 0.5 * sum (lambda * (B_new ^ 2));
+    LT = append ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
+    exp_LT = exp (LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1));
+    P_new  = exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
+    obj_new = - sum (log (rowSums (Y * P_new))) + 0.5 * sum (lambda * (B_new ^ 2));
 	
-	# Consider updating LT_new in the inner loop
+	# Consider updating LT in the inner loop
 	# Consider the big "obj" and "obj_new" rounding-off their small difference below:
 
 	actred = (obj - obj_new);
 	
 	rho = actred / qk;
+	is_rho_accepted = (rho > eta0);
 	snorm = sqrt (sum (S ^ 2));
-	print ("     Actual    = " + actred);
-	print ("     Predicted = " + qk);
 	
-	if (iter == 0) {
+	if (iter == 1) {
 	   delta = min (delta, snorm);
 	}
 
@@ -243,20 +232,6 @@ while (! converge)
 	} 
 	else {
 	   alpha = max (sigma1, -0.5 * gs / alpha2);
-	}
-
-	if (rho > eta0)
-	{
-		B = B_new;
-		LT = LT_new;
-		P = P_new;
-		Grad = t(X) %*% (P - Y);
-		if (intercept_status == 2) {
-		    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
-		}
-		Grad = Grad + lambda * B;
-		norm_Grad = sqrt (sum (Grad ^ 2));
-		obj = obj_new;
 	}
 	
 	if (rho < eta0) {
@@ -275,14 +250,33 @@ while (! converge)
 			}
 		}
 	} 
+
+	if (is_trust_boundary_reached == 1)
+	{
+	    print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations, trust bound REACHED");
+	} else {
+	    print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations");
+	}
+	print ("   -- Obj.Reduction:  Actual = " + actred + ",  Predicted = " + qk + 
+	       "  (A/P: " + (round (10000.0 * rho) / 10000.0) + "),  Trust Delta = " + delta);
+	if (is_rho_accepted)
+	{
+		B = B_new;
+		P = P_new;
+		Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
+		if (intercept_status == 2) {
+		    Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
+		}
+		Grad = Grad + lambda * B;
+		norm_Grad = sqrt (sum (Grad ^ 2));
+		obj = obj_new;
+	    print ("   -- New Objective = " + obj + ",  Beta Change Norm = " + snorm + ",  Gradient Norm = " + norm_Grad);
+	}
 	
 	iter = iter + 1;
 	converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxiter) |
 	    ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 0.00000000000001)));
-	print ("     Delta =  "     + delta);
-	print ("     Rho = "        + rho);
-	print ("     OuterIter =  " + iter);
-	print ("     Converge =  "  + converge);
+    if (converge) { print ("Termination / Convergence condition satisfied."); } else { print (" "); }
 } 
 
 if (intercept_status == 2) {
@@ -291,4 +285,4 @@ if (intercept_status == 2) {
 } else {
     B_out = B;
 }
-writeMM (B_out, $B);
+write (B_out, $B, format=$fmt);

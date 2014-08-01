@@ -17,6 +17,9 @@
 # Y     String  ---     Location to read response matrix Y with either 1 or 2 columns:
 #                       if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
 # B     String  ---     Location to store estimated regression parameters (the betas)
+# fmt   String "text"   The betas matrix output format, such as "text" or "csv"
+# O     String  " "     Location to write the printed statistics; by default is standard output
+# Log   String  " "     Location to write per-iteration variables for log/debugging purposes
 # dfam  Int     1       Distribution family code: 1 = Power, 2 = Binomial
 # vpow  Double  0.0     Power for Variance defined as (mean)^power (ignored if dfam != 1):
 #                       0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
@@ -38,10 +41,49 @@
 # OUTPUT: Matrix beta, whose size depends on icpt:
 #     icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
 #
+# In addition, some GLM statistics are provided in CSV format, one comma-separated name-value
+# pair per each line, as follows:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------------
+# TERMINATION_CODE      A positive integer indicating success/failure as follows:
+#                       1 = Converged successfully; 2 = Maximum number of iterations reached; 
+#                       3 = Input (X, Y) out of range; 4 = Distribution/link is not supported
+# BETA_MIN              Smallest beta value (regression coefficient), excluding the intercept
+# BETA_MIN_INDEX        Column index for the smallest beta value
+# BETA_MAX              Largest beta value (regression coefficient), excluding the intercept
+# BETA_MAX_INDEX        Column index for the largest beta value
+# INTERCEPT             Intercept value, or NaN if there is no intercept (if icpt=0)
+# DISPERSION            Dispersion used to scale deviance, provided as "disp" input parameter
+#                       or estimated (same as DISPERSION_EST) if the "disp" parameter is <= 0
+# DISPERSION_EST        Dispersion estimated from the dataset
+# DEVIANCE_UNSCALED     Deviance from the saturated model, assuming dispersion == 1.0
+# DEVIANCE_SCALED       Deviance from the saturated model, scaled by the DISPERSION value
+# -------------------------------------------------------------------------------------------
+#
+# The Log file, when requested, contains the following per-iteration variables in CSV format,
+# each line containing triple (NAME, ITERATION, VALUE) with ITERATION = 0 for initial values:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------------
+# NUM_CG_ITERS          Number of inner (Conj.Gradient) iterations in this outer iteration
+# IS_TRUST_REACHED      1 = trust region boundary was reached, 0 = otherwise
+# POINT_STEP_NORM       L2-norm of iteration step from old point (i.e. "beta") to new point
+# OBJECTIVE             The loss function we minimize (i.e. negative partial log-likelihood)
+# OBJ_DROP_REAL         Reduction in the objective during this iteration, actual value
+# OBJ_DROP_PRED         Reduction in the objective predicted by a quadratic approximation
+# OBJ_DROP_RATIO        Actual-to-predicted reduction ratio, used to update the trust region
+# GRADIENT_NORM         L2-norm of the loss function gradient (NOTE: sometimes omitted)
+# LINEAR_TERM_MIN       The minimum value of X %*% beta, used to check for overflows
+# LINEAR_TERM_MAX       The maximum value of X %*% beta, used to check for overflows
+# IS_POINT_UPDATED      1 = new point accepted; 0 = new point rejected, old point restored
+# TRUST_DELTA           Updated trust region size, the "delta"
+# -------------------------------------------------------------------------------------------
+#
 # Example with distribution = "Binomial.logit":
 # hadoop jar SystemML.jar -f GLM_HOME/GLM.dml -nvargs dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.001
-#     tol=0.00000001 disp=1.0 moi=100 mii=10 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
-#
+#     tol=0.00000001 disp=1.0 moi=100 mii=10 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas 
+#     fmt=csv O=OUTPUT_DIR/stats Log=OUTPUT_DIR/log
 #
 # SOME OF THE SUPPORTED GLM DISTRIBUTION FAMILIES
 # AND LINK FUNCTIONS:
@@ -75,6 +117,9 @@
 
 # Default values for input parameters
 
+$O = " ";
+$Log = " ";
+$fmt = "text";
 $dfam = 1;
 $vpow = 0.0;
 $link = 0;
@@ -87,6 +132,18 @@ $disp = 0.0;
 $moi  = 200;
 $mii  = 0;
 
+# Default values for output statistics:
+
+termination_code     = 0.0;
+min_beta             = 0.0 / 0.0;
+i_min_beta           = 0.0 / 0.0;
+max_beta             = 0.0 / 0.0;
+i_max_beta           = 0.0 / 0.0;
+intercept_value      = 0.0 / 0.0;
+dispersion           = 0.0 / 0.0;
+estimated_dispersion = 0.0 / 0.0;
+deviance_nodisp      = 0.0 / 0.0;
+deviance             = 0.0 / 0.0;
 
 print("BEGIN GLM SCRIPT");
 print("Reading X...");
@@ -189,6 +246,7 @@ if (link_type == 0)
 # is also special as it represents the logarithm link.
 
 num_response_columns = ncol (Y);
+
 is_supported = check_if_supported (num_response_columns, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
 if (is_supported == 1)
 {
@@ -205,16 +263,16 @@ if (isNaN == 0)
 sum_X_sq = sum (rowSums_X_sq);
 trust_delta = 0.5 * sqrt (num_features) / max (sqrt (rowSums_X_sq));
 ###  max_trust_delta = trust_delta * 10000.0;
-g = matrix (0.0, rows = num_features, cols = 1);
 log_l = 0.0;
 deviance_nodisp = 0.0;
 new_deviance_nodisp = 0.0;
 isNaN_log_l = 2;
 newbeta = beta;
+g = matrix (0.0, rows = num_features, cols = 1);
+g_norm = sqrt (sum ((g + lambda * beta) ^ 2));
 accept_new_beta = 1;
 reached_trust_boundary = 0;
 neg_log_l_change_predicted = 0.0;
-converged_IRLS = 0;
 i_IRLS = 0;
 
 print ("BEGIN IRLS ITERATIONS...");
@@ -230,9 +288,17 @@ if (isNaN_new_log_l == 0) {
     new_deviance_nodisp = 2.0 * (saturated_log_l - new_log_l);
     new_log_l = new_log_l - 0.5 * sum (lambda * newbeta ^ 2);
 }
-                             
 
-while (converged_IRLS == 0)
+if ($Log != " ") {
+    log_str = "POINT_STEP_NORM," + i_IRLS + "," + sqrt (sum (beta ^ 2));
+    log_str = append (log_str, "OBJECTIVE," + i_IRLS + "," + (- new_log_l));
+    log_str = append (log_str, "LINEAR_TERM_MIN," + i_IRLS + "," + min (all_linear_terms));
+    log_str = append (log_str, "LINEAR_TERM_MAX," + i_IRLS + "," + max (all_linear_terms));
+} else {
+    log_str = " ";
+}
+
+while (termination_code == 0)
 {
     accept_new_beta = 1;
     
@@ -262,6 +328,10 @@ while (converged_IRLS == 0)
         }
     }
 
+    if ($Log != " ") {
+        log_str = append (log_str, "IS_POINT_UPDATED," + i_IRLS + "," + accept_new_beta);
+        log_str = append (log_str, "TRUST_DELTA,"      + i_IRLS + "," + trust_delta);
+    }
     if (accept_new_beta == 1)
     {
         beta = newbeta;  log_l = new_log_l;  deviance_nodisp = new_deviance_nodisp;  isNaN_log_l = isNaN_new_log_l;
@@ -272,21 +342,16 @@ while (converged_IRLS == 0)
         #     g_Y = y_residual / (y_var * link_grad);
         #     w   = 1.0 / (y_var * link_grad * link_grad);
                       
-/*                      
-norm_y_residual = sqrt (sum (y_residual * y_residual));
-norm_y_var = sqrt (sum (y_var * y_var));
-norm_link_grad = sqrt (sum (link_grad * link_grad));
-min_linear_term = min (all_linear_terms);
-max_linear_term = max (all_linear_terms);
-print ("||y_residual|| = " + norm_y_residual + ";  ||y_var|| = " + norm_y_var + ";  ||link_grad|| = " + norm_link_grad + ";  max_linear_term = " + max_linear_term);
-print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs (link_grad)));                      
-*/
-
         gXY = - t(X) %*% g_Y;
         g = diag (scale_X) %*% gXY + shift_X %*% gXY [num_features, ];
+        g_norm = sqrt (sum ((g + lambda * beta) ^ 2));
+        
+        if ($Log != " ") {
+            log_str = append (log_str, "GRADIENT_NORM," + i_IRLS + "," + g_norm);
+        }
     }
     
-    [z, neg_log_l_change_predicted, reached_trust_boundary] = 
+    [z, neg_log_l_change_predicted, num_CG_iters, reached_trust_boundary] = 
         get_CG_Steihaug_point (X, scale_X, shift_X, w, g, beta, lambda, trust_delta, max_iteration_CG);
 
     newbeta = beta + z;
@@ -308,7 +373,7 @@ print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs
     if (reached_trust_boundary == 0 & isNaN_new_log_l == 0 & 
         (2.0 * abs (log_l_change) < eps * (deviance_nodisp + 0.1) | abs (log_l_change) < (abs (log_l) + abs (new_log_l)) * 0.00000000000001) )  
     {
-        converged_IRLS = 1;
+        termination_code = 1;
     }
     rho = - log_l_change / neg_log_l_change_predicted;
     z_norm = sqrt (sum (z * z));
@@ -318,7 +383,6 @@ print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs
     [rho_m, rho_e] = round_to_print (rho);
     [new_log_l_m, new_log_l_e] = round_to_print (new_log_l);
     [log_l_change_m, log_l_change_e] = round_to_print (log_l_change);
-    g_norm = sqrt (sum (g * g));
     [g_norm_m, g_norm_e] = round_to_print (g_norm);
 
     i_IRLS = i_IRLS + 1;
@@ -330,8 +394,21 @@ print ("min (y_var) = " + min (y_var) + ";  min (abs (link_grad)) = " + min (abs
         + ", new_log_l = " + new_log_l_m + "E" + new_log_l_e
         + ", log_l_change = " + log_l_change_m + "E" + log_l_change_e
         + ", rho = " + rho_m + "E" + rho_e);
+        
+    if ($Log != " ") {
+        log_str = append (log_str, "NUM_CG_ITERS,"     + i_IRLS + "," + num_CG_iters);
+        log_str = append (log_str, "IS_TRUST_REACHED," + i_IRLS + "," + reached_trust_boundary);
+        log_str = append (log_str, "POINT_STEP_NORM,"  + i_IRLS + "," + z_norm);
+        log_str = append (log_str, "OBJECTIVE,"        + i_IRLS + "," + (- new_log_l));
+        log_str = append (log_str, "OBJ_DROP_REAL,"    + i_IRLS + "," + log_l_change);
+        log_str = append (log_str, "OBJ_DROP_PRED,"    + i_IRLS + "," + (- neg_log_l_change_predicted));
+        log_str = append (log_str, "OBJ_DROP_RATIO,"   + i_IRLS + "," + rho);
+        log_str = append (log_str, "LINEAR_TERM_MIN,"  + i_IRLS + "," + min (all_linear_terms));
+        log_str = append (log_str, "LINEAR_TERM_MAX,"  + i_IRLS + "," + max (all_linear_terms));
+    }
+        
     if (i_IRLS == max_iteration_IRLS) {
-        converged_IRLS = 2;
+        termination_code = 2;
     }
 }
 
@@ -339,7 +416,7 @@ beta = newbeta;
 log_l = new_log_l;
 deviance_nodisp = new_deviance_nodisp;
 
-if (converged_IRLS == 1) {
+if (termination_code == 1) {
     print ("Converged in " + i_IRLS + " steps.");
 } else {
     print ("Did not converge.");
@@ -353,19 +430,20 @@ if (intercept_status == 2) {
     beta_out = ssX_beta;
 }
 
-if (nrow (beta_out) >= 1) {
-    print ("beta[1] = " + castAsScalar (beta_out [1, 1]));
-}
-if (nrow (beta_out) >= 2) {
-    print ("beta[2] = " + castAsScalar (beta_out [2, 1]));
-}
-if (nrow (beta_out) >= 3) {
-    print ("beta[3] = " + castAsScalar (beta_out [3, 1]));
-}
+write (beta_out, $B, format=$fmt);
 
-write (beta_out, $B, format="text");
-
-
+if (intercept_status == 1 | intercept_status == 2) {
+    intercept_value = castAsScalar (beta_out [num_features, 1]);
+    beta_noicept = beta_out [1 : (num_features - 1), 1];
+} else {
+    beta_noicept = beta_out [1 : num_features, 1];
+}
+min_beta = min (beta_noicept);
+max_beta = max (beta_noicept);
+tmp_i_min_beta = rowIndexMin (t(beta_noicept))
+i_min_beta = castAsScalar (tmp_i_min_beta [1, 1]);
+tmp_i_max_beta = rowIndexMax (t(beta_noicept))
+i_max_beta = castAsScalar (tmp_i_max_beta [1, 1]);
 
 #####  OVER-DISPERSION PART  #####
 
@@ -376,20 +454,41 @@ pearson_residual_sq = g_Y ^ 2 / w;
 pearson_residual_sq = replace (target = pearson_residual_sq, pattern = 0.0/0.0, replacement = 0);
 # pearson_residual_sq = (y_residual ^ 2) / y_var;
 
-if (dispersion <= 0.0)
-{
-    dispersion = sum (pearson_residual_sq) / (num_records - num_features);
-    print ("Estimated dispersion = " + dispersion);
+if (num_records > num_features) {
+    estimated_dispersion = sum (pearson_residual_sq) / (num_records - num_features);
 }
-
+if (dispersion <= 0.0) {
+    dispersion = estimated_dispersion;
+}
 deviance = deviance_nodisp / dispersion;
-print ("Deviance:  no overdispersion = " + deviance_nodisp + ",  with overdispersion = " + deviance);
 
+if ($Log != " ") {
+    write (log_str, $Log);
+}
 
 #####  END OF THE MAIN PART  #####
 
-} else { print ("Response vector is out of range.  Terminating the DML."); }
-} else { print ("Distribution/Link not supported.  Terminating the DML."); }
+} else { print ("Input matrices are out of range.  Terminating the DML."); termination_code = 3; }
+} else { print ("Distribution/Link not supported.  Terminating the DML."); termination_code = 4; }
+
+str = "TERMINATION_CODE," + termination_code;
+str = append (str, "BETA_MIN," + min_beta);
+str = append (str, "BETA_MIN_INDEX," + i_min_beta);
+str = append (str, "BETA_MAX," + max_beta);
+str = append (str, "BETA_MAX_INDEX," + i_max_beta);
+str = append (str, "INTERCEPT," + intercept_value);
+str = append (str, "DISPERSION," + dispersion);
+str = append (str, "DISPERSION_EST," + estimated_dispersion);
+str = append (str, "DEVIANCE_UNSCALED," + deviance_nodisp);
+str = append (str, "DEVIANCE_SCALED," + deviance);
+
+if ($O != " ") {
+    write (str, $O);
+} else {
+    print (str);
+}
+
+
 
 
 check_if_supported = 
@@ -885,7 +984,7 @@ binomial_probability_two_column =
 get_CG_Steihaug_point =
     function (Matrix[double] X, Matrix[double] scale_X, Matrix[double] shift_X, Matrix[double] w,
     Matrix[double] g, Matrix[double] beta, Matrix[double] lambda, double trust_delta, int max_iter_CG)
-    return (Matrix[double] z, double neg_log_l_change, int reached_trust_boundary)
+    return (Matrix[double] z, double neg_log_l_change, int i_CG, int reached_trust_boundary)
 {
     trust_delta_sq = trust_delta ^ 2;
     size_CG = nrow (g);
@@ -909,6 +1008,7 @@ get_CG_Steihaug_point =
     i_CG = 0;
     while (converged_CG == 0)
     {
+        i_CG = i_CG + 1;
         ssX_p_CG = diag (scale_X) %*% p_CG;
         ssX_p_CG [size_CG, ] = ssX_p_CG [size_CG, ] + t(shift_X) %*% p_CG;
         temp_CG = t(X) %*% (w * (X %*% ssX_p_CG));
@@ -940,7 +1040,6 @@ get_CG_Steihaug_point =
                 old_rr_CG = rr_CG;
                 r_CG = r_CG + alpha_CG * q_CG;
                 rr_CG = sum(r_CG * r_CG);
-                i_CG = i_CG + 1;
                 if (i_CG == max_iteration_CG | rr_CG < eps_CG) {
                     neg_log_l_change = 0.5 * sum (z * (r_CG + g_reg));
                     reached_trust_boundary = 0;

@@ -167,7 +167,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
 		OptNode pn = plan.getRoot();
-		double M = -1, M2 = -1; //memory consumption
+		double M0 = -1, M1 = -1, M2 = -1; //memory consumption
 		
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -185,25 +185,25 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
-		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
-		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M) );
+		M0 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
+		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M0) );
 		
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
 		HashMap<String, PDataPartitionFormat> partitionedMatrices = new HashMap<String,PDataPartitionFormat>();
 		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
-		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
+		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
-		boolean flagLIX = rewriteSetResultPartitioning( pn, M, ec.getVariables() );
-		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
+		boolean flagLIX = rewriteSetResultPartitioning( pn, M1, ec.getVariables() );
+		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
-		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M) );
+		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M1) );
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		
 		// rewrite 3: execution strategy
-		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M, M2, flagLIX );
+		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
@@ -211,7 +211,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( flagRecompMR ){
 				//rewrite 4: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
-				M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
 			}
 			
 			// rewrite 5: data colocation
@@ -224,23 +224,23 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
 			// rewrite 8: nested parallelism (incl exec types)	
-			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
+			boolean flagNested = rewriteNestedParallelism( pn, M1, flagLIX );
 			
 			// rewrite 9: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M, flagNested );
+			rewriteSetDegreeOfParallelism( pn, M1, flagNested );
 			
 			// rewrite 10: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 			
 			// rewrite 11: fused data partitioning and execution
-			rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, ec.getVariables());
+			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables());
 		
 			// rewrite 12: transpose sparse vector operations
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
 			//rewrite 13:
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			rewriteSetInPlaceResultIndexing(pn, M, ec.getVariables(), inplaceResultVars);
+			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
 			//rewrite 14:
 			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -248,7 +248,7 @@ public class OptimizerRuleBased extends Optimizer
 		else //if( pn.getExecType() == ExecType.CP )
 		{
 			// rewrite 9: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M, false );
+			rewriteSetDegreeOfParallelism( pn, M1, false );
 			
 			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
@@ -767,7 +767,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param M
 	 * @throws DMLRuntimeException 
 	 */
-	protected boolean rewriteSetExecutionStategy(OptNode n, double M, double M2, boolean flagLIX) 
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, boolean flagLIX) 
 		throws DMLRuntimeException
 	{
 		boolean isCPOnly = n.isCPOnly();
@@ -786,7 +786,7 @@ public class OptimizerRuleBased extends Optimizer
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
 			//MR if problem is large enough and remote parallelism is larger than local   
-			else if( _lk < _N && _lk < _rk && isLargeProblem(n, M) )
+			else if( _lk < _N && _lk < _rk && isLargeProblem(n, M0) )
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
@@ -838,10 +838,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param pn
 	 * @return
 	 */
-	protected boolean isLargeProblem(OptNode pn, double M)
+	protected boolean isLargeProblem(OptNode pn, double M0)
 	{
 		return ((_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE )
-				&& M > PROB_SIZE_THRESHOLD_MB ); //operations at least larger than 8MB
+				&& M0 > PROB_SIZE_THRESHOLD_MB ); //original operations at least larger than 8MB
 	}
 	
 	/**

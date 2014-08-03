@@ -241,7 +241,8 @@ public class OptimizerUtils
 		//we need to set default_size larger than any execution context
 		//memory budget, however, it should not produce overflows on sum
 		DEFAULT_SIZE = Math.max( InfrastructureAnalyzer.getLocalMaxMemory(),
-				                 InfrastructureAnalyzer.getRemoteMaxMemory() );
+				                 Math.max(InfrastructureAnalyzer.getRemoteMaxMemoryMap(),
+				                		  InfrastructureAnalyzer.getRemoteMaxMemoryReduce()));
 	}
 	
 	/**
@@ -256,9 +257,13 @@ public class OptimizerUtils
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
-	public static double getRemoteMemBudget()
+	/**
+	 * 
+	 * @return
+	 */
+	public static double getRemoteMemBudgetMap()
 	{
-		return getRemoteMemBudget(false);
+		return getRemoteMemBudgetMap(false);
 	}
 	
 	
@@ -266,11 +271,21 @@ public class OptimizerUtils
 	 * 
 	 * @return
 	 */
-	public static double getRemoteMemBudget(boolean substractSortBuffer)
+	public static double getRemoteMemBudgetMap(boolean substractSortBuffer)
 	{
-		double ret = InfrastructureAnalyzer.getRemoteMaxMemory();
+		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryMap();
 		if( substractSortBuffer )
 			ret -= InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
+		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static double getRemoteMemBudgetReduce()
+	{
+		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryReduce();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 

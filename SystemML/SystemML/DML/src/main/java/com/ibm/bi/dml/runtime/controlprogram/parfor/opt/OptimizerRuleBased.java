@@ -129,8 +129,10 @@ public class OptimizerRuleBased extends Optimizer
 	protected int _rk2  = -1; //remote par (reducers)
 	protected int _rkmax = -1; //remote max par (mappers)
 	protected int _rkmax2 = -1; //remote max par (reducers)
-	protected double _lm = -1; //general memory constraint
-	protected double _rm = -1; //global memory constraint
+	protected double _lm = -1; //local memory constraint
+	protected double _rm = -1; //remote memory constraint (mappers)
+	protected double _rm2 = -1; //remote memory constraint (reducers)
+	
 	
 	protected CostEstimator _cost = null;
 
@@ -238,11 +240,11 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 12: transpose sparse vector operations
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
-			//rewrite 13:
+			//rewrite 13: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
-			//rewrite 14:
+			//rewrite 14: disable caching
 			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
 		}
 		else //if( pn.getExecType() == ExecType.CP )
@@ -280,18 +282,19 @@ public class OptimizerRuleBased extends Optimizer
 	 */
 	protected void analyzeProblemAndInfrastructure( OptNode pn )
 	{
-		_N     = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS)); 
-		_Nmax  = pn.getMaxProblemSize(); 
-		_lk    = InfrastructureAnalyzer.getLocalParallelism();
+		_N       = Long.parseLong(pn.getParam(ParamType.NUM_ITERATIONS)); 
+		_Nmax    = pn.getMaxProblemSize(); 
+		_lk      = InfrastructureAnalyzer.getLocalParallelism();
 		_lkmaxCP = (int) Math.ceil( PAR_K_FACTOR * _lk ); 
 		_lkmaxMR = (int) Math.ceil( PAR_K_MR_FACTOR * _lk );
-		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
-		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		_rk2   = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_rkmax2 = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
-		_lm   = OptimizerUtils.getLocalMemBudget();
-		_rm   = OptimizerUtils.getRemoteMemBudget(false); 	
+		_rnk     = InfrastructureAnalyzer.getRemoteParallelNodes();  
+		_rk      = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+		_rk2     = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
+		_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
+		_lm      = OptimizerUtils.getLocalMemBudget();
+		_rm      = OptimizerUtils.getRemoteMemBudgetMap(false); 	
+		_rm2     = OptimizerUtils.getRemoteMemBudgetReduce(); 	
 	}
 	
 	///////
@@ -1404,6 +1407,13 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * Furthermore, it should be only chosen if we already decided for remote partitioning
 	 * and otherwise would create a large number of partition files.
+	 * 
+	 * NOTE: We already respect the reducer memory budget for plan correctness. However,
+	 * we miss optimization potential if the reducer budget is larger than the mapper budget
+	 * (if we were not able to select REMOTE_MR as execution strategy wrt mapper budget)
+	 * TODO modify 'set exec strategy' and related rewrites for conditional data partitioning.
+	 * 
+	 * 
 	 * @param M 
 	 * @param partitionedMatrices, ExecutionContext ec 
 	 * 
@@ -1426,7 +1436,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// try to merge MR data partitioning and MR exec 
 		if(  pn.getExecType()==ExecType.MR   //MR EXEC and CP body
-			&& M < _rm //fits into remote memory (to be extended for location reduce)	
+			&& M < _rm2 //fits into remote memory of reducers	
 			&& partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString()) //MR partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
@@ -1902,7 +1912,7 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getRemoteMemBudget(false));
+						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getRemoteMemBudgetMap(false));
 					}
 				}
 			}
@@ -2017,7 +2027,7 @@ public class OptimizerRuleBased extends Optimizer
 					long rows = mo.getNumRows();
 					long cols = mo.getNumColumns();
 					double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
-						                         OptimizerUtils.getRemoteMemBudget();
+						                         OptimizerUtils.getRemoteMemBudgetMap();
 					ret &= isInMemoryResultMerge(rows, cols, memBudget);
 				}
 			}

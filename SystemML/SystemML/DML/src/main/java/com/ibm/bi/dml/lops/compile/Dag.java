@@ -835,7 +835,7 @@ public class Dag<N extends Lop>
 			// default behavior
 			return addNode;
 		
-		double memBudget = Math.min(AggBinaryOp.MVMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudget(true);
+		double memBudget = Math.min(AggBinaryOp.MVMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudgetMap(true);
 		//System.out.println("MapperMemBudget: " + memBudget);
 		if ( footprintInMapper <= memBudget ) 
 			return addNode;

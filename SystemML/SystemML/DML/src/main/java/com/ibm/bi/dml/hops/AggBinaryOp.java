@@ -645,7 +645,7 @@ public class AggBinaryOp extends Hop
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
-					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudget(true) ) 
+					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudgetMap(true) ) 
 				{
 					ret = true;
 				}
@@ -884,14 +884,14 @@ public class AggBinaryOp extends Hop
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
 					&& OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
-						< OptimizerUtils.getRemoteMemBudget(true) )
+						< OptimizerUtils.getRemoteMemBudgetMap(true) )
 				{
 					return MMultMethod.MAPMULT_CHAIN;
 				}
 				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
 					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
 					   + OptimizerUtils.estimateSize(m1_cols, m2_cols, 1.0)
-					   < OptimizerUtils.getRemoteMemBudget(true) )
+					   < OptimizerUtils.getRemoteMemBudgetMap(true) )
 				{
 					return MMultMethod.MAPMULT_CHAIN;
 				}
@@ -907,7 +907,7 @@ public class AggBinaryOp extends Hop
 		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2);		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true);		
+		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true);		
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
 			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
 		{

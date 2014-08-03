@@ -38,7 +38,8 @@ public class InfrastructureAnalyzer
 	public static int  _remotePar       = -1;
 	public static int  _remoteParMap    = -1;
 	public static int  _remoteParReduce = -1;
-	public static long _remoteJVMMaxMem = -1;
+	public static long _remoteJVMMaxMemMap    = -1;
+	public static long _remoteJVMMaxMemReduce = -1;
 	public static long _remoteMRSortMem = -1;
 	public static boolean _localJT      = false;
 	public static long _blocksize       = -1;
@@ -146,25 +147,29 @@ public class InfrastructureAnalyzer
 	}
 	
 	/**
-	 * Gets the maximum memory [in bytes] of a hadoop task JVM.
+	 * Gets the maximum memory [in bytes] of a hadoop map task JVM.
 	 * 
 	 * @return
 	 */
-	public static long getRemoteMaxMemory()
+	public static long getRemoteMaxMemoryMap()
 	{
-		if( _remoteJVMMaxMem == -1 )
+		if( _remoteJVMMaxMemMap == -1 )
 			analyzeHadoopCluster();
 		
-		return _remoteJVMMaxMem;
+		return _remoteJVMMaxMemMap;
 	}
 	
 	/**
+	 * Gets the maximum memory [in bytes] of a hadoop reduce task JVM.
 	 * 
 	 * @return
 	 */
-	public static long getGlobalMaxMemory()
+	public static long getRemoteMaxMemoryReduce()
 	{
-		return Math.min( getLocalMaxMemory(), getRemoteMaxMemory() );
+		if( _remoteJVMMaxMemReduce == -1 )
+			analyzeHadoopCluster();
+		
+		return _remoteJVMMaxMemReduce;
 	}
 	
 	/**
@@ -195,7 +200,7 @@ public class InfrastructureAnalyzer
 	
 	public static boolean isLocalMode()
 	{
-		if( _remoteJVMMaxMem == -1 )
+		if( _remoteJVMMaxMemMap == -1 )
 			analyzeHadoopCluster();
 		
 		return _localJT;		
@@ -203,7 +208,7 @@ public class InfrastructureAnalyzer
 	
 	public static boolean isLocalMode(JobConf job)
 	{
-		if( _remoteJVMMaxMem == -1 )
+		if( _remoteJVMMaxMemMap == -1 )
 		{
 			//analyze if local mode
 			String jobTracker = job.get("mapred.job.tracker", "local");
@@ -246,7 +251,7 @@ public class InfrastructureAnalyzer
 	public static long getCmMax() 
 	{
 		//default value (if not specified)
-		return Math.min( getLocalMaxMemory(), getRemoteMaxMemory() );
+		return Math.min( getLocalMaxMemory(), getRemoteMaxMemoryMap() );
 	}
 
 	/**
@@ -368,12 +373,17 @@ public class InfrastructureAnalyzer
 				
 				//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 				//(for robustness we probe both: child and map configuration parameters)
-				String javaOpts1 = job.get("mapred.child.java.opts");
-				String javaOpts2 = job.get("mapreduce.map.java.opts", null);
+				String javaOpts1 = job.get("mapred.child.java.opts"); //internally mapred/mapreduce synonym
+				String javaOpts2 = job.get("mapreduce.map.java.opts", null); //internally mapred/mapreduce synonym
+				String javaOpts3 = job.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
 				if( javaOpts2 != null ) //specific value overrides generic
-					_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts2); 
+					_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
 				else
-					_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts1);
+					_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts1);
+				if( javaOpts3 != null ) //specific value overrides generic
+					_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts3); 
+				else
+					_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
 				
 				//analyze if local mode
 				String jobTracker = job.get("mapred.job.tracker", "local");

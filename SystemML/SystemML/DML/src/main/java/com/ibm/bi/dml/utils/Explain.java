@@ -78,7 +78,9 @@ public class Explain
 		sb.append( "# Memory Budget local/remote = " );
 		sb.append( OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) );
 		sb.append( "MB/" );
-		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudget()) );
+		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetMap()) );
+		sb.append( "MB/" );
+		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetReduce()) );
 		sb.append( "MB" );
 		
 		return sb.toString();		 

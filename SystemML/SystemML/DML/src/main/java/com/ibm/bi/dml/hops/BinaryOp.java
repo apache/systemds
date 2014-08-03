@@ -379,13 +379,19 @@ public class BinaryOp extends Hop
 				}
 				else //CP
 				{
-					Lop offset = createAppendOffsetLop( getInput().get(0) ); //offset 1st input
-					
-					AppendCP app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
-							                    offset, get_dataType(), get_valueType());
+					AppendCP app = null;
+					if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) {
+						Lop offset = createAppendOffsetLop( getInput().get(0) ); //offset 1st input
+						app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, get_dataType(), get_valueType());
+						app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+								                                get_rows_in_block(), get_cols_in_block(), getNnz());
+					}
+					else { //SCALAR STRING append
+						app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+								     Data.createLiteralLop(ValueType.INT, "-1"), get_dataType(), get_valueType());
+						app.getOutputParameters().setDimensions(0,0,-1,-1,-1);
+					}
 					app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
-							                                get_rows_in_block(), get_cols_in_block(), getNnz());
 					set_lops(app);
 				}
 			}
@@ -1099,7 +1105,7 @@ public class BinaryOp extends Hop
 		if( dimsKnown() && _nnz<0 ) //never after inference
 			nnz = -1; 
 		
-		if(op==OpOp2.APPEND && !OptimizerUtils.ALLOW_DYN_RECOMPILATION ) {	
+		if(op==OpOp2.APPEND && !OptimizerUtils.ALLOW_DYN_RECOMPILATION && !(get_dataType()==DataType.SCALAR) ) {	
 			ret = OptimizerUtils.DEFAULT_SIZE;
 		}
 		else
@@ -1462,7 +1468,7 @@ public class BinaryOp extends Hop
 			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
 		{
 			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget(true) )
+			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true) )
 				return AppendMethod.MR_MAPPEND;
 		}
 		
@@ -1527,6 +1533,8 @@ public class BinaryOp extends Hop
 		if ( get_dataType() == DataType.SCALAR ) 
 		{
 			//do nothing always known
+			set_dim1(0);
+			set_dim2(0);
 		}
 		else //MATRIX OUTPUT
 		{
@@ -1534,7 +1542,7 @@ public class BinaryOp extends Hop
 			if( op == OpOp2.APPEND )
 			{
 				set_dim1( (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1() );
-				
+					
 				//ensure both columns are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.get_dim2()>0 && input2.get_dim2()>0 )
 					set_dim2( input1.get_dim2() + input2.get_dim2() );

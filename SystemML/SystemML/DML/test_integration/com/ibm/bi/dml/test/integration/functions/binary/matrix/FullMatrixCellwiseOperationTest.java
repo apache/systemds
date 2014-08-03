@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class FullMatrixCellwiseOperationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME1 = "FullMatrixCellwiseOperation_Addition";
@@ -44,6 +44,11 @@ public class FullMatrixCellwiseOperationTest extends AutomatedTestBase
 		DIVISION
 	}
 	
+	private enum SparsityType{
+		DENSE,
+		SPARSE,
+		EMPTY
+	}
 	
 	@Override
 	public void setUp() 
@@ -58,193 +63,433 @@ public class FullMatrixCellwiseOperationTest extends AutomatedTestBase
 	@Test
 	public void testAdditionDenseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, false, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testAdditionDenseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, false, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testAdditionDenseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testAdditionSparseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, true, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testAdditionSparseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, true, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testAdditionSparseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
+	}
+	
+	@Test
+	public void testAdditionEmptyDenseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testAdditionEmptySparseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testAdditionEmptyEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testAdditionDenseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, false, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testAdditionDenseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, false, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testAdditionDenseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testAdditionSparseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, true, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testAdditionSparseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.ADDITION, true, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
 	}
+	
+	@Test
+	public void testAdditionSparseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
+	}
+	
+	@Test
+	public void testAdditionEmptyDenseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testAdditionEmptySparseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testAdditionEmptyEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
+	}	
 	
 	@Test
 	public void testSubstractionDenseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, false, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testSubstractionDenseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, false, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testSubstractionDenseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testSubstractionSparseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, true, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testSubstractionSparseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, true, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testSubstractionSparseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
+	}
+	
+	@Test
+	public void testSubstractionEmptyDenseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testSubstractionEmptySparseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testSubstractionEmptyEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testSubstractionDenseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, false, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testSubstractionDenseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, false, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testSubstractionDenseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testSubstractionSparseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, true, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testSubstractionSparseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, true, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testSubstractionSparseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
+	}
+	
+	@Test
+	public void testSubstractionEmptyDenseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testSubstractionEmptySparseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testSubstractionEmptyEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testMultiplicationDenseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, false, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testMultiplicationDenseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, false, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testMultiplicationDenseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testMultiplicationSparseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, true, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testMultiplicationSparseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, true, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testMultiplicationSparseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyDenseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testMultiplicationEmptySparseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testMultiplicationDenseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, false, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testMultiplicationDenseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, false, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testMultiplicationDenseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testMultiplicationSparseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, true, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testMultiplicationSparseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, true, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testMultiplicationSparseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyDenseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testMultiplicationEmptySparseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testDivisionDenseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, false, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testDivisionDenseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, false, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testDivisionDenseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testDivisionSparseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, true, false, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
 	public void testDivisionSparseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, true, true, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testDivisionSparseEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
+	}
+	
+	@Test
+	public void testDivisionEmptyDenseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testDivisionEmptySparseCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
+	}
+	
+	@Test
+	public void testDivisionEmptyEmptyCP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
 	public void testDivisionDenseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, false, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testDivisionDenseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, false, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testDivisionDenseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
 	public void testDivisionSparseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, true, false, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
 	public void testDivisionSparseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.DIVISION, true, true, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testDivisionSparseEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
+	}
+	
+	@Test
+	public void testDivisionEmptyDenseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testDivisionEmptySparseMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
+	}
+	
+	@Test
+	public void testDivisionEmptyEmptyMR() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	/**
@@ -253,7 +498,7 @@ public class FullMatrixCellwiseOperationTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runMatrixCellwiseOperationTest( OpType type, boolean sparseM1, boolean sparseM2, ExecType instType)
+	private void runMatrixCellwiseOperationTest( OpType type, SparsityType sparseM1, SparsityType sparseM2, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -288,10 +533,23 @@ public class FullMatrixCellwiseOperationTest extends AutomatedTestBase
 			
 			loadTestConfiguration(config);
 	
+			//get sparsity
+			double lsparsity1 = 1.0, lsparsity2 = 1.0;
+			switch( sparseM1 ){
+				case DENSE: lsparsity1 = sparsity1; break;
+				case SPARSE: lsparsity1 = sparsity2; break;
+				case EMPTY: lsparsity1 = 0.0; break;
+			}
+			switch( sparseM2 ){
+				case DENSE: lsparsity2 = sparsity1; break;
+				case SPARSE: lsparsity2 = sparsity2; break;
+				case EMPTY: lsparsity2 = 0.0; break;
+			}
+			
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparseM1?sparsity2:sparsity1, 7); 
+			double[][] A = getRandomMatrix(rows, cols, 0, (lsparsity1==0)?0:1, lsparsity1, 7); 
 			writeInputMatrix("A", A, true);
-			double[][] B = getRandomMatrix(rows, cols, 0, 1, sparseM2?sparsity2:sparsity1, 3); 
+			double[][] B = getRandomMatrix(rows, cols, 0, (lsparsity2==0)?0:1, lsparsity2, 3); 
 			writeInputMatrix("B", B, true);
 	
 			boolean exceptionExpected = false;

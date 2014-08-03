@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.math.random.Well1024a;
+import org.apache.hadoop.io.DataInputBuffer;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
@@ -45,6 +46,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -55,6 +57,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -1744,6 +1747,13 @@ public class MatrixBlock extends MatrixValue
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
 			nonZeros = mbin.readDoubleArray(limit, denseBlock);
 		}
+		else if( in instanceof DataInputBuffer && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) 
+		{
+			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
+			DataInputBuffer din = (DataInputBuffer)in;
+			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
+			nonZeros = mbin.readDoubleArray(limit, denseBlock);			
+		}
 		else //default deserialize
 		{
 			for( int i=0; i<limit; i++ )
@@ -1770,6 +1780,13 @@ public class MatrixBlock extends MatrixValue
 		{
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
 			nonZeros = mbin.readSparseRows(rlen, sparseRows);
+		}
+		else if( in instanceof DataInputBuffer  && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) 
+		{
+			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
+			DataInputBuffer din = (DataInputBuffer)in;
+			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
+			nonZeros = mbin.readSparseRows(rlen, sparseRows);			
 		}
 		else //default deserialize
 		{
@@ -2438,7 +2455,8 @@ public class MatrixBlock extends MatrixValue
 				}
 				sparseRows[r].truncate(pos);
 			}
-		}else
+		}
+		else
 		{
 			int limit=rlen*clen;
 			nonZeros=0;
@@ -2453,8 +2471,7 @@ public class MatrixBlock extends MatrixValue
 	
 	private void denseScalarOperationsInPlace(ScalarOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		
+	{		
 		if( sparse ) //SPARSE MATRIX
 		{
 			double v;
@@ -2468,15 +2485,16 @@ public class MatrixBlock extends MatrixValue
 		else //DENSE MATRIX
 		{
 			//early abort not possible because not sparsesafe (e.g., A+7)
-			if(denseBlock==null)
-				allocateDenseBlock();
+			
+			//allocate dense block (if necessary), incl clear nnz
+			allocateDenseBlock(true);
 				
+			//compute scalar operation, incl nnz maintenance
 			int limit=rlen*clen;
-			nonZeros=0;
-			for(int i=0; i<limit; i++)
+			for(int i=0; i<limit; i++) 
 			{
-				denseBlock[i]=op.executeScalar(denseBlock[i]);
-				if(denseBlock[i]!=0)
+				denseBlock[i] = op.executeScalar(denseBlock[i]);
+				if(denseBlock[i] != 0)
 					nonZeros++;
 			}
 		}
@@ -2595,18 +2613,18 @@ public class MatrixBlock extends MatrixValue
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		MatrixBlock that=checkType(thatValue);
-		checkType(result);
-		if(this.rlen!=that.rlen || this.clen!=that.clen)
+		MatrixBlock that = checkType(thatValue);
+		MatrixBlock ret = checkType(result);
+		if(this.rlen!=that.rlen || this.clen!=that.clen ) {
 			throw new RuntimeException("block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"
-					+that.clen);
+					"cell operations: "+this.rlen+"x"+this.clen+" vs "+ that.rlen+"x"+that.clen);
+		}
 		
 		MatrixBlock tmp = null;
 		if(op.sparseSafe)
-			tmp = sparseBinaryHelp(op, that, (MatrixBlock)result);
+			tmp = sparseBinaryHelp(op, that, ret);
 		else
-			tmp = denseBinaryHelp(op, that, (MatrixBlock)result);
+			tmp = denseBinaryHelp(op, that, ret);
 				
 		return tmp;
 	}
@@ -2686,8 +2704,8 @@ public class MatrixBlock extends MatrixValue
 		{
 			//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
 			result.allocateDenseBlock();
-			int m = result.rlen;
-			int n = result.clen;
+			final int m = result.rlen;
+			final int n = result.clen;
 			double[] c = result.denseBlock;
 			
 			//1) process left input: assignment
@@ -2716,10 +2734,10 @@ public class MatrixBlock extends MatrixValue
 			}
 			else //DENSE left
 			{
-				if( this.denseBlock!=null ) 
+				if( !this.isEmptyBlock(false) ) 
 					System.arraycopy(this.denseBlock, 0, c, 0, m*n);
 				else
-					Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+					Arrays.fill(result.denseBlock, 0, m*n, 0); 
 			}
 			
 			//2) process right input: op.fn (+,-,*), * only if dense
@@ -2742,11 +2760,11 @@ public class MatrixBlock extends MatrixValue
 			}
 			else //DENSE right
 			{
-				if( that.denseBlock!=null )
+				if( !that.isEmptyBlock(false) )
 					for( int i=0; i<m*n; i++ )
 						c[i] = op.fn.execute(c[i], that.denseBlock[i]);
 				else if(op.fn instanceof Multiply)
-					Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+					Arrays.fill(result.denseBlock, 0, m*n, 0); 
 			}
 
 			//3) recompute nnz
@@ -2755,8 +2773,8 @@ public class MatrixBlock extends MatrixValue
 		else if( !result.sparse && !this.sparse && !that.sparse && this.denseBlock!=null && that.denseBlock!=null )
 		{
 			result.allocateDenseBlock();
-			int m = result.rlen;
-			int n = result.clen;
+			final int m = result.rlen;
+			final int n = result.clen;
 			double[] c = result.denseBlock;
 			
 			//int nnz = 0;

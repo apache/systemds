@@ -40,8 +40,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-
-import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -59,6 +57,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 
 /**
@@ -506,7 +505,7 @@ public class DataConverter
 			throw new IOException("Read matrix blocks from hdfs is only supported for binary blocked format.");
 		
 		//prepare file access
-		JobConf job = ConfigurationManager.getCachedJobConf();
+		JobConf job = new JobConf();
 		FileSystem fs = (localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( ((localFS) ? "file:///" : "") + dir); 
 		if( !fs.exists(path) )	
@@ -1112,6 +1111,10 @@ public class DataConverter
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
 		
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		// 1) create sequence file writer, with right replication factor 
 		// (config via 'dfs.replication' not possible since sequence file internally calls fs.getDefaultReplication())
 		SequenceFile.Writer writer = null;
@@ -1119,7 +1122,7 @@ public class DataConverter
 		{
 			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt("io.file.buffer.size", 4096),  
-					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());
+					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
 		}
 		else	
 		{
@@ -1189,6 +1192,10 @@ public class DataConverter
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
+		
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
 		//initialize blocks for reuse (at most 4 different blocks required)
 		MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
@@ -1908,6 +1915,10 @@ public class DataConverter
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
 		
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
@@ -1915,6 +1926,7 @@ public class DataConverter
 			
 			try
 			{
+				//note: next(key, value) does not yet exploit the given serialization classes, record reader does but is generally slower.
 				while( reader.next(key, value) )
 				{	
 					//empty block filter (skip entire block)
@@ -1968,6 +1980,10 @@ public class DataConverter
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
 			
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)

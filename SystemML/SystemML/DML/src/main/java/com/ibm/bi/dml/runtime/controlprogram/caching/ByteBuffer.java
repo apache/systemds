@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -95,8 +93,9 @@ public class ByteBuffer
 		
 		if( _sparse )
 		{
-			ByteArrayInputStream bis = new ByteArrayInputStream(_bdata);
-			DataInputStream din = new DataInputStream(bis); 
+			//ByteArrayInputStream bis = new ByteArrayInputStream(_bdata);
+			//DataInputStream din = new DataInputStream(bis); 
+			CacheDataInput din = new CacheDataInput(_bdata);
 			ret = new MatrixBlock();
 			ret.readFields(din);
 		}

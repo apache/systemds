@@ -100,6 +100,10 @@ public class ReblockMR
 		job.setInt("mapred.task.timeout", 0);			
 		job.setMapSpeculativeExecution(false);
 		
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		//enable jvm reuse (based on SystemML configuration)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);
@@ -114,9 +118,12 @@ public class ReblockMR
 		
 		MatrixCharacteristics[] stats=ret.stats;
 		
-		//set up the number of reducers
+		//set up the number of reducers (according to output size)
 		int numRed = determineNumReducers(rlens, clens, nnz, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), (int)ret.numReducerGroups);
 		job.setNumReduceTasks(numRed);
+		
+		//setup in-memory reduce buffers budget (reblock reducer dont need much memory)
+		//job.set("mapred.job.reduce.input.buffer.percent", "0.70");
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())

@@ -74,9 +74,10 @@ public class LocalFileUtils
 		throws FileNotFoundException, IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
-		BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
-		DataInputStream in = new DataInputStream( bis );
-	
+		//BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
+		//DataInputStream in = new DataInputStream( bis );
+		FastBufferedDataInputStream in = new FastBufferedDataInputStream(fis, BUFFER_SIZE);
+		
 		try
 		{
 			ret.readFields(in);
@@ -99,7 +100,7 @@ public class LocalFileUtils
 	 */
 	public static void writeMatrixBlockToLocal (String filePathAndName, MatrixBlock mb)
 		throws FileNotFoundException, IOException
-	{		
+	{	
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		//BufferedOutputStream bos = new BufferedOutputStream( fos, BUFFER_SIZE );
 		//DataOutputStream out = new DataOutputStream( bos );
@@ -112,7 +113,7 @@ public class LocalFileUtils
 		finally
 		{
 			if( out != null )
-				out.close ();	
+				out.close();	
 		}	
 	}
 	

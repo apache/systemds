@@ -59,7 +59,7 @@ public class GMR
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
+	
 	/**
 	 * inBlockRepresentation: indicate whether to use block representation or cell representation
 	 * inputs: input matrices, the inputs are indexed by 0, 1, 2, .. based on the position in this string
@@ -193,6 +193,10 @@ public class GMR
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		//set up jvm reuse (incl. reuse of loaded dist cache matrices)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);

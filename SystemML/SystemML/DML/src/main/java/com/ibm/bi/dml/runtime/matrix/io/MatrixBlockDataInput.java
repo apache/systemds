@@ -5,7 +5,6 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-
 package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.io.IOException;
@@ -17,11 +16,12 @@ import java.io.IOException;
  * yes we let the implementation directly pass the entire block instead of value-by-value.
  * 
  * Known implementation classes:
- *    TODO
+ *    - FastBufferedDataInputStream
+ *    - CacheDataInput
  *    
  */
 public interface MatrixBlockDataInput 
-{
+{	
 	/**
 	 * Reads the double array from the data input into the given dense block
 	 * and returns the number of non-zeros. 

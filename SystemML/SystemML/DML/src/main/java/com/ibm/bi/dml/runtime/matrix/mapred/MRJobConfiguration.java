@@ -90,6 +90,9 @@ public class MRJobConfiguration
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	 //internal param: custom deserializer/serializer (usually 30% faster than WritableSerialization)
+	public static final boolean USE_BINARYBLOCK_SERIALIZATION = true;
+	
 	//Job configurations
 	
 	public static IDSequence seq = new IDSequence();
@@ -1983,6 +1986,13 @@ public class MRJobConfiguration
 	public static String getSystemMLLocalTmpDir(JobConf job)
 	{
 		return job.get(SYSTEMML_LOCAL_TMP_DIR);
+	}
+	
+	public static void addBinaryBlockSerializationFramework( JobConf job )
+	{
+		String frameworkList = job.get("io.serializations");
+		String frameworkClassBB = "com.ibm.bi.dml.runtime.util.BinaryBlockSerialization";
+		job.set("io.serializations", frameworkClassBB+","+frameworkList);
 	}
 }
 

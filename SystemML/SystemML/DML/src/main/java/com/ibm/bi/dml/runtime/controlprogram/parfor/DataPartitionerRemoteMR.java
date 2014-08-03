@@ -162,6 +162,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			job.setInt("mapred.task.timeout", 0);			
 			job.setMapSpeculativeExecution(false);
 			
+			//set up preferred custom serialization framework for binary block format
+			if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+				MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+			
 			//enables the reuse of JVMs (multiple tasks per MR task)
 			if( _jvmReuse )
 				job.setNumTasksToExecutePerJvm(-1); //unlimited

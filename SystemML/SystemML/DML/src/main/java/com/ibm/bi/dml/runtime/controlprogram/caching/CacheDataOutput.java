@@ -71,10 +71,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	public void writeInt(int v) 
 		throws IOException 
 	{
-		_buff[_count+0] = (byte)((v >>> 24) & 0xFF);
-		_buff[_count+1] = (byte)((v >>> 16) & 0xFF);
-		_buff[_count+2] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count+3] = (byte)((v >>>  0) & 0xFF);
+		intToBa(v, _buff, _count);
 		_count += 4;
 	}
 	
@@ -83,14 +80,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		throws IOException 
 	{
 		long tmp = Double.doubleToRawLongBits(v);		
-		_buff[_count+0] = (byte)((tmp >>> 56) & 0xFF);
-		_buff[_count+1] = (byte)((tmp >>> 48) & 0xFF);
-		_buff[_count+2] = (byte)((tmp >>> 40) & 0xFF);
-		_buff[_count+3] = (byte)((tmp >>> 32) & 0xFF);
-		_buff[_count+4] = (byte)((tmp >>> 24) & 0xFF);
-		_buff[_count+5] = (byte)((tmp >>> 16) & 0xFF);
-		_buff[_count+6] = (byte)((tmp >>>  8) & 0xFF);
-		_buff[_count+7] = (byte)((tmp >>>  0) & 0xFF);		
+		longToBa(tmp, _buff, _count);
 		_count += 8;
 	}
 
@@ -143,19 +133,18 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
 	{
+		//original buffer offset
+		int off = _count;
+		
+		//serialize entire array into buffer
 		for( int i=0; i<len; i++ )
 		{
 		    long tmp = Double.doubleToRawLongBits(varr[i]);
-		    _buff[_count+0] = (byte)((tmp >>> 56) & 0xFF);
-			_buff[_count+1] = (byte)((tmp >>> 48) & 0xFF);
-			_buff[_count+2] = (byte)((tmp >>> 40) & 0xFF);
-			_buff[_count+3] = (byte)((tmp >>> 32) & 0xFF);
-			_buff[_count+4] = (byte)((tmp >>> 24) & 0xFF);
-			_buff[_count+5] = (byte)((tmp >>> 16) & 0xFF);
-			_buff[_count+6] = (byte)((tmp >>>  8) & 0xFF);
-			_buff[_count+7] = (byte)((tmp >>>  0) & 0xFF);	
-			_count+=8;
+		    longToBa(tmp, _buff, off+i*8);
 		}
+		
+		//update buffer offset
+		_count = off + len*8;
 	}
 	
 	@Override
@@ -163,10 +152,9 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		throws IOException
 	{
 		int lrlen = Math.min(rows.length, rlen);
-		int i; //used for two consecutive loops
 		
 		//process existing rows
-		for( i=0; i<lrlen; i++ )
+		for( int i=0; i<lrlen; i++ )
 		{
 			SparseRow arow = rows[i];
 			if( arow!=null && arow.size()>0 )
@@ -179,23 +167,10 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 
 				for( int j=0; j<alen; j++ )
 				{
-					int tmp1 = aix[j];
-					_buff[_count+0 ] = (byte)((tmp1 >>> 24) & 0xFF);
-					_buff[_count+1 ] = (byte)((tmp1 >>> 16) & 0xFF);
-					_buff[_count+2 ] = (byte)((tmp1 >>>  8) & 0xFF);
-					_buff[_count+3 ] = (byte)((tmp1 >>>  0) & 0xFF);
-					
+					intToBa(aix[j], _buff, _count);
 					long tmp2 = Double.doubleToRawLongBits(avals[j]);
-					_buff[_count+4 ] = (byte)((tmp2 >>> 56) & 0xFF);
-					_buff[_count+5 ] = (byte)((tmp2 >>> 48) & 0xFF);
-					_buff[_count+6 ] = (byte)((tmp2 >>> 40) & 0xFF);
-					_buff[_count+7 ] = (byte)((tmp2 >>> 32) & 0xFF);
-					_buff[_count+8 ] = (byte)((tmp2 >>> 24) & 0xFF);
-					_buff[_count+9 ] = (byte)((tmp2 >>> 16) & 0xFF);
-					_buff[_count+10] = (byte)((tmp2 >>>  8) & 0xFF);
-					_buff[_count+11] = (byte)((tmp2 >>>  0) & 0xFF);
-					
-					_count +=12;
+					longToBa(tmp2, _buff, _count+4);
+					_count += 12;
 				}	
 			}
 			else 
@@ -203,7 +178,41 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		}
 		
 		//process remaining empty rows
-		for( ; i<rlen; i++ )
+		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
+	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param ba
+	 * @param off
+	 */
+	private static void intToBa( final int val, byte[] ba, final int off )
+	{
+		//shift and mask out 4 bytes
+		ba[ off+0 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
+	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param ba
+	 * @param off
+	 */
+	private static void longToBa( final long val, byte[] ba, final int off )
+	{
+		//shift and mask out 8 bytes
+		ba[ off+0 ] = (byte)((val >>> 56) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 48) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>> 40) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>> 32) & 0xFF);
+		ba[ off+4 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
 	}
 }

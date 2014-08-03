@@ -35,7 +35,6 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	protected byte[] _buff;
 	protected int _bufflen;
 	protected int _count;
-	protected OutputStream _out;
 	    
 	public FastBufferedDataOutputStream(OutputStream out) 
 	{
@@ -46,13 +45,16 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	{
 		super(out);
 		
-	    if (size <= 0) 
-	    	throw new IllegalArgumentException("Buffer size <= 0");
-	        
+	    if(size <= 0) 
+	    	throw new IllegalArgumentException("Buffer size <= 0.");
+	    if( size%8 != 0 )    
+	    	throw new IllegalArgumentException("Buffer size not a multiple of 8.");
+	    
 		_buff = new byte[size];
 		_bufflen = size;
 	}
 
+	@Override
     public void write(int b) 
     	throws IOException 
     {
@@ -62,6 +64,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)b;
     }
 
+    @Override
     public void write(byte b[], int off, int len) 
     	throws IOException 
     {
@@ -76,7 +79,8 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		System.arraycopy(b, off, _buff, _count, len);
 		_count += len;
     }
-	    
+	   
+    @Override
     public void flush() 
     	throws IOException 
     {
@@ -94,6 +98,12 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
         }
     }
 
+    @Override
+    public void close()
+    	throws IOException
+    {
+    	super.close();
+    }
     
     /////////////////////////////
     // DataOutput Implementation
@@ -117,10 +127,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		if (_count+4 > _bufflen) {
 		    flushBuffer();
 		}
-		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
-		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((v >>>  0) & 0xFF);
+		
+		intToBa(v, _buff, _count);
+		_count += 4;
 	}
 	
 
@@ -132,14 +141,8 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		    flushBuffer();
 		}
 		
-		_buff[_count++] = (byte)((v >>> 56) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 48) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 40) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 32) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
-		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((v >>>  0) & 0xFF);
+		longToBa(v, _buff, _count);
+		_count += 8;
 	}
 	
 	@Override
@@ -151,14 +154,8 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		}
 		
 		long tmp = Double.doubleToRawLongBits(v);		
-		_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>>  0) & 0xFF);		
+		longToBa(tmp, _buff, _count);
+		_count += 8;
 	}
 
 	@Override
@@ -204,47 +201,28 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
     // Implementation of MatrixBlockDSMDataOutput
     ///////////////////////////////////////////////	
 	
-	private static final int BLOCK_NVALS = 512;
-	private static final int BLOCK_NBYTES = BLOCK_NVALS*8; //4KB
-	
 	@Override
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
 	{
-		if( _bufflen >=  BLOCK_NBYTES) //blockwise if buffer large enough
+		//initial flush
+		flushBuffer();
+		
+		//write matrix block-wise to underlying stream
+		int blen = _bufflen/8;
+		for( int i=0; i<len; i+=blen )
 		{
-			long tmp = -1;
-			int i, j;
-			
-			//process full blocks of BLOCK_NVALS values 
-			for( i=0; i<len-BLOCK_NVALS; i+=BLOCK_NVALS )
+			//write values of current block
+			int lblen = Math.min(len-i, blen);
+			for( int j=0; j<lblen; j++ )
 			{
-				if (_count+BLOCK_NBYTES > _bufflen) 
-				    flushBuffer();
-				
-				for( j=0; j<BLOCK_NVALS; j++ )
-				{
-					tmp = Double.doubleToRawLongBits(varr[i+j]);
-					_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>>  0) & 0xFF);	
-				}
-			}
+				long tmp = Double.doubleToRawLongBits(varr[i+j]);
+				longToBa(tmp, _buff, _count);
+				_count += 8;
+			}	
 			
-			//process remaining values of the last block
-			//(not relevant for performance, since at most BLOCK_NVALS-1 values)
-			for(  ; i<len; i++ )
-				writeDouble(varr[i]);
-		}
-		else //value wise (general case for small buffers)
-		{
-			for( int i=0; i<len; i++ )
-				writeDouble(varr[i]);
+			//flush buffer for current block
+			flushBuffer(); //based on count
 		}
 	}
 
@@ -253,10 +231,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		throws IOException
 	{
 		int lrlen = Math.min(rows.length, rlen);
-		int i; //used for two consecutive loops
 		
 		//process existing rows
-		for( i=0; i<lrlen; i++ )
+		for( int i=0; i<lrlen; i++ )
 		{
 			SparseRow arow = rows[i];
 			if( arow!=null && arow.size()>0 )
@@ -275,22 +252,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					
 					for( int j=0; j<alen; j++ )
 					{
-						int tmp1 = aix[j];
-						_buff[_count+0 ] = (byte)((tmp1 >>> 24) & 0xFF);
-						_buff[_count+1 ] = (byte)((tmp1 >>> 16) & 0xFF);
-						_buff[_count+2 ] = (byte)((tmp1 >>>  8) & 0xFF);
-						_buff[_count+3 ] = (byte)((tmp1 >>>  0) & 0xFF);
-						
 						long tmp2 = Double.doubleToRawLongBits(avals[j]);
-						_buff[_count+4 ] = (byte)((tmp2 >>> 56) & 0xFF);
-						_buff[_count+5 ] = (byte)((tmp2 >>> 48) & 0xFF);
-						_buff[_count+6 ] = (byte)((tmp2 >>> 40) & 0xFF);
-						_buff[_count+7 ] = (byte)((tmp2 >>> 32) & 0xFF);
-						_buff[_count+8 ] = (byte)((tmp2 >>> 24) & 0xFF);
-						_buff[_count+9 ] = (byte)((tmp2 >>> 16) & 0xFF);
-						_buff[_count+10] = (byte)((tmp2 >>>  8) & 0xFF);
-						_buff[_count+11] = (byte)((tmp2 >>>  0) & 0xFF);
-						
+						intToBa(aix[j], _buff, _count);
+						longToBa(tmp2, _buff, _count+4);
 						_count += 12;
 					}
 				}
@@ -299,8 +263,13 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					//row does not fit in buffer
 					for( int j=0; j<alen; j++ )
 					{
-						writeInt( aix[j] );
-						writeDouble( avals[j] );
+						if (_count+12 > _bufflen) 
+						    flushBuffer();
+						
+						long tmp2 = Double.doubleToRawLongBits(avals[j]);
+						intToBa(aix[j], _buff, _count);
+						longToBa(tmp2, _buff, _count+4);
+						_count += 12;
 					}
 				}	
 			}
@@ -309,8 +278,41 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		}
 		
 		//process remaining empty rows
-		for( ; i<rlen; i++ )
+		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
 	}
 	
+	/**
+	 * 
+	 * @param val
+	 * @param ba
+	 * @param off
+	 */
+	private static void intToBa( final int val, byte[] ba, final int off )
+	{
+		//shift and mask out 4 bytes
+		ba[ off+0 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
+	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param ba
+	 * @param off
+	 */
+	private static void longToBa( final long val, byte[] ba, final int off )
+	{
+		//shift and mask out 8 bytes
+		ba[ off+0 ] = (byte)((val >>> 56) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 48) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>> 40) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>> 32) & 0xFF);
+		ba[ off+4 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
+	}
 }

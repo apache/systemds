@@ -29,7 +29,8 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME = "rewrite_mapmultchain";
+	private final static String TEST_NAME1 = "rewrite_mapmultchain1";
+	private final static String TEST_NAME2 = "rewrite_mapmultchain2";
 	private final static String TEST_DIR = "functions/recompile/";
 	
 	private final static int rows = 1974;
@@ -45,37 +46,66 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "HV" }) );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "HV" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "HV" }) );
 	}
 
 	
 	
 	@Test
-	public void testRewriteSingleColumnCP() 
+	public void testRewriteExpr1SingleColumnCP() 
 		throws DMLRuntimeException, IOException 
 	{
-		runRewriteMapMultChain(true, ExecType.CP);
+		runRewriteMapMultChain(TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteMultiColumnCP() 
+	public void testRewriteExpr1MultiColumnCP() 
 		throws DMLRuntimeException, IOException 
 	{
-		runRewriteMapMultChain(false, ExecType.CP);
+		runRewriteMapMultChain(TEST_NAME1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteSingleColumnMR() 
+	public void testRewriteExpr1SingleColumnMR() 
 		throws DMLRuntimeException, IOException 
 	{
-		runRewriteMapMultChain(true, ExecType.MR);
+		runRewriteMapMultChain(TEST_NAME1, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testRewriteMultiColumnMR() 
+	public void testRewriteExpr1MultiColumnMR() 
 		throws DMLRuntimeException, IOException 
 	{
-		runRewriteMapMultChain(false, ExecType.MR);
+		runRewriteMapMultChain(TEST_NAME1, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testRewriteExpr2SingleColumnCP() 
+		throws DMLRuntimeException, IOException 
+	{
+		runRewriteMapMultChain(TEST_NAME2, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testRewriteExpr2MultiColumnCP() 
+		throws DMLRuntimeException, IOException 
+	{
+		runRewriteMapMultChain(TEST_NAME2, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testRewriteExpr2SingleColumnMR() 
+		throws DMLRuntimeException, IOException 
+	{
+		runRewriteMapMultChain(TEST_NAME2, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testRewriteExpr2MultiColumnMR() 
+		throws DMLRuntimeException, IOException 
+	{
+		runRewriteMapMultChain(TEST_NAME2, false, ExecType.MR);
 	}
 	
 
@@ -87,7 +117,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	private void runRewriteMapMultChain( boolean singleCol, ExecType et ) 
+	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) 
 		throws DMLRuntimeException, IOException
 	{	
 		RUNTIME_PLATFORM platformOld = rtplatform;

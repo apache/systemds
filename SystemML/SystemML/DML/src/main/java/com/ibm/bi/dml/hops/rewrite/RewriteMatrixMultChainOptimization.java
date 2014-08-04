@@ -86,9 +86,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
-	private int[][] mmChainDP(long dimArray[], int size) 
+	private int[][] mmChainDP(double dimArray[], int size) 
 	{
-		long dpMatrix[][] = new long[size][size]; //min cost table
+		double dpMatrix[][] = new double[size][size]; //min cost table
 		int split[][] = new int[size][size]; //min cost index table
 
 		//init minimum costs for chains of length 1
@@ -102,11 +102,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			for (int i = 0; i < size - l + 1; i++) {
 				int j = i + l - 1;
 				// find cost of (i,j)
-				dpMatrix[i][j] = Long.MAX_VALUE;
+				dpMatrix[i][j] = Double.MAX_VALUE;
 				for (int k = i; k <= j - 1; k++) 
 				{
 					//recursive cost computation
-					long cost = dpMatrix[i][k] + dpMatrix[k + 1][j] 
+					double cost = dpMatrix[i][k] + dpMatrix[k + 1][j] 
 							  + (dimArray[i] * dimArray[k + 1] * dimArray[j + 1]);
 					
 					//prune suboptimal
@@ -203,13 +203,13 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @return
 	 * @throws HopsException
 	 */
-	private long [] getDimArray ( Hop hop, ArrayList<Hop> chain ) 
+	private double [] getDimArray ( Hop hop, ArrayList<Hop> chain ) 
 		throws HopsException 
 	{
 		// Build the array containing dimensions from all matrices in the
 		// chain
 		
-		long dimArray[] = new long[chain.size() + 1];
+		double dimArray[] = new double[chain.size() + 1];
 		
 		// check the dimensions in the matrix chain to insure all dimensions are known
 		boolean shortCircuit = false;
@@ -364,7 +364,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			
 			 // Step-3: Find the optimal ordering via dynamic programming.
 			
-			long dimArray[] = getDimArray( hop, mmChain );
+			double dimArray[] = getDimArray( hop, mmChain );
 			
 			// Invoke Dynamic Programming
 			int size = mmChain.size();

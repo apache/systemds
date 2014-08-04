@@ -101,10 +101,12 @@ public class WriteCSVTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args", inputMatrixName, dmlOutput, csvOutputName, Boolean.toString(header), sep, Boolean.toString(sparse) };
 		
+		runTest(true, false, null, -1);
+
+		// Verify produced CSV file w/ R
+		csvOutputName = TestUtils.processMultiPartCSVForR(csvOutputName);
 		fullRScriptName = HOME + "writecsv_verify.R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + csvOutputName + " " + Boolean.toString(header).toUpperCase() + " " + sep + " " + rOutput;
-		
-		runTest(true, false, null, -1);
 		runRScript(true);
 		
 		double dmlScalar = TestUtils.readDMLScalar(dmlOutput); 

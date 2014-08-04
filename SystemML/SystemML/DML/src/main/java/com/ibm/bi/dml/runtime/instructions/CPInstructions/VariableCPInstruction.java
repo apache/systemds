@@ -788,7 +788,7 @@ public class VariableCPInstruction extends CPInstruction
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-						DataConverter.mergeCSVPartFiles(mo.getFileName(), input2.get_name(), (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
+					DataConverter.addHeaderToCSV(mo.getFileName(), input2.get_name(), (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(input2.get_name(), outFmt, formatProperties);

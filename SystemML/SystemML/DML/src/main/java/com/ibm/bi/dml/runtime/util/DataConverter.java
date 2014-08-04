@@ -708,6 +708,89 @@ public class DataConverter
 		}
 	}
 		
+	public static void addHeaderToCSV(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
+			throws IOException {
+		
+		Configuration conf = new Configuration();
+
+		Path srcFilePath = new Path(srcFileName);
+		Path destFilePath = new Path(destFileName);
+		FileSystem hdfs = FileSystem.get(conf);
+		
+		if ( !csvprop.isHasHeader() ) {
+			// simply move srcFile to destFile
+			hdfs.delete(destFilePath, true);
+			hdfs.rename(srcFilePath, destFilePath);
+			return;
+		}
+	
+		// construct the header line
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < clen; i++) {
+			sb.append("C" + (i + 1));
+			if (i < clen - 1)
+				sb.append(csvprop.getDelim());
+		}
+		sb.append('\n');
+
+		if (hdfs.isDirectory(srcFilePath)) {
+
+			// compute sorted order among part files
+			ArrayList<Path> files=new ArrayList<Path>();
+			for(FileStatus stat: hdfs.listStatus(srcFilePath, CSVReblockMR.hiddenFileFilter))
+				files.add(stat.getPath());
+			Collections.sort(files);
+		
+			// first part file path
+			Path firstpart = files.get(0);
+			
+			// create a temp file, and add header and contents of first part
+			Path tmp = new Path(firstpart.toString() + ".tmp");
+			OutputStream out = hdfs.create(tmp, true);
+			out.write(sb.toString().getBytes());
+			sb.setLength(0);
+			
+			// copy rest of the data from firstpart
+			InputStream in = null;
+			try {
+				in = hdfs.open(firstpart);
+				IOUtils.copyBytes(in, out, conf, true);
+			} finally {
+				in.close();
+				out.close();
+			}
+			
+			// rename tmp to firstpart
+			hdfs.delete(firstpart, true);
+			hdfs.rename(tmp, firstpart);
+			
+			// rename srcfile to destFile
+			hdfs.delete(destFilePath, true);
+			hdfs.rename(srcFilePath, destFilePath);
+		
+		} else if (hdfs.isFile(srcFilePath)) {
+			// create destition file
+			OutputStream out = hdfs.create(destFilePath, true);
+			
+			// write header
+			out.write(sb.toString().getBytes());
+			sb.setLength(0);
+			
+			// copy the data from srcFile
+			InputStream in = null;
+			try {
+				in = hdfs.open(srcFilePath);
+				IOUtils.copyBytes(in, out, conf, true);
+			} finally {
+				in.close();
+				out.close();
+			}
+		} else {
+			throw new IOException(srcFilePath.toString()
+					+ ": No such file or directory");
+		}
+	}
+		
 	/**
 	 * 
 	 * @param fileName

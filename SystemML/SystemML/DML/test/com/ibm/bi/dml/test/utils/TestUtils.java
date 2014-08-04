@@ -593,6 +593,38 @@ public class TestUtils
 		}
 		return Double.NaN;
 	}
+	
+	public static String processMultiPartCSVForR(String csvFile) {
+		File csv = new File(csvFile);
+		if (csv.isDirectory()) {
+			File[] parts = csv.listFiles();
+			
+			int count=0;
+			int index = -1;
+			for(int i=0; i < parts.length; i++ ) {
+				File f = parts[i];
+				String path = f.getPath();
+				if (path.startsWith(".") && path.endsWith(".crc"))
+					continue;
+				count++;
+				index = i;
+			}
+			
+			if ( count == 1) {
+				csvFile = parts[index].toString();
+			}
+			else if ( count > 1 ) {
+				//File tmp = new File(csvFile+"_temp.csv");
+				//BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp)));
+		
+				throw new RuntimeException("Need to handle multi-part csv file read in R");
+			}
+			else {
+				throw new RuntimeException("Unexpected error while reading a CSV file in R: " + count);
+			}
+		}
+		return csvFile;
+	}
 
 	/**
 	 * Compares two double values regarding tolerance t. If one or both of them

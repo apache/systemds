@@ -179,7 +179,7 @@ public class FormatChangeTest extends AutomatedTestBase
 
 	}
 	
-	private void compareFiles(int rows, int cols, double sparsity, String dmlFile, String dmlFormat, String mmFile) {
+	private void compareFiles(int rows, int cols, double sparsity, String dmlFile, String dmlFormat, String csvFile) {
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		
 		// backup old DML and R script files
@@ -197,9 +197,16 @@ public class FormatChangeTest extends AutomatedTestBase
                 							dmlOutput
                 							};
 		
+		// Check if input csvFile is a directory
+		try {
+			csvFile = TestUtils.processMultiPartCSVForR(csvFile);
+		} catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+		
 		fullRScriptName = HOME + "csv_verify.R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       mmFile + " " + rOutput;
+		       csvFile + " " + rOutput;
 		
 		// Run the verify test
 		runTest(true, false, null, -1);

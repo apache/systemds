@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
@@ -31,6 +32,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
@@ -38,6 +40,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 
 /**
  * 
@@ -169,18 +173,91 @@ public class ProgramRecompiler
 	 * 
 	 * @param prog
 	 * @param parforSB
+	 * @param vars
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		LocalVariableMap constVars = new LocalVariableMap(); 
+		
+		for( String varname : vars.keySet() )
+		{
+			Data dat = vars.get(varname);
+			if( dat instanceof ScalarObject //scalar
+				&& isApplicableForReuseVariable(prog, parforSB, varname) ) //constant
+			{
+				constVars.put(varname, dat);
+			}
+		}
+		
+		return constVars;
+	}
+	
+	public static void replaceConstantScalarVariables( StatementBlock sb, LocalVariableMap vars )
+		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException
+	{
+		if( sb instanceof IfStatementBlock )
+		{
+			IfStatement is = (IfStatement) sb.getStatement(0);
+			for( StatementBlock lsb : is.getIfBody() )
+				replaceConstantScalarVariables(lsb, vars);
+			for( StatementBlock lsb : is.getElseBody() )
+				replaceConstantScalarVariables(lsb, vars);
+		}
+		else if( sb instanceof WhileStatementBlock )
+		{
+			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			for( StatementBlock lsb : ws.getBody() )
+				replaceConstantScalarVariables(lsb, vars);		
+		}
+		else if( sb instanceof ForStatementBlock ) //for or parfor
+		{
+			ForStatementBlock fsb = (ForStatementBlock)sb;
+			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			for( StatementBlock lsb : fs.getBody() )
+				replaceConstantScalarVariables(lsb, vars);
+		}
+		else //last level block
+		{
+			ArrayList<Hop> hops = sb.get_hops();
+			if( hops != null ) 
+			{	
+				//step 1) replace constant literals
+				Hop.resetVisitStatus(hops);
+				for( Hop hopRoot : hops )
+					Recompiler.rReplaceLiterals( hopRoot, vars );
+				
+				//step 2) run constant folding, currently not applied 
+				//Hop.resetVisitStatus(hops);
+				//hops = new RewriteConstantFolding().rewriteHopDAGs(hops);
+				//sb.set_hops(hops);		
+			}	
+		}
+	}
+	
+	/**
+	 * This function determines if an parfor input variable is guaranteed to be read-only
+	 * across multiple invocations of parfor optimization (e.g., in a surrounding while loop).
+	 * In case of invariant variables we can reuse partitioned matrices and propagate constants
+	 * for better size estimation.
+	 * 
+	 * @param prog
+	 * @param parforSB
 	 * @param var
 	 * @return
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	public static boolean isApplicableForReusePartitionedMatrix( DMLProgram prog, StatementBlock parforSB, String var )
+	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		boolean ret = false;
 		
 		for( StatementBlock sb : prog.getStatementBlocks() )
-			ret |= isApplicableForReusePartitionedMatrix(sb, parforSB, var);
+			ret |= isApplicableForReuseVariable(sb, parforSB, var);
 		
 		return  ret;	
 	}
@@ -193,7 +270,7 @@ public class ProgramRecompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	private static boolean isApplicableForReusePartitionedMatrix( StatementBlock sb, StatementBlock parforSB, String var )
+	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var )
 			throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		boolean ret = false;
@@ -202,15 +279,15 @@ public class ProgramRecompiler
 		{
 			IfStatement is = (IfStatement) sb.getStatement(0);
 			for( StatementBlock lsb : is.getIfBody() )
-				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+				ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 			for( StatementBlock lsb : is.getElseBody() )
-				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+				ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 		}
 		else if( sb instanceof WhileStatementBlock )
 		{
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
 			for( StatementBlock lsb : ws.getBody() )
-				ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);		
+				ret |= isApplicableForReuseVariable(lsb, parforSB, var);		
 		}
 		else if( sb instanceof ForStatementBlock ) //for or parfor
 		{
@@ -222,7 +299,7 @@ public class ProgramRecompiler
 			}
 			else {
 				for( StatementBlock lsb : fs.getBody() )
-					ret |= isApplicableForReusePartitionedMatrix(lsb, parforSB, var);
+					ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 			}
 		}
 		

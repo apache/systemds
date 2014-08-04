@@ -548,7 +548,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						//store original and partitioned matrix (for reuse if applicable)
 						_variablesDPOriginal.put(var, moVar);
 						if(    ALLOW_REUSE_PARTITION_VARS 
-							&& ProgramRecompiler.isApplicableForReusePartitionedMatrix(_sb.getDMLProg(), _sb, var) ) 
+							&& ProgramRecompiler.isApplicableForReuseVariable(_sb.getDMLProg(), _sb, var) ) 
 						{
 							_variablesDPReuse.put(var, dpdatNew);
 						}

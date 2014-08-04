@@ -656,7 +656,7 @@ public class Recompiler
 			ArrayList<Instruction> tmp = pb.getInstructions();
 
 			if(	sb != null 
-				&& Recompiler.requiresRecompilation( sb.get_hops() ) 
+				//&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
 				tmp = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, true, tid);
@@ -1080,26 +1080,29 @@ public class Recompiler
 					&& c.get_dataType()==DataType.SCALAR )
 				{
 					ScalarObject dat = (ScalarObject)vars.get(c.get_name());
-					Hop literal = null;
-					switch( dat.getValueType() ) {
-						case INT:
-							literal = new LiteralOp(String.valueOf(dat.getLongValue()), dat.getLongValue());		
-							break;
-						case DOUBLE:
-							literal = new LiteralOp(String.valueOf(dat.getDoubleValue()), dat.getDoubleValue());		
-							break;						
-						case BOOLEAN:
-							literal = new LiteralOp(String.valueOf(dat.getBooleanValue()), dat.getBooleanValue());		
-							break;
-						//otherwise: do nothing
-					}
-					
-					//replace on demand 
-					if( literal != null )
+					if( dat != null ) //required for selective constant propagation
 					{
-						HopRewriteUtils.removeChildReference(hop, c);
-						HopRewriteUtils.addChildReference(hop, literal, i);
-					}	
+						Hop literal = null;
+						switch( dat.getValueType() ) {
+							case INT:
+								literal = new LiteralOp(String.valueOf(dat.getLongValue()), dat.getLongValue());		
+								break;
+							case DOUBLE:
+								literal = new LiteralOp(String.valueOf(dat.getDoubleValue()), dat.getDoubleValue());		
+								break;						
+							case BOOLEAN:
+								literal = new LiteralOp(String.valueOf(dat.getBooleanValue()), dat.getBooleanValue());		
+								break;
+							//otherwise: do nothing
+						}
+						
+						//replace on demand 
+						if( literal != null )
+						{
+							HopRewriteUtils.removeChildReference(hop, c);
+							HopRewriteUtils.addChildReference(hop, literal, i);
+						}
+					}
 				}
 				//as.scalar/matrix read - literal replacement
 				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 

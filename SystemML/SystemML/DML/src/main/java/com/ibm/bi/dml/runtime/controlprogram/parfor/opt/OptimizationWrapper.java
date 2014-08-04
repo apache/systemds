@@ -220,6 +220,17 @@ public class OptimizationWrapper
 				}
 			}
 			
+			//constant propagation into parfor body and called functions
+			//(input scalars to parfor are guaranteed read only, but need to ensure safe-replace on multiple reopt
+			//separate propagation required because recompile in-place without literal replacement)
+			try{
+				LocalVariableMap constVars = ProgramRecompiler.getReusableScalarVariables(sb.getDMLProg(), sb, ec.getVariables());
+				ProgramRecompiler.replaceConstantScalarVariables(sb, constVars);
+			}
+			catch(Exception ex){
+				throw new DMLRuntimeException(ex);
+			}
+			
 			//recompilation of parfor body:
 			//* clone of variables in order to allow for statistics propagation across DAGs
 			//(tid=0, because deep copies created after opt)

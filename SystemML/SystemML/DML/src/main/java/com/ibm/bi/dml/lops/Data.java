@@ -17,7 +17,6 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.Statement;
 
 
 
@@ -248,6 +247,14 @@ public class Data extends Lop
 	public double getDoubleValue() throws LopsException {
 		if(literal_var) {
 			return Double.parseDouble(getOutputParameters().getLabel());
+		}
+		else
+			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
+	}
+	
+	public long getLongValue() throws LopsException {
+		if(literal_var) {
+			return Long.parseLong(getOutputParameters().getLabel());
 		}
 		else
 			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");

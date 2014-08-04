@@ -372,56 +372,76 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue that,
-			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult)
+			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
-		ctable.execute(this.value, c2.value, c3.value, ctableResult);
+		if ( ctableResult != null)
+			ctable.execute(this.value, c2.value, c3.value, ctableResult);
+		else
+			ctable.execute(this.value, c2.value, c3.value, ctableResultBlock);
 	}
 
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue that,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		CTable ctable = CTable.getCTableFnObject();
-		ctable.execute(this.value, c2.value, scalarThat2, ctableResult);		
+		if ( ctableResult != null)
+			ctable.execute(this.value, c2.value, scalarThat2, ctableResult);		
+		else
+			ctable.execute(this.value, c2.value, scalarThat2, ctableResultBlock);		
 	}
 
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
-		ctable.execute(this.value, scalarThat, scalarThat2, ctableResult);		
+		if ( ctableResult != null)
+			ctable.execute(this.value, scalarThat, scalarThat2, ctableResult);		
+		else
+			ctable.execute(this.value, scalarThat, scalarThat2, ctableResultBlock);		
 	}
 	
 	@Override
 	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
-			HashMap<MatrixIndexes, Double> ctableResult)
+			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//ctable expand (column vector to ctable)
 		CTable ctable = CTable.getCTableFnObject();
-		if( left )
-			ctable.execute(ix1.getRowIndex(), this.value, scalarThat, ctableResult);		
-		else
-			ctable.execute(this.value, ix1.getRowIndex(), scalarThat, ctableResult);			
+		if ( ctableResult != null ) {
+			if( left )
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, ctableResult);		
+			else
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, ctableResult);			
+		} 
+		else {
+			if( left )
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, ctableResultBlock);		
+			else
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, ctableResultBlock);			
+		}
 	}
 
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult)
+			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
-		ctable.execute(this.value, scalarThat, c3.value, ctableResult);
-		
+		if ( ctableResult != null)
+			ctable.execute(this.value, scalarThat, c3.value, ctableResult);
+		else 
+			ctable.execute(this.value, scalarThat, c3.value, ctableResultBlock);
+
 	}
 
 	@Override

@@ -48,6 +48,7 @@ public abstract class Statement
 	public static final String GAGG_FN_VARIANCE = "variance";
 	public static final String GAGG_FN_CM       = "centralmoment";
 	public static final String GAGG_FN_CM_ORDER = "order";
+	public static final String GAGG_NUM_GROUPS  = "ngroups";
 	
 	public abstract boolean controlStatement();
 	

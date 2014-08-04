@@ -1255,11 +1255,8 @@ public class Dag<N extends Lop>
 			  
 			  if(queuedNodes.size() != 0)
 			  {
-			    if (LOG.isDebugEnabled())
-			    {
 			      //System.err.println("Queued nodes should be 0");
 			      throw new LopsException("Queued nodes should not be 0 at this point \n");
-			    }
 			  }
 			  
 				LOG.trace("All done! queuedNodes = "
@@ -1501,7 +1498,7 @@ public class Dag<N extends Lop>
 								node.getInputs().get(1).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					} 
-					else if (node.getInputs().size() == 3) {
+					else if (node.getInputs().size() == 3 || node.getType() == Type.Tertiary) {
 						inst_string = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(),
 								node.getInputs().get(1).getOutputParameters().getLabel(),
@@ -1746,7 +1743,6 @@ public class Dag<N extends Lop>
 				else {
 					if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
 						&& isChild(tmpNode, node, IDMap)  && branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
-					    
 						if( //e.g. MMCJ
 					        (node.getExecLocation() == ExecLocation.MapAndReduce &&
 							branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes) && !tmpNode.definesMRJob() )
@@ -2017,8 +2013,6 @@ public class Dag<N extends Lop>
        if(n.equals(node))
          continue;
        
-       
-       
        if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
          return false;
        
@@ -2026,10 +2020,7 @@ public class Dag<N extends Lop>
          return false;
          
       }
-     
-     
      return true;
-
   }
 
 	/**
@@ -2217,9 +2208,12 @@ public class Dag<N extends Lop>
 		
 		boolean[] nodeMarked = node.get_reachable();
 		boolean[] tmpMarked  = tmpNode.get_reachable();
+		//long nodeid = IDMap.get(node.getID());
+		//long tmpid = IDMap.get(tmpNode.getID());
 		
 		for ( int i=0; i < queuedNodes.size(); i++ ) {
 			int id = IDMap.get(queuedNodes.get(i).getID());
+			//if ((id != nodeid && nodeMarked[id]) && (id != tmpid && tmpMarked[id]) )
 			if (nodeMarked[id] && tmpMarked[id])
 				return true;
 		}
@@ -3481,7 +3475,7 @@ public class Dag<N extends Lop>
 				}
 
 				return output_index;
-			} else if (inputIndices.size() == 3) {
+			} else if (inputIndices.size() == 3 || node.getType() == Type.Tertiary) {
 				int output_index = start_index[0];
 				start_index[0]++;
 

@@ -2794,12 +2794,15 @@ public class DMLTranslator
 			break;
 			
 		case TABLE:
-			if ( expr3 != null ) {
-				// example DML statement: F = ctable(A,B,W) 
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
-			}
-			else {				
-				// example DML statement: F = ctable(A,B)
+			
+			// Always a TertiaryOp is created for table().
+			// - create a hop for weights, if not provided in the function call.
+			int numTableArgs = source._args.length;
+			
+			switch(numTableArgs) {
+			case 2:
+			case 4:
+				// example DML statement: F = ctable(A,B) or F = ctable(A,B,10,15)
 				// here, weight is interpreted as 1.0
 				Hop weightHop = new LiteralOp(Double.toString(1.0), 1.0);
 				// set dimensions
@@ -2809,14 +2812,30 @@ public class DMLTranslator
 				weightHop.set_rows_in_block(0);
 				weightHop.set_cols_in_block(0);
 				
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
-				/*
-				RandOp rand = new RandOp(target, 1.0, 1.0, 1.0, "uniform");
-				setIdentifierParams(rand, expr); // Rand lop should have same dimensions as the input hop
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, rand);
-				*/
+				if ( numTableArgs == 2 )
+					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
+				else {
+					Hop outDim1 = processExpression(source._args[2], null, hops);
+					Hop outDim2 = processExpression(source._args[3], null, hops);
+					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2);
+				}
+				break;
 				
-			} 
+			case 3:
+			case 5:
+				// example DML statement: F = ctable(A,B,W) or F = ctable(A,B,W,10,15) 
+				if (numTableArgs == 3) 
+					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
+				else {
+					Hop outDim1 = processExpression(source._args[3], null, hops);
+					Hop outDim2 = processExpression(source._args[4], null, hops);
+					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2);
+				}
+				break;
+				
+			default: 
+				throw new ParseException("Invalid number of arguments "+ numTableArgs + " to table() function.");
+			}
 			break;
 
 		case CAST_AS_SCALAR:

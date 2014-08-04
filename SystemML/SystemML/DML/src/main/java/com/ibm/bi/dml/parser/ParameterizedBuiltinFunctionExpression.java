@@ -128,7 +128,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		switch (this.getOpCode()) {
 		
 		case GROUPEDAGG:
-			
+			int colwise = -1;
 			if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
 				raiseValidateError("Must define both target and groups and both must have same dimensions", conditional);
 			}
@@ -139,6 +139,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
 				DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
 			
+				if ( targetid.dimsKnown() ) {
+					colwise = targetid.getDim1() > targetid.getDim2() ? 1 : 0;
+				}
+				else if ( groupsid.dimsKnown() ) {
+					colwise = groupsid.getDim1() > groupsid.getDim2() ? 1 : 0;
+				}
+				else if ( weightsid != null && weightsid.dimsKnown() ) {
+					colwise = weightsid.getDim1() > weightsid.getDim2() ? 1 : 0;
+				}
+				
 				//precompute number of rows and columns because target can be row or column vector
 				long rowsTarget = Math.max(targetid.getDim1(),targetid.getDim2());
 				long colsTarget = Math.min(targetid.getDim1(),targetid.getDim2());
@@ -188,11 +198,25 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				}
 			}
 			
+			long outputDim1 = -1, outputDim2 = -1;
+			Identifier numGroups = (Identifier) getVarParam(Statement.GAGG_NUM_GROUPS);
+			if ( numGroups != null && numGroups instanceof ConstIdentifier) {
+				long ngroups = ((ConstIdentifier)numGroups).getLongValue();
+				if ( colwise == 1 ) {
+					outputDim1 = ngroups;
+					outputDim2 = 1;
+				}
+				else if ( colwise == 0 ) {
+					outputDim1 = 1;
+					outputDim2 = ngroups;
+				}
+			}
+			
 			// Output is a matrix with unknown dims
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(-1, -1);
-				
+			output.setDimensions(outputDim1, outputDim2);
+
 			break; 
 			
 		case CDF:

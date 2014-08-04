@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -120,22 +121,27 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		} 
 		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
 			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			MatrixBlock groups = ec.getMatrixInput(params.get("groups"));
+			MatrixBlock target = ec.getMatrixInput(params.get(Statement.GAGG_TARGET));
+			MatrixBlock groups = ec.getMatrixInput(params.get(Statement.GAGG_GROUPS));
 			MatrixBlock weights= null;
-			if ( params.get("weights") != null )
-				weights = ec.getMatrixInput(params.get("weights"));
+			if ( params.get(Statement.GAGG_WEIGHTS) != null )
+				weights = ec.getMatrixInput(params.get(Statement.GAGG_WEIGHTS));
+			
+			int ngroups = -1;
+			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
+				ngroups = Integer.parseInt(params.get(Statement.GAGG_NUM_GROUPS));
+			}
 			
 			// compute the result
-			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), optr));
+			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, optr));
 			
 			ec.setMatrixOutput(output.get_name(), soresBlock);
 			// release locks
 			target = groups = weights = null;
-			ec.releaseMatrixInput(params.get("target"));
-			ec.releaseMatrixInput(params.get("groups"));
-			if ( params.get("weights") != null )
-				ec.releaseMatrixInput(params.get("weights"));
+			ec.releaseMatrixInput(params.get(Statement.GAGG_TARGET));
+			ec.releaseMatrixInput(params.get(Statement.GAGG_GROUPS));
+			if ( params.get(Statement.GAGG_WEIGHTS) != null )
+				ec.releaseMatrixInput(params.get(Statement.GAGG_WEIGHTS));
 			
 		}
 		else if ( opcode.equalsIgnoreCase("rmempty") ) {

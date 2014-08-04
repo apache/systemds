@@ -37,34 +37,18 @@ public class Tertiary extends Lop
 	OperationTypes operation;
 	
 
-	
-	/**
-	 * Constructor to perform a binary operation.
-	 * @param input
-	 * @param op
-	 */
-
-	public Tertiary(Lop input1, Lop input2, Lop input3, OperationTypes op, DataType dt, ValueType vt) 
-	{
+	public Tertiary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.Tertiary, dt, vt);
-		init(input1, input2, input3, op, ExecType.MR);
+		init(inputLops, op, et);
 	}
 	
-	public Tertiary(Lop input1, Lop input2, Lop input3, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
-		super(Lop.Type.Tertiary, dt, vt);
-		init(input1, input2, input3, op, et);
-	}
-	
-	private void init (Lop input1, Lop input2, Lop input3, OperationTypes op, ExecType et) 
-	{
+	private void init(Lop[] inputLops, OperationTypes op, ExecType et) {
 		operation = op;
-		this.addInput(input1);
-		this.addInput(input2);
-		this.addInput(input3);
-		input1.addOutput(this);
-		input2.addOutput(this);
-		input3.addOutput(this);
+		
+		for(int i=0; i < inputLops.length; i++) {
+			this.addInput(inputLops[i]);
+			inputLops[i].addOutput(this);
+		}
 		
 		boolean breaksAlignment = true;
 		boolean aligner = false;
@@ -87,7 +71,7 @@ public class Tertiary extends Lop
 			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
-
+	
 	@Override
 	public String toString() {
 	
@@ -160,6 +144,28 @@ public class Tertiary extends Lop
 		}
 		sb.append( OPERAND_DELIMITOR );
 		
+		if ( this.getInputs().size() > 3 ) {
+			sb.append(getInputs().get(3).getOutputParameters().getLabel());
+			sb.append(LITERAL_PREFIX);
+			sb.append((getInputs().get(3).getType() == Type.Data && ((Data)getInputs().get(3)).isLiteral()) );
+			sb.append( OPERAND_DELIMITOR );
+
+			sb.append(getInputs().get(4).getOutputParameters().getLabel());
+			sb.append(LITERAL_PREFIX);
+			sb.append((getInputs().get(4).getType() == Type.Data && ((Data)getInputs().get(4)).isLiteral()) );
+			sb.append( OPERAND_DELIMITOR );
+		}
+		else {
+			sb.append(-1);
+			sb.append(LITERAL_PREFIX);
+			sb.append(true);
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append(-1);
+			sb.append(LITERAL_PREFIX);
+			sb.append(true);
+			sb.append( OPERAND_DELIMITOR ); 
+		}
 		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
@@ -183,7 +189,6 @@ public class Tertiary extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 		
@@ -211,8 +216,6 @@ public class Tertiary extends Lop
 			
 			sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
 			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 		
@@ -242,8 +245,6 @@ public class Tertiary extends Lop
 			sb.append( getInputs().get(scalarIndex3).prepScalarInputOperand(getExecType()));
 			sb.append( OPERAND_DELIMITOR );
 			
-			sb.append( this.prepOutputOperand(output_index));
-			
 			break;
 		
 		case CTABLE_TRANSFORM_HISTOGRAM:
@@ -264,8 +265,6 @@ public class Tertiary extends Lop
 			
 			sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()) );
 			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 		
@@ -288,13 +287,33 @@ public class Tertiary extends Lop
 			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 			sb.append( OPERAND_DELIMITOR );
 			
-			sb.append( this.prepOutputOperand(output_index));
-			
 			break;
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Tertiary operation: " + operation);
 		}
+		
+		long outputDim1=-1, outputDim2=-1;
+		if ( getInputs().size() > 3 ) {
+			sb.append(getInputs().get(3).prepScalarLabel());
+			sb.append( OPERAND_DELIMITOR );
+
+			sb.append(getInputs().get(4).prepScalarLabel());
+			sb.append( OPERAND_DELIMITOR );
+			/*if ( input3 instanceof Data && ((Data)input3).isLiteral() 
+					&& input4 instanceof Data && ((Data)input4).isLiteral() ) {
+				outputDim1 = ((Data)input3).getLongValue();
+				outputDim2 = ((Data)input4).getLongValue();
+			}*/
+		}
+		else {
+			sb.append( outputDim1 );
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append( outputDim2 );
+			sb.append( OPERAND_DELIMITOR ); 
+		}
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

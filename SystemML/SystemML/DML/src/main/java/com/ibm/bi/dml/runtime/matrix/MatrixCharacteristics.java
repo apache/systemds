@@ -267,7 +267,13 @@ public class MatrixCharacteristics
 			long nrow=realIns.indexRange.rowEnd-realIns.indexRange.rowStart+1;
 			long ncol=realIns.indexRange.colEnd-realIns.indexRange.colStart+1;
 			dim_out.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
-		}else { 
+		}
+		else if (ins instanceof TertiaryInstruction) {
+			TertiaryInstruction realIns = (TertiaryInstruction)ins;
+			MatrixCharacteristics in_dim=dims.get(realIns.input1);
+			dim_out.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
+		}
+		else { 
 			/*
 			 * if ins is none of the above cases then we assume that dim_out dimensions are unknown
 			 */

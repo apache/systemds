@@ -403,6 +403,13 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		return false;
 	}
 	
+	protected boolean dimsKnownForTertiaryInstructions() {
+		if( mixed_instructions != null )
+			for(MRInstruction inst : mixed_instructions)
+				if( inst instanceof TertiaryInstruction && !((TertiaryInstruction)inst).knownOutputDims() )
+					return false;
+		return true;
+	}
 
 	/**
 	 * 

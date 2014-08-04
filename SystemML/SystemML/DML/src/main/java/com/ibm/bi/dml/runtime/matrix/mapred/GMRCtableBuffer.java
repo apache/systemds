@@ -14,8 +14,11 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 
 public class GMRCtableBuffer 
@@ -29,6 +32,7 @@ public class GMRCtableBuffer
 	public static final int MAX_BUFFER_SIZE = 4096; 
 	
 	private HashMap<Byte, HashMap<MatrixIndexes, Double>> _buffer = null;
+	private HashMap<Byte, MatrixBlock> _blockBuffer = null;
 	private CollectMultipleConvertedOutputs _collector = null;
 
 	private byte[] _resultIndexes = null;
@@ -38,9 +42,12 @@ public class GMRCtableBuffer
 	private long[] _resultMaxColDims = null;
 	
 	
-	public GMRCtableBuffer( CollectMultipleConvertedOutputs collector )
+	public GMRCtableBuffer( CollectMultipleConvertedOutputs collector, boolean outputDimsKnown )
 	{
-		_buffer = new HashMap<Byte, HashMap<MatrixIndexes, Double>>();
+		if ( outputDimsKnown )
+			_blockBuffer = new HashMap<Byte, MatrixBlock>();
+		else
+			_buffer = new HashMap<Byte, HashMap<MatrixIndexes, Double>>();
 		_collector = collector;
 	}
 	
@@ -67,10 +74,26 @@ public class GMRCtableBuffer
 	 */
 	public int getBufferSize()
 	{
-		int ret = 0;
-		for( Entry<Byte, HashMap<MatrixIndexes, Double>> ctable : _buffer.entrySet() )
-			ret += ctable.getValue().size();
-		return ret;
+		if ( _buffer != null ) {
+			int ret = 0;
+			for( Entry<Byte, HashMap<MatrixIndexes, Double>> ctable : _buffer.entrySet() )
+				ret += ctable.getValue().size();
+			return ret;
+		}
+		else if ( _blockBuffer != null ) {
+			int ret = 0;
+			for( Entry<Byte, MatrixBlock> ctable: _blockBuffer.entrySet()) {
+				ctable.getValue().recomputeNonZeros();
+				ret += MatrixBlock.estimateSizeInMemory(
+						ctable.getValue().getNumRows(), 
+						ctable.getValue().getNumColumns(), 
+						((double)ctable.getValue().getNonZeros()/ctable.getValue().getNumRows())*ctable.getValue().getNumColumns());
+			}
+			return ret;
+		}
+		else {
+			return 0;
+		}
 	}
 	
 	/**
@@ -80,6 +103,11 @@ public class GMRCtableBuffer
 	public HashMap<Byte, HashMap<MatrixIndexes, Double>> getBuffer()
 	{
 		return _buffer;
+	}
+	
+	public HashMap<Byte, MatrixBlock> getBlockBuffer() 
+	{
+		return _blockBuffer;
 	}
 	
 	/**
@@ -92,26 +120,95 @@ public class GMRCtableBuffer
 	{
 		try
 		{
-			MatrixIndexes key=null;//new MatrixIndexes();
-			MatrixCell value=new MatrixCell();
-			for(Entry<Byte, HashMap<MatrixIndexes, Double>> ctable: _buffer.entrySet())
-			{
-				Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
-				for(Entry<MatrixIndexes, Double> e: ctable.getValue().entrySet())
+			if ( _buffer != null ) {
+				MatrixIndexes key=null;//new MatrixIndexes();
+				MatrixCell value=new MatrixCell();
+				for(Entry<Byte, HashMap<MatrixIndexes, Double>> ctable: _buffer.entrySet())
 				{
-					key = e.getKey();
-					value.setValue(e.getValue());
-					for(Integer i: resultIDs)
+					Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
+					for(Entry<MatrixIndexes, Double> e: ctable.getValue().entrySet())
 					{
-						_collector.collectOutput(key, value, i, reporter);
-						_resultNonZeros[i]++;
-						
-						if( _resultDimsUnknown[i] == (byte) 1 ) {
-							_resultMaxRowDims[i] = Math.max( key.getRowIndex(), _resultMaxRowDims[i]);
-							_resultMaxColDims[i] = Math.max( key.getColumnIndex(), _resultMaxColDims[i]);
+						key = e.getKey();
+						value.setValue(e.getValue());
+						for(Integer i: resultIDs)
+						{
+							_collector.collectOutput(key, value, i, reporter);
+							_resultNonZeros[i]++;
+							
+							if( _resultDimsUnknown[i] == (byte) 1 ) {
+								_resultMaxRowDims[i] = Math.max( key.getRowIndex(), _resultMaxRowDims[i]);
+								_resultMaxColDims[i] = Math.max( key.getColumnIndex(), _resultMaxColDims[i]);
+							}
 						}
 					}
 				}
+			}
+			else if ( _blockBuffer != null ) {
+				MatrixIndexes key=new MatrixIndexes(1,1);
+				//DataConverter.writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
+				for(Entry<Byte, MatrixBlock> ctable: _blockBuffer.entrySet())
+				{
+					Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
+					MatrixBlock outBlock = ctable.getValue();
+					outBlock.recomputeNonZeros();
+					
+					// TODO: change hard coding of 1000
+					int brlen = 1000, bclen = 1000;
+					int rlen = outBlock.getNumRows();
+					int clen = outBlock.getNumColumns();
+					
+					// final output matrix is smaller than a single block
+					if(rlen <= brlen && clen <= brlen ) {
+						key = new MatrixIndexes(1,1);
+						for(Integer i: resultIDs)
+						{
+							_collector.collectOutput(key, outBlock, i, reporter);
+							_resultNonZeros[i]+= outBlock.getNonZeros();
+						}
+					}
+					
+					else {
+						//Following code is similar to that in DataConverter.DataConverter.writeBinaryBlockMatrixToHDFS
+						//initialize blocks for reuse (at most 4 different blocks required)
+						MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, clen, brlen, bclen, true, outBlock.getNonZeros());  
+						
+						//create and write subblocks of matrix
+						for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++) {
+							for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
+							{
+								int maxRow = (blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen;
+								int maxCol = (blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen;
+						
+								int row_offset = blockRow*brlen;
+								int col_offset = blockCol*bclen;
+								
+								//get reuse matrix block
+								MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+			
+								//copy submatrix to block
+								outBlock.sliceOperations( row_offset+1, row_offset+maxRow, 
+										             col_offset+1, col_offset+maxCol, 
+										             block );
+								
+								// TODO: skip empty "block"
+								
+								//append block to sequence file
+								key.setIndexes(blockRow+1, blockCol+1);
+								for(Integer i: resultIDs)
+								{
+									_collector.collectOutput(key, block, i, reporter);
+									_resultNonZeros[i]+= block.getNonZeros();
+								}
+								
+								//reset block for later reuse
+								block.reset();
+							}
+						}
+					}
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Unexpected.. both ctable buffers are empty.");
 			}
 		}
 		catch(Exception ex)
@@ -119,6 +216,9 @@ public class GMRCtableBuffer
 			throw new RuntimeException("Failed to flush ctable buffer.", ex);
 		}
 		//remove existing partial ctables
-		_buffer.clear();
+		if (_buffer != null ) 
+			_buffer.clear();
+		else 
+			_blockBuffer.clear();
 	}
 }

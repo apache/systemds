@@ -441,7 +441,8 @@ public class StatementBlock extends LiveVariableAnalysis
 					//auto casting of inputs on inlining (if required) TODO discuss with Doug
 					ValueType targetVT = newTarget.getValueType();
 					if( newTarget.getDataType()==DataType.SCALAR && targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING ){
-						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),currCallParam, null, null);
+						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
+																		new Expression[] {currCallParam});
 					}
 					
 					// create the assignment statement to bind the call parameter to formal parameter
@@ -481,7 +482,7 @@ public class StatementBlock extends LiveVariableAnalysis
 					//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites) TODO discuss with Doug
 					ValueType sourceVT = newSource.getValueType();
 					if( newSource.getDataType()==DataType.SCALAR && sourceVT != ValueType.STRING ){
-						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),newSource, null, null);
+						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT), new Expression[] {newSource});
 					}
 					
 					// create the assignment statement to bind the call parameter to formal parameter

@@ -25,7 +25,7 @@ public class CombineTertiaryInstruction extends TertiaryInstruction
 	
 	public CombineTertiaryInstruction(OperationTypes op, byte in1, byte in2,
 			byte in3, byte out, String istr) {
-		super(op, in1, in2, in3, out, istr);
+		super(op, in1, in2, in3, out, -1, -1, istr);
 		mrtype = MRINSTRUCTION_TYPE.CombineTertiary;
 	}
 

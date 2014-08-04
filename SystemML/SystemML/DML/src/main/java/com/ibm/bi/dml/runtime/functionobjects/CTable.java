@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.functionobjects;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -80,6 +81,37 @@ public class CTable extends ValueFunction
 	 * @param ctableResult
 	 * @throws DMLRuntimeException
 	 */
+	public void execute(double v1, double v2, MatrixBlock ctableResult) 
+		throws DMLRuntimeException 
+	{	
+		// If any of the values are NaN (i.e., missing) then 
+		// we skip this tuple, proceed to the next tuple
+		if ( Double.isNaN(v1) || Double.isNaN(v2) ) {
+			return;
+		}
+		
+		// safe casts to long for consistent behavior with indexing
+		long row = UtilFunctions.toLong( v1 );
+		long col = UtilFunctions.toLong( v2 );
+		
+		if ( row <= 0 || col <= 0 ) {
+			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
+		} 
+		// skip this entry as it does not fall within specified output dimensions
+		if ( row > ctableResult.getNumRows() || col > ctableResult.getNumColumns() )
+			return;
+		
+		ctableResult.addValue((int)row, (int)col, 1);
+	}
+	
+	/**
+	 * 
+	 * @param v1
+	 * @param v2
+	 * @param w
+	 * @param ctableResult
+	 * @throws DMLRuntimeException
+	 */
 	public void execute(double v1, double v2, double w, HashMap<MatrixIndexes, Double> ctableResult) 
 		throws DMLRuntimeException 
 	{	
@@ -103,4 +135,37 @@ public class CTable extends ValueFunction
 			oldw=0.0;
 		ctableResult.put(temp, oldw+w);
 	}	
+
+	/**
+	 * 
+	 * @param v1
+	 * @param v2
+	 * @param w
+	 * @param ctableResult
+	 * @throws DMLRuntimeException
+	 */
+	public void execute(double v1, double v2, double w, MatrixBlock ctableResult) 
+		throws DMLRuntimeException 
+	{	
+		// If any of the values are NaN (i.e., missing) then 
+		// we skip this tuple, proceed to the next tuple
+		if ( Double.isNaN(v1) || Double.isNaN(v2) || Double.isNaN(w) ) {
+			return;
+		}
+		
+		// safe casts to long for consistent behavior with indexing
+		long row = UtilFunctions.toLong( v1 );
+		long col = UtilFunctions.toLong( v2 );
+				
+		if ( row <= 0 || col <= 0 ) {
+			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
+		} 
+		
+		// skip this entry as it does not fall within specified output dimensions
+		if ( row > ctableResult.getNumRows() || col > ctableResult.getNumColumns() )
+			return;
+		
+		ctableResult.addValue((int)row-1, (int)col-1, w);
+	}	
+
 }

@@ -11,9 +11,11 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Tertiary;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -28,19 +30,34 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	//String _outputDim1var, _outputDim2var; 
+	//long _outputDim1, _outputDim2;
+	
+	String _outDim1, _outDim2;
+	boolean _dim1Literal, _dim2Literal;
+	
 	public TertiaryCPInstruction(Operator op, 
 							 CPOperand in1, 
 							 CPOperand in2, 
 							 CPOperand in3, 
 							 CPOperand out, 
+							 String outputDim1,
+							 boolean dim1Literal,
+							 String outputDim2,
+							 boolean dim2Literal,
 						     String istr ){
 		super(op, in1, in2, in3, out);
+		_outDim1 = outputDim1;
+		_dim1Literal = dim1Literal;
+		_outDim2 = outputDim2;
+		_dim2Literal = dim2Literal;
+		
 		instString = istr;
 	}
 
 	public static TertiaryCPInstruction parseInstruction(String inst) throws DMLRuntimeException{
 		
-		InstructionUtils.checkNumFields ( inst, 4 );
+		InstructionUtils.checkNumFields ( inst, 6 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
@@ -51,10 +68,14 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
-		CPOperand out = new CPOperand(parts[4]);
+		
+		String[] dim1Fields = parts[4].split(Instruction.LITERAL_PREFIX);
+		String[] dim2Fields = parts[5].split(Instruction.LITERAL_PREFIX);
+
+		CPOperand out = new CPOperand(parts[6]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, inst);
+		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), inst);
 	}
 	
 /*	static TertiaryOperator getTertiaryOperator(String opcode) throws DMLRuntimeException{
@@ -81,30 +102,43 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock resultBlock = null;
 		Tertiary.OperationTypes ctableOp = findCtableOperation();
 		
+		long _outputDim1=-1, _outputDim2=-1;
+		
+		_outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
+		_outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
+			
+		boolean outputDimsKnown = (_outputDim1 != -1 && _outputDim2 != -1);
+		if ( outputDimsKnown ) {
+			int inputRows = matBlock1.getNumRows();
+			//int outputNNZ = (int) Math.min(inputRows, _outputDim1*_outputDim2);
+			boolean sparse = (inputRows < _outputDim1*_outputDim2);
+			resultBlock = new MatrixBlock((int)_outputDim1, (int)_outputDim2, sparse);
+		}
+		
 		switch(ctableOp) {
 		case CTABLE_TRANSFORM:
 			// F=ctable(A,B,W)
 			matBlock2 = ec.getMatrixInput(input2.get_name());
 			wtBlock = ec.getMatrixInput(input3.get_name());
-			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, wtBlock, ctableMap);
+			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, wtBlock, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = ec.getMatrixInput(input2.get_name());
 			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap);
+			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
 			cst2 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap);
+			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
 			wtBlock = ec.getMatrixInput(input3.get_name());
 			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap);
+			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap, resultBlock);
 			break;
 		
 		default:
@@ -120,7 +154,9 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		if(input3.get_dataType() == DataType.MATRIX)
 			ec.releaseMatrixInput(input3.get_name());
 		
-		resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
+		if ( resultBlock == null )
+			resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
+		
 		ec.setMatrixOutput(output.get_name(), resultBlock);
 		ctableMap.clear();
 		resultBlock = null;

@@ -658,7 +658,10 @@ public class MatrixBlock extends MatrixValue
 	@Override
 	/**
 	 * If (r,c) \in Block, add v to existing cell
-	 * If not, add a new cell with index (r,c)
+	 * If not, add a new cell with index (r,c).
+	 * 
+	 * This function intentionally avoids the maintenance of NNZ for efficiency. 
+	 * 
 	 */
 	public void addValue(int r, int c, double v) {
 		if(sparse)
@@ -667,13 +670,8 @@ public class MatrixBlock extends MatrixValue
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			double curV=sparseRows[r].get(c);
-			if(curV==0)
-				nonZeros++;
 			curV+=v;
-			if(curV==0)
-				nonZeros--;
-			else
-				sparseRows[r].set(c, curV);
+			sparseRows[r].set(c, curV);
 			
 		}
 		else
@@ -686,13 +684,8 @@ public class MatrixBlock extends MatrixValue
 			}
 			
 			int index=r*clen+c;
-			if(denseBlock[index]==0)
-				nonZeros++;
 			denseBlock[index]+=v;
-			if(denseBlock[index]==0)
-				nonZeros--;
 		}
-		
 	}
 	
 	public double quickGetValue(int r, int c) 
@@ -5087,7 +5080,7 @@ public class MatrixBlock extends MatrixValue
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, Operator op) 
+	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//setup input matrices
@@ -5104,6 +5097,10 @@ public class MatrixBlock extends MatrixValue
 			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column or row matrix for target.");
 		if( this.getNumRows() != Math.max(target.getNumRows(),target.getNumColumns()) || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
 			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
+		
+		// obtain numGroups from instruction, if provided
+		if (ngroups > 0)
+			numGroups = ngroups;
 		
 		// Determine the number of groups
 		if( numGroups <= 0 ) //reuse if available
@@ -5141,6 +5138,8 @@ public class MatrixBlock extends MatrixValue
 			
 			for ( int i=0; i < this.getNumRows(); i++ ) {
 				int g = (int) this.quickGetValue(i, 0);
+				if ( g > numGroups )
+					continue;
 				double d = target.quickGetValue(i,0);
 				if ( weights != null )
 					w = weights.quickGetValue(i,0);
@@ -5495,10 +5494,12 @@ public class MatrixBlock extends MatrixValue
 	 * (i1,j1,v1) from input1 (this)
 	 * (v2) from sclar_input2 (scalarThat)
 	 * (i3,j3,w)  from input3 (that2)
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
+			MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixBlock that2 = checkType(that2Val);
@@ -5507,13 +5508,24 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		for( int i=0; i<rlen; i++ )
-			for( int j=0; j<clen; j++ )
-			{
-				double v1 = this.quickGetValue(i, j);
-				double w = that2.quickGetValue(i, j);
-				ctable.execute(v1, v2, w, ctableResult);
-			}
+		if ( resultBlock == null ) {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double w = that2.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultMap);
+				}
+		}
+		else {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double w = that2.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultBlock);
+				}
+		}
 	}
 
 	/**
@@ -5526,7 +5538,7 @@ public class MatrixBlock extends MatrixValue
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, double scalarThat,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			double scalarThat2, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
@@ -5535,12 +5547,22 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		for( int i=0; i<rlen; i++ )
-			for( int j=0; j<clen; j++ )
-			{
-				double v1 = this.quickGetValue(i, j);
-				ctable.execute(v1, v2, w, ctableResult);
-			}		
+		if ( resultBlock == null ) { 
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultMap);
+				}
+		}
+		else {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultBlock);
+				}		
+		}		
 	}
 	
 	/**
@@ -5551,7 +5573,7 @@ public class MatrixBlock extends MatrixValue
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
-			boolean left, int brlen, HashMap<MatrixIndexes, Double> ctableResult)
+			boolean left, int brlen, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		CTable ctable = CTable.getCTableFnObject();
@@ -5560,15 +5582,28 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		for( int i=0; i<rlen; i++ )
-			for( int j=0; j<clen; j++ )
-			{
-				double v1 = this.quickGetValue(i, j);
-				if( left )
-					ctable.execute(offset+i+1, v1, w, ctableResult);
-				else
-					ctable.execute(v1, offset+i+1, w, ctableResult);
-			}
+		if( resultBlock == null) {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					if( left )
+						ctable.execute(offset+i+1, v1, w, resultMap);
+					else
+						ctable.execute(v1, offset+i+1, w, resultMap);
+				}
+		}
+		else {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					if( left )
+						ctable.execute(offset+i+1, v1, w, resultBlock);
+					else
+						ctable.execute(v1, offset+i+1, w, resultBlock);
+				}
+		}
 	}
 
 	/**
@@ -5581,7 +5616,7 @@ public class MatrixBlock extends MatrixValue
 	 */
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue thatVal,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult)
+			double scalarThat2, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		MatrixBlock that = checkType(thatVal);
@@ -5590,13 +5625,24 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		for( int i=0; i<rlen; i++ )
-			for( int j=0; j<clen; j++ )
-			{
-				double v1 = this.quickGetValue(i, j);
-				double v2 = that.quickGetValue(i, j);
-				ctable.execute(v1, v2, w, ctableResult);
-			}
+		if ( resultBlock == null ) {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double v2 = that.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultMap);
+				}
+		}
+		else {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double v2 = that.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultBlock);
+				}
+		}
 	}
 	
 	/**
@@ -5608,6 +5654,12 @@ public class MatrixBlock extends MatrixValue
 	 * (i1,j1,w)  from input3 (that2)
 	 */
 	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		{
+			tertiaryOperations(op, thatVal, that2Val, ctableResult, null);
+		}
+		
+	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
 		MatrixBlock that = checkType(thatVal);
@@ -5616,14 +5668,26 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
+		if(resultBlock == null) {
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ )
 			{
 				double v1 = this.quickGetValue(i, j);
 				double v2 = that.quickGetValue(i, j);
 				double w = that2.quickGetValue(i, j);
-				ctable.execute(v1, v2, w, ctableResult);
+				ctable.execute(v1, v2, w, resultMap);
 			}		
+		}
+		else {
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double v2 = that.quickGetValue(i, j);
+					double w = that2.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultBlock);
+				}		
+		}
 	}
 
 	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
@@ -5993,4 +6057,5 @@ public class MatrixBlock extends MatrixValue
 		}
 		public SparsityEstimate(){}
 	}
+	
 }

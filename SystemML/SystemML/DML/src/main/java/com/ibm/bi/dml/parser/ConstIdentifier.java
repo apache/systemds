@@ -16,5 +16,14 @@ public abstract class ConstIdentifier extends Identifier
 	public ConstIdentifier(){
 		super();
 	}
+	
+	public long getLongValue() throws LanguageException {
+		if ( this instanceof IntIdentifier )
+			return ((IntIdentifier)this).getValue();
+		else if ( this instanceof DoubleIdentifier ) 
+			return (long) ((DoubleIdentifier) this).getValue();
+		else
+			throw new LanguageException("Invalid variable type");
+	}
  
 }

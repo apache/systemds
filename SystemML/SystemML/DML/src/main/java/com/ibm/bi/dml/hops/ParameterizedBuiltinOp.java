@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -155,10 +156,37 @@ public class ParameterizedBuiltinOp extends Hop
 	
 					}
 					
+					int colwise = -1;
+					long outputDim1=-1, outputDim2=-1;
+					Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
+					if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
+						long ngroups = ((Data)numGroups).getLongValue();
+						
+						Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
+						long inDim1 = input.getOutputParameters().getNum_rows();
+						long inDim2 = input.getOutputParameters().getNum_cols();
+						if(inDim1 > 0 && inDim2 > 0 ) {
+							if ( inDim1 > inDim2 )
+								colwise = 1;
+							else 
+								colwise = 0;
+						}
+						
+						if ( colwise == 1 ) {
+							outputDim1 = ngroups;
+							outputDim2 = 1;
+						}
+						else if ( colwise == 0 ) {
+							outputDim1 = 1;
+							outputDim2 = ngroups;
+						}
+						
+					}
+					
 					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
 							get_dataType(), get_valueType());
 					// output dimensions are unknown at compilation time
-					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, get_rows_in_block(), get_cols_in_block(), -1);
 					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					//set_lops(grp_agg);
@@ -298,10 +326,27 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		long[] ret = null;
 	
-		Hop input = getInput().get(_paramIndexMap.get("target"));	
+		Hop input = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));	
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 
-		if (   _op == ParamBuiltinOp.GROUPEDAGG ) { 
+		if (   _op == ParamBuiltinOp.GROUPEDAGG ) {
+			// Get the number of groups provided as part of aggregate() invocation, whenever available.
+			if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
+				Hop ngroups = getInput().get(_paramIndexMap.get(Statement.GAGG_NUM_GROUPS));
+				if(ngroups != null && ngroups.getKind() == Kind.LiteralOp) {
+					try {
+						long m = ((LiteralOp)ngroups).getLongValue();
+						//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): m="+m);
+						return new long[]{m,1,m};
+					} catch (HopsException e) {
+						throw new RuntimeException(e);
+					}
+				}
+				/*else {
+					System.out.println("WARN: dimensions are not inferred: " + (ngroups == null ? "null" : ngroups.getKind()) );
+				}*/
+			}
+			
 			// Output dimensions are completely data dependent. In the worst case, 
 			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
@@ -310,6 +355,7 @@ public class ParameterizedBuiltinOp extends Hop
 			long m = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
 			if ( m > 1 )
 			{
+				//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): worstcase m="+m);
 				ret = new long[]{m, 1, m};
 			}
 		}
@@ -337,7 +383,7 @@ public class ParameterizedBuiltinOp extends Hop
 		return ret;
 	}
 	
-	@Override
+	@Override 
 	public boolean allowsAllExecTypes()
 	{
 		return false;

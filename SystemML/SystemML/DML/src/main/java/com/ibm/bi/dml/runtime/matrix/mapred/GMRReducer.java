@@ -74,7 +74,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 				if(ins instanceof TertiaryInstruction)
 				{  
 					MatrixCharacteristics dim = dimensions.get(((TertiaryInstruction) ins).input1);
-					((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), dim.get_rows_per_block(), dim.get_cols_per_block());
+					((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), _buff.getBlockBuffer(), dim.get_rows_per_block(), dim.get_cols_per_block());
 					if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
 						_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
 				}
@@ -119,7 +119,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		
 		//init ctable buffer (if required, after super init)
 		if( containsTertiaryInstruction() ){
-			_buff = new GMRCtableBuffer(collectFinalMultipleOutputs);
+			_buff = new GMRCtableBuffer(collectFinalMultipleOutputs, dimsKnownForTertiaryInstructions());
 			_buff.setMetadataReferences(resultIndexes, resultsNonZeros, resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
 			prepareMatrixCharacteristicsTertiaryInstruction(job); //put matrix characteristics in dimensions map
 		}

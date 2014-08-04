@@ -1,0 +1,27 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+A = read($1);
+B = read($2);
+
+M = $3;
+N = $4;
+
+# temp1 and temp2 are introduced simply to make sure that the values 
+# for dim1 and dim2 are not inferred at compile time.
+temp1 = matrix(1, rows=M, cols=1);
+temp2 = matrix(1, rows=1, cols=N);
+
+dim1 = sum(temp1);
+dim2 = sum(temp2);
+
+F = table(A,B, dim1, dim2);
+
+write(F, $5, format="text");

@@ -118,9 +118,10 @@ delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
 B = matrix (0, rows = D, cols = K);     ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B;
                                         ### LT = append (LT, matrix (0, rows = N, cols = 1));
-P = matrix (1, rows = N, cols = K+1);   ### exp_LT = exp (LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1));
+                                        ### LT = LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1);
+P = matrix (1, rows = N, cols = K+1);   ### exp_LT = exp (LT);
 P = P / (K + 1);                        ### P =  exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
-obj = N * log (K + 1);                  ### obj = - sum (log (rowSums (Y * P))) + 0.5 * sum (lambda * (B ^ 2));
+obj = N * log (K + 1);                  ### obj = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
 Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
 if (intercept_status == 2) {
@@ -209,10 +210,11 @@ while (! converge)
         ssX_B_new = B_new;
     }
     LT = append ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
-    exp_LT = exp (LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1));
+    LT = LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1);
+    exp_LT = exp (LT);
     P_new  = exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
-    obj_new = - sum (log (rowSums (Y * P_new))) + 0.5 * sum (lambda * (B_new ^ 2));
-	
+    obj_new = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
+    	
 	# Consider updating LT in the inner loop
 	# Consider the big "obj" and "obj_new" rounding-off their small difference below:
 

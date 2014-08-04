@@ -132,7 +132,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		int numPMap = Math.min(numMap, maxPMap);
 		int numRed = computeNumReduceTasks( vs, mapOutIx, jinst.getJobType() );
 		int numPRed = Math.min(numRed, maxPRed);
-		LOG.debug("Meta nmap = "+numMap+", nred = "+numRed);
+		LOG.debug("Meta nmap = "+numMap+", nred = "+numRed+"; npmap = "+numPMap+", npred = "+numPRed);
 		
 		
 		//step 0: export if inputs in mem
@@ -422,19 +422,20 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					ixMap.add(ix);
 		}
 		
-		if( shfInst!=null && shfInst.length()>0 ) {
-			shfInst = replaceInstructionPatch(shfInst);
-			Instruction[] ins = MRInstructionParser.parseMixedInstructions(shfInst);
-			for( Instruction inst : ins )
-				for( byte ix : inst.getAllIndexes() )
-					ixMap.add(ix);
-		}
-		
 		//reduce indices
 		HashSet<Byte> ixRed = new HashSet<Byte>();
 		for( byte ix : retIx )
 			ixRed.add(ix);
 	
+
+		if( shfInst!=null && shfInst.length()>0 ) {
+			shfInst = replaceInstructionPatch(shfInst);
+			Instruction[] ins = MRInstructionParser.parseMixedInstructions(shfInst);
+			for( Instruction inst : ins )
+				for( byte ix : inst.getAllIndexes() )
+					ixRed.add(ix);
+		}
+		
 		if( aggInst!=null && aggInst.length()>0 ) {
 			aggInst = replaceInstructionPatch(aggInst);
 			Instruction[] ins = MRInstructionParser.parseAggregateInstructions(aggInst);

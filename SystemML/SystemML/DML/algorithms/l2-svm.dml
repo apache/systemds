@@ -7,7 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# Implements multiclass C-SVM with squared slack variables
+# Implements binary-class C-SVM with squared slack variables
 #
 # Example Usage:
 # Assume L2SVM_HOME is set to the home of the dml script

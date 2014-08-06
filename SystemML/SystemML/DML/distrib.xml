@@ -17,6 +17,46 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/algorithms</directory>
+			<includes>
+				<include>GLM-predict.dml,GLM.dml</include>
+				<include>Kmeans-predict.dml</include>
+				<include>Kmeans.dml</include>
+				<include>LinearRegCG.dml</include>
+				<include>LinearRegDS.dml</include>
+				<include>MultiLogReg.dml</include>
+				<include>Univar-Stats.dml</include>
+				<include>bivar-stats.dml</include>
+				<include>l2-svm-predict.dml</include>
+				<include>l2-svm.dml</include>
+				<include>m-svm-predict.dml</include>
+				<include>m-svm.dml</include>
+				<include>naive-bayes-predict.dml</include>
+				<include>naive-bayes.dml</include>
+				<include>stratstats.dml</include>
+				<include>transform.dml</include>
+			</includes>
+			<outputDirectory>./algorithms</outputDirectory>
+		</fileSet>
+		
+		<fileSet>
+			<directory>${basedir}/docs/Language Reference</directory>
+			<includes>
+				<include>SystemML_Language_Reference.html</include>
+				<include>${basedir}/docs/Algorithms Reference/SystemML_Algorithms_Reference.pdf</include>
+			</includes>
+			<outputDirectory>./docs</outputDirectory>
+		</fileSet>
+		
+		<fileSet>
+			<directory>${basedir}/docs/Algorithms Reference</directory>
+			<includes>
+				<include>SystemML_Algorithms_Reference.pdf</include>
+			</includes>
+			<outputDirectory>./docs</outputDirectory>
+		</fileSet>
 	</fileSets>
 	
 	<files>

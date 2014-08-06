@@ -14,19 +14,12 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-score.dml -nvargs X=data
-#  	     		     			    	      	  	  Y=labels
-#							    	  				  icpt=intercept
-#							    	  				  model=model
-#													  scores=scores
-#													  accuracy=accuracy
-#													  confusion=confusion
-#													  fmt="csv"|"text"
+# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels icpt=intercept model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #
 # Note about inputs: 
 # labels (entries in Y) should either be set to +1/-1
 # or be the result of recoding
-# anything else will prompt an error message from this script
+# anything else may prompt an error message from this script
 
 $Y = " "
 $confusion = " "

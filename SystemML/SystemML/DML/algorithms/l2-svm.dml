@@ -7,22 +7,14 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# Implements binary-class C-SVM with squared slack variables
+# Implements binary-class SVM with squared slack variables
 #
 # Example Usage:
 # Assume L2SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume epsilon = 0.001, lambda = 1, maxiterations = 100
 #
-# hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X 
-#  	     		     			    	    				Y=$INPUT_DIR/Y 
-#							    							icpt=0 
-# 	  						    							tol=0.001 
-#							    							reg=1 
-#							    							maxiter=100 
-#							    							model=$OUPUT_DIR/w
-#															debug_output=$OUTPUT_DIR/debug_output
-#															fmt="csv"|"text"
+# hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y icpt=0 tol=0.001 reg=1 maxiter=100 model=$OUPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 # Note about inputs: 
 # Assumes that labels (entries in Y) 
@@ -122,5 +114,5 @@ while(continue == 1 & iter < maxiterations)  {
 }
 
 write(w, $model, format=$fmt)
-write(debug_str, $debug_output)
+write(debug_str, $Log)
 

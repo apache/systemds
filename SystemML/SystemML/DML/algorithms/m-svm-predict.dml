@@ -14,14 +14,7 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs X=data
-#  	     		     		     	     			 Y=labels
-#						     						 icpt=intercept 
-#						     						 model=model 
-#						     						 scores=scores
-#													 accuracy=accuracy
-#													 confusion=confusion
-#													 fmt="csv"|"text"
+# hadoop jar SystemML.jar -f m-svm-predict.dml -nvargs X=data Y=labels icpt=intercept model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #													 
 
 $Y = " "

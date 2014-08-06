@@ -7,7 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# Implements multiclass C-SVM with squared slack variables, 
+# Implements multiclass SVM with squared slack variables, 
 # learns one-against-the-rest binary-class classifiers
 # 
 # Example Usage:
@@ -15,16 +15,7 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume number of classes is 10, epsilon = 0.001, lambda=1.0, max_iterations = 100
 # 
-# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X 
-#  	     		     			 	 					 Y=$INPUT_DIR/y 
-# 	     		  				 						 icpt=intercept 
-#							 							 classes=10 
-#							 							 tol=.001 
-#							 							 reg=1.0 
-#							 							 maxiter=100 
-#							 							 model=$OUTPUT_DIR/w
-#														 debug_output=$OUTPUT_DIR/debug_output
-#														 fmt="csv"|"text"
+# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept classes=10 tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 
 $fmt="text"
@@ -138,5 +129,5 @@ if(check_X == 0){
 				debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
 		}
 	}
-	write(debug_str, $debug_output)
+	write(debug_str, $Log)
 }

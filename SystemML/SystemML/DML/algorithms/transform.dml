@@ -20,8 +20,11 @@ else X = original_X[,1:last_data_col]
 #		 1: mean subtraction
 #		 2: z-scoring
 #		 (later used to store col mean)
-# col 6: (used later to store col std) 
-attrinfo = matrix(0, rows=ncol(X), cols=6)
+# col 6: (used later to store col std)
+# col 7: (used later to store global mean for 
+#		 missing value imputation)
+# col 8: (used later to store num_bins)
+attrinfo = matrix(0, rows=ncol(X), cols=8)
 
 if(isMissingValueImputationRequired > 0){	
 	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
@@ -106,6 +109,8 @@ parfor(i in 1:ncol(X), check=0){
 		num_vals = nrow(X) - castAsScalar(num_missing[1,mv_col_id])
 		global_mean = castAsScalar(col_sums[1,i])/num_vals
 		col = col + missing_indicator_mat[,mv_col_id] * global_mean
+		
+		attrinfo[i,7] = global_mean
 	}
 	
 	if(num_bins > 0){
@@ -125,6 +130,7 @@ parfor(i in 1:ncol(X), check=0){
 		#reusing attrinfo to store bin_defns
 		attrinfo[i,1] = bin_width
 		attrinfo[i,2] = min_val
+		attrinfo[i,8] = num_bins
 	}
 
 	if(dummy_coding_beg_col == dummy_coding_end_col){
@@ -149,17 +155,30 @@ parfor(i in 1:ncol(X), check=0){
 }
 write(new_X, $transformed_X, format="csv")
 
+if(isMissingValueImputationRequired > 0){
+	missing_value_maps = matrix(0, rows=nrow(missing_index), cols=2)
+	parfor(i in 1:nrow(missing_index)){
+		attr_index_missing_val = castAsScalar(missing_index[i,1])
+		if(attr_index_missing_val > 0){
+			missing_value_maps[i,1] = attr_index_missing_val
+			missing_value_maps[i,2] = attrinfo[attr_index_missing_val, 7]
+		}
+	}
+	write(missing_value_maps, $missing_value_maps, format="csv")
+}
+
 isBinningRequired = sum(binning_index[,1])
 if(isBinningRequired > 0){
 	# col 1 contains attr index
 	# col 2 contains the bin width
 	# col 3 contains the min val in this dataset
-	bin_defns = matrix(0, rows=nrow(binning_index), cols=3)
+	bin_defns = matrix(0, rows=nrow(binning_index), cols=4)
 	parfor(i in 1:nrow(binning_index)){
 		attr_index = castAsScalar(binning_index[i,1])
 		bin_defns[i,1] = attr_index
 		bin_defns[i,2] = castAsScalar(attrinfo[attr_index,1])
 		bin_defns[i,3] = castAsScalar(attrinfo[attr_index,2])
+		bin_defns[i,4] = castAsScalar(attrinfo[attr_index,8])
 	}
 	write(bin_defns, $bin_defns, format="csv")
 }

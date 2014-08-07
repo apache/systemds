@@ -1079,19 +1079,20 @@ public class Recompiler
 				if( c instanceof DataOp && ((DataOp)c).get_dataop() != DataOpTypes.PERSISTENTREAD 
 					&& c.get_dataType()==DataType.SCALAR )
 				{
-					ScalarObject dat = (ScalarObject)vars.get(c.get_name());
+					Data dat = vars.get(c.get_name());
 					if( dat != null ) //required for selective constant propagation
 					{
+						ScalarObject sdat = (ScalarObject)dat;
 						Hop literal = null;
-						switch( dat.getValueType() ) {
+						switch( sdat.getValueType() ) {
 							case INT:
-								literal = new LiteralOp(String.valueOf(dat.getLongValue()), dat.getLongValue());		
+								literal = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
 								break;
 							case DOUBLE:
-								literal = new LiteralOp(String.valueOf(dat.getDoubleValue()), dat.getDoubleValue());		
+								literal = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());		
 								break;						
 							case BOOLEAN:
-								literal = new LiteralOp(String.valueOf(dat.getBooleanValue()), dat.getBooleanValue());		
+								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
 								break;
 							//otherwise: do nothing
 						}
@@ -1108,22 +1109,24 @@ public class Recompiler
 				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
 					&& c.getInput().get(0) instanceof DataOp )
 				{
-					String varname = c.getInput().get(0).get_name();
-					
-					//cast as scalar (see VariableCPInstruction)
-					MatrixObject mo = ((MatrixObject)vars.get(varname));
-					MatrixBlock mBlock = mo.acquireRead();
-					if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-						throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
-					double value = mBlock.getValue(0,0);
-					mo.release();
-					
-					//literal substitution (always double)
-					Hop literal = new LiteralOp(String.valueOf(value), value);
-					
-					//replace on demand 
-					HopRewriteUtils.removeChildReference(hop, c);
-					HopRewriteUtils.addChildReference(hop, literal, i);	
+					Data dat = vars.get(c.getInput().get(0).get_name());
+					if( dat != null ) //required for selective constant propagation
+					{
+						//cast as scalar (see VariableCPInstruction)
+						MatrixObject mo = (MatrixObject)dat;
+						MatrixBlock mBlock = mo.acquireRead();
+						if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
+							throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
+						double value = mBlock.getValue(0,0);
+						mo.release();
+						
+						//literal substitution (always double)
+						Hop literal = new LiteralOp(String.valueOf(value), value);
+						
+						//replace on demand 
+						HopRewriteUtils.removeChildReference(hop, c);
+						HopRewriteUtils.addChildReference(hop, literal, i);	
+					}
 				}
 				//recursively process childs
 				else 

@@ -618,7 +618,10 @@ public class AggBinaryOp extends Hop
 		Hop h1 = getInput().get(0);
 		Hop h2 = getInput().get(1);
 		
-		if( CP ) //in-memory ba (implies input/output transpose can also be CP)
+		//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
+		//(for both CP/MR, we explicitly check that new transposes fit in memory,
+		//even a ba in CP does not imply that both transposes can be executed in CP)
+		if( CP ) //in-memory ba 
 		{
 			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
 			{
@@ -627,8 +630,12 @@ public class AggBinaryOp extends Hop
 				long n = h2.get_dim2();
 				
 				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
-				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) ) 
+				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() ) 
+				{
 					ret = true;
+				}
 			}
 		}
 		else //MR
@@ -639,8 +646,7 @@ public class AggBinaryOp extends Hop
 				long cd = h1.get_dim2();
 				long n = h2.get_dim2();
 				
-				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
-				//(compared to CP, we explicitly check that new transposes fit in memory)
+				
 				//note: output size constraint for mapmult already checked by optfindmmultmethod
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&

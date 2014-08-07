@@ -32,7 +32,7 @@ numFeatures = ncol(D)
 classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
 parfor (i in 1:numFeatures) {
   Col = D[,i]
-  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum")
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=numClasses)
 }
 
 # Compute the total feature count for each class 
@@ -46,7 +46,7 @@ repClassSums = classSums %*% ones
 class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
 
 # Compute class priors
-class_counts = aggregate(target=C, groups=C, fn="count")
+class_counts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses)
 class_prior = class_counts / numRows;
 
 # Compute accuracy on training set

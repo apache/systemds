@@ -210,7 +210,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 			{
 				//get handle to sparse (allocate if necessary)
 				if( rows[i] == null )
-					rows[i] = new SparseRow(SparseRow.initialCapacity);
+					rows[i] = new SparseRow(lnnz);
 				SparseRow arow = rows[i];
 				
 				//read single sparse row

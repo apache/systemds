@@ -37,6 +37,7 @@
 				<include>naive-bayes.dml</include>
 				<include>stratstats.dml</include>
 				<include>transform.dml</include>
+				<include>apply-transform.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>

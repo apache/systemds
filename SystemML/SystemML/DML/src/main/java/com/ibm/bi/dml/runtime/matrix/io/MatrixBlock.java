@@ -282,6 +282,18 @@ public class MatrixBlock extends MatrixValue
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public boolean isAllocated()
+	{
+		if( sparse )
+			return (sparseRows!=null);
+		else
+			return (denseBlock!=null);
+	}
+	
+	/**
 	 * @throws DMLRuntimeException 
 	 * 
 	 */
@@ -5525,6 +5537,7 @@ public class MatrixBlock extends MatrixValue
 					double w = that2.quickGetValue(i, j);
 					ctable.execute(v1, v2, w, resultBlock);
 				}
+			resultBlock.recomputeNonZeros();
 		}
 	}
 
@@ -5561,7 +5574,8 @@ public class MatrixBlock extends MatrixValue
 				{
 					double v1 = this.quickGetValue(i, j);
 					ctable.execute(v1, v2, w, resultBlock);
-				}		
+				}	
+			resultBlock.recomputeNonZeros();
 		}		
 	}
 	
@@ -5603,6 +5617,7 @@ public class MatrixBlock extends MatrixValue
 					else
 						ctable.execute(v1, offset+i+1, w, resultBlock);
 				}
+			resultBlock.recomputeNonZeros();
 		}
 	}
 
@@ -5642,6 +5657,7 @@ public class MatrixBlock extends MatrixValue
 					double v2 = that.quickGetValue(i, j);
 					ctable.execute(v1, v2, w, resultBlock);
 				}
+			resultBlock.recomputeNonZeros();
 		}
 	}
 	
@@ -5668,17 +5684,19 @@ public class MatrixBlock extends MatrixValue
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		if(resultBlock == null) {
-		for( int i=0; i<rlen; i++ )
-			for( int j=0; j<clen; j++ )
-			{
-				double v1 = this.quickGetValue(i, j);
-				double v2 = that.quickGetValue(i, j);
-				double w = that2.quickGetValue(i, j);
-				ctable.execute(v1, v2, w, resultMap);
-			}		
+		if(resultBlock == null) 
+		{
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = this.quickGetValue(i, j);
+					double v2 = that.quickGetValue(i, j);
+					double w = that2.quickGetValue(i, j);
+					ctable.execute(v1, v2, w, resultMap);
+				}		
 		}
-		else {
+		else 
+		{
 			for( int i=0; i<rlen; i++ )
 				for( int j=0; j<clen; j++ )
 				{
@@ -5686,7 +5704,8 @@ public class MatrixBlock extends MatrixValue
 					double v2 = that.quickGetValue(i, j);
 					double w = that2.quickGetValue(i, j);
 					ctable.execute(v1, v2, w, resultBlock);
-				}		
+				}
+			resultBlock.recomputeNonZeros();
 		}
 	}
 

@@ -151,27 +151,4 @@ public class LocalVariableMap implements Cloneable
 		newMap.putAll (this);
 		return newMap;
 	}
-	
-	/*
-	@Override
-	protected void finalize ()
-	{
-		localMap = null;
-	}
-	
-	private String getNewID ()
-	{
-        char[] out = {'0', '0', '0', '0', '0', '0'};
-        String src = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        int srcIndex = out.length - 1;
-        for (int newID = globalCount ++; newID != 0; newID /= src.length ())
-        {
-            if (newID < 0 || srcIndex < 0)
-            	throw new RuntimeException ("Too many variable-maps");
-            out [srcIndex] = src.charAt (newID % src.length ());
-            srcIndex--;
-        }
-        return new String (out);
-	}
-	*/
 }

@@ -533,10 +533,17 @@ public class MatrixObject extends CacheableData
 		boolean write = false;
 		if ( isModify() )
 		{
+			//set flags for write
 			write = true;
 			_dirtyFlag = true;
+			
+			//update meta data
 			refreshMetaData();
 		}
+
+		//compact empty in-memory block 
+		if( _data.isEmptyBlock(false) && _data.isAllocated() )
+			_data.cleanupBlock(true, true);
 		
 		super.release();
 
@@ -549,8 +556,7 @@ public class MatrixObject extends CacheableData
 			{
 				//evict blob
 				String filePath = getCacheFilePathAndName();
-				try
-				{
+				try {
 					writeMatrix (filePath);
 				}
 				catch (Exception e)
@@ -1069,7 +1075,7 @@ public class MatrixObject extends CacheableData
 		double sparsity = OptimizerUtils.getSparsity( rlen, clen, nnz );
 		double size = MatrixBlock.estimateSizeInMemory( rlen, clen, sparsity ); 
 		
-		return ( size <= CACHING_THRESHOLD );
+		return ( !_data.isAllocated() || size <= CACHING_THRESHOLD );
 	}
 	
 	// *******************************************

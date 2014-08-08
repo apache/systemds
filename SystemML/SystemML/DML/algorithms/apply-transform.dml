@@ -55,8 +55,8 @@ if($dummy_code_maps != " "){
 		attrinfo[attr_index_dc,7] = dummy_code_maps[i,3]
 	}
 }else{
-	attrinfo[,5] = seq(1, ncol(X), 1)
 	attrinfo[,6] = seq(1, ncol(X), 1)
+	attrinfo[,7] = seq(1, ncol(X), 1)
 }
 
 if($normalization_maps != " "){
@@ -69,7 +69,7 @@ if($normalization_maps != " "){
 	}
 }
 
-write(attrinfo, "binning/attrinfo.mtx", format="csv")
+#write(attrinfo, "binning/attrinfo.mtx", format="csv")
 
 cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
 new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)

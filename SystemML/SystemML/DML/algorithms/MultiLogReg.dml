@@ -17,6 +17,7 @@
 # X     String  ---     Location to read the matrix of feature vectors
 # Y     String  ---     Location to read the matrix with category labels
 # B     String  ---     Location to store estimated regression parameters (the betas)
+# Log   String  " "     Location to write per-iteration variables for log/debugging purposes
 # icpt  Int      0      Intercept presence, shifting and rescaling X columns:
 #                       0 = no intercept, no shifting, no rescaling;
 #                       1 = add intercept, but neither shift nor rescale X;
@@ -29,11 +30,31 @@
 # --------------------------------------------------------------------------------------------
 # The largest label represents the baseline category; if label -1 or 0 is present, then it is
 # the baseline label (and it is converted to the largest label).
-# 
+#
+# The Log file, when requested, contains the following per-iteration variables in CSV format,
+# each line containing triple (NAME, ITERATION, VALUE) with ITERATION = 0 for initial values:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------------
+# LINEAR_TERM_MIN       The minimum value of X %*% B, used to check for overflows
+# LINEAR_TERM_MAX       The maximum value of X %*% B, used to check for overflows
+# NUM_CG_ITERS          Number of inner (Conj.Gradient) iterations in this outer iteration
+# IS_TRUST_REACHED      1 = trust region boundary was reached, 0 = otherwise
+# POINT_STEP_NORM       L2-norm of iteration step from old point (i.e. matrix B) to new point
+# OBJECTIVE             The loss function we minimize (negative regularized log-likelihood)
+# OBJ_DROP_REAL         Reduction in the objective during this iteration, actual value
+# OBJ_DROP_PRED         Reduction in the objective predicted by a quadratic approximation
+# OBJ_DROP_RATIO        Actual-to-predicted reduction ratio, used to update the trust region
+# IS_POINT_UPDATED      1 = new point accepted; 0 = new point rejected, old point restored
+# GRADIENT_NORM         L2-norm of the loss function gradient (omitted if point is rejected)
+# TRUST_DELTA           Updated trust region size, the "delta"
+# -------------------------------------------------------------------------------------------
+#
 # Script invocation example:
 # hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
-#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv
+#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv Log=OUTPUT_DIR/log
 
+$Log = " ";
 $icpt = 0;
 $reg  = 0.0;
 $tol  = 0.000001;
@@ -140,7 +161,15 @@ iter = 1;
 converge = (norm_Grad < tol) | (iter > maxiter);
 
 print ("-- Initially:  Objective = " + obj + ",  Gradient Norm = " + norm_Grad + ",  Trust Delta = " + delta);
-	
+
+if ($Log != " ") {
+    log_str = "OBJECTIVE,0," + obj;
+    log_str = append (log_str, "GRADIENT_NORM,0," + norm_Grad);
+    log_str = append (log_str, "TRUST_DELTA,0," + delta);
+} else {
+    log_str = " ";
+}
+
 while (! converge)
 {
 	# SOLVE TRUST REGION SUB-PROBLEM
@@ -209,7 +238,12 @@ while (! converge)
     } else {
         ssX_B_new = B_new;
     }
+    
     LT = append ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
+    if ($Log != " ") {
+        log_str = append (log_str, "LINEAR_TERM_MIN,"  + iter + "," + min (LT));
+        log_str = append (log_str, "LINEAR_TERM_MAX,"  + iter + "," + max (LT));
+    }
     LT = LT - rowMaxs (LT) %*% matrix (1, rows = 1, cols = K+1);
     exp_LT = exp (LT);
     P_new  = exp_LT / (rowSums (exp_LT) %*% matrix (1, rows = 1, cols = K+1));
@@ -223,7 +257,17 @@ while (! converge)
 	rho = actred / qk;
 	is_rho_accepted = (rho > eta0);
 	snorm = sqrt (sum (S ^ 2));
-	
+
+    if ($Log != " ") {
+        log_str = append (log_str, "NUM_CG_ITERS,"     + iter + "," + (inneriter - 1));
+        log_str = append (log_str, "IS_TRUST_REACHED," + iter + "," + is_trust_boundary_reached);
+        log_str = append (log_str, "POINT_STEP_NORM,"  + iter + "," + snorm);
+        log_str = append (log_str, "OBJECTIVE,"        + iter + "," + obj_new);
+        log_str = append (log_str, "OBJ_DROP_REAL,"    + iter + "," + actred);
+        log_str = append (log_str, "OBJ_DROP_PRED,"    + iter + "," + qk);
+        log_str = append (log_str, "OBJ_DROP_RATIO,"   + iter + "," + rho);
+    }
+
 	if (iter == 1) {
 	   delta = min (delta, snorm);
 	}
@@ -252,7 +296,7 @@ while (! converge)
 			}
 		}
 	} 
-
+	
 	if (is_trust_boundary_reached == 1)
 	{
 	    print ("-- Outer Iteration " + iter + ": Had " + (inneriter - 1) + " CG iterations, trust bound REACHED");
@@ -261,6 +305,7 @@ while (! converge)
 	}
 	print ("   -- Obj.Reduction:  Actual = " + actred + ",  Predicted = " + qk + 
 	       "  (A/P: " + (round (10000.0 * rho) / 10000.0) + "),  Trust Delta = " + delta);
+	       
 	if (is_rho_accepted)
 	{
 		B = B_new;
@@ -273,7 +318,19 @@ while (! converge)
 		norm_Grad = sqrt (sum (Grad ^ 2));
 		obj = obj_new;
 	    print ("   -- New Objective = " + obj + ",  Beta Change Norm = " + snorm + ",  Gradient Norm = " + norm_Grad);
-	}
+        if ($Log != " ") {
+            log_str = append (log_str, "IS_POINT_UPDATED," + iter + ",1");
+            log_str = append (log_str, "GRADIENT_NORM,"    + iter + "," + norm_Grad);
+        }
+	} else {
+        if ($Log != " ") {
+            log_str = append (log_str, "IS_POINT_UPDATED," + iter + ",0");
+        }
+    }	
+	
+    if ($Log != " ") {
+        log_str = append (log_str, "TRUST_DELTA," + iter + "," + delta);
+    }	
 	
 	iter = iter + 1;
 	converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxiter) |
@@ -288,3 +345,8 @@ if (intercept_status == 2) {
     B_out = B;
 }
 write (B_out, $B, format=$fmt);
+
+if ($Log != " ") {
+    write (log_str, $Log);
+}
+

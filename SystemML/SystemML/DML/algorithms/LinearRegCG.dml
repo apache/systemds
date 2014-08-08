@@ -17,6 +17,7 @@
 # Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
 # B     String  ---     Location to store estimated regression parameters (the betas)
 # O     String  " "     Location to write the printed statistics; by default is standard output
+# Log   String  " "     Location to write per-iteration variables for log/debugging purposes
 # icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
 #                       0 = no intercept, no shifting, no rescaling;
 #                       1 = add intercept, but neither shift nor rescale X;
@@ -44,6 +45,7 @@
 # STDEV_TOT_Y           Standard Deviation of the response value Y
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 # STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
+# DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
 # PLAIN_R2              Plain R^2 of residual with bias included vs. total average
 # ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
 # PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
@@ -53,9 +55,20 @@
 # -------------------------------------------------------------------------------------
 # * The last two statistics are only printed if there is no intercept (icpt=0)
 #
+# The Log file, when requested, contains the following per-iteration variables in CSV
+# format, each line containing triple (NAME, ITERATION, VALUE) with ITERATION = 0 for
+# initial values:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------
+# CG_RESIDUAL_NORM      L2-norm of Conj.Grad.residual, which is A %*% beta - t(X) %*% y
+#                           where A = t(X) %*% X + diag (lambda), or a similar quantity
+# CG_RESIDUAL_RATIO     Ratio of current L2-norm of Conj.Grad.residual over the initial
+# -------------------------------------------------------------------------------------
+#
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
-#     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv
+#     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv Log=OUTPUT_DIR/log
 
 $O=" ";
 $icpt=0;
@@ -141,6 +154,8 @@ norm_r2 = sum (r ^ 2);
 norm_r2_initial = norm_r2;
 norm_r2_target = norm_r2_initial * tolerance ^ 2;
 print ("||r|| initial value = " + sqrt (norm_r2_initial) + ",  target value = " + sqrt (norm_r2_target));
+log_str = "CG_RESIDUAL_NORM,0," + sqrt (norm_r2_initial);
+log_str = append (log_str, "CG_RESIDUAL_RATIO,0,1.0");
 
 while (i < max_iteration & norm_r2 > norm_r2_target)
 {
@@ -166,6 +181,8 @@ while (i < max_iteration & norm_r2 > norm_r2_target)
 	p = -r + (norm_r2 / old_norm_r2) * p;
 	i = i + 1;
 	print ("Iteration " + i + ":  ||r|| / ||r init|| = " + sqrt (norm_r2 / norm_r2_initial));
+	log_str = append (log_str, "CG_RESIDUAL_NORM,"  + i + "," + sqrt (norm_r2));
+    log_str = append (log_str, "CG_RESIDUAL_RATIO," + i + "," + sqrt (norm_r2 / norm_r2_initial));
 }
 
 if (i >= max_iteration) {
@@ -194,8 +211,10 @@ ss_avg_res = ss_res - n * avg_res ^ 2;
 
 plain_R2 = 1 - ss_res / ss_avg_tot;
 if (n > m_ext) {
-    adjusted_R2 = 1 - (ss_res / (n - m_ext)) / (ss_avg_tot / (n - 1));
+    dispersion  = ss_res / (n - m_ext);
+    adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
 } else {
+    dispersion  = 0.0 / 0.0;
     adjusted_R2 = 0.0 / 0.0;
 }
 
@@ -221,6 +240,7 @@ str = "AVG_TOT_Y," + avg_tot;                                    #  Average of t
 str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y
 str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
 str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
+str = append (str, "DISPERSION," + dispersion);                  #  GLM-style dispersion, i.e. residual sum of squares / # d.f.
 str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
 str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
 str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average
@@ -245,4 +265,8 @@ if (intercept_status == 2) {
     beta_out = beta;
 }
 write (beta_out, $B, format=$fmt);
+
+if ($Log != " ") {
+    write (log_str, $Log);
+}
 print ("END LINEAR REGRESSION SCRIPT");

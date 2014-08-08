@@ -15,13 +15,14 @@
 # ----------------------------------------------------------------------------
 # X     String   ---    Location to read matrix X with the input data records
 # k     Int      ---    Number of centroids
-# runs  Int      100    Number of runs (with different initial centroids)
+# runs  Int       10    Number of runs (with different initial centroids)
 # maxi  Int     1000    Maximum number of iterations per run
 # tol   Double 0.000001 Tolerance (epsilon) for WCSS change ratio
 # samp  Int       50    Average number of records per centroid in data samples
 # C     String  "C.mtx" Location to store the output matrix with the centroids
 # isY   Int        0    0 = do not write Y,  1 = write Y
 # Y     String  "Y.mtx" Location to store the mapping of records to centroids
+# fmt   String "text"   Matrix output format, usually "text" or "csv"
 # verb  Int        0    0 = do not print per-iteration stats, 1 = print them
 # ----------------------------------------------------------------------------
 #
@@ -29,13 +30,14 @@
 # hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 C=centroids.mtx
 # hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=1 Y=clusters.mtx verb=1
 
-$runs=100;
+$runs=10;
 $maxi=1000;
 $tol=0.000001;
 $samp=50;
 $C="C.mtx";
 $isY=0;
 $Y="Y.mtx";
+$fmt="text";
 $verb=0;
 
 print ("BEGIN K-MEANS SCRIPT");
@@ -140,14 +142,14 @@ parfor (run_index in 1 : num_runs, check = 0)
         # without the C-independent term, then take the minimum for each record
         D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
         minD = rowMins (D);
-        # Compute the current within-cluster sum of squares (WCSS)
+        # Compute the current centroid-based within-cluster sum of squares (WCSS)
         wcss_old = wcss;
         wcss = sumXsq + sum (minD);
         if (is_verbose == 1) {
             if (iter_count == 0) {
-                print ("Run " + run_index + ", At Start-Up:  WCSS = " + wcss);
+                print ("Run " + run_index + ", At Start-Up:  Centroid WCSS = " + wcss);
             } else {
-                print ("Run " + run_index + ", Iteration " + iter_count + ":  WCSS = " + wcss
+                print ("Run " + run_index + ", Iteration " + iter_count + ":  Centroid WCSS = " + wcss
                     + ";  Centroid change (avg.sq.dist.) = " + (sum ((C - C_old) ^ 2) / num_centroids));
         }   }
         # Check if convergence or maximum iteration has been reached
@@ -167,20 +169,18 @@ parfor (run_index in 1 : num_runs, check = 0)
                 if (sum (ppred (P_denom, 0.0, "<=")) > 0) {
                     term_code = 3;  # There is a "runaway" centroid with 0.0 denominator
                 } else {
-                    # Normalize the columns of P to compute record weights for new centroids
-                    P = P / (one_per_record %*% P_denom);
-                    # Compute new centroids as weighted averages over the records
                     C_old = C;
-                    C = t(P) %*% X;
+                    # Compute new centroids as weighted averages over the records
+                    C = (t(P) %*% X) / (t(P_denom) %*% t(one_per_feature));
     }   }   }   }
-    print ("Run " + run_index + ", Iteration " + iter_count + ":  Terminated with code = " + term_code + ",  WCSS = " + wcss);
+    print ("Run " + run_index + ", Iteration " + iter_count + ":  Terminated with code = " + term_code + ",  Centroid WCSS = " + wcss);
     All_Centroids [(num_centroids * (run_index - 1) + 1) : (num_centroids * run_index), ] = C;
     final_wcss [run_index, 1] = wcss;
     termination_code [run_index, 1] = term_code;
     num_iterations [run_index, 1] = iter_count;
 }
 
-# STEP 3: SELECT THE RUN WITH BEST WCSS AND OUTPUT ITS CENTROIDS:
+# STEP 3: SELECT THE RUN WITH BEST CENTROID-WCSS AND OUTPUT ITS CENTROIDS:
 
 termination_bitmap = matrix (0, rows = num_runs, cols = 3);
 termination_bitmap_raw = table (seq (1, num_runs, 1), termination_code);
@@ -199,18 +199,18 @@ if (num_successful_runs > 0) {
     best_index_vector = ppred (final_wcss_successful, best_wcss, "==");
     aggr_best_index_vector = sumup_rows (best_index_vector);
     best_index = as.integer (sum (ppred (aggr_best_index_vector, 0, "==")) + 1);
-    print ("Successful runs:  Best run is " + best_index + " with WCSS = " + best_wcss 
+    print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss 
         + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
     print ("Writing out the best-WCSS centroids...");
-    write (C, $C, format = "text");
+    write (C, $C, format=$fmt);
     if ($isY == 1) {
         print ("Writing out the best-WCSS cluster labels...");
         D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
         P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
         aggr_P = sumup_cols (P);
         Y = rowSums (ppred (aggr_P, 0, "==")) + 1
-        write (Y, $Y, format = "text");
+        write (Y, $Y, format=$fmt);
     }
     print ("DONE.");
 } else {
@@ -273,7 +273,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
         sample_col_map = matrix (0, rows = (num_records * num_samples), cols = num_samples);
         for (i in 1:num_samples) {
             sample_maps    [(num_records * (i - 1) + 1) : (num_records * i),  ] = diag (one_per_record);
-            sample_col_map [(num_records * (i - 1) + 1) : (num_records * i), i] = t(one_per_record);
+            sample_col_map [(num_records * (i - 1) + 1) : (num_records * i), i] = one_per_record;
 }   }   }
 
 sumup_rows = function (Matrix[double] A) return (Matrix[double] sum_A)

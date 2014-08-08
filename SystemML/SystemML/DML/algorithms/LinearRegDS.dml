@@ -41,6 +41,7 @@
 # STDEV_TOT_Y           Standard Deviation of the response value Y
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 # STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
+# DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
 # PLAIN_R2              Plain R^2 of residual with bias included vs. total average
 # ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
 # PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
@@ -151,8 +152,10 @@ ss_avg_res = ss_res - n * avg_res ^ 2;
 
 plain_R2 = 1 - ss_res / ss_avg_tot;
 if (n > m_ext) {
-    adjusted_R2 = 1 - (ss_res / (n - m_ext)) / (ss_avg_tot / (n - 1));
+    dispersion  = ss_res / (n - m_ext);
+    adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
 } else {
+    dispersion  = 0.0 / 0.0;
     adjusted_R2 = 0.0 / 0.0;
 }
 
@@ -178,6 +181,7 @@ str = "AVG_TOT_Y," + avg_tot;                                    #  Average of t
 str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y
 str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
 str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
+str = append (str, "DISPERSION," + dispersion);                  #  GLM-style dispersion, i.e. residual sum of squares / # d.f.
 str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
 str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
 str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average

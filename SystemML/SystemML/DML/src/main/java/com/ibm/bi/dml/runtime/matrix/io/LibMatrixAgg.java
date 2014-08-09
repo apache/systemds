@@ -809,14 +809,19 @@ public class LibMatrixAgg
 		{
 			case MAX_INDEX:
 			{
-				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					out.quickSetValue(0, 0, in.clen); //maxindex
+				if( ixFn instanceof ReduceCol ) { //ROWINDEXMAX
+					for(int i=0; i<out.rlen; i++) {
+						out.quickSetValue(i, 0, in.clen); //maxindex
+					}
+				}
 				break;
 			}
 			case MIN_INDEX:
 			{
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMIN
-					out.quickSetValue(0, 0, in.clen); //minindex
+					for(int i=0; i<out.rlen; i++) {
+						out.quickSetValue(i, 0, in.clen); //minindex
+					}
 				break;
 			}
 			case MEAN:

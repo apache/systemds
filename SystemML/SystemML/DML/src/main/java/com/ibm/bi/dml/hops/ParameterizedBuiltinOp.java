@@ -10,18 +10,16 @@ package com.ibm.bi.dml.hops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.ReBlock;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
@@ -116,137 +114,8 @@ public class ParameterizedBuiltinOp extends Hop
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} 
 			else if (_op == ParamBuiltinOp.GROUPEDAGG) {
-				
 				ExecType et = optFindExecType();
-				if ( et == ExecType.MR ) 
-				{
-					// construct necessary lops: combineBinary/combineTertiary and
-					// groupedAgg
-	
-					boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
-					if (isWeighted) 
-					{
-						Lop append = BinaryOp.constructAppendLopChain(
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
-								getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
-								DataType.MATRIX, get_valueType(), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
-		
-						// add the combine lop to parameter list, with a new name "combinedinput"
-						inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
-						inputlops.remove(Statement.GAGG_TARGET);
-						inputlops.remove(Statement.GAGG_GROUPS);
-						inputlops.remove(Statement.GAGG_WEIGHTS);
-	
-					} 
-					else 
-					{
-						Lop append = BinaryOp.constructAppendLop(
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
-								DataType.MATRIX, get_valueType(), 
-								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
-						
-						// add the combine lop to parameter list, with a new name
-						// "combinedinput"
-						inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
-						inputlops.remove(Statement.GAGG_TARGET);
-						inputlops.remove(Statement.GAGG_GROUPS);
-	
-					}
-					
-					int colwise = -1;
-					long outputDim1=-1, outputDim2=-1;
-					Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
-					if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
-						long ngroups = ((Data)numGroups).getLongValue();
-						
-						Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
-						long inDim1 = input.getOutputParameters().getNum_rows();
-						long inDim2 = input.getOutputParameters().getNum_cols();
-						if(inDim1 > 0 && inDim2 > 0 ) {
-							if ( inDim1 > inDim2 )
-								colwise = 1;
-							else 
-								colwise = 0;
-						}
-						
-						if ( colwise == 1 ) {
-							outputDim1 = ngroups;
-							outputDim2 = 1;
-						}
-						else if ( colwise == 0 ) {
-							outputDim1 = 1;
-							outputDim2 = ngroups;
-						}
-						
-					}
-					
-					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-							get_dataType(), get_valueType());
-					// output dimensions are unknown at compilation time
-					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, get_rows_in_block(), get_cols_in_block(), -1);
-					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					//set_lops(grp_agg);
-					
-					ReBlock reblock = null;
-					try {
-						reblock = new ReBlock(
-								grp_agg, get_rows_in_block(),
-								get_cols_in_block(), get_dataType(),
-								get_valueType());
-					} catch (Exception e) {
-						throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
-					}
-					reblock.getOutputParameters().setDimensions(-1, -1, 
-							get_rows_in_block(), get_cols_in_block(), -1);
-					
-					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					set_lops(reblock);
-				}
-				else //CP 
-				{
-					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-							get_dataType(), get_valueType(), et);
-					// output dimensions are unknown at compilation time
-					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					// introduce a reblock lop only if it is NOT single_node execution
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
-						|| et == ExecType.CP ) 
-					{
-						if( et == ExecType.CP ){
-							//force blocked output in CP (see below)
-							grp_agg.getOutputParameters().setDimensions(-1, 1, 1000, 1000, -1);
-						}
-						
-						//grouped agg, w/o reblock in CP
-						set_lops(grp_agg);
-					}
-					else 
-					{
-						//insert reblock binarycell->binaryblock in MR
-						ReBlock reblock = null;
-						try {
-							reblock = new ReBlock(
-									grp_agg, get_rows_in_block(),
-									get_cols_in_block(), get_dataType(),
-									get_valueType());
-						} catch (Exception e) {
-							throw new HopsException(this.printErrorLocation() + "In ParameterizedBuiltinOp, error creating Reblock Lop " , e);
-						}
-						reblock.getOutputParameters().setDimensions(-1, -1, 
-								get_rows_in_block(), get_cols_in_block(), -1);
-						
-						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
-						set_lops(reblock);
-					}
-				}
+				handleGroupedAggregate(inputlops, et);
 			}
 			else if(   _op == ParamBuiltinOp.RMEMPTY ) 
 			{
@@ -286,6 +155,114 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 
 		return get_lops();
+	}
+	
+	private void handleGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) throws HopsException, LopsException {
+		if ( et == ExecType.MR ) 
+		{
+			// construct necessary lops: combineBinary/combineTertiary and
+			// groupedAgg
+
+			boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
+			if (isWeighted) 
+			{
+				Lop append = BinaryOp.constructAppendLopChain(
+						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
+						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
+						getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
+						DataType.MATRIX, get_valueType(), 
+						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+
+				// add the combine lop to parameter list, with a new name "combinedinput"
+				inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
+				inputlops.remove(Statement.GAGG_TARGET);
+				inputlops.remove(Statement.GAGG_GROUPS);
+				inputlops.remove(Statement.GAGG_WEIGHTS);
+
+			} 
+			else 
+			{
+				Lop append = BinaryOp.constructAppendLop(
+						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
+						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
+						DataType.MATRIX, get_valueType(), 
+						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+				
+				// add the combine lop to parameter list, with a new name
+				// "combinedinput"
+				inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
+				inputlops.remove(Statement.GAGG_TARGET);
+				inputlops.remove(Statement.GAGG_GROUPS);
+
+			}
+			
+			int colwise = -1;
+			long outputDim1=-1, outputDim2=-1;
+			Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
+			if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
+				long ngroups = ((Data)numGroups).getLongValue();
+				
+				Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
+				long inDim1 = input.getOutputParameters().getNum_rows();
+				long inDim2 = input.getOutputParameters().getNum_cols();
+				if(inDim1 > 0 && inDim2 > 0 ) {
+					if ( inDim1 > inDim2 )
+						colwise = 1;
+					else 
+						colwise = 0;
+				}
+				
+				if ( colwise == 1 ) {
+					outputDim1 = ngroups;
+					outputDim2 = 1;
+				}
+				else if ( colwise == 0 ) {
+					outputDim1 = 1;
+					outputDim2 = ngroups;
+				}
+				
+			}
+			
+			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
+					get_dataType(), get_valueType());
+			// output dimensions are unknown at compilation time
+			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, get_rows_in_block(), get_cols_in_block(), -1);
+			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			//set_lops(grp_agg);
+			
+			ReBlock reblock = null;
+			try {
+				reblock = new ReBlock(
+						grp_agg, get_rows_in_block(),
+						get_cols_in_block(), get_dataType(),
+						get_valueType());
+			} catch (Exception e) {
+				throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
+			}
+			reblock.getOutputParameters().setDimensions(-1, -1, 
+					get_rows_in_block(), get_cols_in_block(), -1);
+			
+			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			set_lops(reblock);
+		}
+		else //CP 
+		{
+			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
+					get_dataType(), get_valueType(), et);
+			// output dimensions are unknown at compilation time
+			grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			// introduce a reblock lop only if it is NOT single_node execution
+			if( et == ExecType.CP ){
+				//force blocked output in CP (see below)
+				grp_agg.getOutputParameters().setDimensions(-1, 1, 1000, 1000, -1);
+			}
+			//grouped agg, w/o reblock in CP
+			set_lops(grp_agg);
+		}
 	}
 
 	@Override

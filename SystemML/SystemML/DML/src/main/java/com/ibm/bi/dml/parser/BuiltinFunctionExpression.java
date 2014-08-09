@@ -486,6 +486,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// First input: is always of type MATRIX
 			checkMatrixParam(getFirstExpr());
 			
+			if ( getSecondExpr() == null )
+				raiseValidateError("Invalid number of arguements to table(): " 
+						+ this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			
 			// Second input: can be MATRIX or SCALAR
 			// cases: table(A,B) or table(A,1)
 			if ( getSecondExpr().getOutput().getDataType() == DataType.MATRIX)

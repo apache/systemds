@@ -874,7 +874,7 @@ public class TertiaryOp extends Hop
 					//note: for ctable histogram dim2 known but automatically replaces m         
 					//ret = new long[]{m, m, m};
 				}
-				if ( this.getInput().size() > 3 && this.getInput().get(3) instanceof LiteralOp && this.getInput().get(4) instanceof LiteralOp ) {
+				if ( this.getInput().size() > 3 && this.getInput().get(3).getKind() == Kind.LiteralOp && this.getInput().get(4).getKind() == Kind.LiteralOp ) {
 					try {
 						long outputDim1 = ((LiteralOp)getInput().get(3)).getLongValue();
 						long outputDim2 = ((LiteralOp)getInput().get(4)).getLongValue();
@@ -882,7 +882,6 @@ public class TertiaryOp extends Hop
 						
 						this._dim1 = outputDim1;
 						this._dim2 = outputDim2;
-						//System.out.println("TertiaryOp.inferOutputCharacteristics(): [="+outputDim1 + "," + outputDim2 +"," + outputNNZ + "]");
 						inferred = true;
 						return new long[]{outputDim1, outputDim2, outputNNZ};
 					} catch (HopsException e) {
@@ -968,7 +967,6 @@ public class TertiaryOp extends Hop
 							else //if( input2 instanceof DataGenOp && ((DataGenOp)input2).getDataGenMethod()==DataGenMethod.SEQ )
 								set_dim2( input2._dim1 );
 						}
-						
 						//for ctable_histogram also one dimension is known
 						Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(
 																input1.get_dataType(), input2.get_dataType(), input3.get_dataType());
@@ -977,8 +975,22 @@ public class TertiaryOp extends Hop
 						{
 							set_dim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input2) );
 						}
+						
+						// if output dimensions are provided, update _dim1 and _dim2
+						try {
+							if ( this.getInput().size() > 3 ) {
+								if ( this.getInput().get(3).getKind() == Kind.LiteralOp ) {
+									this._dim1 = ((LiteralOp)getInput().get(3)).getLongValue();
+								}
+								if (this.getInput().get(4).getKind() == Kind.LiteralOp ) {
+									this._dim2 = ((LiteralOp)getInput().get(4)).getLongValue();
+								}
+							}
+						} catch (HopsException e) {
+							throw new RuntimeException(e);
+						}
 					}
-					
+
 					break;
 				
 				case QUANTILE:

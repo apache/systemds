@@ -156,7 +156,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		
 		if ( resultBlock == null )
 			resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
-		
+
 		ec.setMatrixOutput(output.get_name(), resultBlock);
 		ctableMap.clear();
 		resultBlock = null;

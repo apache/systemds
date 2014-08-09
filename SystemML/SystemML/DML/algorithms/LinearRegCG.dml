@@ -71,6 +71,7 @@
 #     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv Log=OUTPUT_DIR/log
 
 $O=" ";
+$Log=" ";
 $icpt=0;
 $reg=0.000001;
 $tol=0.000001;

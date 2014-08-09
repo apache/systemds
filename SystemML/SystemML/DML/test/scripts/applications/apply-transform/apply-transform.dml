@@ -78,7 +78,7 @@ if($normalization_maps != " "){
 	}
 }
 
-write(attrinfo, "binning/attrinfo.mtx", format="csv")
+#write(attrinfo, "binning/attrinfo.mtx", format="csv")
 
 cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
 new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
@@ -136,7 +136,7 @@ parfor(i in 1:ncol(X), check=0){
 
 write(new_X, $transformed_X, format="text")
 
-s = ""
+s = "Warning Messages"
 for(i in 1:nrow(log)){
 	if(castAsScalar(log[i,1]) == 1)
 		s = append(s, "Unseen value in column " + i + " (" + castAsScalar(log[i,2]) + ")")

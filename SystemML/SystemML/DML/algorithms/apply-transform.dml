@@ -82,6 +82,7 @@ if($normalization_maps != " "){
 
 cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
 new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
+log = matrix(0, rows=ncol(X), cols=2)
 parfor(i in 1:ncol(X), check=0){
 	col = X[,i]
 	
@@ -119,8 +120,25 @@ parfor(i in 1:ncol(X), check=0){
 		}
 		
 		new_X[,dummy_coding_beg_col] = col
-	}else
-		new_X[,dummy_coding_beg_col:dummy_coding_end_col] = table(seq(1, nrow(X), 1), col)
+	}else{
+		min_val = min(col)
+		max_val = max(col)
+		if(min_val >= 1 & max_val <= dummy_coding_end_col - dummy_coding_beg_col + 1){
+			res = table(seq(1, nrow(X), 1), col, nrow(X), (dummy_coding_end_col-dummy_coding_beg_col+1))
+			new_X[,dummy_coding_beg_col:dummy_coding_end_col] = res
+		}else{
+			log[i,1] = 1
+			if(min_val < 1) log[i,2] = min_val
+			else log[i,2] = max_val
+		}
+	}
 }
 
 write(new_X, $transformed_X, format="csv")
+
+s = "Warning Messages"
+for(i in 1:nrow(log)){
+	if(castAsScalar(log[i,1]) == 1)
+		s = append(s, "Unseen value in column " + i + " (" + castAsScalar(log[i,2]) + ")")
+}
+write(s, $Log)

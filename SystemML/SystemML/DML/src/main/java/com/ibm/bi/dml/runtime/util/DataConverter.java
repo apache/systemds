@@ -719,8 +719,32 @@ public class DataConverter
 		
 		if ( !csvprop.isHasHeader() ) {
 			// simply move srcFile to destFile
+			
+			/*
+			 * TODO: Remove this roundabout way! 
+			 * For example: destFilePath = /user/biadmin/csv/temp/out/file.csv 
+			 *              & the only path that exists already on HDFS is /user/biadmin/csv/.
+			 * In this case: the directory structure /user/biadmin/csv/temp/out must be created. 
+			 * Simple hdfs.rename() does not seem to create this directory structure.
+			 */
+			
+			// delete the destination file, if exists already
+			//boolean ret1 = 
 			hdfs.delete(destFilePath, true);
+			
+			// Create /user/biadmin/csv/temp/out/file.csv so that ..../temp/out/ is created.
+			//boolean ret2 = 
+			hdfs.createNewFile(destFilePath);
+			
+			// delete the file "file.csv" but preserve the directory structure /user/biadmin/csv/temp/out/
+			//boolean ret3 = 
+			hdfs.delete(destFilePath, true);
+			
+			// finally, move the data to destFilePath = /user/biadmin/csv/temp/out/file.csv
+			//boolean ret4 = 
 			hdfs.rename(srcFilePath, destFilePath);
+
+			//System.out.println("Return values = del:" + ret1 + ", createNew:" + ret2 + ", del:" + ret3 + ", rename:" + ret4);
 			return;
 		}
 	
@@ -766,7 +790,9 @@ public class DataConverter
 			
 			// rename srcfile to destFile
 			hdfs.delete(destFilePath, true);
-			hdfs.rename(srcFilePath, destFilePath);
+			hdfs.createNewFile(destFilePath); // force the creation of directory structure
+			hdfs.delete(destFilePath, true);  // delete the file, but preserve the directory structure
+			hdfs.rename(srcFilePath, destFilePath); // move the data 
 		
 		} else if (hdfs.isFile(srcFilePath)) {
 			// create destition file

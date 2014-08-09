@@ -636,7 +636,7 @@ public class CSVReblockMR
 	{
 		JobConf job;
 		job = new JobConf(ReblockMR.class);
-		job.setJobName("CVS-Reblock-MR");
+		job.setJobName("CSV-Reblock-MR");
 		
 		byte[] realIndexes=new byte[inputs.length];
 		for(byte b=0; b<realIndexes.length; b++)

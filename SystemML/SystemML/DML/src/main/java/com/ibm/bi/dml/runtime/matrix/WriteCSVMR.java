@@ -207,7 +207,9 @@ public class WriteCSVMR
 		public double[] container=null;
 		public static enum Situation{START, NEWLINE, MIDDLE};
 		Situation sit=Situation.START;
-		private StringBuffer buffer=new StringBuffer();
+		//private StringBuffer buffer=new StringBuffer();
+		private StringBuilder _buffer = new StringBuilder();
+		
 		String delim=",";
 		boolean sparse=true;
 		
@@ -240,35 +242,50 @@ public class WriteCSVMR
 
 		@Override
 		public void write(DataOutput out) throws IOException {
-			buffer.delete(0, buffer.length());
+			//long begin = System.nanoTime();
+			_buffer.setLength(0);
 			switch(sit)
 			{
 			case START:
 				break;
 			case NEWLINE:
-				buffer.append('\n');
+				_buffer.append('\n');
 				break;
 			case MIDDLE:
-				buffer.append(delim);
+				_buffer.append(delim);
 				break;
 			default:
 				throw new RuntimeException("Unrecognized situation "+sit);	
 			}
 			int i=0;
-			for(; i<numCols-1; i++)
-			{
+			
+			if ( numCols > 0 ) {
+				for(; i<numCols-1; i++)
+				{
+					if( !sparse || container[i]!=0 )
+						_buffer.append(container[i]);
+					_buffer.append(delim);
+				}
 				if( !sparse || container[i]!=0 )
-					buffer.append(container[i]);
-				buffer.append(delim);
+					_buffer.append(container[i]);
 			}
-			if( !sparse || container[i]!=0 )
-				buffer.append(container[i]);
-			ByteBuffer bytes = Text.encode(buffer.toString());
-		    int length = bytes.limit();
+			//long prep = System.nanoTime()-begin;
+			//begin = System.nanoTime();
+			
+			ByteBuffer bytes = Text.encode(_buffer.toString());
+			
+			//long encode = System.nanoTime()-begin;
+			//begin = System.nanoTime();
+			
+			int length = bytes.limit();
 		    out.write(bytes.array(), 0, length);
-		   // System.out.print(buffer.toString());
+			
+		    //long write = System.nanoTime()-begin;
+			
+			//System.out.println(":::" + _buffer.toString());
 			//out.write(Text.encode(buffer.toString(), true).array());
 		}
+		
 		public String toString()
 		{
 			String str="";
@@ -329,7 +346,6 @@ public class WriteCSVMR
 				}
 			}
 			reporter.incrCounter(Counters.MAP_TIME, System.currentTimeMillis()-start);
-			
 		}
 		
 		public void configure(JobConf job)
@@ -420,12 +436,21 @@ public class WriteCSVMR
 			return sit;
 		}
 		
+		private void addNewlineCharacter(byte tag, Reporter reporter) throws IOException 
+		{
+			zeroBlock.numCols = 0;
+			zeroBlock.setSituation(Situation.NEWLINE);
+			collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
+		}
+		
 		@Override
 		public void reduce(TaggedFirstSecondIndexes inkey,
 				Iterator<RowBlock> inValue,
 				OutputCollector<NullWritable, RowBlockForTextOutput> out, Reporter reporter)
 				throws IOException {
 		
+			long begin = System.nanoTime();
+			//ReduceBase.prep = ReduceBase.encode = ReduceBase.write = 0;
 			if(firsttime)
 			{
 				cachedReporter=reporter;
@@ -474,6 +499,10 @@ public class WriteCSVMR
 				sit=RowBlockForTextOutput.Situation.MIDDLE;
 			}
 			rowIndexes[tag]=inkey.getFirstIndex();
+
+			reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, (System.nanoTime()-begin));
+			//reporter.incrCounter(Counters.WRITE, ReduceBase.write);
+			//ReduceBase.write = 0;
 		}
 		
 		public void configure(JobConf job)
@@ -540,7 +569,11 @@ public class WriteCSVMR
 				
 				//if a row is completely missing
 				addMissingRows(tag, maxRowIndexes[tag]+1, Situation.NEWLINE, cachedReporter);
+				
+				// add a newline character at the end of file
+				addNewlineCharacter(tag, cachedReporter);
 			}
+			
 			super.close();
 		}
 	}

@@ -1,0 +1,144 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+$missing_value_maps = " "
+$bin_defns = " "
+$dummy_code_maps = " "
+$normalization_maps = " "
+
+original_X = read($X)
+
+if($missing_value_maps != " "){
+	missing_val_maps = read($missing_value_maps)
+
+	last_data_col = ncol(original_X)-nrow(missing_val_maps)
+	X = original_X[,1:last_data_col]
+}else
+	X = original_X
+
+# col 1: col index of missing indicator col
+#		 0 otherwise
+# col 2: global mean if imputation is needed
+# col 3: num_bins if binning is required
+# col 4: bin width if binning is required
+# col 5: min val if binning is required
+# col 6: begin col if dummy coding is required
+# col 7: end col if dummy coding is required
+# col 8: 1 if normalization is required 0 ow
+# col 9: mean for normalization
+# col 10: std for z-scoring for normalization
+#		 -1 indicates mean subtraction  
+attrinfo = matrix(0, rows=ncol(X), cols=10)
+
+if($missing_value_maps != " "){
+	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
+	
+	parfor(i in 1:nrow(missing_val_maps), check=0){
+		attr_index_mv = castAsScalar(missing_val_maps[i,1])
+		attrinfo[attr_index_mv,1] = i
+		attrinfo[attr_index_mv,2] = missing_val_maps[i,2]
+	}	
+}
+ 	
+if($bin_defns != " "){
+	bin_defns = read($bin_defns)
+	parfor(i in 1:nrow(bin_defns), check=0){
+		attr_index_bin = castAsScalar(bin_defns[i,1])
+		attrinfo[attr_index_bin,3] = bin_defns[i,4]
+		attrinfo[attr_index_bin,4] = bin_defns[i,2]
+		attrinfo[attr_index_bin,5] = bin_defns[i,3]
+	}
+}
+
+if($dummy_code_maps != " "){
+	dummy_code_maps = read($dummy_code_maps)
+	parfor(i in 1:nrow(dummy_code_maps), check=0){
+		attr_index_dc = castAsScalar(dummy_code_maps[i,1])
+		attrinfo[attr_index_dc,6] = dummy_code_maps[i,2]
+		attrinfo[attr_index_dc,7] = dummy_code_maps[i,3]
+	}
+}else{
+	attrinfo[,6] = seq(1, ncol(X), 1)
+	attrinfo[,7] = seq(1, ncol(X), 1)
+}
+
+if($normalization_maps != " "){
+	normalization_map = read($normalization_maps)
+	parfor(i in 1:nrow(normalization_map), check=0){
+		attr_index_normalization = castAsScalar(normalization_map[i,1])
+		attrinfo[attr_index_normalization,8] = 1
+		attrinfo[attr_index_normalization,9] = castAsScalar(normalization_map[i,2])
+		attrinfo[attr_index_normalization,10] = castAsScalar(normalization_map[i,3])
+	}
+}
+
+write(attrinfo, "binning/attrinfo.mtx", format="csv")
+
+cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
+new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
+log = matrix(0, rows=ncol(X), cols=2)
+parfor(i in 1:ncol(X), check=0){
+	col = X[,i]
+	
+	mv_col_id = castAsScalar(attrinfo[i,1])
+	global_mean = castAsScalar(attrinfo[i,2])
+	num_bins = castAsScalar(attrinfo[i,3])
+	bin_width = castAsScalar(attrinfo[i,4])
+	min_val = castAsScalar(attrinfo[i,5])
+	dummy_coding_beg_col = castAsScalar(attrinfo[i,6])
+	dummy_coding_end_col = castAsScalar(attrinfo[i,7])
+	normalization_needed = castAsScalar(attrinfo[i,8])
+	normalization_mean = castAsScalar(attrinfo[i,9])
+	normalization_std = castAsScalar(attrinfo[i,10])
+	
+	if(mv_col_id > 0){ 
+		# fill-in with global mean
+		col = col + missing_indicator_mat[,mv_col_id] * global_mean
+	}
+	
+	if(num_bins > 0){
+		# only for equiwidth bins
+	
+		# note that max_val entries will get assigned num_bins+1
+		col = round((col - min_val)/bin_width - 0.5) + 1
+		less_than_lb = ppred(col, 1, "<")
+		more_than_ub = ppred(col, num_bins, ">")
+		
+		col = (1 - less_than_lb - more_than_ub)*col + more_than_ub*num_bins + less_than_lb
+	}
+
+	if(dummy_coding_beg_col == dummy_coding_end_col){
+		if(normalization_needed == 1){
+			if(normalization_std == -1) col = col - normalization_mean
+			else col = (col - normalization_mean)/normalization_std
+		}
+		
+		new_X[,dummy_coding_beg_col] = col
+	}else{
+		min_val = min(col)
+		max_val = max(col)
+		if(min_val >= 1 & max_val <= dummy_coding_end_col - dummy_coding_beg_col + 1){
+			res = table(seq(1, nrow(X), 1), col, nrow(X), (dummy_coding_end_col-dummy_coding_beg_col+1))
+			new_X[,dummy_coding_beg_col:dummy_coding_end_col] = res
+		}else{
+			log[i,1] = 1
+			if(min_val < 1) log[i,2] = min_val
+			else log[i,2] = max_val
+		}
+	}
+}
+
+write(new_X, $transformed_X, format="text")
+
+s = ""
+for(i in 1:nrow(log)){
+	if(castAsScalar(log[i,1]) == 1)
+		s = append(s, "Unseen value in column " + i + " (" + castAsScalar(log[i,2]) + ")")
+}
+write(s, $Log)

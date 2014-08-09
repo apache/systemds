@@ -265,7 +265,7 @@ if ($Y != " ")
     if (df_ss_avg_res_Y > 0) {
         var_res_Y = ss_avg_res_Y / df_ss_avg_res_Y;
     } else {
-        var_res_Y = 0.0 / 0.0;
+        var_res_Y = matrix (0.0, rows = 1, cols = ncol (Y)) / 0.0;
     }
     plain_R2_nobias  = 1 - ss_avg_res_Y / ss_avg_tot_Y;
     adjust_R2_nobias = 1 - var_res_Y / var_tot_Y;
@@ -273,7 +273,7 @@ if ($Y != " ")
     if (df_ss_res_Y > 0) {
         adjust_R2 = 1 - (ss_res_Y / df_ss_res_Y) / var_tot_Y;
     } else {
-        adjust_R2 = 0.0 / 0.0;
+        adjust_R2 = matrix (0.0, rows = 1, cols = ncol (Y)) / 0.0;
     }
     
     predicted_avg_var_res_Y = dispersion * colSums (vars) / sum (Y_counts);

@@ -520,6 +520,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( String var : vars )
 			{
 				Data dat = ec.getVariable(var);
+				//skip non-existing input matrices (which are due to unknown sizes marked for
+				//partitioning but typically related branches are never exected)				
 				if( dat != null && dat instanceof MatrixObject )
 				{
 					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input

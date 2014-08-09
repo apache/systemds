@@ -426,20 +426,25 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		double mem = -1;
 		
-		MatrixObject mo = (MatrixObject) vars.get( varName );
-		
-		//those are worst-case (dense) estimates
-		switch( dpf )
+		//not all intermediates need to be known on optimize
+		Data dat = vars.get( varName );
+		if( dat != null )
 		{
-			case COLUMN_WISE:
-				mem = mo.getNumRows() * 8; 
-				break;
-			case ROW_WISE:
-				mem = mo.getNumColumns() * 8;
-				break;
-			case BLOCK_WISE_M_N:
-				mem = Integer.MAX_VALUE; //TODO
-				break;
+			MatrixObject mo = (MatrixObject) dat;
+			
+			//those are worst-case (dense) estimates
+			switch( dpf )
+			{
+				case COLUMN_WISE:
+					mem = mo.getNumRows() * 8; 
+					break;
+				case ROW_WISE:
+					mem = mo.getNumColumns() * 8;
+					break;
+				case BLOCK_WISE_M_N:
+					mem = Integer.MAX_VALUE; //TODO
+					break;
+			}	
 		}
 		
 		return mem;
@@ -967,11 +972,13 @@ public class OptimizerRuleBased extends Optimizer
 			long nnzMax = Long.MIN_VALUE;
 			for( String c : cand ) {
 				MatrixObject tmp = (MatrixObject)vars.get(c);
-				long nnzTmp = tmp.getNnz();
-				if( nnzTmp > nnzMax ) {
-					nnzMax = nnzTmp;
-					varname = c;
-					apply = true;
+				if( tmp != null ){
+					long nnzTmp = tmp.getNnz();
+					if( nnzTmp > nnzMax ) {
+						nnzMax = nnzTmp;
+						varname = c;
+						apply = true;
+					}
 				}
 			}		
 		}

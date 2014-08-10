@@ -1303,7 +1303,7 @@ public class MRJobConfiguration
 		
 		//set up names of the input matrices and their inputformat information
 		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
-		MRJobConfiguration.setMapFucInputMatrixIndexes(job, inputIndexes);
+		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, inputIndexes);
 		
 		if(setConverter)
 		{
@@ -1357,7 +1357,7 @@ public class MRJobConfiguration
 		
 		//set up names of the input matrices and their inputformat information
 		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
-		MRJobConfiguration.setMapFucInputMatrixIndexes(job, inputIndexes);
+		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, inputIndexes);
 		
 		for(int i=0; i<inputs.length; i++)
 		{
@@ -1885,7 +1885,8 @@ public class MRJobConfiguration
 		
 	}
 	
-	private static void getIndexes(Instruction[] instructions, HashSet<Byte> indexes) throws DMLRuntimeException
+	private static void getIndexes(Instruction[] instructions, HashSet<Byte> indexes) 
+		throws DMLRuntimeException
 	{
 		if(instructions==null)
 			return;
@@ -1898,38 +1899,29 @@ public class MRJobConfiguration
 	
 	private static String getIndexesString(HashSet<Byte> indexes)
 	{
+		String ret = "";
 		if(indexes==null || indexes.isEmpty())
-			return "";
-		String str="";
+			return ret;
+
 		for(Byte ind: indexes)
-			str += (ind + Instruction.INSTRUCTION_DELIM);
-		return str.substring(0, str.length()-1);//remove the last delim
+			ret += (ind + Instruction.INSTRUCTION_DELIM);
+		return ret.substring(0, ret.length()-1);//remove the last delim
 	}
 	
 	private static String getIndexesString(byte[] indexes)
 	{
-		if(indexes==null)
-			return "";
-		String str="";
-		for(byte ind: indexes)
-			str+=(ind+Instruction.INSTRUCTION_DELIM);
-		return str.substring(0, str.length()-1);//remove the last delim
-	}
-
-	private static String getIndexesString(ArrayList<Byte> indexes)
-	{
-		if(indexes==null)
-			return "";
-		String str="";
-		for(byte ind: indexes)
-			str+=(ind+Instruction.INSTRUCTION_DELIM);
-		return str.substring(0, str.length()-1);//remove the last delim
-	}
-
-	public static void setMapFucInputMatrixIndexes(JobConf job,
-			byte[] realIndexes) {
-		job.set(MAPFUNC_INPUT_MATRICIES_INDEXES_CONFIG, getIndexesString(realIndexes));
+		String ret = "";
+		if(indexes==null || indexes.length==0)
+			return ret;
 		
+		for(byte ind: indexes)
+			ret+=(ind+Instruction.INSTRUCTION_DELIM);
+		return ret.substring(0, ret.length()-1);//remove the last delim
+	}
+
+	public static void setMapFunctionInputMatrixIndexes(JobConf job, byte[] realIndexes) 
+	{
+		job.set(MAPFUNC_INPUT_MATRICIES_INDEXES_CONFIG, getIndexesString(realIndexes));	
 	}
 
 	public static boolean deriveRepresentation(InputInfo[] inputInfos) {

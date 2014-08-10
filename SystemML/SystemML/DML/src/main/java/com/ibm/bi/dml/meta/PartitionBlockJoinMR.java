@@ -72,7 +72,7 @@ public class PartitionBlockJoinMR
 		//job.setMapperClass(PartitionBlockJoinMapperMatrix.class);
 		//instead of above stmt, we cull out the foll from that file
 		job.setStrings("input.matrices.dirs", new String[]{input});		//TODO the prefix string is hardcoded from MRJobConfiguration.java
-		MRJobConfiguration.setMapFucInputMatrixIndexes(job, new byte[]{0});
+		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, new byte[]{0});
 		MRJobConfiguration.setInputInfo(job, (byte)(0), inputinfo, bnr, bnc, ConvertTarget.BLOCK);
 		//add idtable class
 		MultipleInputs.addInputPath(job, new Path(input), inputinfo.inputFormatClass ,PartitionBlockJoinMapperMatrix.class); 

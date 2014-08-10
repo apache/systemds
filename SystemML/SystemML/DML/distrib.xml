@@ -21,7 +21,8 @@
 		<fileSet>
 			<directory>${basedir}/algorithms</directory>
 			<includes>
-				<include>GLM-predict.dml,GLM.dml</include>
+				<include>GLM-predict.dml</include>
+				<include>GLM.dml</include>
 				<include>Kmeans-predict.dml</include>
 				<include>Kmeans.dml</include>
 				<include>LinearRegCG.dml</include>
@@ -46,7 +47,7 @@
 			<directory>${basedir}/docs/Language Reference</directory>
 			<includes>
 				<include>SystemML_Language_Reference.html</include>
-				<include>${basedir}/docs/Algorithms Reference/SystemML_Algorithms_Reference.pdf</include>
+				<include>README.txt</include>
 			</includes>
 			<outputDirectory>./docs</outputDirectory>
 		</fileSet>

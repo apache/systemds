@@ -97,17 +97,20 @@ public class DMLScript
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	private static final String PATH_TO_SRC = "./";
 	
-	
-	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ "   [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? [-args | -nvargs]? <args-list>? \n" 
+	public static String USAGE = 
+			"Usage is " + DMLScript.class.getCanonicalName() + " -f <filename>" 
+	        //+ " (-exec <mode>)?" + " (-explain <type>)?" + " (-stats)?" + " (-clean)?" + " (-config=<config_filename>)? 
+			+ " [-options] ([-args | -nvargs] <args-list>)? \n" 
 			+ "   -f: <filename> will be interpreted as a filename path (if <filename> is prefixed\n"
-			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system\n" 
-			+ "   -s: <filename> will be interpreted as a DML script string \n"
+			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system)\n" 
+			//undocumented feature in beta 08/2014 release
+			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
-			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
+			//undocumented feature in beta 08/2014 release
+			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ "   -explain: <type> (optional) explain plan (hops, runtime)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
-			+ "   -clean: (optional) cleanup all SystemML working directories (FS, HDFS).\n"
+			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
 			+ "         values in default SystemML-config.xml config file; if <config_filename> is\n" 
@@ -119,7 +122,8 @@ public class DMLScript
 			+ "         after -nvargs flag, each argument must be be named-argument of form argName=argValue,\n"
 			+ "         where value will replace $argName in DML script, argName must be a valid DML variable\n"
 			+ "         name (start with letter, contain only letters, numbers, or underscores).\n"
-			+ "   <args-list>: (optional) args to DML script \n" ;
+			+ "   <args-list>: (optional) args to DML script \n" 
+			+ "   -? | -help: (optional) show this help message \n";
 	
 	
 	///////////////////////////////

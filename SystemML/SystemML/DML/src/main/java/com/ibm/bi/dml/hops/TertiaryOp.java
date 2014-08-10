@@ -977,17 +977,11 @@ public class TertiaryOp extends Hop
 						}
 						
 						// if output dimensions are provided, update _dim1 and _dim2
-						try {
-							if ( this.getInput().size() > 3 ) {
-								if ( this.getInput().get(3).getKind() == Kind.LiteralOp ) {
-									this._dim1 = ((LiteralOp)getInput().get(3)).getLongValue();
-								}
-								if (this.getInput().get(4).getKind() == Kind.LiteralOp ) {
-									this._dim2 = ((LiteralOp)getInput().get(4)).getLongValue();
-								}
-							}
-						} catch (HopsException e) {
-							throw new RuntimeException(e);
+						if( getInput().size() >= 5 ) {
+							if( getInput().get(3).getKind() == Kind.LiteralOp )
+								set_dim1( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(3)) );
+							if( getInput().get(4).getKind() == Kind.LiteralOp )
+								set_dim2( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(4)) );
 						}
 					}
 

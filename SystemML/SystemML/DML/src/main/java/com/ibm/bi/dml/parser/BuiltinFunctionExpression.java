@@ -487,7 +487,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFirstExpr());
 			
 			if ( getSecondExpr() == null )
-				raiseValidateError("Invalid number of arguements to table(): " 
+				raiseValidateError("Invalid number of arguments to table(): " 
 						+ this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			
 			// Second input: can be MATRIX or SCALAR
@@ -547,7 +547,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				break;
 
 			default:
-				raiseValidateError("Invalid number of arguements to table(): " 
+				raiseValidateError("Invalid number of arguments to table(): " 
 						+ this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			// The dimensions for the output matrix will be known only at the

@@ -126,7 +126,7 @@ public class ApplyTransformTest extends AutomatedTestBase{
 			 
 			 if(XDML.containsKey(cell)){
 				 double val = XDML.get(cell).doubleValue();
-				 success = success && (Math.abs(-0.05 - val) < 0.0000001);
+				 success = success && (Math.abs(0.2/3 - val) < 0.0000001);
 			 }else success = false;
 		 }else{
 			 CellIndex cell;
@@ -165,5 +165,7 @@ public class ApplyTransformTest extends AutomatedTestBase{
 			 if(!XDML.containsKey(cell4)) success = false;
 			 else success = success && (dummy_coding_maps != " ") ? (XDML.get(cell4).doubleValue() == 1) : (XDML.get(cell4).doubleValue() == 2);
 		 }
+		 
+		 System.out.println("SUCCESS: " + success);
 	 }
 }

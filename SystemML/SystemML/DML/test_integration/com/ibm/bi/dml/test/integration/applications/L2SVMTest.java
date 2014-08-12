@@ -33,20 +33,22 @@ public class L2SVMTest extends AutomatedTestBase
 
 	private int numRecords, numFeatures;
     private double sparsity;
+    private boolean intercept;
     
-	public L2SVMTest(int rows, int cols, double sp) {
+	public L2SVMTest(int rows, int cols, double sp, boolean intercept) {
 		numRecords = rows;
 		numFeatures = cols;
 		sparsity = sp;
+		intercept = this.intercept;
 	}
 	
 	@Parameters
 	 public static Collection<Object[]> data() {
 	   Object[][] data = new Object[][] { 
 			   //sparse tests (sparsity=0.01)
-			   {100, 50, 0.01}, {1000, 500, 0.01}, {10000, 750, 0.01}, {100000, 1000, 0.01},
+			   {100, 50, 0.01, false}, {1000, 500, 0.01, false}, {10000, 750, 0.01, false}, {10000, 750, 0.01, true}, {100000, 1000, 0.01, false},
 			   //dense tests (sparsity=0.7)
-			   {100, 50, 0.7}, {1000, 500, 0.7}, {10000, 750, 0.7} };
+			   {100, 50, 0.7, false}, {1000, 500, 0.7, false}, {1000, 500, 0.7, true}, {10000, 750, 0.7, false} };
 	   
 	   return Arrays.asList(data);
 	 }
@@ -78,15 +80,17 @@ public class L2SVMTest extends AutomatedTestBase
         /* This is for running the junit test by constructing the arguments directly */
 		String L2SVM_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = L2SVM_HOME + TEST_L2SVM + ".dml";
-		programArgs = new String[]{"-stats", "-args", 
-	               				L2SVM_HOME + INPUT_DIR + "X", 
-	               				L2SVM_HOME + INPUT_DIR + "Y", 
-	               				Integer.toString(rows), 
-	               				Integer.toString(cols),
-	               				Double.toString(epsilon), 
-	               				Double.toString(lambda), 
-	               				Integer.toString(maxiterations),
-	               				L2SVM_HOME + OUTPUT_DIR + "w"};
+		programArgs = new String[]{"-stats", "-nvargs", 
+	               				"X=" + L2SVM_HOME + INPUT_DIR + "X", 
+	               				"Y=" + L2SVM_HOME + INPUT_DIR + "Y",
+	               				"numrows=" + Integer.toString(rows),
+	               				"numcols=" + Integer.toString(cols),
+	               				"icpt=" + ((intercept) ? Integer.toString(1) : Integer.toString(0)),
+	               				"tol=" + Double.toString(epsilon), 
+	               				"reg=" + Double.toString(lambda), 
+	               				"maxiter=" + Integer.toString(maxiterations),
+	               				"model=" + L2SVM_HOME + OUTPUT_DIR + "w",
+	               				"Log=" + L2SVM_HOME + OUTPUT_DIR + "Log"};
 		/*dmlArgs = new String[]{"-f", 
 							   L2SVM_HOME + TEST_L2SVM + ".dml",
 				               "-args", 
@@ -115,6 +119,7 @@ public class L2SVMTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + 
 				fullRScriptName + " " + 
 				L2SVM_HOME + INPUT_DIR + " " + 
+				((intercept) ? Integer.toString(1) : Integer.toString(0)) + " " +
 				Double.toString(epsilon) + " " + 
 				Double.toString(lambda) + " " + 
 				Integer.toString(maxiterations) + " " + 

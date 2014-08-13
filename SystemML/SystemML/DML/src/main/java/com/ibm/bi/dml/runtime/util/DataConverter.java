@@ -836,6 +836,10 @@ public class DataConverter
     	int rows = src.getNumRows();
 		int cols = src.getNumColumns();
 
+		//blocksize for string concatenation in order to prevent write OOM 
+		//(can be set to very large value to disable blocking)
+		final int blockSizeJ = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
+		
 		//bound check per block
 		if( rows > rlen || cols > clen )
 		{
@@ -850,85 +854,119 @@ public class DataConverter
 			
 			CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)formatProperties;
 			String delim = csvProperties.getDelim(); //Pattern.quote(csvProperties.getDelim());
+			boolean csvsparse = csvProperties.isSparse();
 			
 			// Write header line, if needed
-			if (csvProperties.isHasHeader()) {
-				for(int i=0; i < clen; i++) {
-					sb.append("C"+ (i+1));
-					if ( i < clen-1 )
-						sb.append(delim);
+			if( csvProperties.isHasHeader() ) 
+			{
+				//write row chunk-wise to prevent OOM on large number of columns
+				for( int bj=0; bj<clen; bj+=blockSizeJ )
+				{
+					for( int j=bj; j < Math.min(clen,bj+blockSizeJ); j++) 
+					{
+						sb.append("C"+ (j+1));
+						if ( j < clen-1 )
+							sb.append(delim);
+					}
+					br.write( sb.toString() );
+		            sb.setLength(0);	
 				}
 				sb.append('\n');
-				br.write( sb.toString());
+				br.write( sb.toString() );
 	            sb.setLength(0);
 			}
 			
 			// Write data lines
 			if( sparse ) //SPARSE
-			{			   
-	            int c, prev_c;
-	            double v;
-				for(int r=0; r < rows; r++) {
-					SparseRow spRow = src.getSparseRows()[r];
-					prev_c = -1;
-					if ( spRow != null) {
-						for(int ind=0; ind < spRow.size(); ind++) {
-							c = spRow.getIndexContainer()[ind];
-							v = spRow.getValueContainer()[ind];
+			{	
+				SparseRow[] sparseRows = src.getSparseRows();
+				for(int i=0; i < rlen; i++) 
+	            {
+					//write row chunk-wise to prevent OOM on large number of columns
+					int prev_jix = -1;
+					if(    sparseRows!=null && i<sparseRows.length 
+						&& sparseRows[i]!=null && sparseRows[i].size()>0 )
+					{
+						SparseRow arow = sparseRows[i];
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();
+						
+						for(int j=0; j < alen; j++) 
+						{
+							int jix = aix[j];
 							
 							// output empty fields, if needed
-							while(prev_c < c-1) {
-								if (!csvProperties.isSparse()) {
+							for( int j2=prev_jix; j2<jix-1; j2++ ) {
+								if( !csvsparse )
 									sb.append(0.0);
-								}
 								sb.append(delim);
-								prev_c++;
+							
+								//flush buffered string
+					            if( j2%blockSizeJ==0 ){
+									br.write( sb.toString() );
+						            sb.setLength(0);
+					            }
 							}
 							
-							// output the value
-							sb.append(v);
-							if ( c < clen-1)
+							// output the value (non-zero)
+							sb.append( avals[j] );
+							if( jix < clen-1)
 								sb.append(delim);
-							prev_c = c;
+							br.write( sb.toString() );
+				            sb.setLength(0);
+				            
+				            //flush buffered string
+				            if( jix%blockSizeJ==0 ){
+								br.write( sb.toString() );
+					            sb.setLength(0);
+				            }
+				            
+							prev_jix = jix;
 						}
 					}
+					
 					// Output empty fields at the end of the row.
 					// In case of an empty row, output (clen-1) empty fields
-					while (prev_c < clen - 1) {
-						if (!csvProperties.isSparse()) {
-							sb.append(0.0);
+					for( int bj=prev_jix+1; bj<clen; bj+=blockSizeJ )
+					{
+						for( int j = bj; j < Math.min(clen,bj+blockSizeJ); j++) {
+							if( !csvsparse )
+								sb.append(0.0);
+							if( j < clen-1 )
+								sb.append(delim);
 						}
-						prev_c++;
-						if (prev_c < clen-1)
-							sb.append(delim);
+						br.write( sb.toString() );
+			            sb.setLength(0);	
 					}
+
 					sb.append('\n');
-					/*if ( sb.toString().split(Pattern.quote(delim)).length != clen) {
-						throw new RuntimeException("row = " + r + ", prev_c = " + prev_c + ", filedcount=" + sb.toString().split(Pattern.quote(delim)).length + ": " + sb.toString());
-					}*/
 					br.write( sb.toString() ); 
 					sb.setLength(0); 
 				}
 			}
 			else //DENSE
 			{
-				for( int i=0; i<rows; i++ ) {
-					for( int j=0; j<cols; j++ )
+				for( int i=0; i<rlen; i++ ) 
+				{
+					//write row chunk-wise to prevent OOM on large number of columns
+					for( int bj=0; bj<clen; bj+=blockSizeJ )
 					{
-						double lvalue = src.getValueDenseUnsafe(i, j);
-						if( lvalue != 0 ) //for nnz
+						for( int j=bj; j<Math.min(clen,bj+blockSizeJ); j++ )
 						{
-							sb.append(lvalue);
-						}
-						else {
-							if (!csvProperties.isSparse()) {
-								// write in dense format
+							double lvalue = src.getValueDenseUnsafe(i, j);
+							if( lvalue != 0 ) //for nnz
+								sb.append(lvalue);
+							else if( !csvsparse ) 
 								sb.append(0.0);
-							}
+							
+							if( j != clen-1 )
+								sb.append(delim);
 						}
-						if ( j != cols-1 )
-							sb.append(delim);
+						br.write( sb.toString() );
+			            sb.setLength(0);
 					}
+					
 					sb.append('\n');
 					br.write( sb.toString() ); //same as append
 					sb.setLength(0); 

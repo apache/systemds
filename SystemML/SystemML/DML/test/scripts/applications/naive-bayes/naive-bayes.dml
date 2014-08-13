@@ -1,0 +1,66 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Implements multinomial naive Bayes classifier with Laplace correction
+#
+# Example Usage:
+# hadoop jar SystemML.jar -f naive-bayes.dml -nvargs X=<Data> Y=<labels> classes=<Num Classes> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
+#
+
+# defaults
+$laplace = 1
+$fmt = "text"
+
+# reading input args
+numClasses = $classes
+D = read($X)
+C = read($Y)
+laplace_correction = $laplace
+
+numRows = nrow(D)
+numFeatures = ncol(D)
+
+# Compute conditionals
+
+# Compute the feature counts for each class
+classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures) {
+  Col = D[,i]
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=as.integer(numClasses))
+}
+
+# Compute the total feature count for each class 
+# and add the number of features to this sum
+# for subsequent regularization (Laplace's rule)
+classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
+
+# Compute class conditional probabilities
+ones = matrix(1, rows=1, cols=numFeatures)
+repClassSums = classSums %*% ones
+class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
+
+# Compute class priors
+class_counts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses))
+class_prior = class_counts / numRows;
+
+# Compute accuracy on training set
+ones = matrix(1, rows=numRows, cols=1)
+D_w_ones = append(D, ones)
+model = append(class_conditionals, class_prior)
+log_probs = D_w_ones %*% t(log(model))
+pred = rowIndexMax(log_probs)
+acc = sum(ppred(pred, C, "==")) / numRows * 100
+
+acc_str = "Training Accuracy (%): " + acc
+print(acc_str)
+write(acc_str, $accuracy)
+
+# write out the model
+write(class_prior, $prior, format=$fmt);
+write(class_conditionals, $conditionals, format=$fmt);

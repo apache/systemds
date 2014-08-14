@@ -69,22 +69,22 @@ public class IfProgramBlock extends ProgramBlock
 	
 	public void printMe() {
 		
-		System.out.println("***** if current block predicate inst: *****");
+		LOG.debug("***** if current block predicate inst: *****");
 		for (Instruction cp : _predicate){
 			cp.printMe();
 		}
 		
-		System.out.println("***** children block inst --- if body : *****");
+		LOG.debug("***** children block inst --- if body : *****");
 		for (ProgramBlock pb : this._childBlocksIfBody){
 			pb.printMe();
 		}
 	
-		System.out.println("***** children block inst --- else body : *****");
+		LOG.debug("***** children block inst --- else body : *****");
 		for (ProgramBlock pb: this._childBlocksElseBody){
 			pb.printMe();
 		}
 		
-		System.out.println("***** current block inst exit: *****");
+		LOG.debug("***** current block inst exit: *****");
 		for (Instruction i : this._exitInstructions) {
 			i.printMe();
 		}	

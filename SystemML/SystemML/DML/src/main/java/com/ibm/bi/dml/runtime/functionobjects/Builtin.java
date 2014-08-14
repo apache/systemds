@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.apache.commons.math.util.FastMath;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
@@ -345,7 +346,8 @@ public class Builtin extends ValueFunction
 	{
 		switch (bFunc) {
 		case PRINT:
-			System.out.println(in1);
+			if (!DMLScript.suppressPrint2Stdout())
+				System.out.println(in1);
 			return null;
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);

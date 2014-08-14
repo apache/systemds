@@ -215,7 +215,7 @@ public class MaximalGlobalGraphCreator
 			for(String varName : liveOut.getVariableNames()) {
 				VariableSet kill = block.getKill();
 				if(!kill.containsVariable(varName)) {
-					System.out.println("added dags for loop live out: " + varName);
+					//System.out.println("added dags for loop live out: " + varName);
 					
 					HopsDag hopsDag = inVars.get(varName);
 					if(hopsDag != null) {

@@ -995,7 +995,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 
 	public void printMe() {
-		System.out.println("***** INSTRUCTION BLOCK *****");
+		//System.out.println("***** INSTRUCTION BLOCK *****");
 		for (Instruction i : this._inst) {
 			i.printMe();
 		}

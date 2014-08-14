@@ -194,7 +194,7 @@ public abstract class DMLQLParserBase
 			if (e instanceof DMLParseException){
 				for ( DMLParseException dmlpe : ((DMLParseException)e).getExceptionList()){
 					LOG.error(dmlpe.getExceptionList().get(0).getMessage());
-					System.out.println(dmlpe.getExceptionList().get(0).getMessage());
+					//System.out.println(dmlpe.getExceptionList().get(0).getMessage());
 				}
 			}
 			_dmlp = null;

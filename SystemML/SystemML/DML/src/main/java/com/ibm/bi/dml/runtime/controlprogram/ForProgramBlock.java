@@ -37,26 +37,26 @@ public class ForProgramBlock extends ProgramBlock
 	
 	public void printMe() 
 	{		
-		System.out.println("***** current for block predicate inst: *****");
-		System.out.println("FROM:");
+		LOG.debug("***** current for block predicate inst: *****");
+		LOG.debug("FROM:");
 		for (Instruction cp : _fromInstructions){
 			cp.printMe();
 		}
-		System.out.println("TO:");
+		LOG.debug("TO:");
 		for (Instruction cp : _toInstructions){
 			cp.printMe();
 		}
-		System.out.println("INCREMENT:");
+		LOG.debug("INCREMENT:");
 		for (Instruction cp : _incrementInstructions){
 			cp.printMe();
 		}
 		
-		System.out.println("***** children block inst: *****");
+		LOG.debug("***** children block inst: *****");
 		for (ProgramBlock pb : this._childBlocks){
 			pb.printMe();
 		}
 		
-		System.out.println("***** current block inst exit: *****");
+		LOG.debug("***** current block inst exit: *****");
 		for (Instruction i : this._exitInstructions) {
 			i.printMe();
 		}

@@ -47,7 +47,7 @@ public class WhileProgramBlock extends ProgramBlock
 	
 	public void printMe() {
 		
-		System.out.println("***** while current block predicate inst: *****");
+		LOG.debug("***** while current block predicate inst: *****");
 		for (Instruction cp : _predicate){
 			cp.printMe();
 		}
@@ -56,7 +56,7 @@ public class WhileProgramBlock extends ProgramBlock
 			pb.printMe();
 		}
 		
-		System.out.println("***** current block inst exit: *****");
+		LOG.debug("***** current block inst exit: *****");
 		for (Instruction i : this._exitInstructions) {
 			i.printMe();
 		}

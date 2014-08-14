@@ -129,10 +129,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			populatePlanToProgram(optimalPlan, d);
 			
 			//TODO: turn into proper logging
-			//if(this.debug) 
+			/*if(this.debug) 
 			{
 				System.out.println(summary);
-			}
+			}*/
 		}
 		return rtprog;
 	}

@@ -142,9 +142,9 @@ public class CleanupMR
 			{
 				String task = value.toString();
 				
-				System.out.print("Running cleanup task: "+task+" ("+_dir+") ... ");
+				//System.out.print("Running cleanup task: "+task+" ("+_dir+") ... ");
 				int count = LocalFileUtils.cleanupRcWorkingDirectory(_dir);
-				System.out.println("Done - deleted "+count+" files.");
+				//System.out.println("Done - deleted "+count+" files.");
 			}
 			catch(Exception ex)
 			{

@@ -29,7 +29,7 @@ public class TestPackageFunctionWorker extends PackageFunction
 	@Override
 	public void execute() {
 
-		System.out.println("Woo Hoo! Package function running on worker");
+		//System.out.println("Woo Hoo! Package function running on worker");
 
 		outputs = new ArrayList<FIO>();
 
@@ -37,12 +37,12 @@ public class TestPackageFunctionWorker extends PackageFunction
 		for (int i = 0; i < this.getNumFunctionInputs(); i++) {
 			FIO input = this.getFunctionInput(i);
 			
-			if(input instanceof Matrix)
+			/*if(input instanceof Matrix)
 				System.out.println("Input is matrix " + ((Matrix)input).getFilePath() + " " + ((Matrix)input).getNumRows() + " " + ((Matrix)input).getNumCols());
 			if(input instanceof Scalar)
 				System.out.println("Input is scalar " + ((Scalar)input).getValue());
 			if(input instanceof bObject)
-				System.out.println("Input is object " + ((bObject)input).toString());
+				System.out.println("Input is object " + ((bObject)input).toString());*/
 
 			outputs.add(input);
 		}

@@ -194,7 +194,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 
 	@Override
 	public void printMe() {
-		System.out.println("ExternalBuiltInFunction: " + this.toString());
+		LOG.debug("ExternalBuiltInFunction: " + this.toString());
 	}
 
 	public String getGraphString() {

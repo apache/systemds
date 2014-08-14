@@ -35,7 +35,7 @@ public class Test extends Configured
 		public void configure(JobConf conf)
 		{ 
 			String inputName=conf.get("map.input.file"); 
-			System.out.println(inputName);
+			//System.out.println(inputName);
 		}
 	
 	}

@@ -3890,51 +3890,34 @@ public class MatrixBlock extends MatrixValue
 				for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
 				{
 					if(sparseRows[r]==null) continue;
-					//System.out.println("row "+r+"\t"+sparseRows[r]);
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					
 					if(complementary)//if selection
 					{
 						int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
-						//System.out.println("start: "+start);
 						if(start<0) continue;
 						int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
-						//System.out.println("end: "+end);
 						if(end<0 || start>end) continue;
 						
 						for(int i=start; i<end; i++)
 						{
 							((MatrixBlock) result).appendValue(r, cols[i], values[i]);
-						//	System.out.println("set "+r+", "+cols[i]+": "+values[i]);
 						}
 					}else
 					{
 						int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
-						//System.out.println("start: "+start);
 						if(start<0) start=sparseRows[r].size();
 						int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
-						//System.out.println("end: "+end);
 						if(end<0) end=sparseRows[r].size();
 						
-				/*		if(r==999)
-						{
-							System.out.println("----------------------");
-							System.out.println("range: "+range);
-							System.out.println("row: "+sparseRows[r]);
-							System.out.println("start: "+start);
-							System.out.println("end: "+end);
-						}
-				*/		
 						for(int i=0; i<start; i++)
 						{
 							((MatrixBlock) result).appendValue(r, cols[i], values[i]);
-					//		if(r==999) System.out.println("append ("+r+", "+cols[i]+"): "+values[i]);
 						}
 						for(int i=end; i<sparseRows[r].size(); i++)
 						{
 							((MatrixBlock) result).appendValue(r, cols[i], values[i]);
-					//		if(r==999) System.out.println("append ("+r+", "+cols[i]+"): "+values[i]);
 						}
 					}
 				}
@@ -3976,8 +3959,6 @@ public class MatrixBlock extends MatrixValue
 				
 			}
 		}
-		//System.out.println("zeroout in:\n"+this);
-		//System.out.println("zeroout result:\n"+result);
 		return result;
 	}
 	

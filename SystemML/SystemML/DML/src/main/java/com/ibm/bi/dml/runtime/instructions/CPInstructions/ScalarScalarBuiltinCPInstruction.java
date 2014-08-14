@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -43,20 +44,22 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			if (input2.get_valueType() != ValueType.STRING)
 				throw new DMLRuntimeException("wrong value type in print");
 			buffer = so2.getStringValue() + " ";
-					
-			switch (input1.get_valueType()) {
-			case INT:
-				System.out.println(buffer + so1.getLongValue());
-				break;
-			case DOUBLE:
-				System.out.println(buffer + so1.getDoubleValue());
-				break;
-			case BOOLEAN:
-				System.out.println(buffer + so1.getBooleanValue());
-				break;
-			case STRING:
-				System.out.println(buffer + so1.getStringValue());
-				break;
+			
+			if ( !DMLScript.suppressPrint2Stdout()) {
+				switch (input1.get_valueType()) {
+				case INT:
+					System.out.println(buffer + so1.getLongValue());
+					break;
+				case DOUBLE:
+					System.out.println(buffer + so1.getDoubleValue());
+					break;
+				case BOOLEAN:
+					System.out.println(buffer + so1.getBooleanValue());
+					break;
+				case STRING:
+					System.out.println(buffer + so1.getStringValue());
+					break;
+				}
 			}
 		}
 		else {

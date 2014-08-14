@@ -174,7 +174,7 @@ public abstract class PlanRewriter
 					if((data.get_dataop() == DataOpTypes.PERSISTENTREAD || data.get_dataop() == DataOpTypes.PERSISTENTWRITE)
 							&& rc.getValue()==ExecType.CP.ordinal() 
 							&& !data.get_dataType().equals(DataType.SCALAR)) {
-						System.out.println("data op in CP: " + data + ", " + data.get_dataop());
+						//System.out.println("data op in CP: " + data + ", " + data.get_dataop());
 						return false;
 					}
 					

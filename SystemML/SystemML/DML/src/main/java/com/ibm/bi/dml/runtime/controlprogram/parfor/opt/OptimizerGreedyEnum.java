@@ -15,11 +15,10 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 
 /**
@@ -61,7 +60,7 @@ class OptimizerGreedyEnum extends Optimizer
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree pPlan, CostEstimator est, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		System.out.println("--- GREEDY OPTIMIZER -------");
+		//System.out.println("--- GREEDY OPTIMIZER -------");
 		
 		//preparations
 		boolean change = false;
@@ -83,7 +82,7 @@ class OptimizerGreedyEnum extends Optimizer
 		int i = 0; //count of processed iterations
 		while( !converged && i < MAX_ITERATIONS )
 		{
-			System.out.println("--- GREEDY OPTIMIZER: iteration "+i+": T="+T/1000+"s, M="+M/(1024*1024)+"MB");
+			//System.out.println("--- GREEDY OPTIMIZER: iteration "+i+": T="+T/1000+"s, M="+M/(1024*1024)+"MB");
 			
 			MemoTable memo = new MemoTable();
 			
@@ -95,8 +94,8 @@ class OptimizerGreedyEnum extends Optimizer
 				double lck = est.computeLocalParBound(lPlan, n);
 				double lcm = est.computeLocalMemoryBound(lPlan, n);
 				
-				System.out.println("lck="+lck);
-				System.out.println("lcm="+lcm);
+				//System.out.println("lck="+lck);
+				//System.out.println("lcm="+lcm);
 				
 				// enum plans per node, wrt given par constraint
 				Collection<OptNode> C = enumPlans(n, lck);
@@ -109,11 +108,11 @@ class OptimizerGreedyEnum extends Optimizer
 					OptNode rc = OptTreeConverter.rCreateOptNode(cPB, ec.getVariables(), topLevel, false); 
 
 					double cM = est.getEstimate(TestMeasure.MEMORY_USAGE, rc);
-					System.out.println("cM="+cM);
+					//System.out.println("cM="+cM);
 					if( cM <= lcm ) //check memory constraint
 					{
 						double cT = est.getEstimate(TestMeasure.EXEC_TIME, rc);
-						System.out.println("cT="+cT);
+						//System.out.println("cT="+cT);
 						memo.putMemoTableEntry(ac.getID(), new MemoTableEntry(ac.getID(),rc, cPB, cM, cT), true);
 					}
 				}
@@ -127,12 +126,12 @@ class OptimizerGreedyEnum extends Optimizer
 				MemoTableEntry minC = null;
 				for( MemoTableEntry c : C )
 				{
-					System.out.println("Local plan>\n"+c.getRtOptNode().explain(0, false));
+					//System.out.println("Local plan>\n"+c.getRtOptNode().explain(0, false));
 					OptNode tmpPNode = OptTreeConverter.exchangeTemporary( pRoot, c.getID(), c.getRtOptNode() );
-					System.out.println("After exchange>\n"+tmpPNode.explain(0, false));
+					//System.out.println("After exchange>\n"+tmpPNode.explain(0, false));
 					double tmpT = est.getEstimate(TestMeasure.EXEC_TIME, tmpPNode);
 					
-					System.out.println("tmpT="+tmpT+", minT="+minT);
+					//System.out.println("tmpT="+tmpT+", minT="+minT);
 					if( tmpT < minT )
 					{
 						minT = tmpT;
@@ -150,14 +149,14 @@ class OptimizerGreedyEnum extends Optimizer
 				}
 				else
 				{
-					System.out.println("Warning: Unsuccessful convergence (no more global candiate despite existing local candidates).");
+					//System.out.println("Warning: Unsuccessful convergence (no more global candiate despite existing local candidates).");
 					converged = true;
 				}
 				i++; //iteration cnt
 			}
 			else
 			{
-				System.out.println("Successful convergence.");
+				//System.out.println("Successful convergence.");
 				converged = true;
 			}
 		}
@@ -188,7 +187,7 @@ class OptimizerGreedyEnum extends Optimizer
 		for( OptNode n : nodes )
 			if( n.getNodeType()==NodeType.HOP )
 			{
-				System.out.println(n.getParam(ParamType.OPSTRING)); 
+				//System.out.println(n.getParam(ParamType.OPSTRING)); 
 				if(n.getInstructionName().contains("a(+*)") ) //"rand"
 				{
 					n.setExecType(ExecType.CP);

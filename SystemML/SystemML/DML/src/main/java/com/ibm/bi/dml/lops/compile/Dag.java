@@ -113,7 +113,7 @@ public class Dag<N extends Lop>
 	private HashMap<Long, Integer> IDMap = null;
 
 
-	public static class PiggyProfiler {
+	/*public static class PiggyProfiler {
 		public static long setupTime=0;
 		public static long topoTime=0, groupingTime=0;
 		public static long topoSetup=0, topoFindSrcs=0, topoSetLevels=0, topoSort=0, topoCopy=0, topoSanity=0;
@@ -123,7 +123,7 @@ public class Dag<N extends Lop>
 			System.out.println(" --> Total = " + (setupTime + topoTime + groupingTime) + " msec.");
 			System.out.println("TOPO: " + topoSetup + "   " +  topoFindSrcs + "   " +  topoSetLevels + "   " +  topoSort + "   " +  topoCopy + "   " +  topoSanity);
 		}
-	}
+	}*/
 	
 	private class NodeOutput {
 		String fileName;

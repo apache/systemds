@@ -55,7 +55,7 @@ public class BinaryBlockRecordReader extends SequenceFileRecordReader<MatrixInde
 		throws IOException 
 	{		
 		//in milliseconds.
-		System.out.println(_time/1000000);
+		//System.out.println(_time/1000000);
 		super.close();
 	}
 }

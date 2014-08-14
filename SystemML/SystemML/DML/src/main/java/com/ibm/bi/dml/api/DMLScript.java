@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -182,14 +181,6 @@ public class DMLScript
 	public static boolean executeScript( Configuration conf, String[] args, boolean suppress) 
 			throws DMLException
 		{
-		
-			LOG.warn("-----------------------------------------------");
-			Map<String, String> env = System.getenv();
-			for(String s : env.keySet()) {
-				LOG.warn("  " + s + ":" + env.get(s));
-			}
-			LOG.warn("-----------------------------------------------");
-		
 			_suppressPrint2Stdout = suppress;
 			return executeScript(conf, args);
 		}

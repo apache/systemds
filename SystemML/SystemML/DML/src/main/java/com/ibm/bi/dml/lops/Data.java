@@ -254,10 +254,19 @@ public class Data extends Lop
 	
 	public long getLongValue() throws LopsException {
 		if(literal_var) {
-			return Long.parseLong(getOutputParameters().getLabel());
+			ValueType vt = get_valueType();
+			switch(vt) {
+			case INT:
+				return Long.parseLong(getOutputParameters().getLabel());
+			case DOUBLE:
+				return (long) Double.parseDouble(getOutputParameters().getLabel());
+			
+			default:
+				throw new LopsException("Encountered a non-numeric value " + (vt) + ", while a numeric value is expected.");
+			}
 		}
 		else
-			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
+			throw new LopsException("Can not obtain the value of a non-literal variable at compile time.");
 	}
 	
 	public String getStringValue() throws LopsException {

@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -40,7 +41,12 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String outString = so.getStringValue();
-			System.out.println(outString);
+			
+			// print to stdout only when suppress flag in DMLScript is not set.
+			// The flag will be set, for example, when SystemML is invoked in fenced mode from Jaql.
+			if (!DMLScript.suppressPrint2Stdout())
+				System.out.println(outString);
+			
 			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
 			sores = new StringObject(outString);
 		}

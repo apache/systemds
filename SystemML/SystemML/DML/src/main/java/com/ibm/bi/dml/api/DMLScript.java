@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -91,6 +92,9 @@ public class DMLScript
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
+
+	// flag that indicates whether or not to suppress any prints to stdout
+	public static boolean _suppressPrint2Stdout = false;
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -146,6 +150,10 @@ public class DMLScript
 		_uuid = uuid;
 	}
 	
+	public static boolean suppressPrint2Stdout() {
+		return _suppressPrint2Stdout;
+	}
+	
 	/**
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
 	 * 
@@ -171,6 +179,20 @@ public class DMLScript
 		return executeScript( conf, args );
 	}
 	
+	public static boolean executeScript( Configuration conf, String[] args, boolean suppress) 
+			throws DMLException
+		{
+		
+			LOG.warn("-----------------------------------------------");
+			Map<String, String> env = System.getenv();
+			for(String s : env.keySet()) {
+				LOG.warn("  " + s + ":" + env.get(s));
+			}
+			LOG.warn("-----------------------------------------------");
+		
+			_suppressPrint2Stdout = suppress;
+			return executeScript(conf, args);
+		}
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)

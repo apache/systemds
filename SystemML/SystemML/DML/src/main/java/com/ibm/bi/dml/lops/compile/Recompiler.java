@@ -619,28 +619,59 @@ public class Recompiler
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
-			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			removeUpdatedScalars(vars, tmp.getStatementBlock());
-			for (ProgramBlock pb2 : tmp.getChildBlocks())
+			WhileProgramBlock wpb = (WhileProgramBlock)pb;
+			WhileStatementBlock wsb = (WhileStatementBlock) wpb.getStatementBlock();
+			//recompile predicate
+			recompileWhilePredicate(wpb, wsb, vars, tid);
+			//remove updated scalars because in loop
+			removeUpdatedScalars(vars, wsb); 
+			//copy vars for later compare
+			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
+			for (ProgramBlock pb2 : wpb.getChildBlocks())
 				rRecompileProgramBlock(pb2, vars, tid);
-			removeUpdatedScalars(vars, tmp.getStatementBlock());
+			if( reconcileUpdatedCallVarsLoops(oldVars, vars, wsb) ) {
+				//second pass with unknowns if required
+				recompileWhilePredicate(wpb, wsb, vars, tid);
+				for (ProgramBlock pb2 : wpb.getChildBlocks())
+					rRecompileProgramBlock(pb2, vars, tid);
+			}
+			removeUpdatedScalars(vars, wsb);
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
-			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+			IfProgramBlock ipb = (IfProgramBlock)pb;	
+			IfStatementBlock isb = (IfStatementBlock)ipb.getStatementBlock();
+			//recompile predicate
+			recompileIfPredicate(ipb, isb, vars, tid);
+			//copy vars for later compare
+			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
+			LocalVariableMap varsElse = (LocalVariableMap) vars.clone();
+			for( ProgramBlock pb2 : ipb.getChildBlocksIfBody() )
 				rRecompileProgramBlock(pb2, vars, tid);
-			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
-				rRecompileProgramBlock(pb2, vars, tid);
-			removeUpdatedScalars(vars, tmp.getStatementBlock());
+			for( ProgramBlock pb2 : ipb.getChildBlocksElseBody() )
+				rRecompileProgramBlock(pb2, varsElse, tid);
+			reconcileUpdatedCallVarsIf(oldVars, vars, varsElse, isb);
+			removeUpdatedScalars(vars, ipb.getStatementBlock());
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
-			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			removeUpdatedScalars(vars, tmp.getStatementBlock());
-			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+			ForProgramBlock fpb = (ForProgramBlock)pb;	
+			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
+			//recompile predicates
+			recompileForPredicates(fpb, fsb, vars, tid);
+			//remove updated scalars because in loop
+			removeUpdatedScalars(vars, fpb.getStatementBlock()); 
+			//copy vars for later compare
+			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
+			for( ProgramBlock pb2 : fpb.getChildBlocks() )
 				rRecompileProgramBlock(pb2, vars, tid);
-			removeUpdatedScalars(vars, tmp.getStatementBlock());
+			if( reconcileUpdatedCallVarsLoops(oldVars, vars, fsb) ) {
+				//second pass with unknowns if required
+				recompileForPredicates(fpb, fsb, vars, tid);
+				for( ProgramBlock pb2 : fpb.getChildBlocks() )
+					rRecompileProgramBlock(pb2, vars, tid);		
+			}
+			removeUpdatedScalars(vars, fpb.getStatementBlock());
 		}		
 		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			    || pb instanceof CVProgramBlock
@@ -669,6 +700,239 @@ public class Recompiler
 			removeUpdatedScalars(vars, sb);			
 		}
 		
+	}
+	
+
+	/**
+	 * 
+	 * @param oldCallVars
+	 * @param callVars
+	 * @param sb
+	 * @return
+	 */
+	public static boolean reconcileUpdatedCallVarsLoops( LocalVariableMap oldCallVars, LocalVariableMap callVars, StatementBlock sb )
+	{
+		boolean requiresRecompile = false;
+		
+		//handle matrices
+		for( String varname : sb.variablesUpdated().getVariableNames() )
+		{
+			Data dat1 = oldCallVars.get(varname);
+			Data dat2 = callVars.get(varname);
+			if( dat1!=null && dat1 instanceof MatrixObject && dat2!=null && dat2 instanceof MatrixObject )
+			{
+				MatrixObject moOld = (MatrixObject) dat1;
+				MatrixObject mo = (MatrixObject) dat2;
+				MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
+				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				
+				if( mcOld.get_rows() != mc.get_rows() 
+					|| mcOld.get_cols() != mc.get_cols()
+					|| mcOld.getNonZeros() != mc.getNonZeros() )
+				{
+					long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+					//handle dimension change in body
+					if(    mcOld.get_rows() != mc.get_rows() 
+						|| mcOld.get_cols() != mc.get_cols() )
+					{
+						ldim1=-1;
+						ldim2=-1; //unknown
+						requiresRecompile = true;
+					}
+					//handle sparsity change
+					if( mcOld.getNonZeros() != mc.getNonZeros() )
+					{
+						lnnz=-1; //unknown		
+						requiresRecompile = true;
+					}
+					
+					
+					MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
+					callVars.put(varname, moNew);
+				}
+			}
+		}
+		
+		return requiresRecompile;
+	}
+
+	/**
+	 * 
+	 * @param oldCallVars
+	 * @param callVarsIf
+	 * @param callVarsElse
+	 * @param sb
+	 * @return
+	 */
+	public static LocalVariableMap reconcileUpdatedCallVarsIf( LocalVariableMap oldCallVars, LocalVariableMap callVarsIf, LocalVariableMap callVarsElse, StatementBlock sb )
+	{
+		for( String varname : sb.variablesUpdated().getVariableNames() )
+		{	
+			Data origVar = oldCallVars.get(varname);
+			Data ifVar = callVarsIf.get(varname);
+			Data elseVar = callVarsElse.get(varname);
+			Data dat1 = null, dat2 = null;
+			
+			if( ifVar!=null && elseVar!=null ){ // both branches exists
+				dat1 = ifVar;
+				dat2 = elseVar;
+			}
+			else if( ifVar!=null && elseVar==null ){ //only if
+				dat1 = origVar;
+				dat2 = ifVar;
+			}
+			else { //only else
+				dat1 = origVar;
+				dat2 = elseVar;
+			}
+			
+			//compare size and value information (note: by definition both dat1 and dat2 are of same type
+			//because we do not allow data type changes)
+			if( dat1 != null && dat1 instanceof MatrixObject && dat2!=null )
+			{
+				//handle matrices
+				if( dat1 instanceof MatrixObject && dat2 instanceof MatrixObject )
+				{
+					MatrixObject moOld = (MatrixObject) dat1;
+					MatrixObject mo = (MatrixObject) dat2;
+					MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
+					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+					
+					if( mcOld.get_rows() != mc.get_rows() 
+							|| mcOld.get_cols() != mc.get_cols()
+							|| mcOld.getNonZeros() != mc.getNonZeros() )
+					{
+						long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+						
+						//handle dimension change
+						if(    mcOld.get_rows() != mc.get_rows() 
+							|| mcOld.get_cols() != mc.get_cols() )
+						{
+							ldim1=-1; ldim2=-1; //unknown
+						}
+						//handle sparsity change
+						if( mcOld.getNonZeros() != mc.getNonZeros() )
+						{
+							lnnz=-1; //unknown		
+						}
+						
+						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
+						callVarsIf.put(varname, moNew);
+					}
+				}
+			}
+		}
+		
+		return callVarsIf;
+	}
+	
+	/**
+	 * 
+	 * @param dim1
+	 * @param dim2
+	 * @param nnz
+	 * @return
+	 */
+	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz )
+	{
+		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
+		MatrixCharacteristics mc = new MatrixCharacteristics( 
+									dim1, dim2,
+									DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+									nnz);
+		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+		moOut.setMetaData(meta);
+		
+		return moOut;
+	}
+	
+	
+	//helper functions for predicate recompile
+	
+	/**
+	 * 
+	 * @param ipb
+	 * @param isb
+	 * @param vars
+	 * @param tid
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		if( isb != null )
+		{
+			Hop hops = isb.getPredicateHops();
+			if( hops != null ) {
+				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
+				ipb.setPredicate( tmp );
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param wpb
+	 * @param wsb
+	 * @param vars
+	 * @param tid
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		if( wsb != null )
+		{
+			Hop hops = wsb.getPredicateHops();
+			if( hops != null ) {
+				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
+				wpb.setPredicate( tmp );
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param fpb
+	 * @param fsb
+	 * @param vars
+	 * @param tid
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		if( fsb != null )
+		{
+			Hop fromHops = fsb.getFromHops();
+			Hop toHops = fsb.getToHops();
+			Hop incrHops = fsb.getIncrementHops();
+			
+			if( fromHops != null ) {
+				ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
+				fpb.setFromInstructions(tmp);
+			}
+			if( toHops != null ) {
+				ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
+				fpb.setToInstructions(tmp);
+			}
+			if( incrHops != null ) {
+				ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
+				fpb.setIncrementInstructions(tmp);
+			}
+		}
 	}
 	
 	/**

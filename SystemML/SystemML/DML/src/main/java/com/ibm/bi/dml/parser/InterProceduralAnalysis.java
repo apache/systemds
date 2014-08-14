@@ -378,7 +378,7 @@ public class InterProceduralAnalysis
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : wstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ);
-			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ){ //second pass if required
+			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ){ //second pass if required
 				propagateStatisticsAcrossPredicateDAG(wsb.getPredicateHops(), callVars);
 				for (StatementBlock sbi : wstmt.getBody())
 					propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ);
@@ -399,7 +399,7 @@ public class InterProceduralAnalysis
 				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ);
 			for (StatementBlock sbi : istmt.getElseBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVarsElse, fcandSafeNNZ);
-			callVars = reconcileUpdatedCallVarsIf(oldCallVars, callVars, callVarsElse, isb);
+			callVars = Recompiler.reconcileUpdatedCallVarsIf(oldCallVars, callVars, callVarsElse, isb);
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 		}
@@ -417,7 +417,7 @@ public class InterProceduralAnalysis
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : fstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ);
-			if( reconcileUpdatedCallVarsLoops(oldCallVars, callVars, fsb) )
+			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, fsb) )
 				for (StatementBlock sbi : fstmt.getBody())
 					propagateStatisticsAcrossBlock(sbi, fcand, callVars, fcandSafeNNZ);
 			//remove updated constant scalars
@@ -496,129 +496,6 @@ public class InterProceduralAnalysis
 		}
 	}
 	
-	
-	/**
-	 * 
-	 * @param oldCallVars
-	 * @param callVars
-	 * @param sb
-	 * @return
-	 */
-	private boolean reconcileUpdatedCallVarsLoops( LocalVariableMap oldCallVars, LocalVariableMap callVars, StatementBlock sb )
-	{
-		boolean requiresRecompile = false;
-		
-		//handle matrices
-		for( String varname : sb._updated.getVariableNames() )
-		{
-			Data dat1 = oldCallVars.get(varname);
-			Data dat2 = callVars.get(varname);
-			if( dat1!=null && dat1 instanceof MatrixObject && dat2!=null && dat2 instanceof MatrixObject )
-			{
-				MatrixObject moOld = (MatrixObject) dat1;
-				MatrixObject mo = (MatrixObject) dat2;
-				MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
-				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-				
-				if( mcOld.get_rows() != mc.get_rows() 
-					|| mcOld.get_cols() != mc.get_cols()
-					|| mcOld.getNonZeros() != mc.getNonZeros() )
-				{
-					long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
-					//handle dimension change in body
-					if(    mcOld.get_rows() != mc.get_rows() 
-						|| mcOld.get_cols() != mc.get_cols() )
-					{
-						ldim1=-1;
-						ldim2=-1; //unknown
-						requiresRecompile = true;
-					}
-					//handle sparsity change
-					if( mcOld.getNonZeros() != mc.getNonZeros() )
-					{
-						lnnz=-1; //unknown		
-						requiresRecompile = true;
-					}
-					
-					
-					MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
-					callVars.put(varname, moNew);
-				}
-			}
-		}
-		
-		return requiresRecompile;
-	}
-
-	/**
-	 * 
-	 * @param oldCallVars
-	 * @param callVarsIf
-	 * @param callVarsElse
-	 * @param sb
-	 * @return
-	 */
-	private LocalVariableMap reconcileUpdatedCallVarsIf( LocalVariableMap oldCallVars, LocalVariableMap callVarsIf, LocalVariableMap callVarsElse, StatementBlock sb )
-	{
-		for( String varname : sb._updated.getVariableNames() )
-		{	
-			Data origVar = oldCallVars.get(varname);
-			Data ifVar = callVarsIf.get(varname);
-			Data elseVar = callVarsElse.get(varname);
-			Data dat1 = null, dat2 = null;
-			
-			if( ifVar!=null && elseVar!=null ){ // both branches exists
-				dat1 = ifVar;
-				dat2 = elseVar;
-			}
-			else if( ifVar!=null && elseVar==null ){ //only if
-				dat1 = origVar;
-				dat2 = ifVar;
-			}
-			else { //only else
-				dat1 = origVar;
-				dat2 = elseVar;
-			}
-			
-			//compare size and value information (note: by definition both dat1 and dat2 are of same type
-			//because we do not allow data type changes)
-			if( dat1 != null && dat1 instanceof MatrixObject && dat2!=null )
-			{
-				//handle matrices
-				if( dat1 instanceof MatrixObject && dat2 instanceof MatrixObject )
-				{
-					MatrixObject moOld = (MatrixObject) dat1;
-					MatrixObject mo = (MatrixObject) dat2;
-					MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
-					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-					
-					if( mcOld.get_rows() != mc.get_rows() 
-							|| mcOld.get_cols() != mc.get_cols()
-							|| mcOld.getNonZeros() != mc.getNonZeros() )
-					{
-						long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
-						
-						//handle dimension change
-						if(    mcOld.get_rows() != mc.get_rows() 
-							|| mcOld.get_cols() != mc.get_cols() )
-						{
-							ldim1=-1; ldim2=-1; //unknown
-						}
-						//handle sparsity change
-						if( mcOld.getNonZeros() != mc.getNonZeros() )
-						{
-							lnnz=-1; //unknown		
-						}
-						
-						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
-						callVarsIf.put(varname, moNew);
-					}
-				}
-			}
-		}
-		
-		return callVarsIf;
-	}
 	
 	/////////////////////////////
 	// INTER-PROCEDURE ANALYIS

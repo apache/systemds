@@ -115,10 +115,10 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 				switch( mo.getPartitionFormat() )
 				{
 					case ROW_WISE:
-						mcNew = new MatrixCharacteristics( 1, mc.get_cols(), 1, mc.get_cols_per_block() );
+						mcNew = new MatrixCharacteristics( 1, mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block() );
 						break;
 					case COLUMN_WISE:
-						mcNew = new MatrixCharacteristics( mc.get_rows(), 1, mc.get_rows_per_block(), 1 );
+						mcNew = new MatrixCharacteristics( mc.get_rows(), 1, mc.get_rows_per_block(), mc.get_cols_per_block() );
 						break;					
 					default:
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE rangeReIndex: "+ mo.getPartitionFormat());

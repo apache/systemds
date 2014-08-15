@@ -1,0 +1,25 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+powering = function (int index)
+  return (int value)
+{
+   if(index == 1) {
+      value = 2;
+   }
+   else {
+      ret = powering(index-1);
+      value = 2 * ret;
+   }
+}
+
+n = $1;
+v = powering(n);
+print("Result is " + v);

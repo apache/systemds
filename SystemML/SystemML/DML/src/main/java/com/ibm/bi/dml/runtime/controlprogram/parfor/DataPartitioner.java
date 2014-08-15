@@ -172,9 +172,7 @@ public abstract class DataPartitioner
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
-		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols,
-				                           (_format==PDataPartitionFormat.ROW_WISE)? 1 : (int)brlen, //for blockwise brlen anyway
-				                           (_format==PDataPartitionFormat.COLUMN_WISE)? 1 : (int)bclen ); //for blockwise bclen anyway
+		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)brlen, (int)bclen ); 
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;

@@ -46,6 +46,20 @@ max_kind = max(K);
 # matrices to store computed statistics
 baseStats = matrix(0, rows=numBaseStats, cols=n);
 
+# Compute max domain size among all categorical attributes
+maxs = colMaxs(A);
+maxDomainSize = -1;
+for(i in 1:ncol(A)) {
+  if( as.scalar(K[1,i]) > 1) {
+      colMaximum = as.scalar(maxs[1,i]);
+      if(maxDomainSize < colMaximum) {
+        maxDomainSize = colMaximum;
+      }
+  }
+}
+maxDomain = as.integer(maxDomainSize);
+#print("Maximum domain size = " + maxDomainSize);
+
 parfor(i in 1:n, check=0) {
 
 	# project out the i^th column
@@ -111,7 +125,7 @@ parfor(i in 1:n, check=0) {
 			}
 			else {
 				# compute CATEGORICAL statistics on the projected column
-				cat_counts = table(F,1);  # counts for each category
+				cat_counts = table(F,1, maxDomain, 1);  # counts for each category
 				num_cat = nrow(cat_counts); # number of categories
 
 				mode = rowIndexMax(t(cat_counts));

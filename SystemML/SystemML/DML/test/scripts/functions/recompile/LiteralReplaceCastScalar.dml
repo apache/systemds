@@ -1,0 +1,30 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+scalar = $1;
+
+if( 1==1 ){
+   A = Rand(rows=10, cols=10, min=1, max=2);
+   B = Rand(rows=10, cols=10, min=3, max=4);
+   C = Rand(rows=as.scalar(A[1,1]), cols=as.scalar(B[1,1]));
+}  
+
+ret1 = sum(C) * as.double(scalar);
+ret2 = sum(C) * as.integer(scalar);
+
+if( sum(C)>0 & as.logical(scalar) ){
+   ret3 = sum(C) * as.double(scalar);
+}   
+else {
+   ret3 = sum(C);
+}   
+
+print("Ret1 = "+ret1);
+print("Ret2 = "+ret2);
+print("Ret3 = "+ret3);

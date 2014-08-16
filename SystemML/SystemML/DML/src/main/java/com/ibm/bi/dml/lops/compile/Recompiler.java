@@ -1369,6 +1369,38 @@ public class Recompiler
 						}
 					}
 				}
+				//as.double/as.integer/as.boolean over scalar read - literal replacement
+				else if( c instanceof UnaryOp && (((UnaryOp)c).get_op() == OpOp1.CAST_AS_DOUBLE
+					|| ((UnaryOp)c).get_op() == OpOp1.CAST_AS_INT || ((UnaryOp)c).get_op() == OpOp1.CAST_AS_BOOLEAN )	
+						&& c.getInput().get(0) instanceof DataOp && c.get_dataType()==DataType.SCALAR )
+				{
+					Data dat = vars.get(c.getInput().get(0).get_name());
+					if( dat != null ) //required for selective constant propagation
+					{
+						ScalarObject sdat = (ScalarObject)dat;
+						UnaryOp cast = (UnaryOp) c;
+						Hop literal = null;
+						switch( cast.get_op() ) {
+							case CAST_AS_INT:
+								literal = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
+								break;
+							case CAST_AS_DOUBLE:
+								literal = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());		
+								break;						
+							case CAST_AS_BOOLEAN:
+								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
+								break;
+							//otherwise: do nothing
+						}
+						
+						//replace on demand 
+						if( literal != null )
+						{
+							HopRewriteUtils.removeChildReference(hop, c);
+							HopRewriteUtils.addChildReference(hop, literal, i);
+						}
+					}
+				}
 				//as.scalar/matrix read - literal replacement
 				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
 					&& c.getInput().get(0) instanceof DataOp )

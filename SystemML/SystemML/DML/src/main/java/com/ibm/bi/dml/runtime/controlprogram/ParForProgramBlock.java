@@ -66,6 +66,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -539,6 +540,9 @@ public class ParForProgramBlock extends ForProgramBlock
 						if( dpdatNew == null ) //no reuse opportunity
 						{
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
+							//disable binary cell for sparse if consumed by MR jobs
+							if( !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf ) )
+								dp.disableBinaryCell();
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
 							dpdatNew = moVarNew;
 						}

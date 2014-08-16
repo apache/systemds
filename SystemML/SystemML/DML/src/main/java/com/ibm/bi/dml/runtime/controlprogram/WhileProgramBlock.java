@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstructi
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
@@ -196,6 +197,9 @@ public class WhileProgramBlock extends ProgramBlock
 		for ( Instruction si : _predicate ) {
 			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable ) {
 				result = ((ComputationCPInstruction) si).getOutputVariableName();  
+			}
+			else if(si instanceof VariableCPInstruction && ((VariableCPInstruction)si).isVariableCastInstruction()){
+				result = ((VariableCPInstruction)si).getOutputVariableName();
 			}
 			else if(si instanceof SQLScalarAssignInstruction)
 				result = ((SQLScalarAssignInstruction) si).getVariableName();

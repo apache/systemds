@@ -974,4 +974,17 @@ public class VariableCPInstruction extends CPInstruction
 			instString = sb.toString();
 		}
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isVariableCastInstruction()
+	{
+		return ( opcode == VariableOperationCode.CastAsScalarVariable  ||
+				 opcode == VariableOperationCode.CastAsMatrixVariable  ||
+				 opcode == VariableOperationCode.CastAsIntegerVariable ||
+				 opcode == VariableOperationCode.CastAsDoubleVariable  ||
+				 opcode == VariableOperationCode.CastAsBooleanVariable );
+	}
 }

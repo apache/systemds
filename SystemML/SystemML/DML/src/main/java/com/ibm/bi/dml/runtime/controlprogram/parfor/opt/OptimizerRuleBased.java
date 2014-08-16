@@ -543,6 +543,17 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;	
 	}
 	
+	/**
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PDataPartitionFormat dpf ) 
+		throws DMLRuntimeException
+	{
+		return (getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP );
+	}
+	
 	///////
 	//REWRITE set result partitioning
 	///

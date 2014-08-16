@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1);
+m = nrow(V);
+n = ncol(V);
+
+R = matrix(0,rows=m,cols=n); 
+
+parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=REMOTE_MR, opt=NONE )
+{
+   col = V[,i];
+   if(1==1){}
+   R[,i] = col; 
+}   
+
+write(R, $2);       

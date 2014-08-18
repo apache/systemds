@@ -38,7 +38,7 @@ attrinfo = matrix(0, rows=ncol(X), cols=8)
 if(isMissingValueImputationRequired > 0){	
 	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
 	num_missing = colSums(missing_indicator_mat)
-	col_sums = colSums(X)
+	#col_sums = colSums(X)
 }
 
 parfor(i in 1:nrow(missing_index), check=0){
@@ -115,9 +115,12 @@ parfor(i in 1:ncol(X), check=0){
 	
 	if(mv_col_id > 0){ 
 		# fill-in with global mean
+		missing_col = missing_indicator_mat[,mv_col_id]
 		num_vals = nrow(X) - castAsScalar(num_missing[1,mv_col_id])
-		global_mean = castAsScalar(col_sums[1,i])/num_vals
-		col = col + missing_indicator_mat[,mv_col_id] * global_mean
+		#global_mean = castAsScalar(col_sums[1,i])/num_vals
+		global_mean = sum(col*(1-missing_col))/num_vals
+		#col = col + missing_col * global_mean
+		col = col * (1-missing_col) + missing_col * global_mean
 		
 		attrinfo[i,7] = global_mean
 	}

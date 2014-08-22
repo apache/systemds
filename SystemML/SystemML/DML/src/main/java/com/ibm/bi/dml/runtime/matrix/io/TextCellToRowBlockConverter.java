@@ -11,18 +11,17 @@ package com.ibm.bi.dml.runtime.matrix.io;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
-import com.ibm.bi.dml.runtime.matrix.WriteCSVMR.RowBlock;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
-public class TextCellToRowBlockConverter implements Converter<LongWritable, Text, MatrixIndexes, RowBlock>
+public class TextCellToRowBlockConverter implements Converter<LongWritable, Text, MatrixIndexes, MatrixBlock>
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private MatrixIndexes indexes=new MatrixIndexes();
-	private RowBlock rowBlock=new RowBlock();
-	private Pair<MatrixIndexes, RowBlock> pair=new Pair<MatrixIndexes, RowBlock>(indexes, rowBlock);
+	private MatrixBlock rowBlock=new MatrixBlock();
+	private Pair<MatrixIndexes, MatrixBlock> pair=new Pair<MatrixIndexes, MatrixBlock>(indexes, rowBlock);
 	private FastStringTokenizer st = new FastStringTokenizer(' '); 
 	private boolean hasValue=false;
 	private boolean toIgnore=false;
@@ -50,10 +49,8 @@ public class TextCellToRowBlockConverter implements Converter<LongWritable, Text
 				
 		//convert text to row block
 		indexes.setIndexes( st.nextLong(), st.nextLong() );
-		if(rowBlock.container==null || rowBlock.container.length<1)
-			rowBlock.container=new double[1];
-		rowBlock.numCols = 1;
-		rowBlock.container[0] = st.nextDouble();
+		rowBlock.reset(1, 1);
+		rowBlock.quickSetValue(0, 0, st.nextDouble());
 		hasValue = true;
 	}
 
@@ -63,28 +60,12 @@ public class TextCellToRowBlockConverter implements Converter<LongWritable, Text
 	}
 
 	@Override
-	public Pair<MatrixIndexes, RowBlock> next() {
+	public Pair<MatrixIndexes, MatrixBlock> next() {
 		if(!hasValue)
 			return null;
 		
 		hasValue=false;
 		return pair;
-	}
-	
-	public static void main(String[] args) throws Exception {
-		TextToBinaryCellConverter conv=new TextToBinaryCellConverter();
-		LongWritable lw=new LongWritable(1);
-		Text[] texts=new Text[]{new Text("%%ksdjl"), new Text("%ksalfk"), new Text("1 1 1"), new Text("1 2 10.0"), new Text("%ksalfk")};
-		
-		for(Text text: texts)
-		{
-			conv.convert(lw, text);
-			while(conv.hasNext())
-			{
-				Pair pair=conv.next();
-				System.out.println(pair.getKey()+": "+pair.getValue());
-			}
-		}
 	}
 
 	@Override

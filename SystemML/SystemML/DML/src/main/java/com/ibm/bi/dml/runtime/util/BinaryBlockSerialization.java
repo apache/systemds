@@ -63,8 +63,7 @@ public class BinaryBlockSerialization implements Serialization
 	public class MatrixBlockDeserializer implements Deserializer<MatrixBlock>
 	{
 		private FastBufferedDataInputStream _in = null; 
-		
-		//private long time = 0;
+		private MatrixBlock _buff = null;
 		
 		@Override
 		public void open(InputStream arg0) 
@@ -77,6 +76,14 @@ public class BinaryBlockSerialization implements Serialization
 		public MatrixBlock deserialize(MatrixBlock mb) 
 			throws IOException 
 		{
+			//internal buffer usage for robustness (if required)
+			if( mb == null ){
+				if( _buff == null )
+					_buff = new MatrixBlock();
+				mb = _buff;
+			}
+			
+			//core deserialize
 			mb.readFields(_in);
 			
 			return mb;

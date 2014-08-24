@@ -24,11 +24,12 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput.Situation;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSecondIndexes, MatrixBlock, NullWritable, RowBlockForTextOutput>
@@ -37,37 +38,35 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	NullWritable nullKey=NullWritable.get();
-	RowBlockForTextOutput outValue=new RowBlockForTextOutput();
-	RowBlockForTextOutput zeroBlock=new RowBlockForTextOutput();
+	private NullWritable nullKey = NullWritable.get();
+	private RowBlockForTextOutput outValue = new RowBlockForTextOutput();
+	private RowBlockForTextOutput zeroBlock = new RowBlockForTextOutput();
 	
-	long[] rowIndexes=null;
-	long[] minRowIndexes=null;
-	long[] maxRowIndexes=null;
-	long[] colIndexes=null;
-	long[] numColBlocks=null;
-	int[] colsPerBlock=null;
-	int[] lastBlockNCols=null;
-	String[] delims=null;
-	boolean[] sparses=null;
-	boolean firsttime=true;
-	int[] tagToResultIndex=null;
-	//HashMap<Byte, CSVWriteInstruction> csvWriteInstructions=new HashMap<Byte, CSVWriteInstruction>();
+	private long[] rowIndexes=null;
+	private long[] minRowIndexes=null;
+	private long[] maxRowIndexes=null;
+	private long[] colIndexes=null;
+	private long[] numColBlocks=null;
+	private int[] colsPerBlock=null;
+	private int[] lastBlockNCols=null;
+	private String[] delims=null;
+	private boolean[] sparses=null;
+	private int[] tagToResultIndex=null;
 	
 	private void addEndingMissingValues(byte tag, Reporter reporter) 
-	throws IOException
+		throws IOException
 	{
 		long col=colIndexes[tag]+1;
 		for(;col<numColBlocks[tag]; col++)
 		{
-			zeroBlock.numCols=colsPerBlock[tag];
+			zeroBlock.setNumColumns(colsPerBlock[tag]);
 			zeroBlock.setSituation(Situation.MIDDLE);
 			collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 		}
 		//the last block
 		if(col<=numColBlocks[tag])
 		{
-			zeroBlock.numCols=lastBlockNCols[tag];
+			zeroBlock.setNumColumns(lastBlockNCols[tag]);
 			zeroBlock.setSituation(Situation.MIDDLE);
 			collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 			colIndexes[tag]=0;
@@ -80,12 +79,12 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		{
 			for(long c=1; c<numColBlocks[tag]; c++)
 			{
-				zeroBlock.numCols=colsPerBlock[tag];
+				zeroBlock.setNumColumns(colsPerBlock[tag]);
 				zeroBlock.setSituation(sit);
 				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 				sit=Situation.MIDDLE;
 			}
-			zeroBlock.numCols=lastBlockNCols[tag];
+			zeroBlock.setNumColumns(lastBlockNCols[tag]);
 			zeroBlock.setSituation(sit);
 			collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 			colIndexes[tag]=0;
@@ -97,7 +96,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 	
 	private void addNewlineCharacter(byte tag, Reporter reporter) throws IOException 
 	{
-		zeroBlock.numCols = 0;
+		zeroBlock.setNumColumns(0);
 		zeroBlock.setSituation(Situation.NEWLINE);
 		collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 	}
@@ -107,15 +106,10 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			OutputCollector<NullWritable, RowBlockForTextOutput> out, Reporter reporter)
 			throws IOException 
 	{
-	
 		long begin = System.nanoTime();
-		//ReduceBase.prep = ReduceBase.encode = ReduceBase.write = 0;
-		if(firsttime)
-		{
-			cachedReporter=reporter;
-			firsttime=false;
-		}
 		
+		cachedReporter = reporter;
+
 		byte tag = inkey.getTag();
 		zeroBlock.setFormatParameters(delims[tag], sparses[tag]);
 		outValue.setFormatParameters(delims[tag], sparses[tag]);
@@ -142,21 +136,24 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		//add missing value at the beginning of this row
 		for(long col=colIndexes[tag]+1; col<inkey.getSecondIndex(); col++)
 		{
-			zeroBlock.numCols=colsPerBlock[tag];
+			zeroBlock.setNumColumns(colsPerBlock[tag]);
 			zeroBlock.setSituation(sit);
 			collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 			sit=Situation.MIDDLE;
 		}
-	
+		
 		colIndexes[tag]=inkey.getSecondIndex();
 		
 		while(inValue.hasNext())
 		{
 			MatrixBlock block = inValue.next();
-			outValue.set(block, sit);
+			outValue.setData(block);
+			outValue.setNumColumns(block.getNumColumns());
+			outValue.setSituation(sit);
+			
 			collectFinalMultipleOutputs.directOutput(nullKey, outValue, tagToResultIndex[tag], reporter);
 			resultsNonZeros[tagToResultIndex[tag]] += block.getNonZeros();
-			sit=Situation.MIDDLE;
+			sit = Situation.MIDDLE;
 		}
 		rowIndexes[tag]=inkey.getFirstIndex();
 
@@ -189,7 +186,6 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		colIndexes=new long[maxIndex+1];
 		maxRowIndexes=new long[maxIndex+1];
 		minRowIndexes=new long[maxIndex+1];
-		int maxCol=0;
 		numColBlocks=new long[maxIndex+1];
 		lastBlockNCols=new int[maxIndex+1];
 		colsPerBlock=new int[maxIndex+1];
@@ -205,8 +201,6 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			MatrixCharacteristics dim=MRJobConfiguration.getMatrixCharacteristicsForInput(job, in.input);
 			delims[ri]=in.delim;
 			sparses[ri]=in.sparse;
-			if(dim.get_cols_per_block()>maxCol)
-				maxCol=dim.get_cols_per_block();
 			numColBlocks[ri]=(long)Math.ceil((double)dim.get_cols()/(double) dim.get_cols_per_block());
 			lastBlockNCols[ri]=(int) (dim.get_cols()%dim.get_cols_per_block());
 			colsPerBlock[ri]=dim.get_cols_per_block();
@@ -216,7 +210,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			colIndexes[ri]=0;
 		}
 		
-		zeroBlock.container=new double[maxCol];
+		zeroBlock.setData(new MatrixBlock());
 	}
 	
 	@Override
@@ -238,34 +232,48 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 	}
 
 	
-
+	/**
+	 * Custom output writable to prevent automatic newline after each partial block.
+	 * Writing partial blocks is important for robustness in case of very large rows
+	 * (otherwise there would be potential to run OOM).
+	 * 
+	 */
 	public static class RowBlockForTextOutput implements Writable
 	{
-		public int numCols=0;
-		public double[] container=null;
-		public static enum Situation{START, NEWLINE, MIDDLE};
-		Situation sit=Situation.START;
-		//private StringBuffer buffer=new StringBuffer();
+		public static enum Situation{
+			START, 
+			NEWLINE, 
+			MIDDLE
+		};
+		
+		private MatrixBlock _data = null;
+		private int _numCols = 0;
+		private Situation _sit = Situation.START;
+		
+		private String delim=",";
+		private boolean sparse=true;
+		
 		private StringBuilder _buffer = new StringBuilder();
 		
-		String delim=",";
-		boolean sparse=true;
 		
 		public RowBlockForTextOutput()
 		{
+			
 		}
 		
-		public void set(MatrixBlock block, Situation s)
+		public void setData(MatrixBlock block)
 		{
-			this.numCols=block.getNumColumns();
-			container = DataConverter.convertToDoubleMatrix(block)[0];
-			
-			this.sit=s;
+			_data = block;
+		}
+		
+		public void setNumColumns(int cols)
+		{
+			_numCols = cols;
 		}
 		
 		public void setSituation(Situation s)
 		{
-			this.sit=s;
+			_sit = s;
 		}
 		
 		public void setFormatParameters(String del, boolean sps)
@@ -280,31 +288,58 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		}
 
 		@Override
-		public void write(DataOutput out) throws IOException {
-			//long begin = System.nanoTime();
+		public void write(DataOutput out) 
+			throws IOException 
+		{
 			_buffer.setLength(0);
-			switch(sit)
+			switch( _sit )
 			{
-			case START:
-				break;
-			case NEWLINE:
-				_buffer.append('\n');
-				break;
-			case MIDDLE:
-				_buffer.append(delim);
-				break;
-			default:
-				throw new RuntimeException("Unrecognized situation "+sit);	
+				case START:
+					break;
+				case NEWLINE:
+					_buffer.append('\n');
+					break;
+				case MIDDLE:
+					_buffer.append(delim);
+					break;
+				default:
+					throw new RuntimeException("Unrecognized situation "+_sit);	
 			}
 			
-			if ( numCols > 0 ) {
-				for(int j=0; j<numCols; j++)
+			//serialize data if required (not newline)
+			if ( _numCols > 0 ) 
+			{
+				if( _data.isEmptyBlock(false) ) //EMPTY BLOCK
 				{
-					double val = container[j];
-					if( !sparse || val!=0 )
-						_buffer.append(val);
-					if( j < numCols-1 )
-						_buffer.append(delim);
+					appendZero(_buffer, sparse, delim, false, _numCols);
+				}
+				else if( _data.isInSparseFormat() ) //SPARSE BLOCK
+				{
+					SparseRowsIterator iter = _data.getSparseRowsIterator();
+					int j = -1;
+					while( iter.hasNext() )
+					{
+						IJV cell = iter.next();
+						appendZero(_buffer, sparse, delim, true, cell.j-j-1);
+						
+						j = cell.j; //current col
+						if( !sparse )
+							_buffer.append(cell.v);
+						if( j < _numCols-1 )
+							_buffer.append(delim);
+					}
+					appendZero(_buffer, sparse, delim, false, _numCols-j-1);
+				}
+				else //DENSE BLOCK
+				{
+					for(int j=0; j<_numCols; j++)
+					{
+						double val = _data.getValueDenseUnsafe(0, j);
+						if( !sparse || val!=0 )
+							_buffer.append(val);
+						if( j < _numCols-1 )
+							_buffer.append(delim);
+					}	
 				}
 			}
 			
@@ -313,5 +348,25 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		    out.write(bytes.array(), 0, length);
 		}
 		
+		/**
+		 * 
+		 * @param buffer
+		 * @param sparse
+		 * @param delim
+		 * @param len
+		 */
+		private static void appendZero( StringBuilder buffer, boolean sparse, String delim, boolean alwaysDelim, int len )
+		{
+			if( len <= 0 )
+				return;
+			
+			for( int i=0; i<len; i++ )
+			{
+				if( !sparse ) //single character
+					buffer.append('0');
+				if( alwaysDelim || i < len-1 )
+					buffer.append(delim);
+			}
+		}		
 	}
 }

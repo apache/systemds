@@ -70,6 +70,7 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -1470,6 +1471,8 @@ public class Recompiler
 	{
 		boolean ret = true;
 		
+		boolean localMode = InfrastructureAnalyzer.isLocalMode();
+		
 		//check only shuffle inst
 		String rdInst = inst.getIv_randInstructions();
 		String rrInst = inst.getIv_recordReaderInstructions();
@@ -1533,9 +1536,9 @@ public class Recompiler
 			}
 		}
 		
-		//check in-memory reblock size threshold
-		//(prevent long single-threaded text read)
-		if( ret ) {
+		//check in-memory reblock size threshold (prevent long single-threaded text read)
+		//NOTE: this does not apply to local mode because there text read single-threaded as well
+		if( ret && !localMode ) {
 			for( MatrixObject mo : inputs )
 			{
 				MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();

@@ -53,7 +53,7 @@ if($Y != " "){
 		write(acc_str, $accuracy)
 
 	if($confusion != " "){
-		confusion_mat = table(pred, y)
+		confusion_mat = table(pred, y, num_classes, num_classes)
 		write(confusion_mat, $confusion, format="csv")
 	}
 }

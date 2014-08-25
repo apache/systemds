@@ -24,6 +24,7 @@ prior = read($prior)
 conditionals = read($conditionals)
 
 numRows = nrow(D)
+num_classes = nrow(prior)
 
 ones = matrix(1, rows=numRows, cols=1)
 D_w_ones = append(D, ones)
@@ -50,7 +51,7 @@ if($Y != " "){
 		write(acc_str, $accuracy)
 
 	if($confusion != " "){
-		confusion_mat = table(pred, C)
+		confusion_mat = table(pred, C, num_classes, num_classes)
 		write(confusion_mat, $confusion, format="csv")
 	}
 }

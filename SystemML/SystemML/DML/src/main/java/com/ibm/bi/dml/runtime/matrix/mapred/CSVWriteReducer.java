@@ -323,7 +323,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 						appendZero(_buffer, sparse, delim, true, cell.j-j-1);
 						
 						j = cell.j; //current col
-						if( !sparse )
+						if( !sparse || cell.v != 0 )
 							_buffer.append(cell.v);
 						if( j < _numCols-1 )
 							_buffer.append(delim);

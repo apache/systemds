@@ -318,14 +318,9 @@ public class Statistics
 		
 		sb.append("SystemML Statistics:\n");
 		double totalT = getRunTime()*1e-9; // nanoSec --> sec
-		sb.append("Total time:\t\t" + totalT + " sec.\n");
-		/*sb.append("CompileTime: " + parseTime*1e-9);
-		sb.append(" " + hopsTime*1e-9);
-		sb.append(" " + lopsTime*1e-9);
-		sb.append(" " + piggybackTime*1e-9);
-		sb.append(" = " + (parseTime+hopsTime+lopsTime+piggybackTime)*1e-9  + "\n");
-		sb.append("RunTime: " + execTime*1e-9 + "\n");*/
-		sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
+		sb.append("Total execution time:\t\t" + String.format("%.3f", totalT) + " sec.\n");
+		if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+			sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		
 		//show extended caching/compilation statistics

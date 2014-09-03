@@ -24,7 +24,6 @@ prior = read($prior)
 conditionals = read($conditionals)
 
 numRows = nrow(D)
-num_classes = nrow(prior)
 
 ones = matrix(1, rows=numRows, cols=1)
 D_w_ones = append(D, ones)
@@ -50,6 +49,11 @@ if($Y != " "){
 	if($accuracy != " ")
 		write(acc_str, $accuracy)
 
+	num_classes = nrow(prior)
+	num_classes_ground_truth = max(C)
+	if(num_classes < num_classes_ground_truth)
+		num_classes = num_classes_ground_truth
+		
 	if($confusion != " "){
 		confusion_mat = table(pred, C, num_classes, num_classes)
 		write(confusion_mat, $confusion, format="csv")

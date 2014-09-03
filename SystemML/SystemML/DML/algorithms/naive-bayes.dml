@@ -10,7 +10,7 @@
 # Implements multinomial naive Bayes classifier with Laplace correction
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f naive-bayes.dml -nvargs X=<Data> Y=<labels> classes=<Num Classes> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
+# hadoop jar SystemML.jar -f naive-bayes.dml -nvargs X=<Data> Y=<labels> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
 #
 
 # defaults
@@ -18,11 +18,11 @@ $laplace = 1
 $fmt = "text"
 
 # reading input args
-numClasses = $classes
 D = read($X)
 C = read($Y)
 laplace_correction = $laplace
 
+numClasses = max(C)
 numRows = nrow(D)
 numFeatures = ncol(D)
 

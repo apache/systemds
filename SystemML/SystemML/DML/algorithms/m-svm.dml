@@ -13,9 +13,9 @@
 # Example Usage:
 # Assume SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume number of classes is 10, epsilon = 0.001, lambda=1.0, max_iterations = 100
+# Assume epsilon = 0.001, lambda=1.0, max_iterations = 100
 # 
-# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept classes=10 tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
+# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 
 $fmt="text"
@@ -34,7 +34,7 @@ if(check_X == 0){
 }else{
 	Y = read($Y)
 	intercept = $icpt
-	num_classes = $classes
+	num_classes = max(Y)
 	epsilon = $tol
 	lambda = $reg
 	max_iterations = $maxiter

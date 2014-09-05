@@ -1,0 +1,44 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to append 1 matrix to another and apply row range
+# indexing. This is used for R cbind() like functionality returning
+# the head() of the result.
+#
+# Parameters:
+#    x    : (input) 1st data set
+#    y    : (input) 2nd data set
+#    n    : (input) number of rows to return, i.e.: 1:n
+#    o    : (output) 
+#    ofmt : (output) default "csv"; format of output
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/cbind.dml -nvargs x="/tmp/M.mtx" y="/tmp/M1.mtx" n=100 o="/tmp/o.mtx"
+#
+
+$ofmt = "csv";
+
+x = read ($x);
+y = read ($y);
+
+if ($n == nrow(x))
+{
+
+   xp = x;
+   yp = y;
+} 
+else 
+{
+   xp = x[1:$n,];
+   yp = y[1:$n,];
+}
+
+o = append (xp, yp);
+
+write (o, $o, format=$ofmt);

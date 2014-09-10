@@ -2236,14 +2236,17 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
+		//unknown nnz after range indexing (applies to indexing op but also
+		//data dependent operations)
+		target.setNnz(-1); 
 		
 		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
 				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
 				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
 		indexOp.setAllPositions(indexOp.getBeginLine(), indexOp.getBeginColumn(), indexOp.getEndLine(), indexOp.getEndColumn());
-		
 		setIdentifierParams(indexOp, target);
+		
 		return indexOp;
 	}
 	

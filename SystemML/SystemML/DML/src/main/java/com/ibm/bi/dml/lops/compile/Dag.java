@@ -774,14 +774,18 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private boolean sendWriteLopToMR(N node) {
+	private boolean sendWriteLopToMR(N node) 
+	{
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return false;
 		N in = (N) node.getInputs().get(0);
-		if( in.getExecType() == ExecType.MR  || node.getExecType() == ExecType.MR )
-		{
+		Format nodeFormat = node.getOutputParameters().getFormat();
+		
+		//send write lop to MR if (1) it is marked with exec type MR (based on its memory consumption), or
+		//(2) if the input lop is in MR and the write format allows to pack it into the same job (this does
+		//not apply to csv write because MR csvwrite is a separate MR job type)
+		if( node.getExecType() == ExecType.MR || (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV ) )
 			return true;
-		}
 		else
 			return false;
 	}

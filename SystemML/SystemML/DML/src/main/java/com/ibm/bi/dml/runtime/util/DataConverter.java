@@ -899,7 +899,7 @@ public class DataConverter
 							// output empty fields, if needed
 							for( int j2=prev_jix; j2<jix-1; j2++ ) {
 								if( !csvsparse )
-									sb.append(0.0);
+									sb.append('0');
 								sb.append(delim);
 							
 								//flush buffered string
@@ -932,7 +932,7 @@ public class DataConverter
 					{
 						for( int j = bj; j < Math.min(clen,bj+blockSizeJ); j++) {
 							if( !csvsparse )
-								sb.append(0.0);
+								sb.append('0');
 							if( j < clen-1 )
 								sb.append(delim);
 						}
@@ -958,7 +958,7 @@ public class DataConverter
 							if( lvalue != 0 ) //for nnz
 								sb.append(lvalue);
 							else if( !csvsparse ) 
-								sb.append(0.0);
+								sb.append('0');
 							
 							if( j != clen-1 )
 								sb.append(delim);

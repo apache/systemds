@@ -1614,17 +1614,6 @@ public class MatrixBlock extends MatrixValue
 				System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
 	}
 	
-	
-	public void copyRowArrayToDense(int destRow, double[] src, int sourceStart) 
-		throws DMLRuntimeException
-	{
-		//handle empty dest
-		if(denseBlock==null)
-			allocateDenseBlock();
-		//no need to clear for awareDestNZ since overwritten 
-		System.arraycopy(src, sourceStart, denseBlock, destRow*clen, clen);
-	}
-	
 	private void copyEmptyToSparse(int rl, int ru, int cl, int cu, boolean updateNNZ ) 
 	{
 		if( cl==cu ) //specific case: column vector

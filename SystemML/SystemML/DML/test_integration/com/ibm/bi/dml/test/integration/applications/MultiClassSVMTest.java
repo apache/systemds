@@ -124,7 +124,7 @@ public class MultiClassSVMTest  extends AutomatedTestBase{
 	        
 		 HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
 		 HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
-		 boolean success = TestUtils.compareMatrices(wR, wDML, Math.pow(10, -12), "w", "w");
+		 boolean success = TestUtils.compareMatrices(wR, wDML, Math.pow(10, -10), "w", "w");
 		 System.out.println(success+"");
 	 }
 }

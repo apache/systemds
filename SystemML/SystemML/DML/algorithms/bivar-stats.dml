@@ -100,7 +100,7 @@ if(num_scale_scale_tests == 0){
 }else{
   size_scale_scale_tests = num_scale_scale_tests
 }
-basestats_scale_scale = matrix(0, rows=3, cols=size_scale_scale_tests)
+basestats_scale_scale = matrix(0, rows=6, cols=size_scale_scale_tests)
 
 if(num_nominal_nominal_tests == 0){
   size_nominal_nominal_tests = 1
@@ -121,7 +121,7 @@ if(num_nominal_scale_tests == 0){
 }else{
   size_nominal_scale_tests = num_nominal_scale_tests
 }
-basestats_nominal_scale = matrix(0, rows=4, cols=size_nominal_scale_tests)
+basestats_nominal_scale = matrix(0, rows=11, cols=size_nominal_scale_tests)
 
 # Compute max domain size among all categorical attributes
 maxs = colMaxs(D);
@@ -161,11 +161,14 @@ parfor( i in 1:s1size, check=0) {
             if (k1 == 1) {
                 # scale-scale
                 print("[" + i + "," + j + "] scale-scale");
-                r = bivar_ss(A1,A2);   
+                [r, cov, sigma1, sigma2] = bivar_ss(A1,A2);   
 		
     			basestats_scale_scale[1,rowid1] = a1;
 				basestats_scale_scale[2,rowid1] = a2;	
                 basestats_scale_scale[3,rowid1] = r;
+                basestats_scale_scale[4,rowid1] = cov;
+                basestats_scale_scale[5,rowid1] = sigma1;
+                basestats_scale_scale[6,rowid1] = sigma2;
             } else {
                 # nominal-nominal or ordinal-ordinal
                 print("[" + i + "," + j + "] categorical-categorical");
@@ -194,15 +197,22 @@ parfor( i in 1:s1size, check=0) {
                 print("[" + i + "," + j + "] scale-categorical");
                 
                	if ( k1 == 1 ) {
-                	[eta,f, counts, means, vars] = bivar_sc(A1, A2, maxDomain);
+                	[eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A1, A2, maxDomain);
                 } else {
-                    [eta,f, counts, means, vars] = bivar_sc(A2, A1, maxDomain);
+                    [eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A2, A1, maxDomain);
                 }
 		
                 basestats_nominal_scale[1,rowid1] = a1;
                 basestats_nominal_scale[2,rowid1] = a2;
                 basestats_nominal_scale[3,rowid1] = eta;
                 basestats_nominal_scale[4,rowid1] = f;
+                basestats_nominal_scale[5,rowid1] = pval;
+                basestats_nominal_scale[6,rowid1] = bw_ss;
+                basestats_nominal_scale[7,rowid1] = within_ss;
+                basestats_nominal_scale[8,rowid1] = bw_df;
+                basestats_nominal_scale[9,rowid1] = within_df;
+                basestats_nominal_scale[10,rowid1] = bw_mean_square;
+                basestats_nominal_scale[11,rowid1] = within_mean_square;
             } else {
                 # nominal-ordinal or ordinal-nominal
                 print("[" + i + "," + j + "] categorical-categorical");
@@ -270,7 +280,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B, Double maxDomain) return
 
 # -----------------------------------------------------------------------------------------------------------
 
-bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R) {
+bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R, Double covXY, Double sigmaX, Double sigmaY) {
 
     # Unweighted co-variance
     covXY = cov(X,Y);
@@ -290,7 +300,8 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R) {
 
 # Y points to SCALE variable
 # A points to CATEGORICAL variable
-bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain) return (Double Eta, Double AnovaF, Matrix[Double] CFreqs, Matrix[Double] CMeans, Matrix[Double] CVars ) {
+bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain) 
+		   return (Double Eta, Double AnovaF, Double pval, Double bw_ss, Double within_ss, Double bw_df, Double within_df, Double bw_mean_square, Double within_mean_square) {
 
     # mean and variance in target variable
     W = nrow(A);
@@ -307,9 +318,17 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain) return
 
     Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
 
-    anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
-    anova_den = sum( (CFreqs-1)*CVars )/(W-R);
-    AnovaF = anova_num/anova_den;
+	bw_ss = sum( (CFreqs*(CMeans-my)^2) );
+	bw_df = R-1;
+	bw_mean_square = bw_ss/bw_df;
+	
+	within_ss = sum( (CFreqs-1)*CVars );
+	within_df = W-R;
+	within_mean_square = within_ss/within_df;
+	
+    AnovaF = bw_mean_square/within_mean_square;
+    
+    pval = 1-cumulativeProbability(target=AnovaF, dist="F", df1=bw_df, df2=within_df)
 }
 
 

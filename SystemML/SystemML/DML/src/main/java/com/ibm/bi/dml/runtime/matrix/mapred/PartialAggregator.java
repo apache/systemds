@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,7 +29,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class PartialAggregator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private int bufferCapacity=0;
@@ -51,7 +51,8 @@ public class PartialAggregator
 	private JobConf job = null;
 	private FileSystem fs = null;
 	private int fileCursor = -1;
-	private Path[] files = null;
+	private String filePrefix = null;
+	private int fileN = -1;
 	
 	
 	/**
@@ -102,12 +103,13 @@ public class PartialAggregator
 			job = conf;
 			fs = FileSystem.getLocal(job);
 			rowMajor = inRowMajor;
-			files = new Path[n];
 			String hadoopLocalDir=job.get("mapred.local.dir").split(",")[0];
-			for(int i=0; i<n; i++)
-			{
-				files[i]=new Path(hadoopLocalDir, filePrefix+"_partial_aggregator_"+i);
-				MapReduceTool.deleteFileIfExistOnLFS(files[i], job);
+			filePrefix = new Path(hadoopLocalDir, filePrefix+"_partial_aggregator_").toString();
+			fileN = n;
+			//delete existing files
+			for(int i=0; i<n; i++) {
+				Path ifile = new Path(filePrefix+i);
+				MapReduceTool.deleteFileIfExistOnLFS(ifile, job);
 			}
 		}
 	}
@@ -127,10 +129,9 @@ public class PartialAggregator
 		if( !memOnly )
 		{
 			int newFileCursor=getFileCursor(indexes);
-			if(newFileCursor>=files.length)
-			{
-				throw new IOException("indexes: "+indexes+" needs to be put in file #"+newFileCursor+" which exceeds the limit: "+files.length);
-			}
+			if( newFileCursor>=fileN )
+				throw new IOException("indexes: "+indexes+" needs to be put in file #"+newFileCursor+" which exceeds the limit: "+fileN);
+			
 			if(fileCursor!=newFileCursor)
 			{	
 				writeBuffer();
@@ -161,15 +162,20 @@ public class PartialAggregator
 			outputs.collectOutput(buffer[ix].getKey(), buffer[ix].getValue(), j, reporter);
 			nonZeros+=buffer[ix].getValue().getNonZeros();
 		}
-		if( !memOnly )
-			MapReduceTool.deleteFileIfExistOnHDFS(files[fileCursor], job);
+		
+		if( !memOnly ){
+			Path path = getFilePath(fileCursor);
+			MapReduceTool.deleteFileIfExistOnHDFS(path, job);
+		}
 	
 		
 		//flush local fs buffer pages to hdfs
 		if( !memOnly )
-			for(int i=0; i<files.length; i++)
-				if( i != fileCursor ) //current cursor already flushed
-					nonZeros+=copyFileContentAndDelete(files[i], outputs, j, reporter);
+			for(int i=0; i<fileN; i++)
+				if( i != fileCursor ){ //current cursor already flushed
+					Path path = getFilePath(i);
+					nonZeros+=copyFileContentAndDelete(path, outputs, j, reporter);
+				}
 		
 		return nonZeros;
 	}
@@ -182,8 +188,10 @@ public class PartialAggregator
 		throws IOException
 	{
 		if( !memOnly )
-			for(Path file : files)
-				MapReduceTool.deleteFileIfExistOnLFS(file, job);
+			for(int i=0; i<fileN; i++){
+				Path path =  getFilePath(i);
+				MapReduceTool.deleteFileIfExistOnLFS(path, job);
+			}
 	}
 	
 	/**
@@ -250,6 +258,17 @@ public class PartialAggregator
 	
 	/**
 	 * 
+	 * @param fileCursor
+	 * @return
+	 */
+	private Path getFilePath( int fileCursor )
+	{
+		Path path = new Path( filePrefix + fileCursor );
+		return path;
+	}
+	
+	/**
+	 * 
 	 * @throws IOException
 	 */
 	private void loadBuffer() 
@@ -258,27 +277,9 @@ public class PartialAggregator
 		currentBufferSize=0;
 		bufferMap.clear();
 		
-		if(fs.exists(files[fileCursor]))
-		{
-			currentBufferSize = LocalFileUtils.readBlockSequenceFromLocal(files[fileCursor].toString(), buffer, bufferMap);
-			
-			/*
-			SequenceFile.Reader reader=new SequenceFile.Reader(fs, files[fileCursor], job);
-			try
-			{
-				while(currentBufferSize<bufferCapacity && reader.next(buffer[currentBufferSize].getKey(), buffer[currentBufferSize].getValue()))
-				{
-					bufferMap.put( buffer[currentBufferSize].getKey(), 
-							       currentBufferSize );
-					currentBufferSize++;
-				}
-			}
-			finally
-			{
-				if( reader!=null )
-					reader.close();
-			}
-			*/
+		Path path = getFilePath(fileCursor);
+		if( fs.exists(path) ) {
+			currentBufferSize = LocalFileUtils.readBlockSequenceFromLocal(path.toString(), buffer, bufferMap);
 		}
 	}
 	
@@ -293,24 +294,8 @@ public class PartialAggregator
 			return;
 		
 		//the old file will be overwritten
-		LocalFileUtils.writeBlockSequenceToLocal(files[fileCursor].toString(), buffer, currentBufferSize);
-		
-		/*
-		SequenceFile.Writer writer=new SequenceFile.Writer(fs, job, files[fileCursor], MatrixIndexes.class, valueClass);
-		try
-		{
-			for( Integer ix : bufferMap.values() )
-			{
-				writer.append( buffer[ix].getKey(), 
-						       buffer[ix].getValue() );
-			}
-		}
-		finally
-		{
-			if( writer != null )
-				writer.close();
-		}
-		*/
+		Path path = getFilePath(fileCursor);
+		LocalFileUtils.writeBlockSequenceToLocal(path.toString(), buffer, currentBufferSize);
 	}
 
 	/**
@@ -336,25 +321,6 @@ public class PartialAggregator
 				nonZeros+=buffer[i].getValue().getNonZeros();	
 			}
 			MapReduceTool.deleteFileIfExistOnHDFS(path, job);
-			
-			/*
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, job);
-			try
-			{
-				while(reader.next(buffer[0].getKey(), buffer[0].getValue()))
-				{
-				//	System.out.println(buffer[0].getKey()+" -- "+buffer[0].getValue());
-					outputs.collectOutput(buffer[0].getKey(), buffer[0].getValue(), j, reporter);
-					nonZeros+=buffer[0].getValue().getNonZeros();
-				}
-			}
-			finally
-			{
-				if( reader!=null )
-					reader.close();
-				MapReduceTool.deleteFileIfExistOnHDFS(path, job);
-			}
-			*/
 		}
 		return nonZeros;
 	}

@@ -89,23 +89,43 @@ public class FunctionStatementBlock extends StatementBlock
 							if (curr.getValueType() == ValueType.INT){
 								IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
 								if (currIntValue != null){
-									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue());
+									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(), 
+											curr.getFilename(), curr.getBeginLine(), curr.getBeginColumn(), 
+											curr.getEndLine(), curr.getEndColumn());
 									constVars.put(curr.getName(), currDoubleValue);
 								}
-								LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " but was safely cast");
+								LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() 
+										+ ", return variable " + curr.getName() + " value type of " 
+										+ curr.getValueType() + " does not match value type in function signature of " 
+										+ returnValue.getValueType() + " but was safely cast");
 								curr.setValueType(ValueType.DOUBLE);
 								ids.addVariable(curr.getName(), curr);
 							}
 							else {
 								// THROW EXCEPTION -- CANNOT CONVERT
-								LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast value");
-								throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast value");
+								LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() 
+										+ ", return variable " + curr.getName() + " value type of " 
+										+ curr.getValueType() + " does not match value type in function signature of " 
+										+ returnValue.getValueType() + " and cannot safely cast value");
+								throw new LanguageException(curr.printErrorLocation() + "for function " 
+										+ fstmt.getName() + ", return variable " + curr.getName() 
+										+ " value type of " + curr.getValueType() 
+										+ " does not match value type in function signature of " 
+										+ returnValue.getValueType() + " and cannot safely cast value");
 							}
 						}
 						if (returnValue.getValueType() == ValueType.INT){
 							// THROW EXCEPTION -- CANNOT CONVERT
-							LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
-							throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
+							LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() 
+									+ ", return variable " + curr.getName() + " value type of " 
+									+ curr.getValueType() + " does not match value type in function signature of " 
+									+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
+									+ " as " + returnValue.getValueType());
+							throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() 
+									+ ", return variable " + curr.getName() + " value type of " + curr.getValueType() 
+									+ " does not match value type in function signature of " 
+									+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
+									+ " as " + returnValue.getValueType());
 							
 						} 
 					}	

@@ -21,13 +21,14 @@ public class StringIdentifier extends ConstIdentifier
 		return this;
 	}
 	
-	public StringIdentifier(String val){
+	public StringIdentifier(String val, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = val;
 		_kind = Kind.Data;
 		this.setDimensions(0,0);
         this.computeDataType();
         this.setValueType(ValueType.STRING);
+        this.setAllPositions(filename, blp, bcp, elp, ecp);
 		
 	}
 	

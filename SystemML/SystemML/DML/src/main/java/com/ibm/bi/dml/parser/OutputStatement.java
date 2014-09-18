@@ -40,18 +40,23 @@ public class OutputStatement extends Statement
 		_id = t;
 	}
 	
-	OutputStatement(DataIdentifier t, DataOp op){
+	OutputStatement(DataIdentifier t, DataOp op, 
+			String filename, int blp, int bcp, int elp, int ecp){
 		_id = t;
-		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
+		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
+				filename, blp, bcp, elp, ecp);
 	}
 	
-	OutputStatement(String fname, FunctionCallIdentifier fci) 
+	OutputStatement(String fname, FunctionCallIdentifier fci, 
+			String filename, int blp, int bcp, int elp, int ecp) 
 		throws DMLParseException 
 	{
 		
+		this.setAllPositions(filename, blp, bcp, elp, ecp);
 		DataOp op = Expression.DataOp.WRITE;
 		ArrayList<ParameterExpression> passedExprs = fci.getParamExprs();
-		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>());
+		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
+				filename, blp, bcp, elp, ecp);
 		DMLParseException runningList = new DMLParseException(fname);
 		
 		//check number parameters and proceed only if this will not cause errors
@@ -80,11 +85,13 @@ public class OutputStatement extends Statement
 				}
 			}
 			if (fname.equals("writeMM")){
-				StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET);
+				StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET,
+						this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				addExprParam(DataExpression.FORMAT_TYPE, writeMMExpr, false);
 			}
 			else if (fname.equals("write.csv")){
-				StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV);
+				StringIdentifier delimitedExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV,
+						this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
 			}
 		}
@@ -123,7 +130,8 @@ public class OutputStatement extends Statement
 	// rewrites statement to support function inlining (create deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
-		OutputStatement newStatement = new OutputStatement(null,Expression.DataOp.WRITE);
+		OutputStatement newStatement = new OutputStatement(null,Expression.DataOp.WRITE,
+				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 		// rewrite outputStatement variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
@@ -135,8 +143,8 @@ public class OutputStatement extends Statement
 			Expression newExpr = _paramsExpr.getVarParam(key).rewriteExpression(prefix);
 			newExprParams.put(key, newExpr);
 		}
-		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams);
-		newParamerizedExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams,
+				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}

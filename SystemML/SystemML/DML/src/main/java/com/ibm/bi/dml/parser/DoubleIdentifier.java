@@ -18,22 +18,24 @@ public class DoubleIdentifier extends ConstIdentifier
 	private double _val;
 	
 	
-	public DoubleIdentifier(double val){
+	public DoubleIdentifier(double val, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = val;
 		_kind = Kind.Data;
 		this.setDimensions(0,0);
         this.computeDataType();
         this.setValueType(ValueType.DOUBLE);
+        this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
-	public DoubleIdentifier(DoubleIdentifier d){
+	public DoubleIdentifier(DoubleIdentifier d, String filename, int blp, int bcp, int elp, int ecp){
 		super();
 		 _val = d.getValue();
 		_kind = Kind.Data;
 		this.setDimensions(0,0);
         this.computeDataType();
         this.setValueType(ValueType.DOUBLE);
+        this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

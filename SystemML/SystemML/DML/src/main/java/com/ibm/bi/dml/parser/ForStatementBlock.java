@@ -378,13 +378,19 @@ public class ForStatementBlock extends StatementBlock
 				switch( constValue.getValueType() ) 
 				{
 					case DOUBLE: 
-						ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier)constValue).getValue()).getLongValue());
+						ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier)constValue).getValue()).getLongValue(),
+								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
+								expr.getEndLine(), expr.getEndColumn());
 						break;
 					case INT:    
-						ret = new IntIdentifier((IntIdentifier)constValue);
+						ret = new IntIdentifier((IntIdentifier)constValue,
+								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
+								expr.getEndLine(), expr.getEndColumn());
 						break;
 					case BOOLEAN: 
-						ret = new IntIdentifier(new BooleanObject(((BooleanIdentifier)constValue).getValue()).getLongValue());
+						ret = new IntIdentifier(new BooleanObject(((BooleanIdentifier)constValue).getValue()).getLongValue(),
+								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
+								expr.getEndLine(), expr.getEndColumn());
 						break;
 				}
 			}

@@ -441,8 +441,9 @@ public class StatementBlock extends LiveVariableAnalysis
 					//auto casting of inputs on inlining (if required) TODO discuss with Doug
 					ValueType targetVT = newTarget.getValueType();
 					if( newTarget.getDataType()==DataType.SCALAR && targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING ){
-						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
-																		new Expression[] {currCallParam});
+						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT), new Expression[] {currCallParam}, 
+												newTarget.getFilename(), newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
+						
 					}
 					
 					// create the assignment statement to bind the call parameter to formal parameter
@@ -482,7 +483,8 @@ public class StatementBlock extends LiveVariableAnalysis
 					//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites) TODO discuss with Doug
 					ValueType sourceVT = newSource.getValueType();
 					if( newSource.getDataType()==DataType.SCALAR && sourceVT != ValueType.STRING ){
-						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT), new Expression[] {newSource});
+						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT), new Expression[] {newSource},
+								newTarget.getFilename(), newTarget.getBeginLine(), newTarget.getBeginColumn(), newTarget.getEndLine(), newTarget.getEndColumn());
 					}
 					
 					// create the assignment statement to bind the call parameter to formal parameter
@@ -583,9 +585,9 @@ public class StatementBlock extends LiveVariableAnalysis
 						}
 						IntIdentifier intid = null;
 						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){
-							intid = new IntIdentifier((int)currVal.getDim1());
+							intid = new IntIdentifier((int)currVal.getDim1(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						} else {
-							intid = new IntIdentifier((int)currVal.getDim2());
+							intid = new IntIdentifier((int)currVal.getDim2(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						}
 						
 						// handle case when nrow / ncol called on variable with size unknown (dims == -1) 
@@ -767,7 +769,9 @@ public class StatementBlock extends LiveVariableAnalysis
 						+ " can only be a string with one of following values: binary, text, mm, csv", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
-			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()),true);
+			s.addExprParam(DataExpression.FORMAT_TYPE, 
+					new StringIdentifier(FormatType.TEXT.toString(), s.getFilename(), s.getBeginLine(), s.getBeginColumn(), s.getEndLine(), s.getEndColumn()),
+					true);
 			s.getIdentifier().setFormatType(FormatType.TEXT);
 		}
 	}
@@ -801,7 +805,8 @@ public class StatementBlock extends LiveVariableAnalysis
 						+ " can only be a string with one of following values: binary, text, mm, csv", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
-			dataExpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
+			dataExpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(),
+					dataExpr.getFilename(), dataExpr.getBeginLine(), dataExpr.getBeginColumn(), dataExpr.getEndLine(), dataExpr.getEndColumn()));
 			s.getTarget().setFormatType(FormatType.TEXT);
 		}
 	}

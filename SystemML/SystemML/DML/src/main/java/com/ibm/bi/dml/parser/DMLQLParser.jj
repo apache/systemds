@@ -843,28 +843,32 @@ Statement AssignValueStatements() :
 									try { 
 									 	// try to assign to long value
 										Long longVal = new Long(argVal);
-										constId = new IntIdentifier(longVal);
-										constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+										constId = new IntIdentifier(longVal, this.getFilename(),
+											id.getBeginLine(), id.getBeginColumn(),
+											id.getBeginLine(), id.getBeginColumn());
 										
 									} catch(Exception e1){
 									  	try {
 									  	  	// try to assign to double value
 									  	  	Double doubleVal = new Double(argVal);
-									  	  	constId = new DoubleIdentifier(doubleVal);
-									  	  	constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+									  	  	constId = new DoubleIdentifier(doubleVal, this.getFilename(),
+									  	  		id.getBeginLine(), id.getBeginColumn(),
+									  	  		id.getBeginLine(), id.getBeginColumn());
 									  	  
 									  	} catch (Exception e2) {
 						
 											// try to assign to boolean value
 											if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-												Boolean boolVal = new Boolean(argVal);
-									  	  		constId = new BooleanIdentifier(boolVal);
-									  	  		constId.setAllPositions(this.getFilename(),id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+									  	  		constId = new BooleanIdentifier(new Boolean(argVal),
+									  	  			this.getFilename(),
+									  	  			id.getBeginLine(), id.getBeginColumn(),
+									  	  			id.getBeginLine(), id.getBeginColumn());
 											}
 											else {
 											  	// try to assign to string value
-												constId = new StringIdentifier(argVal);
-												constId.setAllPositions(this.getFilename(), id.getBeginLine(), id.getBeginColumn(), id.getBeginLine(), id.getBeginColumn());
+												constId = new StringIdentifier(argVal, this.getFilename(),
+													id.getBeginLine(), id.getBeginColumn(),
+													id.getBeginLine(), id.getBeginColumn());
 											}	
 						
 									  	} // end catch e2
@@ -1503,7 +1507,9 @@ IterablePredicate IterablePredicate() :
 	    		else {
 	     			fromExpr = seqExprs.get(0).getExpr();
 	     			toExpr   = seqExprs.get(1).getExpr();
-	     			IntIdentifier oneExpr = new IntIdentifier(1);
+	     			IntIdentifier oneExpr = new IntIdentifier(1, this.getFilename(),
+	     					tSeq.beginLine, tSeq.beginColumn,
+	     					tSeq.endLine, tSeq.endColumn);
 	     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2).getExpr() : oneExpr;  
 	    		} 
 	   		}
@@ -1512,7 +1518,9 @@ IterablePredicate IterablePredicate() :
 	    		if (exprParams.size() >= 2){
 					fromExpr = exprParams.get(0);
 	    			toExpr   = exprParams.get(1);
-	    			incrementExpr = new IntIdentifier(1);
+	    			incrementExpr = new IntIdentifier(1, this.getFilename(),
+	    					tStart.beginLine, tStart.beginColumn,
+	    					tStart.endLine, tStart.endColumn);
 	   			}
 	   		}
 	    	
@@ -1522,8 +1530,10 @@ IterablePredicate IterablePredicate() :
 		{
 			if (runningList.size() > 0) {
 				throw runningList;
-			} else {				IterablePredicate retVal = new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
-				retVal.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);	
+			} else {				IterablePredicate retVal = new IterablePredicate(iterVar, fromExpr, toExpr,
+						incrementExpr, parforParamValues,
+						this.getFilename(), tStart.beginLine, tStart.beginColumn,
+						tEnd.beginLine, tEnd.beginColumn);	
 				return retVal;
 			}
 		}
@@ -1887,8 +1897,11 @@ Expression UnaryExpression() :
 					} catch (DMLParseException e){						runningList.add(e);
 					}  
 		     		{
-						if (t != null){							BinaryExpression exprb = new BinaryExpression(bop, this.getFilename(), t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
-		     				IntIdentifier id = new IntIdentifier(0);
+						if (t != null){							BinaryExpression exprb = new BinaryExpression(bop,
+									this.getFilename(), t.beginLine, t.beginColumn,
+									t.beginLine, t.beginColumn);
+		     				IntIdentifier id = new IntIdentifier(0, this.getFilename(),
+		     						t.beginLine, t.endLine, t.beginLine, t.endLine);
 							exprb.setLeft(id);
 							exprb.setRight(right);
 							expr = exprb;
@@ -2004,28 +2017,30 @@ Identifier IdentifierOrConstant() :
 				try {
 				  	// try to assign to long value
 					Long longVal = new Long(argVal);
-					id = new IntIdentifier(longVal);
-					id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+					id = new IntIdentifier(longVal, this.getFilename(),
+							t1.beginLine, t1.beginColumn,
+							t1.beginLine, t1.beginColumn);
 					
 				} catch(Exception e1){
 				  	try {
 				  	  	// try to assign to double value
 				  	  	Double doubleVal = new Double(argVal);
-				  	  	id = new DoubleIdentifier(doubleVal);
-				  	  	id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+				  	  	id = new DoubleIdentifier(doubleVal, this.getFilename(),
+				  	  			t1.beginLine, t1.beginColumn,
+				  	  			t1.beginLine, t1.beginColumn);
 				  	  
 				  	} catch (Exception e2) {
 	
 						// try to assign to boolean value
 						if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
 							Boolean boolVal = new Boolean(argVal);
-				  	  		id = new BooleanIdentifier(boolVal);
-				  	  		id.setAllPositions(this.getFilename(),t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+				  	  		id = new BooleanIdentifier(boolVal, this.getFilename(),
+				  	  				t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
 						}
 						else {
 						  	// try to assign to string value
-							id = new StringIdentifier(argVal);
-							id.setAllPositions(this.getFilename(), t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+							id = new StringIdentifier(argVal, this.getFilename(),
+									t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
 						}	
 	
 				  	} // end catch e2
@@ -2103,11 +2118,11 @@ IntIdentifier IntConstant() :
 	     		long intval = Long.parseLong(t.image);
 	     		if (minus)
 	     			intval = -intval;
-	   			id = new IntIdentifier(intval);
+	   			id = new IntIdentifier(intval, this.getFilename(),
+	   					t.beginLine, t.beginColumn, t.endLine, t.endColumn);
 	  		}
 	 	)
 	 	{
-			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn, t.endLine, t.endColumn);
 	 		return id; 
 	 	}
 	} catch (Exception e){
@@ -2135,11 +2150,11 @@ DoubleIdentifier DoubleConstant() :
 	      		{
 	        		doubleval = -doubleval;
 	      		}
-	   			id = new DoubleIdentifier(doubleval);
+	   			id = new DoubleIdentifier(doubleval, this.getFilename(),
+	   					t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
 	  		}
 	 	)
 	 	{ 
-			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
 	 		return id; 
 	 	}
 	} catch (Exception e){
@@ -2161,14 +2176,14 @@ BooleanIdentifier BooleanConstant() :
 	    (
 	  		(t = <TRUE> | t =<FALSE>)
 	  		{
-	   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
+	   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image),this.getFilename(),
+	   			t.beginLine, t.beginColumn, t.endLine, t.endColumn);
 	   			id.setDimensions(0,0);
 				id.computeDataType();
 				id.setValueType(ValueType.BOOLEAN);
 	  		}
 	 	)
 	 	{
-			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
 	 		return id; 
 	 	}
 	} catch (Exception e){
@@ -2188,10 +2203,14 @@ StringIdentifier StringConstant() :
 {
 	try {
 	    (
-	  		(t =<DBLQUOTE_STRING_LITERAL>){ id = new StringIdentifier(dequoteStr('\"',t.image)); }
+	  		(t =<DBLQUOTE_STRING_LITERAL>)
+	  		{
+	  		  	id = new StringIdentifier(dequoteStr('\"',t.image),
+	  		  			this.getFilename(), t.beginLine, t.beginColumn,
+	  		  			t.endLine, t.endColumn);
+	  		}
 	 	)
-	 	{ 
-			id.setAllPositions(this.getFilename(), t.beginLine, t.beginColumn,  t.endLine, t.endColumn);
+	 	{
 	 		return id; 
 	 	}
 	} catch (Exception e){
@@ -2264,60 +2283,64 @@ DataIdentifier Identifier() :
 			
 		{
 			id = new DataIdentifier(idNameStr);
+			id.setAllPositions(this.getFilename(), blp, bcp, elp, ecp);
   
 			if (functCall != null) {
 
+				functCall.setAllPositions(this.getFilename(), blp, bcp, ecp, elp);
+				
 				// CASE: no namespace -- check if built-in functions
 				if ( tNamespace == null) {
   
 					// check if passed function name is a (non-parameterized) built-in function.
-					BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(t.image, functCall.getParamExprs());
+					BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(
+							t.image, functCall.getParamExprs(), this.getFilename(), blp, bcp, elp, ecp);
+					
 					if (bife != null){
 						if (runningList.size() > 0){
 							throw runningList;
-						} else {
-						  	bife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());							return bife;
+						} else {							return bife;
 						}
 					}
 	
 					// check if passed function name is a parameterized built-in function.
-					ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(t.image, functCall.getParamExprs());
-					if (pbife != null){
-						
-						if (runningList.size() > 0)
+					ParameterizedBuiltinFunctionExpression pbife =
+							ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(
+							  	t.image, functCall.getParamExprs(), this.getFilename(), blp, bcp, elp, ecp);
+				
+					if (pbife != null){	
+						if (runningList.size() > 0) {
 							throw runningList;
-						else {
-							pbife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());						  	return pbife;
+						}
+						else {						  	return pbife;
 						}
 					}
 					
 					// check if passed function name is a data operation built-in function.
 					DataExpression dbife = null;
 
-					try {					  dbife = DataExpression.getDataExpression(t.image, functCall.getParamExprs(), t.beginLine, t.beginColumn);
+					try {					  dbife = DataExpression.getDataExpression(t.image, functCall.getParamExprs(), this.getFilename(), blp, bcp, elp, ecp);
 					} catch (DMLParseException e){						runningList.add(e);
 					}
 				
-					if (dbife != null){						
-						if (runningList.size() > 0)
+					if (dbife != null){						if (runningList.size() > 0)
 							throw runningList;
-						else {							dbife.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+						else {
 							return dbife;
 						}
 					}
 				}
 
+
 				// handle UDF function call
-				if (runningList.size() > 0) {
-					throw runningList;
-				} else {				  
-					String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
+				if (functCall != null){					String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
 	    			functCall.setFunctionNamespace(namespaceName);						
 	    			functCall.setFunctionName(idNameStr);
-
-					// set position information
-					functCall.setAllPositions(this.getFilename(), blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
-				
+					functCall.setAllPositions(this.getFilename(), blp, bcp, elp, ecp);
+				}
+				if (runningList.size() > 0) {
+					throw runningList;
+				} else {  
 	   				return functCall;
 	   			}
 			}
@@ -2328,6 +2351,7 @@ DataIdentifier Identifier() :
 				try {
 				  	if (id != null) {
 				  		iid = new IndexedIdentifier(id.getName(), false, false);
+				  		iid.setAllPositions(this.getFilename(), blp, bcp, elp, ecp);
 						iid.setIndices(exprListList);
 					}
 				} catch (DMLParseException e) {
@@ -2335,26 +2359,30 @@ DataIdentifier Identifier() :
 				}
 		
 				// set position information
-				if (iid != null && exprListList != null)
+				if (iid != null && exprListList != null) {
 					iid.setAllPositions(this.getFilename(), blp, bcp, exprListList);
-
-				if (runningList.size() > 0)
+				}
+				
+				if (runningList.size() > 0) {
 					throw runningList;
+				}
+					
 		   		return iid;
 
 			} else {
 				// set position information
-				if (id != null)
+				if (id != null) {
 					id.setAllPositions(this.getFilename(), blp, bcp, elp, ecp);
-
-				if (runningList.size() > 0)
+				}	
+				if (runningList.size() > 0) {
 					throw runningList;
+			    }
 				return id;
 			}
  		}
 
 	} catch (Exception e){		if (e != runningList)
-			runningList.add(new DMLParseException(getFilename(), e));
+			runningList.add(e);
 		throw runningList;  	}
 }
 
@@ -2391,8 +2419,8 @@ Statement OutputStatement() :
 			fci = FunctionCall()		
 			{
 				try {
-					os = new OutputStatement(tStart.image, fci);
-					os.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, fci.getEndLine(), fci.getEndColumn());
+					os = new OutputStatement(tStart.image, fci,
+						this.getFilename(), tStart.beginLine, tStart.beginColumn, fci.getEndLine(), fci.getEndColumn());
 				} catch (DMLParseException e) {					runningList.add(e);
 				}
 				if (runningList.size() > 0)
@@ -2404,7 +2432,7 @@ Statement OutputStatement() :
 		
 	} catch (Exception e){
 		if (e != runningList)
-			runningList.add(new DMLParseException(getFilename(), e));
+			runningList.add(e);
 		throw runningList;  
 	}
 }
@@ -2454,7 +2482,7 @@ FunctionCallIdentifier FunctionCall():
 		}     
 	} catch (Exception e){
 		if (e != runningList)
-			runningList.add(new DMLParseException(getFilename(), e));
+			runningList.add(e);
 		throw runningList;  
 	}
 }

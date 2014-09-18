@@ -24,8 +24,8 @@ public class BinaryExpression extends Expression
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		
 		
-		BinaryExpression newExpr = new BinaryExpression(this._opcode);
-		newExpr.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		BinaryExpression newExpr = new BinaryExpression(this._opcode,
+				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -100,6 +100,11 @@ public class BinaryExpression extends Expression
 			throws LanguageException 
 	{	
 		//recursive validate
+		if (_left instanceof FunctionCallIdentifier || _right instanceof FunctionCallIdentifier){
+			raiseValidateError("user-defined function calls not supported in binary expressions", 
+		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
+			
 		_left.validateExpression(ids, constVars, conditional);
 		_right.validateExpression(ids, constVars, conditional);
 		

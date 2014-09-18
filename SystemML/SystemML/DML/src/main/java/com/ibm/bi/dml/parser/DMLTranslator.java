@@ -1877,14 +1877,23 @@ public class DMLTranslator
 			//  a) translate 0 --> FALSE; translate 1 --> TRUE
 			//	b) disallow string values
 			if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 0) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 0.0)) {
-				cp.setPredicate(new BooleanIdentifier(false));
+				cp.setPredicate(new BooleanIdentifier(false, 
+						predicate.getFilename(),
+						predicate.getBeginLine(), predicate.getBeginColumn(),
+						predicate.getEndLine(), predicate.getEndColumn()));
 				
 			}
 			else if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 1) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 1.0)) {
-				cp.setPredicate(new BooleanIdentifier(true));
+				cp.setPredicate(new BooleanIdentifier(true,
+						predicate.getFilename(),
+						predicate.getBeginLine(), predicate.getBeginColumn(),
+						predicate.getEndLine(), predicate.getEndColumn()));
 			}
 			else if (predicate instanceof IntIdentifier || predicate instanceof DoubleIdentifier){
-				cp.setPredicate(new BooleanIdentifier(true));
+				cp.setPredicate(new BooleanIdentifier(true,
+						predicate.getFilename(),
+						predicate.getBeginLine(), predicate.getBeginColumn(),
+						predicate.getEndLine(), predicate.getEndColumn()));
 				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
 				throw new ParseException(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
 
@@ -2491,7 +2500,13 @@ public class DMLTranslator
 			String name = target.getName();
 			currBuiltinOp = new DataOp(
 					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTWRITE, hops.get(name), paramHops);
-			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
+			Identifier ioFilename = (Identifier)source.getVarParam(DataExpression.IO_FILENAME);
+			if (!(ioFilename instanceof StringIdentifier)) {
+				LOG.error(source.printErrorLocation() + "processDataExpression():: Filename must be a constant string value");
+				throw new ParseException(source.printErrorLocation() + "processDataExpression():: Filename must be a constant string value");
+			} else {
+				((DataOp)currBuiltinOp).setFileName(((StringIdentifier)ioFilename).getValue());
+			}
 			break;
 			
 		case RAND:

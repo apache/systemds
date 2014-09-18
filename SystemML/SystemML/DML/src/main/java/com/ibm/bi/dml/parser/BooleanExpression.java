@@ -92,9 +92,22 @@ public class BooleanExpression extends Expression
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) throws LanguageException{
 		 	 
 		this.getLeft().validateExpression(ids, constVars, conditional);
-		if (this.getRight() != null)
-			this.getRight().validateExpression(ids, constVars, conditional);
+		
+		//recursive validate
+		if (_left instanceof FunctionCallIdentifier){
+			raiseValidateError("user-defined function calls not supported in boolean expressions", 
+		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
+				
+		if (this.getRight() != null) {
 			
+			if (_right instanceof FunctionCallIdentifier){
+				raiseValidateError("user-defined function calls not supported in boolean expressions", 
+			            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+			}
+			
+			this.getRight().validateExpression(ids, constVars, conditional);
+		}
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());

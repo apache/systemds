@@ -25,7 +25,9 @@ public class IterablePredicate extends Expression
 	private HashMap<String,String> _parforParams;
 	
 	
-	public IterablePredicate(DataIdentifier iterVar, Expression fromExpr, Expression toExpr, Expression incrementExpr, HashMap<String,String> parForParamValues)
+	public IterablePredicate(DataIdentifier iterVar, Expression fromExpr, Expression toExpr, 
+			Expression incrementExpr, HashMap<String,String> parForParamValues,
+			String filename, int blp, int bcp, int elp, int ecp)
 	{
 		_iterVar = iterVar;
 		_fromExpr = fromExpr;
@@ -33,6 +35,7 @@ public class IterablePredicate extends Expression
 		_incrementExpr = incrementExpr;
 		
 		_parforParams = parForParamValues;
+		this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 		
 	public String toString()
@@ -93,6 +96,18 @@ public class IterablePredicate extends Expression
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException 
 	{		
+		
+		//recursive validate
+		if (_iterVar instanceof FunctionCallIdentifier
+				|| _fromExpr instanceof FunctionCallIdentifier
+				||	_toExpr instanceof FunctionCallIdentifier
+				||	_incrementExpr instanceof FunctionCallIdentifier){
+			raiseValidateError("user-defined function calls not supported for iterable predicates", 
+		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
+		
+		
+		
 		//1) VALIDATE ITERATION VARIABLE (index)
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
 		if (ids.containsKey(_iterVar.getName())){

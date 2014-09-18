@@ -109,7 +109,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 		else
 			_opcode = Expression.FunctCallOp.INTERNAL;
 		
-		// force all parameters to be either unnammed or named for functions other than
+		// force all parameters to be either unnammed or named for functions
 		boolean hasNamed = false, hasUnnamed = false;
 		for (ParameterExpression paramExpr : _paramExprs){
 			if (paramExpr.getName() == null)
@@ -125,6 +125,11 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		// validate expressions for each passed parameter
 		for (ParameterExpression paramExpr : _paramExprs) {
+			
+			if (paramExpr.getExpr() instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to function call", false);
+			}
+			
 			paramExpr.getExpr().validateExpression(ids, constVars, conditional);
 		}
 	

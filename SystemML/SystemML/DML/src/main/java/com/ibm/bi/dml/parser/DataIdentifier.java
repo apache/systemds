@@ -48,6 +48,7 @@ public class DataIdentifier extends Identifier
 		_defaultValue = null;
 
 	}
+	
 	/*
 	public DataIdentifier(String name, int line, int col){
 		super();

@@ -95,20 +95,30 @@ public class RelationalExpression extends Expression
 		throws LanguageException
 	{
 		
+		if (_left instanceof FunctionCallIdentifier){
+			raiseValidateError("user-defined function calls not supported in relational expressions", 
+		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
+		
+		if (_right instanceof FunctionCallIdentifier){
+			raiseValidateError("user-defined function calls not supported in relational expressions", 
+		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
+		
 		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
 		if ((_left != null && _left instanceof BooleanIdentifier) || (_right != null && _right instanceof BooleanIdentifier)){
 			if ((_left instanceof IntIdentifier || _left instanceof DoubleIdentifier) || _right instanceof IntIdentifier || _right instanceof DoubleIdentifier){
 				if (_left instanceof BooleanIdentifier){
 					if (((BooleanIdentifier) _left).getValue() == true)
-						this.setLeft(new IntIdentifier(1));
+						this.setLeft(new IntIdentifier(1, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
 					else
-						this.setLeft(new IntIdentifier(0));
+						this.setLeft(new IntIdentifier(0, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
 				}
 				else if (_right instanceof BooleanIdentifier){
 					if (((BooleanIdentifier) _right).getValue() == true)
-						this.setRight(new IntIdentifier(1));
+						this.setRight(new IntIdentifier(1, _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
 					else
-						this.setRight(new IntIdentifier(0));
+						this.setRight(new IntIdentifier(0,  _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
 				}
 			}
 		}

@@ -191,14 +191,16 @@ public abstract class DMLQLParserBase
 		} 
 		catch (Exception e)
 		{
+			String exceptionsStr = new String();
 			if (e instanceof DMLParseException){
 				for ( DMLParseException dmlpe : ((DMLParseException)e).getExceptionList()){
 					LOG.error(dmlpe.getExceptionList().get(0).getMessage());
-					//System.out.println(dmlpe.getExceptionList().get(0).getMessage());
+					exceptionsStr += dmlpe.getExceptionList().get(0).getMessage();
+					exceptionsStr += "\n";
 				}
 			}
 			_dmlp = null;
-			throw new ParseException("DMLQLParser encountered 1 or more errors during parsing.");
+			throw new ParseException("DMLQLParser encountered 1 or more errors during parsing." + "\n" + exceptionsStr);
 		}
 		
 		return _dmlp;

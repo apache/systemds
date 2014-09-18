@@ -21,22 +21,24 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	protected Expression[] 	  _args = null;
 	private BuiltinFunctionOp _opcode;
 
-	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args) {
+	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		_args = new Expression[args.size()];
 		for(int i=0; i < args.size(); i++) {
 			_args[i] = args.get(i).getExpr();
 		}
+		this.setAllPositions(fname, blp, bcp, elp, ecp);
 	}
 
-	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args) {
+	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args, String fname, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		_args = new Expression[args.length];
 		for(int i=0; i < args.length; i++) {
 			_args[i] = args[i];
 		}
+		this.setAllPositions(fname, blp, bcp, elp, ecp);
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
@@ -45,14 +47,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		for(int i=0; i < _args.length; i++) {
 			newArgs[i] = _args[i].rewriteExpression(prefix);
 		}
-		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(this._opcode, newArgs);
-		
-		retVal.setFilename(this.getFilename());
-		retVal.setBeginLine(this.getBeginLine());
-		retVal.setBeginColumn(this.getBeginColumn());
-		retVal.setEndLine(this.getEndLine());
-		retVal.setEndColumn(this.getEndColumn());
-		
+		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(this._opcode, newArgs, 
+				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		return retVal;
 	
 	}
@@ -77,12 +73,23 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
 			throws LanguageException 
 	{
+		if (this.getFirstExpr() instanceof FunctionCallIdentifier){
+			raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+		}
+		
 		this.getFirstExpr().validateExpression(ids, constVars, conditional);
-		if (getSecondExpr() != null)
+		if (getSecondExpr() != null){
+			if (this.getSecondExpr() instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
 			getSecondExpr().validateExpression(ids, constVars, conditional);
-		if (getThirdExpr() != null)
+		}
+		if (getThirdExpr() != null) {
+			if (this.getThirdExpr() instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
 			getThirdExpr().validateExpression(ids, constVars, conditional);
-
+		}
 		_outputs = new Identifier[stmt.getTargetList().size()];
 		int count = 0;
 		for (DataIdentifier outParam: stmt.getTargetList()){
@@ -194,6 +201,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			throws LanguageException {
 		
 		for(int i=0; i < _args.length; i++ ) {
+			
+			if (_args[i] instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
+			
 			_args[i].validateExpression(ids, constVars, conditional);
 		}
 		
@@ -727,7 +739,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					neg = (from > to);
 					if(getThirdExpr() == null) {
 						expandArguments();
-						_args[2] = new DoubleIdentifier((neg? -1.0 : 1.0));
+						_args[2] = new DoubleIdentifier((neg? -1.0 : 1.0),
+								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
+								this.getEndLine(), this.getEndColumn());
 					}
 					incr = getDoubleValue(getThirdExpr()); // (getThirdExpr() != null ? getDoubleValue(getThirdExpr()) : (neg? -1:1) );
 					
@@ -1027,7 +1041,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	public static BuiltinFunctionExpression getBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed) {
+	public static BuiltinFunctionExpression getBuiltinFunctionExpression(
+			String functionName, ArrayList<ParameterExpression> paramExprsPassed,
+			String filename, int blp, int bcp, int elp, int ecp) {
 		
 		if (functionName == null || paramExprsPassed == null)
 			return null;
@@ -1153,7 +1169,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else
 			return null;
 		
-		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(bifop, paramExprsPassed);
+		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(bifop, paramExprsPassed,
+				filename, blp, bcp, elp, ecp);
 	
 		return retVal;
 	} // end method getBuiltinFunctionExpression

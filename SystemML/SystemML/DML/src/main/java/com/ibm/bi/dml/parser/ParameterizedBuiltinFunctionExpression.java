@@ -22,7 +22,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private ParameterizedBuiltinFunctionOp _opcode;
 	private HashMap<String,Expression> _varParams;
 	
-	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed){
+	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed,
+			String fileName, int blp, int bcp, int elp, int ecp){
 	
 		if (functionName == null || paramExprsPassed == null)
 			return null;
@@ -46,22 +47,27 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		for (ParameterExpression pexpr : paramExprsPassed)
 			varParams.put(pexpr.getName(), pexpr.getExpr());
 		
-		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(pbifop,varParams);
+		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(pbifop,varParams,
+				fileName, blp, bcp, elp, ecp);
 		return retVal;
 	} // end method getBuiltinFunctionExpression
+	
 			
-	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op, HashMap<String,Expression> varParams) {
+	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op, HashMap<String,Expression> varParams,
+			String filename, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.ParameterizedBuiltinFunctionOp;
 		_opcode = op;
 		_varParams = varParams;
+		this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
-
-	public ParameterizedBuiltinFunctionExpression() {
+   
+	public ParameterizedBuiltinFunctionExpression(String filename, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.ParameterizedBuiltinFunctionOp;
 		_opcode = ParameterizedBuiltinFunctionOp.INVALID;
 		_varParams = new HashMap<String,Expression>();
+		this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
-
+    
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
@@ -69,12 +75,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
 		}	
-		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams);
-	
-		retVal.setBeginLine(this.getBeginLine());
-		retVal.setBeginColumn(this.getBeginColumn());
-		retVal.setEndLine(this.getEndLine());
-		retVal.setEndColumn(this.getEndColumn());
+		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams,
+				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 		return retVal;
 	}
@@ -115,7 +117,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	{		
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
-			getVarParam(s).validateExpression(ids, constVars, conditional);
+			Expression paramExpr = getVarParam(s);
+			
+			if (paramExpr instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
+			
+			paramExpr.validateExpression(ids, constVars, conditional);
 		}
 		
 		String outputName = getTempName();

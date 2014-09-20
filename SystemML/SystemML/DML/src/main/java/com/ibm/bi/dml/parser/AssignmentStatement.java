@@ -9,6 +9,8 @@ package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.debugger.DMLBreakpointManager;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 
 
@@ -77,6 +79,12 @@ public class AssignmentStatement extends Statement
 	
 	@Override
 	public boolean controlStatement() {
+		// ensure that breakpoints end up in own statement block 
+		if (DMLScript.ENABLE_DEBUG_MODE) {
+			DMLBreakpointManager.insertBreakpoint(_source.getBeginLine());
+			return true;
+		}
+
 		// for now, ensure that function call ends up in different statement block
 		if (_source instanceof FunctionCallIdentifier)
 			return true;
@@ -98,6 +106,10 @@ public class AssignmentStatement extends Statement
 	 */
 	public boolean containsIndividualStatementBlockOperations()
 	{
+		// if (DMLScript.ENABLE_DEBUG_MODE && !DMLScript.ENABLE_DEBUG_OPTIMIZER)
+		if (DMLScript.ENABLE_DEBUG_MODE)
+			return true;
+		
 		boolean ret = false;
 		
 		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )

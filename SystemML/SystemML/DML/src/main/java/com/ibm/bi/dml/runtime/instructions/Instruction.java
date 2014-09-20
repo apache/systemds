@@ -21,7 +21,7 @@ public abstract class Instruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB };
+	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT };
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
@@ -32,13 +32,47 @@ public abstract class Instruction
 	
 	protected INSTRUCTION_TYPE type;
 	protected String           instString;
+	protected int              lineNum;
+	private long instID;
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;
 	}
 	
+	/**
+	 * Setter for instruction line number 
+	 * @param ln Exact (or approximate) DML script line number
+	 */
+	public void setLineNum (int ln ) {
+		lineNum = ln;
+	}
+	
+	/**
+	 * Setter for instruction unique identifier 
+	 * @param id Instruction unique identifier
+	 */
+	public void setInstID (long id ) {
+		instID = id;
+	}
+	
 	public INSTRUCTION_TYPE getType() {
 		return type;
+	}
+
+	/**
+	 * Getter for instruction line number
+	 * @return lineNum Instruction approximate DML script line number
+	 */
+	public int getLineNum() {
+		return lineNum;
+	}
+	
+	/**
+	 * Getter for instruction unique identifier
+	 * @return instID Instruction unique identifier
+	 */
+	public long getInstID() {
+		return instID;
 	}
 	
 	protected static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException{

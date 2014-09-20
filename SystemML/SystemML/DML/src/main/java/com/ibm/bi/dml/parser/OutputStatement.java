@@ -10,6 +10,8 @@ package com.ibm.bi.dml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.debugger.DMLBreakpointManager;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 
  
@@ -197,6 +199,12 @@ public class OutputStatement extends Statement
 	
 	@Override
 	public boolean controlStatement() {
+		// ensure that breakpoints end up in own statement block 
+		if (DMLScript.ENABLE_DEBUG_MODE) {
+			DMLBreakpointManager.insertBreakpoint(_paramsExpr.getBeginLine());
+			return true;
+		}
+
 		Expression fmt = _paramsExpr.getVarParam(DataExpression.FORMAT_TYPE);
 		if ( fmt != null && fmt.toString().equalsIgnoreCase("csv")) {
 			return true;

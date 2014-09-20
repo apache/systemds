@@ -149,6 +149,10 @@ public class StatementBlock extends LiveVariableAnalysis
 	
     public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) throws LanguageException{
 		
+//    	if (DMLScript.ENABLE_DEBUG_MODE && !DMLScript.ENABLE_DEBUG_OPTIMIZER)
+    	if (DMLScript.ENABLE_DEBUG_MODE)
+			return false;
+		
 		// check whether targetIndex stmt block is for a mergable function call 
 		Statement stmt = this.getStatement(0);
 		

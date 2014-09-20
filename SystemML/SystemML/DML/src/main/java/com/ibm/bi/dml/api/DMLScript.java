@@ -37,6 +37,9 @@ import org.xml.sax.SAXException;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.debugger.DMLDebugger;
+import com.ibm.bi.dml.debugger.DMLDebuggerException;
+import com.ibm.bi.dml.debugger.DMLDebuggerProgramInfo;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
@@ -79,7 +82,7 @@ public class DMLScript
 	
 	public enum RUNTIME_PLATFORM { 
 		HADOOP, 	    // execute all matrix operations in MR
-		SINGLE_NODE,    // execute all matrix operations in CP
+		SINGLE_NODE,    // execute all matrix operations in CP 
 		HYBRID,         // execute matrix operations in CP or MR
 		NZ,             // execute matrix operations on NZ SQL backend
 	};
@@ -90,10 +93,16 @@ public class DMLScript
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
+	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
+	// This will be supported in subsquent release. turning off the -debug 'optimize' feature for current release.
+//	public static boolean ENABLE_DEBUG_OPTIMIZER = false; //default debug mode
+//	public static boolean ENABLE_SERVER_SIDE_DEBUG_MODE = false; //default debug mode
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
+	
+	//public static final String DEBUGGER_SYSTEMML_CONFIG_FILEPATH = "./DebuggerSystemML-config.xml";
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -108,6 +117,10 @@ public class DMLScript
 			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system)\n" 
 			//undocumented feature in beta 08/2014 release
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
+			+ "   -debug: (optional) run in debug mode\n"
+			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
+			//+ "   -debug: <flags> (optional) run in debug mode\n"
+			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			//undocumented feature in beta 08/2014 release
 			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
@@ -254,6 +267,36 @@ public class DMLScript
 				}
 				else if (args[i].startsWith("-config="))
 					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
+				else if( args[i].equalsIgnoreCase("-debug") ) {					
+					ENABLE_DEBUG_MODE = true;
+					// ENABLE_DEBUG_OPTIMIZER = false;
+					// ENABLE_SERVER_SIDE_DEBUG_MODE = false;
+					
+//					if( args.length > (i+1) && args[i+1].startsWith("optimize=") ) {
+//						i++;
+//						try {
+//							String value = args[i].split("=")[1];
+//							if(value.toLowerCase().compareTo("on") == 0) {
+//								System.err.println("ERROR: Sorry, the current release doesnot support: \'-debug optimize=on\'. Please try it again with \'-debug optimize=off\'");
+//								return ret;
+//								// DEBUG_OPTIMIZER = true;
+//							}
+//							else if(value.toLowerCase().compareTo("off") == 0) {
+//								ENABLE_DEBUG_OPTIMIZER = false;
+//							}
+//							else {
+//								System.err.println("ERROR: Incorrect option passed to optimize flag for debug mode:\'-debug " + args[i] + 
+//										"\'. Valid options are \'optimize=(on|off)\'");
+//								return ret;
+//							}
+//						}
+//						catch(Exception optionsException) {
+//							System.err.println("ERROR: Incorrect option passed to optimize flag for debug mode:\'-debug " + args[i] + 
+//									"\'. Valid options are \'optimize=(on|off)\'");
+//							return ret;
+//						}
+//					}
+				}
 				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
 					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
 					scriptArgs = new String[args.length - i];
@@ -267,7 +310,8 @@ public class DMLScript
 			}
 			
 			//set log level
-			setLoggingProperties( conf );
+			if (!ENABLE_DEBUG_MODE)
+				setLoggingProperties( conf );
 		
 			//Step 2: prepare script invocation
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
@@ -275,7 +319,13 @@ public class DMLScript
 					
 			//Step 3: invoke dml script
 			printInvocationInfo(args[1], fnameOptConfig, argVals);
-			execute(dmlScriptStr, fnameOptConfig, argVals);		
+			if (ENABLE_DEBUG_MODE) {
+				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
+				launchDebugger(dmlScriptStr, fnameOptConfig, argVals);
+			}
+			else {
+				execute(dmlScriptStr, fnameOptConfig, argVals);
+			}
 			
 			ret = true;
 		}
@@ -295,6 +345,39 @@ public class DMLScript
 		return ret;
 	}
 	
+	/**
+	 * Initialize Hadoop execution. 
+	 * ONLY USE FOR DEBUGGER AUTOMATED TESTING
+	 * 
+	 * @param conf DML provided configuration file (e.g. config.xml)
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 * @throws ParseException 
+	 */
+	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
+	public static void initHadoop(DMLConfig conf) throws DMLRuntimeException, IOException, ParseException
+	{
+	    //set execution environment
+		initHadoopExecution(conf);
+	}
+	
+	/**
+	 * Exit Hadoop execution. 
+	 * ONLY USE FOR DEBUGGER AUTOMATED TESTING
+	 * 
+	 * @param conf DML provided configuration file (e.g. config.xml)
+	 * @throws IOException
+	 * @throws ParseException 
+	 */
+	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
+	public static void exitHadoop(DMLConfig conf) throws IOException, ParseException
+	{			   
+	    //shut down nimble queue (if existing)
+	    ExternalFunctionProgramBlock.shutDownNimbleQueue();
+		    
+		//cleanup scratch_space and all working dirs
+		cleanupHadoopExecution(conf);
+	}
 	
 	///////////////////////////////
 	// private internal utils (argument parsing)
@@ -321,6 +404,7 @@ public class DMLScript
 			if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
 				arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
 				arg.equalsIgnoreCase("-explain") || 
+				arg.equalsIgnoreCase("-debug") || 
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
 				arg.startsWith("-config="))
@@ -553,8 +637,97 @@ public class DMLScript
 			default:
 				throw new DMLRuntimeException("Unsupported runtime platform: "+rtplatform);
 		}
+	}		
+	
+	/**
+	 * launchDebugger: Launcher for DML debugger. This method should be called after 
+	 * execution and debug properties have been correctly set, and customized parameters 
+	 * have been put into _argVals
+	 * @param  dmlScriptStr DML script contents (including new lines)
+	 * @param  fnameOptConfig Full path of configuration file for SystemML
+	 * @param  argVals Key-value pairs defining arguments of DML script
+	 * @throws ParseException 
+	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 * @throws DMLDebuggerException
+	 * @throws HopsException 
+	 * @throws LanguageException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
+	 * @throws DMLException 
+	 */
+	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals)
+		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+	{		
+		//produce debugging information (parse, compile and generate runtime program for a given DML script)
+		DMLDebuggerProgramInfo p = compile(dmlScriptStr, fnameOptConfig, argVals);
+		
+		try {
+			//set execution environment
+			initHadoopExecution(p.conf);
+		
+			//initialize an instance of SystemML debugger
+			DMLDebugger SystemMLdb = new DMLDebugger(p, dmlScriptStr, argVals);
+			//run SystemML debugger
+			SystemMLdb.runSystemMLDebugger();
+		}
+		finally {
+			//shut down nimble queue (if existing)
+			ExternalFunctionProgramBlock.shutDownNimbleQueue();
+	    
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution(p.conf);
+		}
 	}
 	
+	/**
+	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
+	 * This method should be called after execution and debug properties have been set, and 
+	 * customized parameters have been put into _argVals
+	 * @param  dmlScriptStr DML script contents (including new lines)
+	 * @param  fnameOptConfig Full path of configuration file for SystemML
+	 * @param  argVals Key-value pairs defining arguments of DML script
+	 * @return dbprog Class containing parsed and compiled DML script w/ hops, lops and runtime program   
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws DMLRuntimeException
+	 * @throws LanguageException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
+	public static DMLDebuggerProgramInfo compile(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
+			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
+	{					
+		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
+		
+		//Step 1: parse configuration files
+		dbprog.conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		ConfigurationManager.setConfig(dbprog.conf);
+	
+		//Step 2: parse dml script
+		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
+		dbprog.prog = parser.parse();
+		
+		//Step 3: construct HOP DAGs (incl LVA and validate)
+		dbprog.dmlt = new DMLTranslator(dbprog.prog);
+		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
+		dbprog.dmlt.validateParseTree(dbprog.prog);
+		dbprog.dmlt.constructHops(dbprog.prog);
+
+		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
+		dbprog.dmlt.rewriteHopsDAG(dbprog.prog);
+
+		//Step 5: construct LOP DAGs
+		dbprog.dmlt.constructLops(dbprog.prog);
+	
+		//Step 6: generate runtime program
+		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
+		
+		return dbprog;
+	}
+
 	/**
 	 * executeHadoop: Handles execution on the Hadoop Map-reduce runtime
 	 * 
@@ -939,4 +1112,5 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
-}  
+	
+}

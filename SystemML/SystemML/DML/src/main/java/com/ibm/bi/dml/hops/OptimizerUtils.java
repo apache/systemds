@@ -168,12 +168,17 @@ public class OptimizerUtils
 	 *  execution context. The optimization scope if GLOBAL, i.e., program-wide.
 	 *  All advanced rewrites are applied. This optimization level requires more 
 	 *  optimization time but has higher optimization potential.
+	 *  
+	 *  O4 DEBUG MODE - All optimizations, global and local, which interfere with 
+	 *  breakpoints are NOT applied. This optimization level is REQUIRED for the 
+	 *  compiler running in debug mode.
 	 */
 	public enum OptimizationLevel { 
 		O0_LOCAL_STATIC, 
 		O1_LOCAL_MEMORY_MIN,
 		O2_LOCAL_MEMORY_DEFAULT,
 		O3_GLOBAL_TIME_MEMORY,
+		O4_DEBUG_MODE,
 	};
 		
 	public static OptimizationLevel getOptLevel() {
@@ -196,8 +201,8 @@ public class OptimizerUtils
 	public static void setOptimizationLevel( int optlevel ) 
 		throws DMLRuntimeException
 	{
-		if( optlevel < 0 || optlevel > 3 )
-			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-3).");
+		if( optlevel < 0 || optlevel > 4 )
+			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-4).");
 	
 		switch( optlevel )
 		{
@@ -228,6 +233,21 @@ public class OptimizerUtils
 			// opt level 3: global, time- and memory-based (all advanced rewrites)
 			case 3:
 				_optLevel = OptimizationLevel.O3_GLOBAL_TIME_MEMORY;
+				break;
+			// opt level 4: debug mode (no interfering rewrites)
+			case 4:				
+				_optLevel = OptimizationLevel.O4_DEBUG_MODE;
+				ALLOW_CONSTANT_FOLDING = false;
+				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
+				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
+				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				ALLOW_BRANCH_REMOVAL = false;
+				ALLOW_DYN_RECOMPILATION = false;
+				ALLOW_SIZE_EXPRESSION_EVALUATION = false;
+				ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
+				ALLOW_RAND_JOB_RECOMPILE = false;
+				ALLOW_SUM_PRODUCT_REWRITES = false;
+				ALLOW_SPLIT_HOP_DAGS = false;
 				break;
 		}
 		setDefaultSize();

@@ -9,6 +9,9 @@ package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.debugger.DMLBreakpointManager;
+
 
 
 public class MultiAssignmentStatement extends Statement
@@ -75,6 +78,10 @@ public class MultiAssignmentStatement extends Statement
 	@Override
 	// conservative assignment to separate statement block; will merge later if possible
 	public boolean controlStatement() {
+		// ensure that breakpoints end up in own statement block 
+		if (DMLScript.ENABLE_DEBUG_MODE) {
+			DMLBreakpointManager.insertBreakpoint(_source.getBeginLine());
+		}
 		return true;
 	}
 	

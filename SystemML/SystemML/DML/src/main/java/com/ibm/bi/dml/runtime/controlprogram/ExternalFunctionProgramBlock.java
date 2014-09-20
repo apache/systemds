@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.nimble.configuration.NimbleConfig;
@@ -324,7 +325,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
 				className, configFile, execLocation, inputParameterString,
 				outputParameterString);
-
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			if (getInputParams().size() > 0)
+				einst.setLineNum(getInputParams().get(0).getBeginLine());
+			else if (getOutputParams().size() > 0)
+				einst.setLineNum(getOutputParams().get(0).getBeginLine());
+			else
+				einst.setLineNum(this._beginLine);
+		}
 		_inst.add(einst);
 
 		// block output matrices
@@ -362,12 +370,17 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		{
 			c2binst = new ArrayList<Instruction>();
 			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK);
+			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				MRJobLineNumbers = new TreeMap<Integer, ArrayList<String>>();
+			}
 			
 			ArrayList<String> inLabels = new ArrayList<String>();
 			ArrayList<String> outLabels = new ArrayList<String>();
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 			String reblock = "";
+			String reblockStr = ""; //Keep a copy of a single MR reblock instruction
 	
 			String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
 			
@@ -390,6 +403,18 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
 									DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;
 					
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						//Create a copy of reblock instruction but as a single instruction (FOR DEBUGGER)
+						reblockStr = "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
+										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
+										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
+										DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;					
+						//Set MR reblock instruction line number (FOR DEBUGGER)
+						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
+							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
+						}
+						MRJobLineNumbers.get(matrices.get(i).getBeginLine()).add(reblockStr);					
+					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold blocked matrices
 					
@@ -400,6 +425,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo) ) ;
 					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
 					Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						createInst.setLineNum(matrices.get(i).getBeginLine());
+					}
 					c2binst.add(createInst);
 
 				}
@@ -413,6 +441,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				for (int i = 0; i < matrices.size(); i++) {
 					cpInst = VariableCPInstruction.prepareCopyInstruction(outLabels.get(i), matrices.get(i).getName());
 					rmInst = VariableCPInstruction.prepareRemoveInstruction(outLabels.get(i));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						cpInst.setLineNum(matrices.get(i).getBeginLine());
+						rmInst.setLineNum(matrices.get(i).getBeginLine());
+					}
 					c2binst.add(cpInst);
 					c2binst.add(rmInst);
 					//c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "cpvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
@@ -466,7 +498,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		{
 			b2cinst = new ArrayList<Instruction>();
 			MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
-			
+			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				MRJobLineNumbers = new TreeMap<Integer, ArrayList<String>>();
+			}
+			String gmrStr="";
 			ArrayList<String> inLabels = new ArrayList<String>();
 			ArrayList<String> outLabels = new ArrayList<String>();
 			String[] outputs = new String[matrices.size()];
@@ -494,6 +530,19 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 									_otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
 					unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 	
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						//Create a dummy gmr instruction (FOR DEBUGGER)
+						gmrStr = "MR" + Lop.OPERAND_DELIMITOR + "gmr" + Lop.OPERAND_DELIMITOR + 
+										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
+										DMLTranslator.DMLBlockSize + Lop.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;
+						
+						//Set MR gmr instruction line number (FOR DEBUGGER)
+						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
+							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
+						}
+						MRJobLineNumbers.get(matrices.get(i).getBeginLine()).add(gmrStr);
+					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold unblocked matrices
 				 	
@@ -505,13 +554,16 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
 					
 			 		Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
+			 		if(DMLScript.ENABLE_DEBUG_MODE) {
+			 			createInst.setLineNum(matrices.get(i).getBeginLine());
+			 		}
 			 		b2cinst.add(createInst);
 				}
 			
 				// Finally, generate GMR instruction that performs block2cell conversion
 				gmrInst.setGMRInstructions(inLabels.toArray(new String[inLabels.size()]), "", "", "", "", 
 						outLabels.toArray(new String[outLabels.size()]), resultIndex, 0, 1);
-					
+				
 				b2cinst.add(gmrInst);
 			
 				// generate instructions that rename the output variables of GMR job
@@ -519,6 +571,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				for (int i = 0; i < matrices.size(); i++) {
 						cpInst = VariableCPInstruction.prepareCopyInstruction(outLabels.get(i), matrices.get(i).getName());
 						rmInst = VariableCPInstruction.prepareRemoveInstruction(outLabels.get(i));
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							cpInst.setLineNum(matrices.get(i).getBeginLine());
+							rmInst.setLineNum(matrices.get(i).getBeginLine());
+						}
 						b2cinst.add(cpInst);
 						b2cinst.add(rmInst);
 				}

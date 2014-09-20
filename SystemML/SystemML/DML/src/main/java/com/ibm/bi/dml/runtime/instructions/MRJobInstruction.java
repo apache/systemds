@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
@@ -69,6 +70,12 @@ public class MRJobInstruction extends Instruction
 	int iv_numReducers;
 	int iv_replication;
 	public String dimsUnknownFilePrefix;
+	
+	/**
+	 * This structure contains the DML script line number
+	 * of each MR instructions within this MR job
+	 */
+	ArrayList<Integer> MRJobInstructionsLineNumbers;
 	
 	public JobType getJobType()
 	{
@@ -138,6 +145,15 @@ public class MRJobInstruction extends Instruction
 		return outputVars;
 	}
 
+	/**
+	 * Getter for MRJobInstructionslineNumbers
+	 * @return TreeMap containing all instructions indexed by line number   
+	 */
+	public ArrayList<Integer> getMRJobInstructionsLineNumbers()
+	{
+		return MRJobInstructionsLineNumbers;
+	}
+	
 	// Used for partitioning jobs..
 	private PartitionParams partitionParams;
 	
@@ -247,6 +263,14 @@ public class MRJobInstruction extends Instruction
 	
 	public void setRandInstructions(String randInstructions) {
 		iv_randInstructions = randInstructions;
+	}
+	
+	/**
+	 * Setter for MRJobInstructionslineNumbers field
+	 * @param MRJobLineNumbers Line numbers for each instruction in this MRJob  
+	 */
+	public void setMRJobInstructionsLineNumbers(ArrayList<Integer> MRJobLineNumbers) {
+		MRJobInstructionsLineNumbers = MRJobLineNumbers;
 	}
 	
 	/*public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
@@ -446,6 +470,23 @@ public class MRJobInstruction extends Instruction
 		setReplication(replication);
 	}
 	
+	/**
+	 * Search whether or not this MR job contains at least one 
+	 * MR instruction with specified line number parameter 
+	 * @param lineNum Line number in DML script
+	 * @return Return true if found, otherwise return false 
+	 */
+	public boolean findMRInstructions(int lineNum) {
+		if (!DMLScript.ENABLE_DEBUG_MODE) {
+			System.err.println("Error: Expecting debug mode to be enabled for this functionality");
+			return false;
+		}
+		for (Integer lineNumber : MRJobInstructionsLineNumbers) {
+			if (lineNum == lineNumber)
+				return true;
+		}
+		return false;
+	}
 	
 	
 	public <E>String getString(E [] arr)
@@ -535,6 +576,134 @@ public class MRJobInstruction extends Instruction
 		//instruction += "result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
 		instruction += "num reducers = " + iv_numReducers + " \n";
 		instruction += "replication = " + iv_replication + " \n";
+		return instruction;
+	}
+	
+	/**
+	 * Method for displaying MR instructions interspersed with source code 
+	 * ONLY USED IN DEBUG MODE
+	 * @param debug Flag for displaying instructions in debugger test integration
+	 * @return
+	 */
+	public String getMRString(boolean debug)
+	{
+		if (!DMLScript.ENABLE_DEBUG_MODE) {
+			System.err.println("Error: Expecting debug mode to be enabled for this functionality");
+			return "";
+		}
+		
+		String instruction = "MR-Job[\n";
+		instruction += "\t\t\t\tjobtype        = " + jobType + " \n";
+		
+		if (!debug)
+			instruction += "\t\t\t\tinput labels   = " + Arrays.toString(inputVars) + " \n";
+		
+		if (iv_recordReaderInstructions.length() > 0) {
+			String [] instArray = iv_recordReaderInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\trecReader inst = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\trecReader inst = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}			
+			}
+		}
+		if (iv_randInstructions.length() > 0) {			
+			String [] instArray = iv_randInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\trand inst      = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\trand inst      = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}
+			}
+		}
+		if (iv_instructionsInMapper.length() > 0) {
+			String [] instArray = iv_instructionsInMapper.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\tmapper inst    = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\tmapper inst    = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}
+			}
+		}
+		if (iv_shuffleInstructions.length() > 0) {
+			String [] instArray = iv_shuffleInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\tshuffle inst   = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\tshuffle inst   = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}
+			}
+		}
+		if (iv_aggInstructions.length() > 0) {			
+			String [] instArray = iv_aggInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\tagg inst       = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\tagg inst       = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}
+			}
+		}
+		if (iv_otherInstructions.length() > 0) {
+			String [] instArray = iv_otherInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+			if (!debug)
+				instruction += "\t\t\t\tother inst     = " + instArray[0] + " \n";
+			else {
+				String [] instStr = prepareInstruction(instArray[0]).split(" ");
+				instruction += "\t\t\t\tother inst     = " + instStr[0] + " " + instStr[1] + " \n";
+			}
+			for (int i = 1; i < instArray.length ; i++) {
+				if (!debug)
+					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				else {
+					String [] instStr = prepareInstruction(instArray[i]).split(" ");
+					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+				}
+			}			
+		}
+		if (!debug)
+			instruction += "\t\t\t\toutput labels  = " + Arrays.toString(outputVars)  + " \n";
+		instruction += "\t\t\t        ]";
+
 		return instruction;
 	}
 	
@@ -809,6 +978,21 @@ public class MRJobInstruction extends Instruction
 			MatrixFormatMetaData md = (MatrixFormatMetaData) outputMatrices[i].getMetaData();
 			outputInfos[i] = md.getOutputInfo();
 		}
+	}
+	
+	/**
+	 * Prepare current instruction for printing
+	 * by removing internal delimiters.  
+	 * @param inst Instruction to be displayed 
+	 * @return Post-processed instruction in string format
+	 */
+	private static String prepareInstruction(String inst) {
+		String tmp = inst;
+		tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
+		tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
+		tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");
+
+		return tmp;
 	}
 	
 	public void printCompleteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {

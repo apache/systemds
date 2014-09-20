@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -219,6 +220,17 @@ public class DMLConfig
 				retVal = _defaultVals.get(tagName);
 			else
 				LOG.error("Error: requested dml configuration property '"+tagName+"' is invalid.");
+			
+		}
+		
+		if(tagName.compareTo(OPTIMIZATION_LEVEL) == 0 && retVal.trim().compareTo("4") == 0) {
+			// By default, config file should not contain optimization level 4.
+			LOG.error("Error: requested dml configuration property '"+tagName+"' is invalid. The available optimization levels are 0-3.");
+			System.exit(-1); // Added a fatal error
+		}
+		
+		if(DMLScript.ENABLE_DEBUG_MODE && tagName.compareTo(OPTIMIZATION_LEVEL) == 0) {
+			retVal = "4"; // Disable optimization for debugger
 		}
 		
 		return retVal;
@@ -368,7 +380,7 @@ public class DMLConfig
 				throw e;
 			}
 		}
-		
+				
 		return defaultConfig;
 	}
 

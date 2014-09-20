@@ -327,6 +327,9 @@ public class Dag<N extends Lop>
 
 			} else {
 				rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
+				if(DMLScript.ENABLE_DEBUG_MODE) { 
+					rm_inst.setLineNum(node._beginLine);
+				}
 				
 				LOG.trace(rm_inst.toString());
 				inst.add(rm_inst);
@@ -365,6 +368,10 @@ public class Dag<N extends Lop>
 		// ACTUAL list of variables whose value is updated, AND the old value of the variable 
 		// is no longer accessible/used.
 		HashSet<String> updatedLabels = new HashSet<String>();
+		HashMap<String, Integer> updatedLabelsLineNum = null;
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			updatedLabelsLineNum = new HashMap<String, Integer>();
+		}
 		
 		// first capture all transient read variables
 		for (int i = 0; i < nodeV.size(); i++) {
@@ -406,6 +413,9 @@ public class Dag<N extends Lop>
 					&& !labelNodeMapping.containsValue(node.getInputs().get(0)) // check to avoid cases where transient read feeds into a transient write 
 				) {
 				updatedLabels.add(node.getOutputParameters().getLabel());
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					updatedLabelsLineNum.put(node.getOutputParameters().getLabel(), node._beginLine);
+				}
 			}
 		}
 		
@@ -416,6 +426,9 @@ public class Dag<N extends Lop>
 			String label = it.next();
 
 			rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				rm_inst.setLineNum(updatedLabelsLineNum.get(label));
+			}
 			
 			LOG.trace(rm_inst.toString());
 			inst.add(rm_inst);
@@ -443,6 +456,9 @@ public class Dag<N extends Lop>
 				// continue; //skip rm instructions for non-matrix objects
 
 				inst = VariableCPInstruction.prepareRemoveInstruction(varName);
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					inst.setLineNum(sb.getEndLine());
+				}
 				deleteInst.add(inst);
 
 				LOG.trace("  Adding " + inst.toString());
@@ -741,8 +757,16 @@ public class Dag<N extends Lop>
 				
 				if ( !((Data)n).isLiteral() ) {
 					try {
-						String inst_string = n.getInstructions();
-						inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							String inst_string = n.getInstructions();						
+							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
+							currInstr.setLineNum(n._beginLine);						
+							inst.add(currInstr);
+						}
+						else {
+							String inst_string = n.getInstructions();
+							inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
+						}
 					} catch (DMLUnsupportedOperationException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
 					} catch (DMLRuntimeException e) {
@@ -1361,7 +1385,13 @@ public class Dag<N extends Lop>
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		for(Lop in : node.getInputs() ) {
-			processConsumers((N)in, inst, delteInst);
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				processConsumers((N)in, inst, delteInst, node._beginLine);
+			}
+			else {
+				processConsumers((N)in, inst, delteInst, 0);
+			}
+			
 			/*if ( in.removeConsumer() == 0 ) {
 				String label = in.getOutputParameters().getLabel();
 				inst.add(VariableCPInstruction.prepareRemoveInstruction(label));
@@ -1369,7 +1399,7 @@ public class Dag<N extends Lop>
 		}
 	}
 	
-	private void processConsumers(N node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	private void processConsumers(N node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst, int lineNum) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		if ( node.removeConsumer() == 0 ) {
@@ -1378,7 +1408,14 @@ public class Dag<N extends Lop>
 			}
 			
 			String label = node.getOutputParameters().getLabel();
-			inst.add(VariableCPInstruction.prepareRemoveInstruction(label));
+			Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(label);
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				if (lineNum != 0)
+					currInstr.setLineNum(lineNum);
+				else
+					currInstr.setLineNum(node._beginLine);
+			}
+			inst.add(currInstr);
 			excludeRemoveInstruction(label, deleteInst);
 		}
 	}
@@ -1406,6 +1443,10 @@ public class Dag<N extends Lop>
 
 		// variable names to be deleted
 		Vector<String> var_deletions = new Vector<String>();
+		HashMap<String, Integer> var_deletionsLineNum = null;
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			var_deletionsLineNum = new HashMap<String, Integer>();
+		}
 		
 		boolean doRmVar = false;
 
@@ -1455,6 +1496,9 @@ public class Dag<N extends Lop>
 					} 
 					else {
 						var_deletions.add(node.getOutputParameters().getLabel());
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							var_deletionsLineNum.put(node.getOutputParameters().getLabel(), node._beginLine);
+						}
 						//System.out.println("    --> skipping " + out.getLastInstructions() + " while processing node " + node.getID());
 					}
 				}
@@ -1555,7 +1599,16 @@ public class Dag<N extends Lop>
 				
 				try {
 					LOG.trace("Generating simple instruction - "+ inst_string);
-					inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
+					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						if (node._beginLine != 0)
+							currInstr.setLineNum(node._beginLine);
+						else if (node.getOutputs().size() > 0)
+							currInstr.setLineNum(node.getOutputs().get(0)._beginLine);
+						else if (node.getInputs().size() > 0)
+							currInstr.setLineNum(node.getInputs().get(0)._beginLine);
+					}
+					inst.add(currInstr);
 				} catch (Exception e) {
 					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
 							+ inst_string, e);
@@ -1610,9 +1663,17 @@ public class Dag<N extends Lop>
 						node.getOutputParameters().setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 						String io_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
 								node.getOutputParameters().getFile_name());
-						inst.add(CPInstructionParser.parseSingleInstruction(io_inst));
+						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							currInstr.setLineNum(node._beginLine);
+						}
+						inst.add(currInstr);
 						
-						deleteInst.add(VariableCPInstruction.prepareRemoveInstruction(node.getOutputParameters().getLabel()));
+						Instruction tempInstr = VariableCPInstruction.prepareRemoveInstruction(node.getOutputParameters().getLabel());
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							tempInstr.setLineNum(node._beginLine);
+						}
+						deleteInst.add(tempInstr);
 					}
 					else {
 						throw new LopsException("Matrix READs are not handled in CP yet!");
@@ -1632,6 +1693,9 @@ public class Dag<N extends Lop>
 		for ( String var : var_deletions ) {
 			Instruction rmInst = VariableCPInstruction.prepareRemoveInstruction(var);
 			LOG.trace("  Adding var_deletions: " + rmInst.toString());
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				rmInst.setLineNum(var_deletionsLineNum.get(var));
+			}
 			deleteInst.add(rmInst);
 		}
 
@@ -2529,6 +2593,10 @@ public class Dag<N extends Lop>
 		ArrayList<String> inputLabels = new ArrayList<String>();
 		ArrayList<String> outputLabels = new ArrayList<String>();
 		LocalVariableMap outputLabelValueMapping = new LocalVariableMap ();
+		ArrayList<Integer> MRJobLineNumbers = null;
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			MRJobLineNumbers = new ArrayList<Integer>();
+		}
 
 		ArrayList<Lop> inputLops = new ArrayList<Lop>();
 		
@@ -2550,7 +2618,7 @@ public class Dag<N extends Lop>
 		for (int i = 0; i < rootNodes.size(); i++)
 			getInputPathsAndParameters(rootNodes.elementAt(i), execNodes,
 					inputs, inputInfos, numRows, numCols, numRowsPerBlock,
-					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops);
+					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
 
 		Vector<N> partitionNodes = new Vector<N>();
 		getPartitionNodes(execNodes, partitionNodes);
@@ -2709,7 +2777,11 @@ public class Dag<N extends Lop>
 			if (node.get_dataType() == DataType.SCALAR) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 				out.setVarName(oparams.getLabel());
-				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
+				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					currInstr.setLineNum(node._beginLine);
+				}
+				out.addLastInstruction(currInstr);
 			} 
 			else if(!(node instanceof FunctionCallCP)) //general case
 			{
@@ -2730,10 +2802,17 @@ public class Dag<N extends Lop>
 											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 											new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 										);
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					createvarInst.setLineNum(node._beginLine);
+				}
 				out.addPreInstruction(createvarInst);
 
 				// temp file as well as the variable has to be deleted at the end
-				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
+				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					currInstr.setLineNum(node._beginLine);
+				}
+				out.addLastInstruction(currInstr);
 
 				// finally, add the generated filename and variable name to the list of outputs
 				out.setFileName(oparams.getFile_name());
@@ -2754,6 +2833,12 @@ public class Dag<N extends Lop>
 								OutputInfo.outputInfoToString(getOutputInfo((N)fnOut, false)),
 								new MatrixCharacteristics(fnOutParams.getNum_rows(), fnOutParams.getNum_cols(), fnOutParams.get_rows_in_block().intValue(), fnOutParams.get_cols_in_block().intValue(), fnOutParams.getNnz())
 							);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							if (node._beginLine != 0)
+								createvarInst.setLineNum(node._beginLine);
+							else
+								createvarInst.setLineNum(fnOut._beginLine);
+						}
 						out.addPreInstruction(createvarInst);
 					}
 				}
@@ -2766,11 +2851,25 @@ public class Dag<N extends Lop>
 				// generate assignment operations for final and transient writes
 				if ( oparams.getFile_name() == null ) {
 					String io_inst = prepareAssignVarInstruction(node.getInputs().get(0), node);
-					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						if (node._beginLine != 0)
+							currInstr.setLineNum(node._beginLine);
+						else if (node.getInputs().size() > 0)
+							currInstr.setLineNum(node.getInputs().get(0).getBeginLine());
+					}
+					out.addLastInstruction(currInstr);
 				}
 				else {
 					String io_inst = node.getInstructions(node.getInputs().get(0).getOutputParameters().getLabel(), oparams.getFile_name());
-					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						if (node._beginLine != 0)
+							currInstr.setLineNum(node._beginLine);
+						else if (node.getInputs().size() > 0)
+							currInstr.setLineNum(node.getInputs().get(0).getBeginLine());
+					}
+					out.addLastInstruction(currInstr);
 				}
 			}
 			else {
@@ -2796,7 +2895,11 @@ public class Dag<N extends Lop>
 						 *     mVar1 -> temp21
 						 *     tVarH -> temp21
 						 */
-						out.addLastInstruction(VariableCPInstruction.prepareCopyInstruction(inputVarName, constVarName));
+						Instruction currInstr = VariableCPInstruction.prepareCopyInstruction(inputVarName, constVarName);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							currInstr.setLineNum(node._beginLine);
+						}
+						out.addLastInstruction(currInstr);
 						out.setFileName(constFileName);
 					}
 					else {
@@ -2834,6 +2937,9 @@ public class Dag<N extends Lop>
 													OutputInfo.outputInfoToString(out.getOutInfo()), 
 													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 												);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							createvarInst.setLineNum(node._beginLine);
+						}
 						out.addPreInstruction(createvarInst);
 
 						
@@ -2859,9 +2965,16 @@ public class Dag<N extends Lop>
 						 */
 						
 						// rename the temp variable to constant variable (e.g., cpvar tVarAtemp tVarA)
-						out.addLastInstruction(VariableCPInstruction.prepareCopyInstruction(tempVarName, constVarName));
-						out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(tempVarName));
-						
+						Instruction currInstr = VariableCPInstruction.prepareCopyInstruction(tempVarName, constVarName);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							currInstr.setLineNum(node._beginLine);
+						}
+						out.addLastInstruction(currInstr);
+						Instruction tempInstr = VariableCPInstruction.prepareRemoveInstruction(tempVarName);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							tempInstr.setLineNum(node._beginLine);
+						}
+						out.addLastInstruction(tempInstr);
 						// finally, add the temporary filename and variable name to the list of outputs 
 						out.setFileName(tempFileName);
 						out.setVarName(tempVarName);
@@ -2891,13 +3004,21 @@ public class Dag<N extends Lop>
 							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
 							
 							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
-							out.addPostInstruction(CPInstructionParser.parseSingleInstruction(writeInst));
+							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								currInstr.setLineNum(node._beginLine);
+							}
+							out.addPostInstruction(currInstr);
 							
 							// remove the variable
-							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+							CPInstruction tempInstr = CPInstructionParser.parseSingleInstruction(
 									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
 									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
+									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								tempInstr.setLineNum(node._beginLine);
+							}
+							out.addLastInstruction(tempInstr);
 						} 
 						else if (oparams.getFormat() == Format.MM )  {
 							
@@ -2911,13 +3032,21 @@ public class Dag<N extends Lop>
 													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 												);
 							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
-							out.addPostInstruction(CPInstructionParser.parseSingleInstruction(writeInst));
+							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								currInstr.setLineNum(node._beginLine);
+							}
+							out.addPostInstruction(currInstr);
 							
 							// remove the variable
-							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+							CPInstruction tempInstr = CPInstructionParser.parseSingleInstruction(
 									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
 									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
+									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								tempInstr.setLineNum(node._beginLine);
+							}
+							out.addLastInstruction(tempInstr);
 						} 
 						else {
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
@@ -2928,11 +3057,18 @@ public class Dag<N extends Lop>
 									                new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 								                 );
 							// remove the variable
-							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(
 									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
 									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "false" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
+									+ "false" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								currInstr.setLineNum(node._beginLine);
+							}
+							out.addLastInstruction(currInstr);
 							
+						}
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							createvarInst.setLineNum(node._beginLine);
 						}
 						out.addPreInstruction(createvarInst);
 						
@@ -2946,7 +3082,14 @@ public class Dag<N extends Lop>
 						String io_inst = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(), 
 								node.getOutputParameters().getFile_name());
-						out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							if (node.getInputs().size() > 0 && node.getInputs().get(0)._beginLine != 0)
+								currInstr.setLineNum(node.getInputs().get(0)._beginLine);
+							else
+								currInstr.setLineNum(node._beginLine);
+						}
+						out.addLastInstruction(currInstr);
 					}
 				}
 			}
@@ -2990,6 +3133,10 @@ public class Dag<N extends Lop>
 		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> writeInstructions = new ArrayList<Instruction>();
+		ArrayList<Integer> MRJobLineNumbers = null;
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			MRJobLineNumbers = new ArrayList<Integer>();
+		}
 		
 		ArrayList<Lop> inputLops = new ArrayList<Lop>();
 		
@@ -3036,7 +3183,7 @@ public class Dag<N extends Lop>
 		for (int i = 0; i < rootNodes.size(); i++) {
 			getInputPathsAndParameters(rootNodes.elementAt(i), execNodes,
 					inputs, inputInfos, numRows, numCols, numRowsPerBlock,
-					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops);
+					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
 		}
 		
 		// In case of RAND job, instructions are defined in the input file
@@ -3053,7 +3200,7 @@ public class Dag<N extends Lop>
 			for (int i = 0; i < rootNodes.size(); i++) {
 				getRecordReaderInstructions(rootNodes.elementAt(i), execNodes,
 						inputs, recordReaderInstructions, nodeIndexMapping,
-						start_index, inputLabels, inputLops);
+						start_index, inputLabels, inputLops, MRJobLineNumbers);
 				if ( recordReaderInstructions.size() > 1 )
 					throw new LopsException("MapReduce job can only have a single recordreader instruction: " + recordReaderInstructions.toString());
 			}
@@ -3085,7 +3232,7 @@ public class Dag<N extends Lop>
 		for (int i = 0; i < rootNodes.size(); i++) {
 			getMapperInstructions(rootNodes.elementAt(i), execNodes, inputs,
 					mapperInstructions, nodeIndexMapping, start_index,
-					inputLabels, inputLops);
+					inputLabels, inputLops, MRJobLineNumbers);
 		}
 		
 		if (LOG.isTraceEnabled()) {
@@ -3107,7 +3254,7 @@ public class Dag<N extends Lop>
 			int resultIndex = getAggAndOtherInstructions(
 					rootNodes.elementAt(i), execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
-					inputLabels, inputLops);
+					inputLabels, inputLops, MRJobLineNumbers);
 			if ( resultIndex == -1)
 				throw new LopsException("Unexpected error in piggybacking!");
 			resultIndices.add(new Byte((byte) resultIndex));
@@ -3175,6 +3322,10 @@ public class Dag<N extends Lop>
 		// set reducer instruction
 		mr.setAggregateInstructionsInReducer(getCSVString(aggInstructionsReducer));
 		mr.setOtherInstructionsInReducer(getCSVString(otherInstructionsReducer));
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			// set line number information for each MR instruction
+			mr.setMRJobInstructionsLineNumbers(MRJobLineNumbers);
+		}
 
 		/* Add the prepared instructions to output set */
 		inst.addAll(variableInstructions);
@@ -3183,7 +3334,12 @@ public class Dag<N extends Lop>
 		deleteinst.addAll(renameInstructions);
 		
 		for (Lop l : inputLops) {
-			processConsumers((N)l, rmvarinst, deleteinst);
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				processConsumers((N)l, rmvarinst, deleteinst, l._beginLine);
+			}
+			else {
+				processConsumers((N)l, rmvarinst, deleteinst, 0);
+			}
 		}
 
 	}
@@ -3317,6 +3473,7 @@ public class Dag<N extends Lop>
 	 * @param nodeIndexMapping
 	 * @param start_index
 	 * @param inputLabels
+	 * @param MRJoblineNumbers
 	 * @return
 	 * @throws LopsException
 	 */
@@ -3327,7 +3484,8 @@ public class Dag<N extends Lop>
 			ArrayList<String> aggInstructionsReducer,
 			ArrayList<String> otherInstructionsReducer,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops, 
+			ArrayList<Integer> MRJobLineNumbers) throws LopsException
 
 	{
 
@@ -3351,7 +3509,7 @@ public class Dag<N extends Lop>
 			ret_val = getAggAndOtherInstructions((N) node.getInputs().get(0),
 					execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
-					inputLabels, inputLops);
+					inputLabels, inputLops, MRJobLineNumbers);
 			inputIndices.add(ret_val);
 		}
 		else {
@@ -3359,7 +3517,7 @@ public class Dag<N extends Lop>
 				ret_val = getAggAndOtherInstructions((N) node.getInputs().get(i),
 						execNodes, shuffleInstructions, aggInstructionsReducer,
 						otherInstructionsReducer, nodeIndexMapping, start_index,
-						inputLabels, inputLops);
+						inputLabels, inputLops, MRJobLineNumbers);
 				inputIndices.add(ret_val);
 			}
 		}
@@ -3370,6 +3528,9 @@ public class Dag<N extends Lop>
 				// Generate write instruction, which goes into CSV_WRITE Job
 				int output_index = start_index[0];
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				nodeIndexMapping.put(node, output_index);
 				start_index[0]++; 
 				return output_index;
@@ -3385,6 +3546,8 @@ public class Dag<N extends Lop>
 			
 			boolean instGenerated = true;
 			int output_index = start_index[0];
+			String tempInst = null;			
+	
 			switch(node.getType()) {
 			
 			/* Lop types that take a single input */
@@ -3396,6 +3559,9 @@ public class Dag<N extends Lop>
 			case GroupedAgg:
 			case DataPartition:
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				break;
 				
 			/* Lop types that take two inputs */
@@ -3403,12 +3569,18 @@ public class Dag<N extends Lop>
 			case MMRJ:
 			case CombineBinary:
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), inputIndices.get(1), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				break;
 
 			/* Lop types that take three inputs */
 			case CombineTertiary:
 				shuffleInstructions.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), inputIndices.get(2), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				break;
 			
 			default:
@@ -3430,17 +3602,24 @@ public class Dag<N extends Lop>
 		if (node.getExecLocation() == ExecLocation.Reduce
 				|| node.getExecLocation() == ExecLocation.MapOrReduce
 				|| hasChildNode(node, execNodes, ExecLocation.MapAndReduce)) {
-
+			
 			if (inputIndices.size() == 1) {
 				int output_index = start_index[0];
 				start_index[0]++;
-
-				if (node.getType() == Type.Aggregate)
+				
+				if (node.getType() == Type.Aggregate) {
 					aggInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), output_index));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						MRJobLineNumbers.add(node._beginLine);
+					}
+				}
 				else {
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), output_index));
+				}
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
 				}
 				nodeIndexMapping.put(node, output_index);
 
@@ -3451,6 +3630,9 @@ public class Dag<N extends Lop>
 
 				otherInstructionsReducer.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				nodeIndexMapping.put(node, output_index);
 
 				// populate list of input labels.
@@ -3491,6 +3673,9 @@ public class Dag<N extends Lop>
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), inputIndices.get(1),
 							inputIndices.get(2), output_index));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						MRJobLineNumbers.add(node._beginLine);
+					}
 					nodeIndexMapping.put(node, output_index);
 					//}
 				}
@@ -3498,6 +3683,9 @@ public class Dag<N extends Lop>
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), inputIndices.get(1),
 							inputIndices.get(2), output_index));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						MRJobLineNumbers.add(node._beginLine);
+					}
 					nodeIndexMapping.put(node, output_index);
 				}
 
@@ -3510,6 +3698,9 @@ public class Dag<N extends Lop>
 				otherInstructionsReducer.add(node.getInstructions(
 						inputIndices.get(0), inputIndices.get(1),
 						inputIndices.get(2), inputIndices.get(3), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
 				nodeIndexMapping.put(node, output_index);
 				return output_index;
 			}
@@ -3532,6 +3723,7 @@ public class Dag<N extends Lop>
 	 * @param nodeIndexMapping
 	 * @param start_index
 	 * @param inputLabels
+	 * @param MRJobLineNumbers
 	 * @return
 	 * @throws LopsException
 	 */
@@ -3541,7 +3733,8 @@ public class Dag<N extends Lop>
 			ArrayList<String> inputStrings,
 			ArrayList<String> recordReaderInstructions,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops,
+			ArrayList<Integer> MRJobLineNumbers) throws LopsException
 
 	{
 
@@ -3564,7 +3757,7 @@ public class Dag<N extends Lop>
 			N childNode = (N) node.getInputs().get(i);
 			int ret_val = getRecordReaderInstructions(childNode, execNodes,
 					inputStrings, recordReaderInstructions, nodeIndexMapping,
-					start_index, inputLabels, inputLops);
+					start_index, inputLabels, inputLops, MRJobLineNumbers);
 
 			inputIndices.add(ret_val);
 
@@ -3612,9 +3805,13 @@ public class Dag<N extends Lop>
 			}
 
 			// get recordreader instruction.
-			if (node.getInputs().size() == 2)
+			if (node.getInputs().size() == 2) {
 				recordReaderInstructions.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
+				if(DMLScript.ENABLE_DEBUG_MODE) {
+					MRJobLineNumbers.add(node._beginLine);
+				}
+			}
 			else
 				throw new LopsException(
 						"Unexpected number of inputs while generating a RecordReader Instruction");
@@ -3637,6 +3834,7 @@ public class Dag<N extends Lop>
 	 * @param nodeIndexMapping
 	 * @param start_index
 	 * @param inputLabels
+	 * @param MRJoblineNumbers
 	 * @return
 	 * @throws LopsException
 	 */
@@ -3646,7 +3844,8 @@ public class Dag<N extends Lop>
 			ArrayList<String> inputStrings,
 			ArrayList<String> instructionsInMapper,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops, 
+			ArrayList<Integer> MRJobLineNumbers) throws LopsException
 
 	{
 
@@ -3667,7 +3866,7 @@ public class Dag<N extends Lop>
 			N childNode = (N) node.getInputs().get(i);
 			int ret_val = getMapperInstructions(childNode, execNodes,
 					inputStrings, instructionsInMapper, nodeIndexMapping,
-					start_index, inputLabels, inputLops);
+					start_index, inputLabels, inputLops, MRJobLineNumbers);
 
 			inputIndices.add(ret_val);
 
@@ -3773,7 +3972,9 @@ public class Dag<N extends Lop>
 			else
 				throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in dag.java.");
 			
-			
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				MRJobLineNumbers.add(node._beginLine);
+			}
 			return output_index;
 
 		}
@@ -3788,7 +3989,8 @@ public class Dag<N extends Lop>
 			ArrayList<String> inputStrings, ArrayList<InputInfo> inputInfos,
 			ArrayList<Long> numRows, ArrayList<Long> numCols,
 			ArrayList<Long> numRowsPerBlock, ArrayList<Long> numColsPerBlock,
-			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels, ArrayList<Lop> inputLops)
+			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels, 
+			ArrayList<Lop> inputLops, ArrayList<Integer> MRJobLineNumbers)
 			throws LopsException {
 		// treat rand as an input.
 		if (node.getType() == Type.DataGen && execNodes.contains(node)
@@ -3801,9 +4003,12 @@ public class Dag<N extends Lop>
 					.get_cols_in_block());
 			inputStrings.add(node.getInstructions(inputStrings.size(),
 					inputStrings.size()));
+			if(DMLScript.ENABLE_DEBUG_MODE) {
+				MRJobLineNumbers.add(node._beginLine);
+			}
 			inputInfos.add(InputInfo.TextCellInputInfo);
 			nodeIndexMapping.put(node, inputStrings.size() - 1);
-
+			
 			return;
 		}
 
@@ -3909,7 +4114,7 @@ public class Dag<N extends Lop>
 			N childNode = (N) node.getInputs().get(i);
 			getInputPathsAndParameters(childNode, execNodes, inputStrings,
 					inputInfos, numRows, numCols, numRowsPerBlock,
-					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops);
+					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
 		}
 
 	}

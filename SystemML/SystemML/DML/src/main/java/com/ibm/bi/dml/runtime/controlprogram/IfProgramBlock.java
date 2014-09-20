@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -136,8 +137,12 @@ public class IfProgramBlock extends ProgramBlock
 		{	
 			try 
 			{	
-				for( ProgramBlock pb : _childBlocksIfBody )
-					pb.execute(ec);
+				for (int i=0 ; i < this._childBlocksIfBody.size() ; i++) {
+					if(DMLScript.ENABLE_DEBUG_MODE) { 
+						this._prog.getPC().setProgramBlockNumber(i);
+					}
+					this._childBlocksIfBody.get(i).execute(ec);
+				}
 			}
 			catch(Exception e)
 			{
@@ -148,8 +153,12 @@ public class IfProgramBlock extends ProgramBlock
 		{
 			try 
 			{	
-				for( ProgramBlock pb : _childBlocksElseBody )
-					pb.execute(ec);
+				for (int i=0 ; i < this._childBlocksElseBody.size() ; i++) {
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						this._prog.getPC().setProgramBlockNumber(i);
+					}
+					this._childBlocksElseBody.get(i).execute(ec);
+				}
 			}
 			catch(Exception e)
 			{

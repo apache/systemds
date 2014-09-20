@@ -7,6 +7,9 @@
 
 package com.ibm.bi.dml.parser;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.debugger.DMLBreakpointManager;
+
  
 public class PrintStatement extends Statement
 {
@@ -62,6 +65,11 @@ public class PrintStatement extends Statement
 
 	@Override
 	public boolean controlStatement() {	 
+		// ensure that breakpoints end up in own statement block
+		if (DMLScript.ENABLE_DEBUG_MODE) {
+			DMLBreakpointManager.insertBreakpoint(_expr.getBeginLine());
+			return true;
+		}
 		return false;
 	}
 

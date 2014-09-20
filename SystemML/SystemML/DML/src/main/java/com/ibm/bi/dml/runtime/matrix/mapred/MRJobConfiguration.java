@@ -268,14 +268,14 @@ public class MRJobConfiguration
 		return ret;
 	}
 	
-	public static void setMMCJCacheSize(JobConf job, int size)
+	public static void setMMCJCacheSize(JobConf job, long size)
 	{
-		job.setInt(MMCJ_CACHE_SIZE, size);
+		job.setLong(MMCJ_CACHE_SIZE, size);
 	}
 	
-	public static int getMMCJCacheSize(JobConf job)
+	public static long getMMCJCacheSize(JobConf job)
 	{
-		return job.getInt(MMCJ_CACHE_SIZE, 0);
+		return job.getLong(MMCJ_CACHE_SIZE, 0);
 	}
 	
 	public static void setMatrixValueClass(JobConf job, boolean blockRepresentation)

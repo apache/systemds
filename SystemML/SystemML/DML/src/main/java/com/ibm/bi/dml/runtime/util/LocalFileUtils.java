@@ -188,7 +188,8 @@ public class LocalFileUtils
 			{
 				outValues[i].getKey().readFields(in);
 				outValues[i].getValue().readFields(in);
-				outMap.put( outValues[i].getKey(), i );
+				if( outMap!=null )
+					outMap.put( outValues[i].getKey(), i );
 			}
 			bufferSize = len;
 		}

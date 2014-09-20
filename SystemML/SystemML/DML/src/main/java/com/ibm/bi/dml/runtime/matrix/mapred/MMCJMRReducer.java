@@ -68,7 +68,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 	private int cacheSize=0;
 	
 	//to cache output, so that we can do some partial aggregation here
-	private int OUT_CACHE_SIZE;
+	private long OUT_CACHE_SIZE;
 	private HashMap<MatrixIndexes, MatrixValue> outCache;
 	
 	//variables to keep track of the flow
@@ -289,8 +289,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 		int blockRlen=dim1.numRowsPerBlock;
 		int blockClen=dim2.numColumnsPerBlock;
 		int elementSize=(int)Math.ceil((double)(77+8*blockRlen*blockClen+20+12)/0.75);
-		OUT_CACHE_SIZE=((int)OptimizerUtils.getLocalMemBudget() //current jvm max mem
+		OUT_CACHE_SIZE=((long)OptimizerUtils.getLocalMemBudget() //current jvm max mem
 				       -MRJobConfiguration.getMMCJCacheSize(job))/elementSize;
-		outCache=new HashMap<MatrixIndexes, MatrixValue>(OUT_CACHE_SIZE);
+		outCache=new HashMap<MatrixIndexes, MatrixValue>(1024);
 	}
 }

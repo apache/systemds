@@ -11,7 +11,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -23,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
+import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -35,11 +35,10 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//in memory cache to hold the records from one input matrix for the cross product
-	private Vector<RemainIndexValue> cache=new Vector<RemainIndexValue>(100);
-	private int cacheSize=0;
+	public static long MIN_CACHE_SIZE = 64*1024*1024; //64MB
 	
-	private PartialAggregator aggregator;
+	private MMCJMRInputCache cache = null;
+	private PartialAggregator aggregator = null;
 	
 	//variables to keep track of the flow
 	private double prevFirstIndex=-1;
@@ -47,7 +46,6 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 	
 	//temporary variable
 	private MatrixIndexes indexesbuffer=new MatrixIndexes();
-	private RemainIndexValue remainingbuffer=null;
 	private MatrixValue valueBuffer=null;
 	
 	private boolean outputDummyRecords = false;
@@ -82,7 +80,7 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		//for a different k
 		if( prevFirstIndex!=firstIndex ) 
 		{
-			resetCache();
+			cache.resetCache();
 			prevFirstIndex=firstIndex;
 		}
 		else if(prevTag>tag)
@@ -101,35 +99,30 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 	{
 		try
 		{
-			//for the cached matrix
-			if(tag==0)
-			{
-				if(cacheSize<cache.size())
-					cache.get(cacheSize).set(inIndex, inValue); //implicit cp
-				else
-					cache.add(new RemainIndexValue(inIndex, inValue)); //implicit cp
-				cacheSize++;
+			if( tag==0 ) //for the cached matrix
+			{	
+				cache.put(inIndex, inValue);
 			}
 			else //for the probing matrix
 			{
-				remainingbuffer.set(inIndex, inValue); //implicit cp
-				for(int i=0; i<cacheSize; i++)
+				for(int i=0; i<cache.getCacheSize(); i++)
 				{
-					RemainIndexValue left, right;
-					if(tagForLeft==0)
-					{
-						left=cache.get(i);
-						right=remainingbuffer;
-					}else
-					{
-						right=cache.get(i);
-						left=remainingbuffer;
-					}
+					Pair<MatrixIndexes, MatrixValue> tmp = cache.get(i);
 					
-					//perform matrix multiplication
-					indexesbuffer.setIndexes(left.remainIndex, right.remainIndex);
-					OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(left.value, right.value, valueBuffer, 
-							                               (AggregateBinaryOperator)aggBinInstruction.getOperator());
+					if(tagForLeft==0) //left cached
+					{
+						//perform matrix multiplication
+						indexesbuffer.setIndexes(tmp.getKey().getRowIndex(), inIndex);
+						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(tmp.getValue(), inValue, valueBuffer, 
+								                               (AggregateBinaryOperator)aggBinInstruction.getOperator());
+					}
+					else //right cached
+					{
+						//perform matrix multiplication
+						indexesbuffer.setIndexes(inIndex, tmp.getKey().getColumnIndex());
+						OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(inValue, tmp.getValue(), valueBuffer, 
+								                               (AggregateBinaryOperator)aggBinInstruction.getOperator());		
+					}
 					
 					//aggregate block to output buffer
 					aggregator.aggregateToBuffer(indexesbuffer, valueBuffer, tagForLeft==0);
@@ -140,10 +133,6 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		{
 			throw new IOException(ex);
 		}
-	}
-	
-	private void resetCache() {
-		cacheSize=0;
 	}
 
 	@Override
@@ -156,22 +145,46 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		outputDummyRecords = MapReduceTool.getUniqueKeyPerTask(job, false).equals("0");
 		
 		try {
-			//valueBuffer=valueClass.newInstance();
 			valueBuffer=buffer;
-			remainingbuffer=new RemainIndexValue(valueClass);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
 		
-		int cacheSize = MRJobConfiguration.getMMCJCacheSize(job);
-		int outBufferSize = (int)OptimizerUtils.getLocalMemBudget() - cacheSize;
-		try {
-			aggregator=new PartialAggregator(job, (long)outBufferSize, dim1.numRows, dim2.numColumns, 
-					dim1.numRowsPerBlock, dim2.numColumnsPerBlock, MapReduceTool.getGloballyUniqueName(job), (tagForLeft!=0), 
+		//determine input and output cache size (cached input and cached aggregated output)
+		//(prefer to cache input because accessed more frequently than output)
+		long cacheSize = MRJobConfiguration.getMMCJCacheSize(job);
+		long memBudget = (long)OptimizerUtils.getLocalMemBudget();
+		long inBufferSize, outBufferSize;
+		if( (memBudget - cacheSize) > MIN_CACHE_SIZE ){
+			inBufferSize = cacheSize;
+			outBufferSize = memBudget - cacheSize;
+		}
+		else{
+			inBufferSize = memBudget - 2*MIN_CACHE_SIZE;
+			outBufferSize = MIN_CACHE_SIZE;
+		}
+		
+		try 
+		{		
+			//instantiate cached input
+			if( tagForLeft==0 ){ //left cached
+				cache = new MMCJMRInputCache(job, inBufferSize, dim1.numRows, dim1.numColumns, 
+				          dim1.numRowsPerBlock, dim1.numColumnsPerBlock, true, valueClass );
+			}
+			else { //right cached
+				cache = new MMCJMRInputCache(job, inBufferSize, dim2.numRows, dim2.numColumns, 
+				          dim2.numRowsPerBlock, dim2.numColumnsPerBlock, false, valueClass );
+			}
+		
+			//instantiate cached output
+			aggregator=new PartialAggregator(job, outBufferSize, dim1.numRows, dim2.numColumns, 
+					dim1.numRowsPerBlock, dim2.numColumnsPerBlock, (tagForLeft!=0), 
 					(AggregateBinaryOperator) aggBinInstruction.getOperator(), valueClass);
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		
 		//LOG.info("Memory stats: "+Runtime.getRuntime().totalMemory()+", "+Runtime.getRuntime().freeMemory());
 	}
 	
@@ -181,7 +194,7 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		//output the records in the outCache.
 		if(cachedReporter!=null)
 		{
-			long start=System.currentTimeMillis();
+			long start=System.currentTimeMillis(); //incl aggregator.close (delete files)
 			resultsNonZeros[0]+=aggregator.outputToHadoop(collectFinalMultipleOutputs, 0, cachedReporter);
 			cachedReporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 		}
@@ -212,35 +225,8 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 				}
 		}
 		
-		super.close();
-	}
-
-	/**
-	 * Helper class for representing one-dimensional matrix index and related value.
-	 * 
-	 */
-	private class RemainIndexValue
-	{
-		public long remainIndex;
-		public MatrixValue value;
+		cache.close();
 		
-	//	private Class<? extends MatrixValue> valueClass;
-		public RemainIndexValue(Class<? extends MatrixValue> cls) throws Exception
-		{
-			remainIndex=-1;
-			value=cls.newInstance();
-		}
-		public RemainIndexValue(long ind, MatrixValue b) throws Exception
-		{
-			remainIndex=ind;
-			Class<? extends MatrixValue> cls=b.getClass();
-			value=cls.newInstance();
-			value.copy(b);
-		}
-		public void set(long ind, MatrixValue b)
-		{
-			remainIndex=ind;
-			value.copy(b);
-		}
+		super.close();
 	}
 }

@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -10,6 +10,10 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.io.IOTest5.java
 
 B = 12;
+if( 1==1 ){
+   B = 14;
+}
+
 C = read("$$indir$$"+"12", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
 write(C, "$$outdir$$"+B, format="text");
 

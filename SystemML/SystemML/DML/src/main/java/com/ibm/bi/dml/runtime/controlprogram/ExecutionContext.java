@@ -10,13 +10,21 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.debugger.DMLFrame;
+import com.ibm.bi.dml.debugger.DMLProgramCounter;
+import com.ibm.bi.dml.debugger.DebugState;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.BPInstruction;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
@@ -42,6 +50,9 @@ public class ExecutionContext
 	private NetezzaConnector nzConnector;
 	private boolean debug;
 	ArrayList<SQLExecutionStatistics> statistics;
+	
+	//debugging
+	private DebugState _dbState = null;
 	
 	public ExecutionContext()
 	{
@@ -344,5 +355,163 @@ public class ExecutionContext
 		ArrayList<String> varlist = new ArrayList<String>();
 		varlist.addAll(_variables.keySet());	
 		return varlist;
+	}
+
+	
+	///////////////////////////////
+	// Debug State Functionality
+	///////////////////////////////
+	
+	/**
+	 * 
+	 */
+	public void initDebugState() 
+	{
+		if (DMLScript.ENABLE_DEBUG_MODE){
+			_dbState = new DebugState();
+		}
+	}
+
+
+	public void initDebugProgramCounters() 
+	{
+		if (DMLScript.ENABLE_DEBUG_MODE){
+			_dbState.pc = new DMLProgramCounter(DMLProgram.DEFAULT_NAMESPACE, "main", 0, 0); //initialize program counter (pc)
+			_dbState.prevPC = new DMLProgramCounter(DMLProgram.DEFAULT_NAMESPACE, "main", 0, 0); //initialize previous pc
+		}
+	}
+	
+	/**
+	 * 
+	 * @param index
+	 */
+	public void updateDebugState( int index ) 
+	{
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			_dbState.getPC().setProgramBlockNumber(index);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param currInst
+	 */
+	public void updateDebugState( Instruction currInst )
+	{
+		if (DMLScript.ENABLE_DEBUG_MODE) {
+			// New change so that shell doesnot seem like it is hanging while running MR job
+			// Since UI cannot accept instructions when user is submitting the program
+			_dbState.nextCommand = false;
+			// Change to stop before first instruction of a given line
+			//update current instruction ID and line number 
+			_dbState.getPC().setInstID(currInst.getInstID()); 				
+			_dbState.getPC().setLineNumber(currInst.getLineNum());
+			// Change to stop before first instruction of a given line
+			suspendIfAskedInDebugMode(currInst);	
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public void clearDebugProgramCounters()
+	{
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			_dbState.pc = null;
+		}
+	}
+	
+	public void handleDebugException( Exception ex )
+	{
+		_dbState.getDMLStackTrace(ex);
+		_dbState.suspend = true;
+	}
+
+	public void handleDebugBreakpoint(BPInstruction tmp) 
+	{
+		//check if breakpoint instruction is enabled
+		if( tmp.isBPInstructionEnabled()) {
+			System.out.format("Breakpoint reached at %s.\n", _dbState.getPC().toString());					
+			_dbState.suspend = true;
+		}
+	}
+
+	public void handleDebugFunctionEntry( FunctionCallCPInstruction funCallInst )
+	{
+		//push caller frame into call stack
+		_dbState.pushFrame(getVariables(), _dbState.getPC());
+		//initialize pc for callee's frame
+		_dbState.pc = new DMLProgramCounter(funCallInst.getNamespace(), funCallInst.getFunctionName(), 0, 0);
+	}
+	
+	public void handleDebugFunctionExit( FunctionCallCPInstruction funCallInst )
+	{
+		//pop caller frame from call stack
+		DMLFrame fr = _dbState.popFrame();
+		//update pc to caller's frame
+		_dbState.pc = fr.getPC();
+	}
+	
+	public DebugState getDebugState() {
+		return _dbState;
+	}
+	
+	/**
+	 * This function should be called only if user has specified -debug option.
+	 * In this function, if the user has issued one of the step instructions or
+	 * has enabled suspend flag in previous instruction (through breakpoint),
+	 * then it will wait until user issues a new debugger command.
+	 * @param currInst
+	 * @param ec
+	 */
+	@SuppressWarnings("deprecation")
+	private void suspendIfAskedInDebugMode(Instruction currInst ) {
+		if (!DMLScript.ENABLE_DEBUG_MODE) {
+			System.err.println("ERROR: The function suspendIfAskedInDebugMode should not be called in non-debug mode.");
+		}
+		//check for stepping options
+		if (!_dbState.suspend && _dbState.dbCommand != null) { 
+			if (_dbState.dbCommand.equalsIgnoreCase("step_instruction")) {
+				System.out.format("Step instruction reached at %s.\n", _dbState.getPC().toString());
+				_dbState.suspend = true;
+			}
+			else if (_dbState.dbCommand.equalsIgnoreCase("step_line") && _dbState.prevPC.getLineNumber() != currInst.getLineNum()
+					&& _dbState.prevPC.getLineNumber() != 0) {
+				// Don't step into first instruction of first line
+				// System.out.format("Step reached at %s.\n", this._prog.getPC().toString());
+				System.out.format("Step reached at %s.\n", _dbState.getPC().toStringWithoutInstructionID());
+				_dbState.suspend = true;
+			}
+			else if (_dbState.dbCommand.equalsIgnoreCase("step return") && currInst instanceof FunctionCallCPInstruction) {
+				FunctionCallCPInstruction funCallInst = (FunctionCallCPInstruction) currInst;
+				if (_dbState.dbCommandArg == null || funCallInst.getFunctionName().equalsIgnoreCase(_dbState.dbCommandArg)) {
+					System.out.format("Step return reached at %s.\n", _dbState.getPC().toStringWithoutInstructionID());
+					_dbState.suspend = true;
+				}
+			}
+		}
+		//check if runtime suspend signal is set
+		if (_dbState.suspend) {
+			//flush old commands and arguments
+			_dbState.dbCommand = null;
+			_dbState.dbCommandArg = null;
+			//print current DML script source line
+			if (currInst.getLineNum() != 0)
+				_dbState.printDMLSourceLine(currInst.getLineNum());
+			//save current symbol table
+			_dbState.setVariables(this.getVariables());
+			//send next command signal to debugger control module
+			_dbState.nextCommand = true;
+			//suspend runtime execution thread
+			Thread.currentThread().suspend();
+			//reset next command signal
+			_dbState.nextCommand = false;
+		}
+		//reset runtime suspend signal
+		_dbState.suspend = false;
+		//update previous pc
+		_dbState.prevPC.setFunctionName(_dbState.getPC().getFunctionName());
+		_dbState.prevPC.setProgramBlockNumber(_dbState.getPC().getProgramBlockNumber());
+		_dbState.prevPC.setLineNumber(currInst.getLineNum());
 	}
 }

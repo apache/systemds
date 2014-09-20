@@ -33,9 +33,17 @@ import com.ibm.bi.dml.runtime.instructions.BPInstruction.BPINSTRUCTION_STATUS;
 public class DMLDebugger
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+
+	// This will be supported in subsquent release. turning off the -debug 'optimize' feature for current release.
+	//public static boolean ENABLE_DEBUG_OPTIMIZER = false; //default debug mode
+	//public static boolean ENABLE_SERVER_SIDE_DEBUG_MODE = false; //default debug mode
+		
+	//public static final String DEBUGGER_SYSTEMML_CONFIG_FILEPATH = "./DebuggerSystemML-config.xml";
+	
+	
 	private DMLDebuggerProgramInfo dbprog; //parsed and compiled DML script w/ hops, lops and runtime program
 	public DMLDebuggerInterface debuggerUI; //debugger command line interface
 	private DMLDebuggerFunctions dbFunctions; //debugger functions interface
@@ -47,6 +55,7 @@ public class DMLDebugger
 
 	private String dmlScriptStr; //DML script contents (including new lines)
 	HashMap<String,String> argVals; //key-value pairs defining arguments of DML script
+	ExecutionContext preEC = null;
 	ExecutionContext currEC = null;
 	String [] lines;
 	volatile boolean quit=false;
@@ -61,7 +70,9 @@ public class DMLDebugger
 		lines = dmlScriptStr.split("\n");
 		argVals = args;		
 		debuggerUI = new DMLDebuggerInterface();
-		dbFunctions = new DMLDebuggerFunctions();
+		dbFunctions = new DMLDebuggerFunctions();		
+		preEC = new ExecutionContext(dbprog.rtprog);
+		preEC.initDebugState();
 		setupDMLRuntime();
 	}
 	
@@ -71,7 +82,7 @@ public class DMLDebugger
 	private void setupDMLRuntime() 
 	{
 		dbprog.setDMLInstMap();
-		dbprog.rtprog.setDMLScript(lines);
+		preEC.getDebugState().setDMLScript(lines);
 	}
 
 	/**
@@ -178,7 +189,7 @@ public class DMLDebugger
 							System.out.println("Runtime has already started. Try \"s\" to go to next line, or \"c\" to continue running your DML script.");
 						}
 						else {
-							currEC = new ExecutionContext(dbprog.rtprog);
+							currEC = preEC;
 							runtime.start();
 							isRuntimeInstruction = true;
 						}
@@ -192,33 +203,33 @@ public class DMLDebugger
 						}
 						else {
 							System.out.println("Resuming DML script execution ...");
-							dbprog.rtprog.setCommand(null);
+							preEC.getDebugState().setCommand(null);
 							runtime.resume();
 							isRuntimeInstruction = true;
 						}
     	    		}
     	    		else if (cmd.hasOption("si")) {
     	    			if (!runtime.isAlive()) {
-    	    				currEC = new ExecutionContext(dbprog.rtprog);
+    	    				currEC = preEC;
 							runtime.start();
 							isRuntimeInstruction = true;
     	    				// System.out.println("Runtime must be started before single stepping can be enabled. Try \"r\" to start DML runtime execution.");
     	    			}
     	    			//else {
-    	    				dbprog.rtprog.setCommand("step_instruction");
+    	    				preEC.getDebugState().setCommand("step_instruction");
     	    				runtime.resume();
     	    				isRuntimeInstruction = true;
     	    			//}
     	    		}
     	    		else if (cmd.hasOption("s")) {
     	    			if (!runtime.isAlive()) {
-    	    				currEC = new ExecutionContext(dbprog.rtprog);
+    	    				currEC = preEC;
 							runtime.start();
 							isRuntimeInstruction = true;
     	    				//System.out.println("Runtime must be started before step over can be enabled. Try \"r\" to start DML runtime execution.");
     	    			}
     	    			//else {
-    	    				dbprog.rtprog.setCommand("step_line");
+    	    				preEC.getDebugState().setCommand("step_line");
     	    				runtime.resume();
     	    				isRuntimeInstruction = true;
     	    			//}
@@ -276,7 +287,7 @@ public class DMLDebugger
     	    				if (!runtime.isAlive())
         	    				System.err.println("Runtime has not been started. Try \"r\" or \"s\" to start DML runtime execution.");
         	    			else 
-        	    				dbFunctions.printCallStack(currEC.getProgram().getCurrentFrame(), currEC.getProgram().getCallStack());
+        	    				dbFunctions.printCallStack(currEC.getDebugState().getCurrentFrame(), currEC.getDebugState().getCallStack());
     	    			}
     	    			else {
     	    				System.err.println("Invalid option for command \"info\".  Try \"info break\" or \"info frame\".");
@@ -320,7 +331,7 @@ public class DMLDebugger
     	    								colIndex = Integer.parseInt(colIndexStr);
     	    							}
     	    							//System.out.println("" + rowIndex + " " + colIndex);
-    	    							dbFunctions.print(currEC.getProgram().getVariables(), variableNameWithoutIndices, "value", rowIndex, colIndex);
+    	    							dbFunctions.print(currEC.getDebugState().getVariables(), variableNameWithoutIndices, "value", rowIndex, colIndex);
     	    						}
     	    						catch(Exception indicesException) {
     	    							indicesException.printStackTrace();
@@ -329,7 +340,7 @@ public class DMLDebugger
         	    				}
         	    				else {
         	    					// Print entire matrix
-        	    					dbFunctions.print(currEC.getProgram().getVariables(), varName, "value", -1, -1);
+        	    					dbFunctions.print(currEC.getDebugState().getVariables(), varName, "value", -1, -1);
         	    				}
     	    				}
         	    			else
@@ -343,7 +354,7 @@ public class DMLDebugger
     	    			}
     	    			else {
     	    				String varName = pOptions[0].trim();
-    	    				dbFunctions.print(currEC.getProgram().getVariables(), varName, "metadata", -1, -1);
+    	    				dbFunctions.print(currEC.getDebugState().getVariables(), varName, "metadata", -1, -1);
     	    			}
     	    		}
     	    		else if (cmd.hasOption("set")) {
@@ -360,10 +371,10 @@ public class DMLDebugger
 		    	    				paramsToSetMatrix[1] = indexString.split(",")[0].trim();
 		    	    				paramsToSetMatrix[2] = indexString.split(",")[1].trim();
 		    	    				paramsToSetMatrix[3] = pOptions[1].trim();
-		    	    				dbFunctions.setMatrixCell(currEC.getProgram().getVariables(), paramsToSetMatrix);
+		    	    				dbFunctions.setMatrixCell(currEC.getDebugState().getVariables(), paramsToSetMatrix);
     	    					}
     	    					else {
-    	    						dbFunctions.setScalarValue(currEC.getProgram().getVariables(), pOptions);
+    	    						dbFunctions.setScalarValue(currEC.getDebugState().getVariables(), pOptions);
     	    					}
     	    				}
     	    				catch(Exception exception1) {
@@ -378,7 +389,7 @@ public class DMLDebugger
     	    			int currentPC = 1;
     	    			
     	    			if(runtime.isAlive()) { 
-    	    				currentPC = currEC.getProgram().getPC().getLineNumber();
+    	    				currentPC = currEC.getDebugState().getPC().getLineNumber();
     	    			}
     	    			
     	    			IntRange range = null;
@@ -442,7 +453,7 @@ public class DMLDebugger
     	    			int currentPC = 1;
     	    			
     	    			if(runtime.isAlive()) { 
-    	    				currentPC = currEC.getProgram().getPC().getLineNumber();
+    	    				currentPC = currEC.getDebugState().getPC().getLineNumber();
     	    			}
     	    			
     	    			IntRange range = null;
@@ -503,12 +514,12 @@ public class DMLDebugger
 						if (!runtime.isAlive())
 							System.err.println("Runtime has not been started. Try \"r\" to start DML runtime execution.");
 						else
-							dbFunctions.setScalarValue(currEC.getProgram().getVariables(), cmd.getOptionValues("set_scalar"));
+							dbFunctions.setScalarValue(currEC.getDebugState().getVariables(), cmd.getOptionValues("set_scalar"));
     	    		}
     	    		else if (cmd.hasOption("m")) {
     	    			String varname = dbFunctions.getValue(cmd.getOptionValues("m"));
     	    			if (runtime.isAlive())
-    	    				dbFunctions.printMatrixVariable(currEC.getProgram().getVariables(), varname);
+    	    				dbFunctions.printMatrixVariable(currEC.getDebugState().getVariables(), varname);
     	    			else
     	    				System.err.println("Runtime has not been started. Try \"r\" to start DML runtime execution.");
     	    		}
@@ -516,14 +527,14 @@ public class DMLDebugger
     	    			if (!runtime.isAlive())
     	    				System.err.println("Runtime has not been started. Try \"r\" to start DML runtime execution.");
     	    			else {
-    	    				dbFunctions.printMatrixCell(currEC.getProgram().getVariables(), cmd.getOptionValues("x"));
+    	    				dbFunctions.printMatrixCell(currEC.getDebugState().getVariables(), cmd.getOptionValues("x"));
     	    			}
     	    		}
     	    		else if (cmd.hasOption("set_cell")) {
     	    			if (!runtime.isAlive())
     	    				System.err.println("Runtime has not been started. Try \"r\" to start DML runtime execution.");
     	    			else {
-    	    				dbFunctions.setMatrixCell(currEC.getProgram().getVariables(), cmd.getOptionValues("set_cell"));
+    	    				dbFunctions.setMatrixCell(currEC.getDebugState().getVariables(), cmd.getOptionValues("set_cell"));
     	    			}
     	    		}
     	    		else {
@@ -533,7 +544,7 @@ public class DMLDebugger
 					//while(runtime.isAlive() && !currEC.getProgram().isStopped()) {
 					wait(300); // To avoid race condition between submitting job and
 					//System.out.println(">> Before while");
-					while(isRuntimeInstruction && !currEC.getProgram().canAcceptNextCommand()) {
+					while(isRuntimeInstruction && !currEC.getDebugState().canAcceptNextCommand()) {
 						if(quit){
 							break;
 						}

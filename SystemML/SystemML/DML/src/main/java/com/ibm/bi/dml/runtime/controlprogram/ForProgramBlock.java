@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -170,10 +169,8 @@ public class ForProgramBlock extends ProgramBlock
 				
 				//for all child blocks
 				for (int i=0 ; i < this._childBlocks.size() ; i++) {
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						this._prog.getPC().setProgramBlockNumber(i);
-					}
-					this._childBlocks.get(i).execute(ec);
+					ec.updateDebugState( i );
+					_childBlocks.get(i).execute(ec);
 				}				
 			
 				// update the iterable predicate variable 

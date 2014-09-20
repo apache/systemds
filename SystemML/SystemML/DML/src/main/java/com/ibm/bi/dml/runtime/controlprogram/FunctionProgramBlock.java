@@ -10,7 +10,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -86,10 +85,8 @@ public class FunctionProgramBlock extends ProgramBlock
 		// for each program block
 		try {						
 			for (int i=0 ; i < this._childBlocks.size() ; i++) {
-				if(DMLScript.ENABLE_DEBUG_MODE) {
-					this._prog.getPC().setProgramBlockNumber(i);
-				}
-				this._childBlocks.get(i).execute(ec);
+				ec.updateDebugState(i);
+				_childBlocks.get(i).execute(ec);
 			}
 		}
 		catch (Exception e){

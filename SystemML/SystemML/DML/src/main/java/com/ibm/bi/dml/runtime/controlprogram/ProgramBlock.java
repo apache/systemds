@@ -14,8 +14,6 @@ import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.debugger.DMLFrame;
-import com.ibm.bi.dml.debugger.DMLProgramCounter;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -220,12 +218,9 @@ public class ProgramBlock
 		{
 			//indexed access required due to dynamic add
 			Instruction currInst = inst.get(i);
-			//update pc's current instruction index
-			if (DMLScript.ENABLE_DEBUG_MODE) {
-				this._prog.getPC().setInstNumber(i);
-			}
 			
 			//execute instruction
+			ec.updateDebugState(i);
 			executeSingleInstruction(currInst, ec);
 		}
 	}
@@ -251,10 +246,8 @@ public class ProgramBlock
 			Instruction currInst = inst.get(i);			
 			if( !isRemoveVariableInstruction(currInst) )
 			{
-				//update pc's current instruction index
-				if (DMLScript.ENABLE_DEBUG_MODE)					
-					this._prog.getPC().setInstNumber(i);
 				//execute instruction
+				ec.updateDebugState(i);
 				executeSingleInstruction(currInst, ec);
 				
 				//get last return name
@@ -283,9 +276,7 @@ public class ProgramBlock
 			//indexed access required due to debug mode
 			Instruction currInst = inst.get(i);
 			if( isRemoveVariableInstruction(currInst) ) {
-				//update pc's current instruction index
-				if (DMLScript.ENABLE_DEBUG_MODE)					
-					this._prog.getPC().setInstNumber(i);
+				ec.updateDebugState(i);
 				executeSingleInstruction(currInst, ec);
 			}
 		}
@@ -311,25 +302,10 @@ public class ProgramBlock
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{	
-		
-		if (DMLScript.ENABLE_DEBUG_MODE) {
-			// New change so that shell doesnot seem like it is hanging while running MR job
-			// Since UI cannot accept instructions when user is submitting the program
-			this._prog.nextCommand = false;
-		}
-		
 		try 
 		{			
-			// Change to stop before first instruction of a given line
-			//update current instruction ID and line number 
-			if (DMLScript.ENABLE_DEBUG_MODE) {
-				this._prog.getPC().setInstID(currInst.getInstID()); 				
-				this._prog.getPC().setLineNumber(currInst.getLineNum());
-				// Change to stop before first instruction of a given line
-				suspendIfAskedInDebugMode(currInst, ec);	
-			}
-			
-			
+			ec.updateDebugState( currInst );
+						
 			long t0 = 0, t1 = 0;
 			if( LOG.isTraceEnabled() )
 			{
@@ -396,11 +372,7 @@ public class ProgramBlock
 
 				//check if function call 
 				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {
-					FunctionCallCPInstruction funCallInst = (FunctionCallCPInstruction) tmp;
-					//push caller frame into call stack
-					this._prog.pushFrame(ec.getVariables(), this._prog.getPC());
-					//initialize pc for callee's frame
-					this._prog.pc = new DMLProgramCounter(funCallInst.getNamespace(), funCallInst.getFunctionName(), 0, 0);
+					ec.handleDebugFunctionEntry((FunctionCallCPInstruction) tmp);
 				}
 
 				//execute original or updated instruction
@@ -408,10 +380,7 @@ public class ProgramBlock
 
 				//check if function returned
 				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {
-					//pop caller frame from call stack
-					DMLFrame fr = this._prog.popFrame();
-					//update pc to caller's frame
-					this._prog.pc = fr.getPC();
+					ec.handleDebugFunctionExit((FunctionCallCPInstruction) tmp);
 				}
 				
 				if (LOG.isTraceEnabled()){	
@@ -435,12 +404,7 @@ public class ProgramBlock
 			//check if breakpoint instruction
 			else if (DMLScript.ENABLE_DEBUG_MODE && currInst instanceof BPInstruction)
 			{
-				BPInstruction tmp = (BPInstruction)currInst;
-				//check if breakpoint instruction is enabled
-				if( tmp.isBPInstructionEnabled()) {
-					System.out.format("Breakpoint reached at %s.\n", this._prog.getPC().toString());					
-					this._prog.suspend = true;
-				}
+				ec.handleDebugBreakpoint((BPInstruction)currInst);
 			}
 		}
 		catch (Exception e)
@@ -448,74 +412,9 @@ public class ProgramBlock
 			if (!DMLScript.ENABLE_DEBUG_MODE)
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 			else {
-				this._prog.getDMLStackTrace(e);
-				this._prog.suspend = true;
+				ec.handleDebugException(e);
 			}
 		}
-		
-//		// Change to stop before first instruction of a given line
-//		if (DMLScript.ENABLE_DEBUG_MODE) {
-//			suspendIfAskedInDebugMode(currInst, ec);	
-//		}
-	}
-	
-	/**
-	 * This function should be called only if user has specified -debug option.
-	 * In this function, if the user has issued one of the step instructions or
-	 * has enabled suspend flag in previous instruction (through breakpoint),
-	 * then it will wait until user issues a new debugger command.
-	 * @param currInst
-	 * @param ec
-	 */
-	@SuppressWarnings("deprecation")
-	private void suspendIfAskedInDebugMode(Instruction currInst, ExecutionContext ec ) {
-		if (!DMLScript.ENABLE_DEBUG_MODE) {
-			System.err.println("ERROR: The function suspendIfAskedInDebugMode should not be called in non-debug mode.");
-		}
-		//check for stepping options
-		if (!this._prog.suspend && this._prog.dbCommand != null) { 
-			if (this._prog.dbCommand.equalsIgnoreCase("step_instruction")) {
-				System.out.format("Step instruction reached at %s.\n", this._prog.getPC().toString());
-				this._prog.suspend = true;
-			}
-			else if (this._prog.dbCommand.equalsIgnoreCase("step_line") && this._prog.prevPC.getLineNumber() != currInst.getLineNum()
-					&& this._prog.prevPC.getLineNumber() != 0) {
-				// Don't step into first instruction of first line
-				// System.out.format("Step reached at %s.\n", this._prog.getPC().toString());
-				System.out.format("Step reached at %s.\n", this._prog.getPC().toStringWithoutInstructionID());
-				this._prog.suspend = true;
-			}
-			else if (this._prog.dbCommand.equalsIgnoreCase("step return") && currInst instanceof FunctionCallCPInstruction) {
-				FunctionCallCPInstruction funCallInst = (FunctionCallCPInstruction) currInst;
-				if (this._prog.dbCommandArg == null || funCallInst.getFunctionName().equalsIgnoreCase(this._prog.dbCommandArg)) {
-					System.out.format("Step return reached at %s.\n", this._prog.getPC().toStringWithoutInstructionID());
-					this._prog.suspend = true;
-				}
-			}
-		}
-		//check if runtime suspend signal is set
-		if (this._prog.suspend) {
-			//flush old commands and arguments
-			this._prog.dbCommand = null;
-			this._prog.dbCommandArg = null;
-			//print current DML script source line
-			if (currInst.getLineNum() != 0)
-				this._prog.printDMLSourceLine(currInst.getLineNum());
-			//save current symbol table
-			this._prog.setVariables(ec.getVariables());
-			//send next command signal to debugger control module
-			this._prog.nextCommand = true;
-			//suspend runtime execution thread
-			Thread.currentThread().suspend();
-			//reset next command signal
-			this._prog.nextCommand = false;
-		}
-		//reset runtime suspend signal
-		this._prog.suspend = false;
-		//update previous pc
-		this._prog.prevPC.setFunctionName(this._prog.getPC().getFunctionName());
-		this._prog.prevPC.setProgramBlockNumber(this._prog.getPC().getProgramBlockNumber());
-		this._prog.prevPC.setLineNumber(currInst.getLineNum());
 	}
 	
 	private boolean isRemoveVariableInstruction(Instruction inst)

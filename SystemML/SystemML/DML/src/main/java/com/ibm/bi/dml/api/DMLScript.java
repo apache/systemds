@@ -96,15 +96,10 @@ public class DMLScript
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
-	// This will be supported in subsquent release. turning off the -debug 'optimize' feature for current release.
-//	public static boolean ENABLE_DEBUG_OPTIMIZER = false; //default debug mode
-//	public static boolean ENABLE_SERVER_SIDE_DEBUG_MODE = false; //default debug mode
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
-	
-	//public static final String DEBUGGER_SYSTEMML_CONFIG_FILEPATH = "./DebuggerSystemML-config.xml";
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	public static boolean _activeAM = false;
@@ -281,33 +276,6 @@ public class DMLScript
 					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
-					// ENABLE_DEBUG_OPTIMIZER = false;
-					// ENABLE_SERVER_SIDE_DEBUG_MODE = false;
-					
-//					if( args.length > (i+1) && args[i+1].startsWith("optimize=") ) {
-//						i++;
-//						try {
-//							String value = args[i].split("=")[1];
-//							if(value.toLowerCase().compareTo("on") == 0) {
-//								System.err.println("ERROR: Sorry, the current release doesnot support: \'-debug optimize=on\'. Please try it again with \'-debug optimize=off\'");
-//								return ret;
-//								// DEBUG_OPTIMIZER = true;
-//							}
-//							else if(value.toLowerCase().compareTo("off") == 0) {
-//								ENABLE_DEBUG_OPTIMIZER = false;
-//							}
-//							else {
-//								System.err.println("ERROR: Incorrect option passed to optimize flag for debug mode:\'-debug " + args[i] + 
-//										"\'. Valid options are \'optimize=(on|off)\'");
-//								return ret;
-//							}
-//						}
-//						catch(Exception optionsException) {
-//							System.err.println("ERROR: Incorrect option passed to optimize flag for debug mode:\'-debug " + args[i] + 
-//									"\'. Valid options are \'optimize=(on|off)\'");
-//							return ret;
-//						}
-//					}
 				}
 				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
 					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
@@ -355,40 +323,6 @@ public class DMLScript
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * Initialize Hadoop execution. 
-	 * ONLY USE FOR DEBUGGER AUTOMATED TESTING
-	 * 
-	 * @param conf DML provided configuration file (e.g. config.xml)
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 * @throws ParseException 
-	 */
-	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
-	public static void initHadoop(DMLConfig conf) throws DMLRuntimeException, IOException, ParseException
-	{
-	    //set execution environment
-		initHadoopExecution(conf);
-	}
-	
-	/**
-	 * Exit Hadoop execution. 
-	 * ONLY USE FOR DEBUGGER AUTOMATED TESTING
-	 * 
-	 * @param conf DML provided configuration file (e.g. config.xml)
-	 * @throws IOException
-	 * @throws ParseException 
-	 */
-	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
-	public static void exitHadoop(DMLConfig conf) throws IOException, ParseException
-	{			   
-	    //shut down nimble queue (if existing)
-	    ExternalFunctionProgramBlock.shutDownNimbleQueue();
-		    
-		//cleanup scratch_space and all working dirs
-		cleanupHadoopExecution(conf);
 	}
 	
 	///////////////////////////////
@@ -715,6 +649,7 @@ public class DMLScript
 	 * @throws LopsException
 	 * @throws DMLUnsupportedOperationException
 	 */
+	//TODO: MB: remove this redundant compile and execute (or at least remove from DMLScript)
 	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
 	public static DMLDebuggerProgramInfo compile(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
 			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
@@ -1101,7 +1036,7 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-/**
+	/**
 	 * 
 	 * @throws DMLException
 	 */

@@ -54,6 +54,9 @@ public class DMLConfig
 	public static final String NUM_REDUCERS         = "numreducers";
 	public static final String JVM_REUSE            = "jvmreuse";
 	public static final String DEFAULT_BLOCK_SIZE   = "defaultblocksize"; 	
+	public static final String YARN_APPMASTER       = "dml.yarn.appmaster"; 	
+	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
+	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
 	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
 	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
 	public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
@@ -80,6 +83,9 @@ public class DMLConfig
 		_defaultVals.put(NUM_REDUCERS,         "10" );
 		_defaultVals.put(JVM_REUSE,            "false" );
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,   "1000" );
+		_defaultVals.put(YARN_APPMASTER,       "false" );
+		_defaultVals.put(YARN_APPMASTERMEM,    "2048" );
+		_defaultVals.put(YARN_MAPREDUCEMEM,    "-1" );
 		_defaultVals.put(NUM_MERGE_TASKS,      "4" );
 		_defaultVals.put(NUM_SOW_THREADS,      "1" );
 		_defaultVals.put(NUM_REAP_THREADS,     "1" );
@@ -380,7 +386,7 @@ public class DMLConfig
 				throw e;
 			}
 		}
-				
+		
 		return defaultConfig;
 	}
 
@@ -391,9 +397,10 @@ public class DMLConfig
 	public String getConfigInfo() 
 	{
 		String[] tmpConfig = new String[]{ LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
-				                     NUM_REDUCERS,DEFAULT_BLOCK_SIZE, NUM_MERGE_TASKS, 
-				                     NUM_SOW_THREADS,NUM_REAP_THREADS,SOWER_WAIT_INTERVAL,
-				                     REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH }; 
+				                     NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
+				                     YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM,
+				                     NUM_MERGE_TASKS, NUM_SOW_THREADS,NUM_REAP_THREADS,
+				                     SOWER_WAIT_INTERVAL,REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH }; 
 		
 		StringBuilder sb = new StringBuilder();
 		for( String tmp : tmpConfig )

@@ -18,11 +18,20 @@ The source code for this program is not published or otherwise divested of its t
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
    <numreducers>10</numreducers> 
    
-   <!-- default jvm reuse flag for specific MR jobs, valid values: true | false  -->
+   <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
    <jvmreuse>false</jvmreuse> 
 
-   <!-- default block dim for binary files -->
+   <!-- default block dim for binary block files -->
    <defaultblocksize>1000</defaultblocksize> 
+
+   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client -->
+   <dml.yarn.appmaster>false</dml.yarn.appmaster>
+
+   <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
+   <dml.yarn.appmaster.mem>2048</dml.yarn.appmaster.mem>
+
+   <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
+   <dml.yarn.mapreduce.mem>2048</dml.yarn.mapreduce.mem>
 
    <!-- configuration properties for Nimble external package support -->
    <NumMergeTasks>4</NumMergeTasks>

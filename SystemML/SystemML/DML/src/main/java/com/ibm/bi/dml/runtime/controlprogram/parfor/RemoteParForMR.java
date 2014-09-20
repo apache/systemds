@@ -27,6 +27,8 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -43,6 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 /**
  * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
@@ -162,6 +165,10 @@ public class RemoteParForMR
 			//disable automatic tasks timeouts and speculative task exec
 			job.setInt("mapred.task.timeout", 0);			
 			job.setMapSpeculativeExecution(false);
+			
+			//set up map/reduce memory configurations (if in AM context)
+			DMLConfig config = ConfigurationManager.getConfig();
+			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
 			//enables the reuse of JVMs (multiple tasks per MR task)
 			if( jvmReuse )

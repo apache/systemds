@@ -65,6 +65,10 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${hadoop.local.path}/commons-httpclient-3.1.jar" /> <!-- for running "auto" in local mode -->
 		<pathelement location="${hadoop.local.path}/commons-cli-1.2.jar" /> <!-- for GenericOptionParser -->
 		<pathelement location="${hadoop.local.path}/commons-collections-3.2.1.jar" /> 
+		<pathelement location="${hadoop.local.path}/hadoop-yarn-api-2.4.1-4.jar" />
+		<pathelement location="${hadoop.local.path}/hadoop-yarn-client-2.4.1-4.jar" />
+		<pathelement location="${hadoop.local.path}/hadoop-yarn-common-2.4.1-4.jar" />
+		<pathelement location="${hadoop.local.path}/hadoop-mapreduce-client-common-2.4.1-4.jar" />
 	</path>
 	
 	<path id="DML.classpath">

@@ -160,6 +160,15 @@ public class InfrastructureAnalyzer
 	}
 	
 	/**
+	 * 
+	 * @param remoteMem
+	 */
+	public static void setRemoteMaxMemoryMap( long remoteMem )
+	{
+		_remoteJVMMaxMemMap = remoteMem;
+	}
+	
+	/**
 	 * Gets the maximum memory [in bytes] of a hadoop reduce task JVM.
 	 * 
 	 * @return
@@ -170,6 +179,15 @@ public class InfrastructureAnalyzer
 			analyzeHadoopCluster();
 		
 		return _remoteJVMMaxMemReduce;
+	}
+	
+	/**
+	 * 
+	 * @param remoteMem
+	 */
+	public static void setRemoteMaxMemoryReduce( long remoteMem )
+	{
+		_remoteJVMMaxMemReduce = remoteMem;
 	}
 	
 	/**

@@ -71,7 +71,9 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 // import com.ibm.bi.dml.utils.visualize.DotGraph;
+import com.ibm.bi.dml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
@@ -82,7 +84,7 @@ public class DMLScript
 	
 	public enum RUNTIME_PLATFORM { 
 		HADOOP, 	    // execute all matrix operations in MR
-		SINGLE_NODE,    // execute all matrix operations in CP 
+		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
 		NZ,             // execute matrix operations on NZ SQL backend
 	};
@@ -105,6 +107,7 @@ public class DMLScript
 	//public static final String DEBUGGER_SYSTEMML_CONFIG_FILEPATH = "./DebuggerSystemML-config.xml";
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
+	public static boolean _activeAM = false;
 	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	private static final String PATH_TO_SRC = "./";
@@ -146,8 +149,7 @@ public class DMLScript
 	// public external interface
 	////////
 	
-	public static String getUUID()
-	{
+	public static String getUUID() {
 		return _uuid;
 	}
 
@@ -165,6 +167,15 @@ public class DMLScript
 	public static boolean suppressPrint2Stdout() {
 		return _suppressPrint2Stdout;
 	}
+	
+	public static void setActiveAM(){
+		_activeAM = true;
+	}
+	
+	public static boolean isActiveAM(){
+		return _activeAM;
+	}
+	
 	
 	/**
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
@@ -192,11 +203,12 @@ public class DMLScript
 	}
 	
 	public static boolean executeScript( Configuration conf, String[] args, boolean suppress) 
-			throws DMLException
-		{
-			_suppressPrint2Stdout = suppress;
-			return executeScript(conf, args);
-		}
+		throws DMLException
+	{
+		_suppressPrint2Stdout = suppress;
+		return executeScript(conf, args);
+	}
+	
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
@@ -316,7 +328,7 @@ public class DMLScript
 			//Step 2: prepare script invocation
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
 			HashMap<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);		
-					
+			
 			//Step 3: invoke dml script
 			printInvocationInfo(args[1], fnameOptConfig, argVals);
 			if (ENABLE_DEBUG_MODE) {
@@ -324,7 +336,7 @@ public class DMLScript
 				launchDebugger(dmlScriptStr, fnameOptConfig, argVals);
 			}
 			else {
-				execute(dmlScriptStr, fnameOptConfig, argVals);
+				execute(dmlScriptStr, fnameOptConfig, argVals, args);
 			}
 			
 			ret = true;
@@ -579,7 +591,7 @@ public class DMLScript
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
+	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs )
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				
 		//print basic time and environment info
@@ -590,11 +602,18 @@ public class DMLScript
 		ConfigurationManager.setConfig(conf);
 		LOG.debug("\nDML config: \n" + conf.getConfigInfo());
 		
-		//Step 2: parse dml script
+		//Step 2: launch SystemML appmaster (if requested and not already in launched AM)
+		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs) )
+				return; //if am launch unsuccessful, fall back to normal compile/execute
+			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); //in AM context
+		}
+			
+		//Step 3: parse dml script
 		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
 		DMLProgram prog = parser.parse();
 		
-		//Step 3: construct HOP DAGs (incl LVA and validate)
+		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
 		dmlt.liveVariableAnalysis(prog);			
 		dmlt.validateParseTree(prog);
@@ -606,7 +625,7 @@ public class DMLScript
 //			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 	
-		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
+		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
 		
 		if (LOG.isDebugEnabled()) {
@@ -621,7 +640,7 @@ public class DMLScript
 //			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 	
-		//Step 5: backend-specific compile and execute
+		//Step 6: backend-specific compile and execute
 		switch( rtplatform )
 		{
 			case HADOOP:
@@ -751,7 +770,7 @@ public class DMLScript
 		          "Level = " + OptimizerUtils.getOptLevel() + "\n"
 				 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
 				 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
-			
+		
 		/////////////////////// construct the lops ///////////////////////////////////
 		dmlt.constructLops(prog);
 
@@ -1112,5 +1131,4 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
-	
-}
+}  

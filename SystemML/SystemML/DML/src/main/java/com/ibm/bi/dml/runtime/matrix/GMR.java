@@ -20,6 +20,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
@@ -52,6 +54,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
  
 public class GMR
@@ -197,6 +200,10 @@ public class GMR
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
+		//set up map/reduce memory configurations (if in AM context)
+		DMLConfig config = ConfigurationManager.getConfig();
+		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
+			
 		//set up jvm reuse (incl. reuse of loaded dist cache matrices)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);

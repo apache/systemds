@@ -541,39 +541,46 @@ public class InterProceduralAnalysis
 			//maintain counters and investigate functions if not seen so far
 			FunctionOp fop = (FunctionOp) hop;
 			String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
-			if( fcand.contains(fkey) && 
-				!fnStack.contains(fkey) &&  //prevent recursion	
-			    fop.getFunctionType() == FunctionType.DML )
+			
+			if( fop.getFunctionType() == FunctionType.DML )
 			{
-				//maintain function call stack
-				fnStack.add(fkey);
-				
-				//propagate statistics
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 				
-				//create mapping and populate symbol table for refresh
-				LocalVariableMap tmpVars = new LocalVariableMap();
-				populateLocalVariableMapForFunctionCall( fstmt, fop, tmpVars, fcandSafeNNZ.get(fkey) );
-
-				//recursively propagate statistics
-				propagateStatisticsAcrossBlock(fsb, fcand, tmpVars, fcandSafeNNZ, fnStack);
-				
-				//extract vars from symbol table, re-map and refresh main program
-				extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);		
-				
-				//maintain function call stack
-				fnStack.remove(fkey);
+				if(  fcand.contains(fkey) && 
+				    !fnStack.contains(fkey)  ) //prevent recursion	
+				{
+					//maintain function call stack
+					fnStack.add(fkey);
+					
+					//create mapping and populate symbol table for refresh
+					LocalVariableMap tmpVars = new LocalVariableMap();
+					populateLocalVariableMapForFunctionCall( fstmt, fop, tmpVars, fcandSafeNNZ.get(fkey) );
+	
+					//recursively propagate statistics
+					propagateStatisticsAcrossBlock(fsb, fcand, tmpVars, fcandSafeNNZ, fnStack);
+					
+					//extract vars from symbol table, re-map and refresh main program
+					extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);		
+					
+					//maintain function call stack
+					fnStack.remove(fkey);
+				}
+				else
+				{
+					extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
+				}
 			}
 			else if (   fop.getFunctionType() == FunctionType.EXTERNAL_FILE
 				     || fop.getFunctionType() == FunctionType.EXTERNAL_MEM  )
 			{
 				//infer output size for known external functions
-				if( PROPAGATE_KNOWN_UDF_STATISTICS ) {
-					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-					ExternalFunctionStatement fstmt = (ExternalFunctionStatement) fsb.getStatement(0);
+				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+				ExternalFunctionStatement fstmt = (ExternalFunctionStatement) fsb.getStatement(0);
+				if( PROPAGATE_KNOWN_UDF_STATISTICS ) 
 					extractExternalFunctionCallReturnStatistics(fstmt, fop, callVars);
-				}
+				else
+					extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
 			}
 		}
 		
@@ -697,6 +704,40 @@ public class InterProceduralAnalysis
 	 * @param callVars
 	 * @throws HopsException
 	 */
+	private void extractFunctionCallUnknownReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
+		throws HopsException
+	{
+		Vector<DataIdentifier> foutputOps = fstmt.getOutputParams();
+		String[] outputVars = fop.getOutputVariableNames();
+		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+		
+		try
+		{
+			for( int i=0; i<foutputOps.size(); i++ )
+			{
+				DataIdentifier di = foutputOps.get(i);
+				String pvarname = outputVars[i]; //name in calling program
+				
+				if( di.getDataType()==DataType.MATRIX )
+				{
+					MatrixObject moOut = createOutputMatrix(-1, -1, -1);	
+					callVars.put(pvarname, moOut);
+				}
+			}
+		}
+		catch( Exception ex )
+		{
+			throw new HopsException( "Failed to extract output statistics of function "+fkey+".", ex);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param fstmt
+	 * @param fop
+	 * @param callVars
+	 * @throws HopsException
+	 */
 	private void extractExternalFunctionCallReturnStatistics( ExternalFunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
 		throws HopsException
 	{
@@ -732,6 +773,10 @@ public class InterProceduralAnalysis
 			if( input1 instanceof LiteralOp && input2 instanceof LiteralOp )
 				callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(((LiteralOp)input1).getLongValue(), 
 						                                                         ((LiteralOp)input2).getLongValue(),-1));
+		}
+		else
+		{
+			extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
 		}
 	}
 	

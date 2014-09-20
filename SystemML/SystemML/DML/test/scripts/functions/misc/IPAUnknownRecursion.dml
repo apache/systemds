@@ -1,0 +1,32 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+factorial = function(Matrix[Double] arr, Integer pos) return (Matrix[Double] arr){
+	if(pos == 1) arr[1, pos] = 1
+	else{
+		arr = factorial(arr, pos-1)
+		arr[1, pos] = pos * arr[1, pos-1]
+	}
+	
+	for(i in 1:ncol(arr))
+		print("inside factorial (" + pos + ") " + i + ": " + castAsScalar(arr[1, i]))
+}
+
+n = $1
+arr = matrix(0, rows=1, cols=n)
+arr = factorial(arr, n)
+
+R = matrix(0, rows=1, cols=n);
+for(i in 1:n) #copy important to test dynamic rewrites
+{
+   print("main factorial " + i + ": " + castAsScalar(arr[1, i]))
+   R[1,i] = as.scalar(arr[1, i]);
+}
+
+write(R, $2);

@@ -31,8 +31,8 @@ public class MMCJMRInputCache extends MMCJMRCache
 		throws IOException, IllegalAccessException, InstantiationException
 	{
 		long elementSize = 77+8*Math.min(rlen,brlen)*Math.min(clen,bclen)+20+12+12+4;//matrix block, matrix index, pair, integer in the linked list
-		long numRowBlocks = leftCached ? rlen/brlen : 1;
-		long numColBlocks = leftCached ? 1 : clen/bclen;
+		long numRowBlocks = leftCached ? (long)Math.ceil((double)rlen/(double)brlen) : 1;
+		long numColBlocks = leftCached ? 1 : (long)Math.ceil((double)clen/(double)bclen);
 		
 		int buffCapacity = (int)Math.max(Math.min((memSize/elementSize), (numRowBlocks*numColBlocks)), 1);
 		super.allocateBuffer(buffCapacity, valueClass, false);

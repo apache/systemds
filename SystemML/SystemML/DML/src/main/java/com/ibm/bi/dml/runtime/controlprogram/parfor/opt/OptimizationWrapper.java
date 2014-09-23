@@ -169,8 +169,10 @@ public class OptimizationWrapper
 	 */
 	public static void setLogLevel( Level optLogLevel )
 	{
-		Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
-		      .setLevel( optLogLevel );
+		if( !LDEBUG ){ //set log level if not overwritten by internal flag
+			Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
+			      .setLevel( optLogLevel );
+		}
 	}
 	
 	/**

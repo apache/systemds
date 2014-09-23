@@ -231,6 +231,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics used for optimization
 	protected ParForStatementBlock _sb          = null;
 	protected long             _numIterations   = -1; 
+	protected String[]         _iterablePredicateVarsOriginal = null;
 	
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
@@ -650,6 +651,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		    ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, dpvar, ec, false);
 		if( _execMode == PExecMode.REMOTE_MR_DP ) //release forced exectypes for fused dp/exec
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, _colocatedDPMatrix, ec, false); 
+		resetIterablePredicateVars();
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
 		//execute exit instructions (usually empty)
@@ -1542,10 +1544,24 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		_numIterations = (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
 		
+		//keep original iterable predicate
+		_iterablePredicateVarsOriginal = new String[4];
+		System.arraycopy(_iterablePredicateVars, 0, _iterablePredicateVarsOriginal, 0, 4);
+		
 		_iterablePredicateVars[0] = iterVarName;
 		_iterablePredicateVars[1] = from.getStringValue();
 		_iterablePredicateVars[2] = to.getStringValue();
 		_iterablePredicateVars[3] = incr.getStringValue();
+	}
+	
+	/**
+	 * 
+	 */
+	private void resetIterablePredicateVars()
+	{
+		//reset of modified for optimization (opt!=NONE)
+		if( _iterablePredicateVarsOriginal!=null ) 
+			System.arraycopy(_iterablePredicateVarsOriginal, 0, _iterablePredicateVars, 0, 4);
 	}
 	
 	/**
@@ -1692,6 +1708,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		//reset all state that was set but is not guaranteed to be overwritten by optimizer
 		_variablesDPOriginal.removeAll();
+		_iterablePredicateVarsOriginal = null;
 		_colocatedDPMatrix     = null;
 		_replicationDP         = WRITE_REPLICATION_FACTOR;
 		_replicationExport     = -1;

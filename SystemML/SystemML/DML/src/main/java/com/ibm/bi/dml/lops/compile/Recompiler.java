@@ -1194,6 +1194,13 @@ public class Recompiler
 	}
 	
 	/**
+	 * Clearing lops for a given hops includes to (1) remove the reference
+	 * to constructed lops and (2) clear the exec type (for consistency). 
+	 * 
+	 * The latter is important for advanced optimizers like parfor; otherwise subtle
+	 * side-effects of program recompilation and hop-lop rewrites possible
+	 * (e.g., see indexingop hop-lop rewrite in combination parfor rewrite set
+	 * exec type that eventuelly might lead to unnecessary remote_parfor jobs).
 	 * 
 	 * @param hop
 	 */
@@ -1211,7 +1218,8 @@ public class Recompiler
 		}
 		else //GENERAL CASE
 		{
-			hop.set_lops(null);
+			hop.resetExecType(); //remove exec type
+			hop.set_lops(null); //clear lops
 			if( hop.getInput() != null )
 				for( Hop c : hop.getInput() )
 					rClearLops(c);

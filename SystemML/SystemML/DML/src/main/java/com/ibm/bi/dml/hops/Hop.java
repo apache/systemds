@@ -123,6 +123,11 @@ public abstract class Hop
 		return _etype;
 	}
 	
+	public void resetExecType()
+	{
+		_etype = null;
+	}
+	
 	/**
 	 * 
 	 * @return

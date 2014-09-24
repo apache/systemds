@@ -99,7 +99,7 @@ public class DataExpression extends DataIdentifier
 	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;
 	public static final boolean DEFAULT_DELIM_FILL = true;
 	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
-	public static final boolean DEFAULT_DELIM_SPARSE = true;
+	public static final boolean DEFAULT_DELIM_SPARSE = false;
 	
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;

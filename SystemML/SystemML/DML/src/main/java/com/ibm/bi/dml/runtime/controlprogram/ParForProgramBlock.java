@@ -516,55 +516,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//partitioning on demand (note: for fused data partitioning and execute the optimizer set 
 		//the data partitioner to NONE in order to prevent any side effects)
-		if( _dataPartitioner != PDataPartitioner.NONE )
-		{			
-			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
-			for( String var : vars )
-			{
-				Data dat = ec.getVariable(var);
-				//skip non-existing input matrices (which are due to unknown sizes marked for
-				//partitioning but typically related branches are never exected)				
-				if( dat != null && dat instanceof MatrixObject )
-				{
-					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
-					
-					PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
-					//dpf = (_optMode != POptMode.NONE) ? OptimizerRuleBased.decideBlockWisePartitioning(moVar, dpf) : dpf;
-					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
-					
-					if( dpf != PDataPartitionFormat.NONE )
-					{
-						Timing ltime = new Timing(true);
-						
-						//input data partitioning (reuse if possible)
-						Data dpdatNew = _variablesDPReuse.get(var);
-						if( dpdatNew == null ) //no reuse opportunity
-						{
-							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
-							//disable binary cell for sparse if consumed by MR jobs
-							if( !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf ) )
-								dp.disableBinaryCell();
-							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
-							dpdatNew = moVarNew;
-						}
-						ec.setVariable(var, dpdatNew);
-						
-						//recompile parfor body program
-						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
-						
-						//store original and partitioned matrix (for reuse if applicable)
-						_variablesDPOriginal.put(var, moVar);
-						if(    ALLOW_REUSE_PARTITION_VARS 
-							&& ProgramRecompiler.isApplicableForReuseVariable(_sb.getDMLProg(), _sb, var) ) 
-						{
-							_variablesDPReuse.put(var, dpdatNew);
-						}
-						
-						LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
-					}
-				}
-			}
-		}
+		handleDataPartitioning( ec ); 
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
@@ -954,6 +906,69 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 		}			
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	private void handleDataPartitioning( ExecutionContext ec ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		if( _dataPartitioner != PDataPartitioner.NONE )
+		{			
+			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
+			for( String var : vars )
+			{
+				Data dat = ec.getVariable(var);
+				//skip non-existing input matrices (which are due to unknown sizes marked for
+				//partitioning but typically related branches are never exected)				
+				if( dat != null && dat instanceof MatrixObject )
+				{
+					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
+					
+					PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
+					//dpf = (_optMode != POptMode.NONE) ? OptimizerRuleBased.decideBlockWisePartitioning(moVar, dpf) : dpf;
+					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
+					
+					if( dpf != PDataPartitionFormat.NONE )
+					{
+						Timing ltime = new Timing(true);
+						
+						//input data partitioning (reuse if possible)
+						Data dpdatNew = _variablesDPReuse.get(var);
+						if( dpdatNew == null ) //no reuse opportunity
+						{
+							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
+							//disable binary cell for sparse if consumed by MR jobs
+							if( !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf ) )
+								dp.disableBinaryCell();
+							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
+							dpdatNew = moVarNew;
+							
+							//skip remaining partitioning logic if not partitioned (e.g., too small)
+							if( moVar == moVarNew ) 
+								continue; //skip to next
+						}
+						ec.setVariable(var, dpdatNew);
+						
+						//recompile parfor body program
+						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
+						
+						//store original and partitioned matrix (for reuse if applicable)
+						_variablesDPOriginal.put(var, moVar);
+						if(    ALLOW_REUSE_PARTITION_VARS 
+							&& ProgramRecompiler.isApplicableForReuseVariable(_sb.getDMLProg(), _sb, var) ) 
+						{
+							_variablesDPReuse.put(var, dpdatNew);
+						}
+						
+						LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
+					}
+				}
+			}
+		}
 	}
 	
 	/**
@@ -1473,6 +1488,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				}
 			}
 		}
+		
 		//handle unscoped variables (vars created in parfor, but potentially used afterwards)
 		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
 			createEmptyUnscopedVariables( ec.getVariables(), _sb );

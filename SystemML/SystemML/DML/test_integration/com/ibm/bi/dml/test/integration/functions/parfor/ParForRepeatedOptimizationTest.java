@@ -32,6 +32,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "parfor_repeatedopt1";
 	private final static String TEST_NAME2 = "parfor_repeatedopt2";
+	private final static String TEST_NAME3 = "parfor_repeatedopt3";
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static double eps = 1e-8;
 	
@@ -44,6 +45,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	{
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"R"}) ); 
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{"R"}) ); 
 		
 	}
 
@@ -51,44 +53,61 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	public void testParForRepeatedOptNoReuseNoUpdateCP() 
 	{
 		int numExpectedMRJobs = 1+3; //reblock, 3*partition
-		runParForRepeatedOptTest( false, false, ExecType.CP, numExpectedMRJobs );
+		runParForRepeatedOptTest( false, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptNoReuseUpdateCP() 
 	{
 		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
- 		runParForRepeatedOptTest( false, true, ExecType.CP, numExpectedMRJobs );
+ 		runParForRepeatedOptTest( false, true, false, ExecType.CP, numExpectedMRJobs );
+	}
+	
+	@Test
+	public void testParForRepeatedOptNoReuseChangedDimCP() 
+	{
+		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+ 		runParForRepeatedOptTest( false, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseNoUpdateCP() 
 	{
 		int numExpectedMRJobs = 1+1; //reblock, partition
-		runParForRepeatedOptTest( true, false, ExecType.CP, numExpectedMRJobs );
+		runParForRepeatedOptTest( true, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseUpdateCP() 
 	{
 		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
-		runParForRepeatedOptTest( true, true, ExecType.CP, numExpectedMRJobs );
+		runParForRepeatedOptTest( true, true, false, ExecType.CP, numExpectedMRJobs );
+	}
+	
+	@Test
+	public void testParForRepeatedOptReuseChangedDimCP() 
+	{
+		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+		runParForRepeatedOptTest( true, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 		
 	
 	/**
+	 * update, refers to changing data
+	 * changed dim, refers to changing dimensions and changing parfor predicate
+	 * 
 	 * 
 	 * @param outer execution mode of outer parfor loop
 	 * @param inner execution mode of inner parfor loop
 	 * @param instType execution mode of instructions
 	 */
-	private void runParForRepeatedOptTest( boolean reusePartitionedData, boolean update, ExecType et, int numExpectedMR )
+	private void runParForRepeatedOptTest( boolean reusePartitionedData, boolean update, boolean changedDim, ExecType et, int numExpectedMR )
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		double memfactorOld = OptimizerUtils.MEM_UTIL_FACTOR;
 		boolean reuseOld = ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS;
 		
-		String TEST_NAME = update ? TEST_NAME2 : TEST_NAME1;
+		String TEST_NAME = update ? TEST_NAME2 : ( changedDim ? TEST_NAME3 : TEST_NAME1);
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
@@ -106,10 +125,10 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 					                        Integer.toString(rows),
 					                        Integer.toString(cols),
 					                        HOME + OUTPUT_DIR + "R",
-					                        Integer.toString(update?1:0)};
+					                        Integer.toString((update||changedDim)?1:0)};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR + " " + Integer.toString(update?1:0);
+			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR + " " + Integer.toString((update||changedDim)?1:0);
 			
 			loadTestConfiguration(config);
 	

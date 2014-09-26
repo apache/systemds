@@ -7,6 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
+$fmt = "csv"
 $missing_value_maps = " "
 $bin_defns = " "
 $dummy_code_maps = " "
@@ -134,7 +135,7 @@ parfor(i in 1:ncol(X), check=0){
 	}
 }
 
-write(new_X, $transformed_X, format="csv")
+write(new_X, $transformed_X, format=$fmt)
 
 s = "Warning Messages"
 for(i in 1:nrow(log)){

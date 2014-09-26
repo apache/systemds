@@ -7,6 +7,8 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
+$fmt = "csv"
+
 original_X = read($X)
 missing_index = read($missing_index)
 binning_index = read($binning_index)
@@ -165,7 +167,7 @@ parfor(i in 1:ncol(X), check=0){
 	}else
 		new_X[,dummy_coding_beg_col:dummy_coding_end_col] = table(seq(1, nrow(X), 1), col)
 }
-write(new_X, $transformed_X, format="csv")
+write(new_X, $transformed_X, format=$fmt)
 
 if(isMissingValueImputationRequired > 0){
 	missing_value_maps = matrix(0, rows=nrow(missing_index), cols=2)

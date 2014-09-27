@@ -19,6 +19,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
@@ -83,6 +84,8 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.utils.Explain;
+import com.ibm.bi.dml.utils.Explain.ExplainType;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -195,9 +198,10 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		//System.out.println("RECOMPILATION");
-		//System.out.println(Explain.explain(newInst));
-		
+		// explain recompiled instructions 
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE )
+			LOG.info("EXPLAIN RECOMPILE SB:\n" + Explain.explain(newInst,1));
+	
 		return newInst;
 	}
 
@@ -274,6 +278,10 @@ public class Recompiler
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
+		// explain recompiled instructions 
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE )
+			LOG.info("EXPLAIN RECOMPILE PRED:\n" + Explain.explain(newInst,1));
 		
 		return newInst;
 	}

@@ -119,10 +119,10 @@ public class DMLScript
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
-			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
+			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid])\n"
 			//undocumented feature in beta 08/2014 release
 			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ "   -explain: <type> (optional) explain plan (hops, runtime)\n"
+			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"

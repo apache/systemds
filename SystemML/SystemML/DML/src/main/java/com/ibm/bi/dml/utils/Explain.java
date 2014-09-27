@@ -63,6 +63,7 @@ public class Explain
 		NONE, 	  // explain disabled
 		HOPS,     // explain program and hops
 		RUNTIME,  // explain runtime program (default)
+		RECOMPILE, // explain runtime program, incl recompile
 	};
 	
 	//////////////
@@ -101,8 +102,13 @@ public class Explain
 	{
 		//dispatch to individual explain utils
 		switch( type ) {
-			case HOPS:     return explain(prog);
-			case RUNTIME:  return explain(rtprog);
+			//explain hops with stats
+			case HOPS:     	
+				return explain(prog);
+			//explain runtime program	
+			case RUNTIME:  
+			case RECOMPILE: 
+				return explain(rtprog);
 		}
 		
 		return null;
@@ -222,6 +228,17 @@ public class Explain
 	/**
 	 * 
 	 * @param inst
+	 * @param level
+	 * @return
+	 */
+	public static String explain( ArrayList<Instruction> inst, int level )
+	{
+		return explainInstructions(inst, level);
+	}
+	
+	/**
+	 * 
+	 * @param inst
 	 * @return
 	 */
 	public static String explain( Instruction inst )
@@ -306,8 +323,11 @@ public class Explain
 				ret = ExplainType.HOPS;
 			else if( arg.equalsIgnoreCase("runtime") )
 				ret = ExplainType.RUNTIME;
+			else if( arg.equalsIgnoreCase("recompile") )
+				ret = ExplainType.RECOMPILE;
 			else 
-				throw new DMLException("Failed to parse explain type: "+arg);
+				throw new DMLException("Failed to parse explain type: "+arg+" " +
+						               "(valid types: hops, runtime, recompile).");
 		}
 		
 		return ret;

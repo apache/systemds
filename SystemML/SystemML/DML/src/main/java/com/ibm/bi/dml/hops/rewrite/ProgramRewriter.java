@@ -80,10 +80,8 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
-			//TODO: matrix mult chain opt should also become part of dynamic recompilation
-			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); //dependency: cse 
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
-				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: common subexpression elimination
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: cse
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     ); 
 			
@@ -95,15 +93,14 @@ public class ProgramRewriter
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)
-		//  (these )
 		if( dynamicRewrites )
 		{
-			//_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()        ); 
+			_dagRuleSet.add(     new RewriteMatrixMultChainOptimization()         ); //dependency: cse 
 			
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 			{
-				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: common subexpression elimination
-				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: common subexpression elimination
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
+				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
 			
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             

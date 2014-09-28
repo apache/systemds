@@ -24,7 +24,7 @@ import com.ibm.bi.dml.hops.HopsException;
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
@@ -198,59 +198,52 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	}
 
 	/**
+	 * Obtains all dimension information of the chain and constructs the dimArray.
+	 * If all dimensions are known it returns true; othrewise the mmchain rewrite
+	 * should be ended without modifications.
 	 * 
+	 * @param hop
 	 * @param chain
+	 * @param dimArray
 	 * @return
 	 * @throws HopsException
 	 */
-	private double [] getDimArray ( Hop hop, ArrayList<Hop> chain ) 
+	private boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
 		throws HopsException 
 	{
-		// Build the array containing dimensions from all matrices in the
-		// chain
+		boolean dimsKnown = true;
 		
-		double dimArray[] = new double[chain.size() + 1];
-		
+		// Build the array containing dimensions from all matrices in the chain		
 		// check the dimensions in the matrix chain to insure all dimensions are known
-		boolean shortCircuit = false;
 		for (int i=0; i< chain.size(); i++){
 			if (chain.get(i).get_dim1() <= 0 || chain.get(i).get_dim2() <= 0)
-				shortCircuit = true;
-		}
-		if (shortCircuit){
-			for (int i=0; i< dimArray.length; i++){
-				dimArray[i] = 1;
-			}	
-			LOG.trace("short-circuit optimizeMMChain() for matrices with unknown size");
-			return dimArray;
+				dimsKnown = false;
 		}
 		
-		
-		
-		for (int i = 0; i < chain.size(); i++) {
-			if (i == 0) {
-				dimArray[i] = chain.get(i).get_dim1();
-				if (dimArray[i] <= 0) {
+		if( dimsKnown ) { //populate dims array if all dims known
+			for (int i = 0; i < chain.size(); i++) 
+			{
+				if (i == 0) {
+					dimsArray[i] = chain.get(i).get_dim1();
+					if (dimsArray[i] <= 0) {
+						throw new HopsException(hop.printErrorLocation() + 
+								"Hops::optimizeMMChain() : Invalid Matrix Dimension: "+ dimsArray[i]);
+					}
+				} else {
+					if (chain.get(i - 1).get_dim2() != chain.get(i).get_dim1()) {
+						throw new HopsException(hop.printErrorLocation() +
+								"Hops::optimizeMMChain() : Matrix Dimension Mismatch");
+					}
+				}
+				dimsArray[i + 1] = chain.get(i).get_dim2();
+				if (dimsArray[i + 1] <= 0) {
 					throw new HopsException(hop.printErrorLocation() + 
-							"Hops::optimizeMMChain() : Invalid Matrix Dimension: "
-									+ dimArray[i]);
+							"Hops::optimizeMMChain() : Invalid Matrix Dimension: " + dimsArray[i + 1]);
 				}
-			} else {
-				if (chain.get(i - 1).get_dim2() != chain.get(i)
-						.get_dim1()) {
-					throw new HopsException(hop.printErrorLocation() +
-							"Hops::optimizeMMChain() : Matrix Dimension Mismatch");
-				}
-			}
-			dimArray[i + 1] = chain.get(i).get_dim2();
-			if (dimArray[i + 1] <= 0) {
-				throw new HopsException(hop.printErrorLocation() + 
-						"Hops::optimizeMMChain() : Invalid Matrix Dimension: "
-								+ dimArray[i + 1]);
 			}
 		}
-
-		return dimArray;
+		
+		return dimsKnown;
 	}
 
 	
@@ -358,22 +351,26 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			// If the chain size is 2, then there is nothing to optimize.
 			return;
 		} 
-		else {
-			 // Step-2: clear the links among Hops within the identified chain
-			clearLinksWithinChain ( hop, mmOperators );
+		else 
+		{
+			// Step-2: construct dims array
+			double dimsArray[] = new double[mmChain.size() + 1];
+			boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
 			
-			 // Step-3: Find the optimal ordering via dynamic programming.
-			
-			double dimArray[] = getDimArray( hop, mmChain );
-			
-			// Invoke Dynamic Programming
-			int size = mmChain.size();
-			int[][] split = new int[size][size];
-			split = mmChainDP(dimArray, mmChain.size());
-			
-			 // Step-4: Relink the hops using the optimal ordering (split[][]) found from DP.
-			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);
+			if( dimsKnown ) {
+				// Step-3: clear the links among Hops within the identified chain
+				clearLinksWithinChain ( hop, mmOperators );
+				
+				// Step-4: Find the optimal ordering via dynamic programming.
+				
+				// Invoke Dynamic Programming
+				int size = mmChain.size();
+				int[][] split = new int[size][size];
+				split = mmChainDP(dimsArray, mmChain.size());
+				
+				 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
+				mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);
+			}
 		}
-		//System.out.println("  .");
 	}
 }

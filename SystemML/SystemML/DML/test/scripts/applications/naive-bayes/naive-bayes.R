@@ -49,7 +49,7 @@ ones = matrix(1, numRows, 1)
 D_w_ones = cbind(D, ones)
 model = cbind(class_conditionals, class_prior)
 log_probs = D_w_ones %*% t(log(model))
-pred = apply(log_probs, 1, function(x) which(x == max(x)))
+pred = max.col(log_probs,ties.method="last");
 acc = sum(pred == C) / numRows * 100
 
 print(paste("Training Accuracy (%): ", acc, sep=""))

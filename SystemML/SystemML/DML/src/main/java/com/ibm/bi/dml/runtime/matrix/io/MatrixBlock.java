@@ -2364,8 +2364,11 @@ public class MatrixBlock extends MatrixValue
 		return evalSparseFormatInMemory(finalRlen, finalClen, ennz); 
 	}
 	
-	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, int nnzm1, int nnzm2)
+	private boolean estimateSparsityOnLeftIndexing(long rlenm1, long clenm1, long nnzm1, long rlenm2, long clenm2, long nnzm2)
 	{
+		//min bound: nnzm1 - rlenm2*clenm2 + nnzm2
+		//max bound: min(rlenm1*rlenm2, nnzm1+nnzm2)
+		
 		long ennz = Math.min(rlenm1*clenm1, nnzm1+nnzm2);
 		return evalSparseFormatInMemory(rlenm1, clenm1, ennz);
 	}
@@ -3426,7 +3429,8 @@ public class MatrixBlock extends MatrixValue
 					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
 		}
 		MatrixBlock result=checkType(ret);
-		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, rhsMatrix.getNonZeros());
+		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 
+				     rhsMatrix.getNumRows(), rhsMatrix.getNumColumns(), rhsMatrix.getNonZeros());
 		
 		if( !inplace ) //general case
 		{
@@ -3484,14 +3488,18 @@ public class MatrixBlock extends MatrixValue
 	public MatrixValue leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixValue ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		MatrixBlock result=checkType(ret);
-
+		MatrixBlock result=checkType(ret);		
+		double inVal = scalar.getDoubleValue();
+		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 1, 1, (inVal!=0)?1:0);
+		
 		if( !inplace ) //general case
 		{
 			if(result==null)
-				result=new MatrixBlock(this);
-			else 
-				result.copy(this);
+				result=new MatrixBlock(rlen, clen, sp);
+			else
+				result.reset(rlen, clen, sp);
+			result.copy(this, sp);
+			
 		}
 		else //update in-place
 			result = this;
@@ -3499,7 +3507,7 @@ public class MatrixBlock extends MatrixValue
 		int rl = (int)row-1;
 		int cl = (int)col-1;
 		
-		result.quickSetValue(rl, cl, scalar.getDoubleValue());
+		result.quickSetValue(rl, cl, inVal);
 		return result;
 	}
 	

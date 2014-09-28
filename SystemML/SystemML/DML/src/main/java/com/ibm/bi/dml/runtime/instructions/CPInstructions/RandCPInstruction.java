@@ -157,7 +157,8 @@ public class RandCPInstruction extends UnaryCPInstruction
 			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
 				lSeed = DataGenOp.generateRandomSeed();
 			
-			LOG.trace("Process RandCPInstruction with seed = "+lSeed+".");
+			if( LOG.isTraceEnabled() )
+				LOG.trace("Process RandCPInstruction with seed = "+lSeed+".");
 			
 			//long begin = System.nanoTime();
 			soresBlock = MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed);

@@ -218,11 +218,11 @@ public class LibMatrixDatagen
 		}
 		
 		// Determine the sparsity of output matrix
-		// if invoked from CP: estimated NNZ is for entire matrix
-		// if invoked from CP: estimated NNZ is for one block
-		final long estnnz = (invokedFromCP ? (long)(sparsity * rows * cols) : nnzInBlocks[0]);
-		boolean lsparse = (MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz )
-				           || (min==0.0 && max==0.0) );
+		// if invoked from CP: estimated NNZ is for entire matrix (nnz=0, if 0 initialized)
+		// if invoked from MR: estimated NNZ is for one block
+		final long estnnz = (invokedFromCP ? ((min==0.0 && max==0.0)? 0 : (long)(sparsity * rows * cols)) 
+				                           : nnzInBlocks[0]);
+		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
 		out.reset(rows, cols, lsparse);
 		
 		// Special case shortcuts for efficiency

@@ -96,8 +96,12 @@ public class MatrixBlock extends MatrixValue
 	protected int maxrow = -1;
 	protected int maxcolumn = -1;
 	
-	//grpaggregate-specific attributes
+	//grpaggregate-specific attributes (optional)
 	protected int numGroups = -1;
+	
+	//diag-specific attributes (optional)
+	protected boolean diag = false;
+	
 	
 	////////
 	// Matrix Constructors
@@ -486,6 +490,16 @@ public class MatrixBlock extends MatrixValue
 			ret = (nonZeros==0);
 		}
 		return ret;
+	}
+	
+	public void setDiag()
+	{
+		diag = true;
+	}
+	
+	public boolean isDiag()
+	{
+		return diag;
 	}
 	
 	////////
@@ -1052,7 +1066,7 @@ public class MatrixBlock extends MatrixValue
 	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
 	{		
 		//evaluate sparsity threshold
-		double lsparsity = ((double)nnz/nrows)/ncols;
+		double lsparsity = (double)nnz/nrows/ncols;
 		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
 		
 		//compare size of sparse and dense representation in order to prevent
@@ -2155,7 +2169,7 @@ public class MatrixBlock extends MatrixValue
 	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity)
 	{
 		//determine sparse/dense representation
-		boolean sparse = evalSparseFormatInMemory(nrows, ncols, (long)sparsity*nrows*ncols);
+		boolean sparse = evalSparseFormatInMemory(nrows, ncols, (long)(sparsity*nrows*ncols));
 		
 		//estimate memory consumption for sparse/dense
 		if( sparse )

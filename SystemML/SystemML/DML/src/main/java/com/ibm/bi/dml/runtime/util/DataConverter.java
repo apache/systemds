@@ -151,7 +151,10 @@ public class DataConverter
 			}
 			else if( outputinfo == OutputInfo.BinaryBlockOutputInfo )
 			{
-				writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
+				if( mat.isDiag() )
+					writeDiagBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
+				else
+					writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
 			}
 			else if ( outputinfo == OutputInfo.MatrixMarketOutputInfo ) 
 			{
@@ -1320,7 +1323,7 @@ public class DataConverter
 						//append block to sequence file
 						indexes.setIndexes(blockRow+1, blockCol+1);
 						writer.append(indexes, block);
-						
+							
 						//reset block for later reuse
 						block.reset();
 					}
@@ -1333,6 +1336,111 @@ public class DataConverter
 		}
 	}
 	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param src
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param replication
+	 * @throws IOException
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 */
+	private static void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication ) 
+			throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		boolean sparse = src.isInSparseFormat();
+		FileSystem fs = FileSystem.get(job);
+		
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
+		// 1) create sequence file writer, with right replication factor 
+		// (config via 'dfs.replication' not possible since sequence file internally calls fs.getDefaultReplication())
+		SequenceFile.Writer writer = null;
+		if( replication > 0 ) //if replication specified (otherwise default)
+		{
+			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt("io.file.buffer.size", 4096),  
+					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+		}
+		else	
+		{
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
+		}
+		
+		// 2) bound check for src block
+		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
+		{
+			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
+					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+		}
+		
+		//3) reblock and write
+		try
+		{
+			MatrixIndexes indexes = new MatrixIndexes();
+
+			if( rlen <= brlen && clen <= bclen ) //opt for single block
+			{
+				//directly write single block
+				indexes.setIndexes(1, 1);
+				writer.append(indexes, src);
+			}
+			else //general case
+			{
+				//initialize blocks for reuse (at most 4 different blocks required)
+				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
+				MatrixBlock emptyBlock = new MatrixBlock();
+					
+				//create and write subblocks of matrix
+				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
+					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
+					{
+						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
+						int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+						MatrixBlock block = null;
+						
+						if( blockRow==blockCol ) //block on diagonal
+						{	
+							int row_offset = blockRow*brlen;
+							int col_offset = blockCol*bclen;
+							
+							//get reuse matrix block
+							block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+		
+							//copy submatrix to block
+							src.sliceOperations( row_offset+1, row_offset+maxRow, 
+									             col_offset+1, col_offset+maxCol, 
+									             block );							
+						}
+						else //empty block (not on diagonal)
+						{
+							block = emptyBlock;
+							block.reset(maxRow, maxCol);
+						}
+						
+						//append block to sequence file
+						indexes.setIndexes(blockRow+1, blockCol+1);
+						writer.append(indexes, block);
+						
+						//reset block for later reuse
+						if( blockRow!=blockCol )
+							block.reset();
+					}
+			}				
+		}
+		finally
+		{
+			if( writer != null )
+				writer.close();
+		}
+	}
 	
 	public static void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException

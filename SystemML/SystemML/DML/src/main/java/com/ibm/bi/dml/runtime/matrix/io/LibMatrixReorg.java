@@ -130,8 +130,10 @@ public class LibMatrixReorg
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
-		if( clen == 1 ) //diagV2M
+		if( clen == 1 ){ //diagV2M
 			diagV2M( in, out );
+			out.setDiag();
+		}
 		else if ( rlen == clen ) //diagM2V
 			diagM2V( in, out );
 		else

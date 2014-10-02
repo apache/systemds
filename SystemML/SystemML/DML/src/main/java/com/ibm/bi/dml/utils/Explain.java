@@ -56,6 +56,7 @@ public class Explain
 	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;	
 	private static final boolean SHOW_MEM_ABOVE_BUDGET = true;
 	private static final boolean SHOW_LITERAL_HOPS = false;
+	private static final boolean SHOW_DATA_DEPENDENCIES = true;
 	
 
 	//different explain levels
@@ -63,7 +64,8 @@ public class Explain
 		NONE, 	  // explain disabled
 		HOPS,     // explain program and hops
 		RUNTIME,  // explain runtime program (default)
-		RECOMPILE, // explain runtime program, incl recompile
+		RECOMPILE_HOPS, // explain hops, incl recompile
+		RECOMPILE_RUNTIME, // explain runtime program, incl recompile 
 	};
 	
 	//////////////
@@ -104,10 +106,11 @@ public class Explain
 		switch( type ) {
 			//explain hops with stats
 			case HOPS:     	
+			case RECOMPILE_HOPS:	
 				return explain(prog);
 			//explain runtime program	
 			case RUNTIME:  
-			case RECOMPILE: 
+			case RECOMPILE_RUNTIME: 
 				return explain(rtprog);
 		}
 		
@@ -268,14 +271,27 @@ public class Explain
 	public static String explainHops( ArrayList<Hop> hops ) 
 		throws DMLRuntimeException
 	{
+		return explainHops(hops, 0);
+	}
+	
+	/**
+	 * 
+	 * @param hops
+	 * @param level
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static String explainHops( ArrayList<Hop> hops, int level ) 
+		throws DMLRuntimeException
+	{
 		StringBuilder sb = new StringBuilder();
 		
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
-			sb.append(explainHop(hop, 0));
+			sb.append(explainHop(hop, level));
 		Hop.resetVisitStatus(hops);
 		
-		return sb.toString();
+		return sb.toString();		
 	}
 	
 	/**
@@ -287,8 +303,20 @@ public class Explain
 	public static String explain( Hop hop ) 
 		throws DMLRuntimeException
 	{
+		return explain(hop, 0);
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static String explain( Hop hop, int level ) 
+		throws DMLRuntimeException
+	{
 		hop.resetVisitStatus();
-		String ret = explainHop(hop, 0);
+		String ret = explainHop(hop, level);
 		hop.resetVisitStatus();
 		
 		return ret;
@@ -323,11 +351,13 @@ public class Explain
 				ret = ExplainType.HOPS;
 			else if( arg.equalsIgnoreCase("runtime") )
 				ret = ExplainType.RUNTIME;
-			else if( arg.equalsIgnoreCase("recompile") )
-				ret = ExplainType.RECOMPILE;
+			else if( arg.equalsIgnoreCase("recompile_hops") )
+				ret = ExplainType.RECOMPILE_HOPS;
+			else if( arg.equalsIgnoreCase("recompile_runtime") )
+				ret = ExplainType.RECOMPILE_RUNTIME;
 			else 
 				throw new DMLException("Failed to parse explain type: "+arg+" " +
-						               "(valid types: hops, runtime, recompile).");
+						               "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
 		}
 		
 		return ret;
@@ -346,7 +376,7 @@ public class Explain
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			builder.append(offset);
-			builder.append("WHILE\n");
+			builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+")\n");
 			builder.append(explainHop(wsb.getPredicateHops(), level+1));
 			
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);
@@ -357,7 +387,7 @@ public class Explain
 		else if (sb instanceof IfStatementBlock) {
 			IfStatementBlock ifsb = (IfStatementBlock) sb;
 			builder.append(offset);
-			builder.append("IF\n");
+			builder.append("IF (lines "+ifsb.getBeginLine()+"-"+ifsb.getEndLine()+")\n");
 			builder.append(explainHop(ifsb.getPredicateHops(), level+1));
 			
 			IfStatement ifs = (IfStatement) sb.getStatement(0);
@@ -375,9 +405,9 @@ public class Explain
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			builder.append(offset);
 			if (sb instanceof ParForStatementBlock)
-				builder.append("PARFOR\n");
+				builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			else
-				builder.append("FOR\n");
+				builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			
 			if (fsb.getFromHops() != null) 
 				builder.append(explainHop(fsb.getFromHops(), level+1));
@@ -400,7 +430,7 @@ public class Explain
 		else {
 			// For generic StatementBlock
 			builder.append(offset);
-			builder.append("GENERIC [recompile=" + sb.requiresRecompilation() + "]\n");
+			builder.append("GENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+") [recompile=" + sb.requiresRecompilation() + "]\n");
 			ArrayList<Hop> hopsDAG = sb.get_hops();
 			if (hopsDAG != null && hopsDAG.size() > 0) {
 				Hop.resetVisitStatus(hopsDAG);
@@ -436,8 +466,29 @@ public class Explain
 		for( Hop input : hop.getInput() )
 			sb.append(explainHop(input, level));
 		
+		//indentation
 		sb.append(offset);
+		
+		//hop id
+		if( SHOW_DATA_DEPENDENCIES )
+			sb.append("("+hop.getHopID()+") ");
+		
+		//operation string
 		sb.append(hop.getOpString());
+		
+		//input hop references 
+		if( SHOW_DATA_DEPENDENCIES ){
+			String childs = " (";
+			boolean childAdded = false;
+			for( Hop input : hop.getInput() )
+				if( !(input instanceof LiteralOp) ){
+					childs += (childAdded?",":"") + input.getHopID();
+					childAdded = true;
+				}
+			childs += ")";		
+			if( childAdded )
+				sb.append(childs);
+		}
 		
 		//matrix characteristics
 		sb.append(" [" + hop.get_dim1() + "," 
@@ -488,7 +539,7 @@ public class Explain
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			sb.append(offset);
-			sb.append("WHILE\n");
+			sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+")\n");
 			sb.append(explainInstructions(wpb.getPredicate(), level+1));			
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
 				sb.append( explainProgramBlock( pbc, level+1) );
@@ -497,7 +548,7 @@ public class Explain
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			sb.append(offset);
-			sb.append("IF\n");
+			sb.append("IF (lines "+ipb.getBeginLine()+"-"+ipb.getEndLine()+")\n");
 			sb.append(explainInstructions(ipb.getPredicate(), level+1));
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() ) 
 				sb.append( explainProgramBlock( pbc, level+1) );
@@ -514,9 +565,9 @@ public class Explain
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			sb.append(offset);
 			if( pb instanceof ParForProgramBlock )
-				sb.append("PARFOR\n");
+				sb.append("PARFOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			else
-				sb.append("FOR\n");
+				sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			sb.append(explainInstructions(fpb.getFromInstructions(), level+1));
 			sb.append(explainInstructions(fpb.getToInstructions(), level+1));
 			sb.append(explainInstructions(fpb.getIncrementInstructions(), level+1));
@@ -528,9 +579,9 @@ public class Explain
 		{
 			sb.append(offset);
 			if( pb.getStatementBlock()!=null )
-				sb.append("GENERIC [recompile="+pb.getStatementBlock().requiresRecompilation()+"]\n");
+				sb.append("GENERIC (lines "+pb.getBeginLine()+"-"+pb.getEndLine()+") [recompile="+pb.getStatementBlock().requiresRecompilation()+"]\n");
 			else
-				sb.append("GENERIC\n");
+				sb.append("GENERIC (lines "+pb.getBeginLine()+"-"+pb.getEndLine()+") \n");
 			sb.append(explainInstructions(pb.getInstructions(), level+1));
 		}
 		

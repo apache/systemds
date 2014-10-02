@@ -198,9 +198,15 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		// explain recompiled instructions 
-		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE )
-			LOG.info("EXPLAIN RECOMPILE SB:\n" + Explain.explain(newInst,1));
+		// explain recompiled hops / instructions
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ){
+			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
+		    Explain.explainHops(hops, 1));
+		}
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME ){
+			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
+		    Explain.explain(newInst, 1));
+		}
 	
 		return newInst;
 	}
@@ -279,9 +285,11 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
-		// explain recompiled instructions 
-		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE )
-			LOG.info("EXPLAIN RECOMPILE PRED:\n" + Explain.explain(newInst,1));
+		// explain recompiled instructions
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS )
+			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(newInst,1));
 		
 		return newInst;
 	}

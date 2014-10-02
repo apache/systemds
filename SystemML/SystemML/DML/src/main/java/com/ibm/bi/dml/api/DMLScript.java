@@ -122,7 +122,7 @@ public class DMLScript
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid])\n"
 			//undocumented feature in beta 08/2014 release
 			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile)\n"
+			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"

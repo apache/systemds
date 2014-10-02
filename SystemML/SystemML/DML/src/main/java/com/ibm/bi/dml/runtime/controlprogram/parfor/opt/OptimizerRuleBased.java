@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -84,10 +85,11 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * - 12) rewrite transpose vector operations (for sparse)
  * - 13) rewrite set in-place result indexing
  * - 14) rewrite disable caching (prevent sparse serialization)
- * - 15) rewrite set result merge 		 		 
- * - 16) rewrite set recompile memory budget
- * - 17) rewrite remove recursive parfor	
- * - 18) rewrite remove unnecessary parfor		
+ * - 15) rewrite enable runtime piggybacking
+ * - 16) rewrite set result merge 		 		 
+ * - 17) rewrite set recompile memory budget
+ * - 18) rewrite remove recursive parfor	
+ * - 19) rewrite remove unnecessary parfor		
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -254,21 +256,24 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
+			
+			// rewrite 15: runtime piggybacking
+			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 		}	
 
-		// rewrite 15: set result merge
+		// rewrite 16: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 16: set local recompile memory budget
+		// rewrite 17: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 17: parfor (in recursive functions) to for
+		// rewrite 18: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 18: parfor (par=1) to for 
+		// rewrite 19: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -1799,6 +1804,76 @@ public class OptimizerRuleBased extends Optimizer
 		return sum;
 	}
 	
+	///////
+	//REWRITE enable runtime piggybacking
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 * @param partitionedMatrices.keySet() 
+	 * @param vars 
+	 * @throws DMLRuntimeException
+	 */
+	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PDataPartitionFormat> partitionedMatrices ) 
+		throws DMLRuntimeException
+	{
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+
+		HashSet<String> sharedVars = new HashSet<String>();
+		boolean apply = false; 
+		
+		//enable runtime piggybacking if MR jobs on shared read-only data set
+		if( OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING )
+		{
+			//apply runtime piggybacking if hop in mr and shared input variable 
+			//(any input variabled which is not partitioned and is read only and applies)
+			apply = rHasSharedMRInput(n, vars.keySet(), partitionedMatrices.keySet(), sharedVars);
+		}
+		
+		if( apply )
+			pfpb.setRuntimePiggybacking(apply);
+		
+		_numEvaluatedPlans++;
+		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="+apply+
+				" ("+ProgramConverter.serializeStringCollection(sharedVars)+")" );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param inputVars
+	 * @param partitionedVars
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = false;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				ret |= rHasSharedMRInput( cn, inputVars, partitionedVars, sharedVars );
+		}
+		else if( n.getNodeType()== NodeType.HOP && n.getExecType()==ExecType.MR )
+		{
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			for( Hop ch : h.getInput() )
+				if(    ch instanceof DataOp 
+					&& inputVars.contains(ch.get_name())
+					&& !partitionedVars.contains(ch.get_name()))
+				{
+					ret = true;
+					sharedVars.add(ch.get_name());
+				}
+		}
+
+		return ret;
+	}
+
 	
 	///////
 	//REWRITE set result merge

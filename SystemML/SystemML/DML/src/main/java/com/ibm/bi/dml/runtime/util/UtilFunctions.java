@@ -112,4 +112,12 @@ public class UtilFunctions
 				return false;
 		return true;
 	}
+	
+	public static byte max( byte[] array )
+	{
+		byte ret = Byte.MIN_VALUE;
+		for( int i=0; i<array.length; i++ )
+			ret = (array[i]>ret)?array[i]:ret;
+		return ret;	
+	}
 }

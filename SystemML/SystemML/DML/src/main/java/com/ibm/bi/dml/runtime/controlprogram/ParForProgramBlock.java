@@ -61,6 +61,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking.PiggybackingType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimator;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
@@ -247,6 +249,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected double           _recompileMemoryBudget = -1;
 	//specifics for caching
 	protected boolean          _enableCPCaching     = true;
+	protected boolean          _enableRuntimePiggybacking = false;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -386,6 +389,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void setCPCaching(boolean flag)
 	{
 		_enableCPCaching = flag;
+	}
+	
+	public void setRuntimePiggybacking(boolean flag)
+	{
+		_enableRuntimePiggybacking = flag;
 	}
 	
 	public void setExecMode( PExecMode mode )
@@ -646,6 +654,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
 		
+		//enable runtime piggybacking if required
+		if( _enableRuntimePiggybacking )
+			RuntimePiggybacking.start( PiggybackingType.TIME_BASED_SEQUENTIAL );
+		
 		try
 		{
 			// Step 1) init parallel workers, task queue and threads
@@ -717,6 +729,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			//remove thread-local memory budget (reset to original budget)
 			//(in finally to prevent error side effects for multiple scripts in one jvm)
 			resetMemoryBudget();
+		
+			//disable runtime piggybacking
+			if( _enableRuntimePiggybacking )
+				RuntimePiggybacking.stop();
 			
 			if( _monitor ) 
 			{
@@ -1730,7 +1746,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_replicationExport     = -1;
 		_jvmReuse              = true;
 		_recompileMemoryBudget = -1;
-		
+		_enableRuntimePiggybacking = false;
 	}
 	
 	

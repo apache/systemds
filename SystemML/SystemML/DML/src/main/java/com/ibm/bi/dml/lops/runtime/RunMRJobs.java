@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -70,15 +71,21 @@ public class RunMRJobs
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static boolean flagLocalModeOpt = false;
-	public enum ExecMode { LOCAL, CLUSTER, INVALID }; 
-	//private static final Log LOG = LogFactory.getLog(RunMRJobs.class.getName());
+	public enum ExecMode { 
+		LOCAL, 
+		CLUSTER, 
+		INVALID 
+	}; 
 
-	public static JobReturn submitJob(MRJobInstruction inst, ExecutionContext ec ) 
+	/**
+	 * 
+	 * @param inst
+	 * @param ec
+	 * @return
+	 */
+	public static JobReturn prepareAndSubmitJob( MRJobInstruction inst, ExecutionContext ec )
 		throws DMLRuntimeException 
 	{
-		
-		JobReturn ret = new JobReturn();
-
 		// Obtain references to all input matrices 
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(ec);
 		
@@ -97,8 +104,31 @@ public class RunMRJobs
 		}
 		
 		// Obtain references to all output matrices
-		MatrixObject[] outputMatrices = inst.extractOutputMatrices(ec);
-		
+		inst.extractOutputMatrices(ec);
+	
+		// runtime piggybacking if applicable
+		if(   OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING 
+			&& RuntimePiggybacking.isActive() )
+		{
+			return RuntimePiggybacking.submitJob(inst, ec);
+		}
+		else
+			return submitJob(inst, ec);
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @param ec
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JobReturn submitJob(MRJobInstruction inst, ExecutionContext ec ) 
+		throws DMLRuntimeException 
+	{
+		JobReturn ret = new JobReturn();		
+		MatrixObject[] inputMatrices = inst.getInputMatrices();
+		MatrixObject[] outputMatrices = inst.getOutputMatrices();
 		boolean execCP = false;
 		
 		// Spawn MapReduce Jobs

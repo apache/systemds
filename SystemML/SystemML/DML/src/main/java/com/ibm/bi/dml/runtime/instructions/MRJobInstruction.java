@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
@@ -22,6 +23,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -29,6 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /*
 ---------------------------------------------------------------------------------------
@@ -56,16 +59,16 @@ public class MRJobInstruction extends Instruction
 	//public enum JobType {MMCJ, MMRJ, GMR, Partition, RAND, ReBlock, SortKeys, Combine, CMCOV, GroupedAgg}; 
 	JobType jobType;
 	
-	String iv_randInstructions = "";
-	String iv_recordReaderInstructions = "";
-	String iv_instructionsInMapper = ""; 
-	String iv_shuffleInstructions = ""; 
-	String iv_aggInstructions = "";
-	String iv_otherInstructions = "";
+	String _randInstructions = "";
+	String _recordReaderInstructions = "";
+	String _mapperInstructions = ""; 
+	String _shuffleInstructions = ""; 
+	String _aggInstructions = "";
+	String _otherInstructions = "";
 	
 	String[] inputVars;
 	String[] outputVars;
-	byte [] iv_resultIndices;
+	byte [] _resultIndices;
 	
 	int iv_numReducers;
 	int iv_replication;
@@ -84,37 +87,37 @@ public class MRJobInstruction extends Instruction
 
 	public String getIv_instructionsInMapper()
 	{
-		return iv_instructionsInMapper;
+		return _mapperInstructions;
 	}
 	
 	public String getIv_recordReaderInstructions()
 	{
-		return iv_recordReaderInstructions;
+		return _recordReaderInstructions;
 	}
 	
 	public String getIv_randInstructions() 
 	{
-		return iv_randInstructions;
+		return _randInstructions;
 	}
 
 	public String getIv_shuffleInstructions()
 	{
-		return iv_shuffleInstructions;
+		return _shuffleInstructions;
 	}
 
 	public String getIv_aggInstructions()
 	{
-		return iv_aggInstructions;
+		return _aggInstructions;
 	}
 
 	public String getIv_otherInstructions()
 	{
-		return iv_otherInstructions;
+		return _otherInstructions;
 	}
 
 	public byte[] getIv_resultIndices()
 	{
-		return iv_resultIndices;
+		return _resultIndices;
 	}
 
 	public int getIv_numReducers()
@@ -200,7 +203,7 @@ public class MRJobInstruction extends Instruction
 		//replace inputs/outputs (arrays)
 		inputVars = that.inputVars.clone();
 		outputVars = that.outputVars.clone();
-		iv_resultIndices = that.iv_resultIndices.clone();
+		_resultIndices = that._resultIndices.clone();
 	}
 	
 	/**
@@ -210,7 +213,7 @@ public class MRJobInstruction extends Instruction
 	 * @throws DMLRuntimeException
 	 */
 	public void setOutputs(byte[] outputIndices) {
-		iv_resultIndices = outputIndices;
+		_resultIndices = outputIndices;
 	}
 	
 	/**
@@ -242,27 +245,27 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	public void setRecordReaderInstructions(String rrInstructions) {
-		iv_recordReaderInstructions = rrInstructions;
+		_recordReaderInstructions = rrInstructions;
 	}
 	
 	public void setMapperInstructions(String mapperInstructions) {
-		iv_instructionsInMapper = mapperInstructions;
+		_mapperInstructions = mapperInstructions;
 	}
 	
 	public void setShuffleInstructions(String shuffleInstructions) {
-		iv_shuffleInstructions = shuffleInstructions;
+		_shuffleInstructions = shuffleInstructions;
 	}
 	
 	public void setAggregateInstructionsInReducer(String aggInstructions) {
-		iv_aggInstructions = aggInstructions;
+		_aggInstructions = aggInstructions;
 	}
 	
 	public void setOtherInstructionsInReducer(String otherInstructions) {
-		iv_otherInstructions = otherInstructions;
+		_otherInstructions = otherInstructions;
 	}
 	
 	public void setRandInstructions(String randInstructions) {
-		iv_randInstructions = randInstructions;
+		_randInstructions = randInstructions;
 	}
 	
 	/**
@@ -565,14 +568,14 @@ public class MRJobInstruction extends Instruction
 		String instruction = "";
 		instruction += "jobtype = " + jobType + " \n";
 		instruction += "input labels = " + Arrays.toString(inputVars) + " \n";
-		instruction += "recReader inst = " + iv_recordReaderInstructions + " \n";
-		instruction += "rand inst = " + iv_randInstructions + " \n";
-		instruction += "mapper inst = " + iv_instructionsInMapper + " \n";
-		instruction += "shuffle inst = " + iv_shuffleInstructions + " \n";
-		instruction += "agg inst = " + iv_aggInstructions + " \n";
-		instruction += "other inst = " + iv_otherInstructions + " \n";
+		instruction += "recReader inst = " + _recordReaderInstructions + " \n";
+		instruction += "rand inst = " + _randInstructions + " \n";
+		instruction += "mapper inst = " + _mapperInstructions + " \n";
+		instruction += "shuffle inst = " + _shuffleInstructions + " \n";
+		instruction += "agg inst = " + _aggInstructions + " \n";
+		instruction += "other inst = " + _otherInstructions + " \n";
 		instruction += "output labels = " + Arrays.toString(outputVars) + " \n";
-		instruction += "result indices = " + getString(iv_resultIndices) + " \n";
+		instruction += "result indices = " + getString(_resultIndices) + " \n";
 		//instruction += "result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
 		instruction += "num reducers = " + iv_numReducers + " \n";
 		instruction += "replication = " + iv_replication + " \n";
@@ -598,8 +601,8 @@ public class MRJobInstruction extends Instruction
 		if (!debug)
 			instruction += "\t\t\t\tinput labels   = " + Arrays.toString(inputVars) + " \n";
 		
-		if (iv_recordReaderInstructions.length() > 0) {
-			String [] instArray = iv_recordReaderInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_recordReaderInstructions.length() > 0) {
+			String [] instArray = _recordReaderInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\trecReader inst = " + instArray[0] + " \n";
 			else {
@@ -615,8 +618,8 @@ public class MRJobInstruction extends Instruction
 				}			
 			}
 		}
-		if (iv_randInstructions.length() > 0) {			
-			String [] instArray = iv_randInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_randInstructions.length() > 0) {			
+			String [] instArray = _randInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\trand inst      = " + instArray[0] + " \n";
 			else {
@@ -632,8 +635,8 @@ public class MRJobInstruction extends Instruction
 				}
 			}
 		}
-		if (iv_instructionsInMapper.length() > 0) {
-			String [] instArray = iv_instructionsInMapper.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_mapperInstructions.length() > 0) {
+			String [] instArray = _mapperInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\tmapper inst    = " + instArray[0] + " \n";
 			else {
@@ -649,8 +652,8 @@ public class MRJobInstruction extends Instruction
 				}
 			}
 		}
-		if (iv_shuffleInstructions.length() > 0) {
-			String [] instArray = iv_shuffleInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_shuffleInstructions.length() > 0) {
+			String [] instArray = _shuffleInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\tshuffle inst   = " + instArray[0] + " \n";
 			else {
@@ -666,8 +669,8 @@ public class MRJobInstruction extends Instruction
 				}
 			}
 		}
-		if (iv_aggInstructions.length() > 0) {			
-			String [] instArray = iv_aggInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_aggInstructions.length() > 0) {			
+			String [] instArray = _aggInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\tagg inst       = " + instArray[0] + " \n";
 			else {
@@ -683,8 +686,8 @@ public class MRJobInstruction extends Instruction
 				}
 			}
 		}
-		if (iv_otherInstructions.length() > 0) {
-			String [] instArray = iv_otherInstructions.split(Lop.INSTRUCTION_DELIMITOR);
+		if (_otherInstructions.length() > 0) {
+			String [] instArray = _otherInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
 				instruction += "\t\t\t\tother inst     = " + instArray[0] + " \n";
 			else {
@@ -724,17 +727,17 @@ public class MRJobInstruction extends Instruction
 		String s = new String("");
 		
 		s += jobType;
-		if (!iv_instructionsInMapper.equals("")) {
-			s += ",map("+ getOps(iv_instructionsInMapper) + ")";
+		if (!_mapperInstructions.equals("")) {
+			s += ",map("+ getOps(_mapperInstructions) + ")";
 		}
-		if (!iv_shuffleInstructions.equals("")) {
-			s += ",shuffle("+ getOps(iv_shuffleInstructions) + ")";
+		if (!_shuffleInstructions.equals("")) {
+			s += ",shuffle("+ getOps(_shuffleInstructions) + ")";
 		}
-		if (!iv_aggInstructions.equals("")) {
-			s += ",agg("+ getOps(iv_aggInstructions) + ")";
+		if (!_aggInstructions.equals("")) {
+			s += ",agg("+ getOps(_aggInstructions) + ")";
 		}
-		if (!iv_otherInstructions.equals("")) {
-			s += ",other("+ getOps(iv_otherInstructions) + ")";
+		if (!_otherInstructions.equals("")) {
+			s += ",other("+ getOps(_otherInstructions) + ")";
 		}
 		return s;
 		
@@ -752,9 +755,9 @@ public class MRJobInstruction extends Instruction
 
 	public boolean isMapOnly()
 	{
-		return (   (iv_shuffleInstructions == null || iv_shuffleInstructions.length()==0)
-				&& (iv_aggInstructions == null || iv_aggInstructions.length()==0)
-				&& (iv_otherInstructions == null || iv_otherInstructions.length()==0) );
+		return (   (_shuffleInstructions == null || _shuffleInstructions.length()==0)
+				&& (_aggInstructions == null || _aggInstructions.length()==0)
+				&& (_otherInstructions == null || _otherInstructions.length()==0) );
 	}
 	
 	/*
@@ -1017,22 +1020,22 @@ public class MRJobInstruction extends Instruction
 		}
 		
 		LOG.trace("  Instructions:");
-		if ( !iv_recordReaderInstructions.equals("")) 
-			LOG.trace("    recReader inst - " + iv_recordReaderInstructions );
-		if ( !iv_randInstructions.equals("")) 
-			LOG.trace("    rand inst - " + iv_randInstructions );
-		if ( !iv_instructionsInMapper.equals("")) 
-			LOG.trace("    mapper inst - " + iv_instructionsInMapper );
-		if ( !iv_shuffleInstructions.equals("")) 
-			LOG.trace("    shuffle inst - " + iv_shuffleInstructions );
-		if ( !iv_aggInstructions.equals("")) 
-			LOG.trace("    agg inst - " + iv_aggInstructions );
-		if ( !iv_otherInstructions.equals("")) 
-			LOG.trace("    other inst - " + iv_otherInstructions );
+		if ( !_recordReaderInstructions.equals("")) 
+			LOG.trace("    recReader inst - " + _recordReaderInstructions );
+		if ( !_randInstructions.equals("")) 
+			LOG.trace("    rand inst - " + _randInstructions );
+		if ( !_mapperInstructions.equals("")) 
+			LOG.trace("    mapper inst - " + _mapperInstructions );
+		if ( !_shuffleInstructions.equals("")) 
+			LOG.trace("    shuffle inst - " + _shuffleInstructions );
+		if ( !_aggInstructions.equals("")) 
+			LOG.trace("    agg inst - " + _aggInstructions );
+		if ( !_otherInstructions.equals("")) 
+			LOG.trace("    other inst - " + _otherInstructions );
 
 		LOG.trace("  Outputs:");
 		for(int i=0; i < outputVars.length; i++ ) {
-			LOG.trace("    " + iv_resultIndices[i] + " : " + outputVars[i] + 
+			LOG.trace("    " + _resultIndices[i] + " : " + outputVars[i] + 
 					" - [" + outputs[i] + 
 					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols() + 
 					"]  nnz[" + outputMatrices[i].getNnz() +
@@ -1088,5 +1091,179 @@ public class MRJobInstruction extends Instruction
 				setRandInstructions(rndinst2);
 			}		
 		}
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 * @return
+	 */
+	public boolean isMergableMRJobInstruction( MRJobInstruction that )
+	{
+		//TODO incorporate memory estimates for sum of estimates 
+		//TODO incorporate max byte indexes
+		
+		return true;
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 */
+	public void mergeMRJobInstruction( MRJobInstruction that )
+	{
+		Timing time = new Timing(true);
+		System.out.println("Current instruction:\n"+this.toString());
+		System.out.println("Next instruction:\n"+that.toString());
+		
+		//compute offsets (inputs1, inputs2, intermediates1, intermediates2, outputs1, outputs2)
+		byte maxIxInst1 = UtilFunctions.max(_resultIndices);
+		byte maxIxInst2 = UtilFunctions.max(that._resultIndices);
+		byte sharedIx = 0;
+		
+		//compute input index map (based on distinct filenames)
+		HashMap<String, Byte> inMap = new HashMap<String, Byte>();
+		for( int i=0; i<inputs.length; i++ )
+			inMap.put(inputs[i], (byte) i);
+		
+		//compute shared input indexes
+		for( int i=0; i<that.inputs.length; i++ ) 
+			if( inMap.containsKey(that.inputs[i]) )
+				sharedIx++;
+		
+		byte lenInputs = (byte)(inputs.length + that.inputs.length - sharedIx);
+		
+		//compute transition index map for instruction 1
+		HashMap<Byte, Byte> transMap1 = new HashMap<Byte,Byte>();
+		for( int i=0; i<inputs.length; i++ )
+			transMap1.put((byte)i, (byte)i);
+		for( int i=inputs.length; i<=maxIxInst1; i++ ) //remap intermediates and 
+		{
+			transMap1.put((byte)i, (byte)(that.inputs.length-sharedIx+i));
+			System.out.println("map trans1 "+i+" to "+(that.inputs.length-sharedIx+i));
+		}
+			
+		//compute transition index max for instruction 2
+		HashMap<Byte, Byte> transMap2 = new HashMap<Byte,Byte>();
+		byte nextIX = (byte)inputs.length;
+		for( int i=0; i<that.inputs.length; i++ ) {
+			if( !inMap.containsKey(that.inputs[i]) )
+				inMap.put(that.inputs[i], nextIX++);
+			transMap2.put((byte)i, inMap.get(that.inputs[i]));
+			System.out.println("map trans2 "+i+" to "+inMap.get(that.inputs[i]));
+			
+		}
+		nextIX = (byte) (lenInputs + (maxIxInst1+1 - inputs.length));
+		for( int i=that.inputs.length; i<=maxIxInst2; i++ )
+		{
+			transMap2.put((byte)i, (byte)nextIX++);
+			System.out.println("map trans2 "+i+" to "+(nextIX-1));
+		}
+		
+		//construct merged inputs and meta data
+		int llen = lenInputs; int len = inputs.length;
+		int olen = outputs.length+that.outputs.length;
+		System.out.println("new input size = "+llen);
+		String[] linputs = new String[llen];
+		InputInfo[] linputInfos = new InputInfo[llen];
+		PDataPartitionFormat[] lpformats = new PDataPartitionFormat[llen];
+		long[] lrlens = new long[llen];
+		long[] lclens = new long[llen];
+		int[] lbrlens = new int[llen];
+		int[] lbclens = new int[llen];
+		String[] loutputs = new String[olen];
+		OutputInfo[] loutputInfos = new OutputInfo[olen];
+		byte[] lresultIndexes = new byte[olen];
+		System.arraycopy(inputs, 0, linputs, 0, len);
+		System.arraycopy(inputInfos, 0, linputInfos, 0, len);
+		System.arraycopy(pformats, 0, lpformats, 0, len);
+		System.arraycopy(rlens, 0, lrlens, 0, len);
+		System.arraycopy(clens, 0, lclens, 0, len);
+		System.arraycopy(brlens, 0, lbrlens, 0, len);
+		System.arraycopy(bclens, 0, lbclens, 0, len);
+		System.arraycopy(outputs, 0, loutputs, 0, outputs.length);
+		System.arraycopy(outputInfos, 0, loutputInfos, 0, outputs.length);
+		for( int i=0; i<that.inputs.length; i++ ){
+			byte ixSrc = (byte) i;
+			byte ixTgt = transMap2.get((byte)i);
+			linputs[ixTgt] = that.inputs[ixSrc];
+			linputInfos[ixTgt] = that.inputInfos[ixSrc];
+			lpformats[ixTgt] = that.pformats[ixSrc];
+			lrlens[ixTgt] = that.rlens[ixSrc];
+			lclens[ixTgt] = that.clens[ixSrc];
+			lbrlens[ixTgt] = that.brlens[ixSrc];
+			lbclens[ixTgt] = that.bclens[ixSrc];
+		}
+		for( int i=0; i<_resultIndices.length; i++ )
+			lresultIndexes[i] = transMap1.get(_resultIndices[i]);
+		for( int i=0; i<that._resultIndices.length; i++ ){
+			loutputs[_resultIndices.length+i] = that.outputs[i];
+			loutputInfos[_resultIndices.length+i] = that.outputInfos[i];
+			lresultIndexes[_resultIndices.length+i] = transMap2.get(that._resultIndices[i]);
+		}
+		inputs = linputs; inputInfos = linputInfos; 
+		pformats = lpformats;
+		outputs = loutputs; outputInfos = loutputInfos;
+		rlens = lrlens; clens = lclens; brlens = lbrlens; bclens = lbclens;
+		_resultIndices = lresultIndexes;
+		
+		//replace merged instructions with all transition map entries 
+		String mapInst1 = replaceInstructionStringWithTransMap(this.getIv_instructionsInMapper(), transMap1);
+		String mapInst2 = replaceInstructionStringWithTransMap(that.getIv_instructionsInMapper(), transMap2);
+		
+		//concatenate instructions
+		setMapperInstructions(mapInst1 + Lop.INSTRUCTION_DELIMITOR + mapInst2);
+		//TODO other instructions types
+		
+
+		System.out.println("MERGED INSTRUCTION:");
+		System.out.println(this.toString());
+		
+		System.out.println("Merged mr-job instruction in "+time.stop());
+	}
+	
+	/**
+	 * Safe replacement of mr indexes based on transition map. Multiple string replacements
+	 * would fail for crossing transitions: e.g., 1->2, 2->1.
+	 * 
+	 * @param inst
+	 * @param transMap
+	 * @return
+	 */
+	private String replaceInstructionStringWithTransMap( String inst, HashMap<Byte,Byte> transMap )
+	{
+		//prevent unnecessay parsing and reconstruction
+		if( inst == null || transMap.size()==0 )
+			return inst;
+		
+		String[] pinst = inst.split(Lop.INSTRUCTION_DELIMITOR);
+		StringBuilder instOut = new StringBuilder();
+		for( String lpinst : pinst ){ //for each instruction
+			//split instruction into parts
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(lpinst);
+			//replace instruction parts
+			for( int i=0; i<parts.length; i++ )
+			{
+				String lpart = parts[i];
+				int pos = lpart.indexOf(Instruction.DATATYPE_PREFIX);
+				if( pos>0 ){
+					String index = lpart.substring(0, pos);	
+					String newindex = String.valueOf(transMap.get(Byte.parseByte(index)));
+					parts[i] = newindex + lpart.substring(pos); 
+				}
+			}
+			
+			if( instOut.length()>0 )
+				instOut.append(Lop.INSTRUCTION_DELIMITOR);
+			
+			//reconstruct instruction
+			instOut.append("MR");
+			for( String lpart : parts ){
+				instOut.append(Lop.OPERAND_DELIMITOR);
+				instOut.append(lpart);
+			}
+		}
+		
+		return instOut.toString();
 	}
 }

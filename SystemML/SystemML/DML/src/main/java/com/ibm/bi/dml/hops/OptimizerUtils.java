@@ -109,7 +109,16 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = true;
 
+	/**
+	 * 
+	 */
 	public static boolean ALLOW_RAND_JOB_RECOMPILE = true;
+	
+	/**
+	 * Enables parfor runtime piggybacking of MR jobs into the packed jobs for
+	 * scan sharing.
+	 */
+	public static boolean ALLOW_RUNTIME_PIGGYBACKING = false;
 	
 	/**
 	 * Enables interprocedural analysis between main script and functions as well as functions

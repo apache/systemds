@@ -323,7 +323,7 @@ public class ProgramBlock
 				
 				//execute MR job
 				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
-				JobReturn jb = RunMRJobs.submitJob(currMRInst, ec);
+				JobReturn jb = RunMRJobs.prepareAndSubmitJob(currMRInst, ec);
 				
 				//specific post processing
 				if ( currMRInst.getJobType() == JobType.SORT && jb.getMetaData().length > 0 ) 

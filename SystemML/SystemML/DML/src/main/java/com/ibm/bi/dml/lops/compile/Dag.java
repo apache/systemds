@@ -3313,6 +3313,14 @@ public class Dag<N extends Lop>
 		mr.setRecordReaderInstructions(getCSVString(recordReaderInstructions));
 		mr.setMapperInstructions(getCSVString(mapperInstructions));
 		
+		//compute and set mapper memory requirements (for consistency of runtime piggybacking)
+		if( jt == JobType.GMR ) {
+			double mem = 0;
+			for( N n : execNodes )
+				mem += computeFootprintInMapper(n);
+			mr.setMemoryRequirements(mem);
+		}
+			
 		if ( jt == JobType.DATAGEN )
 			mr.setRandInstructions(getCSVString(randInstructions));
 		

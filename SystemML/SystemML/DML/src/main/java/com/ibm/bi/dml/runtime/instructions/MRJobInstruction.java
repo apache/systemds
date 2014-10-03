@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
@@ -23,7 +24,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -57,114 +57,67 @@ public class MRJobInstruction extends Instruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//public enum JobType {MMCJ, MMRJ, GMR, Partition, RAND, ReBlock, SortKeys, Combine, CMCOV, GroupedAgg}; 
-	JobType jobType;
+	private JobType jobType;
 	
-	String _randInstructions = "";
-	String _recordReaderInstructions = "";
-	String _mapperInstructions = ""; 
-	String _shuffleInstructions = ""; 
-	String _aggInstructions = "";
-	String _otherInstructions = "";
+	private String _randInstructions = "";
+	private String _recordReaderInstructions = "";
+	private String _mapperInstructions = ""; 
+	private String _shuffleInstructions = ""; 
+	private String _aggInstructions = "";
+	private String _otherInstructions = "";
 	
-	String[] inputVars;
-	String[] outputVars;
-	byte [] _resultIndices;
+	private String[] inputVars;
+	private String[] outputVars;
+	private byte [] _resultIndices;
 	
-	int iv_numReducers;
-	int iv_replication;
-	public String dimsUnknownFilePrefix;
+	private int iv_numReducers;
+	private int iv_replication;
+	private String dimsUnknownFilePrefix;
+
+	private double _mapperMem = -1;
 	
 	/**
 	 * This structure contains the DML script line number
 	 * of each MR instructions within this MR job
 	 */
-	ArrayList<Integer> MRJobInstructionsLineNumbers;
+	private ArrayList<Integer> MRJobInstructionsLineNumbers;
+
 	
-	public JobType getJobType()
-	{
-		return jobType;
-	}
-
-	public String getIv_instructionsInMapper()
-	{
-		return _mapperInstructions;
-	}
-	
-	public String getIv_recordReaderInstructions()
-	{
-		return _recordReaderInstructions;
-	}
-	
-	public String getIv_randInstructions() 
-	{
-		return _randInstructions;
-	}
-
-	public String getIv_shuffleInstructions()
-	{
-		return _shuffleInstructions;
-	}
-
-	public String getIv_aggInstructions()
-	{
-		return _aggInstructions;
-	}
-
-	public String getIv_otherInstructions()
-	{
-		return _otherInstructions;
-	}
-
-	public byte[] getIv_resultIndices()
-	{
-		return _resultIndices;
-	}
-
-	public int getIv_numReducers()
-	{
-		return iv_numReducers;
-	}
-
-	public int getIv_replication()
-	{
-		return iv_replication;
-	}
-
-	public String getDimsUnknownFilePrefix() {
-		return dimsUnknownFilePrefix;
-	}
-	public void setDimsUnknownFilePrefix(String prefix) {
-		dimsUnknownFilePrefix = prefix;
-	}
-	
-	public String[] getInputVars()
-	{
-		return inputVars;
-	}
-
-
-	public String[] getOutputVars()
-	{
-		return outputVars;
-	}
-
-	/**
-	 * Getter for MRJobInstructionslineNumbers
-	 * @return TreeMap containing all instructions indexed by line number   
+	/*
+	 * Following attributes are populated by pulling out information from Symbol Table.
+	 * This is done just before a job is submitted/spawned.
 	 */
-	public ArrayList<Integer> getMRJobInstructionsLineNumbers()
-	{
-		return MRJobInstructionsLineNumbers;
-	}
+	private String[] inputs;
+	private InputInfo[] inputInfos;
+	private long[] rlens;
+	private long[] clens;
+	private int[] brlens;
+	private int[] bclens;
+	private String[] outputs;
+	private OutputInfo[] outputInfos;
+
+	// Member variables to store partitioning-related information for all input matrices 
+	private boolean[] partitioned;
+	private PDataPartitionFormat[] pformats;
+	private int[] psizes;
 	
+	/*
+	 * These members store references to MatrixObjects corresponding to different 
+	 * MATRIX variables in inputVars and outputVars, respectively. Note that the 
+	 * references to SCALAR input variables are not stored in <code>inputMatrices</code>.
+	 * Every reference in <code>outputMatrices</code> is always points to MATRIX 
+	 * since MR jobs always produces matrices. 
+	 */
+	private MatrixObject[] inputMatrices, outputMatrices;
+
+	// Indicates the data type of inputVars
+	private DataType[] inputDataTypes;
+
+
 	// Used for partitioning jobs..
 	private PartitionParams partitionParams;
 	
-	public PartitionParams getPartitionParams() {
-		return partitionParams ;
-	}
 	
-
 	
 	/**
 	 * Constructor
@@ -204,6 +157,127 @@ public class MRJobInstruction extends Instruction
 		inputVars = that.inputVars.clone();
 		outputVars = that.outputVars.clone();
 		_resultIndices = that._resultIndices.clone();
+	}	
+	
+	
+	
+	public JobType getJobType()
+	{
+		return jobType;
+	}
+
+	public String getIv_instructionsInMapper()
+	{
+		return _mapperInstructions;
+	}
+	
+	public void setIv_instructionsInMapper(String inst)
+	{
+		_mapperInstructions = inst;
+	}
+	
+	public String getIv_recordReaderInstructions()
+	{
+		return _recordReaderInstructions;
+	}
+	
+	public void setIv_recordReaderInstructions(String inst)
+	{
+		_recordReaderInstructions = inst;
+	}
+	
+	public String getIv_randInstructions() 
+	{
+		return _randInstructions;
+	}
+	
+	public void setIv_randInstructions(String inst) 
+	{
+		_randInstructions = inst;
+	}
+
+	public String getIv_shuffleInstructions()
+	{
+		return _shuffleInstructions;
+	}
+	
+	public void setIv_shuffleInstructions(String inst)
+	{
+		_shuffleInstructions = inst;
+	}
+
+	public String getIv_aggInstructions()
+	{
+		return _aggInstructions;
+	}
+	
+	public void setIv_aggInstructions(String inst)
+	{
+		_aggInstructions = inst;
+	}
+
+	public String getIv_otherInstructions()
+	{
+		return _otherInstructions;
+	}
+	
+	public void setIv_otherInstructions(String inst)
+	{
+		_otherInstructions = inst;
+	}
+
+	public byte[] getIv_resultIndices()
+	{
+		return _resultIndices;
+	}
+
+	public int getIv_numReducers()
+	{
+		return iv_numReducers;
+	}
+
+	public int getIv_replication()
+	{
+		return iv_replication;
+	}
+
+	public double getMemoryRequirements(){
+		return _mapperMem;
+	}
+
+	public void setMemoryRequirements(double mem) {
+		_mapperMem = mem;
+	}
+	
+	public String getDimsUnknownFilePrefix() {
+		return dimsUnknownFilePrefix;
+	}
+	public void setDimsUnknownFilePrefix(String prefix) {
+		dimsUnknownFilePrefix = prefix;
+	}
+	
+	public String[] getInputVars()
+	{
+		return inputVars;
+	}
+
+
+	public String[] getOutputVars()
+	{
+		return outputVars;
+	}
+
+	/**
+	 * Getter for MRJobInstructionslineNumbers
+	 * @return TreeMap containing all instructions indexed by line number   
+	 */
+	public ArrayList<Integer> getMRJobInstructionsLineNumbers()
+	{
+		return MRJobInstructionsLineNumbers;
+	}
+	
+	public PartitionParams getPartitionParams() {
+		return partitionParams ;
 	}
 	
 	/**
@@ -276,36 +350,6 @@ public class MRJobInstruction extends Instruction
 		MRJobInstructionsLineNumbers = MRJobLineNumbers;
 	}
 	
-	/*public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
-			long[] nr, long[] nc, int[] bnr, int[] bnc, byte[] resultIndexes, byte[] resultDimsUnknown, PartitionParams pp, ArrayList <String> inLabels, 
-			ArrayList <String> outLabels, LocalVariableMap outputLabelValueMapping) {
-		this.iv_inputs = inputs ;
-		this.iv_inputInfos = inputInfo ;
-		this.iv_outputs = outputs ;
-		
-		
-		//this.iv_outputInfos = new OutputInfo[1] ; 
-		//this.iv_outputInfos[0] = OutputInfo.BinaryBlockOutputInfo ;
-		
-		this.iv_outputInfos = new OutputInfo[this.iv_outputs.length];
-		for (int i = 0; i <this.iv_outputs.length; i++ )
-			this.iv_outputInfos[i] = OutputInfo.BinaryBlockOutputInfo; 
-		
-		
-		this.iv_numReducers = numReducers ;
-		this.iv_replication = replication ;
-		this.iv_rows = nr ;
-		this.iv_cols = nc ;
-		this.iv_num_rows_per_block = bnr ;
-		this.iv_num_cols_per_block = bnc ;
-		this.iv_resultIndices = resultIndexes ;
-		this.iv_resultDimsUnknown = resultDimsUnknown;
-		this.partitionParams = pp ;
-		this.inputLabels = inLabels ;
-		this.outputLabels = outLabels ;
-		this.outputLabelValues = outputLabelValueMapping ;
-	}*/
-
 	public void setGMRInstructions(String[] inLabels,  
 			String recordReaderInstructions, String mapperInstructions, 
 			String aggInstructions, String otherInstructions, String [] outLabels, byte [] resultIndex,  
@@ -759,36 +803,6 @@ public class MRJobInstruction extends Instruction
 				&& (_aggInstructions == null || _aggInstructions.length()==0)
 				&& (_otherInstructions == null || _otherInstructions.length()==0) );
 	}
-	
-	/*
-	 * Following attributes are populated by pulling out information from Symbol Table.
-	 * This is done just before a job is submitted/spawned.
-	 */
-	private String[] inputs;
-	private InputInfo[] inputInfos;
-	private long[] rlens;
-	private long[] clens;
-	private int[] brlens;
-	private int[] bclens;
-	private String[] outputs;
-	private OutputInfo[] outputInfos;
-
-	// Member variables to store partitioning-related information for all input matrices 
-	private boolean[] partitioned;
-	private PDataPartitionFormat[] pformats;
-	private int[] psizes;
-	
-	/*
-	 * These members store references to MatrixObjects corresponding to different 
-	 * MATRIX variables in inputVars and outputVars, respectively. Note that the 
-	 * references to SCALAR input variables are not stored in <code>inputMatrices</code>.
-	 * Every reference in <code>outputMatrices</code> is always points to MATRIX 
-	 * since MR jobs always produces matrices. 
-	 */
-	private MatrixObject[] inputMatrices, outputMatrices;
-
-	// Indicates the data type of inputVars
-	private DataType[] inputDataTypes;
 
 	public String[] getInputs() {
 		return inputs;
@@ -849,12 +863,6 @@ public class MRJobInstruction extends Instruction
 	public void setPsizes(int[] psizes) {
 		this.psizes = psizes;
 	}
-
-	/*public void setInputMatrices(MatrixObjectNew[] inputMatrices) {
-		this.inputMatrices = inputMatrices;
-		// fill-in the auxiliary data structures required in spawning MR job
-		populateInputs();
-	}*/
 	
 	/**
 	 * Extracts input variables with MATRIX data type, and stores references to
@@ -885,12 +893,6 @@ public class MRJobInstruction extends Instruction
 		return outputMatrices;
 	}
 
-	/*public void setOutputMatrices(MatrixObjectNew[] outputMatrices) {
-		this.outputMatrices = outputMatrices;
-		// fill-in the auxiliary data structures required in spawning MR job
-		populateOutputs();
-	}*/
-	
 	/**
 	 * Extracts MatrixObject references to output variables, all of which will be
 	 * of MATRIX data type, and stores them in <code>outputMatrices</code>. Also, 
@@ -1100,10 +1102,24 @@ public class MRJobInstruction extends Instruction
 	 */
 	public boolean isMergableMRJobInstruction( MRJobInstruction that )
 	{
-		//TODO incorporate memory estimates for sum of estimates 
-		//TODO incorporate max byte indexes
+		boolean ret = true;
 		
-		return true;
+		//check max memory requirements of mapper instructions
+		if(   (_mapperMem + that._mapperMem) 
+			> OptimizerUtils.getRemoteMemBudgetMap(true) )
+		{
+			ret = false;
+		}
+		
+		//check max possible byte indexes (worst-case: no sharing)
+		int maxIx1 = UtilFunctions.max(_resultIndices);
+		int maxIx2 = UtilFunctions.max(that._resultIndices);
+		if( (maxIx1+maxIx2) > Byte.MAX_VALUE )
+		{
+			ret = false;
+		}
+		
+		return ret;
 	}
 	
 	/**
@@ -1112,9 +1128,8 @@ public class MRJobInstruction extends Instruction
 	 */
 	public void mergeMRJobInstruction( MRJobInstruction that )
 	{
-		Timing time = new Timing(true);
-		System.out.println("Current instruction:\n"+this.toString());
-		System.out.println("Next instruction:\n"+that.toString());
+		LOG.debug("Current instruction:\n"+this.toString());
+		LOG.debug("Next instruction:\n"+that.toString());
 		
 		//compute offsets (inputs1, inputs2, intermediates1, intermediates2, outputs1, outputs2)
 		byte maxIxInst1 = UtilFunctions.max(_resultIndices);
@@ -1140,7 +1155,6 @@ public class MRJobInstruction extends Instruction
 		for( int i=inputs.length; i<=maxIxInst1; i++ ) //remap intermediates and 
 		{
 			transMap1.put((byte)i, (byte)(that.inputs.length-sharedIx+i));
-			System.out.println("map trans1 "+i+" to "+(that.inputs.length-sharedIx+i));
 		}
 			
 		//compute transition index max for instruction 2
@@ -1150,20 +1164,16 @@ public class MRJobInstruction extends Instruction
 			if( !inMap.containsKey(that.inputs[i]) )
 				inMap.put(that.inputs[i], nextIX++);
 			transMap2.put((byte)i, inMap.get(that.inputs[i]));
-			System.out.println("map trans2 "+i+" to "+inMap.get(that.inputs[i]));
-			
 		}
 		nextIX = (byte) (lenInputs + (maxIxInst1+1 - inputs.length));
 		for( int i=that.inputs.length; i<=maxIxInst2; i++ )
 		{
 			transMap2.put((byte)i, (byte)nextIX++);
-			System.out.println("map trans2 "+i+" to "+(nextIX-1));
 		}
 		
 		//construct merged inputs and meta data
 		int llen = lenInputs; int len = inputs.length;
 		int olen = outputs.length+that.outputs.length;
-		System.out.println("new input size = "+llen);
 		String[] linputs = new String[llen];
 		InputInfo[] linputInfos = new InputInfo[llen];
 		PDataPartitionFormat[] lpformats = new PDataPartitionFormat[llen];
@@ -1208,18 +1218,31 @@ public class MRJobInstruction extends Instruction
 		_resultIndices = lresultIndexes;
 		
 		//replace merged instructions with all transition map entries 
+		String randInst1 = replaceInstructionStringWithTransMap(this.getIv_randInstructions(), transMap1);
+		String randInst2 = replaceInstructionStringWithTransMap(that.getIv_randInstructions(), transMap2);
+		String rrInst1 = replaceInstructionStringWithTransMap(this.getIv_recordReaderInstructions(), transMap1);
+		String rrInst2 = replaceInstructionStringWithTransMap(that.getIv_recordReaderInstructions(), transMap2);
 		String mapInst1 = replaceInstructionStringWithTransMap(this.getIv_instructionsInMapper(), transMap1);
 		String mapInst2 = replaceInstructionStringWithTransMap(that.getIv_instructionsInMapper(), transMap2);
+		String shuffleInst1 = replaceInstructionStringWithTransMap(this.getIv_shuffleInstructions(), transMap1);
+		String shuffleInst2 = replaceInstructionStringWithTransMap(that.getIv_shuffleInstructions(), transMap2);
+		String aggInst1 = replaceInstructionStringWithTransMap(this.getIv_aggInstructions(), transMap1);
+		String aggInst2 = replaceInstructionStringWithTransMap(that.getIv_aggInstructions(), transMap2);
+		String otherInst1 = replaceInstructionStringWithTransMap(this.getIv_otherInstructions(), transMap1);
+		String otherInst2 = replaceInstructionStringWithTransMap(that.getIv_otherInstructions(), transMap2);
 		
 		//concatenate instructions
-		setMapperInstructions(mapInst1 + Lop.INSTRUCTION_DELIMITOR + mapInst2);
-		//TODO other instructions types
+		setIv_randInstructions( concatenateInstructions(randInst1, randInst2) );
+		setIv_recordReaderInstructions( concatenateInstructions(rrInst1, rrInst2) );
+		setIv_instructionsInMapper( concatenateInstructions(mapInst1, mapInst2) );
+		setIv_shuffleInstructions( concatenateInstructions(shuffleInst1, shuffleInst2) );
+		setIv_aggInstructions( concatenateInstructions(aggInst1, aggInst2) );
+		setIv_otherInstructions( concatenateInstructions(otherInst1, otherInst2) );
 		
-
-		System.out.println("MERGED INSTRUCTION:");
-		System.out.println(this.toString());
+		//merge memory requirements
+		_mapperMem = _mapperMem + that._mapperMem;
 		
-		System.out.println("Merged mr-job instruction in "+time.stop());
+		LOG.debug("Merged instruction:\n"+this.toString());
 	}
 	
 	/**
@@ -1232,8 +1255,8 @@ public class MRJobInstruction extends Instruction
 	 */
 	private String replaceInstructionStringWithTransMap( String inst, HashMap<Byte,Byte> transMap )
 	{
-		//prevent unnecessay parsing and reconstruction
-		if( inst == null || transMap.size()==0 )
+		//prevent unnecessary parsing and reconstruction
+		if( inst == null || inst.length()==0 || transMap.size()==0 )
 			return inst;
 		
 		String[] pinst = inst.split(Lop.INSTRUCTION_DELIMITOR);
@@ -1266,4 +1289,27 @@ public class MRJobInstruction extends Instruction
 		
 		return instOut.toString();
 	}
+
+	/**
+	 * 
+	 * @param inst1
+	 * @param inst2
+	 * @return
+	 */
+	private String concatenateInstructions(String inst1, String inst2)
+	{
+		boolean emptyInst1 = (inst1 == null || inst1.length()==0);
+		boolean emptyInst2 = (inst2 == null || inst2.length()==0);
+		String ret = "";
+		
+		if( !emptyInst1 && !emptyInst2 )
+			ret = inst1 + Lop.INSTRUCTION_DELIMITOR + inst2;
+		else if( !emptyInst1 )
+			ret = inst1;
+		else if( !emptyInst2 )
+			ret = inst2;
+		
+		return ret;
+	}
+	
 }

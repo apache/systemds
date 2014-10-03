@@ -7,14 +7,21 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor.mqo;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 
+/**
+ * 
+ * 
+ */
 public abstract class PiggybackingWorker extends Thread
 {
 	@SuppressWarnings("unused")
@@ -23,17 +30,61 @@ public abstract class PiggybackingWorker extends Thread
 	
 	
 	protected static final Log LOG = LogFactory.getLog(PiggybackingWorker.class.getName());
-	
+
+	protected HashMap<Long, JobReturn> _results = null;	
 	protected boolean _stop;
 	
 	protected PiggybackingWorker()
 	{
+		_results = new HashMap<Long, JobReturn>();
 		_stop = false;
 	}
 
+	/**
+	 * 
+	 */
 	public void setStopped()
 	{
 		_stop = true;
+	}
+	
+	/**
+	 * 
+	 * @param instID
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public synchronized JobReturn getJobResult( long instID ) 
+		throws InterruptedException
+	{
+		JobReturn ret = null;
+				
+		while( ret == null )
+		{
+			//wait for new results 
+			wait();
+			
+			//obtain job return (if available)
+			ret = _results.remove( instID );
+		}
+		
+		return ret;
+	}
+	
+	
+	/**
+	 * 
+	 * @param ids
+	 * @param results
+	 */
+	protected synchronized void putJobResults( LinkedList<Long> ids, LinkedList<JobReturn> results )
+	{
+		//make job returns available
+		for( int i=0; i<ids.size(); i++ )
+			_results.put(ids.get(i), results.get(i));
+	
+		//notify all waiting threads
+		notifyAll();
 	}
 	
 	/**
@@ -47,6 +98,7 @@ public abstract class PiggybackingWorker extends Thread
 		throws IllegalArgumentException, IllegalAccessException
 	{
 		LinkedList<MergedMRJobInstruction> ret = new LinkedList<MergedMRJobInstruction>();
+		Timing time = new Timing(true);
 		
 		//NOTE currently all merged into one (might be invalid due to memory constraints)
 		MergedMRJobInstruction minst = new MergedMRJobInstruction();
@@ -87,7 +139,7 @@ public abstract class PiggybackingWorker extends Thread
 		ret.add(minst);
 		
 		//output log info for better understandability for users
-		LOG.info("Merged MR-Job instructions: "+workingSet.size()+" --> "+ret.size());
+		LOG.info("Merged MR-Job instructions: "+workingSet.size()+" --> "+ret.size()+" in "+time.stop()+"ms.");
 		
 		return ret;
 	}

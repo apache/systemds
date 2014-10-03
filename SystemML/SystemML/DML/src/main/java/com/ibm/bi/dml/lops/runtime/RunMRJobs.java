@@ -78,6 +78,13 @@ public class RunMRJobs
 	}; 
 
 	/**
+	 * Wrapper for submitting MR job instructions incl preparation and actual submission.
+	 * The preparation includes (1) pulling stats out of symbol table and populating the
+	 * instruction, (2) instruction patching, and (3) export of in-memory matrices if 
+	 * required. 
+	 * 
+	 * Furthermore, this wrapper also provides a hook for runtime piggybacking to intercept
+	 * concurrent job submissions in order to collect and merge instructions.   
 	 * 
 	 * @param inst
 	 * @param ec
@@ -106,24 +113,52 @@ public class RunMRJobs
 		// Obtain references to all output matrices
 		inst.extractOutputMatrices(ec);
 	
+		// obtain original state
+		String rdInst = inst.getIv_randInstructions();
+		String rrInst = inst.getIv_recordReaderInstructions();
+		String mapInst = inst.getIv_instructionsInMapper();
+		String shuffleInst = inst.getIv_shuffleInstructions();
+		String aggInst = inst.getIv_aggInstructions();
+		String otherInst = inst.getIv_otherInstructions();			
+					
+		// variable patching (replace placeholders with variables)
+		inst.setIv_randInstructions(updateLabels(rdInst, ec.getVariables()));
+		inst.setIv_recordReaderInstructions(updateLabels(rrInst, ec.getVariables()));
+		inst.setIv_instructionsInMapper(updateLabels(mapInst, ec.getVariables()));
+		inst.setIv_shuffleInstructions(updateLabels(shuffleInst, ec.getVariables()));
+		inst.setIv_aggInstructions(updateLabels(aggInst, ec.getVariables()));
+		inst.setIv_otherInstructions(updateLabels(otherInst, ec.getVariables()));
+		
 		// runtime piggybacking if applicable
+		JobReturn ret = null;
 		if(   OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING 
 			&& RuntimePiggybacking.isActive() )
 		{
-			return RuntimePiggybacking.submitJob(inst, ec);
+			ret = RuntimePiggybacking.submitJob( inst );
 		}
 		else
-			return submitJob(inst, ec);
+			ret = submitJob( inst );
+		
+		// reset original state
+		inst.setIv_randInstructions(rdInst);
+		inst.setIv_recordReaderInstructions(rrInst);
+		inst.setIv_instructionsInMapper(mapInst);
+		inst.setIv_shuffleInstructions(shuffleInst);
+		inst.setIv_aggInstructions(aggInst);
+		inst.setIv_otherInstructions(otherInst);
+		
+		return ret;
 	}
 	
 	/**
+	 * Submits an MR job instruction, without modifying any state of that instruction.
 	 * 
 	 * @param inst
 	 * @param ec
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static JobReturn submitJob(MRJobInstruction inst, ExecutionContext ec ) 
+	public static JobReturn submitJob(MRJobInstruction inst ) 
 		throws DMLRuntimeException 
 	{
 		JobReturn ret = new JobReturn();		
@@ -134,12 +169,12 @@ public class RunMRJobs
 		// Spawn MapReduce Jobs
 		try {
 			// replace all placeholders in all instructions with appropriate values
-			String rdInst = updateLabels(inst.getIv_randInstructions(), ec.getVariables());
-			String rrInst = updateLabels(inst.getIv_recordReaderInstructions(), ec.getVariables());
-			String mapInst = updateLabels(inst.getIv_instructionsInMapper(), ec.getVariables());
-			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(), ec.getVariables());
-			String aggInst = updateLabels(inst.getIv_aggInstructions(), ec.getVariables());
-			String otherInst = updateLabels(inst.getIv_otherInstructions(), ec.getVariables());
+			String rdInst = inst.getIv_randInstructions();
+			String rrInst = inst.getIv_recordReaderInstructions();
+			String mapInst = inst.getIv_instructionsInMapper();
+			String shuffleInst = inst.getIv_shuffleInstructions();
+			String aggInst = inst.getIv_aggInstructions();
+			String otherInst = inst.getIv_otherInstructions();
 			boolean jvmReuse = ConfigurationManager.getConfig().getBooleanValue(DMLConfig.JVM_REUSE);
 			
 			switch(inst.getJobType()) {

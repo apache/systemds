@@ -13,7 +13,6 @@ import java.util.LinkedList;
 
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
@@ -22,7 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 
 /**
  * 
- * TODO extended runtime support: variable patching, call-backs instead of time based polling
+ * 
  */
 public class RuntimePiggybacking 
 {
@@ -37,9 +36,6 @@ public class RuntimePiggybacking
 		UTIL_BASED_PARALLEL,
 	}
 	
-	//internal configuration parameters
-	private static long DEFAULT_MERGE_INTERVAL = 1000;
-	
 	private static boolean _active = false;
 	private static IDSequence _idSeq = null;
 	private static PiggybackingWorker _worker = null;
@@ -47,7 +43,6 @@ public class RuntimePiggybacking
 	//mr instruction pool
 	private static HashMap<JobType, LinkedList<Long>> _pool = null;
 	private static HashMap<Long, MRJobInstruction> _jobs = null;
-	private static HashMap<Long, JobReturn> _results = null;
 	
 	
 	//static initialization of piggybacking server
@@ -56,7 +51,6 @@ public class RuntimePiggybacking
 		//initialize mr-job instruction pool
 		_pool = new HashMap<JobType, LinkedList<Long>>();	
 		_jobs = new HashMap<Long, MRJobInstruction>();
-		_results = new HashMap<Long, JobReturn>();
 		
 		//init id sequence
 		_idSeq = new IDSequence();
@@ -77,15 +71,26 @@ public class RuntimePiggybacking
 	}
 	
 	/**
+	 * @throws DMLRuntimeException 
 	 * 
 	 */
-	public static void start( PiggybackingType type )
+	public static void start( PiggybackingType type ) 
+		throws DMLRuntimeException
 	{
 		//activate piggybacking server
 		_active = true;
 		
 		//init job merge/submission worker 
-		_worker = new PiggybackingWorkerSequential(DEFAULT_MERGE_INTERVAL);
+		switch( type )
+		{
+			case TIME_BASED_SEQUENTIAL:
+				_worker = new PiggybackingWorkerTimeSequential();
+				break;
+			default:
+				throw new DMLRuntimeException("Unsupported runtime piggybacking type: "+type);
+		}
+		
+		//start worker
 		_worker.start();
 	}
 	
@@ -119,7 +124,7 @@ public class RuntimePiggybacking
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static JobReturn submitJob(MRJobInstruction inst, ExecutionContext ec) 
+	public static JobReturn submitJob(MRJobInstruction inst) 
 		throws DMLRuntimeException 
 	{
 		JobReturn ret = null;
@@ -142,14 +147,7 @@ public class RuntimePiggybacking
 			}
 			
 			//step 3: wait for finished job
-			//TODO rework communication
-			while( ret == null ){
-				//_worker.wait(); //see notify in worker
-				Thread.sleep(500);
-				synchronized( _results ){
-					ret = _results.remove(id);
-				}
-			}
+			ret = _worker.getJobResult( id );
 		}
 		catch(InterruptedException ex)
 		{
@@ -196,19 +194,5 @@ public class RuntimePiggybacking
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * 
-	 * @param ids
-	 * @param results
-	 */
-	protected static void putWorkingSetJobResults( LinkedList<Long> ids, LinkedList<JobReturn> results )
-	{
-		synchronized( _results )
-		{
-			for( int i=0; i<ids.size(); i++ )
-				_results.put(ids.get(i), results.get(i));
-		}
 	}
 }

@@ -5,9 +5,11 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.runtime.instructions;
+package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.debugger.DebugState;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 
 
@@ -15,7 +17,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
  * Class for breakpoint instructions 
  * Note: ONLY USED FOR DEBUGGING PURPOSES  
  */
-public class BPInstruction extends Instruction
+public class BreakPointInstruction extends Instruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
@@ -30,7 +32,7 @@ public class BPInstruction extends Instruction
 	/**
 	 * Constructor for a breakpoint instruction
 	 */
-	public BPInstruction() {
+	public BreakPointInstruction() {
 		type = INSTRUCTION_TYPE.BREAKPOINT;
 		bpStatus = BPINSTRUCTION_STATUS.ENABLED;
 	}
@@ -39,7 +41,7 @@ public class BPInstruction extends Instruction
 	 * Parameterized constructor for a breakpoint instruction
 	 * @param tp Breakpoint instruction status
 	 */
-	public BPInstruction(BPINSTRUCTION_STATUS status) {
+	public BreakPointInstruction(BPINSTRUCTION_STATUS status) {
 		type = INSTRUCTION_TYPE.BREAKPOINT;
 		bpStatus = status;
 	}
@@ -94,6 +96,17 @@ public class BPInstruction extends Instruction
 	public byte[] getAllIndexes() throws DMLRuntimeException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	//@Override
+	public void processInstruction(ExecutionContext ec)
+	{
+		if( isBPInstructionEnabled()) {
+			DebugState dbState = ec.getDebugState();
+			
+			System.out.format("Breakpoint reached at %s.\n", dbState.getPC().toString());					
+			dbState.suspend = true;
+		}
 	}
 	
 	public String toString()

@@ -24,7 +24,7 @@ import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 /** 
  * This class implements a debugger control module for DML scripts.

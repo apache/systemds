@@ -22,11 +22,11 @@ import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 /**
  * This class contains the parsed and compiled DML script w/ hops, lops and runtime program.
@@ -169,7 +169,7 @@ public class DMLDebuggerProgramInfo
 					MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 					// Check if current instruction line number correspond to breakpoint line number
 					if (currMRInst.findMRInstructions(lineNumber))  {						
-						BPInstruction breakpoint = new BPInstruction();
+						BreakPointInstruction breakpoint = new BreakPointInstruction();
 						breakpoint.setLineNum(lineNumber);
 						breakpoint.setInstID(instID++);
 						breakpoint.setBPInstructionLocation(location);
@@ -182,7 +182,7 @@ public class DMLDebuggerProgramInfo
 				{
 					// Check if current instruction line number correspond to breakpoint line number
 					if (currInst.getLineNum() == lineNumber) {
-						BPInstruction breakpoint = new BPInstruction();
+						BreakPointInstruction breakpoint = new BreakPointInstruction();
 						breakpoint.setLineNum(lineNumber);
 						breakpoint.setInstID(instID++);
 						breakpoint.setBPInstructionLocation(location);
@@ -191,9 +191,9 @@ public class DMLDebuggerProgramInfo
 						return;
 					}
 				}
-				else if (currInst instanceof BPInstruction && currInst.getLineNum() == lineNumber) 
+				else if (currInst instanceof BreakPointInstruction && currInst.getLineNum() == lineNumber) 
 				{
-					BPInstruction breakpoint = (BPInstruction) currInst;
+					BreakPointInstruction breakpoint = (BreakPointInstruction) currInst;
 					breakpoint.setBPInstructionStatus(BPINSTRUCTION_STATUS.ENABLED);
 					breakpoint.setBPInstructionLocation(location);
 					instructions.set(i, breakpoint);
@@ -204,11 +204,11 @@ public class DMLDebuggerProgramInfo
 			else 
 			{
 				// Check if current instruction line number correspond to breakpoint line number
-				if (currInst instanceof BPInstruction && currInst.getLineNum() == lineNumber) 
+				if (currInst instanceof BreakPointInstruction && currInst.getLineNum() == lineNumber) 
 				{
 					if (op == 1) 
 					{
-						BPInstruction breakpoint = (BPInstruction) currInst;
+						BreakPointInstruction breakpoint = (BreakPointInstruction) currInst;
 						breakpoint.setLineNum(currInst.getLineNum());
 						breakpoint.setInstID(currInst.getInstID());
 						breakpoint.setBPInstructionStatus(status);
@@ -352,9 +352,9 @@ public class DMLDebuggerProgramInfo
 					disassembler.put(currCPInst.getLineNum(), new ArrayList<Instruction>());
 				disassembler.get(currCPInst.getLineNum()).add(currCPInst);
 			}
-			else if (currInst instanceof BPInstruction)
+			else if (currInst instanceof BreakPointInstruction)
 			{
-				BPInstruction currBPInst = (BPInstruction) currInst;
+				BreakPointInstruction currBPInst = (BreakPointInstruction) currInst;
 				//insert current BP instruction into corresponding source code line
 				if (!disassembler.containsKey(currBPInst.getLineNum()))
 					disassembler.put(currBPInst.getLineNum(), new ArrayList<Instruction>());

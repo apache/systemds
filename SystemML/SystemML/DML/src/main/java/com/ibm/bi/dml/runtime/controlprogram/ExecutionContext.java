@@ -19,7 +19,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -425,15 +424,6 @@ public class ExecutionContext
 	{
 		_dbState.getDMLStackTrace(ex);
 		_dbState.suspend = true;
-	}
-
-	public void handleDebugBreakpoint(BPInstruction tmp) 
-	{
-		//check if breakpoint instruction is enabled
-		if( tmp.isBPInstructionEnabled()) {
-			System.out.format("Breakpoint reached at %s.\n", _dbState.getPC().toString());					
-			_dbState.suspend = true;
-		}
 	}
 
 	public void handleDebugFunctionEntry( FunctionCallCPInstruction funCallInst )

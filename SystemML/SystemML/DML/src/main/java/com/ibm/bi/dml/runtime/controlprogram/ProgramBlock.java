@@ -24,10 +24,10 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
@@ -401,10 +401,10 @@ public class ProgramBlock
 			{			
 				((SQLInstructionBase)currInst).execute(null); // TODO: must pass SQLExecutionContext here!!!
 			}
-			//check if breakpoint instruction
-			else if (DMLScript.ENABLE_DEBUG_MODE && currInst instanceof BPInstruction)
+			//check if breakpoint instruction 
+			else if (DMLScript.ENABLE_DEBUG_MODE && currInst instanceof BreakPointInstruction)
 			{
-				ec.handleDebugBreakpoint((BPInstruction)currInst);
+				((BreakPointInstruction)currInst).processInstruction(ec);
 			}
 		}
 		catch (Exception e)

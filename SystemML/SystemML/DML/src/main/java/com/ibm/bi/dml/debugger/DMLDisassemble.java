@@ -19,9 +19,9 @@ import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 
 
@@ -182,8 +182,8 @@ public class DMLDisassemble
 					DMLInstMap.put(currInst.getLineNum(), new ArrayList<Instruction>());
 				DMLInstMap.get(currInst.getLineNum()).add(currCPInst);
 			}
-			else if (currInst instanceof BPInstruction) {
-				BPInstruction currBPInst = (BPInstruction) currInst;
+			else if (currInst instanceof BreakPointInstruction) {
+				BreakPointInstruction currBPInst = (BreakPointInstruction) currInst;
 				// Check if current instruction line number correspond to source line number
 				if (!DMLInstMap.containsKey(currInst.getLineNum()))
 					DMLInstMap.put(currInst.getLineNum(), new ArrayList<Instruction>());

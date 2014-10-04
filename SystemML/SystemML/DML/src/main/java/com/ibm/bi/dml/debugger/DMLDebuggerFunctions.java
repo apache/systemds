@@ -19,10 +19,9 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -30,6 +29,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
 public class DMLDebuggerFunctions {
@@ -49,7 +49,7 @@ public class DMLDebuggerFunctions {
 	 * Print all breakpoints along with current status (i.e. enabled or disabled)
 	 * @param breakpoints Contains all existing breakpoints
 	 */
-	public void listBreakpoints(TreeMap<Integer, BPInstruction> breakpoints) 
+	public void listBreakpoints(TreeMap<Integer, BreakPointInstruction> breakpoints) 
 	{	
 		//Display all breakpoints 
 		if (breakpoints == null) 
@@ -118,8 +118,8 @@ public class DMLDebuggerFunctions {
 						MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 						System.out.format("\t\t id %4d: %s\n", currInst.getInstID(), prepareInstruction(currMRInst.getMRString(debug)));
 					}
-					else if (currInst instanceof BPInstruction) {
-						BPInstruction currBPInst = (BPInstruction) currInst;
+					else if (currInst instanceof BreakPointInstruction) {
+						BreakPointInstruction currBPInst = (BreakPointInstruction) currInst;
 						System.out.format("\t\t id %4d: %s\n", currInst.getInstID(), currBPInst.toString());
 					}
 				}
@@ -148,8 +148,8 @@ public class DMLDebuggerFunctions {
 						MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 						System.out.format("\t\t id %4d: %s\n", currInst.getInstID(), prepareInstruction(currMRInst.getMRString(false)));
 					}
-					else if (currInst instanceof BPInstruction) {
-						BPInstruction currBPInst = (BPInstruction) currInst;
+					else if (currInst instanceof BreakPointInstruction) {
+						BreakPointInstruction currBPInst = (BreakPointInstruction) currInst;
 						System.out.format("\t\t id %4d: %s\n", currInst.getInstID(), currBPInst.toString());
 					}
 				}

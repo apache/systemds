@@ -9,8 +9,8 @@ package com.ibm.bi.dml.debugger;
 
 import java.util.TreeMap;
 
-import com.ibm.bi.dml.runtime.instructions.BPInstruction;
-import com.ibm.bi.dml.runtime.instructions.BPInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 
 /**
@@ -22,14 +22,14 @@ public class DMLBreakpointManager {
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/** Map between DML script line numbers and breakpoint instructions */
-	private static TreeMap<Integer, BPInstruction> breakpoints = new TreeMap<Integer, BPInstruction>();
+	private static TreeMap<Integer, BreakPointInstruction> breakpoints = new TreeMap<Integer, BreakPointInstruction>();
 	
 	
 	/**
 	 * Getter for DML breakpoints
 	 * @return List of breakpoints indexed by DML script line number
 	 */
-	public static TreeMap<Integer, BPInstruction> getBreakpoints() 
+	public static TreeMap<Integer, BreakPointInstruction> getBreakpoints() 
 	{		
 		if (breakpoints.size() > 0)
 			return breakpoints;
@@ -55,7 +55,7 @@ public class DMLBreakpointManager {
 	 * @param lineNumber Location of breakpoint
 	 * @return Breakpoint instruction at indicated line number (if any)
 	 */
-	public static BPInstruction getBreakpoint(int lineNumber) {
+	public static BreakPointInstruction getBreakpoint(int lineNumber) {
 		if (!breakpoints.containsKey(lineNumber))
 			return null;
 		return breakpoints.get(lineNumber);
@@ -66,7 +66,7 @@ public class DMLBreakpointManager {
 	 * @param location Breakpoint id
 	 * @return Breakpoint instruction at indicated id
 	 */
-	public static BPInstruction getBreakpointAtIndex(int location) {
+	public static BreakPointInstruction getBreakpointAtIndex(int location) {
 		int index = 1;
 		for (Integer lineNumber : breakpoints.keySet()) {
 			if (index++ == location) {
@@ -111,7 +111,7 @@ public class DMLBreakpointManager {
 	 * Insert a breakpoint instruction into list of existing breakpoints  
 	 * @param lineNumber Location for inserting breakpoint
 	 */
-	public static void insertBreakpoint (BPInstruction breakpoint, int lineNumber) {	
+	public static void insertBreakpoint (BreakPointInstruction breakpoint, int lineNumber) {	
 		if (breakpoints.containsKey(lineNumber)) {
 			if (breakpoints.get(lineNumber).getBPInstructionStatus() != BPINSTRUCTION_STATUS.INVISIBLE)
 				System.out.format("Breakpoint updated at %s, line, %d.\n", breakpoint.getBPInstructionLocation(), lineNumber);
@@ -130,7 +130,7 @@ public class DMLBreakpointManager {
 			breakpoints.get(lineNumber).setBPInstructionStatus(BPINSTRUCTION_STATUS.INVISIBLE);			
 		}
 		else {
-			breakpoints.put(lineNumber, new BPInstruction(BPINSTRUCTION_STATUS.INVISIBLE));
+			breakpoints.put(lineNumber, new BreakPointInstruction(BPINSTRUCTION_STATUS.INVISIBLE));
 		}
 	}
 	

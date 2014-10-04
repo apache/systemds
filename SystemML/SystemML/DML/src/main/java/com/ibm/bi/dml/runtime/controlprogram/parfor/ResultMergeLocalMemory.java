@@ -48,12 +48,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
-		//Timing time = null;
 		LOG.trace("ResultMerge (local, in-memory): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-		//	time = new Timing();
-		//	time.start();
-		
-		
+				
 		try
 		{
 			//get matrix blocks through caching 
@@ -79,12 +75,25 @@ public class ResultMergeLocalMemory extends ResultMerge
 				{
 					LOG.trace("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 					
+					//read/pin input_i
 					MatrixBlock inMB = in.acquireRead();	
 					
+					//core merge 
 					merge( outMBNew, inMB, appendOnly );
 					
+					//unpin and clear in-memory input_i
 					in.release();
+					in.clearData();
 					flagMerged = true;
+					
+					//determine need for sparse2dense change during merge
+					boolean sparseToDense = appendOnly && !MatrixBlock.evalSparseFormatInMemory(
+							                                 outMBNew.getNumRows(), outMBNew.getNumColumns(), outMBNew.getNonZeros()); 
+					if( sparseToDense ) {
+						outMBNew.sortSparseRows(); //sort sparse due to append-only
+						outMBNew.examSparsity(); //sparse-dense representation change
+						appendOnly = false; //change merge state for subsequent inputs
+					}
 				}
 			}
 		
@@ -309,7 +318,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 				
 				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
 				merge( _outMB, inMB, false );
-				_inMO.release(); 
+				_inMO.release();
+				_inMO.clearData();
 			}
 			catch(Exception ex)
 			{

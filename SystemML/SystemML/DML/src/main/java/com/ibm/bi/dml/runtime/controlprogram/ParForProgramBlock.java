@@ -656,7 +656,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//enable runtime piggybacking if required
 		if( _enableRuntimePiggybacking )
-			RuntimePiggybacking.start( PiggybackingType.TIME_BASED_SEQUENTIAL );
+			RuntimePiggybacking.start( PiggybackingType.UTIL_DECAY_BASED_PARALLEL, _numThreads );
 		
 		try
 		{

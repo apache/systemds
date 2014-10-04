@@ -51,6 +51,7 @@ public class PiggybackingWorkerTimeSequential extends PiggybackingWorker
 					long currentTime = System.currentTimeMillis();
 					if( currentTime-lastTime < _time  )
 						Thread.sleep( _time-(currentTime-lastTime) );
+					lastTime = currentTime;
 				}
 				else
 					Thread.sleep(_time);

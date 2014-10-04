@@ -31,9 +31,8 @@ public class RuntimePiggybacking
 	
 	public enum PiggybackingType {
 		TIME_BASED_SEQUENTIAL,
-		TIME_BASED_PARALLEL,
-		UTIL_BASED_SEQUENTIAL,
-		UTIL_BASED_PARALLEL,
+		UTIL_TIME_BASED_PARALLEL,
+		UTIL_DECAY_BASED_PARALLEL,
 	}
 	
 	private static boolean _active = false;
@@ -74,7 +73,7 @@ public class RuntimePiggybacking
 	 * @throws DMLRuntimeException 
 	 * 
 	 */
-	public static void start( PiggybackingType type ) 
+	public static void start( PiggybackingType type, int par ) 
 		throws DMLRuntimeException
 	{
 		//activate piggybacking server
@@ -85,6 +84,12 @@ public class RuntimePiggybacking
 		{
 			case TIME_BASED_SEQUENTIAL:
 				_worker = new PiggybackingWorkerTimeSequential();
+				break;
+			case UTIL_TIME_BASED_PARALLEL:
+				_worker = new PiggybackingWorkerUtilTimeParallel(par);
+				break;
+			case UTIL_DECAY_BASED_PARALLEL:
+				_worker = new PiggybackingWorkerUtilDecayParallel(par);
 				break;
 			default:
 				throw new DMLRuntimeException("Unsupported runtime piggybacking type: "+type);

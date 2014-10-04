@@ -14,6 +14,7 @@ import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 
 /**
@@ -360,6 +361,44 @@ public class InfrastructureAnalyzer
 		job.set(key, javaOptsNew);
 	}
 	
+	/**
+	 * Gets the fraction of running map/reduce tasks to existing
+	 * map/reduce task slots. 
+	 * 
+	 * NOTE: on YARN the number of slots is a spurious indicator 
+	 * because containers are purely scheduled based on memory. 
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public static double getClusterUtilization(boolean mapOnly) 
+		throws IOException
+	{
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		JobClient client = new JobClient(job);
+		ClusterStatus stat = client.getClusterStatus();
+		
+		double ret = 0.0;
+		if( stat != null ) //if in cluster mode
+		{
+			if( mapOnly )
+			{
+				int capacity = stat.getMaxMapTasks();
+				int current = stat.getMapTasks();
+				ret = ((double)current) / capacity;
+			}
+			else
+			{
+				int capacity = stat.getMaxMapTasks() + stat.getMaxReduceTasks();
+				int current = stat.getMapTasks() + stat.getReduceTasks();
+				ret = ((double)current) / capacity;
+			}
+		}
+		
+		return ret;
+	}
+	
+	
 	///////
 	//internal methods for analysis
 		
@@ -379,7 +418,7 @@ public class InfrastructureAnalyzer
 	{
 		try 
 		{
-			JobConf job = new JobConf(InfrastructureAnalyzer.class);
+			JobConf job = ConfigurationManager.getCachedJobConf();
 			JobClient client = new JobClient(job);
 			ClusterStatus stat = client.getClusterStatus();
 			if( stat != null ) //if in cluster mode

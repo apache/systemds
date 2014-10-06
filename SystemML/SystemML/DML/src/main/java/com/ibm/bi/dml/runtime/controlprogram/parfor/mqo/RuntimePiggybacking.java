@@ -153,6 +153,9 @@ public class RuntimePiggybacking
 			
 			//step 3: wait for finished job
 			ret = _worker.getJobResult( id );
+			
+			if( !ret.successful )
+				throw new DMLRuntimeException("Failed to run MR job via runtime piggybacking - job unsuccessful:\n"+inst.toString());
 		}
 		catch(InterruptedException ex)
 		{

@@ -130,6 +130,7 @@ public abstract class PiggybackingWorker extends Thread
 					//close current merged instruction
 					ret.add(minst); 
 					//open new merged instruction
+					minst = new MergedMRJobInstruction();
 					minst.inst = new MRJobInstruction( instVal );	
 					minst.addInstructionMetaData( instID, 0, numOutputs );
 				}

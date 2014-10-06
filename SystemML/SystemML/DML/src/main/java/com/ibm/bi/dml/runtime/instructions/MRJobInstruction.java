@@ -799,9 +799,9 @@ public class MRJobInstruction extends Instruction
 
 	public boolean isMapOnly()
 	{
-		return (   (_shuffleInstructions == null || _shuffleInstructions.length()==0)
-				&& (_aggInstructions == null || _aggInstructions.length()==0)
-				&& (_otherInstructions == null || _otherInstructions.length()==0) );
+		return (   (_shuffleInstructions == null || _shuffleInstructions.trim().length()==0)
+				&& (_aggInstructions == null || _aggInstructions.trim().length()==0)
+				&& (_otherInstructions == null || _otherInstructions.trim().length()==0) );
 	}
 
 	public String[] getInputs() {
@@ -1119,6 +1119,13 @@ public class MRJobInstruction extends Instruction
 			ret = false;
 		}
 		
+		//TODO conceptually this check should not be necessary
+		//check map only jobs versus full map-reduce jobs
+		if( isMapOnly() != that.isMapOnly() )
+		{
+			ret = false;
+		}
+			
 		return ret;
 	}
 	
@@ -1127,7 +1134,7 @@ public class MRJobInstruction extends Instruction
 	 * @param that
 	 */
 	public void mergeMRJobInstruction( MRJobInstruction that )
-	{
+	{	
 		LOG.debug("Current instruction:\n"+this.toString());
 		LOG.debug("Next instruction:\n"+that.toString());
 		

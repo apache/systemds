@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.utils.Statistics;
 
@@ -145,7 +146,18 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 			}
 			catch(Exception ex)
 			{
-				throw new RuntimeException(ex); 
+				//log error and merged instruction
+				LOG.error("Failed to run merged mr-job instruction:\n"+_minst.inst.toString(),ex); 
+				
+				//handle unsuccessful job returns for failed job 
+				//(otherwise clients would literally wait forever for results)
+				LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
+				for( Long id : _minst.ids ){
+					JobReturn fret = new JobReturn(new MatrixCharacteristics[_minst.outIxLens.get(id)], false); 
+					ret.add( _minst.constructJobReturn(id, fret) );
+					Statistics.decrementNoOfExecutedMRJobs();
+				}
+				putJobResults(_minst.ids, ret);
 			}
 		}
 		

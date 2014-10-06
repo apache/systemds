@@ -24,10 +24,12 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
@@ -1862,6 +1864,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			for( Hop ch : h.getInput() )
+			{
 				if(    ch instanceof DataOp 
 					&& inputVars.contains(ch.get_name())
 					&& !partitionedVars.contains(ch.get_name()))
@@ -1869,6 +1872,15 @@ public class OptimizerRuleBased extends Optimizer
 					ret = true;
 					sharedVars.add(ch.get_name());
 				}
+				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
+					&& ch.getInput().get(0) instanceof DataOp 
+					&& inputVars.contains(ch.getInput().get(0).get_name())
+					&& !partitionedVars.contains(ch.getInput().get(0).get_name()))
+				{
+					ret = true;
+					sharedVars.add(ch.get_name());
+				}
+			}
 		}
 
 		return ret;

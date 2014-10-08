@@ -174,8 +174,9 @@ public class DMLYarnClient
 			// submit application (non-blocking)
 			yarnClient.submitApplication(appContext);
 
-			// Check application status periodically
+			// Check application status periodically (and output web ui address)
 			ApplicationReport appReport = yarnClient.getApplicationReport(appId);
+			LOG.info("Application tracking-URL: "+appReport.getTrackingUrl());
 			YarnApplicationState appState = appReport.getYarnApplicationState();
 			YarnApplicationState oldState = appState;
 			LOG.info("Application state: " + appState);

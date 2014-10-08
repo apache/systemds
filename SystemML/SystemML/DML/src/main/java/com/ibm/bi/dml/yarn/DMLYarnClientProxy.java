@@ -30,7 +30,7 @@ public class DMLYarnClientProxy
 	
 	private static final Log LOG = LogFactory.getLog(DMLYarnClientProxy.class);
 
-	protected static final boolean LDEBUG = true;
+	protected static final boolean LDEBUG = false;
 	
 	static
 	{

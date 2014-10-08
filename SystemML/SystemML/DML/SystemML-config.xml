@@ -24,7 +24,7 @@ The source code for this program is not published or otherwise divested of its t
    <!-- default block dim for binary block files -->
    <defaultblocksize>1000</defaultblocksize> 
 
-   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client -->
+   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
    <dml.yarn.appmaster>false</dml.yarn.appmaster>
 
    <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->

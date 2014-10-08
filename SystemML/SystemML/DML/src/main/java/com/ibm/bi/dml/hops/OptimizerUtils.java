@@ -118,7 +118,7 @@ public class OptimizerUtils
 	 * Enables parfor runtime piggybacking of MR jobs into the packed jobs for
 	 * scan sharing.
 	 */
-	public static boolean ALLOW_RUNTIME_PIGGYBACKING = false;
+	public static boolean ALLOW_RUNTIME_PIGGYBACKING = true;
 	
 	/**
 	 * Enables interprocedural analysis between main script and functions as well as functions

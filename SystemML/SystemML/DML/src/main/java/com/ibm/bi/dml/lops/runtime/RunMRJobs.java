@@ -131,8 +131,9 @@ public class RunMRJobs
 		
 		// runtime piggybacking if applicable
 		JobReturn ret = null;
-		if(   OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING 
-			&& RuntimePiggybacking.isActive() )
+		if(   OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING
+			&& RuntimePiggybacking.isActive()
+			&& RuntimePiggybacking.isSupportedJobType(inst.getJobType()) )
 		{
 			ret = RuntimePiggybacking.submitJob( inst );
 		}

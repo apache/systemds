@@ -374,6 +374,8 @@ public class InfrastructureAnalyzer
 	public static double getClusterUtilization(boolean mapOnly) 
 		throws IOException
 	{
+		//in local mode, the cluster utilization is always 0.0 
+		
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		JobClient client = new JobClient(job);
 		ClusterStatus stat = client.getClusterStatus();

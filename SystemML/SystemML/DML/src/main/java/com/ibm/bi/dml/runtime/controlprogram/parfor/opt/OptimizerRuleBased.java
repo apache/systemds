@@ -34,6 +34,7 @@ import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -1865,7 +1866,7 @@ public class OptimizerRuleBased extends Optimizer
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			for( Hop ch : h.getInput() )
 			{
-				if(    ch instanceof DataOp 
+				if(    ch instanceof DataOp && ch.get_dataType() == DataType.MATRIX
 					&& inputVars.contains(ch.get_name())
 					&& !partitionedVars.contains(ch.get_name()))
 				{
@@ -1873,12 +1874,12 @@ public class OptimizerRuleBased extends Optimizer
 					sharedVars.add(ch.get_name());
 				}
 				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
-					&& ch.getInput().get(0) instanceof DataOp 
+					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).get_dataType() == DataType.MATRIX
 					&& inputVars.contains(ch.getInput().get(0).get_name())
 					&& !partitionedVars.contains(ch.getInput().get(0).get_name()))
 				{
 					ret = true;
-					sharedVars.add(ch.get_name());
+					sharedVars.add(ch.getInput().get(0).get_name());
 				}
 			}
 		}

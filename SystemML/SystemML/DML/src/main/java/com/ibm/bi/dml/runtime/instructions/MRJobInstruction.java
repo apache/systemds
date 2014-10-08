@@ -1094,7 +1094,7 @@ public class MRJobInstruction extends Instruction
 			}		
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param that
@@ -1103,6 +1103,12 @@ public class MRJobInstruction extends Instruction
 	public boolean isMergableMRJobInstruction( MRJobInstruction that )
 	{
 		boolean ret = true;
+		
+		//check job type (just in case its called with wrong assumptions)
+		if( jobType != that.jobType )
+		{
+			ret = false;
+		}
 		
 		//check max memory requirements of mapper instructions
 		if(   (_mapperMem + that._mapperMem) 
@@ -1183,6 +1189,7 @@ public class MRJobInstruction extends Instruction
 		int olen = outputs.length+that.outputs.length;
 		String[] linputs = new String[llen];
 		InputInfo[] linputInfos = new InputInfo[llen];
+		MatrixObject[] linputMatrices = new MatrixObject[llen];
 		PDataPartitionFormat[] lpformats = new PDataPartitionFormat[llen];
 		long[] lrlens = new long[llen];
 		long[] lclens = new long[llen];
@@ -1193,6 +1200,7 @@ public class MRJobInstruction extends Instruction
 		byte[] lresultIndexes = new byte[olen];
 		System.arraycopy(inputs, 0, linputs, 0, len);
 		System.arraycopy(inputInfos, 0, linputInfos, 0, len);
+		System.arraycopy(inputMatrices, 0, linputMatrices, 0, len);
 		System.arraycopy(pformats, 0, lpformats, 0, len);
 		System.arraycopy(rlens, 0, lrlens, 0, len);
 		System.arraycopy(clens, 0, lclens, 0, len);
@@ -1205,6 +1213,7 @@ public class MRJobInstruction extends Instruction
 			byte ixTgt = transMap2.get((byte)i);
 			linputs[ixTgt] = that.inputs[ixSrc];
 			linputInfos[ixTgt] = that.inputInfos[ixSrc];
+			linputMatrices[ixTgt] = that.inputMatrices[ixSrc];
 			lpformats[ixTgt] = that.pformats[ixSrc];
 			lrlens[ixTgt] = that.rlens[ixSrc];
 			lclens[ixTgt] = that.clens[ixSrc];
@@ -1218,7 +1227,7 @@ public class MRJobInstruction extends Instruction
 			loutputInfos[_resultIndices.length+i] = that.outputInfos[i];
 			lresultIndexes[_resultIndices.length+i] = transMap2.get(that._resultIndices[i]);
 		}
-		inputs = linputs; inputInfos = linputInfos; 
+		inputs = linputs; inputInfos = linputInfos; inputMatrices = linputMatrices;
 		pformats = lpformats;
 		outputs = loutputs; outputInfos = loutputInfos;
 		rlens = lrlens; clens = lclens; brlens = lbrlens; bclens = lbclens;
@@ -1275,7 +1284,7 @@ public class MRJobInstruction extends Instruction
 			for( int i=0; i<parts.length; i++ )
 			{
 				String lpart = parts[i];
-				int pos = lpart.indexOf(Instruction.DATATYPE_PREFIX);
+				int pos = lpart.indexOf(Instruction.DATATYPE_PREFIX+DataType.MATRIX.toString());
 				if( pos>0 ){
 					String index = lpart.substring(0, pos);	
 					String newindex = String.valueOf(transMap.get(Byte.parseByte(index)));

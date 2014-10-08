@@ -62,7 +62,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking.PiggybackingType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimator;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
@@ -656,7 +655,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//enable runtime piggybacking if required
 		if( _enableRuntimePiggybacking )
-			RuntimePiggybacking.start( PiggybackingType.UTIL_DECAY_BASED_PARALLEL, _numThreads );
+			RuntimePiggybacking.start( _numThreads ); //default piggybacking worker
 		
 		try
 		{

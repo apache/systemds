@@ -35,6 +35,8 @@ public class RuntimePiggybacking
 		UTIL_DECAY_BASED_PARALLEL,
 	}
 	
+	private static PiggybackingType DEFAULT_WORKER_TYPE = PiggybackingType.UTIL_DECAY_BASED_PARALLEL;
+	
 	private static boolean _active = false;
 	private static IDSequence _idSeq = null;
 	private static PiggybackingWorker _worker = null;
@@ -67,6 +69,18 @@ public class RuntimePiggybacking
 	public static boolean isActive()
 	{
 		return _active;
+	}
+	
+	/**
+	 * 
+	 * @param type
+	 * @param par
+	 * @throws DMLRuntimeException
+	 */
+	public static void start( int par ) 
+		throws DMLRuntimeException
+	{
+		start( DEFAULT_WORKER_TYPE, par );
 	}
 	
 	/**
@@ -164,6 +178,22 @@ public class RuntimePiggybacking
 		
 		return ret;
 	}		
+	
+	/**
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static boolean isSupportedJobType( JobType type )
+	{
+		// reblock and datagen apply as well but this would limit the recompilation
+		// potential of job-specific recompilation hooks due all-or-nothing semantics
+		
+		return (   type == JobType.GMR
+				|| type == JobType.CM_COV
+				|| type == JobType.GROUPED_AGG
+				|| type == JobType.REBLOCK );
+	}
 	
 	/**
 	 * Gets a working set of MR job instructions out of the global pool.

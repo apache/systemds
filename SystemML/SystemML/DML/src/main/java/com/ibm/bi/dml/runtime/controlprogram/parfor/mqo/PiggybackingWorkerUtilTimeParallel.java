@@ -144,6 +144,7 @@ public class PiggybackingWorkerUtilTimeParallel extends PiggybackingWorker
 					ret.add( _minst.constructJobReturn(id, mret) );
 					Statistics.decrementNoOfExecutedMRJobs();
 				}
+				// make job returns available and notify waiting clients
 				putJobResults(_minst.ids, ret);
 			}
 			catch(Exception ex)

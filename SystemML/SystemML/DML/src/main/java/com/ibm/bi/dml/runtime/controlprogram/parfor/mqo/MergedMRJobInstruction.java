@@ -14,6 +14,11 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 
+/**
+ * Merged MR Job instruction to hold the actually merged instruction as well as offsets of
+ * result indexes in order to split result meta data after successful execution.
+ * 
+ */
 public class MergedMRJobInstruction 
 {
 	@SuppressWarnings("unused")
@@ -59,5 +64,4 @@ public class MergedMRJobInstruction
 		
 		return ret;
 	}
-	
 }

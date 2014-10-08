@@ -157,6 +157,7 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 					ret.add( _minst.constructJobReturn(id, fret) );
 					Statistics.decrementNoOfExecutedMRJobs();
 				}
+				// make job returns available and notify waiting clients
 				putJobResults(_minst.ids, ret);
 			}
 		}

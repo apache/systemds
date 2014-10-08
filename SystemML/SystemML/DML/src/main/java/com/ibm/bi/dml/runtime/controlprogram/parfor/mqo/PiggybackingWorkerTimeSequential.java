@@ -77,6 +77,7 @@ public class PiggybackingWorkerTimeSequential extends PiggybackingWorker
 						ret.add( minst.constructJobReturn(id, mret) );
 						Statistics.decrementNoOfExecutedMRJobs();
 					}
+					// make job returns available and notify waiting clients
 					putJobResults(minst.ids, ret);
 				}
 			}

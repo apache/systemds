@@ -1832,7 +1832,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			//apply runtime piggybacking if hop in mr and shared input variable 
 			//(any input variabled which is not partitioned and is read only and applies)
-			apply = rHasSharedMRInput(n, vars.keySet(), partitionedMatrices.keySet(), sharedVars);
+			apply = rHasSharedMRInput(n, vars.keySet(), partitionedMatrices.keySet(), sharedVars)
+					&& n.getTotalK() > 1; //apply only if degree of parallelism > 1
 		}
 		
 		if( apply )

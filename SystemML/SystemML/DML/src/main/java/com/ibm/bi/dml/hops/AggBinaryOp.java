@@ -618,7 +618,7 @@ public class AggBinaryOp extends Hop
 		Hop h1 = getInput().get(0);
 		Hop h2 = getInput().get(1);
 		
-		//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
+		//check for known dimensions and cost for t(X) vs t(v) + t(tvX)
 		//(for both CP/MR, we explicitly check that new transposes fit in memory,
 		//even a ba in CP does not imply that both transposes can be executed in CP)
 		if( CP ) //in-memory ba 
@@ -629,13 +629,25 @@ public class AggBinaryOp extends Hop
 				long cd = h1.get_dim2();
 				long n = h2.get_dim2();
 				
-				//check for known dimensions and cost for t(M) vs t(v) + t(tvM)
-				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
-					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
-					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() ) 
-				{
-					ret = true;
-				}
+				//check for known dimensions (necessary condition for subsequent checks)
+				ret = (m>0 && cd>0 && n>0); 
+				
+				//check operation memory with changed transpose (this is important if we have 
+				//e.g., t(X) %*% v, where X is sparse and tX fits in memory but X does not
+				double memX = h1.getInput().get(0).getOutputMemEstimate();
+				double memtv = OptimizerUtils.estimateSizeExactSparsity(n, cd, 1.0);
+				double memtXv = OptimizerUtils.estimateSizeExactSparsity(n, m, 1.0);
+				double newMemEstimate = memtv + memX + memtXv;
+				ret &= ( newMemEstimate < OptimizerUtils.getLocalMemBudget() );
+				
+				//check for cost benefit of t(X) vs t(v) + t(tvX) and memory of additional transpose ops
+				ret &= ( m*cd > (cd*n + m*n) &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getLocalMemBudget() &&
+					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) < OptimizerUtils.getLocalMemBudget() ); 
+				
+				//update operation memory estimate (e.g., for parfor optimizer)
+				if( ret )
+					_memEstimate = newMemEstimate;
 			}
 		}
 		else //MR

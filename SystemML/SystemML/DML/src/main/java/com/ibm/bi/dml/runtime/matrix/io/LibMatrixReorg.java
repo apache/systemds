@@ -173,6 +173,11 @@ public class LibMatrixReorg
 		//determine output representation
 	    out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
 		
+		//set output dimensions
+		out.rlen = rows;
+		out.clen = cols;
+		out.nonZeros = in.nonZeros;
+		
 		//core reshape (sparse or dense)	
 		if(!in.sparse && !out.sparse)
 			reshapeDense(in, out, rows, cols, rowwise);		
@@ -182,14 +187,6 @@ public class LibMatrixReorg
 			reshapeSparseToDense(in, out, rows, cols, rowwise);
 		else
 			reshapeDenseToSparse(in, out, rows, cols, rowwise);
-		
-		//finally set output dimensions
-		out.rlen = rows;
-		out.clen = cols;
-		out.nonZeros = in.nonZeros;
-		
-		//out.print();
-		
 		
 		return out;
 	}
@@ -553,8 +550,10 @@ public class LibMatrixReorg
 	 * @param rows
 	 * @param cols
 	 * @param rowwise
+	 * @throws DMLRuntimeException 
 	 */
-	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
+	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
+		throws DMLRuntimeException
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -564,8 +563,7 @@ public class LibMatrixReorg
 			return;
 		
 		//allocate block if necessary
-		if(out.denseBlock==null)
-			out.denseBlock = new double[rows * cols];
+		out.allocateDenseBlock(false);
 		
 		//dense reshape
 		double[] a = in.denseBlock;
@@ -821,8 +819,10 @@ public class LibMatrixReorg
 	 * @param rows
 	 * @param cols
 	 * @param rowwise
+	 * @throws DMLRuntimeException 
 	 */
-	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
+	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
+		throws DMLRuntimeException
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -832,8 +832,7 @@ public class LibMatrixReorg
 			return;
 		
 		//allocate block if necessary
-		if(out.denseBlock==null)
-			out.denseBlock = new double[rows * cols];
+		out.allocateDenseBlock(false);
 		
 		//sparse/dense reshape
 		SparseRow[] aRows = in.sparseRows;

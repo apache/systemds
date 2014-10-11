@@ -208,6 +208,7 @@ public class MatrixBlock extends MatrixValue
 	}
 	
 	public void resetDenseWithValue(int rl, int cl, double v) 
+		throws DMLRuntimeException 
 	{	
 		estimatedNNzsPerRow=-1;
 		rlen=rl;
@@ -220,10 +221,11 @@ public class MatrixBlock extends MatrixValue
 			return;
 		}
 		
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length<limit)
-			denseBlock=new double[limit];
+		//allocate dense block
+		allocateDenseBlock();
 		
+		//init with constant value (non-zero, see above)
+		int limit = rlen * clen;
 		Arrays.fill(denseBlock, 0, limit, v);
 		nonZeros=limit;
 	}
@@ -323,7 +325,7 @@ public class MatrixBlock extends MatrixValue
 					                      "Please, reduce the JVM heapsize to execute this in MR.");
 		}
 		
-		//allocate block if non-existing or too small
+		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		if(denseBlock == null || denseBlock.length < limit ) {
 			denseBlock = new double[(int)limit];
 		}
@@ -359,18 +361,17 @@ public class MatrixBlock extends MatrixValue
 	 * 
 	 * @param rl
 	 * @param cl
+	 * @throws DMLRuntimeException 
 	 */
-	public void allocateDenseBlockUnsafe(int rl, int cl)
+	public void allocateDenseBlockUnsafe(int rl, int cl) 
+		throws DMLRuntimeException
 	{
 		sparse=false;
 		rlen=rl;
 		clen=cl;
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length<limit)
-		{
-			denseBlock=new double[limit];
-		}else
-			Arrays.fill(denseBlock, 0, limit, 0);
+		
+		//allocate dense block
+		allocateDenseBlock();
 	}
 	
 	
@@ -657,14 +658,15 @@ public class MatrixBlock extends MatrixValue
 		{
 			if(denseBlock==null && v==0.0)
 				return;
-			
-			int limit=rlen*clen;
-			if(denseBlock==null || denseBlock.length<limit)
-			{
-				denseBlock=new double[limit];
-				//Arrays.fill(denseBlock, 0, limit, 0);
+
+			//allocate and init dense block (w/o overwriting nnz)
+			try {
+				allocateDenseBlock(false);
 			}
-			
+			catch(DMLRuntimeException e){
+				throw new RuntimeException(e);
+			}
+				
 			int index=r*clen+c;
 			if(denseBlock[index]==0)
 				nonZeros++;
@@ -702,11 +704,12 @@ public class MatrixBlock extends MatrixValue
 		}
 		else
 		{
-			int limit=rlen*clen;
-			if(denseBlock==null)
-			{
-				denseBlock=new double[limit];
-				Arrays.fill(denseBlock, 0, limit, 0);
+			//allocate and init dense block (w/o overwriting nnz)
+			try {
+				allocateDenseBlock(false);
+			}
+			catch(DMLRuntimeException e){
+				throw new RuntimeException(e);
 			}
 			
 			int index=r*clen+c;
@@ -748,11 +751,13 @@ public class MatrixBlock extends MatrixValue
 		{
 			if(denseBlock==null && v==0.0)
 				return;		
-			int limit=rlen*clen;
-			if(denseBlock==null || denseBlock.length<limit)
-			{
-				denseBlock=new double[limit];
-				//Arrays.fill(denseBlock, 0, limit, 0);
+			
+			//allocate and init dense block (w/o overwriting nnz)
+			try {
+				allocateDenseBlock(false);
+			}
+			catch(DMLRuntimeException e){
+				throw new RuntimeException(e);
 			}
 			
 			int index=r*clen+c;
@@ -1322,18 +1327,27 @@ public class MatrixBlock extends MatrixValue
 	
 	private void copyDenseToDense(MatrixBlock that)
 	{
-		this.nonZeros=that.nonZeros;
+		nonZeros = that.nonZeros;
+		int limit = rlen*clen;
 		
+		//plain reset to 0 for empty input
 		if( that.isEmptyBlock(false) )
 		{
 			if(denseBlock!=null)
-				Arrays.fill(denseBlock, 0);
+				Arrays.fill(denseBlock, 0, limit, 0);
 			return;
 		}
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length<limit)
-			denseBlock=new double[limit];
-		System.arraycopy(that.denseBlock, 0, this.denseBlock, 0, limit);
+		
+		//allocate and init dense block (w/o overwriting nnz)
+		try {
+			allocateDenseBlock(false);
+		}
+		catch(DMLRuntimeException e){
+			throw new RuntimeException(e);
+		}
+		
+		//actual copy 
+		System.arraycopy(that.denseBlock, 0, denseBlock, 0, limit);
 	}
 	
 	private void copySparseToDense(MatrixBlock that)
@@ -1345,11 +1359,15 @@ public class MatrixBlock extends MatrixValue
 				Arrays.fill(denseBlock, 0);
 			return;
 		}
-		int limit=rlen*clen;
-		if(denseBlock==null || denseBlock.length<limit)
-			denseBlock=new double[limit];
-		else
-			Arrays.fill(denseBlock, 0, limit, 0);
+		
+		//allocate and init dense block (w/o overwriting nnz)
+		try {
+			allocateDenseBlock(false);
+		}
+		catch(DMLRuntimeException e){
+			throw new RuntimeException(e);
+		}
+		
 		int start=0;
 		for(int r=0; r<Math.min(that.sparseRows.length, rlen); r++, start+=clen)
 		{
@@ -4991,11 +5009,9 @@ public class MatrixBlock extends MatrixValue
 	{
 		if(m1.sparseRows==null || m2.sparseRows==null)
 			return;
-		//double[] cache=null;
 		TreeMap<Integer, Double> cache=null;
 		if(result.isInSparseFormat())
 		{
-			//cache=new double[m2.getNumColumns()];
 			cache=new TreeMap<Integer, Double>();
 		}
 		for(int i=0; i<Math.min(m1.rlen, m1.sparseRows.length); i++)
@@ -5324,8 +5340,8 @@ public class MatrixBlock extends MatrixValue
 				}
 				else
 				{
-					if( ret.denseBlock==null )
-						ret.denseBlock = new double[ rlen2*clen ];
+					ret.allocateDenseBlock(false);
+					
 					int index1 = i*clen;
 					int index2 = rindex*clen;
 					for(int j=0; j<clen; j++)

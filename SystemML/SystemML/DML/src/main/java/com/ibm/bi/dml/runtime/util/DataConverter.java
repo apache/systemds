@@ -363,32 +363,32 @@ public class DataConverter
 		MatrixBlock ret = null;
 		boolean sparse = false;
 		
-		if ( inputinfo == InputInfo.CSVInputInfo && (rlen==-1 || clen==-1) ) {
-			// CP-side CSV reblock based on file size for matrix w/ unknown dimensions
-			ret = null;
-		}
-		else {
-			//determine target representation (sparse/dense)
-			long estnnz = (long)(prop.expectedSparsity*rlen*clen);
-			sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
-			
-			//prepare result matrix block
-			ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
-			if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
-				ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
-			else if( sparse )
-				ret.adjustSparseRows((int)rlen-1);
-		}
-		
-		//prepare file access
-		JobConf job = new JobConf();	
-		FileSystem fs = (prop.localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
-		Path path = new Path( ((prop.localFS) ? "file:///" : "") + prop.path); 
-		if( !fs.exists(path) )	
-			throw new IOException("File "+prop.path+" does not exist on HDFS/LFS.");
-		
 		try 
 		{
+			if ( inputinfo == InputInfo.CSVInputInfo && (rlen==-1 || clen==-1) ) {
+				// CP-side CSV reblock based on file size for matrix w/ unknown dimensions
+				ret = null;
+			}
+			else {
+				//determine target representation (sparse/dense)
+				long estnnz = (long)(prop.expectedSparsity*rlen*clen);
+				sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
+				
+				//prepare result matrix block
+				ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
+				if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
+					ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+				else if( sparse )
+					ret.adjustSparseRows((int)rlen-1);
+			}
+			
+			//prepare file access
+			JobConf job = new JobConf();	
+			FileSystem fs = (prop.localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
+			Path path = new Path( ((prop.localFS) ? "file:///" : "") + prop.path); 
+			if( !fs.exists(path) )	
+				throw new IOException("File "+prop.path+" does not exist on HDFS/LFS.");
+		
 			//check for empty file
 			if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
 				throw new EOFException("Empty input file "+ prop.path +".");
@@ -458,16 +458,17 @@ public class DataConverter
 		
 		long estnnz = (long)(expectedSparsity*rlen*clen);
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
-
-		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
-		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
-			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
-		else if( sparse )
-			ret.adjustSparseRows((int)rlen-1);
-
+		MatrixBlock ret = null;
+		
 		try
 		{
+			//prepare result matrix block
+			ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
+			if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
+				ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+			else if( sparse )
+				ret.adjustSparseRows((int)rlen-1);
+
 			//core read (consistent use of internal readers)
 			readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, (inputinfo==InputInfo.MatrixMarketInputInfo));
 		
@@ -2407,8 +2408,10 @@ public class DataConverter
 	 * @param bclen
 	 * @param sparse
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros )
+	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros ) 
+		throws DMLRuntimeException
 	{
 		MatrixBlock[] blocks = new MatrixBlock[4];
 		double sparsity = ((double)nonZeros)/(rlen*clen);

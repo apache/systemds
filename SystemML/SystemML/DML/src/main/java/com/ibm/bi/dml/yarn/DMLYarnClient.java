@@ -27,6 +27,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
@@ -69,6 +70,8 @@ public class DMLYarnClient
 	//Internal configuration parameters
 	// environment variable to obtain the original jar filename
 	private static final String JARFILE_ENV_CONST = "IBM_JAVA_COMMAND_LINE"; 
+	// environment variable to obtain default jvm arguments
+	private static final String JVMOPTS_ENV_CONST = "HADOOP_OPTS";
 	// default of 1 core since YARN scheduler does not take the number of cores into account yet 
 	private static final int NUM_CORES = 1;  
 	// factor for compute virtual memory to request based on given max heap size
@@ -192,9 +195,18 @@ public class DMLYarnClient
 					LOG.info("Application state: " + appState);
 				}
 			}
+			//check final status (failed or succeeded)
+			FinalApplicationStatus finalState = appReport.getFinalApplicationStatus();
+			LOG.info("Application final status: " + finalState);
+			
+			//show application and total runtime
 			double appRuntime = (double)(appReport.getFinishTime() - appReport.getStartTime()) / 1000;
 			LOG.info( "Application runtime: " + appRuntime + " sec." );
 			LOG.info( "Total runtime: " + String.format("%.3f", time.stop()/1000) + " sec.");
+			
+			//raised script-level error in case of failed final status
+			if( finalState != FinalApplicationStatus.SUCCEEDED )
+				throw new DMLRuntimeException("DML yarn app master finished with final status: "+finalState+".");
 			
 			ret = true;
 		}
@@ -348,9 +360,29 @@ public class DMLYarnClient
 	 */
 	private String constructAMCommand( String[] args, DMLConfig conf )
 	{
-		int memHeap = conf.getIntValue(DMLConfig.YARN_APPMASTERMEM);
+		//start command
 		StringBuilder command = new StringBuilder();
 		command.append("java");
+		
+		//add client jvm arguments (concatenation of HADOOP_CLIENT_OPTS and HADOOP_OPTS)
+		if( System.getenv().containsKey(JVMOPTS_ENV_CONST) ) {
+			String externalArgs = System.getenv(JVMOPTS_ENV_CONST);
+			//safe parsing and replacement of redundant Xmx, Xms, Xmn
+			if( externalArgs != null ) {
+				String[] parts = externalArgs.split(" ");
+				for( int i=0; i<parts.length; i++ )
+					if( !(   parts[i].startsWith("-Xmx") 
+						  || parts[i].startsWith("-Xms") 
+						  || parts[i].startsWith("-Xmn") ) ) 
+					{
+						command.append(" ");
+						command.append(parts[i]);
+					}
+			}
+		}	
+		
+		//add jvm heap configuration (specify xmn for default gcpolicy:gencon)
+		int memHeap = conf.getIntValue(DMLConfig.YARN_APPMASTERMEM);
 		command.append(" -Xmx"+memHeap+"m");
 		command.append(" -Xms"+memHeap+"m");
 		command.append(" -Xmn"+(int)(memHeap/10)+"m");

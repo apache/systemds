@@ -356,9 +356,8 @@ public class TertiaryOp extends Hop
 		DataType dt1 = getInput().get(0).get_dataType(); 
 		DataType dt2 = getInput().get(1).get_dataType(); 
 		DataType dt3 = getInput().get(2).get_dataType(); 
- 		Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
-		tertiaryOp = isSequenceRewriteApplicable() ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOp;
-		
+ 		Tertiary.OperationTypes tertiaryOpOrig = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+ 		
 		// Compute lops for all inputs
 		Lop[] inputLops = new Lop[getInput().size()];
 		for(int i=0; i < getInput().size(); i++) {
@@ -366,11 +365,12 @@ public class TertiaryOp extends Hop
 		}
 		
 		ExecType et = optFindExecType();
-		if ( et == ExecType.CP ) {
-			Tertiary tertiary = new Tertiary(
-					inputLops,
-					tertiaryOp,
-					get_dataType(), get_valueType(), et);
+		if ( et == ExecType.CP ) 
+		{	
+			//for CP we support only ctable expand left
+			Tertiary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			
+			Tertiary tertiary = new Tertiary(inputLops, tertiaryOp, get_dataType(), get_valueType(), et);
 			
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, get_rows_in_block(), get_cols_in_block(), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -378,38 +378,21 @@ public class TertiaryOp extends Hop
 				|| et == ExecType.CP ) {
 				
 				if( et == ExecType.CP ){
-					//force blocked output in CP (see below)
+					//force blocked output in CP (see below), otherwise binarycell
 					tertiary.getOutputParameters().setDimensions(_dim1, _dim2, 1000, 1000, -1);
 				}
 				
 				//tertiary opt, w/o reblock in CP
 				set_lops(tertiary);
 			}
-			/*else {
-				ReBlock reblock = null;
-				try {
-					reblock = new ReBlock(
-							tertiary, get_rows_in_block(),
-							get_cols_in_block(), get_dataType(),
-							get_valueType());
-				} catch (Exception e) {
-					throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop " , e);
-				}
-				reblock.getOutputParameters().setDimensions(_dim1, _dim2,  
-						get_rows_in_block(), get_cols_in_block(), -1);
-				
-				reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-				set_lops(reblock);
-			}*/
 		}
-		else {
-			Group group1, group2, group3, group4;
-			group1 = group2 = group3 = group4 = null;
-
-			group1 = new Group(
-						inputLops[0],
-						Group.OperationTypes.Sort, get_dataType(), get_valueType());
+		else //MR
+		{
+			//for MR we support both ctable expand left and right
+			Tertiary.OperationTypes tertiaryOp = isSequenceRewriteApplicable() ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			
+			Group group1 = null, group2 = null, group3 = null, group4 = null;
+			group1 = new Group(inputLops[0], Group.OperationTypes.Sort, get_dataType(), get_valueType());
 			group1.getOutputParameters().setDimensions(get_dim1(),
 					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			

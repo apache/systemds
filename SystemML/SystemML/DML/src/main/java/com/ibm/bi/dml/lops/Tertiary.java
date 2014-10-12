@@ -23,7 +23,7 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class Tertiary extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes { 
@@ -117,7 +117,10 @@ public class Tertiary extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "ctable" );
+		if( operation != Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+			sb.append( "ctable" );
+		else
+			sb.append( "ctableexpand" );
 		sb.append( OPERAND_DELIMITOR );
 		
 		if ( getInputs().get(0).get_dataType() == DataType.SCALAR ) {

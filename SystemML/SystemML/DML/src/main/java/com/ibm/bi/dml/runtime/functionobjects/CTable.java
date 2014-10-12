@@ -166,6 +166,37 @@ public class CTable extends ValueFunction
 			return;
 		
 		ctableResult.addValue((int)row-1, (int)col-1, w);
-	}	
+	}
+	
+	/**
+	 * 
+	 * @param row
+	 * @param v2
+	 * @param w
+	 * @param maxCol
+	 * @return
+	 */
+	public int execute(int row, double v2, double w, int maxCol, MatrixBlock ctableResult) 
+		throws DMLRuntimeException 
+	{	
+		// If any of the values are NaN (i.e., missing) then 
+		// we skip this tuple, proceed to the next tuple
+		if ( Double.isNaN(v2) || Double.isNaN(w) ) {
+			return maxCol;
+		}
+		
+		// safe casts to long for consistent behavior with indexing
+		long col = UtilFunctions.toLong( v2 );
+				
+		if( col <= 0 ) {
+			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): "+v2);
+		} 
+		
+		//set weight as value (expand is guaranteed to address different cells)
+		ctableResult.quickSetValue((int)row-1, (int)col-1, w);
+		
+		//maintain max seen col 
+		return Math.max(maxCol, (int)col);
+	}
 
 }

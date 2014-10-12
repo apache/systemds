@@ -5658,15 +5658,46 @@ public class MatrixBlock extends MatrixValue
 				}
 		}
 		else {
-			for( int i=0; i<rlen; i++ )
+			for( int i=0; i<rlen; i++ ){
 				for( int j=0; j<clen; j++ )
 				{
 					double v1 = this.quickGetValue(i, j);
 					double v2 = that.quickGetValue(i, j);
 					ctable.execute(v1, v2, w, resultBlock);
 				}
+			}
 			resultBlock.recomputeNonZeros();
 		}
+	}
+	
+	/**
+	 *  D = ctable(seq,A,w)
+	 *  this <- seq; thatMatrix <- A; thatScalar <- w; result <- D
+	 *  
+	 * (i1,j1,v1) from input1 (this)
+	 * (i1,j1,v2) from input2 (that)
+	 * (w)  from scalar_input3 (scalarThat2)
+	 */
+	public void tertiaryOperations(Operator op, MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock)
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		MatrixBlock that = checkType(thatMatrix);
+		CTable ctable = CTable.getCTableFnObject();
+		double w = thatScalar;
+		
+		//sparse-unsafe ctable execution
+		//(because input values of 0 are invalid and have to result in errors) 		
+		//resultBlock guaranteed to be allocated for ctableexpand
+		//each row in resultBlock will be allocated and will contain exactly one value
+		int maxCol = 0;
+		for( int i=0; i<rlen; i++ ) {
+			double v2 = that.quickGetValue(i, 0);
+			maxCol = ctable.execute(i+1, v2, w, maxCol, resultBlock);
+		}
+		
+		//update meta data (initially unknown number of columns)
+		//note: nnz maintained in ctable (via quickset)
+		resultBlock.clen = maxCol;
 	}
 	
 	/**

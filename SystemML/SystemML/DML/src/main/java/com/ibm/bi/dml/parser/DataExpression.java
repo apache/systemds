@@ -545,6 +545,7 @@ public class DataExpression extends DataIdentifier
 	
 		//general data expression constant propagation
 		performConstantPropagationRand( currConstVars );
+		performConstantPropagationReadWrite( currConstVars );
 		
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
 		Expression dataParam1 = getVarParam(RAND_DATA);		
@@ -1624,7 +1625,30 @@ public class DataExpression extends DataIdentifier
 		String[] paramNamesForEval = new String[]{RAND_DATA, RAND_SPARSITY, RAND_MIN, RAND_MAX};
 		
 		//replace data identifiers with const identifiers
-		for( String paramName : paramNamesForEval )
+		performConstantPropagation(currConstVars, paramNamesForEval);
+	}
+	
+	/**
+	 * 
+	 * @param currConstVars
+	 */
+	private void performConstantPropagationReadWrite( HashMap<String, ConstIdentifier> currConstVars )
+	{
+		//here, we propagate constants for all read/write parameters that are required during validate.
+		String[] paramNamesForEval = new String[]{FORMAT_TYPE, IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM};
+		
+		//replace data identifiers with const identifiers
+		performConstantPropagation(currConstVars, paramNamesForEval);
+	}
+	
+	/**
+	 * 
+	 * @param currConstVars
+	 * @param paramNames
+	 */
+	private void performConstantPropagation( HashMap<String, ConstIdentifier> currConstVars, String[] paramNames )
+	{
+		for( String paramName : paramNames )
 		{
 			Expression paramExp = getVarParam(paramName);
 			if (   paramExp != null && paramExp instanceof DataIdentifier && !(paramExp instanceof IndexedIdentifier) 

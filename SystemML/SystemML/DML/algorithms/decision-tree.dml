@@ -1,0 +1,828 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Implements regression trees (with scale/continuous features)
+#
+# Example Usage:
+#
+# hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y bins=100 depth=5 num_leaf=10 num_samples=250 model=$OUPUT_DIR/model Log=$OUTPUT_DIR/Log fmt="csv"
+#
+# Args:
+# X, Y: Input features and labels
+# bins: Generates this many number of equiheight bins per feature
+# depth: Defines max depth of the learnt tree
+# num_leaf: Defines the number of samples when splitting stops and a leaf node is built
+# num_samples: Defines the number of samples at which point we switch to in-memory subtree building
+# model: HDFS location where the learnt tree is stored
+# Log: HDFS location where the log messages are stored
+# fmt: Preferred format of the model file (default is ijv/"text")
+#
+
+$fmt="text"
+
+order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
+			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+	
+/*
+ * Computes label for regression trees
+ */ 		    
+findLabel = function(Matrix[Double] X, Matrix[Double] y) return (Double label){
+	label = mean(y)
+}
+
+/*
+ * Computes gain using variance
+ * Takes as input arguments 6 scalars:
+ * sum(y^2), sum(y), count of samples
+ * for samples that go to the left: sum(y^2), sum(y) and count of samples
+ */ 
+computeGain = function(Double sum_y2_all, Double sum_y_all, Integer count_all, Double sum_y2_left, Double sum_y_left, Integer count_left)
+			  return (Double gain){
+	var_all = 0
+	if(count_all > 0) var_all = (sum_y2_all - sum_y_all^2/count_all)		#*count_all/(count_all-1)		  
+	
+	var_left = 0
+	if(count_left > 0) var_left = (sum_y2_left - sum_y_left^2/count_left)		#*count_left/(count_left-1)
+	
+	sum_y2_right = sum_y2_all - sum_y2_left
+	sum_y_right = sum_y_all - sum_y_left
+	count_right = count_all - count_left
+	
+	var_right = 0
+	if(count_right > 0) var_right = (sum_y2_right - sum_y_right^2/count_right)		#*count_right/(count_right-1)
+	
+	gain = var_all - var_left - var_right			
+}
+
+/*
+ * Finds a the best split for a node
+ * Meant for use when a 'small' number of samples reach this node
+ */
+findSplit = function(Matrix[Double] X, Matrix[Double] y) return (Integer feature, Double threshold){
+	n = nrow(X)
+	
+	best_gain = 0
+	best_feature = -1
+	best_threshold = 0
+	for(i in 1:ncol(X)){
+		feature_vals = X[,i]
+		sorted_feature_vals = order(feature_vals, 1, FALSE)
+		
+		/*
+		 * print("feature=" + i + " sorted feature values:")
+		 * for(j in 1:nrow(sorted_feature_vals))
+		 *	print(" " + j + " -> " + castAsScalar(sorted_feature_vals[j,1]))
+		 */
+		 
+		best_threshold_pos_for_feature = 0
+		best_gain_for_feature = 0
+		for(j in 1:(nrow(sorted_feature_vals)-1)){
+			threshold = castAsScalar((sorted_feature_vals[j,1] + sorted_feature_vals[j+1,1])/2)
+			
+			left = ppred(feature_vals, threshold, "<")
+			yl = y*left
+			nl = as.integer(sum(left))
+			
+			gain = computeGain(sum(y^2), sum(y), n, sum(yl^2), sum(yl), nl)
+			
+			#print("feature=" + i + " threshold=" + threshold + " gain=" + gain + " nl=" + nl + " nr=" + nr)
+			
+			if(best_threshold_pos_for_feature == 0 | gain > best_gain_for_feature){
+				best_gain_for_feature = gain
+				best_threshold_pos_for_feature = j
+			}
+		}
+		
+		best_threshold_for_feature = castAsScalar((sorted_feature_vals[best_threshold_pos_for_feature,1] + sorted_feature_vals[best_threshold_pos_for_feature + 1, 1])/2)
+		#print("feature=" + i + " best_threshold=" + best_threshold_for_feature + " best_gain=" + best_gain_for_feature)
+		
+		if(best_feature == -1 | best_gain_for_feature > best_gain){
+			best_gain = best_gain_for_feature
+			best_feature = i
+			best_threshold = best_threshold_for_feature
+		}
+	}
+	
+	feature = best_feature
+	threshold = best_threshold
+	#print("best_feature=" + feature + " best_threshold=" + threshold + " best_gain=" + best_gain)
+}
+
+/*
+ * Builds a small subtree when computation has reached
+ * lower levels of the decision tree
+ * Only meant for nodes that have a small number of samples
+ * reaching it
+ * Is a recursive function, but meant to run in memory
+ */
+buildNode = function(Matrix[Double] X, 
+					 Matrix[Double] y, 
+					 Matrix[Double] features, 
+					 Matrix[Double] thresholds, 
+					 Integer pos, 
+					 Integer node_id, 
+					 Integer max_node_id, 
+					 Integer leaf_count) 
+		    return (Matrix[Double] features, Matrix[Double] thresholds){
+	if(nrow(X) > leaf_count & 2*node_id <= max_node_id & 2*node_id + 1 <= max_node_id){
+		[feature, threshold] = findSplit(X, y)
+		features[1,pos] = feature
+		thresholds[1,pos] = threshold
+
+		#print("feature=" + feature + " threshold=" + threshold)		
+
+		/*
+		 * print("X:")
+	 	 * for(i in 1:nrow(X))
+	 	 *	for(j in 1:ncol(X))
+	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
+		 */
+		 
+		/*
+		 * print("y:")
+	 	 * for(i in 1:nrow(y))
+	 	 *	for(j in 1:ncol(y))
+	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(y[i,j]))
+		 */
+		 
+		left_rows = ppred(X[,feature], threshold, "<")
+		num_left = sum(left_rows)
+		num_right = nrow(X) - num_left
+		
+		permut_mat = matrix(0, rows=nrow(X), cols=nrow(X))
+		left_pos = 1
+		right_pos = 1
+		for(i in 1:nrow(X)){
+			if(castAsScalar(left_rows[i,1]) == 1){
+				permut_mat[left_pos, i] = 1
+				left_pos = left_pos + 1
+			}else{
+				permut_mat[num_left + right_pos, i] = 1
+				right_pos = right_pos + 1
+			}
+		}
+		
+		reordered_X = permut_mat %*% X
+		reordered_y = permut_mat %*% y
+		
+		left_X = reordered_X[1:num_left,]
+		left_y = reordered_y[1:num_left,]
+		
+		/*
+		 * print("left_X:")
+	 	 * for(i in 1:nrow(left_X))
+	 	 * 	for(j in 1:ncol(left_X))
+	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(left_X[i,j]))
+	 	 */
+	 	 
+	 	/* 		
+	 	 * print("left_y:")
+	 	 * for(i in 1:nrow(left_y))
+	 	 * 	for(j in 1:ncol(left_y))
+	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(left_y[i,j]))
+	 	 */ 
+	 	 
+		right_X = reordered_X[(num_left+1):nrow(X),]
+		right_y = reordered_y[(num_left+1):nrow(y),]
+		
+		/*
+		 * print("right_X:")
+	 	 * for(i in 1:nrow(right_X))
+	 	 *	for(j in 1:ncol(right_X))
+	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(right_X[i,j]))
+	 	 */
+	 	 
+	 	/* 		
+	 	 * print("right_y:")
+	 	 * for(i in 1:nrow(right_y))
+	 	 * for(j in 1:ncol(right_y))
+	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(right_y[i,j]))
+	 	 */ 
+	 	 
+		[features, thresholds] = buildNode(left_X, left_y, features, thresholds, 2*pos, 2*node_id, max_node_id, leaf_count)
+		[features, thresholds] = buildNode(right_X, right_y, features, thresholds, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count)
+	}else{
+		label = mean(y) #findLabel(X, y)
+		features[1,pos] = -1
+		thresholds[1,pos] = label
+	} 
+}
+
+/*
+ * Merges a subtree into the master model
+ * Is a recursive function, but meant to run in memory
+ */
+recursiveCopy = function(Matrix[Double] local_features, Matrix[Double] local_thresholds, Integer local_pos, Matrix[Double] global_model, Integer global_pos)
+				return (Matrix[Double] global_model){
+	feature = local_features[1, local_pos]			
+	global_model[1, global_pos] = feature
+	global_model[2, global_pos] = local_thresholds[1, local_pos]
+	if(castAsScalar(feature) > 0){
+		global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos, global_model, 2*global_pos)
+		global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos + 1, global_model, 2*global_pos + 1)
+	}
+	
+	/*
+	 * print("(inside function) global_model (" + global_pos + "):")
+	 *	for(i in 1:nrow(global_model))
+	 *		for(j in 1:ncol(global_model))
+	 *	 		print(" " + i + " " + j + " -> " + castAsScalar(global_model[i,j]))
+	 */
+}
+
+X = read($X)
+
+debug_str = "Building decision tree.. "
+
+print("X:")
+for(i in 1:nrow(X))
+	for(j in 1:ncol(X))
+		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
+
+num_bins = $bins
+
+bin_size = as.integer(0.5 + nrow(X)/num_bins)
+#print("bin size: " + bin_size)
+
+/*
+ * Generating useful thresholds for each continuous feature
+ * count_thresholds[1,feature_id] = the number of thresholds 
+ * computed for feature_id
+ * thresholds[i, feature_id] = the ith threshold for feature_id
+ * note that, only i = 1 ... count_thresholds[1,feature_id]
+ * are valid
+ */
+count_thresholds = matrix(0, rows=1, cols=ncol(X))
+thresholds = matrix(0, rows=num_bins+1, cols=ncol(X))
+parfor(i8 in 1:ncol(X)){
+	col = order(X[,i8], 1, FALSE)
+	
+	col_bins = matrix(0, rows=num_bins+1, cols=1)
+	col_bins[1,1] = col[1,1]
+	
+	pos_col = 0
+	bin_id = 1
+	while(pos_col < nrow(X) & bin_id <= num_bins){
+		#print("pos_col (before): " + pos_col)
+		if(pos_col + bin_size > nrow(X)) pos_col = nrow(X)
+		else pos_col = pos_col + bin_size
+		#print("pos_col (after): " + pos_col)
+		
+		end_val = col[pos_col,1]
+		col_bins[bin_id+1,1] = end_val
+		
+		continue = TRUE
+		while(continue & pos_col < nrow(X))
+			if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
+				pos_col = pos_col + 1
+			else continue = FALSE
+		#print("pos_col (changed): " + pos_col)
+		
+		bin_id = bin_id + 1
+	}
+	
+	/*
+	 * print("sorted vals:")
+	 * for(j in 1:nrow(col))
+	 *	print(" " + castAsScalar(col[j,1]))
+	 */
+	 
+	/* 	
+	 * print("bins:")
+	 * for(j in 1:nrow(col_bins))
+	 *	print(" " + castAsScalar(col_bins[j,1]))
+	 */
+	 
+	num_bins_defined = bin_id - 1
+	for(j in 1:num_bins_defined)
+		col_bins[j,1] = (col_bins[j,1] + col_bins[j+1,1])/2
+		
+	count_thresholds[,i8] = num_bins_defined
+	thresholds[,i8] = col_bins	
+}
+
+tot_thresholds = sum(count_thresholds)
+#print("tot_thresholds: " + tot_thresholds)
+
+cumulative_threshold_offsets = matrix(0, rows=1, cols=ncol(X))
+cumulative_threshold_offsets[1,1] = 0
+for(i in 2:ncol(X))
+	cumulative_threshold_offsets[1,i] = cumulative_threshold_offsets[1,i-1] + count_thresholds[1,i-1]
+
+/*
+ * print("cumulative_threshold_offsets:")
+ * for(i in 1:ncol(cumulative_threshold_offsets))
+ *	print(" " + castAsScalar(cumulative_threshold_offsets[1,i]))
+ */
+ 
+/*
+ * A couple of useful data structures to help navigate thresholds:
+ * pos2feature_and_threshold[threshold_pos,1] = gives feature id
+ * corresponding to this threshold
+ * pos2feature_and_threshold[threshold_pos,2] = gives the local
+ * threshold pos corresponding to this threshold
+ * threshold_positions[feature_id,local_threshold_id] = gives
+ * the unique global threshold_id for this pair
+ * Invariant: 
+ * threshold_positions[pos2feature_and_threshold[threshold_pos,1],
+ *					   pos2feature_and_threshold[threshold_pos,2]] 
+ * = threshold_pos
+ */
+pos2feature_and_threshold = matrix(0, rows=tot_thresholds, cols=2)
+threshold_positions = matrix(0, rows=ncol(X), cols=num_bins)
+parfor(i13 in 1:ncol(X), check=0){
+	threshold_offset = castAsScalar(cumulative_threshold_offsets[1,i13])
+	for(i14 in 1:castAsScalar(count_thresholds[1,i13])){
+		new_pos = threshold_offset + i14
+		threshold_positions[i13,i14] = new_pos
+		pos2feature_and_threshold[new_pos,1] = i13
+		pos2feature_and_threshold[new_pos,2] = i14
+	}	
+}
+
+/*
+ * print("threshold_positions:")
+ * for(i in 1:nrow(threshold_positions))
+ *	for(j in 1:castAsScalar(count_thresholds[1,i]))
+ *		print(" feature=" + i + " threshold=" + j + " position=" + castAsScalar(threshold_positions[i,j]))
+ */
+ 
+/* 
+ * print("pos2feature_and_threshold:")
+ * for(i in 1:nrow(pos2feature_and_threshold))
+ *	print(" pos=" + i + " -> feature=" + castAsScalar(pos2feature_and_threshold[i,1]) + " threshold=" + castAsScalar(pos2feature_and_threshold[i,2]))
+ */
+
+print("thresholds:")
+for(i in 1:ncol(thresholds)){
+	cnt = castAsScalar(count_thresholds[1,i])
+	print(" for feature=" + i + " cnt=" + cnt)
+	for(j in 1:cnt)
+		print("   " + castAsScalar(thresholds[j,i]))
+}
+ 
+y = read($Y)
+
+#exposed to user
+depth = $depth - 1 #user counts depth from 1, but we count from 0
+leaf_count = $num_leaf
+
+#internal
+small_sample_count = $num_samples
+
+max_node_id = as.integer(2^(depth + 1) - 1)
+
+#first row contains feature id
+#second row contains threshold
+model = matrix(0, rows=2, cols=max_node_id)
+
+q = matrix(0, rows=max_node_id, cols=1)
+leaf_q = matrix(0, rows=max_node_id, cols=1)
+if(2 <= max_node_id & 3 <= max_node_id & nrow(X) > leaf_count)
+	q[1,1] = 1
+else leaf_q[1,1] = 1
+
+while(sum(q) != 0 | sum(leaf_q) != 0){
+	str = "q:"
+	for(i in 1:nrow(q))
+		if(castAsScalar(q[i,1]) > 0)
+			str = append(str, " " + castAsScalar(q[i,1]))
+	print(str)
+	
+	str = "leaf_q:"
+	for(i in 1:nrow(leaf_q))
+		if(castAsScalar(leaf_q[i,1]) > 0)
+			str = append(str, " " + castAsScalar(leaf_q[i,1]))
+	print(str)
+
+	/*
+	 * Maps nodes in q, leaf_q to which cols store 
+	 * the corresponding 0/1 reached vector in reached
+	 * position[node,1] is reached col for node
+	 */
+	position = matrix(0, rows=nrow(q), cols=1)
+	num_q = 1
+	for(i3 in 1:nrow(q)){
+		#print(" in q: " + castAsScalar(q[i3,1]))
+		if(castAsScalar(q[i3,1]) > 0){
+			position[castAsScalar(q[i3,1]), 1] = i3
+			num_q = num_q + 1
+		}
+	}
+	num_q = num_q - 1
+	cnt = num_q	
+		
+	for(i in 1:nrow(leaf_q)){
+		#print(" in leaf_q: " + castAsScalar(leaf_q[i,1]))
+		if(castAsScalar(leaf_q[i,1]) > 0){
+			position[castAsScalar(leaf_q[i,1]),1] = num_q + i
+			cnt = cnt + 1
+		}
+	}
+	
+	/*
+	 * print("position:")
+	 * for(i in 1:nrow(position))
+	 *	if(castAsScalar(position[i,1]) > 0)
+	 *		print(" " + i + " -> " + castAsScalar(position[i,1]))
+	 */
+
+	/* 
+	 * Maps which samples reach which node
+	 * reached[i,j] = 1 if sample i reaches the jth node in q
+	 * else reached[i,j] = 0
+	 */
+	reached = matrix(0, rows=nrow(X), cols=cnt)
+	parfor(i4 in 1:nrow(X)){
+	#for(i4 in 1:nrow(X)){
+		curr_node = 1
+		while(castAsScalar(model[1,curr_node]) != 0 & castAsScalar(model[1,curr_node]) != -1){
+			#print("curr_node=" + curr_node)
+			if(castAsScalar(X[i4,castAsScalar(model[1,curr_node])]) < castAsScalar(model[2,curr_node]))
+				curr_node = 2*curr_node
+			else curr_node = 2*curr_node + 1
+		}
+		
+		#print("row " + i4 + " reached node " + curr_node)
+		if(castAsScalar(position[curr_node,1]) != 0)
+			reached[i4,castAsScalar(position[curr_node,1])] = 1
+	}
+
+	/*
+	 * str="reached:"
+	 * for(i in 1:nrow(reached))
+	 *	for(j in 1:ncol(reached))
+	 *		str = append(str, i + " " + j + " -> " + castAsScalar(reached[i,j]))
+	 * print(str) 
+	 */
+	 
+	parfor(i7 in 1:nrow(leaf_q), check=0){
+	#for(i7 in 1:nrow(leaf_q)){
+		node = castAsScalar(leaf_q[i7,1])
+			
+		#print("generating leaf node=" + node 
+		#	 + " (" + castAsScalar(position[node,1]) + ")"
+		#	 )
+			
+		if(node > 0){
+			reach = reached[,castAsScalar(position[node,1])]
+			cnt_reach = sum(reach)
+			sum_y = sum(reach*y)
+			
+			print("for node=" + node + " cnt=" + cnt_reach + " sum_y=" + sum_y)
+			
+			label = 0.0
+			if(cnt_reach > 0) 
+				label = sum_y/cnt_reach
+			
+			# add leaf node
+			model[1,node] = -1
+			model[2,node] = label
+		}
+	}
+	 
+	/*
+	 * Separate q into two sets: big_q and small_q
+	 * Sub-trees for small_q with smaller nodes can be learnt using 1 parfor
+	 * Nodes in big_q need more work
+	 */
+	num_reached = colSums(reached)
+	
+	/*
+	 * print("reached:")
+	 * for(i in 1:ncol(num_reached))
+	 *	print(" " + castAsScalar(num_reached[1,i]) + " samples reached at node=" + castAsScalar(q[i,1]))
+	 */
+	 
+	num_big = 0
+	num_small = 0
+	if(num_q > 0){
+		is_large_node = ppred(num_reached[,1:num_q], small_sample_count, ">")
+		num_big = sum(is_large_node)
+		num_small = num_q - num_big
+		print("num_big=" + num_big + " num_small=" + num_small)
+	}
+	curr_big = 1
+	
+	/*
+	 * use parfors to compute sufficient statistics
+	 * to split multiple nodes
+	 */
+	if(num_big > 0){
+		big_q = matrix(0, rows=num_big, cols=1)
+		for(i in 1:nrow(q))
+			if(castAsScalar(q[i,1]) > 0)
+				if(castAsScalar(num_reached[1,i]) > small_sample_count){
+					big_q[curr_big, 1] = q[i,1]
+					curr_big = curr_big + 1
+				}
+	
+		#print big_q
+		str = "big_q:"
+		for(i in 1:nrow(big_q))
+			str = append(str, " " + castAsScalar(big_q[i,1]))
+		print(str)
+		
+		sum_y2_all = matrix(0, rows=num_big, cols=1)
+		sum_y_all = matrix(0, rows=num_big, cols=1)
+		count_all = matrix(0, rows=num_big, cols=1)
+		parfor(i9 in 1:num_big){
+			big_node_id = castAsScalar(big_q[i9,1])
+			position_of_big_node = castAsScalar(position[big_node_id,1])
+			reach_col = reached[,position_of_big_node]
+		
+			y_reach_dot = y*reach_col	
+			sum_y2_all[i9,1] = sum((y_reach_dot)^2)
+			sum_y_all[i9,1] = sum(y_reach_dot)
+			count_all[i9,1] = sum(reach_col)
+		}
+		
+		reached_node = rowIndexMax(reached)
+		
+		sum_y2_left = matrix(0, rows=num_big, cols=tot_thresholds)
+		sum_y_left = matrix(0, rows=num_big, cols=tot_thresholds)
+		count_left = matrix(0, rows=num_big, cols=tot_thresholds)
+		parfor(i10 in 1:ncol(X), check=0){
+			X_col = X[,i10]
+			
+			parfor(i10_node in 1:num_big, check=0){
+				big_node_ID = castAsScalar(big_q[i10_node,1])
+				position_of_big_node_ID = castAsScalar(position[big_node_ID,1])
+				reach_col_big = reached[,position_of_big_node_ID]
+				
+				parfor(i12 in 1:castAsScalar(count_thresholds[1,i10]), check=0){
+					threshold = castAsScalar(thresholds[i12,i10])
+					left_X_col = ppred(X[,i10], threshold, "<")
+					
+					position_for_threshold = castAsScalar(threshold_positions[i10,i12])
+				
+					y_reach_dot_prod = y * reach_col_big * left_X_col
+					sum_y2_left[i10_node,position_for_threshold] = sum((y_reach_dot_prod)^2)
+					sum_y_left[i10_node,position_for_threshold] = sum(y_reach_dot_prod)
+					count_left[i10_node,position_for_threshold] = sum(reach_col_big * left_X_col)
+				}
+			}
+		}
+			
+		best_gains = matrix(0, rows=num_big, cols=1)
+		parfor(i13 in 1:num_big){
+			sum_y2_a = castAsScalar(sum_y2_all[i13,1])
+			sum_y_a = castAsScalar(sum_y_all[i13,1])
+			count_a = as.integer(castAsScalar(count_all[i13,1]))
+		
+			best_pos = -1			
+			best_gain = 0
+			for(i in 1:ncol(X))
+				for(j in 1:castAsScalar(count_thresholds[1,i])){
+					threshold_pos = castAsScalar(threshold_positions[i,j])
+					
+					sum_y2_l = castAsScalar(sum_y2_left[i13,threshold_pos])
+					sum_y_l = castAsScalar(sum_y_left[i13,threshold_pos])
+					count_l = as.integer(castAsScalar(count_left[i13,threshold_pos]))
+					
+					gain = computeGain(sum_y2_a, sum_y_a, count_a, sum_y2_l, sum_y_l, count_l)
+					
+					print("node=" + castAsScalar(big_q[i13,1]) + " feature=" + i + " threshold=" + castAsScalar(thresholds[j,i]) + " gain=" + gain)
+					
+					if(best_pos == -1 | best_gain < gain){
+						best_gain = gain
+						best_pos = threshold_pos
+					}
+				}
+			
+			best_gains[i13,1] = best_pos
+		}
+			
+		/*	
+		 * print("best_gains:")
+		 * for(i in 1:nrow(best_gains))
+		 *	print(" node=" + castAsScalar(big_q[i,1]) + " -> " + castAsScalar(best_gains[i,1]))		
+		 */
+		 	
+		for(i in 1:num_big){
+			big_node = castAsScalar(big_q[i,1])
+			best_gain_pos = castAsScalar(best_gains[i,1])
+			feature = castAsScalar(pos2feature_and_threshold[best_gain_pos,1])
+			model[1,big_node] = feature
+			threshold_pos = castAsScalar(pos2feature_and_threshold[best_gain_pos,2])
+			model[2,big_node] = thresholds[threshold_pos, feature]
+		}
+	}
+		
+	/*
+	 * one parfor to learn lots of small sub-trees
+	 */
+	if(num_small > 0){
+		small_q = matrix(0, rows=num_small, cols=1)
+		small_q_cnts = matrix(0, rows=num_small, cols=1)
+		
+		curr_small = 1
+		for(i in 1:nrow(q))
+			if(castAsScalar(q[i,1]) > 0)
+				if(castAsScalar(num_reached[1,i]) <= small_sample_count){
+					small_q[curr_small, 1] = q[i,1]
+					small_q_cnts[curr_small, 1] = num_reached[1,i]
+					curr_small = curr_small + 1
+				}
+			
+		cumulative_small_q_cnts = matrix(0, rows=num_small, cols=1)
+		cumulative_small_q_cnts[1,1] = 0
+		for(i in 2:nrow(small_q_cnts))
+			cumulative_small_q_cnts[i,1] = cumulative_small_q_cnts[i-1,1] + small_q_cnts[i-1,1]	
+			
+		#print small_q	
+		str = "small_q:"
+		for(i in 1:nrow(small_q))
+			str = append(str, " " + castAsScalar(small_q[i,1]) + "(" + castAsScalar(small_q_cnts[i,1]) + ")(" + castAsScalar(cumulative_small_q_cnts[i,1]) + ")")
+		print(str)
+		
+		select_mat = matrix(0, rows=ncol(reached), cols=num_small)
+		for(i in 1:nrow(small_q))
+			select_mat[castAsScalar(position[castAsScalar(small_q[i,1]),1]),i] = 1
+		
+		small_reached = reached %*% select_mat
+		
+		/*
+		 * print("small_reached:")
+		 * for(i in 1:nrow(small_reached))
+		 *	for(j in 1:ncol(small_reached))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(small_reached[i,j]))
+		 */
+		 
+		permut_mat = matrix(0, rows=sum(small_q_cnts), cols=nrow(X))
+		parfor(i5 in 1:ncol(small_reached), check=0){
+			offset = castAsScalar(cumulative_small_q_cnts[i5,1])
+			filled = 1
+			for(i in 1:nrow(small_reached))
+				if(castAsScalar(small_reached[i,i5]) == 1){
+					permut_mat[offset + filled, i] = 1
+					filled = filled + 1
+				}
+		}
+		
+		/*
+		 * print("permut_mat:")
+		 * for(i in 1:nrow(permut_mat))
+		 *	for(j in 1:ncol(permut_mat))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(permut_mat[i,j]))
+		 */
+		
+		reordered_X = permut_mat %*% X
+		reordered_y = permut_mat %*% y
+		
+		/*	
+		 * print("reordered_X:")
+		 * for(i in 1:nrow(reordered_X))
+		 *	for(j in 1:ncol(reordered_X))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(reordered_X[i,j]))
+		 */
+		
+		/*
+		 * print("reordered_y:")
+		 * for(i in 1:nrow(reordered_y))
+		 *	for(j in 1:ncol(reordered_y))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(reordered_y[i,j])) 
+		 */
+		 
+		subtree_features = matrix(0, rows=nrow(small_q), cols=max_node_id)
+		subtree_thresholds = matrix(0, rows=nrow(small_q), cols=max_node_id)
+		parfor(i6 in 1:nrow(small_q)){
+			beg = 1 + castAsScalar(cumulative_small_q_cnts[i6,1])
+			end = beg + castAsScalar(small_q_cnts[i6,1]) - 1
+			
+			print("beg=" + beg + " end=" + end)
+			
+			if(end - beg > -1){
+				local_X = reordered_X[beg:end,]
+				local_y = reordered_y[beg:end,]
+		
+				#node = castAsScalar(small_q[i6,1])
+			
+				/*
+			 	 * print("local_X " + node + ":")
+		 	     * for(i in 1:nrow(local_X))
+		 	 	 *	for(j in 1:ncol(local_X))
+		 	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(local_X[i,j]))
+			 	 */
+			
+				/*
+			 	 * print("local_y " + node + ":")
+		 	 	 * for(i in 1:nrow(local_y))
+		 	 	 *	for(j in 1:ncol(local_y))
+		 	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(local_y[i,j]))
+		 	 	 */
+		 	 	
+				/*
+			 	 * learn sub-tree from local_X and local_y
+			 	 */
+				local_model_features = matrix(0, rows=1, cols=max_node_id)
+				local_model_thresholds = matrix(0, rows=1, cols=max_node_id)
+				[learnt_local_features, learnt_local_thresholds] = 
+					buildNode(local_X, local_y, local_model_features, local_model_thresholds, 1, castAsScalar(small_q[i6,1]), max_node_id, leaf_count)
+			 
+				subtree_features[i6,] = learnt_local_features
+				subtree_thresholds[i6,] = learnt_local_thresholds
+			}else{
+				subtree_features[i6,1] = -1
+				subtree_thresholds[i6,1] = 0.0
+			}
+		}
+		
+		/*
+		 * print("subtree_features:")
+		 * for(i in 1:nrow(subtree_features))
+		 *	for(j in 1:ncol(subtree_features))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(subtree_features[i,j]))
+		 */
+		
+		/* 
+		 * print("subtree_thresholds:")
+		 * for(i in 1:nrow(subtree_thresholds))
+		 *	for(j in 1:ncol(subtree_thresholds))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(subtree_thresholds[i,j]))
+		 */
+		 
+		for(i in 1:nrow(small_q)){
+			subtree_feature = subtree_features[i,]
+			subtree_threshold = subtree_thresholds[i,]
+			
+			local_node = 1
+			global_node = as.integer(castAsScalar(small_q[i,1]))
+			
+			#take this out once matthias delivers his fix for recursion
+			model1 = recursiveCopy(subtree_feature, subtree_threshold, local_node, model, global_node)
+			model = model1
+			#model = recursiveCopy(subtree_feature, subtree_threshold, local_node, model, global_node)
+		}
+		
+		/*
+		 * print("(in main) model:")
+		 * for(i in 1:nrow(model))
+		 *	for(j in 1:ncol(model))
+		 *		print(" " + i + " " + j + " -> " + castAsScalar(model[i,j]))
+		 */
+	}
+
+	new_q = matrix(0, rows=nrow(q), cols=1)
+	new_leaf_q = matrix(0, rows=nrow(q), cols=1)
+	if(num_big > 0){
+		curr = 1
+		curr_leaf = 1
+		for(i in 1:nrow(big_q)){
+			par_node = castAsScalar(big_q[i,1])
+			
+			if(par_node > 0){
+				l_child = 2*par_node
+				if(2*l_child <= max_node_id & 2*l_child + 1 <= max_node_id){
+					new_q[curr,1] = l_child
+					curr = curr + 1
+				}else{
+					new_leaf_q[curr_leaf,1] = l_child
+					curr_leaf = curr_leaf + 1
+				}
+				
+				r_child = 2*par_node + 1
+				if(2*r_child <= max_node_id & 2*r_child + 1 <= max_node_id){
+					new_q[curr,1] = r_child
+					curr = curr + 1
+				}else{
+					new_leaf_q[curr_leaf,1] = r_child
+					curr_leaf = curr_leaf + 1
+				}
+			}
+		}
+		
+		/*	
+		 * str = "new_q:"
+		 * for(i in 1:nrow(new_q))
+		 *	if(castAsScalar(new_q[i,1]) > 0)
+		 *		str = append(str, " " + castAsScalar(new_q[i,1]))
+		 * print(str)
+		 */
+		 
+		/*		
+		 * str = "new_leaf_q:"
+		 * for(i in 1:nrow(new_leaf_q))
+		 *	if(castAsScalar(new_leaf_q[i,1]) > 0)
+		 *		str = append(str, " " + castAsScalar(new_leaf_q[i,1]))
+		 * print(str)
+		 */
+	}
+	
+	q = new_q
+	leaf_q = new_leaf_q
+	
+	print("model:")
+	for(i in 1:nrow(model))
+		for(j in 1:ncol(model))
+			print(" " + i + " " + j + " -> " + castAsScalar(model[i,j]))
+}
+
+write(model, $model, format=$fmt)
+write(debug_str, $Log)

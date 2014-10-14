@@ -149,12 +149,12 @@
       <version>2.2.0</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
+    <!-- dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-mapreduce-client-core</artifactId>
       <version>2.2.0</version>
       <scope>provided</scope>
-    </dependency>
+    </dependency-->
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs</artifactId>
@@ -238,27 +238,33 @@
 		<groupId>org.apache.hadoop</groupId>
 		<artifactId>hadoop-yarn-api</artifactId>
 		<version>2.4.1-4</version>
+		<scope>provided</scope>
 	  </dependency>
       
-      <dependency>
-  		<groupId>org.apache.hadoop</groupId>
-  		<artifactId>hadoop-yarn-client</artifactId>
-  		<version>2.4.1-4</version>
-	  </dependency>
+      
 
 	 <dependency>
 	   	<groupId>org.apache.hadoop</groupId>
 	  	<artifactId>hadoop-yarn-common</artifactId>
 	  	<version>2.4.1-4</version>
+	  	<scope>provided</scope>
 	 </dependency>
 
 	 <dependency>
 		<groupId>org.apache.hadoop</groupId>
 		<artifactId>hadoop-mapreduce-client-common</artifactId>
 		<version>2.4.1-4</version>
+
+		<scope>provided</scope>
 	 </dependency>
 
 
+	 <dependency>
+	 	<groupId>org.apache.hadoop</groupId>
+	 	<artifactId>hadoop-yarn-client</artifactId>
+	 	<version>2.4.1-4</version>
+	 	<scope>provided</scope>
+	 </dependency>
 	</dependencies>
 
 	<groupId>com.ibm.biginsights</groupId>

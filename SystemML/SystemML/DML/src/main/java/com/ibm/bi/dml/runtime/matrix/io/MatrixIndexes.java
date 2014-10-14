@@ -27,7 +27,9 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	public static final int BYTE_SIZE = (Long.SIZE+Long.SIZE)/8;
 	public static final long ADD_PRIME1 = 99991;
 	public static final long ADD_PRIME2 = 853;
-	public static final int DIVIDE_PRIME = 51473;
+	public static final int DIVIDE_PRIME = 1405695061; 
+	//prime close to max int, because it determines the max hash domain size
+	//public static final int DIVIDE_PRIME = 51473;
 	
 	private long row = -1;
 	private long column = -1;

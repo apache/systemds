@@ -1,0 +1,19 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+M = read($1)
+R1 = matrix(0, rows=nrow(M), cols=ncol(M));
+
+for( i in 1:10 ) {
+   #M[,i] fails on i=5
+   R1[,i] = M[,i]; 
+}
+
+R = colSums(R1);
+write(R, $2, format="text")

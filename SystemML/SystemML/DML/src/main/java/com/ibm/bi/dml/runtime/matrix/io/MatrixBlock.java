@@ -3649,24 +3649,40 @@ public class MatrixBlock extends MatrixValue
 	private void sliceDense(int rl, int ru, int cl, int cu, MatrixBlock dest) 
 		throws DMLRuntimeException
 	{
+		//ensure allocated input/output blocks
 		if( denseBlock == null )
 			return;
 		dest.allocateDenseBlock();
-		
-		if( cl==cu ) //specific case: column vector 
+
+		//indexing operation
+		if( cl==cu ) //COLUMN INDEXING
 		{
 			if( clen==1 ) //vector -> vector
+			{
 				System.arraycopy(denseBlock, rl, dest.denseBlock, 0, ru-rl+1);
+			}
 			else //matrix -> vector
-				for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
+			{
+				//IBM JVM bug (JDK7) causes crash for certain cl/cu values (e.g., divide by zero for 4) 
+				//for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
+				//	dest.denseBlock[ix] = denseBlock[i];
+				int len = clen;
+				for( int i=rl*len+cl, ix=0; i<=ru*len+cu; i+=len, ix++ )
 					dest.denseBlock[ix] = denseBlock[i];
+			}
 		}
-		else //general case (dense)
+		else // GENERAL RANGE INDEXING
 		{
-			for(int i = rl, ix1 = rl*clen+cl, ix2=0; i <= ru; i++, ix1+=clen, ix2+=dest.clen) 
-				System.arraycopy(denseBlock, ix1, dest.denseBlock, ix2, dest.clen);
+			//IBM JVM bug (JDK7) causes crash for certain cl/cu values (e.g., divide by zero for 4) 
+			//for(int i = rl, ix1 = rl*clen+cl, ix2=0; i <= ru; i++, ix1+=clen, ix2+=dest.clen) 
+			//	System.arraycopy(denseBlock, ix1, dest.denseBlock, ix2, dest.clen);
+			int len1 = clen;
+			int len2 = dest.clen;
+			for(int i = rl, ix1 = rl*len1+cl, ix2=0; i <= ru; i++, ix1+=len1, ix2+=len2) 
+				System.arraycopy(denseBlock, ix1, dest.denseBlock, ix2, len2);
 		}
 		
+		//compute nnz of output (not maintained due to native calls)
 		dest.recomputeNonZeros();
 	}
 	

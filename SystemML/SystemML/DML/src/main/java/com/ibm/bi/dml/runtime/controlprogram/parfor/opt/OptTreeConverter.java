@@ -359,6 +359,7 @@ public class OptTreeConverter
 			node = new OptNode( NodeType.IF );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
+			node.setLineNumbers(isb.getBeginLine(), isb.getEndLine());
 			
 			//handle predicate
 			isb.getPredicateHops().resetVisitStatus();
@@ -401,6 +402,7 @@ public class OptTreeConverter
 			node = new OptNode( NodeType.WHILE );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
+			node.setLineNumbers(wsb.getBeginLine(), wsb.getEndLine());
 			
 			//handle predicate
 			wsb.getPredicateHops().resetVisitStatus();
@@ -424,6 +426,7 @@ public class OptTreeConverter
 			node = new OptNode( NodeType.FOR );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
+			node.setLineNumbers(fsb.getBeginLine(), fsb.getEndLine());
 			
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
@@ -450,6 +453,7 @@ public class OptTreeConverter
 			ParForStatementBlock fsb = (ParForStatementBlock)sb;
 			ParForStatement fs = (ParForStatement) fsb.getStatement(0);
 			node = new OptNode( NodeType.PARFOR );
+			node.setLineNumbers(fsb.getBeginLine(), fsb.getEndLine());
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
 			long N = fpb.getNumIterations();
@@ -504,6 +508,7 @@ public class OptTreeConverter
 			_hlMap.putProgMapping(sb, pb, node);
 			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars, memo) );
 			node.setExecType(ExecType.CP);
+			node.setLineNumbers(sb.getBeginLine(), sb.getEndLine());
 			
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() && containsMRJobInstruction(pb, false) )

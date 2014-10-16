@@ -596,10 +596,14 @@ public class ProgramConverter
 				&& sb != null 
 				&& Recompiler.requiresRecompilation( sb.get_hops() )  )
 			{
-				//create new statement and copy livein/liveout for recompile
+				//create new statement (copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
 				ret.setLiveIn( new VariableSet(sb.liveIn()) );
 				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setBeginLine(sb.getBeginLine());
+				ret.setBeginColumn(sb.getBeginColumn());
+				ret.setEndLine(sb.getEndLine());
+				ret.setEndColumn(sb.getEndColumn());
 				
 				//deep copy hops dag for concurrent recompile
 				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );

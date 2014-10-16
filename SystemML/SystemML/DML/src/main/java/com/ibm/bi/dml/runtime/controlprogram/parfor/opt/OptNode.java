@@ -80,6 +80,10 @@ public class OptNode
 	//node statistics (only present for physical plans and leaf nodes)
 	private OptNodeStatistics         _stats   = null;
 	
+	//line numbers (for explain)
+	private int                       _beginLine = -1;
+	private int                       _endLine = -1;
+	
 	public OptNode( NodeType type )
 	{
 		this(type, null);
@@ -145,6 +149,22 @@ public class OptNode
 		if( _params != null )
 			ret = _params.get(type);
 		return ret;
+	}
+	
+	public void setBeginLine( int line )
+	{
+		_beginLine = line;
+	}
+	
+	public void setEndLine( int line )
+	{
+		_endLine = line;
+	}
+
+	public void setLineNumbers( int begin, int end )
+	{
+		setBeginLine( begin );
+		setEndLine( end );
 	}
 	
 	public void addChild( OptNode child )
@@ -543,10 +563,21 @@ public class OptNode
 		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<level; i++ )
 			sb.append("--");	
-		if( _ntype == NodeType.INST || _ntype == NodeType.HOP )
+		if( _ntype == NodeType.INST || _ntype == NodeType.HOP ) //leaf nodes
+		{
 			sb.append(_params.get(ParamType.OPSTRING));
-		else
+		}
+		else //non-leaf nodes
+		{
 			sb.append(_ntype);
+			if( _beginLine>0 && _endLine>0 ) { //known lines
+				sb.append(" (lines ");
+				sb.append(_beginLine);
+				sb.append("-");
+				sb.append(_endLine);
+				sb.append(")");
+			}
+		}
 		sb.append(", exec=");
 		sb.append(_etype);
 		sb.append(", k=");

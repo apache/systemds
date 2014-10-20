@@ -1,0 +1,206 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2014
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+package com.ibm.bi.dml.yarn.ropt;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
+
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+
+public class GridEnumerationHybrid extends GridEnumeration
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static final int DEFAULT_NSTEPS = 20;
+
+	private int _nsteps = -1;
+	
+	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, double min, double max ) 
+		throws DMLRuntimeException
+	{
+		super(prog, min, max);
+		
+		_nsteps = DEFAULT_NSTEPS;
+	}
+	
+	/**
+	 * 
+	 * @param steps
+	 */
+	public void setNumSteps( int steps )
+	{
+		_nsteps = steps;
+	}
+	
+	@Override
+	public ArrayList<Double> enumerateGridPoints() 
+		throws DMLRuntimeException, HopsException
+	{
+		ArrayList<Double> ret = new ArrayList<Double>();
+		int gap = (int)(_max - _min) / (_nsteps-1); //MB granularity
+		
+		//enumerate bins between equi grid points
+		HashMap<Integer, Integer> map = new HashMap<Integer,Integer>();
+		double v = _min;
+		for (int i = 0; i < _nsteps; i++) {
+			map.put( (int)v/gap, 0 );
+			v += gap;
+		}
+		
+		//get memory estimates
+		ArrayList<Double> mem = new ArrayList<Double>();
+		getMemoryEstimates( _prog, mem );
+		for( Double est : mem )
+			map.put((int)(est/gap), map.get((int)(est/gap)));
+		
+		//prepare output (for disjointness)
+		HashSet<Double> preRet = new HashSet<Double>();
+		for( Entry<Integer, Integer> e : map.entrySet() )
+			if( e.getValue() > 0 ){
+				preRet.add((double)((e.getKey()+1)*gap));
+				if( e.getKey()!=0 )
+					preRet.add((double)(e.getKey()*gap));
+			}
+		
+		//create sorted output (to prevent over-provisioning)
+		for( Double val : preRet )
+			ret.add(val);
+		Collections.sort(ret); //asc
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param pbs
+	 * @param mem
+	 * @throws HopsException
+	 */
+	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Double> mem ) 
+		throws HopsException
+	{
+		for( ProgramBlock pb : pbs )
+			getMemoryEstimates(pb, mem);
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @param mem
+	 * @throws HopsException
+	 */
+	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Double> mem ) 
+		throws HopsException
+	{
+		if (pb instanceof FunctionProgramBlock)
+		{
+			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
+			getMemoryEstimates(fpb.getChildBlocks(), mem);
+		}
+		else if (pb instanceof WhileProgramBlock)
+		{
+			//TODO while predicate 
+			WhileProgramBlock fpb = (WhileProgramBlock)pb;
+			getMemoryEstimates(fpb.getChildBlocks(), mem);
+		}	
+		else if (pb instanceof IfProgramBlock)
+		{
+			//TODO if predicate 
+			IfProgramBlock fpb = (IfProgramBlock)pb;
+			getMemoryEstimates(fpb.getChildBlocksIfBody(), mem);
+			getMemoryEstimates(fpb.getChildBlocksElseBody(), mem);
+		}
+		else if (pb instanceof ForProgramBlock) //incl parfor
+		{
+			//TODO while predicate 
+			ForProgramBlock fpb = (ForProgramBlock)pb;
+			getMemoryEstimates(fpb.getChildBlocks(), mem);
+		}
+		else
+		{
+			StatementBlock sb = pb.getStatementBlock();
+			if( sb != null && sb.get_hops() != null ){
+				for( Hop hop : sb.get_hops() )
+					getMemoryEstimates(hop, mem);	
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param mem
+	 */
+	private void getMemoryEstimates( Hop hop, ArrayList<Double> mem )
+	{
+		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
+			return;
+
+		//process childs
+		for(Hop hi : hop.getInput())
+			getMemoryEstimates(hi, mem);
+		
+		//add memory estimates
+		mem.add( hop.getMemEstimate() );
+		
+		hop.set_visited(Hop.VISIT_STATUS.DONE);
+	}
+	
+	
+	/*
+	 	public int countInterestPoints(double min, double max, ArrayList<Double> interested) {
+		int count = 0;
+		for (Double v : interested) {
+			if (v < min)
+				break;
+			if (v <= max)
+				count++;
+		}
+		return count;
+	}
+
+	public ArrayList<Double> genHybridGrid(double min, double max, int mainStep, int subStep, ArrayList<Double> interested) {
+		int i, j;
+		ArrayList<Double> ret = new ArrayList<Double> ();
+		
+		double mainGap = (max - min) / mainStep;
+		double subGap = mainGap / subStep;
+		
+		double current = min;
+		ret.add(current);
+		for (i = 0; i < mainStep; i++) {
+			if (countInterestPoints(current, current + mainGap, interested) > 0) {
+				double tmp = 0;
+				for (j = 0; j < subStep - 1; j++) {
+					tmp += subGap;
+					ret.add(current + tmp);
+				}
+			}
+			current += mainGap;
+			if (i + 1 == mainStep)
+				ret.add(max);	// just to make sure the last sample is exactly "max"
+			else
+				ret.add(current);
+		}
+		return ret;
+	}
+	 */
+}

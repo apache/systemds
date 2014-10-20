@@ -15,6 +15,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
+import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterConfig;
+import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
 /**
  * The sole purpose of this class is to serve as a proxy to
@@ -30,6 +36,7 @@ public class DMLYarnClientProxy
 	
 	private static final Log LOG = LogFactory.getLog(DMLYarnClientProxy.class);
 
+	protected static final boolean RESOURCE_OPTIMIZER = false;
 	protected static final boolean LDEBUG = false;
 	
 	static
@@ -47,14 +54,25 @@ public class DMLYarnClientProxy
 	 * @param allArgs
 	 * @return
 	 * @throws IOException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static boolean launchDMLYarnAppmaster(String dmlScriptStr, DMLConfig conf, String[] allArgs) 
-		throws IOException
+		throws IOException, DMLRuntimeException
 	{
 		boolean ret = false;
 		
 		try
 		{
+			//optimize resources (and update configuration)
+			if( RESOURCE_OPTIMIZER ){
+				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
+				//TODO compile prog 
+				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( null, cc, 
+						                  GridEnumType.HYBRID_MEM_EQUI_GRID, GridEnumType.EQUI_GRID );
+				conf.updateYarnMemorySettings(rc.getCPResource(), rc.getMaxMRResource());
+			}
+				
+			//launch dml yarn app master
 			DMLYarnClient yclient = new DMLYarnClient(dmlScriptStr, conf, allArgs);
 			ret = yclient.launchDMLYarnAppmaster();
 		}

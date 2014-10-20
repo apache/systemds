@@ -405,6 +405,28 @@ public class DMLConfig
 	
 	/**
 	 * 
+	 * @param amMem
+	 * @param mrMem
+	 */
+	public void updateYarnMemorySettings(long amMem, long mrMem)
+	{
+		//app master memory
+		NodeList list1 = xml_root.getElementsByTagName(YARN_APPMASTERMEM);
+		if (list1 != null && list1.getLength() > 0) {
+			Element elem = (Element) list1.item(0);
+			elem.getFirstChild().setNodeValue(String.valueOf(amMem));
+		}
+		
+		//mapreduce memory
+		NodeList list2 = xml_root.getElementsByTagName(YARN_MAPREDUCEMEM);
+		if (list2 != null && list2.getLength() > 0) {
+			Element elem = (Element) list2.item(0);
+			elem.getFirstChild().setNodeValue(String.valueOf(amMem));
+		}
+	}
+	
+	/**
+	 * 
 	 * @param key
 	 * @return
 	 */
@@ -412,4 +434,5 @@ public class DMLConfig
 	{
 		return _defaultVals.get( key );
 	}
+	
 }

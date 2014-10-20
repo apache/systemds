@@ -16,7 +16,7 @@ public class StatusReporter extends Thread
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static long DEFAULT_REPORT_INTERVAL = 10000;
+	public static long DEFAULT_REPORT_INTERVAL = 5000;
 	
 	private AMRMClient<ContainerRequest> _rmClient;
 	private long _interval; //in ms

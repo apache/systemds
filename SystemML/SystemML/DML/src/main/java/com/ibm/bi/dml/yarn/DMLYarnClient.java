@@ -69,19 +69,19 @@ public class DMLYarnClient
 	
 	//Internal configuration parameters
 	// environment variable to obtain the original jar filename
-	private static final String JARFILE_ENV_CONST = "IBM_JAVA_COMMAND_LINE"; 
+	public static final String JARFILE_ENV_CONST = "IBM_JAVA_COMMAND_LINE"; 
 	// environment variable to obtain default jvm arguments
-	private static final String JVMOPTS_ENV_CONST = "HADOOP_OPTS";
+	public static final String JVMOPTS_ENV_CONST = "HADOOP_OPTS";
 	// default of 1 core since YARN scheduler does not take the number of cores into account yet 
-	private static final int NUM_CORES = 1;  
+	public static final int NUM_CORES = 1;  
 	// factor for compute virtual memory to request based on given max heap size
-	private static final double MEM_FACTOR = 1.5; 
+	public static final double MEM_FACTOR = 1.5; 
 	// default application state report (in milliseconds)
-	private static final int APP_STATE_INTERVAL = 200;
+	public static final int APP_STATE_INTERVAL = 200;
 	// default application master name
-	private static final String APPMASTER_NAME = "SystemML-AM";
+	public static final String APPMASTER_NAME = "SystemML-AM";
 	// default application queue
-	private static final String APP_QUEUE = "default"; 
+	public static final String APP_QUEUE = "default"; 
 	
 	
 	private String _dmlScript = null;

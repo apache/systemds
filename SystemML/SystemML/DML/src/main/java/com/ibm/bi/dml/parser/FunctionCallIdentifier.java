@@ -219,30 +219,4 @@ public class FunctionCallIdentifier extends DataIdentifier
 	}
 }
 
-class ParameterExpression {
-	private Expression 	_expr;
-	private String 		_name;
-
-	ParameterExpression(String name, Expression val){
-		_name 		= name;
-		_expr 		= val;
-	}
-	
-	public String getName(){
-		return _name;
-	}
-	
-	public Expression getExpr(){
-		return _expr;
-	}
-	public String toString(){
-		String retVal = new String();
-		if (_name != null)
-			retVal += _name + "=";
-		retVal +=_expr;
-		
-		return retVal;
-	}
-	
-}
 

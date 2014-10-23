@@ -52,6 +52,7 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${build.sharedlib}/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 	    <pathelement location="${build.sharedlib}/opencsv-1.8.jar" /> <!-- for read/write csv -->
+		<pathelement location="${build.sharedlib}/antlr-4.4-complete.jar" /> <!-- For antlr4 -->
 	</path>	
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
@@ -68,7 +69,7 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${hadoop.local.path}/hadoop-yarn-api-2.4.1-4.jar" />
 		<pathelement location="${hadoop.local.path}/hadoop-yarn-client-2.4.1-4.jar" />
 		<pathelement location="${hadoop.local.path}/hadoop-yarn-common-2.4.1-4.jar" />
-		<pathelement location="${hadoop.local.path}/hadoop-mapreduce-client-common-2.4.1-4.jar" />
+		<pathelement location="${hadoop.local.path}/hadoop-mapreduce-client-common-2.4.1-4.jar" /> 
 	</path>
 	
 	<path id="DML.classpath">
@@ -135,6 +136,15 @@ The source code for this program is not published or otherwise divested of its t
 		<echo message="Running JavaCC on DMLQLParser.jj"/>
 		<javacc target="src/main/java/com/ibm/bi/dml/parser/DMLQLParser.jj"
 		        javacchome="${javacc.home}"/>
+		<!-- start: comment this to disable antlr4 -->
+		<echo message="Running Antlr on Dml.g4"/>
+		<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/antlr4/">
+	      <arg line="Dml.g4"/>
+			<classpath>
+				<pathelement location="${hadoop.local.path}/antlr-4.4-complete.jar" />
+			</classpath>
+	    </java>
+		<!-- end: comment this to disable antlr4 -->
 	</target>
 	
     <!-- Make sure build depends on building DML parser first -->

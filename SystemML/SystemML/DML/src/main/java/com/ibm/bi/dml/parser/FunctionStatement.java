@@ -43,6 +43,14 @@ public class FunctionStatement extends Statement
 		return _outputParams;
 	}
 	
+	public void setInputParams(Vector <DataIdentifier> inputParams){
+		_inputParams = inputParams;
+	}
+	
+	public void setOutputParams(Vector <DataIdentifier> outputParams){
+		_outputParams = outputParams;
+	}
+	
 	public void setName(String fname){
 		_name = fname;
 	}

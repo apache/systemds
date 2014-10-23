@@ -42,6 +42,11 @@ public class DoubleIdentifier extends ConstIdentifier
 		return this;
 	}
 	
+	// Used only by the parser for unary operation
+	public void multiplyByMinusOne() {
+		_val = -1 * _val;
+	}
+	
 	public double getValue(){
 		return _val;
 	}

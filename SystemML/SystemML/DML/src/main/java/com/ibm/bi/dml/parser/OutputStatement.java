@@ -42,13 +42,25 @@ public class OutputStatement extends Statement
 		_id = t;
 	}
 	
-	OutputStatement(DataIdentifier t, DataOp op, 
+	public OutputStatement(DataIdentifier t, DataOp op, 
 			String filename, int blp, int bcp, int elp, int ecp){
 		_id = t;
 		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
 				filename, blp, bcp, elp, ecp);
 	}
 	
+	/**
+	 * Called by the parser (both javacc and antlr).
+	 * 
+	 * @param fname
+	 * @param fci
+	 * @param filename
+	 * @param blp
+	 * @param bcp
+	 * @param elp
+	 * @param ecp
+	 * @throws DMLParseException
+	 */
 	OutputStatement(String fname, FunctionCallIdentifier fci, 
 			String filename, int blp, int bcp, int elp, int ecp) 
 		throws DMLParseException 

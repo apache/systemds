@@ -41,6 +41,11 @@ public class IntIdentifier extends ConstIdentifier
         this.setAllPositions(filename, blp, bcp, elp, ecp);
 	}
 	
+	// Used only by the parser for unary operation
+	public void multiplyByMinusOne() {
+		_val = -1 * _val;
+	}
+	
 	public long getValue(){
 		return _val;
 	}

@@ -23,6 +23,7 @@ import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+//import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +36,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
+import com.ibm.bi.dml.antlr4.Antlr4ParserWrapper;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.debugger.DMLDebugger;
@@ -96,6 +98,8 @@ public class DMLScript
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
+	public static String DML_FILE_PATH_ANTLR_PARSER = null;
+	public static boolean USE_JAVACC_PARSER = false;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 
 	// flag that indicates whether or not to suppress any prints to stdout
@@ -297,6 +301,8 @@ public class DMLScript
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
 			HashMap<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);		
 			
+			DML_FILE_PATH_ANTLR_PARSER = args[1];
+			
 			//Step 3: invoke dml script
 			printInvocationInfo(args[1], fnameOptConfig, argVals);
 			if (ENABLE_DEBUG_MODE) {
@@ -353,6 +359,7 @@ public class DMLScript
 				arg.equalsIgnoreCase("-debug") || 
 				arg.equalsIgnoreCase("-stats") || 
 				arg.equalsIgnoreCase("-exec") ||
+				arg.equalsIgnoreCase("-debug") ||
 				arg.startsWith("-config="))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
@@ -542,10 +549,37 @@ public class DMLScript
 				return; //if am launch unsuccessful, fall back to normal compile/execute
 			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); //in AM context
 		}
-			
-		//Step 3: parse dml script
-		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-		DMLProgram prog = parser.parse();
+		
+		DMLProgram prog = null;
+		if(!USE_JAVACC_PARSER){ 
+			long startTime = System.currentTimeMillis();
+			try {
+				// Set the pipeline required for ANTLR parsing
+				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper.argVals = argVals;
+				prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER);
+				antlr4Parser.cleanUpState();
+			} catch(Exception e) { 
+				System.out.println("Exception occured while parsing using antlr4:" + e); e.printStackTrace(); 
+			}
+			// Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+			if(prog == null) {
+				// System.err.println("One or more errors found during parsing. Cannot proceed ahead.");
+				// return;
+				throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
+			}
+			else {
+				// For now also replacing the verbose expression
+				System.out.println("Parsing time (antlr4): " + (System.currentTimeMillis() - startTime) + " milliseconds."
+						//+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
+						);
+			}
+		}
+		else {
+			//Step 3: parse dml script
+			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
+			prog = parser.parse();
+		}
 		
 		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -661,9 +695,38 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-		dbprog.prog = parser.parse();
-		
+		long startTime = System.currentTimeMillis();
+		if(!USE_JAVACC_PARSER){ 
+			try {
+				// Set the pipeline required for ANTLR parsing
+				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper.argVals = argVals;
+				dbprog.prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER);
+				antlr4Parser.cleanUpState();
+			} catch(Exception e) { 
+				System.out.println("Exception occured while parsing using antlr4:" + e); e.printStackTrace(); 
+			}
+			// Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+			if(dbprog.prog == null) {
+				// System.err.println("One or more errors found during parsing. Cannot proceed ahead.");
+				// return;
+				throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
+			}
+			else {
+				// For now also replacing the verbose expression
+				System.out.println("Parsing time (antlr4): " + (System.currentTimeMillis() - startTime) + " milliseconds."
+						//+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
+						);
+			}
+		}
+		else {
+			//Step 3: parse dml script
+			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
+			dbprog.prog = parser.parse();
+			System.out.println("Parsing time (javacc): " + (System.currentTimeMillis() - startTime) + " milliseconds.");
+		}
+
+
 		//Step 3: construct HOP DAGs (incl LVA and validate)
 		dbprog.dmlt = new DMLTranslator(dbprog.prog);
 		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);

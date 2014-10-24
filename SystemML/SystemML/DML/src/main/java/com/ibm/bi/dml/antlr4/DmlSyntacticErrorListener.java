@@ -10,6 +10,10 @@ package com.ibm.bi.dml.antlr4;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.ibm.bi.dml.api.DMLScript;
 
 import java.util.Stack;
 
@@ -20,40 +24,40 @@ public class DmlSyntacticErrorListener {
 	
 	public static boolean atleastOneError = false;
 	public static Stack<String> currentFileName = new Stack<String>();
+	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	public static class CustomDmlErrorListener extends BaseErrorListener {
 		
 		public void validationError(int line, int charPositionInLine, String msg) {
-			String type = "ERROR: ";
 			try {
 				atleastOneError = true;
 				// Print error messages with file name
-				if(currentFileName == null || currentFileName.empty())
-					System.err.println(type + "line "+line+":"+charPositionInLine+" "+msg);
+				if(currentFileName == null || currentFileName.empty()) {
+					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
+				}
 				else {
 					String fileName = currentFileName.peek();
-					System.err.println(type + fileName + " line "+line+":"+charPositionInLine+" "+msg);
+					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}
 			catch(Exception e1) {
-				System.err.println("ERROR: while customizing error message:" + e1);
+				LOG.error("ERROR: while customizing error message:" + e1);
 			}
 		}
 		
 		public void validationWarning(int line, int charPositionInLine, String msg) {
-			String type = "WARNING: ";
 			try {
-				//atleastOneError = true;
+				//atleastOneError = true; ---> not an error, just warning
 				// Print error messages with file name
 				if(currentFileName == null || currentFileName.empty())
-					System.err.println(type + "line "+line+":"+charPositionInLine+" "+msg);
+					LOG.warn("line "+line+":"+charPositionInLine+" "+msg);
 				else {
 					String fileName = currentFileName.peek();
-					System.err.println(type + fileName + " line "+line+":"+charPositionInLine+" "+msg);
+					LOG.warn(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}
 			catch(Exception e1) {
-				System.err.println("ERROR: while customizing error message:" + e1);
+				LOG.warn("ERROR: while customizing error message:" + e1);
 			}
 		}
 		
@@ -62,19 +66,18 @@ public class DmlSyntacticErrorListener {
 				int line, int charPositionInLine,
 				String msg, RecognitionException e)
 		{	
-			String type = "ERROR: ";
 			try {
 				atleastOneError = true;
 				// Print error messages with file name
 				if(currentFileName == null || currentFileName.empty())
-					System.err.println(type + "line "+line+":"+charPositionInLine+" "+msg);
+					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
 				else {
 					String fileName = currentFileName.peek();
-					System.err.println(type + fileName + " line "+line+":"+charPositionInLine+" "+msg);
+					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}
 			catch(Exception e1) {
-				System.err.println("ERROR: while customizing error message:" + e1);
+				LOG.error("ERROR: while customizing error message:" + e1);
 			}
 		}
 	}

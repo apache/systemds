@@ -551,32 +551,12 @@ public class DMLScript
 		}
 		
 		DMLProgram prog = null;
+		//Step 3: parse dml script
 		if(!USE_JAVACC_PARSER){ 
-			long startTime = System.currentTimeMillis();
-			try {
-				// Set the pipeline required for ANTLR parsing
-				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper.argVals = argVals;
-				prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER);
-				antlr4Parser.cleanUpState();
-			} catch(Exception e) { 
-				System.out.println("Exception occured while parsing using antlr4:" + e); e.printStackTrace(); 
-			}
-			// Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-			if(prog == null) {
-				// System.err.println("One or more errors found during parsing. Cannot proceed ahead.");
-				// return;
-				throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
-			}
-			else {
-				// For now also replacing the verbose expression
-				System.out.println("Parsing time (antlr4): " + (System.currentTimeMillis() - startTime) + " milliseconds."
-						//+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
-						);
-			}
+			Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+			prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		}
 		else {
-			//Step 3: parse dml script
 			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
 			prog = parser.parse();
 		}
@@ -695,35 +675,13 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		long startTime = System.currentTimeMillis();
 		if(!USE_JAVACC_PARSER){ 
-			try {
-				// Set the pipeline required for ANTLR parsing
-				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-				com.ibm.bi.dml.antlr4.Antlr4ParserWrapper.argVals = argVals;
-				dbprog.prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER);
-				antlr4Parser.cleanUpState();
-			} catch(Exception e) { 
-				System.out.println("Exception occured while parsing using antlr4:" + e); e.printStackTrace(); 
-			}
-			// Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-			if(dbprog.prog == null) {
-				// System.err.println("One or more errors found during parsing. Cannot proceed ahead.");
-				// return;
-				throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
-			}
-			else {
-				// For now also replacing the verbose expression
-				System.out.println("Parsing time (antlr4): " + (System.currentTimeMillis() - startTime) + " milliseconds."
-						//+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
-						);
-			}
+			Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+			dbprog.prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		}
 		else {
-			//Step 3: parse dml script
 			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
 			dbprog.prog = parser.parse();
-			System.out.println("Parsing time (javacc): " + (System.currentTimeMillis() - startTime) + " milliseconds.");
 		}
 
 

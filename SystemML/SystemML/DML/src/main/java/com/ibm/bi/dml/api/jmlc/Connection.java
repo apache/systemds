@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.ibm.bi.dml.antlr4.Antlr4ParserWrapper;
 import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -104,8 +105,16 @@ public class Connection
 		try
 		{
 			//parsing
-			DMLQLParser parser = new DMLQLParser(script, args);
-			DMLProgram prog = parser.parse();
+			DMLProgram prog = null;
+			if(!DMLScript.USE_JAVACC_PARSER){
+				Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+				prog = antlr4Parser.parse(null, script, args);
+			}
+			else {
+				DMLQLParser parser = new DMLQLParser(script, args);
+				prog = parser.parse();
+			}
+			
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);

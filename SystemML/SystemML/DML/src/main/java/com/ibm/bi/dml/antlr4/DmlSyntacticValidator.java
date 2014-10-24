@@ -451,7 +451,6 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
 		ctx.dataInfo.expr = new IndexedIdentifier(ctx.name.getText(), false, false);
 		setFileLineColumn(ctx.dataInfo.expr, ctx);
-		String tmp = ctx.getText();
 		try {
 			ArrayList< ArrayList<com.ibm.bi.dml.parser.Expression> > exprList = new ArrayList< ArrayList<com.ibm.bi.dml.parser.Expression> >();
 			
@@ -665,11 +664,17 @@ public class DmlSyntacticValidator implements DmlListener {
 			return;
 		}
 		else {
-			com.ibm.bi.dml.antlr4.Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-			DMLProgram prog = antlr4Parser.parse(filePath);
+			// Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
+			DMLProgram prog = null;
+			try {
+				prog = (new Antlr4ParserWrapper()).doParse(filePath, null);
+			} catch (ParseException e) {
+				DmlSyntacticValidatorHelper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+				return;
+			}
 	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
 			if(prog == null) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("one or more errors found during importing a program from file " + filePath, ctx.start);
+				DmlSyntacticValidatorHelper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
 				return;
 			}
 			else {

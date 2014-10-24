@@ -23,6 +23,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
@@ -48,6 +50,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 
 /**
@@ -144,8 +147,7 @@ public class DataGenMR
 				//seed generation
 				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.seed);
 				long nnz[] = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.sparsity);
-				
-				numblocks = 0;
+				int nnzIx = 0;
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
 					for(long c = 0; c < clens[i]; c += bclens[i])
@@ -160,7 +162,7 @@ public class DataGenMR
 						sb.append(',');
 						sb.append(curBlockColSize);
 						sb.append(',');
-						sb.append(nnz[numblocks]);
+						sb.append(nnz[nnzIx++]);
 						sb.append(',');
 						sb.append(bigrand.nextLong());
 						pw.println(sb.toString());
@@ -281,9 +283,12 @@ public class DataGenMR
 			//set up the instructions that will happen in the reducer, after the aggregation instrucions
 			MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 			
-			
 			//set up the replication factor for the results
 			job.setInt("dfs.replication", replication);
+			
+			//set up map/reduce memory configurations (if in AM context)
+			DMLConfig config = ConfigurationManager.getConfig();
+			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
 			JobClient client=new JobClient(job);
 			int capacity=client.getClusterStatus().getMaxMapTasks();

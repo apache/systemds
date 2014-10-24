@@ -16,6 +16,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -30,6 +32,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 /*
  * inBlockRepresentation: indicate whether to use block representation or cell representation
@@ -108,6 +111,10 @@ public class MMRJMR
 		job.setInt("dfs.replication", replication);
 		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
+		//set up map/reduce memory configurations (if in AM context)
+		DMLConfig config = ConfigurationManager.getConfig();
+		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
+				
 		// byte[] resultIndexes=new byte[]{AggregateBinaryInstruction.parseMRInstruction(aggBinInstrction).output};
 		
 		//set up what matrices are needed to pass from the mapper to reducer

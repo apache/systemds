@@ -17,6 +17,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -31,6 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 
 /*
@@ -210,6 +213,10 @@ public class MMCJMR
 		job.setInt("dfs.replication", replication);
 		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
+		//set up map/reduce memory configurations (if in AM context)
+		DMLConfig config = ConfigurationManager.getConfig();
+		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
+		
 		byte[] resultIndexes=new byte[]{MRInstructionParser.parseSingleInstruction(aggBinInstrction).output};
 		byte[] resultDimsUnknown_Array = new byte[]{resultDimsUnknown};
 		// byte[] resultIndexes=new byte[]{AggregateBinaryInstruction.parseMRInstruction(aggBinInstrction).output};

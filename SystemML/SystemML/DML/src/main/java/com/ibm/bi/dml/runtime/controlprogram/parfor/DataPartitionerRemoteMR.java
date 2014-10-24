@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 /**
  * MR job class for submitting parfor remote partitioning MR jobs.
@@ -176,6 +177,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			//set the replication factor for the results
 			job.setInt("dfs.replication", _replication);
+			
+			//set up map/reduce memory configurations (if in AM context)
+			DMLConfig config = ConfigurationManager.getConfig();
+			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration

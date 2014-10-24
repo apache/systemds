@@ -380,7 +380,7 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException
 	{
 		Lop matmultCP = null;
-		if( isLeftTransposeRewriteApplicable(true) )
+		if( isLeftTransposeRewriteApplicable(true, false) )
 			matmultCP = constructCPLopWithLeftTransposeRewrite();
 		else
 			matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
@@ -417,9 +417,9 @@ public class AggBinaryOp extends Hop
 	private void constructLopsMR_MapMult(MMultMethod method) 
 		throws HopsException, LopsException
 	{
-		if( method == MMultMethod.MAPMULT_R && isLeftTransposeRewriteApplicable(false) )
+		if( method == MMultMethod.MAPMULT_R && isLeftTransposeRewriteApplicable(false, true) )
 		{
-			set_lops( constructMRLopWithLeftTransposeRewrite() );
+			set_lops( constructMapMultMRLopWithLeftTransposeRewrite() );
 		}
 		else //GENERAL CASE
 		{	
@@ -544,23 +544,30 @@ public class AggBinaryOp extends Hop
 	private void constructLopsMR_CPMM() 
 		throws HopsException, LopsException
 	{
-		MMCJ mmcj = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				             get_dataType(), get_valueType());
-		mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		setLineNumbers(mmcj);
-		
-		Group grp = new Group(mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-		grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		setLineNumbers(grp);
-		
-		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		setLineNumbers(agg1);
-		
-		// aggregation uses kahanSum but the inputs do not have correction values
-		agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-		
-		set_lops(agg1);
+		if( isLeftTransposeRewriteApplicable(false, false) )
+		{
+			set_lops( constructMMCJMRLopWithLeftTransposeRewrite() );
+		} 
+		else //general case
+		{
+			MMCJ mmcj = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+					             get_dataType(), get_valueType());
+			mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(mmcj);
+			
+			Group grp = new Group(mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(grp);
+			
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(agg1);
+			
+			// aggregation uses kahanSum but the inputs do not have correction values
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+			
+			set_lops(agg1);
+		}
 	} 
 	
 	/**
@@ -612,7 +619,7 @@ public class AggBinaryOp extends Hop
 	 * 
 	 * @return
 	 */
-	private boolean isLeftTransposeRewriteApplicable(boolean CP)
+	private boolean isLeftTransposeRewriteApplicable(boolean CP, boolean checkMemMR)
 	{
 		boolean ret = false;
 		Hop h1 = getInput().get(0);
@@ -663,7 +670,7 @@ public class AggBinaryOp extends Hop
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
-					OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudgetMap(true) ) 
+					(!checkMemMR || OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudgetMap(true)) ) 
 				{
 					ret = true;
 				}
@@ -707,7 +714,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop constructMRLopWithLeftTransposeRewrite() 
+	private Lop constructMapMultMRLopWithLeftTransposeRewrite() 
 		throws HopsException, LopsException
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
@@ -764,6 +771,46 @@ public class AggBinaryOp extends Hop
 		return out;
 	}
 
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructMMCJMRLopWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose CP
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix multiply
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), get_dataType(), get_valueType());
+		mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(mmcj);
+		
+		Group grp = new Group(mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+		grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(grp);
+		
+		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+		agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(agg1);
+		
+		// aggregation uses kahanSum but the inputs do not have correction values
+		agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+
+		
+		//result transpose CP 
+		Lop out = new Transform(agg1, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.get_dim2(), Y.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		
+		return out;
+	}
 	
 	/**
 	 * 

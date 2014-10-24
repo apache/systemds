@@ -31,19 +31,20 @@ X = read ($X)
 if (y == 1)
 {
    OX = X[,y+1:ncol(X)]
+   OY = X[,y]
 } 
 else if (y == ncol(X))
 {
    OX = X[,1:y-1]
+   OY = X[,y]
 } 
 else 
 {
    OX1 = X[,1:y-1]
    OX2 = X[,y+1:ncol(X)]
    OX = append (OX1, OX2)
+   OY = X[,y]
 }
-
-OY = X[,y]
 
 # Write output
 write (OX, $OX, format=ofmt)

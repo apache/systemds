@@ -1,0 +1,22 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to change format of X.
+#
+# Parameters:
+#    I       : (input)  filename of input
+#    O       : (output) filename of output
+#    ofmt    : format of O: "csv", "binary" 
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/write.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx" ofmt="binary"
+#
+
+M = read($I)
+write(M, $O, format=$ofmt)

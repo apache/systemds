@@ -1,0 +1,52 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to split X into new X and Y.
+#
+# Parameters:
+#    X       : (input)  filename of data matrix
+#    y       : (default ncol(X))  colIndex
+#    OX      : (output) filename of output matrix with all columns except y
+#    OY      : (output) filename of output matrix with y column
+#    ofmt    : (default binary) format of OX and OY output matrix
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/splitXY.dml -nvargs X="/tmp/X.mtx" y=50 OX="/tmp/OX.mtx  OY="/tmp/OY.mtx  
+#
+
+$ofmt = "binary"
+$y = ncol($X)
+
+ofmt=$ofmt
+y=$y
+
+X = read ($X)
+
+if (y == 1)
+{
+   OX = X[,y+1:ncol(X)]
+} 
+else if (y == ncol(X))
+{
+   OX = X[,1:y-1]
+} 
+else 
+{
+   OX1 = X[,1:y-1]
+   OX2 = X[,y+1:ncol(X)]
+   OX = append (OX1, OX2)
+}
+
+OY = X[,y]
+
+# Write output
+write (OX, $OX, format=ofmt)
+write (OY, $OY, format=ofmt)
+
+

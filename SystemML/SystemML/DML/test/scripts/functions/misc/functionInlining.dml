@@ -7,14 +7,14 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-foo = function(Double in) return (Double out)
+foo = function(Double input) return (Double out)
 {
-   out = in + in; #will be inlined
+   out = input + input; #will be inlined
 }
 
-foo2 = function(Integer in) return (Double out)
+foo2 = function(Integer input) return (Double out)
 { 
-   out = in + in; #will be inlined
+   out = input + input; #will be inlined
 }
 
 x = $1;

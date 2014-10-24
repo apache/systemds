@@ -9,7 +9,7 @@
 
 execFun = function(Matrix[Double] Xin) return (Double sx) 
 {
-   X = Xin[2:,]
+   X = Xin[2:nrow(Xin),]
 
    if( nrow(X)>1 )
    {

@@ -14,14 +14,15 @@
 #
 
 # defaults
-$laplace = 1
-$fmt = "text"
+# $laplace = 1
+#$fmt = "text"
+fmt = ifdef($fmt, "text")
 
 # reading input args
 numClasses = $classes
 D = read($X)
 C = read($Y)
-laplace_correction = $laplace
+laplace_correction = ifdef($laplace, 1)
 
 numRows = nrow(D)
 numFeatures = ncol(D)
@@ -62,5 +63,5 @@ print(acc_str)
 write(acc_str, $accuracy)
 
 # write out the model
-write(class_prior, $prior, format=$fmt);
-write(class_conditionals, $conditionals, format=$fmt);
+write(class_prior, $prior, format=fmt);
+write(class_conditionals, $conditionals, format=fmt);

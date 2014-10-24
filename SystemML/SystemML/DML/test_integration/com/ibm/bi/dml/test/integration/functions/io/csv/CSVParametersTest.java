@@ -179,18 +179,18 @@ public class CSVParametersTest extends AutomatedTestBase
 		String[] writeArgs = new String[]{"-args", 
 				txtFile,
 				csvFile,
-				Boolean.toString(_header),
+				Boolean.toString(_header).toUpperCase(),
 				_delim,
-				Boolean.toString(_sparse)
+				Boolean.toString(_sparse).toUpperCase()
 				};
 		
 		String readDML = HOME + "csvprop_read.dml";
 		String[] readArgs = new String[]{"-args", 
 				txtFile,
 				csvFile,
-				Boolean.toString(_header),
+				Boolean.toString(_header).toUpperCase(),
 				_delim,
-				Boolean.toString(_sparse),
+				Boolean.toString(_sparse).toUpperCase(),
 				Double.toString(0.0),
 				scalarFile
 				};

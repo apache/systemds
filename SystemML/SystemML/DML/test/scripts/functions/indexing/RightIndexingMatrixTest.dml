@@ -9,7 +9,7 @@
 
 A=read($1, rows=$2, cols=$3, format="text")
 B=A[$4:$5,$6:$7]
-C=A[:$5,$6:]
+C=A[1:$5,$6:ncol(A)]
 D=A[,$6:$7]
 write(B, $8, format="text")
 write(C, $9, format="text")

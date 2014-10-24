@@ -13,7 +13,7 @@ C=read($12, rows=$5, cols=$16, format="text")
 D=read($13, rows=$2, cols=$15, format="text")
 A[$4:$5,$6:$7]=B
 write(A, $8, format="text")
-A[:$5,$6:]=C
+A[1:$5,$6:ncol(A)]=C
 write(A, $9, format="text")
 A[,$6:$7]=D
 write(A, $10, format="text")

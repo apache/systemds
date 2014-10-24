@@ -7,11 +7,11 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-foo = function(Matrix[Double] in) return (Double out) 
+foo = function(Matrix[Double] input) return (Double out) 
 {
    if( 1==1 ){} #prevent inlining
   
-   out = castAsScalar(in[1,1]);
+   out = castAsScalar(input[1,1]);
 }
 
 Y = matrix(1, rows=10, cols=10);

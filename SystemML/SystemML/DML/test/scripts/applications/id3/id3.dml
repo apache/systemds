@@ -122,14 +122,14 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		
 		sz = nrow(attributes)
 		gains = matrix(0, rows=sz, cols=1)
-		parfor(i in 1:nrow(attributes)){
+		for(i in 1:nrow(attributes)){
 			if(castAsScalar(attributes[i,1]) == 1){
 				attr_vals = X[,i]
 				attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
 
 				hxt_vector = matrix(0, rows=nrow(attr_domain), cols=1)
 				
-        parfor(j in 1:nrow(attr_domain), check=0){
+        for(j in 1:nrow(attr_domain), check=0){
 					if(castAsScalar(attr_domain[j,1]) != 0){
 						val = j
 						Tj = X_subset * ppred(X[,i], val, "==")
@@ -189,7 +189,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		numSubtreeNodes = matrix(0, rows=sz2, cols=1)
 		numSubtreeEdges = matrix(0, rows=sz2, cols=1)
 		
-    parfor(i1 in 1:nrow(attr_domain), check=0){
+    for(i1 in 1:nrow(attr_domain), check=0){
 			
 			Ti = X_subset * ppred(X[,best_attr], i1, "==")
 			num_nodes_Ti = sum(Ti)

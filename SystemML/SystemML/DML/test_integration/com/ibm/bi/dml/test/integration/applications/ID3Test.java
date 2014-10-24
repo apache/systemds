@@ -67,7 +67,7 @@ public class ID3Test extends AutomatedTestBase
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "X" , 
+		programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "X" , 
 				                            HOME + INPUT_DIR + "y" ,
                                             Integer.toString(rows), 
 				                            Integer.toString(cols),

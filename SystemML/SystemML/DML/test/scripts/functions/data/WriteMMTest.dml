@@ -11,4 +11,4 @@
 
 A = read($1, rows=$2, cols=$3, format="text");
 
-writeMM(A, $4);
+write(A, $4, format="mm");

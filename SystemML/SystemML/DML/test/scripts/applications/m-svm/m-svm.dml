@@ -18,13 +18,13 @@
 # hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept classes=10 tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 
-$fmt="text"
-$icpt = 0
-$tol=0.001
-$reg=1.0
-$maxiter=100
+cmdLine_fmt=ifdef($fmt, "text")
+cmdLine_icpt = ifdef($icpt, 0)
+cmdLine_tol=ifdef($tol, 0.001)
+cmdLine_reg=ifdef($reg, 1.0)
+cmdLine_maxiter=ifdef($maxiter, 100)
 
-print("icpt=" + $icpt + " tol=" + $tol + " reg=" + $reg + " maxiter=" + $maxiter)
+print("icpt=" + cmdLine_icpt + " tol=" + cmdLine_tol + " reg=" + cmdLine_reg + " maxiter=" + cmdLine_maxiter)
 
 X = read($X)
 
@@ -33,11 +33,11 @@ if(check_X == 0){
 	print("X has no non-zeros")
 }else{
 	Y = read($Y)
-	intercept = $icpt
+	intercept = cmdLine_icpt
 	num_classes = $classes
-	epsilon = $tol
-	lambda = $reg
-	max_iterations = $maxiter
+	epsilon = cmdLine_tol
+	lambda = cmdLine_reg
+	max_iterations = cmdLine_maxiter
  
 	num_samples = nrow(X)
 	num_features = ncol(X)
@@ -119,7 +119,7 @@ if(check_X == 0){
 		w[,iter_class] = w_class
 	}
 
-	write(w, $model, format=$fmt)
+	write(w, $model, format=cmdLine_fmt)
 
 	debug_str = "# Class, Iter, Obj"
 	for(iter_class in 1:ncol(debug_mat)){

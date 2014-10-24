@@ -117,20 +117,20 @@
 
 # Default values for input parameters
 
-$O = " ";
-$Log = " ";
-$fmt = "text";
-$dfam = 1;
-$vpow = 0.0;
-$link = 0;
-$lpow = 1.0;
-$yneg = 0.0;
-$icpt = 0;
-$reg  = 0.0;
-$tol  = 0.000001;
-$disp = 0.0;
-$moi  = 200;
-$mii  = 0;
+cmdLine_O = ifdef($O, " ");
+cmdLine_Log = ifdef($Log, " ");
+cmdLine_fmt = ifdef($fmt, "text");
+cmdLine_dfam = ifdef($dfam, 1);
+cmdLine_vpow = ifdef($vpow, 0.0);
+cmdLine_link = ifdef($link, 0);
+cmdLine_lpow = ifdef($lpow, 1.0);
+cmdLine_yneg = ifdef($yneg, 0.0);
+cmdLine_icpt = ifdef($icpt, 0);
+cmdLine_reg  = ifdef($reg, 0.0);
+cmdLine_tol  = ifdef($tol, 0.000001);
+cmdLine_disp = ifdef($disp, 0.0);
+cmdLine_moi  = ifdef($moi, 200);
+cmdLine_mii  = ifdef($mii, 0);
 
 # Default values for output statistics:
 
@@ -150,7 +150,7 @@ print("Reading X...");
 X = read ($X);
 print("Reading Y...");
 Y = read ($Y);
-intercept_status = $icpt;
+intercept_status = cmdLine_icpt;
 
 num_records  = nrow (X);
 num_features = ncol (X);
@@ -201,16 +201,16 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 
 # Initialize other input-dependent parameters
 
-distribution_type = $dfam;
-variance_as_power_of_the_mean = 0.0 + $vpow;
-bernoulli_No_label = 0.0 + $yneg;
-link_type = $link;
-link_as_power_of_the_mean = 0.0 + $lpow;
-dispersion = 0.0 + $disp;
-lambda = scale_lambda * $reg;
-eps = 0.0 + $tol;
-max_iteration_IRLS = $moi;
-max_iteration_CG = $mii;
+distribution_type = cmdLine_dfam;
+variance_as_power_of_the_mean = 0.0 + cmdLine_vpow;
+bernoulli_No_label = 0.0 + cmdLine_yneg;
+link_type = cmdLine_link;
+link_as_power_of_the_mean = 0.0 + cmdLine_lpow;
+dispersion = 0.0 + cmdLine_disp;
+lambda = scale_lambda * cmdLine_reg;
+eps = 0.0 + cmdLine_tol;
+max_iteration_IRLS = cmdLine_moi;
+max_iteration_CG = cmdLine_mii;
 if (max_iteration_CG == 0) {
     max_iteration_CG = num_features;
 }
@@ -289,7 +289,7 @@ if (isNaN_new_log_l == 0) {
     new_log_l = new_log_l - 0.5 * sum (lambda * newbeta ^ 2);
 }
 
-if ($Log != " ") {
+if (cmdLine_Log != " ") {
     log_str = "POINT_STEP_NORM," + i_IRLS + "," + sqrt (sum (beta ^ 2));
     log_str = append (log_str, "OBJECTIVE," + i_IRLS + "," + (- new_log_l));
     log_str = append (log_str, "LINEAR_TERM_MIN," + i_IRLS + "," + min (all_linear_terms));
@@ -328,7 +328,7 @@ while (termination_code == 0)
         }
     }
 
-    if ($Log != " ") {
+    if (cmdLine_Log != " ") {
         log_str = append (log_str, "IS_POINT_UPDATED," + i_IRLS + "," + accept_new_beta);
         log_str = append (log_str, "TRUST_DELTA,"      + i_IRLS + "," + trust_delta);
     }
@@ -346,7 +346,7 @@ while (termination_code == 0)
         g = diag (scale_X) %*% gXY + shift_X %*% gXY [num_features, ];
         g_norm = sqrt (sum ((g + lambda * beta) ^ 2));
         
-        if ($Log != " ") {
+        if (cmdLine_Log != " ") {
             log_str = append (log_str, "GRADIENT_NORM," + i_IRLS + "," + g_norm);
         }
     }
@@ -395,7 +395,7 @@ while (termination_code == 0)
         + ", log_l_change = " + log_l_change_m + "E" + log_l_change_e
         + ", rho = " + rho_m + "E" + rho_e);
         
-    if ($Log != " ") {
+    if (cmdLine_Log != " ") {
         log_str = append (log_str, "NUM_CG_ITERS,"     + i_IRLS + "," + num_CG_iters);
         log_str = append (log_str, "IS_TRUST_REACHED," + i_IRLS + "," + reached_trust_boundary);
         log_str = append (log_str, "POINT_STEP_NORM,"  + i_IRLS + "," + z_norm);
@@ -430,7 +430,7 @@ if (intercept_status == 2) {
     beta_out = ssX_beta;
 }
 
-write (beta_out, $B, format=$fmt);
+write (beta_out, $B, format=cmdLine_fmt);
 
 if (intercept_status == 1 | intercept_status == 2) {
     intercept_value = castAsScalar (beta_out [num_features, 1]);
@@ -462,8 +462,8 @@ if (dispersion <= 0.0) {
 }
 deviance = deviance_nodisp / dispersion;
 
-if ($Log != " ") {
-    write (log_str, $Log);
+if (cmdLine_Log != " ") {
+    write (log_str, cmdLine_Log);
 }
 
 #####  END OF THE MAIN PART  #####
@@ -482,8 +482,8 @@ str = append (str, "DISPERSION_EST," + estimated_dispersion);
 str = append (str, "DEVIANCE_UNSCALED," + deviance_nodisp);
 str = append (str, "DEVIANCE_SCALED," + deviance);
 
-if ($O != " ") {
-    write (str, $O);
+if (cmdLine_O != " ") {
+    write (str, cmdLine_O);
 } else {
     print (str);
 }

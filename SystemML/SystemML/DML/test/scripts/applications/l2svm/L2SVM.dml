@@ -19,11 +19,11 @@
 # are set to either -1 or +1
 # or the result of recoding
 
-$fmt="text"
-$icpt=0
-$tol=0.001
-$reg=1.0
-$maxiter=100
+cmdLine_fmt=ifdef($fmt,"text")
+cmdLine_icpt=ifdef($icpt, 0)
+cmdLine_tol=ifdef($tol, 0.001)
+cmdLine_reg=ifdef($reg, 1.0)
+cmdLine_maxiter=ifdef($maxiter, 100)
 
 X = read($X, rows=$numrows, cols=$numcols, format="text")
 Y = read($Y, rows=$numrows, cols=1, format="text")
@@ -38,10 +38,10 @@ else{
 		Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
 }
 
-epsilon = $tol
-lambda = $reg
-maxiterations = $maxiter
-intercept = $icpt
+epsilon = cmdLine_tol
+lambda = cmdLine_reg
+maxiterations = cmdLine_maxiter
+intercept = cmdLine_icpt
 
 num_samples = nrow(X)
 dimensions = ncol(X)
@@ -110,5 +110,5 @@ while(continue == 1 & iter < maxiterations)  {
 	iter = iter + 1
 }
 
-write(w, $model, format=$fmt)
+write(w, $model, format=cmdLine_fmt)
 write(debug_str, $Log)

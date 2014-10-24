@@ -7,7 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-dynWrite = externalFunction(Matrix[Double] in, String fname, String format)
+dynWrite = externalFunction(Matrix[Double] input, String fname, String format)
   return(Boolean success)
   implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP",exectype="mem") 
 

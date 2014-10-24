@@ -13,6 +13,6 @@ A = read ($1, rows=$2, cols=$3, format="text");
 
 i = 0;
 while( i < 2) {
-     writeMM (A, $4);
+     write (A, $4, format="mm");
      i = i +1;
 }

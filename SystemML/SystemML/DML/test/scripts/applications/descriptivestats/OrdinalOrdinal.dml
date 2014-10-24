@@ -17,7 +17,7 @@
 #-------------------------------------------------------------------------
 # Function to compute ranks
 # takes a column vector as input, and produces a vector of same size in which each cell denotes to the computed score for that category
-computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
+computeRanks = function(matrix[double] X) return (matrix[double] Ranks) {
     dummy = Rand(rows=1, cols=1, min=1, max=1);
     Rks = X;
     size = nrow(X);

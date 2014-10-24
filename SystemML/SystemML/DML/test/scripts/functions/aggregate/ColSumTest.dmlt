@@ -1,11 +1,20 @@
-# junit test class: dml.test.integration.functions.aggregate.ColSumTest.java
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
 
-Helper = readMM("./test/scripts/functions/aggregate/in/helper/in", rows=1, cols=2, format="text");
+# junit test class: com.ibm.bi.dml.test.integration.functions.aggregate.ColSumTest.java
 
-Vector = readMM("./test/scripts/functions/aggregate/in/vector", rows=10, cols=1, format="text");
+Helper = read("./DML/test/scripts/functions/aggregate/in/helper/in", rows=1, cols=2, format="text");
+
+Vector = read("./DML/test/scripts/functions/aggregate/in/vector", rows=10, cols=1, format="text");
 VectorColSum = colSums(Vector);
-write(VectorColSum, "./test/scripts/functions/aggregate/out/vector_colsum", format="text");
+write(VectorColSum, "./DML/test/scripts/functions/aggregate/out/vector_colsum", format="text");
 
-Matrix = readMM("./test/scripts/functions/aggregate/in/matrix", rows=10, cols=10, format="text");
+Matrix = read("./DML/test/scripts/functions/aggregate/in/matrix", rows=10, cols=10, format="text");
 MatrixColSum = colSums(Matrix);
-write(MatrixColSum, "./test/scripts/functions/aggregate/out/matrix_colsum", format="text");
+write(MatrixColSum, "./DML/test/scripts/functions/aggregate/out/matrix_colsum", format="text");

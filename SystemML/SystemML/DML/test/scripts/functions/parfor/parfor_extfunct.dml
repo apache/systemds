@@ -11,7 +11,7 @@ dynRead = externalFunction(String fname, Integer rows, Integer cols, String form
 return (Matrix[Double] M) 
 implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP",exectype="mem")   
 
-execCondense = externalFunction(Matrix[Double] in)
+execCondense = externalFunction(Matrix[Double] input)
 return(Matrix[Double] out)
 implemented in (classname="com.ibm.bi.dml.packagesupport.RemoveEmptyRows",exectype="file", execlocation="master")   
 

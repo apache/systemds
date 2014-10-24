@@ -11,7 +11,7 @@ dynRead = externalFunction(String fname, Integer rows, Integer cols, String form
 return (Matrix[Double] M) 
 implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP",exectype="mem")   
 
-dynWrite = externalFunction(Matrix[Double] in, String fname, String format)
+dynWrite = externalFunction(Matrix[Double] input, String fname, String format)
 return(Boolean success)
 implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP",exectype="mem")  
 

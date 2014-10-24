@@ -196,10 +196,11 @@ public class ScalarIOTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
+		// TODO Niketan: Separate these as individual tests
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
 		programArgs = new String[]{	"-args", 
-									String.valueOf(boolean_scalar),
+									String.valueOf(boolean_scalar).toUpperCase(),
 									HOME + OUTPUT_DIR + "a.scalar"
                 				  };
 		runTest(true, false, null, -1);

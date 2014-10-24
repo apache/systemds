@@ -25,8 +25,8 @@
 #      i.e. projecting columns 4 and 2 of X results in a matrix with columns 4 and 2.
 # If P specifies the exclude list, then projected columns are order preserved.
 
-$exclude=FALSE
-$ofmt="binary"
+exclude = ifdef ($exclude, FALSE);
+ofmt = ifdef ($ofmt, "binary");
 
 X = read ($X)
 P = read ($P)
@@ -34,7 +34,7 @@ P = read ($P)
 # create projection matrix using projection list and sequence matrix, and pad with 0s. The size of
 # PP is nbrOfColsInX x nbrOfColsToKeep
 
-if ($exclude==FALSE)
+if (exclude==FALSE)
 {
    # create projection matrix using projection list and sequence matrix, and pad with 0s. The size
    # of PP is nbrOfColsInX x nbrOfColsToKeep
@@ -63,6 +63,6 @@ if ($exclude==FALSE)
 PX = X %*% PP
 
 # Write output
-write (PX, $o, format=$ofmt)
+write (PX, $o, format=ofmt)
 
 

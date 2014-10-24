@@ -16,13 +16,13 @@
 #    y    : (input) 2nd data set
 #    n    : (input) number of rows to return, i.e.: 1:n
 #    o    : (output) 
-#    ofmt : (output) default "csv"; format of output
+#    ofmt : (default "csv"); format of output
 #
 # Example:
 #   hadoop jar SystemML.jar -f algorithms/utils/cbind.dml -nvargs x="/tmp/M.mtx" y="/tmp/M1.mtx" n=100 o="/tmp/o.mtx"
 #
 
-$ofmt = "csv";
+ofmt = ifdef ($ofmt, "csv");
 
 x = read ($x);
 y = read ($y);
@@ -41,4 +41,4 @@ else
 
 o = append (xp, yp);
 
-write (o, $o, format=$ofmt);
+write (o, $o, format=ofmt);

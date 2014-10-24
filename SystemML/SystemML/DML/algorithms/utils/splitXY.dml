@@ -20,11 +20,8 @@
 #   hadoop jar SystemML.jar -f algorithms/utils/splitXY.dml -nvargs X="/tmp/X.mtx" y=50 OX="/tmp/OX.mtx  OY="/tmp/OY.mtx  
 #
 
-$ofmt = "binary"
-$y = ncol($X)
-
-ofmt=$ofmt
-y=$y
+ofmt = ifdef($ofmt, "binary")
+y = ifdef($y, ncol($X))
 
 X = read ($X)
 

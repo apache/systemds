@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,7 +18,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@SuppressWarnings("deprecation")
@@ -48,7 +48,11 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
 		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 2);
 		double[][] d = createRandomMatrix("d", rows, cols, 0, 10, 1, new Date().getTime() + 4);
-
+		writeInputMatrixWithMTD("a", a, false);
+		writeInputMatrixWithMTD("b", b, false);
+		writeInputMatrixWithMTD("c", c, false);
+		writeInputMatrixWithMTD("d", d, false);
+		
 		double[][] result = new double[rows][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -75,7 +79,10 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
 		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 4);
-
+		writeInputMatrixWithMTD("a", a, false);
+		writeInputMatrixWithMTD("b", b, false);
+		writeInputMatrixWithMTD("c", c, false);
+		
 		double[][] result = new double[rows][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -102,7 +109,10 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
 		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 2);
-
+		writeInputMatrixWithMTD("a", a, false);
+		writeInputMatrixWithMTD("b", b, false);
+		writeInputMatrixWithMTD("c", c, false);
+		
 		double[][] result = new double[rows][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {

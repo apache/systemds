@@ -123,8 +123,8 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed MR jobs
 			//note: with algebraic rewrites - unary op in reducer prevents job-level recompile
-			int expectedNumCompiled = 2; //reblock, GMR
-			int expectedNumExecuted = splitDags ? 0 : rewrites ? 2 : 1;			
+			int expectedNumCompiled = (rewrites && !splitDags) ? 2 : 3; //reblock, GMR
+			int expectedNumExecuted = splitDags ? 0 : rewrites ? 2 : 2;			
 			
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 

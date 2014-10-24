@@ -1046,6 +1046,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case Reblock: //opcodes: rblk
 					return DEFAULT_NFLOP_CP * ((leftSparse)? d1m*d1n*d1s : d1m*d1n); 
 					
+				case Replicate: //opcodes: rblk
+					return DEFAULT_NFLOP_CP * ((leftSparse)? d1m*d1n*d1s : d1m*d1n); 
+					
 				case CM_N_COV: //opcodes: mean
 					double xcm = 8;
 					return (leftSparse) ? xcm * (d1m * d1s + 1) : xcm * d1m;

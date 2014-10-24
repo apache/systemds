@@ -18,7 +18,7 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class FullMatrixCellwiseOperationTest extends AutomatedTestBase 
+public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

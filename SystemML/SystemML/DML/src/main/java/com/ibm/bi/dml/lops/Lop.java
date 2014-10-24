@@ -26,7 +26,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public abstract class Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/**
@@ -40,7 +40,7 @@ public abstract class Lop
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock
+		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock, RepMat,
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}

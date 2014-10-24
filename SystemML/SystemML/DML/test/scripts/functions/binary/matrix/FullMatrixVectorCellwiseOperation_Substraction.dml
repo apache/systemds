@@ -1,0 +1,16 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.FullMatrixMultiplicationTest.java
+
+A = read($1, format="text");
+B = read($2, format="text");
+C = A - B;
+
+write(C, $3, format="text");

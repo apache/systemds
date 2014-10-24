@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
@@ -244,7 +245,7 @@ public class MatrixCharacteristics
 					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
-		else if(ins instanceof BinaryInstruction || ins instanceof CombineBinaryInstruction )
+		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{
 			BinaryMRInstructionBase realIns=(BinaryMRInstructionBase)ins;
 			dim_out.set(dims.get(realIns.input1));

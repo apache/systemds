@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -186,7 +187,8 @@ public class InstructionUtils
 			String opcode = getOpCode(inst);
 			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
 			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
-			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE) ) 
+			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
+			   || BinaryM.isOpcode( opcode ) ) //multiple opcodes
 			{
 				return true;
 			}

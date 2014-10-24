@@ -153,7 +153,7 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = (IPA) ? (TEST_NAME.equals(TEST_NAME5)?3:1) : 4; //reblock, 2xGMR foo, GMR 
+			int expectedNumCompiled = (IPA) ? (TEST_NAME.equals(TEST_NAME5)?4:1) : (TEST_NAME.equals(TEST_NAME5)?5:4); //reblock, 2xGMR foo, GMR 
 			int expectedNumExecuted = 0;			
 			
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 

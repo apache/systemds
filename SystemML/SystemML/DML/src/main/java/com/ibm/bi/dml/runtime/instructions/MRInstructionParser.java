@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -17,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
@@ -36,6 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
@@ -133,11 +136,28 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "^2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2MRInstructionType.put( "^2c-" , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2MRInstructionType.put( "*2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
-		// String2InstructionType.put( "sl"    , MRINSTRUCTION_TYPE.Scalar);
-
+		String2MRInstructionType.put( "map+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map/"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map%%"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map%/%"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "mapmax"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "mapmin"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map>"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map>="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map<"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "map!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		
 		// REORG Instruction Opcodes 
 		String2MRInstructionType.put( "r'"     , MRINSTRUCTION_TYPE.Reorg);
 		String2MRInstructionType.put( "rdiag"  , MRINSTRUCTION_TYPE.Reorg);
+		
+		// REPLICATE Instruction Opcodes
+		String2MRInstructionType.put( "rep"     , MRINSTRUCTION_TYPE.Replicate);
 		
 		// DataGen Instruction Opcodes 
 		String2MRInstructionType.put( "Rand"   , MRINSTRUCTION_TYPE.Rand);
@@ -185,6 +205,7 @@ public class MRInstructionParser extends InstructionParser
 		//misc
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 		
+		
 		//partitioning
 		String2MRInstructionType.put( "partition", MRINSTRUCTION_TYPE.Partition);
 		
@@ -217,6 +238,7 @@ public class MRInstructionParser extends InstructionParser
 			return (MRInstruction) AggregateInstruction.parseInstruction(str);
 			
 		case ArithmeticBinary:
+			String opcode = InstructionUtils.getOpCode(str);
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			// extract datatypes of first and second input operands
 			String dt1 = parts[1].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
@@ -225,7 +247,10 @@ public class MRInstructionParser extends InstructionParser
 				return (MRInstruction) ScalarInstruction.parseInstruction(str);
 			}
 			else {
-				return (MRInstruction) BinaryInstruction.parseInstruction(str);
+				if( BinaryM.isOpcode( opcode ) )
+					return (MRInstruction) BinaryMInstruction.parseInstruction(str);
+				else
+					return (MRInstruction) BinaryInstruction.parseInstruction(str);
 			}
 		case AggregateBinary:
 			return (MRInstruction) AggregateBinaryInstruction.parseInstruction(str);
@@ -251,8 +276,8 @@ public class MRInstructionParser extends InstructionParser
 		case Reorg:
 			return (MRInstruction) ReorgInstruction.parseInstruction(str);
 			
-		//case Replicate:
-		//	return (MRInstruction) ReplicateInstruction.parseInstruction(str);
+		case Replicate:
+			return (MRInstruction) ReplicateInstruction.parseInstruction(str);
 		
 		case Unary:
 			return (MRInstruction) UnaryInstruction.parseInstruction(str);

@@ -31,6 +31,7 @@ import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
@@ -837,6 +838,12 @@ public class Dag<N extends Lop>
 					dcInputIndex);
 		}
 		else if ( node instanceof AppendM ) {
+			footprint = BinaryOp.footprintInMapper(
+					in1dims.getNum_rows(), in1dims.getNum_cols(), 
+					in2dims.getNum_rows(), in2dims.getNum_cols(), 
+					in1dims.get_rows_in_block(), in1dims.get_cols_in_block());
+		}
+		else if ( node instanceof BinaryM ) {
 			footprint = BinaryOp.footprintInMapper(
 					in1dims.getNum_rows(), in1dims.getNum_cols(), 
 					in2dims.getNum_rows(), in2dims.getNum_cols(), 

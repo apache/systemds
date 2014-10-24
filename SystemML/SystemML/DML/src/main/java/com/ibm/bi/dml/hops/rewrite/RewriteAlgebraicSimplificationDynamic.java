@@ -136,7 +136,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyEmptyMatrixMult(hop, hi, i);         //e.g., X%*%Y -> matrix(0,...), if nnz(Y)==0 | X if Y==matrix(1,1,1)
 			hi = simplifyIdentityRepMatrixMult(hop, hi, i);   //e.g., X%*%y -> X if y matrix(1,1,1);
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
-			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> (X%*%ones)*Y if otherwise 
+			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y));, if col vector
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
@@ -685,7 +685,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
 		
-			// diag(X) %*% Y -> X * Y / diag(X) %*% Y -> (X%*%ones) * Y
+			// diag(X) %*% Y -> X * Y / diag(X) %*% Y -> Y * X 
+			// previously rep required for the second case: diag(X) %*% Y -> (X%*%ones) * Y
 			if( left instanceof ReorgOp && ((ReorgOp)left).getOp()==ReOrgOp.DIAG //left diag
 				&& HopRewriteUtils.isDimsKnown(left) && left.get_dim2()>1 ) //diagV2M
 			{
@@ -697,37 +698,34 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, hi);
 					
 					//create binary operation over input and right
-					Hop input = left.getInput().get(0);
+					Hop input = left.getInput().get(0); //diag input
 					hnew = new BinaryOp(input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, input, right);
 					HopRewriteUtils.setOutputParameters(hnew, left.get_dim1(), right.get_dim2(), left.get_rows_in_block(), left.get_cols_in_block(), -1);
 				
 					LOG.debug("Applied simplifyMatrixMultDiag1");
 				}
-				else if( right.get_dim2()==2 ) //multi column vector (but not general case)
+				else if( right.get_dim2()>1 ) //multi column vector 
 				{
 					//remove link from parent to matrix mult
 					HopRewriteUtils.removeChildReference(parent, hi);
 					
+					//create binary operation over input and right; in contrast to above rewrite,
+					//we need to switch the order because MV binary cell operations require vector on the right
+					Hop input = left.getInput().get(0); //diag input
+					hnew = new BinaryOp(input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, right, input);
+					HopRewriteUtils.setOutputParameters(hnew, left.get_dim1(), right.get_dim2(), left.get_rows_in_block(), left.get_cols_in_block(), -1);
+					
+					//NOTE: previously to MV binary cell operations we replicated the left (if moderate number of columns: 2)
 					//create binary operation over input and right
-					Hop input = left.getInput().get(0);
-					Hop ones = HopRewriteUtils.createDataGenOpByVal(new LiteralOp("1",1), new LiteralOp(String.valueOf(right.get_dim2()),right.get_dim2()), 1);
-					Hop repmat = new AggBinaryOp( input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, input, ones );
-					HopRewriteUtils.setOutputParameters(repmat, input.get_dim1(), ones.get_dim2(), input.get_rows_in_block(), input.get_cols_in_block(), -1);
-					hnew = new BinaryOp(input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, repmat, right);
-					HopRewriteUtils.setOutputParameters(hnew, right.get_dim1(), right.get_dim2(), right.get_rows_in_block(), right.get_cols_in_block(), -1);
+					//Hop input = left.getInput().get(0);
+					//Hop ones = HopRewriteUtils.createDataGenOpByVal(new LiteralOp("1",1), new LiteralOp(String.valueOf(right.get_dim2()),right.get_dim2()), 1);
+					//Hop repmat = new AggBinaryOp( input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, input, ones );
+					//HopRewriteUtils.setOutputParameters(repmat, input.get_dim1(), ones.get_dim2(), input.get_rows_in_block(), input.get_cols_in_block(), -1);
+					//hnew = new BinaryOp(input.get_name(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, repmat, right);
+					//HopRewriteUtils.setOutputParameters(hnew, right.get_dim1(), right.get_dim2(), right.get_rows_in_block(), right.get_cols_in_block(), -1);
 				
 					LOG.debug("Applied simplifyMatrixMultDiag2");
 				}
-				/*else
-				{
-					System.out.println("DEBUG - CANNOT APPLY DIAG MM Rewrite");
-					System.out.println("left ("+left.getHopID()+") = "+left);
-					System.out.println("nrow(left)="+left.get_dim1());
-					System.out.println("ncol(left)="+left.get_dim2());
-					System.out.println("right ("+right.getHopID()+") = "+right);
-					System.out.println("nrow(right)="+right.get_dim1());
-					System.out.println("ncol(right)="+right.get_dim2());
-				}*/
 			}
 			
 			//notes: similar rewrites would be possible for the right side as well, just transposed into the right alignment

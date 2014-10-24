@@ -264,7 +264,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			runRScript(true);
 			
 			//CHECK compiled MR jobs
-			int expectNumCompiled = 18; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
+			int expectNumCompiled = 21; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 			//CHECK executed MR jobs

@@ -129,7 +129,7 @@ public class BinaryExpression extends Expression
 
 		output.setValueType(resultVT);
 
-		checkAndSetDimensions(output);
+		checkAndSetDimensions(output, conditional);
 		if (this.getOpCode() == Expression.BinaryOp.MATMULT) {
 			if ((this.getLeft().getOutput().getDataType() != DataType.MATRIX) || (this.getRight().getOutput().getDataType() != DataType.MATRIX)) {
 		// remove exception for now
@@ -152,7 +152,7 @@ public class BinaryExpression extends Expression
 		this.setOutput(output);
 	}
 
-	private void checkAndSetDimensions(DataIdentifier output)
+	private void checkAndSetDimensions(DataIdentifier output, boolean conditional)
 			throws LanguageException {
 		Identifier left = this.getLeft().getOutput();
 		Identifier right = this.getRight().getOutput();
@@ -168,22 +168,23 @@ public class BinaryExpression extends Expression
 			pivot = right;
 		}
 
-		if ((pivot != null) && (aux != null)) {
-			if (isSameDimensionBinaryOp(this.getOpCode())) {
-		//		if ((pivot.getDim1() != aux.getDim1())
-		//				|| (pivot.getDim2() != aux.getDim2())) {
-		//			throw new LanguageException(
-		//					"Mismatch in dimensions for operation "
-		//							+ this.toString(),
-		//					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-		//		}
+		if ((pivot != null) && (aux != null)) 
+		{
+			//check dimensions binary operations (if dims known)
+			if (isSameDimensionBinaryOp(this.getOpCode()) && pivot.dimsKnown() && aux.dimsKnown() )
+			{
+				if(   pivot.getDim1() != aux.getDim1()  //number of rows must always be equivalent
+				   || (pivot.getDim2() != aux.getDim2() & aux.getDim2()>1)) //number of cols must be equivalent if not matrix-vector
+				{
+					raiseValidateError("Mismatch in dimensions for operation "+ this.toString(), conditional, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				} 
 			}
 		}
 
+		//set dimension information
 		if (pivot != null) {
 			output.setDimensions(pivot.getDim1(), pivot.getDim2());
 		}
-		return;
 	}
 	
 	public String toString() {
@@ -211,6 +212,7 @@ public class BinaryExpression extends Expression
 
 	public static boolean isSameDimensionBinaryOp(BinaryOp op) {
 		return (op == BinaryOp.PLUS) || (op == BinaryOp.MINUS)
-				|| (op == BinaryOp.MULT) || (op == BinaryOp.DIV);
+				|| (op == BinaryOp.MULT) || (op == BinaryOp.DIV)
+				|| (op == BinaryOp.MODULUS) || (op == BinaryOp.INTDIV);
 	}
 }

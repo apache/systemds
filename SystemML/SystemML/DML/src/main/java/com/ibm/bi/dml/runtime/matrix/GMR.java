@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -313,14 +315,18 @@ public class GMR
 		{
 			//get all indexes of distributed cache inputs
 			ArrayList<Byte> indexList = new ArrayList<Byte>();
-			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
-			for( String tmp : inst ){
-				if( tmp.contains(MapMultChain.OPCODE) )
-					MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
-				else if( tmp.contains(MapMult.OPCODE) )
-					AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
-				else if( tmp.contains(AppendM.OPCODE) )
-					AppendMInstruction.addDistCacheIndex(tmp, indexList);								
+			if(instructionsInMapper!=null && !instructionsInMapper.trim().isEmpty()) {
+				String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
+				for( String tmp : inst ){
+					if( tmp.contains(MapMultChain.OPCODE) )
+						MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
+					else if( tmp.contains(MapMult.OPCODE) )
+						AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
+					else if( tmp.contains(AppendM.OPCODE) )
+						AppendMInstruction.addDistCacheIndex(tmp, indexList);		
+					else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
+						BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
+				}
 			}
 			
 			//construct index and path strings
@@ -372,7 +378,7 @@ public class GMR
 			boolean distCacheOnly = true;
 			boolean use = false;
 			for( String linst : inst ){ //for all instruction categories
-				if(linst!=null){
+				if(linst!=null && !linst.trim().isEmpty()){
 					String[] alinst = linst.split(Lop.INSTRUCTION_DELIMITOR);
 					for( String tmp : alinst ) //for each individual instruction
 					{
@@ -382,7 +388,9 @@ public class GMR
 						else if( tmp.contains(MapMult.OPCODE) )
 							lcache = AggregateBinaryInstruction.isDistCacheOnlyIndex(tmp, index);
 						else if( tmp.contains(AppendM.OPCODE) )
-							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);								
+							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);	
+						else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
+							lcache = BinaryMInstruction.isDistCacheOnlyIndex(tmp, index);	
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);
 					}

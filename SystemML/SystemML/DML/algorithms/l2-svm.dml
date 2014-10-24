@@ -22,11 +22,11 @@
 # or the result of recoding
 #
 
-$fmt="text"
-$icpt=0
-$tol=0.001
-$reg=1.0
-$maxiter=100
+cmdLine_fmt = ifdef($fmt, "text")
+cmdLine_icpt = ifdef($icpt, 0)
+cmdLine_tol = ifdef($tol, 0.001)
+cmdLine_reg = ifdef($reg, 1.0)
+cmdLint_maxiter = ifdef($maxiter, 100)
 
 X = read($X)
 Y = read($Y)
@@ -44,10 +44,10 @@ if(num_min + num_max != nrow(Y)){
 	continue = 1
 }
 
-intercept = $icpt
-epsilon = $tol
-lambda = $reg
-maxiterations = $maxiter
+intercept = cmdLine_icpt
+epsilon = cmdLine_tol
+lambda = cmdLine_reg
+maxiterations = cmdLine_maxiter
 
 num_samples = nrow(X)
 dimensions = ncol(X)
@@ -115,6 +115,6 @@ while(continue == 1 & iter < maxiterations)  {
     iter = iter + 1
 }
 
-write(w, $model, format=$fmt)
+write(w, $model, format=cmdLine_fmt)
 write(debug_str, $Log)
 

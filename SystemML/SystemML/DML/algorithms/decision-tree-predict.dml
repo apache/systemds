@@ -16,11 +16,11 @@
 # Example Usage:
 # hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=data Y=labels model=model predictions=predictions accuracy=accuracy confusion=confusion fmt="text"
 
-$Y = " "
-$confusion = " "
-$accuracy = " "
-$predictions = " "
-$fmt = "text"
+cmdLine_Y = ifdef($Y, " ")
+cmdLine_confusion = ifdef($confusion, " ")
+cmdLine_accuracy = ifdef($accuracy, " ")
+cmdLine_predictions = ifdef($predictions, " ")
+cmdLine_fmt = ifdef($fmt, "text")
 
 X = read($X)
 model = read($model)
@@ -39,24 +39,24 @@ parfor(i4 in 1:nrow(X)){
 		pred[i4,1] = model[2,curr_node]
 }
 
-if($predictions != " ")
-	write(pred, $predictions, format=$fmt)
+if(cmdLine_predictions != " ")
+	write(pred, cmdLine_predictions, format=cmdLine_fmt)
 
-if($Y != " "){
-	y = read($Y)
+if(cmdLine_Y != " "){
+	y = read(cmdLine_Y)
 
 	num_correct = sum(ppred(pred, y, "=="))
 	acc = 100*num_correct/nrow(X)
 
 	acc_str = "Accuracy (%): " + acc
 	print(acc_str)
-	if($accuracy != " ")
-		write(acc_str, $accuracy)
+	if(cmdLine_accuracy != " ")
+		write(acc_str, cmdLine_accuracy)
 	
 	num_classes = max(y)
 	
-	if($confusion != " "){
+	if(cmdLine_confusion != " "){
 		confusion_mat = table(pred, y, num_classes, num_classes)
-		write(confusion_mat, $confusion, format="csv")
+		write(confusion_mat, cmdLine_confusion, format="csv")
 	}
 }

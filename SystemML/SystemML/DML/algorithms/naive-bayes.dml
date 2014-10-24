@@ -14,13 +14,13 @@
 #
 
 # defaults
-$laplace = 1
-$fmt = "text"
+cmdLine_laplace = ifdef($laplace, 1)
+cmdLine_fmt = ifdef($fmt, "text")
 
 # reading input args
 D = read($X)
 C = read($Y)
-laplace_correction = $laplace
+laplace_correction = cmdLine_laplace
 
 numClasses = max(C)
 numRows = nrow(D)
@@ -62,5 +62,5 @@ print(acc_str)
 write(acc_str, $accuracy)
 
 # write out the model
-write(class_prior, $prior, format=$fmt);
-write(class_conditionals, $conditionals, format=$fmt);
+write(class_prior, $prior, format=cmdLine_fmt);
+write(class_conditionals, $conditionals, format=cmdLine_fmt);

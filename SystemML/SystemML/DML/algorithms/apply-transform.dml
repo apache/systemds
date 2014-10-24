@@ -7,16 +7,16 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-$fmt = "csv"
-$missing_value_maps = " "
-$bin_defns = " "
-$dummy_code_maps = " "
-$normalization_maps = " "
+cmdLine_fmt = ifdef($fmt, "csv")
+cmdLine_missing_value_maps = ifdef($missing_value_maps, " ")
+cmdLine_bin_defns = ifdef($bin_defns, " ")
+cmdLine_dummy_code_maps = ifdef($dummy_code_maps, " ")
+cmdLine_normalization_maps = ifdef($normalization_maps, " ")
 
 original_X = read($X)
 
-if($missing_value_maps != " "){
-	missing_val_maps = read($missing_value_maps)
+if(cmdLine_missing_value_maps != " "){
+	missing_val_maps = read(cmdLine_missing_value_maps)
 
 	last_data_col = ncol(original_X)-nrow(missing_val_maps)
 	X = original_X[,1:last_data_col]
@@ -37,7 +37,7 @@ if($missing_value_maps != " "){
 #		 -1 indicates mean subtraction  
 attrinfo = matrix(0, rows=ncol(X), cols=10)
 
-if($missing_value_maps != " "){
+if(cmdLine_missing_value_maps != " "){
 	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
 	
 	parfor(i in 1:nrow(missing_val_maps), check=0){
@@ -47,8 +47,8 @@ if($missing_value_maps != " "){
 	}	
 }
  	
-if($bin_defns != " "){
-	bin_defns = read($bin_defns)
+if(cmdLine_bin_defns != " "){
+	bin_defns = read(cmdLine_bin_defns)
 	parfor(i in 1:nrow(bin_defns), check=0){
 		attr_index_bin = castAsScalar(bin_defns[i,1])
 		attrinfo[attr_index_bin,3] = bin_defns[i,4]
@@ -57,8 +57,8 @@ if($bin_defns != " "){
 	}
 }
 
-if($dummy_code_maps != " "){
-	dummy_code_maps = read($dummy_code_maps)
+if(cmdLine_dummy_code_maps != " "){
+	dummy_code_maps = read(cmdLine_dummy_code_maps)
 	parfor(i in 1:nrow(dummy_code_maps), check=0){
 		attr_index_dc = castAsScalar(dummy_code_maps[i,1])
 		attrinfo[attr_index_dc,6] = dummy_code_maps[i,2]
@@ -69,8 +69,8 @@ if($dummy_code_maps != " "){
 	attrinfo[,7] = seq(1, ncol(X), 1)
 }
 
-if($normalization_maps != " "){
-	normalization_map = read($normalization_maps)
+if(cmdLine_normalization_maps != " "){
+	normalization_map = read(cmdLine_normalization_maps)
 	parfor(i in 1:nrow(normalization_map), check=0){
 		attr_index_normalization = castAsScalar(normalization_map[i,1])
 		attrinfo[attr_index_normalization,8] = 1
@@ -135,7 +135,7 @@ parfor(i in 1:ncol(X), check=0){
 	}
 }
 
-write(new_X, $transformed_X, format=$fmt)
+write(new_X, $transformed_X, format=cmdLine_fmt)
 
 s = "Warning Messages"
 for(i in 1:nrow(log)){

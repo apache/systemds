@@ -13,11 +13,11 @@
 # hadoop jar SystemML.jar -f naive-bayes-predict.dml -nvargs X=data Y=labels prior=model_file1 conditionals=model_file2 probabilities=probabilities accuracy=accuracy confusion=confusion fmt="text"
 #
 
-$Y = " "
-$accuracy = " "
-$confusion = " "
-$probabilities = " "
-$fmt="text"
+cmdLine_Y = ifdef($Y, " ")
+cmdLine_accuracy = ifdef($accuracy, " ")
+cmdLine_confusion = ifdef($confusion, " ")
+cmdLine_probabilities = ifdef($probabilities, " ")
+cmdLine_fmt = ifdef($fmt, "text")
 
 D = read($X)
 prior = read($prior)
@@ -31,31 +31,31 @@ model = append(conditionals, prior)
 
 log_probs = D_w_ones %*% t(log(model))
 
-if($probabilities != " "){
+if(cmdLine_probabilities != " "){
 	mx = rowMaxs(log_probs)
 	ones = matrix(1, rows=1, cols=nrow(prior))
 	probs = log_probs - mx %*% ones
 	probs = exp(probs)/(rowSums(exp(probs)) %*% ones)
-	write(probs, $probabilities, format=$fmt)
+	write(probs, cmdLine_probabilities, format=cmdLine_fmt)
 }
 
-if($Y != " "){
-	C = read($Y)
+if(cmdLine_Y != " "){
+	C = read(cmdLine_Y)
 	pred = rowIndexMax(log_probs)
 	acc = sum(ppred(pred, C, "==")) / numRows * 100
 
 	acc_str = "Accuracy (%): " + acc
 	print(acc_str)
-	if($accuracy != " ")
-		write(acc_str, $accuracy)
+	if(cmdLine_accuracy != " ")
+		write(acc_str, cmdLine_accuracy)
 
 	num_classes = nrow(prior)
 	num_classes_ground_truth = max(C)
 	if(num_classes < num_classes_ground_truth)
 		num_classes = num_classes_ground_truth
 		
-	if($confusion != " "){
+	if(cmdLine_confusion != " "){
 		confusion_mat = table(pred, C, num_classes, num_classes)
-		write(confusion_mat, $confusion, format="csv")
+		write(confusion_mat, cmdLine_confusion, format="csv")
 	}
 }

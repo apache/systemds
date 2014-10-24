@@ -24,7 +24,7 @@
 # fmt: Preferred format of the model file (default is ijv/"text")
 #
 
-$fmt="text"
+cmdLine_fmt = ifdef($fmt, "text")
 
 order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
 			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
@@ -824,5 +824,5 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			print(" " + i + " " + j + " -> " + castAsScalar(model[i,j]))
 }
 
-write(model, $model, format=$fmt)
+write(model, $model, format=cmdLine_fmt)
 write(debug_str, $Log)

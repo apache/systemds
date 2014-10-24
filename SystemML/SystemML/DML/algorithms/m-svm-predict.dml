@@ -17,15 +17,15 @@
 # hadoop jar SystemML.jar -f m-svm-predict.dml -nvargs X=data Y=labels icpt=intercept model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #													 
 
-$Y = " "
-$confusion = " "
-$accuracy = " "
-$scores = " "
-$fmt="text"
-$icpt=0
+cmdLine_Y = ifdef($Y, " ")
+cmdLine_confusion = ifdef($confusion, " ")
+cmdLine_accuracy = ifdef($accuracy, " ")
+cmdLine_scores = ifdef($scores, " ")
+cmdLine_fmt = ifdef($fmt, "text")
+cmdLine_icpt = ifdef($icpt, 0)
 
 X = read($X);
-intercept = $icpt
+intercept = cmdLine_icpt
 W = read($model);
 
 N = nrow(X);
@@ -39,25 +39,25 @@ if (intercept == 1)
 ones = matrix(1, rows=N, cols=1)
 scores = X %*% W[1:m,] + ones %*% b;
 	
-if($scores != " ")
-	write(scores, $scores, format=$fmt);
+if(cmdLine_scores != " ")
+	write(scores, cmdLine_scores, format=cmdLine_fmt);
 
-if($Y != " "){
-	y = read($Y);
+if(cmdLine_Y != " "){
+	y = read(cmdLine_Y);
 	pred = rowIndexMax(scores);
 	correct_percentage = sum(ppred(pred - y, 0, "==")) / N * 100;
 	
 	acc_str = "Accuracy (%): " + correct_percentage
 	print(acc_str)
-	if($accuracy != " ")
-		write(acc_str, $accuracy)
+	if(cmdLine_accuracy != " ")
+		write(acc_str, cmdLine_accuracy)
 
 	num_classes_ground_truth = max(y)
 	if(num_classes < num_classes_ground_truth)
 		num_classes = num_classes_ground_truth
 
-	if($confusion != " "){
+	if(cmdLine_confusion != " "){
 		confusion_mat = table(pred, y, num_classes, num_classes)
-		write(confusion_mat, $confusion, format="csv")
+		write(confusion_mat, cmdLine_confusion, format="csv")
 	}
 }

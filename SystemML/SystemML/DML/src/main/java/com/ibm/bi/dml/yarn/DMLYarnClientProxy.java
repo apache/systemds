@@ -8,14 +8,18 @@
 package com.ibm.bi.dml.yarn;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
 import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
@@ -56,7 +60,7 @@ public class DMLYarnClientProxy
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	public static boolean launchDMLYarnAppmaster(String dmlScriptStr, DMLConfig conf, String[] allArgs) 
+	public static boolean launchDMLYarnAppmaster(String dmlScriptStr, DMLConfig conf, String[] allArgs, Program rtprog) 
 		throws IOException, DMLRuntimeException
 	{
 		boolean ret = false;
@@ -66,9 +70,10 @@ public class DMLYarnClientProxy
 			//optimize resources (and update configuration)
 			if( RESOURCE_OPTIMIZER ){
 				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
-				//TODO compile prog 
-				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( null, cc, 
-						                  GridEnumType.HYBRID_MEM_EQUI_GRID, GridEnumType.EQUI_GRID );
+				ArrayList<ProgramBlock> pb = getRuntimeProgramBlocks(rtprog);
+				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( pb, cc, 
+						              //    GridEnumType.EQUI_GRID, GridEnumType.EQUI_GRID );
+						              GridEnumType.HYBRID2_MEM_EXP_GRID, GridEnumType.EQUI_GRID );
 				conf.updateYarnMemorySettings(rc.getCPResource(), rc.getMaxMRResource());
 			}
 				
@@ -83,6 +88,23 @@ public class DMLYarnClientProxy
 					 "Resume with default client processing.");
 			ret = false;
 		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param args
+	 * @return
+	 * @throws DMLException
+	 */
+	private static ArrayList<ProgramBlock> getRuntimeProgramBlocks(Program prog) 
+		throws DMLRuntimeException
+	{			
+		//construct single list of all program blocks including functions
+		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
+		ret.addAll(prog.getProgramBlocks());
+		ret.addAll(prog.getFunctionProgramBlocks().values());
 		
 		return ret;
 	}

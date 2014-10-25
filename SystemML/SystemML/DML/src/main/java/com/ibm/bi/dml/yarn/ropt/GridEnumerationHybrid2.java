@@ -8,47 +8,47 @@
 package com.ibm.bi.dml.yarn.ropt;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 
-public class GridEnumerationEqui extends GridEnumeration
+/**
+ * Composite overlay of hybrid and exp grid.
+ * 
+ */
+public class GridEnumerationHybrid2 extends GridEnumeration
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final int DEFAULT_NSTEPS = 20;
-
-	private int _nsteps = -1;
-	
-	public GridEnumerationEqui( ArrayList<ProgramBlock> prog, long min, long max ) 
+	public GridEnumerationHybrid2( ArrayList<ProgramBlock> prog, long min, long max ) 
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
-		
-		_nsteps = DEFAULT_NSTEPS;
-	}
-	
-	/**
-	 * 
-	 * @param steps
-	 */
-	public void setNumSteps( int steps )
-	{
-		_nsteps = steps;
 	}
 	
 	@Override
 	public ArrayList<Long> enumerateGridPoints() 
+		throws DMLRuntimeException, HopsException
 	{
+		GridEnumeration ge1 = new GridEnumerationHybrid(_prog, _min, _max);
+		GridEnumeration ge2 = new GridEnumerationExp(_prog, _min, _max);
+		
+		//ensure distinct points
+		HashSet<Long> hs = new HashSet<Long>();
+		hs.addAll( ge1.enumerateGridPoints() );
+		hs.addAll( ge2.enumerateGridPoints() );
+		
+		//create sorted output list
 		ArrayList<Long> ret = new ArrayList<Long>();
-		long gap = (_max - _min) / (_nsteps-1);
-		long v = _min;
-		for (int i = 0; i < _nsteps; i++) {
-			ret.add(v);
-			v += gap;
-		}
+		for( Long val : hs )
+			ret.add(val);
+		Collections.sort(ret); //asc
+		
 		return ret;
 	}
 }

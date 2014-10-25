@@ -38,6 +38,7 @@ public class ResourceConfig
 		_cpres = init;
 		
 		//init mr memory
+		_mrres = new ArrayList<Double>();
 		addProgramBlocks(prog, init);
 	}
 	

@@ -265,7 +265,7 @@ public class OptimizerUtils
 	/**
 	 * 
 	 */
-	private static void setDefaultSize() 
+	public static void setDefaultSize() 
 	{
 		//we need to set default_size larger than any execution context
 		//memory budget, however, it should not produce overflows on sum

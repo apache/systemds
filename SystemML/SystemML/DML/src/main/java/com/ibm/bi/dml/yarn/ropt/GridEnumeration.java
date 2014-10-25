@@ -20,10 +20,10 @@ public abstract class GridEnumeration
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected ArrayList<ProgramBlock> _prog = null;
-	protected double  _min = -1;
-	protected double  _max = -1;
+	protected long  _min = -1;
+	protected long  _max = -1;
 
-	public GridEnumeration( ArrayList<ProgramBlock> prog, double min, double max ) 
+	public GridEnumeration( ArrayList<ProgramBlock> prog, long min, long max ) 
 		throws DMLRuntimeException
 	{
 		if( min > max )
@@ -40,6 +40,6 @@ public abstract class GridEnumeration
 	 * @throws HopsException 
 	 * @throws DMLException
 	 */
-	public abstract ArrayList<Double> enumerateGridPoints() 
+	public abstract ArrayList<Long> enumerateGridPoints() 
 		throws DMLRuntimeException, HopsException; 
 }

@@ -20,6 +20,7 @@ public class YarnOptimizerUtils
 		EQUI_GRID,
 		EXP_GRID,
 		HYBRID_MEM_EQUI_GRID,
+		HYBRID2_MEM_EXP_GRID,
 	}
 	
 	public enum CompilationMode { 
@@ -100,8 +101,36 @@ public class YarnOptimizerUtils
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param mb
+	 * @return
+	 */
 	public static long toB( long mb )
 	{
 		return 1024 * 1024 * mb; 
+	}
+	
+	/**
+	 * 
+	 * @param b
+	 * @return
+	 */
+	public static long toMB( long b )
+	{
+		return b / (1024 * 1024); 
+	}
+	
+	/**
+	 * 
+	 * @param minAlloc
+	 * @param maxAlloc
+	 * @param numCores
+	 * @return
+	 */
+	public static long computeMinContraint( long minAlloc, long maxAlloc, long numCores )
+	{
+		long minL = (long)minAlloc; 
+		return ((long)(Math.max(minAlloc, maxAlloc/numCores )/minL)*minAlloc); 	
 	}
 }

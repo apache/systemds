@@ -26,17 +26,19 @@ import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.yarn.DMLYarnClient;
 import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
 /**
+ * TODO predicate compile
  * TODO parallel version with exposed numThreads parameter
- * TODO change all memory units to long byte
  * 
  */
 public class ResourceOptimizer 
@@ -46,6 +48,11 @@ public class ResourceOptimizer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(ResourceOptimizer.class);
+	private static final boolean PRUNING = true;
+	
+	private static long _cntCompilePB = 0;
+	private static long _cntCostPB = 0;
+	
 	
 	/**
 	 * 
@@ -56,27 +63,34 @@ public class ResourceOptimizer
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static ResourceConfig optimizeResourceConfig( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType cptype, GridEnumType mrtype ) 
+	public synchronized static ResourceConfig optimizeResourceConfig( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType cptype, GridEnumType mrtype ) 
 		throws DMLRuntimeException
 	{
 		ResourceConfig ROpt = null;
 		
 		try
 		{
+			//init statistics and counters
+			Timing time = new Timing(true);
+			initStatistics();
+			
 			//enumerate grid points for given types (refers to jvm max heap)
-			ArrayList<Double> SRc = enumerateGridPoints(prog, cc, cptype);
-			ArrayList<Double> SRm = enumerateGridPoints(prog, cc, mrtype);
-			double min = YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR;
+			ArrayList<Long> SRc = enumerateGridPoints(prog, cc, cptype);
+			ArrayList<Long> SRm = enumerateGridPoints(prog, cc, mrtype);
+			long min = (long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR);
+			long max = (long)(YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR);
+			min = YarnOptimizerUtils.computeMinContraint(min, max, cc.getAvgNumCores());
 			
 			//init resource config and global costs
 			ROpt = new ResourceConfig(prog, min);
 			double costOpt = Double.MAX_VALUE;
 			
-			for( Double rc : SRc ) //enumerate CP memory rc
+			for( Long rc : SRc ) //enumerate CP memory rc
 			{
 				//baseline compile and pruning
 				ArrayList<ProgramBlock> B = compileProgram(prog, null, rc, min); //unrolled Bp
 				ArrayList<ProgramBlock> Bp = pruneProgramBlocks( B );
+				LOG.debug("Enum (rc="+rc+"): |B|="+B.size()+", |Bp|="+Bp.size());
 				
 				//init local memo table [resource, cost]
 				double[][] memo = initLocalMemoTable( Bp, min );
@@ -85,37 +99,49 @@ public class ResourceOptimizer
 				{
 					ProgramBlock pb = Bp.get(i);
 					
-					for( Double rm : SRm ) //for each MR memory 
+					for( Long rm : SRm ) //for each MR memory 
 					{
 						//recompile program block 
 						recompileProgramBlock(pb, rc, rm);
 						
 						//local costing and memo table maintenance (cost entire program to account for 
 						//in-memory status of variables and loops)
-						double lcost = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), new ExecutionContext());
+						double lcost = getProgramCosts( pb.getProgram() );
+						//System.out.println("local compare "+lcost+" "+memo[i][1]);
 						if( lcost < memo[i][1] ) { //accept new local opt
 							memo[i][0] = rm;
 							memo[i][1] = lcost;
+							LOG.debug("Enum (rc="+rc+"): found new local opt w/ cost="+lcost);			
  						}
+						//LOG.debug("Enum (rc="+rc+", rm="+rm+"): lcost="+lcost+", mincost="+memo[i][1]);						
 					}
 				}			
 				
 				//global costing 
 				double[][] gmemo = initGlobalMemoTable(B, Bp, memo, min);
 				recompileProgramBlocks(B, rc, gmemo);
-				double gcost = CostEstimationWrapper.getTimeEstimate(B.get(0).getProgram(), new ExecutionContext());
-				if( gcost <= costOpt ){ //accept new global opt
+				double gcost = getProgramCosts(B.get(0).getProgram());
+				if( gcost < costOpt ){ //accept new global opt
 					ROpt.setCPResource(rc.longValue());
 					ROpt.setMRResources(B, gmemo);
 					costOpt = gcost;
+					LOG.debug("Enum (rc="+rc+"): found new opt w/ cost="+gcost);
 				}
 			}	
+
+			//print optimization summary
+			LOG.debug("Optimization summary:");
+			LOG.debug("-- optimal plan (rc, rm): "+YarnOptimizerUtils.toMB(ROpt.getCPResource())+"MB, "+YarnOptimizerUtils.toMB(ROpt.getMaxMRResource())+"MB");
+			LOG.debug("-- costs of optimal plan: "+costOpt);
+			LOG.debug("-- # of block compiles:   "+_cntCompilePB);
+			LOG.debug("-- # of block costings:   "+_cntCostPB);
+			LOG.debug("-- optimization time:     "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
 		}
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException(ex);
 		}
-		
+	
 		return ROpt;
 	}
 	
@@ -129,12 +155,13 @@ public class ResourceOptimizer
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	private static ArrayList<Double> enumerateGridPoints( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType type ) 
+	private static ArrayList<Long> enumerateGridPoints( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType type ) 
 		throws DMLRuntimeException, HopsException
 	{
 		//compute effective memory
-		double min = YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR;
-		double max = YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR;
+		long max = (long)(YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR);
+		long min = (long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR);
+		min = YarnOptimizerUtils.computeMinContraint(min, max, cc.getAvgNumCores()); //restrict to max degree of parallelism
 		
 		//create enumerator
 		GridEnumeration ge = null;
@@ -145,10 +172,15 @@ public class ResourceOptimizer
 				ge = new GridEnumerationExp(prog, min, max); break;
 			case HYBRID_MEM_EQUI_GRID:
 				ge = new GridEnumerationHybrid(prog, min, max); break;
+			case HYBRID2_MEM_EXP_GRID:
+				ge = new GridEnumerationHybrid2(prog, min, max); break;
 		}
 		
 		//generate points 
-		return ge.enumerateGridPoints();
+		ArrayList<Long> ret = ge.enumerateGridPoints();
+		LOG.debug("Gen: min="+YarnOptimizerUtils.toMB(min)+", max="+YarnOptimizerUtils.toMB(max)+", npoints="+ret.size());
+		
+		return ret;
 	}
 	
 	/**
@@ -172,6 +204,7 @@ public class ResourceOptimizer
 			InfrastructureAnalyzer.setLocalMaxMemory( (long)cp );
 			InfrastructureAnalyzer.setRemoteMaxMemoryMap( (long)mr );
 			InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );	
+			OptimizerUtils.setDefaultSize(); //dependent on cp, mr
 		}
 		
 		for( ProgramBlock pb : prog )
@@ -225,6 +258,8 @@ public class ResourceOptimizer
 					                                   new LocalVariableMap(), false, 0);
 			pb.setInstructions( inst );
 			B.add(pb);
+			
+			_cntCompilePB ++;
 		}
 		
 		return B;
@@ -268,14 +303,33 @@ public class ResourceOptimizer
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		//init compiler memory budget
+		InfrastructureAnalyzer.setLocalMaxMemory( (long) cp );
 		InfrastructureAnalyzer.setRemoteMaxMemoryMap( (long)mr );
 		InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );
+		OptimizerUtils.setDefaultSize(); //dependent on cp, mr
 		
 		//recompile instructions
 		StatementBlock sb = pb.getStatementBlock();
 		ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.get_hops(), 
 				                                   new LocalVariableMap(), false, 0);
 		pb.setInstructions( inst );
+		
+		_cntCompilePB ++;
+	}
+	
+	/**
+	 * 
+	 * @param prog
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 */
+	private static double getProgramCosts( Program prog ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		double val = CostEstimationWrapper.getTimeEstimate(prog, new ExecutionContext());
+		_cntCostPB ++;
+		
+		return val;
 	}
 	
 	/**
@@ -285,6 +339,9 @@ public class ResourceOptimizer
 	 */
 	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B )
 	{
+		if( !PRUNING )
+			return B;
+		
 		ArrayList<ProgramBlock> Bp = new ArrayList<ProgramBlock>();
 		for( ProgramBlock pb : B )
 			if( OptTreeConverter.containsMRJobInstruction(pb.getInstructions(), false) ){
@@ -335,23 +392,36 @@ public class ResourceOptimizer
 		int lenp = Bp.size(); //lenp<=len
 		double[][] memo = new double[len][2];
 		
-		//init with min resource and current costs
+		//init with min resources
+		for( int i=0; i<len; i++ ) {
+			memo[i][0] = min;
+			memo[i][1] = -1;
+		}
+		
+		//overwrite existing values
 		int j = 0;
 		for( int i=0; i<len && j<lenp; i++ )
 		{
 			ProgramBlock pb = B.get(i);
-			if( pb != Bp.get(j) ){
-				memo[i][0] = min;
-				memo[i][1] = -1;
-				j++; continue;
-			}
+			if( pb != Bp.get(j) )
+				continue; 
 			
+			//map local memo entry
 			memo[i][0] = lmemo[j][0];
 			memo[i][1] = -1;
+			j++;
 		}
 		
 		return memo;
+	}
 	
+	/**
+	 * 
+	 */
+	public static void initStatistics()
+	{
+		_cntCompilePB = 0;
+		_cntCostPB = 0;
 	}
 	
 	

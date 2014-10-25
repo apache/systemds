@@ -543,11 +543,9 @@ public class DMLScript
 		ConfigurationManager.setConfig(conf);
 		LOG.debug("\nDML config: \n" + conf.getConfigInfo());
 		
-		//Step 2: launch SystemML appmaster (if requested and not already in launched AM)
+		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs) )
-				return; //if am launch unsuccessful, fall back to normal compile/execute
-			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); //in AM context
+			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); 
 		}
 		
 		DMLProgram prog = null;
@@ -594,7 +592,7 @@ public class DMLScript
 			case HADOOP:
 			case SINGLE_NODE:
 			case HYBRID:
-				executeHadoop(dmlt, prog, conf);
+				executeHadoop(dmlt, prog, conf, dmlScriptStr, allArgs);
 				break;
 			case NZ:
 				if( DISABLE_NZ_RUNTIME )
@@ -627,7 +625,7 @@ public class DMLScript
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{		
 		//produce debugging information (parse, compile and generate runtime program for a given DML script)
-		DMLDebuggerProgramInfo p = compile(dmlScriptStr, fnameOptConfig, argVals);
+		DMLDebuggerProgramInfo p = compileForDebug(dmlScriptStr, fnameOptConfig, argVals);
 		
 		try {
 			//set execution environment
@@ -665,7 +663,7 @@ public class DMLScript
 	 */
 	//TODO: MB: remove this redundant compile and execute (or at least remove from DMLScript)
 	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
-	public static DMLDebuggerProgramInfo compile(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
+	public static DMLDebuggerProgramInfo compileForDebug(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
 			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
 	{					
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
@@ -702,7 +700,7 @@ public class DMLScript
 		
 		return dbprog;
 	}
-
+	
 	/**
 	 * executeHadoop: Handles execution on the Hadoop Map-reduce runtime
 	 * 
@@ -719,7 +717,7 @@ public class DMLScript
 	 * @throws DMLRuntimeException 
 	 * @throws DMLException 
 	 */
-	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig config) 
+	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig conf, String dmlScriptStr, String[] allArgs) 
 		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
@@ -744,7 +742,7 @@ public class DMLScript
 		}
 		
 		////////////////////// generate runtime program ///////////////////////////////
-		Program rtprog = prog.getRuntimeProgram(config);
+		Program rtprog = prog.getRuntimeProgram(conf);
 
 		if (LOG.isDebugEnabled()) {
 			LOG.info("********************** Instructions *******************");
@@ -760,6 +758,12 @@ public class DMLScript
 			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
 		}
 		
+		//launch SystemML appmaster (if requested and not already in launched AM)
+		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
+				return; //if am launch unsuccessful, fall back to normal execute
+		}
+		
 		//count number compiled MR jobs	
 		int jobCount = Explain.countCompiledMRJobs(rtprog);
 		Statistics.setNoOfCompiledMRJobs( jobCount );				
@@ -773,12 +777,13 @@ public class DMLScript
 				
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
 		//System.out.println("Estimated costs: "+costs);
-				
+		
+		
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
 		try 
 		{  
-			initHadoopExecution( config );
+			initHadoopExecution( conf );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute( new ExecutionContext(rtprog) );  
@@ -794,7 +799,7 @@ public class DMLScript
 			ExternalFunctionProgramBlock.shutDownNimbleQueue();
 			
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( config );		
+			cleanupHadoopExecution( conf );		
 		}
 	} 
 

@@ -15,11 +15,15 @@ public class YarnClusterConfig
 		
 	private long _minAllocMB = -1;
 	private long _maxAllocMB = -1;
+	private long _numNodes = -1;
+	private long _numCores = -1;
 	
 	public YarnClusterConfig()
 	{
 		_minAllocMB = -1;
 		_maxAllocMB = -1;
+		_numNodes = -1;
+		_numCores = -1;
 	}
 	
 	public long getMinAllocationMB()
@@ -40,5 +44,30 @@ public class YarnClusterConfig
 	public void setMaxAllocationMB(long max)
 	{
 		_maxAllocMB = max;
+	}
+	
+	public long getNumCores()
+	{
+		return _numCores;
+	}
+	
+	public void setNumCores(long ncores)
+	{
+		_numCores = ncores;
+	}
+	
+	public long getNumNodes()
+	{
+		return _numNodes;
+	}
+	
+	public void setNumNodes(long nnodes)
+	{
+		_numNodes = nnodes;
+	}
+	
+	public long getAvgNumCores()
+	{
+		return (long)Math.round((double)_numCores / _numNodes);
 	}
 }

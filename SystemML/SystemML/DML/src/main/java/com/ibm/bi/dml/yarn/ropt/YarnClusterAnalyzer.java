@@ -65,6 +65,7 @@ public class YarnClusterAnalyzer
 	public static long mrAMPhy = -1;						// The default physical memory size of MR AM
 	
 	public static long clusterTotalMem = -1;
+	public static int clusterTotalNodes = -1;
 	public static int clusterTotalCores = -1;
 	public static long minimalPhyAllocate = -1;
 	public static long maximumPhyAllocate = -1;
@@ -551,25 +552,41 @@ public class YarnClusterAnalyzer
 		analyzeYarnCluster(yarnClient, conf, verbose);
 	}
 	
-	public static long getMinAllocationMB()
+	public static long getMinAllocationBytes()
 	{
 		if( minimalPhyAllocate < 0 )
 			analyzeYarnCluster(false);
 		return minimalPhyAllocate;
 	}
 	
-	public static long getMaxAllocationMB()
+	public static long getMaxAllocationBytes()
 	{
 		if( maximumPhyAllocate < 0 )
 			analyzeYarnCluster(false);
 		return maximumPhyAllocate;
 	}
 	
+	public static long getNumCores()
+	{
+		if( clusterTotalCores < 0 )
+			analyzeYarnCluster(false);
+		return clusterTotalCores;
+	}
+	
+	public static long getNumNodes()
+	{
+		if( clusterTotalNodes < 0 )
+			analyzeYarnCluster(false);
+		return clusterTotalNodes;
+	}
+	
 	public static YarnClusterConfig getClusterConfig()
 	{
 		YarnClusterConfig cc = new YarnClusterConfig();
-		cc.setMinAllocationMB( getMinAllocationMB() );
-		cc.setMaxAllocationMB( getMaxAllocationMB() );
+		cc.setMinAllocationMB( getMinAllocationBytes()/(1024*1024) );
+		cc.setMaxAllocationMB( getMaxAllocationBytes()/(1024*1024) );
+		cc.setNumNodes( getNumNodes() );
+		cc.setNumCores( getNumCores()*CPU_HYPER_FACTOR );
 		
 		return cc;
 	}
@@ -588,6 +605,7 @@ public class YarnClusterAnalyzer
 			nodesMaxPhySorted = new ArrayList<Long> (nodesReport.size());
 			clusterTotalMem = 0;
 			clusterTotalCores = 0;
+			clusterTotalNodes = 0;
 			minimumMRContainerPhyMB = -1;
 			for (NodeReport node : nodesReport) {
 				Resource resource = node.getCapability();
@@ -606,9 +624,11 @@ public class YarnClusterAnalyzer
 				clusterTotalMem += (long)mb * 1024 * 1024;
 				nodesMaxPhySorted.add((long)mb * 1024 * 1024);
 				clusterTotalCores += cores;
+				clusterTotalNodes ++;
 				if (verbose)
 					System.out.println("\t" + node.getNodeId() + " has " + mb + " MB (" + used.getMemory() + " MB used) memory and " + 
 						resource.getVirtualCores() + " (" + used.getVirtualCores() + " used) cores");
+				
 			}
 			Collections.sort(nodesMaxPhySorted, Collections.reverseOrder());
 			
@@ -654,6 +674,8 @@ public class YarnClusterAnalyzer
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to analyze yarn cluster ", e);
 		}
+		
+		
 		
 		/*
 		 * This is for AppMaster to query available resource in the cluster during heartbeat 

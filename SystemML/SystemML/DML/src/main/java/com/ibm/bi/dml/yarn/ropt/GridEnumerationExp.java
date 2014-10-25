@@ -22,7 +22,7 @@ public class GridEnumerationExp extends GridEnumeration
 
 	private double _factor = -1;
 	
-	public GridEnumerationExp( ArrayList<ProgramBlock> prog, double min, double max ) 
+	public GridEnumerationExp( ArrayList<ProgramBlock> prog, long min, long max ) 
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
@@ -40,10 +40,10 @@ public class GridEnumerationExp extends GridEnumeration
 	}
 	
 	@Override
-	public ArrayList<Double> enumerateGridPoints() 
+	public ArrayList<Long> enumerateGridPoints() 
 	{
-		ArrayList<Double> ret = new ArrayList<Double>();
-		double v = _min;
+		ArrayList<Long> ret = new ArrayList<Long>();
+		long v = _min;
 		while( v <= _max ) {
 			ret.add( v );
 			v *= _factor;

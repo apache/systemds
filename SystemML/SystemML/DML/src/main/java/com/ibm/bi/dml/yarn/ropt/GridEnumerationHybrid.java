@@ -33,7 +33,7 @@ public class GridEnumerationHybrid extends GridEnumeration
 
 	private int _nsteps = -1;
 	
-	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, double min, double max ) 
+	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, long min, long max ) 
 		throws DMLRuntimeException
 	{
 		super(prog, min, max);
@@ -51,38 +51,43 @@ public class GridEnumerationHybrid extends GridEnumeration
 	}
 	
 	@Override
-	public ArrayList<Double> enumerateGridPoints() 
+	public ArrayList<Long> enumerateGridPoints() 
 		throws DMLRuntimeException, HopsException
 	{
-		ArrayList<Double> ret = new ArrayList<Double>();
-		int gap = (int)(_max - _min) / (_nsteps-1); //MB granularity
+		ArrayList<Long> ret = new ArrayList<Long>();
+		long gap = (long)(_max - _min) / (_nsteps-1); //MB granularity
 		
 		//enumerate bins between equi grid points
-		HashMap<Integer, Integer> map = new HashMap<Integer,Integer>();
-		double v = _min;
+		HashMap<Long, Integer> map = new HashMap<Long,Integer>();
+		long v = _min;
 		for (int i = 0; i < _nsteps; i++) {
-			map.put( (int)v/gap, 0 );
+			map.put( getKey(_min, gap, v), 0 );
 			v += gap;
 		}
 		
 		//get memory estimates
-		ArrayList<Double> mem = new ArrayList<Double>();
+		ArrayList<Long> mem = new ArrayList<Long>();
 		getMemoryEstimates( _prog, mem );
-		for( Double est : mem )
-			map.put((int)(est/gap), map.get((int)(est/gap)));
+		for( Long est : mem ){
+			Integer cnt = map.get( getKey(_min, gap, est));
+			cnt = (cnt==null) ? 0 : cnt;
+			map.put(getKey(_min, gap, est), cnt+1);
+		}
 		
 		//prepare output (for disjointness)
-		HashSet<Double> preRet = new HashSet<Double>();
-		for( Entry<Integer, Integer> e : map.entrySet() )
+		HashSet<Long> preRet = new HashSet<Long>();
+		for( Entry<Long, Integer> e : map.entrySet() ){
 			if( e.getValue() > 0 ){
-				preRet.add((double)((e.getKey()+1)*gap));
-				if( e.getKey()!=0 )
-					preRet.add((double)(e.getKey()*gap));
+				preRet.add(_min+e.getKey()*gap);
+				if( e.getKey()>0 )
+					preRet.add(_min+(e.getKey()+1)*gap);
 			}
+		}
 		
 		//create sorted output (to prevent over-provisioning)
-		for( Double val : preRet )
-			ret.add(val);
+		for( Long val : preRet )
+			if( val <= _max )//filter max
+				ret.add(val);
 		Collections.sort(ret); //asc
 		
 		return ret;
@@ -94,7 +99,7 @@ public class GridEnumerationHybrid extends GridEnumeration
 	 * @param mem
 	 * @throws HopsException
 	 */
-	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Double> mem ) 
+	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) 
 		throws HopsException
 	{
 		for( ProgramBlock pb : pbs )
@@ -107,7 +112,7 @@ public class GridEnumerationHybrid extends GridEnumeration
 	 * @param mem
 	 * @throws HopsException
 	 */
-	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Double> mem ) 
+	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) 
 		throws HopsException
 	{
 		if (pb instanceof FunctionProgramBlock)
@@ -138,8 +143,9 @@ public class GridEnumerationHybrid extends GridEnumeration
 		{
 			StatementBlock sb = pb.getStatementBlock();
 			if( sb != null && sb.get_hops() != null ){
+				Hop.resetVisitStatus(sb.get_hops());
 				for( Hop hop : sb.get_hops() )
-					getMemoryEstimates(hop, mem);	
+					getMemoryEstimates(hop, mem);
 			}
 		}
 	}
@@ -149,7 +155,7 @@ public class GridEnumerationHybrid extends GridEnumeration
 	 * @param hop
 	 * @param mem
 	 */
-	private void getMemoryEstimates( Hop hop, ArrayList<Double> mem )
+	private void getMemoryEstimates( Hop hop, ArrayList<Long> mem )
 	{
 		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
 			return;
@@ -159,9 +165,21 @@ public class GridEnumerationHybrid extends GridEnumeration
 			getMemoryEstimates(hi, mem);
 		
 		//add memory estimates
-		mem.add( hop.getMemEstimate() );
+		mem.add( (long)hop.getMemEstimate() );
 		
 		hop.set_visited(Hop.VISIT_STATUS.DONE);
+	}
+	
+	/**
+	 * 
+	 * @param min
+	 * @param gap
+	 * @param val
+	 * @return
+	 */
+	private static long getKey( long min, long gap, long val )
+	{
+		return Math.max( (val-min)/gap, 0 );
 	}
 	
 	

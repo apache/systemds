@@ -9,7 +9,8 @@ grammar Dml;
 
 @header
 {
-    package com.ibm.bi.dml.antlr4;
+	// Commenting the package name and explicitly passing it in build.xml to maintain compatibility with maven plugin
+    // package com.ibm.bi.dml.antlr4;
 }
 
 // DML Program is a list of expression

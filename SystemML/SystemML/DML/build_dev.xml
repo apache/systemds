@@ -55,7 +55,7 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${build.sharedlib}/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 	    <pathelement location="${build.sharedlib}/opencsv-1.8.jar" /> <!-- for read/write csv -->
-		<pathelement location="${build.sharedlib}/antlr-4.4-complete.jar" /> <!-- For antlr4 -->
+		<pathelement location="${build.sharedlib}/antlr-4.3-complete.jar" /> <!-- For antlr4 parser generator -->
 	</path>	
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
@@ -142,9 +142,9 @@ The source code for this program is not published or otherwise divested of its t
 		<!-- start: comment this to disable antlr4 -->
 			<echo message="Running Antlr on Dml.g4"/>
 			<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/antlr4/">
-		      <arg line="Dml.g4"/>
+				<arg line="Dml.g4 -package com.ibm.bi.dml.antlr4"/>
 				<classpath>
-					<pathelement location="${hadoop.local.path}/antlr-4.4-complete.jar" />
+					<pathelement location="${hadoop.local.path}/antlr-4.3-complete.jar" />
 				</classpath>
 		    </java>
 		<!-- end: comment this to disable antlr4 -->
@@ -197,6 +197,8 @@ The source code for this program is not published or otherwise divested of its t
 			<exclude name="com/ibm/bi/dml/test/**" />
 			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble_hadoop2.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-annotations-4.3.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-runtime-4.3.jar"/>
 			<!--zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar"/--> 
 			<!-- TZ: IHC 1.0.3 has commons-math-2.2.jar already, but Cloudera does not have it yet, so we need to include it for now. -->
 			<!-- TZ: To include any other jar, we need code scan and legal approval -->

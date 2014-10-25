@@ -41,6 +41,32 @@ import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 
+/**
+ * This is the main entry point for the Antlr4 parser.
+ * Dml.g4 is the grammar file which enforces syntactic structure of DML program. 
+ * DmlSyntaticValidator on other hand captures little bit of semantic as well as does the job of translation of Antlr AST to DMLProgram.
+ * At a high-level, DmlSyntaticValidator implements call-back methods that are called by walker.walk(validator, tree)
+ * The callback methods are of two type: enterSomeASTNode() and exitSomeASTNode()
+ * It is important to note that almost every node in AST has either ExpressionInfo or StatementInfo object associated with it.
+ * The key design decision is that while "exiting" the node (i.e. callback to exitSomeASTNode), we use information in given AST node and construct an object of type Statement or Expression and put it in StatementInfo or ExpressionInfo respectively. 
+ * This way it avoids any bugs due to lookahead and one only has to "think as an AST node", thereby making any changes to parse code much simpler :)
+ * 
+ * Note: to add additional builtin function, one only needs to modify DmlSyntaticValidator (which is java file and provides full Eclipse tooling support) not g4. 
+ * 
+ * To separate logic of semantic validation, DmlSyntaticValidatorHelper contains functions that do semantic validation. Currently, there is no semantic validation as most of it is delegated to subsequent validation phase. 
+ * 
+ * Whenever there is a parse error, it goes through DmlSyntacticErrorListener. This allows us to pipe the error messages to any future pipeline as well as control the format in an elegant manner. 
+ * There are three types of messages passed:
+ * - Syntactic errors: When passed DML script doesnot conform to syntatic structure enforced by Dml.g4
+ * - Validation errors: Errors due to translation of AST to  DMLProgram
+ * - Validation warnings: Messages to inform users that there might be potential bug in their program
+ * 
+ * As of this moment, Antlr4ParserWrapper is stateful and cannot be multithreaded. This is not big deal because each users calls SystemML in different process.
+ * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
+ * 
+ * @author npansar
+ *
+ */
 public class Antlr4ParserWrapper {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

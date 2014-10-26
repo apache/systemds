@@ -10,6 +10,10 @@ package com.ibm.bi.dml.yarn.ropt;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -23,22 +27,23 @@ public class ResourceConfig
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private double _cpres = -1;
-	private ArrayList<Double> _mrres = null;
+	private long _cpres = -1;
+	private ArrayList<Long> _mrres = null;
 	
-	public ResourceConfig( double cp, ArrayList<Double> mr )
+	public ResourceConfig( long cp, ArrayList<Long> mr )
 	{
 		_cpres = cp;
 		_mrres = mr;
 	}
 	
-	public ResourceConfig( ArrayList<ProgramBlock> prog, double init )
+	public ResourceConfig( ArrayList<ProgramBlock> prog, long init ) 
+		throws HopsException
 	{
 		//init cp memory
 		_cpres = init;
 		
 		//init mr memory
-		_mrres = new ArrayList<Double>();
+		_mrres = new ArrayList<Long>();
 		addProgramBlocks(prog, init);
 	}
 	
@@ -55,6 +60,28 @@ public class ResourceConfig
 	{
 		_cpres = res;
 	}
+
+
+	public long getMRResources( int i ) 
+		throws DMLRuntimeException
+	{
+		if( _mrres.size() <= i )
+			throw new DMLRuntimeException("Memo table out-of-bounds: "+_mrres.size()+" vs "+i);
+			
+		return _mrres.get(i); 
+	}
+
+	public double[][] getMRResourcesMemo()
+	{
+		int len = _mrres.size();
+		double[][] ret = new double[len][2];
+		for( int i=0; i< len; i++ ){
+			ret[i][0] = _mrres.get(i);
+			ret[i][1] = -1;
+		}
+		
+		return ret;
+	}
 	
 	public void setMRResources( ArrayList<ProgramBlock> B, double[][] res ) 
 		throws DMLRuntimeException
@@ -64,8 +91,9 @@ public class ResourceConfig
 		
 		int len = res.length;
 		for( int i=0; i<len; i++ )
-			_mrres.set(i, res[i][0]);
+			_mrres.set(i, (long)res[i][0]);
 	}
+
 	
 	/**
 	 * 
@@ -86,40 +114,33 @@ public class ResourceConfig
 		StringBuilder ret = new StringBuilder();
 		
 		//serialize cp
-		ret.append("cp");
-		ret.append("-");
-		ret.append(_cpres);
-		ret.append(":");
+		ret.append(YarnOptimizerUtils.toMB(_cpres));
+		ret.append(",");
 		
 		//serialize mr
 		int len = _mrres.size();
-		for( int i=0; i<len; i++ ) {
-			ret.append(i);
-			ret.append("-");
-			ret.append(_mrres.get(i).toString());
-			ret.append(":");
+		for( int i=0; i<len-1; i++ ) {
+			ret.append(YarnOptimizerUtils.toMB(_mrres.get(i)));
+			ret.append(",");
 		}
+		ret.append(YarnOptimizerUtils.toMB(_mrres.get(len-1)));
 		
 		return ret.toString();
 	}
 	
 	public static ResourceConfig deserialize( String str ) 
 	{	
-		String[] pairs = str.split(":");
+		String[] parts = str.split(",");
 		
 		//deserialize cp
-		double cp = Double.valueOf(pairs[0].substring(3));
+		long cp = YarnOptimizerUtils.toB(Long.valueOf(parts[0]));
 		
 		//deserialize mr
-		ArrayList<Double> mr = new ArrayList<Double>();
-		for (int i=1; i<pairs.length; i++) 
+		ArrayList<Long> mr = new ArrayList<Long>();
+		for (int i=1; i<parts.length; i++) 
 		{
-			if (pairs[i].length() > 0) {
-				String[] entries = pairs[i].split("_");
-				int index = Integer.parseInt(entries[0]);
-				double val = Double.parseDouble(entries[1]);
-				mr.set(index, val);
-			}
+			long val = YarnOptimizerUtils.toB(Long.parseLong(parts[i]));
+			mr.set(i, val);
 		}
 		
 		return new ResourceConfig(cp, mr);
@@ -129,8 +150,10 @@ public class ResourceConfig
 	 * 
 	 * @param pbs
 	 * @param init
+	 * @throws HopsException 
 	 */
-	private void addProgramBlocks( ArrayList<ProgramBlock> pbs, double init )
+	private void addProgramBlocks( ArrayList<ProgramBlock> pbs, long init ) 
+		throws HopsException
 	{
 		for( ProgramBlock pb : pbs )
 			addProgramBlock(pb, init);
@@ -140,8 +163,10 @@ public class ResourceConfig
 	 * 
 	 * @param pb
 	 * @param init
+	 * @throws HopsException 
 	 */
-	private void addProgramBlock( ProgramBlock pb, double init )
+	private void addProgramBlock( ProgramBlock pb, long init ) 
+		throws HopsException
 	{
 		if (pb instanceof FunctionProgramBlock)
 		{
@@ -150,21 +175,27 @@ public class ResourceConfig
 		}
 		else if (pb instanceof WhileProgramBlock)
 		{
-			//TODO while predicate 
 			WhileProgramBlock fpb = (WhileProgramBlock)pb;
+			WhileStatementBlock wsb = (WhileStatementBlock)pb.getStatementBlock();
+			if( ResourceOptimizer.INCLUDE_PREDICATES && wsb!=null && wsb.getPredicateHops()!=null )
+				_mrres.add(init);		
 			addProgramBlocks(fpb.getChildBlocks(), init);
 		}	
 		else if (pb instanceof IfProgramBlock)
 		{
-			//TODO if predicate 
 			IfProgramBlock fpb = (IfProgramBlock)pb;
+			IfStatementBlock isb = (IfStatementBlock)pb.getStatementBlock();
+			if( ResourceOptimizer.INCLUDE_PREDICATES && isb!=null && isb.getPredicateHops()!=null )
+				_mrres.add(init);
 			addProgramBlocks(fpb.getChildBlocksIfBody(), init);
 			addProgramBlocks(fpb.getChildBlocksElseBody(), init);
 		}
 		else if (pb instanceof ForProgramBlock) //incl parfor
 		{
-			//TODO while predicate 
 			ForProgramBlock fpb = (ForProgramBlock)pb;
+			ForStatementBlock fsb = (ForStatementBlock)pb.getStatementBlock();
+			if( ResourceOptimizer.INCLUDE_PREDICATES && fsb!=null )
+				_mrres.add(init);
 			addProgramBlocks(fpb.getChildBlocks(), init);
 		}
 		else

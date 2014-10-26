@@ -10,47 +10,14 @@ package com.ibm.bi.dml.yarn.ropt;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.utils.Explain.ExplainType;
 
 public class YarnOptimizerUtils 
 {
-	private static CompilationMode _compileMode = CompilationMode.O0_COMPILE_AND_EXECUTION;
-	
 	public enum GridEnumType{
 		EQUI_GRID,
 		EXP_GRID,
-		HYBRID_MEM_EQUI_GRID,
-		HYBRID2_MEM_EXP_GRID,
-	}
-	
-	public enum CompilationMode { 
-		O0_COMPILE_AND_EXECUTION,
-		O1_COMPILE_ONLY_SILENT,
-		O2_COMPILE_ONLY_AND_HOP_ESTIMATE,
-		O3_COMPILE_ONLY_AND_EXPLAIN_RUNTIME,
-	};
-	
-	public static CompilationMode getCompileMode() {
-		return _compileMode;
-	}
-	
-	public static void setCompileMode(CompilationMode mode) {
-		_compileMode = mode;
-	}
-	
-	public static boolean executeAfterCompile() {
-		return _compileMode == CompilationMode.O0_COMPILE_AND_EXECUTION;
-	}
-	
-	public static boolean silentCompile() {
-		return (_compileMode == CompilationMode.O1_COMPILE_ONLY_SILENT) ||
-				(_compileMode == CompilationMode.O0_COMPILE_AND_EXECUTION);
-	}
-	
-	public static ExplainType getCompileExplainType() {
-		if (_compileMode == CompilationMode.O3_COMPILE_ONLY_AND_EXPLAIN_RUNTIME)
-			return ExplainType.RUNTIME;
-		return ExplainType.NONE;
+		MEM_EQUI_GRID,
+		HYBRID_MEM_EXP_GRID,
 	}
 
 	/**

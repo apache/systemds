@@ -761,7 +761,9 @@ public class DMLScript
 		//launch SystemML appmaster (if requested and not already in launched AM)
 		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
 			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
-				return; //if am launch unsuccessful, fall back to normal execute
+				return; //if AM launch unsuccessful, fall back to normal execute
+			if( isActiveAM() ) //in AM context (not failed AM launch)
+				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
 		}
 		
 		//count number compiled MR jobs	

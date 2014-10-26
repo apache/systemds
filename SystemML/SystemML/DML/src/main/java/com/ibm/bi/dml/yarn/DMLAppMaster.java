@@ -72,7 +72,7 @@ public class DMLAppMaster
 		LOG.debug("Registered the SystemML application master with resource manager");
 		
 		//start status reporter to ResourceManager
-		StatusReporter reporter = new StatusReporter(rmClient, 10000);
+		DMLAppMasterStatusReporter reporter = new DMLAppMasterStatusReporter(rmClient, 10000);
 		reporter.start();
 		LOG.debug("Started status reporter (heartbeat to resource manager)");
 		

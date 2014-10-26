@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -25,6 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRU
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 
 public class IfProgramBlock extends ProgramBlock 
@@ -191,6 +193,8 @@ public class IfProgramBlock extends ProgramBlock
 					IfStatementBlock isb = (IfStatementBlock)_sb;
 					Hop predicateOp = isb.getPredicateHops();
 					boolean recompile = isb.requiresPredicateRecompilation();
+					if( recompile && DMLScript.isActiveAM() ) //set program block specific remote memory
+						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
 					result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BOOLEAN, ec);
 				}
 				else

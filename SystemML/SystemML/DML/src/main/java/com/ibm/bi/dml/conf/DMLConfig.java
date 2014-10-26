@@ -408,7 +408,7 @@ public class DMLConfig
 	 * @param amMem
 	 * @param mrMem
 	 */
-	public void updateYarnMemorySettings(long amMem, long mrMem)
+	public void updateYarnMemorySettings(String amMem, String mrMem)
 	{
 		//app master memory
 		NodeList list1 = xml_root.getElementsByTagName(YARN_APPMASTERMEM);

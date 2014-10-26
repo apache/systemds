@@ -44,10 +44,11 @@ public class GridEnumerationExp extends GridEnumeration
 	{
 		ArrayList<Long> ret = new ArrayList<Long>();
 		long v = _min;
-		while( v <= _max ) {
+		while( v < _max ) {
 			ret.add( v );
 			v *= _factor;
 		}
+		ret.add(_max);
 		
 		return ret;
 	}

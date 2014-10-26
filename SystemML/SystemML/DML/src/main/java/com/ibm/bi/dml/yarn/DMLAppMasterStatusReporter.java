@@ -10,7 +10,7 @@ package com.ibm.bi.dml.yarn;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 
-public class StatusReporter extends Thread
+public class DMLAppMasterStatusReporter extends Thread
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
@@ -23,7 +23,7 @@ public class StatusReporter extends Thread
 	private boolean _stop;	
 	
 	
-	public StatusReporter(AMRMClient<ContainerRequest> rmClient, long interval) 
+	public DMLAppMasterStatusReporter(AMRMClient<ContainerRequest> rmClient, long interval) 
 	{
 		_rmClient = rmClient;
 		_interval = interval;

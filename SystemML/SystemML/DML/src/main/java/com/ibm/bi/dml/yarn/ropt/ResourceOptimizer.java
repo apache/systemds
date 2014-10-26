@@ -13,12 +13,17 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -37,7 +42,6 @@ import com.ibm.bi.dml.yarn.DMLYarnClient;
 import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
 /**
- * TODO predicate compile
  * TODO parallel version with exposed numThreads parameter
  * 
  */
@@ -48,7 +52,11 @@ public class ResourceOptimizer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(ResourceOptimizer.class);
-	private static final boolean PRUNING = true;
+	
+	//internal configuration parameters 
+	public static final long MIN_CP_BUDGET = 512*1024*1024; //512MB
+	public static final boolean INCLUDE_PREDICATES = true;
+	public static final boolean PRUNING = true;
 	
 	private static long _cntCompilePB = 0;
 	private static long _cntCostPB = 0;
@@ -74,26 +82,28 @@ public class ResourceOptimizer
 			Timing time = new Timing(true);
 			initStatistics();
 			
-			//enumerate grid points for given types (refers to jvm max heap)
-			ArrayList<Long> SRc = enumerateGridPoints(prog, cc, cptype);
-			ArrayList<Long> SRm = enumerateGridPoints(prog, cc, mrtype);
-			long min = (long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR);
+			//get constraints (yarn-specific: force higher min to limit degree of parallelism)
 			long max = (long)(YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR);
-			min = YarnOptimizerUtils.computeMinContraint(min, max, cc.getAvgNumCores());
+			long minCP = Math.max((long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR), MIN_CP_BUDGET);
+			long minMR = YarnOptimizerUtils.computeMinContraint(minCP, max, cc.getAvgNumCores());
+			
+			//enumerate grid points for given types (refers to jvm max heap)
+			ArrayList<Long> SRc = enumerateGridPoints(prog, minCP, max, cptype);
+			ArrayList<Long> SRm = enumerateGridPoints(prog, minMR, max, mrtype);
 			
 			//init resource config and global costs
-			ROpt = new ResourceConfig(prog, min);
+			ROpt = new ResourceConfig(prog, minCP);
 			double costOpt = Double.MAX_VALUE;
 			
 			for( Long rc : SRc ) //enumerate CP memory rc
 			{
 				//baseline compile and pruning
-				ArrayList<ProgramBlock> B = compileProgram(prog, null, rc, min); //unrolled Bp
+				ArrayList<ProgramBlock> B = compileProgram(prog, null, rc, minMR); //unrolled Bp
 				ArrayList<ProgramBlock> Bp = pruneProgramBlocks( B );
 				LOG.debug("Enum (rc="+rc+"): |B|="+B.size()+", |Bp|="+Bp.size());
 				
 				//init local memo table [resource, cost]
-				double[][] memo = initLocalMemoTable( Bp, min );
+				double[][] memo = initLocalMemoTable( Bp, minMR );
 				
 				for( int i=0; i<Bp.size(); i++ ) //for all relevant blocks
 				{
@@ -107,18 +117,17 @@ public class ResourceOptimizer
 						//local costing and memo table maintenance (cost entire program to account for 
 						//in-memory status of variables and loops)
 						double lcost = getProgramCosts( pb.getProgram() );
-						//System.out.println("local compare "+lcost+" "+memo[i][1]);
 						if( lcost < memo[i][1] ) { //accept new local opt
 							memo[i][0] = rm;
 							memo[i][1] = lcost;
-							LOG.debug("Enum (rc="+rc+"): found new local opt w/ cost="+lcost);			
+							//LOG.debug("Enum (rc="+rc+"): found new local opt w/ cost="+lcost);			
  						}
 						//LOG.debug("Enum (rc="+rc+", rm="+rm+"): lcost="+lcost+", mincost="+memo[i][1]);						
 					}
 				}			
 				
 				//global costing 
-				double[][] gmemo = initGlobalMemoTable(B, Bp, memo, min);
+				double[][] gmemo = initGlobalMemoTable(B, Bp, memo, minMR);
 				recompileProgramBlocks(B, rc, gmemo);
 				double gcost = getProgramCosts(B.get(0).getProgram());
 				if( gcost < costOpt ){ //accept new global opt
@@ -130,12 +139,13 @@ public class ResourceOptimizer
 			}	
 
 			//print optimization summary
-			LOG.debug("Optimization summary:");
-			LOG.debug("-- optimal plan (rc, rm): "+YarnOptimizerUtils.toMB(ROpt.getCPResource())+"MB, "+YarnOptimizerUtils.toMB(ROpt.getMaxMRResource())+"MB");
-			LOG.debug("-- costs of optimal plan: "+costOpt);
-			LOG.debug("-- # of block compiles:   "+_cntCompilePB);
-			LOG.debug("-- # of block costings:   "+_cntCostPB);
-			LOG.debug("-- optimization time:     "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
+			LOG.info("Optimization summary:");
+			LOG.info("-- optimal plan (rc, rm): "+YarnOptimizerUtils.toMB(ROpt.getCPResource())+"MB, "+YarnOptimizerUtils.toMB(ROpt.getMaxMRResource())+"MB");
+			LOG.info("-- costs of optimal plan: "+costOpt);
+			LOG.info("-- # of block compiles:   "+_cntCompilePB);
+			LOG.info("-- # of block costings:   "+_cntCostPB);
+			LOG.info("-- optimization time:     "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
+			LOG.info("-- optimal plan details:  "+ROpt.serialize());
 		}
 		catch(Exception ex)
 		{
@@ -145,43 +155,28 @@ public class ResourceOptimizer
 		return ROpt;
 	}
 	
-	
 	/**
 	 * 
 	 * @param prog
-	 * @param cc
-	 * @param type
+	 * @param B
+	 * @param rc
 	 * @return
-	 * @throws DMLRuntimeException 
+	 * @throws IOException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
 	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
 	 */
-	private static ArrayList<Long> enumerateGridPoints( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType type ) 
-		throws DMLRuntimeException, HopsException
+	public static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ResourceConfig rc ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
-		//compute effective memory
-		long max = (long)(YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR);
-		long min = (long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR);
-		min = YarnOptimizerUtils.computeMinContraint(min, max, cc.getAvgNumCores()); //restrict to max degree of parallelism
+		//recompile program block hierarchy to list of blocks and apply optimized resource configuration
+		ArrayList<ProgramBlock> B = compileProgram(prog, null, rc.getCPResource(), rc.getMaxMRResource());
+		ResourceOptimizer.recompileProgramBlocks(B, rc.getCPResource(), rc.getMRResourcesMemo());
 		
-		//create enumerator
-		GridEnumeration ge = null;
-		switch( type ){
-			case EQUI_GRID:
-				ge = new GridEnumerationEqui(prog, min, max); break;
-			case EXP_GRID:
-				ge = new GridEnumerationExp(prog, min, max); break;
-			case HYBRID_MEM_EQUI_GRID:
-				ge = new GridEnumerationHybrid(prog, min, max); break;
-			case HYBRID2_MEM_EXP_GRID:
-				ge = new GridEnumerationHybrid2(prog, min, max); break;
-		}
-		
-		//generate points 
-		ArrayList<Long> ret = ge.enumerateGridPoints();
-		LOG.debug("Gen: min="+YarnOptimizerUtils.toMB(min)+", max="+YarnOptimizerUtils.toMB(max)+", npoints="+ret.size());
-		
-		return ret;
+		return B;
 	}
+	
 	
 	/**
 	 * 
@@ -234,21 +229,49 @@ public class ResourceOptimizer
 		}
 		else if (pb instanceof WhileProgramBlock)
 		{
-			//TODO while predicate 
-			WhileProgramBlock fpb = (WhileProgramBlock)pb;
-			compileProgram(fpb.getChildBlocks(), B, cp, mr);
+			WhileProgramBlock wpb = (WhileProgramBlock)pb;
+			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				wpb.setPredicate( inst );
+				B.add(wpb);
+				_cntCompilePB ++;
+			}				
+			compileProgram(wpb.getChildBlocks(), B, cp, mr);
 		}	
 		else if (pb instanceof IfProgramBlock)
 		{
-			//TODO if predicate 
-			IfProgramBlock fpb = (IfProgramBlock)pb;
-			compileProgram(fpb.getChildBlocksIfBody(), B, cp, mr);
-			compileProgram(fpb.getChildBlocksElseBody(), B, cp, mr);
+			IfProgramBlock ipb = (IfProgramBlock)pb;
+			IfStatementBlock sb = (IfStatementBlock) ipb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ipb.setPredicate( inst );
+				B.add(ipb);
+				_cntCompilePB ++;
+			}
+			compileProgram(ipb.getChildBlocksIfBody(), B, cp, mr);
+			compileProgram(ipb.getChildBlocksElseBody(), B, cp, mr);
 		}
 		else if (pb instanceof ForProgramBlock) //incl parfor
 		{
-			//TODO while predicate 
 			ForProgramBlock fpb = (ForProgramBlock)pb;
+			ForStatementBlock sb = (ForStatementBlock) fpb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null ){
+				if( sb.getFromHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), false, 0);
+					fpb.setFromInstructions( inst );	
+				}
+				if( sb.getToHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), false, 0);
+					fpb.setToInstructions( inst );	
+				}
+				if( sb.getIncrementHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), false, 0);
+					fpb.setIncrementInstructions( inst );	
+				}
+				B.add(fpb);
+				_cntCompilePB ++;
+			}
 			compileProgram(fpb.getChildBlocks(), B, cp, mr);
 		}
 		else
@@ -258,7 +281,6 @@ public class ResourceOptimizer
 					                                   new LocalVariableMap(), false, 0);
 			pb.setInstructions( inst );
 			B.add(pb);
-			
 			_cntCompilePB ++;
 		}
 		
@@ -308,11 +330,51 @@ public class ResourceOptimizer
 		InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );
 		OptimizerUtils.setDefaultSize(); //dependent on cp, mr
 		
-		//recompile instructions
-		StatementBlock sb = pb.getStatementBlock();
-		ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.get_hops(), 
-				                                   new LocalVariableMap(), false, 0);
-		pb.setInstructions( inst );
+		//recompile instructions (incl predicates)
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock)pb;
+			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				wpb.setPredicate( inst );
+			}				
+		}	
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock ipb = (IfProgramBlock)pb;
+			IfStatementBlock sb = (IfStatementBlock) ipb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ipb.setPredicate( inst );
+			}
+		}
+		else if (pb instanceof ForProgramBlock) //incl parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock)pb;
+			ForStatementBlock sb = (ForStatementBlock) fpb.getStatementBlock();
+			if( INCLUDE_PREDICATES && sb!=null ){
+				if( sb.getFromHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), false, 0);
+					fpb.setFromInstructions( inst );	
+				}
+				if( sb.getToHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), false, 0);
+					fpb.setToInstructions( inst );	
+				}
+				if( sb.getIncrementHops()!=null ){
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), false, 0);
+					fpb.setIncrementInstructions( inst );	
+				}
+			}
+		}
+		else //last-level program blocks
+		{
+			StatementBlock sb = pb.getStatementBlock();
+			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.get_hops(), 
+					                                   new LocalVariableMap(), false, 0);
+			pb.setInstructions( inst );
+		}
 		
 		_cntCompilePB ++;
 	}
@@ -326,6 +388,7 @@ public class ResourceOptimizer
 	private static double getProgramCosts( Program prog ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		//we need to cost the entire program in order to take in-memory status into account
 		double val = CostEstimationWrapper.getTimeEstimate(prog, new ExecutionContext());
 		_cntCostPB ++;
 		
@@ -336,19 +399,156 @@ public class ResourceOptimizer
 	 * 
 	 * @param B
 	 * @return
+	 * @throws HopsException 
 	 */
-	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B )
+	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B ) 
+		throws HopsException
 	{
 		if( !PRUNING )
 			return B;
 		
+		//prune all program blocks w/o mr instructions (mr budget does not matter)
 		ArrayList<ProgramBlock> Bp = new ArrayList<ProgramBlock>();
 		for( ProgramBlock pb : B )
-			if( OptTreeConverter.containsMRJobInstruction(pb.getInstructions(), false) ){
+			if( OptTreeConverter.containsMRJobInstruction(pb.getInstructions(), false) )
 				Bp.add( pb );
-			}
 		
-		return Bp;		
+		//prune all program blocks, where all mr hops are due to unknowns
+		ArrayList<ProgramBlock> Bp2 = new ArrayList<ProgramBlock>();
+		for( ProgramBlock pb : Bp )
+			if( !pruneHasOnlyUnknownMR(pb) )
+				Bp2.add( pb );
+			
+		return Bp2;		
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 * @throws HopsException
+	 */
+	private static boolean pruneHasOnlyUnknownMR( ProgramBlock pb ) 
+		throws HopsException
+	{
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
+			sb.getPredicateHops().resetVisitStatus();
+			return pruneHasOnlyUnknownMR(sb.getPredicateHops());
+		}	
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfStatementBlock sb = (IfStatementBlock) pb.getStatementBlock();
+			sb.getPredicateHops().resetVisitStatus();
+			return pruneHasOnlyUnknownMR(sb.getPredicateHops());
+		}
+		else if (pb instanceof ForProgramBlock) //incl parfor
+		{
+			ForStatementBlock sb = (ForStatementBlock) pb.getStatementBlock();
+			sb.getFromHops().resetVisitStatus();
+			sb.getToHops().resetVisitStatus();
+			sb.getIncrementHops().resetVisitStatus();
+			return    pruneHasOnlyUnknownMR(sb.getFromHops())
+				   && pruneHasOnlyUnknownMR(sb.getToHops())
+				   && pruneHasOnlyUnknownMR(sb.getIncrementHops());
+		}
+		else //last-level program blocks
+		{
+			StatementBlock sb = pb.getStatementBlock();
+			return pruneHasOnlyUnknownMR(sb.get_hops());
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 * @throws HopsException
+	 */
+	private static boolean pruneHasOnlyUnknownMR( ArrayList<Hop> hops ) 
+		throws HopsException
+	{
+		boolean ret = false;
+
+		if( hops!=null ){
+			ret = true;
+			Hop.resetVisitStatus(hops);
+			for( Hop hop : hops )
+				ret &= pruneHasOnlyUnknownMR(hop);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	private static boolean pruneHasOnlyUnknownMR( Hop hop )
+	{
+		if( hop == null || hop.get_visited() == Hop.VISIT_STATUS.DONE )
+			return true;
+
+		boolean ret = true;
+		
+		//process childs
+		for(Hop hi : hop.getInput())
+			ret &= pruneHasOnlyUnknownMR( hi );
+		
+		//investigate hop exec type and known dimensions
+		if( hop.getExecType()==ExecType.MR ) {
+			boolean lret = false;
+			
+			//1) operator output dimensions unknown
+			lret |= !hop.dimsKnown(); 
+				
+			//2) operator output dimensions known but inputs unknown
+			//(use cases for e.g. AggUnary with scalar output, Binary with one known input)
+			for(Hop hi : hop.getInput())
+				lret |= !hi.dimsKnown();
+				
+			ret &= lret;
+		}
+		
+		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		
+		return ret;
+	}
+	
+	
+	/**
+	 * 
+	 * @param prog
+	 * @param cc
+	 * @param type
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
+	 */
+	private static ArrayList<Long> enumerateGridPoints( ArrayList<ProgramBlock> prog, long min, long max, GridEnumType type ) 
+		throws DMLRuntimeException, HopsException
+	{
+		//create enumerator
+		GridEnumeration ge = null;
+		switch( type ){
+			case EQUI_GRID:
+				ge = new GridEnumerationEqui(prog, min, max); break;
+			case EXP_GRID:
+				ge = new GridEnumerationExp(prog, min, max); break;
+			case MEM_EQUI_GRID:
+				ge = new GridEnumerationMemory(prog, min, max); break;
+			case HYBRID_MEM_EXP_GRID:
+				ge = new GridEnumerationHybrid(prog, min, max); break;
+		}
+		
+		//generate points 
+		ArrayList<Long> ret = ge.enumerateGridPoints();
+		LOG.debug("Gen: min="+YarnOptimizerUtils.toMB(min)+", max="+YarnOptimizerUtils.toMB(max)+", npoints="+ret.size());
+		
+		return ret;
 	}
 	
 	/**
@@ -447,303 +647,4 @@ public class ResourceOptimizer
 		return (double)physical / DMLYarnClient.MEM_FACTOR * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
-	/*
-
-	public static final double MINIMAL_CP_BUDGET_ALLOWED = 512 * 1024 * 1024; //TODO get min allocation constraints
-	public static final double MINIMAL_MR_BUDGET_ALLOWED = 512 * 1024 * 1024;
-	
-	
-	public static double jvmToBudget(long jvm) {
-		return (double)jvm * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
-	
-	
-	public static int budgetToPhysicalMB(double budget) {
-		return (int) Math.ceil(budget / OptimizerUtils.MEM_UTIL_FACTOR * DMLYarnClient.MEM_FACTOR / 1024 / 1024);
-	}
-	
-	public static int budgetToJvmMB(double budget) {
-		return (int) Math.ceil(budget / OptimizerUtils.MEM_UTIL_FACTOR / 1024 / 1024);
-	}
-	
-	public static int byteToMB(long byteSize) {
-		return (int) Math.ceil(byteSize / 1024 / 1024);
-	}
-	
-	
-	public static class DMLMultiTimeCompiler {
-		public YarnConfiguration conf;
-		public String[] dmlScriptArgs = null;
-		
-		public int compileCount;
-		
-		public DMLMultiTimeCompiler(YarnConfiguration conf, String[] dmlScriptArgs) {
-			this.conf = conf;
-			this.dmlScriptArgs = dmlScriptArgs;
-			compileCount = 0;
-		}
-		
-		public int getCompileCount() {
-			return compileCount;
-		}
-		
-		public void tryCompile(CompilationMode compileMode, long cpJvm, HashMap<Long, Double> mrBudget) 
-				throws DMLException, ParseException, IOException {
-			
-			//System.out.println("try compiling CP heap " + OptimizerUtils.toMB(cpJvm) + ", mr budget " + MemOptimizer.serializeRemoteBudgetPlan(mrBudget, true));
-			if (compileCount == 0) {	// Initial compile, compile from script
-				YarnOptimizerUtils.setCompileMode(compileMode);
-				YarnClusterAnalyzer.setRemoteMaxMemPlan(mrBudget);
-				InfrastructureAnalyzer.setLocalMaxMemory(cpJvm);
-				DMLScript.executeScript(conf, dmlScriptArgs);
-			} else {					// Later compile, same scope as dynamic recompilation
-				if (dmlProg == null)
-					throw new DMLException("Initial compile didn't go to HadoopExecution");
-				
-				YarnOptimizerUtils.setCompileMode(compileMode);
-				YarnClusterAnalyzer.setRemoteMaxMemPlan(mrBudget);
-				InfrastructureAnalyzer.setLocalMaxMemory(cpJvm);
-				
-				YarnClusterAnalyzer.resetSBProbedSet();
-				
-				//apply hop rewrites (dynamic rewrites, after IPA)
-				dmlt.resetHopsDAGVisitStatus(dmlProg);
-				ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
-				rewriter2.rewriteProgramHopDAGs(dmlProg);
-				dmlt.resetHopsDAGVisitStatus(dmlProg);
-				
-				// Compute memory estimates for all the hops. These estimates are used
-				// subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
-				if (YarnOptimizerUtils.getCompileMode() == CompilationMode.O2_COMPILE_ONLY_AND_HOP_ESTIMATE) {
-					ResourceOptimizer.hopMemEstimates.clear();
-					// FIXME MB dmlt.refreshMemEstimates(dmlProg, MemOptimizer.hopMemEstimates);
-				} else
-				{
-					// FIXME MB dmlt.refreshMemEstimates(dmlProg, null);
-				}
-				
-				dmlt.printHops(dmlProg);
-				
-				dmlt.resetHopsDAGVisitStatus(dmlProg);
-				// FIXME MB DMLScript.executeHadoop(dmlt, dmlProg, dmlConf);
-			}
-			compileCount++;
-		}
-	}
-	
-	// Output and updated in each compilation attempt
-	public static boolean hasMRJobs;
-	public static double cost;
-	public static ArrayList<Double> hopMemEstimates = new ArrayList<Double>();	// Budget estimates in Byte from hop
-	public static DMLTranslator dmlt;
-	public static DMLProgram dmlProg = null;
-	public static DMLConfig dmlConf;
-	
-	// Input of each compilation attempt and runtime execution
-	double cpBudget;
-	HashMap<Long, Double> mrBudget = new HashMap<Long, Double>();
-		
-	// Fixed after initial compilation
-	ArrayList<Double> hopMemEstSorted;		// Sorted budget estimates in Byte from hop, might have -1 in the end !!!
-	double maxBudget;		// Max budget possible by the largest node in the cluster
-	long maxSbId;			// Max (inclusive) statement block Id assigned in initial compile
-	
-	//ArrayList<Long> probed;	// probed id during compile
-	//long maxId;		// maximum id created during compile, inclusive
-	
-	// Final optimal decision
-	double optCPBudgetByte;
-	HashMap<Long, Double> optMRBudget = new HashMap<Long, Double>();
-	
-	public YarnConfiguration conf;
-	
-	DMLMultiTimeCompiler compiler;
-	
-	
-	public int getCPPhysicalMemMB() {
-		return budgetToPhysicalMB(optCPBudgetByte);
-	}
-	
-	public long getCPJvmMem() {
-		return budgetToJvm(optCPBudgetByte);
-	}
-	
-	
-	public void init(String[] args, int startIndex, YarnConfiguration conf, 
-			YarnClient yarnClient) throws IOException, DMLException, YarnException, ParseException {
-
-		String[] dmlScriptArgs = new String [args.length - startIndex];
-		for (int i = 0; i < args.length - startIndex; i++)
-			dmlScriptArgs[i] = args[startIndex + i];
-		dmlScriptArgs = new GenericOptionsParser(conf, dmlScriptArgs).getRemainingArgs();
-		compiler = new DMLMultiTimeCompiler(conf, dmlScriptArgs);
-		
-		this.conf = conf;
-		YarnClusterAnalyzer.analyzeYarnCluster(yarnClient, conf, true);
-		
-		optCPBudgetByte = -1;
-		
-		// Maximum budget = min(max node, max RM assignment)
-		maxBudget = YarnClusterAnalyzer.getNodesMaxBudgetSorted().get(0);
-		if (maxBudget <= MINIMAL_CP_BUDGET_ALLOWED || maxBudget <= MINIMAL_MR_BUDGET_ALLOWED)
-			throw new IOException("Max cluster node is so small? " + OptimizerUtils.toMB(maxBudget) + "MB");
-		
-		long maxYarnAllocate = YarnClusterAnalyzer.getMaxPhyAllocate();
-		double maxAllocate = ResourceOptimizer.phyToBudget(maxYarnAllocate);
-		if (maxBudget > maxAllocate)
-			maxBudget = maxAllocate;
-		maxBudget--;	// Avoid round up error when converted to physical memory
-		
-		//----------- The initial compilation attempt ---------------
-		mrBudget.clear();
-		mrBudget.put((long)-1, maxBudget);
-		
-		compiler.tryCompile(CompilationMode.O2_COMPILE_ONLY_AND_HOP_ESTIMATE, budgetToJvm(maxBudget), mrBudget);
-		
-		// FIXME MB maxSbId = StatementBlock.getIDAssignedCount();
-		hopMemEstSorted = new ArrayList<Double> (hopMemEstimates);
-		Collections.sort(hopMemEstSorted, Collections.reverseOrder());
-		
-		// Print some results
-		System.out.println(maxSbId + " statement blocks created after runtime plan generated");
-		System.out.print("Memory requirement of the hops (MB): ");
-		for (Double d : hopMemEstSorted)
-			System.out.print(OptimizerUtils.toMB(d) + ",");
-		System.out.println();
-	}
-	
-	
-	public double optimizeGrid(ArrayList<Double> cpGrid, ArrayList<Double> mrGrid, boolean verbose) throws DMLException, ParseException, IOException {
-		// cpMem -> (sbId -> mrMem or cost)
-		HashMap<Double, HashMap<Long, ArrayList<Double>>> memSpace = new HashMap<Double, HashMap<Long, ArrayList<Double>>> ();
-		HashMap<Double, HashMap<Long, ArrayList<Double>>> costSpace = new HashMap<Double, HashMap<Long, ArrayList<Double>>> ();
-		HashMap<Double, HashMap<Long, Double>> optMRMemChoice = new HashMap<Double, HashMap<Long, Double>> ();
-		
-		// cpMem -> optCost
-		HashMap<Double, Double> cpOptCosts = new HashMap<Double, Double> ();
-		
-		double globalOptCost = -1;
-		// Search the CP space
-		for (Double tryCp : cpGrid) {
-			// Try minimal MR memory as baseline plan
-			mrBudget.clear();
-			mrBudget.put((long)-1, MINIMAL_MR_BUDGET_ALLOWED);
-			for (long i = 1; i <= maxSbId; i++)
-				mrBudget.put(i, MINIMAL_MR_BUDGET_ALLOWED);
-			
-			if (verbose)
-				System.out.println("try cp = " + OptimizerUtils.toMB(tryCp));
-			// Baseline plan
-			compiler.tryCompile(CompilationMode.O1_COMPILE_ONLY_SILENT, budgetToJvm(tryCp), mrBudget);
-			
-			// FIXME MB 
-			if (!InfrastructureAnalyzer.checkValidMemPlan(hasMRJobs)) {
-				if (verbose)
-					System.out.println("   base plan invalid");
-				continue;	// not enough cluster memory for MR
-			}
-			
-			
-			ArrayList<Long> probed = null; // FIXME MB new ArrayList<Long> (InfrastructureAnalyzer.getSBProbedSet());
-			Collections.sort(probed);
-			if (hasMRJobs != (probed.size() > 0))
-				throw new RuntimeException("Probed but no MR job? " + probed.size() + ", " + hasMRJobs);
-			// FIXME MB if (StatementBlock.getIDAssignedCount() != maxSbId)
-			// FIXME MB 	throw new RuntimeException("statement block max id different " + maxSbId + ", " + StatementBlock.getIDAssignedCount());
-			
-			double baseCost = cost;
-			double optCostCurCp = baseCost;
-			if (verbose) {
-				System.out.println("   base cost " + baseCost);
-				System.out.print("   probed sbId: ");
-				
-				for (Long id : probed)
-					System.out.print(id + ",");
-				System.out.println();
-			}
-			
-			// Initialize the cost results 
-			HashMap<Long, ArrayList<Double>> cpMems = new HashMap<Long, ArrayList<Double>>();
-			HashMap<Long, ArrayList<Double>> cpCosts = new HashMap<Long, ArrayList<Double>>();
-			HashMap<Long, Double> optChoice = new HashMap<Long, Double> ();
-			memSpace.put(tryCp, cpMems);
-			costSpace.put(tryCp, cpCosts);
-			optMRMemChoice.put(tryCp, optChoice);
-			for (Long sbId : probed) {
-				ArrayList<Double> mems = new ArrayList<Double>();
-				ArrayList<Double> costs = new ArrayList<Double>();
-				mems.add(MINIMAL_MR_BUDGET_ALLOWED);
-				costs.add(baseCost);
-				cpMems.put(sbId, mems);
-				cpCosts.put(sbId, costs);
-				optChoice.put(sbId, MINIMAL_MR_BUDGET_ALLOWED);
-			}
-			
-			// Search the MR space
-			for (Long sbId : probed) {	// Search for the optimal MR memory for each statment block
-				if (verbose)
-					System.out.println("   try sbId = " + sbId);
-				double minCostInCurSb = baseCost;
-				for (Double tryMr : mrGrid) {
-					if (tryMr == MINIMAL_MR_BUDGET_ALLOWED) {
-						if (verbose)
-							System.out.println("      skip mr = " + OptimizerUtils.toMB(MINIMAL_MR_BUDGET_ALLOWED));
-						continue;
-					}
-					mrBudget.put(sbId, tryMr);
-					if (verbose)
-						System.out.print("      try mr = " + OptimizerUtils.toMB(tryMr));
-					compiler.tryCompile(CompilationMode.O1_COMPILE_ONLY_SILENT, budgetToJvm(tryCp), mrBudget);
-					
-					if (!YarnClusterAnalyzer.checkValidMemPlan(hasMRJobs)) {
-						if (verbose)
-							System.out.println(", break at mr = " + OptimizerUtils.toMB(tryMr));
-						break;	// not enough cluster memory for MR
-					}
-					if (verbose)
-						System.out.println(", get cost " + cost);
-					
-					// FIXME MB if (YarnClusterAnalyzer.getSBProbedSet().size() != probed.size())
-					// FIXME MB 	throw new RuntimeException("A different probed set " + InfrastructureAnalyzer.getSBProbedSet().size() + ", " + probed.size());
-					if (!hasMRJobs)
-						throw new RuntimeException("No mr jobs?!");
-					// FIXME MB if (StatementBlock.getIDAssignedCount() != maxSbId)
-					// FIXME MB 	throw new RuntimeException("statement block max id different " + maxSbId + ", " + StatementBlock.getIDAssignedCount());
-					
-					cpMems.get(sbId).add(tryMr);
-					cpCosts.get(sbId).add(cost);
-					if (minCostInCurSb > cost) {
-						minCostInCurSb = cost;
-						optChoice.put(sbId, tryMr);
-					}
-				}
-				mrBudget.put(sbId, MINIMAL_MR_BUDGET_ALLOWED);
-				
-				optCostCurCp -= baseCost - minCostInCurSb;
-				if (verbose)
-					System.out.println("      sbId " + sbId + " reduce the cost by " + (baseCost - minCostInCurSb) + 
-						" using mr = " + OptimizerUtils.toMB(optChoice.get(sbId)));
-			}
-			
-			cpOptCosts.put(tryCp, optCostCurCp);
-			if (globalOptCost == -1 || globalOptCost > optCostCurCp) {
-				globalOptCost = optCostCurCp;
-				optCPBudgetByte = tryCp;
-			}
-			if (verbose)
-				System.out.println("   minimal cost " + optCostCurCp + " using cp = " + OptimizerUtils.toMB(tryCp) + "\n");
-		}
-		
-		// Set the opt mr settings
-		optMRBudget.clear();
-		for (Map.Entry<Long, Double> entry : optMRMemChoice.get(optCPBudgetByte).entrySet())
-			optMRBudget.put(entry.getKey(), entry.getValue());
-		
-		//if (verbose)
-		//	System.out.println("Search done, optimal cost " + globalOptCost + " with cp = " + OptimizerUtils.toMB(optCPBudgetByte));
-		return globalOptCost;
-	}
-
-
-	*/
 }

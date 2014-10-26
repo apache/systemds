@@ -15,7 +15,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -70,13 +69,15 @@ public class DMLYarnClientProxy
 			//optimize resources (and update configuration)
 			if( RESOURCE_OPTIMIZER ){
 				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
-				ArrayList<ProgramBlock> pb = getRuntimeProgramBlocks(rtprog);
+				ArrayList<ProgramBlock> pb = DMLAppMasterUtils.getRuntimeProgramBlocks(rtprog);
 				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( pb, cc, 
-						              //    GridEnumType.EQUI_GRID, GridEnumType.EQUI_GRID );
-						              GridEnumType.HYBRID2_MEM_EXP_GRID, GridEnumType.EQUI_GRID );
-				conf.updateYarnMemorySettings(rc.getCPResource(), rc.getMaxMRResource());
+						                 GridEnumType.HYBRID_MEM_EXP_GRID, GridEnumType.HYBRID_MEM_EXP_GRID );
+				conf.updateYarnMemorySettings(String.valueOf(rc.getCPResource()), rc.serialize());
+				//alternative: only use the max mr memory for all statement blocks
+				//conf.updateYarnMemorySettings(String.valueOf(rc.getCPResource()), String.valueOf(rc.getMaxMRResource()));
 			}
-				
+			//System.exit(1);
+			
 			//launch dml yarn app master
 			DMLYarnClient yclient = new DMLYarnClient(dmlScriptStr, conf, allArgs);
 			ret = yclient.launchDMLYarnAppmaster();
@@ -88,23 +89,6 @@ public class DMLYarnClientProxy
 					 "Resume with default client processing.");
 			ret = false;
 		}
-		
-		return ret;
-	}
-	
-	/**
-	 * 
-	 * @param args
-	 * @return
-	 * @throws DMLException
-	 */
-	private static ArrayList<ProgramBlock> getRuntimeProgramBlocks(Program prog) 
-		throws DMLRuntimeException
-	{			
-		//construct single list of all program blocks including functions
-		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
-		ret.addAll(prog.getProgramBlocks());
-		ret.addAll(prog.getFunctionProgramBlocks().values());
 		
 		return ret;
 	}

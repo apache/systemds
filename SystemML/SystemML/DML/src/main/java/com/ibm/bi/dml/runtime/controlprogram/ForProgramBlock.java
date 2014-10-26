@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -19,6 +20,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -239,6 +241,9 @@ public class ForProgramBlock extends ProgramBlock
 						predHops = fsb.getIncrementHops();
 						recompile = fsb.requiresIncrementRecompilation();
 					}
+					if( recompile && DMLScript.isActiveAM() ) //set program block specific remote memory
+						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
+					
 					tmp = (IntObject) executePredicate(instructions, predHops, recompile, ValueType.INT, ec);
 				}
 				else

@@ -91,7 +91,7 @@ public class DMLAppMasterUtils
 			
 			_rcMap = new HashMap<ProgramBlock, Long>();
 			for( int i=0; i<B.size(); i++ ){
-				_rcMap.put(B.get(0), _rc.getMRResources(i));
+				_rcMap.put(B.get(i), _rc.getMRResources(i));
 			}
 		}
 	}

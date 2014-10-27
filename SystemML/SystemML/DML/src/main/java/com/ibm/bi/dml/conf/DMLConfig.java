@@ -421,7 +421,7 @@ public class DMLConfig
 		NodeList list2 = xml_root.getElementsByTagName(YARN_MAPREDUCEMEM);
 		if (list2 != null && list2.getLength() > 0) {
 			Element elem = (Element) list2.item(0);
-			elem.getFirstChild().setNodeValue(String.valueOf(amMem));
+			elem.getFirstChild().setNodeValue(String.valueOf(mrMem));
 		}
 	}
 	

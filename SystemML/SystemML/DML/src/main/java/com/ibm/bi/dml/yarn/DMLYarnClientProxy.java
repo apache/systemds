@@ -23,6 +23,7 @@ import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
 import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterConfig;
+import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils;
 import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
 /**
@@ -39,8 +40,8 @@ public class DMLYarnClientProxy
 	
 	private static final Log LOG = LogFactory.getLog(DMLYarnClientProxy.class);
 
-	protected static final boolean RESOURCE_OPTIMIZER = false;
-	protected static final boolean LDEBUG = false;
+	protected static boolean RESOURCE_OPTIMIZER = false;
+	protected static boolean LDEBUG = false;
 	
 	static
 	{
@@ -66,13 +67,17 @@ public class DMLYarnClientProxy
 		
 		try
 		{
+			//check for need for resource optimization
+			//if( conf.getIntValue(DMLConfig.YARN_APPMASTERMEM) < 0 )
+			//	RESOURCE_OPTIMIZER = true;
+			
 			//optimize resources (and update configuration)
 			if( RESOURCE_OPTIMIZER ){
 				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
 				ArrayList<ProgramBlock> pb = DMLAppMasterUtils.getRuntimeProgramBlocks(rtprog);
 				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( pb, cc, 
 						                 GridEnumType.HYBRID_MEM_EXP_GRID, GridEnumType.HYBRID_MEM_EXP_GRID );
-				conf.updateYarnMemorySettings(String.valueOf(rc.getCPResource()), rc.serialize());
+				conf.updateYarnMemorySettings(String.valueOf(YarnOptimizerUtils.toMB(rc.getCPResource())), rc.serialize());
 				//alternative: only use the max mr memory for all statement blocks
 				//conf.updateYarnMemorySettings(String.valueOf(rc.getCPResource()), String.valueOf(rc.getMaxMRResource()));
 			}

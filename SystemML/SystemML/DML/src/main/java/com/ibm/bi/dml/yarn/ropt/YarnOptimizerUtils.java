@@ -97,7 +97,6 @@ public class YarnOptimizerUtils
 	 */
 	public static long computeMinContraint( long minAlloc, long maxAlloc, long numCores )
 	{
-		long minL = (long)minAlloc; 
-		return ((long)(Math.max(minAlloc, maxAlloc/numCores )/minL)*minAlloc); 	
+		return ((long)(Math.max(minAlloc, maxAlloc/numCores )/minAlloc)*minAlloc); 	
 	}
 }

@@ -140,7 +140,7 @@ public class ResourceConfig
 		for (int i=1; i<parts.length; i++) 
 		{
 			long val = YarnOptimizerUtils.toB(Long.parseLong(parts[i]));
-			mr.set(i, val);
+			mr.add( val );
 		}
 		
 		return new ResourceConfig(cp, mr);

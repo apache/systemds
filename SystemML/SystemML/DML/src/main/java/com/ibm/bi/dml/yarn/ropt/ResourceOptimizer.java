@@ -84,7 +84,7 @@ public class ResourceOptimizer
 			
 			//get constraints (yarn-specific: force higher min to limit degree of parallelism)
 			long max = (long)(YarnOptimizerUtils.toB(cc.getMaxAllocationMB()) / DMLYarnClient.MEM_FACTOR);
-			long minCP = Math.max((long)(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR), MIN_CP_BUDGET);
+			long minCP = (long) Math.max(YarnOptimizerUtils.toB(cc.getMinAllocationMB()) / DMLYarnClient.MEM_FACTOR, MIN_CP_BUDGET);
 			long minMR = YarnOptimizerUtils.computeMinContraint(minCP, max, cc.getAvgNumCores());
 			
 			//enumerate grid points for given types (refers to jvm max heap)
@@ -92,7 +92,7 @@ public class ResourceOptimizer
 			ArrayList<Long> SRm = enumerateGridPoints(prog, minMR, max, mrtype);
 			
 			//init resource config and global costs
-			ROpt = new ResourceConfig(prog, minCP);
+			ROpt = new ResourceConfig(prog, minMR);
 			double costOpt = Double.MAX_VALUE;
 			
 			for( Long rc : SRc ) //enumerate CP memory rc

@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import junit.framework.Assert;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -39,7 +40,7 @@ public class ParForParWorkerTest extends ParWorker
 	
 	
 	public void testExecutionSet() 
-		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{ 
 		Collection<Task> tasks = createTasks( TaskType.SET );
 		setParWorkerAttributes();
@@ -53,7 +54,7 @@ public class ParForParWorkerTest extends ParWorker
 	
 	
 	public void testExecutionRange() 
-		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{ 
 		Collection<Task> tasks = createTasks( TaskType.RANGE );
 		setParWorkerAttributes();

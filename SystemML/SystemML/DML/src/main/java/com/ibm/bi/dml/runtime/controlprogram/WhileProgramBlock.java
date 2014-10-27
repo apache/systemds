@@ -14,6 +14,7 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -155,7 +156,7 @@ public class WhileProgramBlock extends ProgramBlock
 		return result;
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
+	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException {
 
 		BooleanObject predResult = executePredicate(ec); 
 		

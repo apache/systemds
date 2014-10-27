@@ -49,7 +49,7 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 		String opcode = null;
 		ValueFunction func = null;
 		
-		if( parts.length==4 ) //print
+		if( parts.length==4 ) //print or stop
 		{
 			opcode = parts[0];
 			in.split(parts[1]);

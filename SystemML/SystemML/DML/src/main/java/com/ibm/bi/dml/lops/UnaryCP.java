@@ -25,7 +25,7 @@ public class UnaryCP extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, PRINT, NROW, NCOL, LENGTH, ROUND, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, NOTSUPPORTED
 	};
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -67,104 +67,94 @@ public class UnaryCP extends Lop
 
 	}
 
-	@Override
-	public String getInstructions(String input, String output)
-			throws LopsException {
-		String opString = new String(getExecType() + Lop.OPERAND_DELIMITOR);
-
+	private String getOpCode() throws LopsException {
 		switch (operation) {
 		case NOT:
-			opString += "!";
-			break;
+			return "!";
 
 		case ABS:
-			opString += "abs";
-			break;
+			return "abs";
 
 		case SIN:
-			opString += "sin";
-			break;
+			return "sin";
 
 		case COS:
-			opString += "cos";
-			break;
+			return "cos";
 
 		case TAN:
-			opString += "tan";
-			break;
+			return "tan";
 
 		case ASIN:
-			opString += "asin";
-			break;
+			return "asin";
 
 		case ACOS:
-			opString += "acos";
-			break;
+			return "acos";
 
 		case ATAN:
-			opString += "atan";
-			break;
+			return "atan";
 
 		case SQRT:
-			opString += "sqrt";
-			break;
+			return "sqrt";
 
 		case LOG:
-			opString += "log";
-			break;
+			return "log";
 
 		case ROUND:
-			opString += "round";
-			break;
+			return "round";
 
 		case EXP:
-			opString += "exp";
-			break;
+			return "exp";
 
 		case PRINT:
-			opString += "print";
-			break;
+			return "print";
 
 		case CAST_AS_MATRIX:
-			opString += CAST_AS_MATRIX_OPCODE;
-			break;	
+			return CAST_AS_MATRIX_OPCODE;
+			
+		case STOP:
+			return "stop";
+			
+		case CEIL:
+			return "ceil";
+			
+		case FLOOR:
+			return "floor";
 			
 		// CAST_AS_SCALAR, NROW, NCOL, LENGTH builtins take matrix as the input
 		// and produces a scalar
 		case CAST_AS_SCALAR:
-			opString += CAST_AS_SCALAR_OPCODE; //old opcode "assignvarwithfile";
-			break;
+			return CAST_AS_SCALAR_OPCODE; 
 
 		case CAST_AS_DOUBLE:
-			opString += CAST_AS_DOUBLE_OPCODE; 
-			break;
+			return CAST_AS_DOUBLE_OPCODE; 
 
 		case CAST_AS_INT:
-			opString += CAST_AS_INT_OPCODE; 
-			break;
+			return CAST_AS_INT_OPCODE; 
 
 		case CAST_AS_BOOLEAN:
-			opString += CAST_AS_BOOLEAN_OPCODE; 
-			break;
+			return CAST_AS_BOOLEAN_OPCODE; 
 
 		case NROW:
-			opString += "nrow";
-			break;
+			return "nrow";
+		
 		case NCOL:
-			opString += "ncol";
-			break;
+			return "ncol";
+
 		case LENGTH:
-			opString += "length";
-			break;
+			return "length";
 
 		default:
-			throw new LopsException(this.printErrorLocation() + 
-					"Instruction not defined for UnaryScalar operation: "
-							+ operation);
+			throw new LopsException(this.printErrorLocation() + "Unknown operation: " + operation);
 		}
-
+	}
+	
+	@Override
+	public String getInstructions(String input, String output)
+			throws LopsException {
 		StringBuilder sb = new StringBuilder();
-		sb.append( opString );
+		sb.append(getExecType());
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpCode() );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append(getInputs().get(0).prepScalarInputOperand(getExecType()));

@@ -54,6 +54,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -191,21 +192,42 @@ public class DMLScript
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		
+		try {
 		DMLScript.executeScript(conf, otherArgs); 
+		} catch (DMLScriptException e){
+			// In case of DMLScriptException, simply print the error message.
+			String msg = e.prepErrorMessage();
+			System.err.println(msg);
+		}
 	} 
 
 	public static boolean executeScript( String[] args ) 
-		throws DMLException
+		throws DMLException, DMLScriptException
 	{
 		Configuration conf = new Configuration();
 		return executeScript( conf, args );
 	}
 	
-	public static boolean executeScript( Configuration conf, String[] args, boolean suppress) 
+	/**
+	 * This version of executeScript() is invoked from RJaqlUdf (from BigR).
+	 *  
+	 * @param conf
+	 * @param args
+	 * @param suppress
+	 * @return
+	 * @throws DMLException
+	 * @throws DMLScriptException
+	 */
+	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
 		throws DMLException
 	{
 		_suppressPrint2Stdout = suppress;
-		return executeScript(conf, args);
+		try {
+			boolean ret = executeScript(conf, args);
+			return Boolean.toString(ret);
+		} catch(DMLScriptException e) {
+			return (e.prepErrorMessage());
+		}
 	}
 	
 	/**
@@ -218,7 +240,7 @@ public class DMLScript
 	 * @throws LanguageException 
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException
+		throws DMLException, DMLScriptException
 	{
 		boolean ret = false;
 		
@@ -314,6 +336,9 @@ public class DMLScript
 			}
 			
 			ret = true;
+		}
+		catch (DMLScriptException e) {
+			throw e;
 		}
 		catch(Exception ex)
 		{
@@ -530,10 +555,11 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
+	 * @throws DMLScriptException 
 	 * @throws DMLException 
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs )
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, DMLScriptException 
 	{				
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
@@ -715,10 +741,11 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
+	 * @throws DMLScriptException 
 	 * @throws DMLException 
 	 */
 	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig conf, String dmlScriptStr, String[] allArgs) 
-		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{	
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
 		          "Level = " + OptimizerUtils.getOptLevel() + "\n"

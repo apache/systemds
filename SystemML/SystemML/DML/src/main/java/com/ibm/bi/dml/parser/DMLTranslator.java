@@ -51,6 +51,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLCleanup;
@@ -1594,6 +1595,7 @@ public class DMLTranslator
 			if (current instanceof PrintStatement) {
 				PrintStatement ps = (PrintStatement) current;
 				Expression source = ps.getExpression();
+				PRINTTYPE ptype = ps.getType();
 				
 				DataIdentifier target = createTarget();
 				target.setDataType(DataType.SCALAR);
@@ -1603,7 +1605,9 @@ public class DMLTranslator
 				Hop ae = processExpression(source, target, ids);
 			
 				try {
-					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.PRINT, ae);
+					Hop.OpOp1 op = (ptype == PRINTTYPE.PRINT ? Hop.OpOp1.PRINT : Hop.OpOp1.STOP);
+					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
+					printHop.setForcedExecType(ExecType.CP);
 					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 					output.add(printHop);
 				} catch ( HopsException e ) {
@@ -2882,6 +2886,8 @@ public class DMLTranslator
 		case SQRT:
 		case EXP:
 		case ROUND:
+		case CEIL:
+		case FLOOR:
 			Hop.OpOp1 mathOp1;
 			switch (source.getOpCode()) {
 			case ABS:
@@ -2913,6 +2919,12 @@ public class DMLTranslator
 				break;
 			case ROUND:
 				mathOp1 = Hop.OpOp1.ROUND;
+				break;
+			case CEIL:
+				mathOp1 = Hop.OpOp1.CEIL;
+				break;
+			case FLOOR:
+				mathOp1 = Hop.OpOp1.FLOOR;
 				break;
 			default:
 				

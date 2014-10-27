@@ -688,7 +688,7 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR
 	}
 
 	// Operations that require two operands
@@ -873,6 +873,8 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.EXP, com.ibm.bi.dml.lops.Unary.OperationTypes.EXP);
 		HopsOpOp1LopsU.put(OpOp1.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp1LopsU.put(OpOp1.ROUND, com.ibm.bi.dml.lops.Unary.OperationTypes.ROUND);
+		HopsOpOp1LopsU.put(OpOp1.CEIL, com.ibm.bi.dml.lops.Unary.OperationTypes.CEIL);
+		HopsOpOp1LopsU.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.Unary.OperationTypes.FLOOR);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
@@ -901,6 +903,9 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LENGTH);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.PRINT);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ROUND);
+		HopsOpOp1LopsUS.put(OpOp1.CEIL, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CEIL);
+		HopsOpOp1LopsUS.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.FLOOR);
+		HopsOpOp1LopsUS.put(OpOp1.STOP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
 	static public HashMap<Hop.OpOp1, String> HopsOpOp12String;
@@ -925,6 +930,7 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.ASIN, "asin");
 		HopsOpOp12String.put(OpOp1.ACOS, "acos");
 		HopsOpOp12String.put(OpOp1.ATAN, "atan");
+		HopsOpOp12String.put(OpOp1.STOP, "stop");
 	}
 	static public HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {

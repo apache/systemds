@@ -14,6 +14,7 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -144,7 +145,7 @@ public class ForProgramBlock extends ProgramBlock
 	
 	@Override	
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];

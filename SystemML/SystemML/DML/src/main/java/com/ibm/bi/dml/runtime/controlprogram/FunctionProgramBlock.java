@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 
@@ -64,7 +65,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{	
 		//dynamically recompile entire function body (according to function inputs)
 		/*//TODO in order to make this really useful we need CHAINED UPDATE of STATISTICS along PBs (see parfor)

@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
@@ -132,9 +133,10 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLScriptException 
 	 */
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{
 		ArrayList<Instruction> tmp = _inst;
 
@@ -177,9 +179,10 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLScriptException 
 	 */
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, boolean requiresRecompile, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{
 		ArrayList<Instruction> tmp = inst;
 		
@@ -215,9 +218,10 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLScriptException 
 	 */
 	protected void executeInstructions(ArrayList<Instruction> inst, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{
 		for (int i = 0; i < inst.size(); i++) 
 		{
@@ -236,9 +240,10 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLScriptException 
 	 */
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
 	{
 		ScalarObject ret = null;
 		String retName = null;
@@ -302,10 +307,11 @@ public class ProgramBlock
 	 * 
 	 * 
 	 * @param currInst
+	 * @throws DMLScriptException 
 	 * @throws DMLRuntimeException 
 	 */
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
-		throws DMLRuntimeException
+		throws DMLScriptException, DMLRuntimeException
 	{	
 		try 
 		{			
@@ -414,8 +420,12 @@ public class ProgramBlock
 		}
 		catch (Exception e)
 		{
-			if (!DMLScript.ENABLE_DEBUG_MODE)
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
+			if (!DMLScript.ENABLE_DEBUG_MODE) {
+				if ( e instanceof DMLScriptException) 
+					throw new DMLScriptException(e);
+				else
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
+			}
 			else {
 				ec.handleDebugException(e);
 			}

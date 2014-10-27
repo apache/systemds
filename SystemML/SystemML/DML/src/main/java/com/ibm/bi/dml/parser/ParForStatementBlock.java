@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.parser.Expression.BuiltinFunctionOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -474,6 +475,10 @@ public class ParForStatementBlock extends ForStatementBlock
 				else if( s instanceof FunctionStatement ) 
 				{
 					rDetermineCandidates(((FunctionStatement)s).getBody(), C, sCount);
+				}
+				else if( s instanceof PrintStatement && ((PrintStatement)s).getType() == PRINTTYPE.STOP ) {
+					raiseValidateError("PARFOR loop dependency analysis: " +
+					                   "stop() statement is not allowed inside a parfor loop body." , false);
 				}
 				else
 				{

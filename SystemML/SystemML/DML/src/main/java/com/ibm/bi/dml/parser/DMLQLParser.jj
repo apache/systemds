@@ -192,6 +192,7 @@ TOKEN :
 	| <IMPLEMENTED_IN 		: "implemented in" >
 	| <PARFOR 		: "parfor">
 	| <PRINT 		: "print">
+	| <STOP 		: "stop">
 	| <WRITEMATRIX 	: "write">
 	| <WRITEMM		: "writeMM" >
 	| <WRITE_CSV	: "write.csv" >
@@ -2398,14 +2399,14 @@ Statement OutputStatement() :
 }
 {
 	try {
-		(			tStart = <PRINT> <LEFTPAREN>
+		(			(tStart = <PRINT> | tStart = <STOP>)  <LEFTPAREN>
 			try {				t2 = Expression()
 			} catch (DMLParseException e){				runningList.add(e);
 			}
 			tEnd = <RIGHTPAREN>  
 			{				if (runningList.size() > 0) {
 					throw runningList;
-				} else {					os  = new PrintStatement(t2);
+				} else {					os  = new PrintStatement(tStart.image, t2);
 					os.setAllPositions(this.getFilename(), tStart.beginLine, tStart.beginColumn, tEnd.beginLine, tEnd.beginColumn);
 					return os;
 				}

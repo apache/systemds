@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.scalar.StopTest.java
+
+val = $1;
+
+M = matrix(val,10,5); 
+
+if (sum(M) <= 0.0) {
+    stop($2);
+}
+M2 = M/5;
+print ("Sum(M2) = " + sum(M2));
+
+
+

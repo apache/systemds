@@ -45,6 +45,7 @@ import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -179,7 +180,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 */
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException, DMLScriptException
 	{
 		_runID = _idSeq.getNextID();
 		

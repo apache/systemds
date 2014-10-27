@@ -90,6 +90,119 @@ public class UnaryOp extends Hop
 		return s;
 	}
 
+	private Lop handleIQM() throws HopsException, LopsException {
+		ExecType et = optFindExecType();
+		Hop input = getInput().get(0);
+		if ( et == ExecType.MR ) {
+			CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
+							                       DataType.MATRIX, get_valueType());
+			combine.getOutputParameters().setDimensions(
+					input.get_dim1(),
+					input.get_dim2(), 
+					input.get_rows_in_block(),
+					input.get_cols_in_block(),
+					input.getNnz());
+
+			SortKeys sort = SortKeys.constructSortByValueLop(combine,
+							           SortKeys.OperationTypes.WithNoWeights,
+							           DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
+
+			// Sort dimensions are same as the first input
+			sort.getOutputParameters().setDimensions(
+					input.get_dim1(),
+					input.get_dim2(),
+					input.get_rows_in_block(),
+					input.get_cols_in_block(),
+					input.getNnz());
+
+			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
+			
+			lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+            			
+			PickByCount pick = new PickByCount(
+					sort, lit, DataType.MATRIX, get_valueType(),
+					PickByCount.OperationTypes.RANGEPICK);
+
+			pick.getOutputParameters().setDimensions(-1, -1,  
+					get_rows_in_block(), get_cols_in_block(), -1);
+			
+			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			PartialAggregate pagg = new PartialAggregate(
+					pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
+					HopsDirection2Lops.get(Hop.Direction.RowCol),
+					DataType.MATRIX, get_valueType());
+			
+			pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			// Set the dimensions of PartialAggregate LOP based on the
+			// direction in which aggregation is performed
+			pagg.setDimensionsBasedOnDirection(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block());
+
+			Group group1 = new Group(
+					pagg, Group.OperationTypes.Sort, DataType.MATRIX,
+					get_valueType());
+			group1.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(),
+					get_cols_in_block(), getNnz());
+			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			Aggregate agg1 = new Aggregate(
+					group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
+					DataType.MATRIX, get_valueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(),
+					get_cols_in_block(), getNnz());
+			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
+			
+			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			UnaryCP unary1 = new UnaryCP(
+					agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+					get_dataType(), get_valueType());
+			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			BinaryCP binScalar1 = new BinaryCP(
+					sort, lit, BinaryCP.OperationTypes.IQSIZE,
+					DataType.SCALAR, get_valueType());
+			binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+
+			binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1, HopsOpOp2LopsBS.get(Hop.OpOp2.DIV), 
+					                           DataType.SCALAR,get_valueType());
+			binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			
+			binScalar2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			return binScalar2;
+		}
+		else {
+			SortKeys sort = SortKeys.constructSortByValueLop(
+					input.constructLops(), 
+					SortKeys.OperationTypes.WithNoWeights, 
+					DataType.MATRIX, ValueType.DOUBLE, et );
+			sort.getOutputParameters().setDimensions(
+					input.get_dim1(),
+					input.get_dim2(),
+					input.get_rows_in_block(),
+					input.get_cols_in_block(),
+					input.getNnz());
+			PickByCount pick = new PickByCount(sort, null,
+					get_dataType(),get_valueType(),
+					PickByCount.OperationTypes.IQM, et, true);
+
+			pick.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+
+			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			return pick;
+		}
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -106,116 +219,8 @@ public class UnaryOp extends Hop
 			{
 				if (_op == Hop.OpOp1.IQM)  //special handling IQM
 				{
-					ExecType et = optFindExecType();
-					if ( et == ExecType.MR ) {
-						CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
-										                       DataType.MATRIX, get_valueType());
-						combine.getOutputParameters().setDimensions(
-								input.get_dim1(),
-								input.get_dim2(), 
-								input.get_rows_in_block(),
-								input.get_cols_in_block(),
-								input.getNnz());
-	
-						SortKeys sort = SortKeys.constructSortByValueLop(combine,
-										           SortKeys.OperationTypes.WithNoWeights,
-										           DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-	
-						// Sort dimensions are same as the first input
-						sort.getOutputParameters().setDimensions(
-								input.get_dim1(),
-								input.get_dim2(),
-								input.get_rows_in_block(),
-								input.get_cols_in_block(),
-								input.getNnz());
-	
-						Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
-						
-						lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	                    			
-						PickByCount pick = new PickByCount(
-								sort, lit, DataType.MATRIX, get_valueType(),
-								PickByCount.OperationTypes.RANGEPICK);
-	
-						pick.getOutputParameters().setDimensions(-1, -1,  
-								get_rows_in_block(), get_cols_in_block(), -1);
-						
-						pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						PartialAggregate pagg = new PartialAggregate(
-								pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
-								HopsDirection2Lops.get(Hop.Direction.RowCol),
-								DataType.MATRIX, get_valueType());
-						
-						pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						// Set the dimensions of PartialAggregate LOP based on the
-						// direction in which aggregation is performed
-						pagg.setDimensionsBasedOnDirection(get_dim1(),
-									get_dim2(), get_rows_in_block(),
-									get_cols_in_block());
-	
-						Group group1 = new Group(
-								pagg, Group.OperationTypes.Sort, DataType.MATRIX,
-								get_valueType());
-						group1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						Aggregate agg1 = new Aggregate(
-								group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
-								DataType.MATRIX, get_valueType(), ExecType.MR);
-						agg1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
-						
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						UnaryCP unary1 = new UnaryCP(
-								agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-								get_dataType(), get_valueType());
-						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-						unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						BinaryCP binScalar1 = new BinaryCP(
-								sort, lit, BinaryCP.OperationTypes.IQSIZE,
-								DataType.SCALAR, get_valueType());
-						binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-	
-						binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1, HopsOpOp2LopsBS.get(Hop.OpOp2.DIV), 
-								                           DataType.SCALAR,get_valueType());
-						binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-						
-						binScalar2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						set_lops(binScalar2);
-					}
-					else {
-						SortKeys sort = SortKeys.constructSortByValueLop(
-								input.constructLops(), 
-								SortKeys.OperationTypes.WithNoWeights, 
-								DataType.MATRIX, ValueType.DOUBLE, et );
-						sort.getOutputParameters().setDimensions(
-								input.get_dim1(),
-								input.get_dim2(),
-								input.get_rows_in_block(),
-								input.get_cols_in_block(),
-								input.getNnz());
-						PickByCount pick = new PickByCount(sort, null,
-								get_dataType(),get_valueType(),
-								PickByCount.OperationTypes.IQM, et, true);
-			
-						pick.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-			
-						pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						set_lops(pick);
-					}
+					Lop iqmLop = handleIQM();
+					set_lops(iqmLop);
 				} 
 				else //general case SCALAR/CAST (always in CP)
 				{

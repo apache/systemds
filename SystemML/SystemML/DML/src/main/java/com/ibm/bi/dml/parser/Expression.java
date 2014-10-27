@@ -90,7 +90,9 @@ public abstract class Expression
 		QR,
 		LU,
 		EIGEN,
-		SOLVE
+		SOLVE,
+		CEIL,
+		FLOOR
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {

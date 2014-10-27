@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -28,7 +29,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException, DMLScriptException 
 	{	
 		String opcode = InstructionUtils.getOpCode(instString);
 		SimpleOperator dop = (SimpleOperator) optr;
@@ -49,6 +50,10 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			
 			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
 			sores = new StringObject(outString);
+		}
+		else if ( opcode.equalsIgnoreCase("stop") ) {
+			String msg = so.getStringValue();
+			throw new DMLScriptException(msg);
 		}
 		else {
 			//Inputs for all builtins other than PRINT are treated as DOUBLE.

@@ -13,6 +13,7 @@ import org.apache.commons.math.util.FastMath;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
 
@@ -38,7 +39,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX  };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -67,13 +68,16 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "ncol"   , BuiltinFunctionCode.NCOL);
 		String2BuiltinFunctionCode.put( "length" , BuiltinFunctionCode.LENGTH);
 		String2BuiltinFunctionCode.put( "round"  , BuiltinFunctionCode.ROUND);
+		String2BuiltinFunctionCode.put( "stop"   , BuiltinFunctionCode.STOP);
+		String2BuiltinFunctionCode.put( "ceil"   , BuiltinFunctionCode.CEIL);
+		String2BuiltinFunctionCode.put( "floor"  , BuiltinFunctionCode.FLOOR);
 	}
 	
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
-	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null;
+	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null, stopObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
@@ -169,6 +173,18 @@ public class Builtin extends ValueFunction
 			if ( roundObj == null )
 				roundObj = new Builtin(BuiltinFunctionCode.ROUND);
 			return roundObj;
+		case CEIL:
+			if ( ceilObj == null )
+				ceilObj = new Builtin(BuiltinFunctionCode.CEIL);
+			return ceilObj;
+		case FLOOR:
+			if ( floorObj == null )
+				floorObj = new Builtin(BuiltinFunctionCode.FLOOR);
+			return floorObj;
+		case STOP:
+			if ( stopObj == null )
+				stopObj = new Builtin(BuiltinFunctionCode.STOP);
+			return stopObj;
 		}
 		
 		return null;
@@ -198,6 +214,9 @@ public class Builtin extends ValueFunction
 		case PRINT:
 		case MAXINDEX:
 		case MININDEX:
+		case STOP:
+		case CEIL:
+		case FLOOR:
 			return (_arity == 1);
 		
 		case LOG:
@@ -219,7 +238,8 @@ public class Builtin extends ValueFunction
 		case ASIN:   return FASTMATH ? FastMath.asin(in) : Math.asin(in);
 		case ACOS:   return FASTMATH ? FastMath.acos(in) : Math.acos(in);
 		case ATAN:   return Math.atan(in); //faster in Math
-		
+		case CEIL:   return FASTMATH ? FastMath.ceil(in) : Math.ceil(in);
+		case FLOOR:  return FASTMATH ? FastMath.floor(in) : Math.floor(in);
 		case LOG:
 			//if ( in <= 0 )
 			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
@@ -340,15 +360,17 @@ public class Builtin extends ValueFunction
 		}
 	}
 
-	// currently, it is used only for PRINT 
+	// currently, it is used only for PRINT and STOP
 	public String execute (String in1) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException, DMLScriptException 
 	{
 		switch (bFunc) {
 		case PRINT:
 			if (!DMLScript.suppressPrint2Stdout())
 				System.out.println(in1);
 			return null;
+		case STOP:
+			throw new DMLScriptException(in1);
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}

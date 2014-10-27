@@ -115,18 +115,21 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "min"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "solve"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		
-		String2CPInstructionType.put( "exp"  , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "abs"  , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "sin"  , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "cos"  , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "tan"  , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "exp"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "abs"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "sin"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "cos"   , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "tan"   , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "asin"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "acos"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "atan"  , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "sqrt" , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "plogp", CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "print", CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "round" ,CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "sqrt"  , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "plogp" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "print" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "round" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ceil"  , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "floor" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);

@@ -35,6 +35,7 @@ import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -487,7 +488,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	@Override	
 	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{	
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];

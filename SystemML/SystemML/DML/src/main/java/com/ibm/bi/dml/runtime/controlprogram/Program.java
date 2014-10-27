@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
 
@@ -92,7 +93,7 @@ public class Program
 	}
 
 	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{
 		ec.initDebugProgramCounters();
 		
@@ -102,6 +103,9 @@ public class Program
 				ec.updateDebugState(i);
 				_programBlocks.get(i).execute(ec);
 			}
+		}
+		catch(DMLScriptException e) {
+			throw e;
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);

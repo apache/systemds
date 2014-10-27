@@ -14,6 +14,7 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -129,7 +130,7 @@ public class IfProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
 	{	
 		BooleanObject predResult = executePredicate(ec); 
 	
@@ -142,6 +143,9 @@ public class IfProgramBlock extends ProgramBlock
 					ec.updateDebugState(i);
 					_childBlocksIfBody.get(i).execute(ec);
 				}
+			}
+			catch(DMLScriptException e) {
+				throw e;
 			}
 			catch(Exception e)
 			{
@@ -157,6 +161,9 @@ public class IfProgramBlock extends ProgramBlock
 					_childBlocksElseBody.get(i).execute(ec);
 				}
 			}
+			catch(DMLScriptException e) {
+				throw e;
+			}
 			catch(Exception e)
 			{
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statement body ", e);
@@ -166,6 +173,9 @@ public class IfProgramBlock extends ProgramBlock
 		//execute exit instructions
 		try { 
 			executeInstructions(_exitInstructions, ec);
+		}
+		catch(DMLScriptException e) {
+			throw e;
 		}
 		catch (Exception e){
 			

@@ -850,6 +850,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case LOG:
 		case EXP:
 		case ROUND:
+		case CEIL:
+		case FLOOR:
 			return true;
 		default:
 			return false;
@@ -868,6 +870,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ABS:
 		case EXP:
 		case ROUND:
+		case CEIL:
+		case FLOOR:
 			checkNumParameters(1);
 			break;
 		case LOG:
@@ -1166,6 +1170,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
+		else if (functionName.equals("ceil"))
+			bifop = Expression.BuiltinFunctionOp.CEIL;
+		else if (functionName.equals("floor"))
+			bifop = Expression.BuiltinFunctionOp.FLOOR;
 		else
 			return null;
 		

@@ -94,6 +94,10 @@ public abstract class AutomatedTestBase
 	private int iExpectedStdOutState = 0;
 	private PrintStream originalPrintStreamStd = null;
 
+	private String expectedStdErr;
+	private int iExpectedStdErrState = 0;
+	private PrintStream originalErrStreamStd = null;
+
 	@Before
 	public abstract void setUp();
 
@@ -1074,6 +1078,8 @@ public abstract class AutomatedTestBase
 
 		assertTrue("expected String did not occur: " + expectedStdOut, iExpectedStdOutState == 0
 				|| iExpectedStdOutState == 2);
+		assertTrue("expected String did not occur (stderr): " + expectedStdErr, iExpectedStdErrState == 0
+				|| iExpectedStdErrState == 2);
 		TestUtils.displayAssertionBuffer();
 
 		TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
@@ -1110,7 +1116,7 @@ public abstract class AutomatedTestBase
 		this.expectedStdOut = expectedLine;
 		originalPrintStreamStd = System.out;
 		iExpectedStdOutState = 1;
-		System.setOut(new PrintStream(new ExpecterOutputStream()));
+		System.setOut(new PrintStream(new ExpectedOutputStream()));
 	}
 
 	/**
@@ -1120,7 +1126,7 @@ public abstract class AutomatedTestBase
 	 *
 	 * 
 	 */
-	class ExpecterOutputStream extends OutputStream {
+	class ExpectedOutputStream extends OutputStream {
 		private String line = "";
 
 		@Override
@@ -1134,6 +1140,37 @@ public abstract class AutomatedTestBase
 				}
 			}
 			originalPrintStreamStd.write(b);
+		}
+	}
+
+	public void setExpectedStdErr(String expectedLine) {
+		this.expectedStdErr = expectedLine;
+		originalErrStreamStd = System.err;
+		iExpectedStdErrState = 1;
+		System.setErr(new PrintStream(new ExpectedErrorStream()));
+	}
+
+	/**
+	 * This class is used to compare the standard error stream against an
+	 * expected string.
+	 * 
+	 *
+	 * 
+	 */
+	class ExpectedErrorStream extends OutputStream {
+		private String line = "";
+
+		@Override
+		public void write(int b) throws IOException {
+			line += String.valueOf((char) b);
+			if (((char) b) == '\n') {
+				/** new line */
+				if (line.contains(expectedStdErr)) {
+					iExpectedStdErrState = 2;
+					System.setErr(originalErrStreamStd);
+				}
+			}
+			originalErrStreamStd.write(b);
 		}
 	}
 

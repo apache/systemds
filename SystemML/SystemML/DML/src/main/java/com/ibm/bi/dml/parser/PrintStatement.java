@@ -16,16 +16,34 @@ public class PrintStatement extends Statement
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	public enum PRINTTYPE {PRINT, STOP};
 	
+	protected PRINTTYPE _type; // print or stop
 	protected Expression _expr;
 
-	public PrintStatement(Expression expr){
+	private static PRINTTYPE getPrintType(String type) throws LanguageException {
+		if(type.equalsIgnoreCase("print")) {
+			return PRINTTYPE.PRINT;
+		}
+		else if (type.equalsIgnoreCase("stop")) {
+			return PRINTTYPE.STOP;
+		}
+		else
+			throw new LanguageException("Unknown statement type: " + type);
+	}
+	
+	public PrintStatement(String type, Expression expr) throws LanguageException{
+		this(getPrintType(type), expr);
+	}
+	 
+	public PrintStatement(PRINTTYPE type, Expression expr) throws LanguageException{
+		_type = type;
 		_expr = expr; 
 	}
 	 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		Expression newExpr = _expr.rewriteExpression(prefix);
-		PrintStatement retVal = new PrintStatement(newExpr);
+		PrintStatement retVal = new PrintStatement(_type, newExpr);
 		retVal.setBeginLine(this.getBeginLine());
 		retVal.setBeginColumn(this.getBeginColumn());
 		retVal.setEndLine(this.getEndLine());
@@ -43,7 +61,7 @@ public class PrintStatement extends Statement
 	
 	public String toString(){
 		 StringBuffer sb = new StringBuffer();
-		 sb.append(Statement.PRINTSTATEMENT + " (" );
+		 sb.append(_type + " (" );
 		 if (_expr != null){
 			 sb.append(_expr.toString());
 		 }
@@ -75,6 +93,10 @@ public class PrintStatement extends Statement
 
 	public Expression getExpression(){
 		return _expr;
-	}	
+	}
+	
+	public PRINTTYPE getType() {
+		return _type;
+	}
 	 
 }

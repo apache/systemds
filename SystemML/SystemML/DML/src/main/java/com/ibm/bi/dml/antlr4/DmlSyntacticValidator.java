@@ -735,18 +735,23 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 	}
 	
-	private void setPrintStatement(FunctionCallAssignmentStatementContext ctx) {
+	private void setPrintStatement(FunctionCallAssignmentStatementContext ctx, String functionName) {
 		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 		if(paramExpression.size() != 1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("print function has only one parameter", ctx.start);
+			DmlSyntacticValidatorHelper.notifyErrorListeners(functionName + "() has only one parameter", ctx.start);
 			return;
 		}
 		com.ibm.bi.dml.parser.Expression expr = paramExpression.get(0).getExpr();
 		if(expr == null) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process print function", ctx.start);
+			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
 		}
-		ctx.info.stmt = new com.ibm.bi.dml.parser.PrintStatement(expr);
+		try {
+			ctx.info.stmt = new com.ibm.bi.dml.parser.PrintStatement(functionName, expr);
+		} catch (LanguageException e) {
+			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+			return;
+		}
 	}
 	
 	private void setOutputStatement(FunctionCallAssignmentStatementContext ctx) {
@@ -801,8 +806,8 @@ public class DmlSyntacticValidator implements DmlListener {
 			return;
 		}
 		
-		if(functionName.compareTo("print") == 0 && namespace.compareTo(DMLProgram.DEFAULT_NAMESPACE) == 0) {
-			setPrintStatement(ctx);
+		if((functionName.compareTo("print") == 0 || functionName.compareTo("stop") == 0 ) && namespace.compareTo(DMLProgram.DEFAULT_NAMESPACE) == 0) {
+			setPrintStatement(ctx, functionName);
 			return;
 		}
 		else if(functionName.compareTo("write") == 0

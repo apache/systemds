@@ -124,17 +124,23 @@ fileO = ifdef ($O, " ");
 fileLog = ifdef ($Log, " ");
 fmtB = ifdef ($fmt, "text");
 
-distribution_type = ifdef ($dfam, 1);                     # $dfam = 1;
-variance_as_power_of_the_mean = 0.0 + ifdef ($vpow, 0.0); # $vpow = 0.0;
-link_type = ifdef ($link, 0);                             # $link = 0;
-link_as_power_of_the_mean = 0.0 + ifdef ($lpow, 1.0);     # $lpow = 1.0;
-bernoulli_No_label = 0.0 + ifdef ($yneg, 0.0);            # $yneg = 0.0;
-intercept_status = ifdef ($icpt, 0);                      # $icpt = 0;
-dispersion = 0.0 + ifdef ($disp, 0.0);                    # $disp = 0.0;
-regularization = ifdef ($reg, 0.0);                       # $reg  = 0.0;
-eps = 0.0 + ifdef ($tol, 0.000001);                       # $tol  = 0.000001;
-max_iteration_IRLS = ifdef ($moi, 200);                   # $moi  = 200;
-max_iteration_CG = ifdef ($mii, 0);                       # $mii  = 0;
+distribution_type = ifdef ($dfam, 1);                # $dfam = 1;
+variance_as_power_of_the_mean = ifdef ($vpow, 0.0);  # $vpow = 0.0;
+link_type = ifdef ($link, 0);                        # $link = 0;
+link_as_power_of_the_mean = ifdef ($lpow, 1.0);      # $lpow = 1.0;
+bernoulli_No_label = ifdef ($yneg, 0.0);             # $yneg = 0.0;
+intercept_status = ifdef ($icpt, 0);                 # $icpt = 0;
+dispersion = ifdef ($disp, 0.0);                     # $disp = 0.0;
+regularization = ifdef ($reg, 0.0);                  # $reg  = 0.0;
+eps = ifdef ($tol, 0.000001);                        # $tol  = 0.000001;
+max_iteration_IRLS = ifdef ($moi, 200);              # $moi  = 200;
+max_iteration_CG = ifdef ($mii, 0);                  # $mii  = 0;
+
+variance_as_power_of_the_mean = as.double (variance_as_power_of_the_mean);
+link_as_power_of_the_mean = as.double (link_as_power_of_the_mean);
+bernoulli_No_label = as.double (bernoulli_No_label);
+dispersion = as.double (dispersion);
+eps = as.double (eps);
 
 
 # Default values for output statistics:

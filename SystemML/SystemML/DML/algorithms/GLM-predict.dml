@@ -80,11 +80,15 @@ fileY = ifdef ($Y, " ");
 fileO = ifdef ($O, " ");
 fmtM  = ifdef ($fmt, "text");
 
-dist_type  = ifdef ($dfam, 1);         # $dfam = 1;
-var_power  = 0.0 + ifdef ($vpow, 0.0); # $vpow = 0.0;
-link_type  = ifdef ($link, 0);         # $link = 0;
-link_power = 0.0 + ifdef ($lpow, 1.0); # $lpow = 1.0;
-dispersion = 0.0 + ifdef ($disp, 1.0); # $disp = 1.0;
+dist_type  = ifdef ($dfam, 1);    # $dfam = 1;
+var_power  = ifdef ($vpow, 0.0);  # $vpow = 0.0;
+link_type  = ifdef ($link, 0);    # $link = 0;
+link_power = ifdef ($lpow, 1.0);  # $lpow = 1.0;
+dispersion = ifdef ($disp, 1.0);  # $disp = 1.0;
+
+var_power  = as.double (var_power);
+link_power = as.double (link_power); 
+dispersion = as.double (dispersion);
 
 if (dist_type == 3) {
     link_type = 2;

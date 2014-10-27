@@ -62,9 +62,11 @@ fmtB = ifdef ($fmt, "text");
 
 intercept_status = ifdef ($icpt, 0); # $icpt = 0;
 regularization = ifdef ($reg, 0.0);  # $reg  = 0.0;
-tol = 0.0 + ifdef ($tol, 0.000001);  # $tol  = 0.000001;
+tol = ifdef ($tol, 0.000001);        # $tol  = 0.000001;
 maxiter = ifdef ($moi, 100);         # $moi  = 100;
 maxinneriter = ifdef ($mii, 0);      # $mii  = 0;
+
+tol = as.double (tol); 
 
 print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
 print ("Reading X...");

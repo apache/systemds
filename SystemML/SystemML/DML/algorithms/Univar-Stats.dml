@@ -125,8 +125,8 @@ parfor(i in 1:n, check=0) {
 			}
 			else {
 				# compute CATEGORICAL statistics on the projected column
+				num_cat = max(F); # number of categories
 				cat_counts = table(F,1, maxDomain, 1);  # counts for each category
-				num_cat = nrow(cat_counts); # number of categories
 
 				mode = rowIndexMax(t(cat_counts));
 				mx = max(cat_counts)

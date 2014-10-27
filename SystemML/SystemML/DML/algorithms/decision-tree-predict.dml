@@ -35,8 +35,7 @@ parfor(i4 in 1:nrow(X)){
 		else curr_node = 2*curr_node + 1
 	}
 		
-	if(castAsScalar(position[curr_node,1]) != 0)
-		pred[i4,1] = model[2,curr_node]
+	pred[i4,1] = model[2,curr_node]
 }
 
 if(cmdLine_predictions != " ")

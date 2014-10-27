@@ -26,7 +26,7 @@ cmdLine_fmt = ifdef($fmt, "text")
 cmdLine_icpt = ifdef($icpt, 0)
 cmdLine_tol = ifdef($tol, 0.001)
 cmdLine_reg = ifdef($reg, 1.0)
-cmdLint_maxiter = ifdef($maxiter, 100)
+cmdLine_maxiter = ifdef($maxiter, 100)
 
 X = read($X)
 Y = read($Y)

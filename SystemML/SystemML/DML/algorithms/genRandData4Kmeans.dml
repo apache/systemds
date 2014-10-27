@@ -40,6 +40,11 @@ dist_per_feature_first_record = $dr;
 feature_bias_factor = $fbf;
 cluster_bias_factor = $cbf;
 
+fileX    = ifdef ($X, "X");
+fileC    = ifdef ($C, "C");
+fileY    = ifdef ($Y, "Y");
+fileYbyC = ifdef ($YbyC, "YbyC");
+
 one_per_record   = matrix (1, rows = num_records,   cols = 1);
 one_per_centroid = matrix (1, rows = num_centroids, cols = 1);
 
@@ -93,12 +98,12 @@ print (num_centroids + "-cluster WCSS attained by the mixture centroids = " + at
 
 print ("Writing out the resulting dataset...");
 
-write (X, $X, format = "text");
-write (C, $C, format = "text");
-write (Y, $Y, format = "text");
-write (Y_by_C, $YbyC, format = "text");
+write (X, fileX, format = "text");
+write (C, fileC, format = "text");
+write (Y, fileY, format = "text");
+write (Y_by_C, fileYbyC, format = "text");
 
-print ("Please run the scoring script to compare " + $Y + " with " + $YbyC); 
+print ("Please run the scoring script to compare " + fileY + " with " + fileYbyC); 
 
 print ("DONE: K-MEANS GENERATOR SCRIPT");
 

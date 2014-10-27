@@ -54,24 +54,23 @@
 # hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
 #     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv Log=OUTPUT_DIR/log
 
-$Log = " ";
-$icpt = 0;
-$reg  = 0.0;
-$tol  = 0.000001;
-$moi  = 100;
-$mii  = 0;
-$fmt = "text";
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fileLog = ifdef ($Log, " ");
+fmtB = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0); # $icpt = 0;
+regularization = ifdef ($reg, 0.0);  # $reg  = 0.0;
+tol = 0.0 + ifdef ($tol, 0.000001);  # $tol  = 0.000001;
+maxiter = ifdef ($moi, 100);         # $moi  = 100;
+maxinneriter = ifdef ($mii, 0);      # $mii  = 0;
 
 print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
 print ("Reading X...");
-X = read ($X);
+X = read (fileX);
 print ("Reading Y...");
-Y_vec = read ($Y);
-
-intercept_status = $icpt;
-tol = 0.0 + $tol;
-maxiter = $moi;
-maxinneriter = $mii;
+Y_vec = read (fileY);
 
 eta0 = 0.0001;
 eta1 = 0.25;
@@ -134,7 +133,7 @@ if (min (Y_vec) <= 0) {
 Y = table (seq (1, N, 1), Y_vec);
 K = ncol (Y) - 1;   # The number of  non-baseline categories
 
-lambda = (scale_lambda %*% matrix (1, rows = 1, cols = K)) * $reg;
+lambda = (scale_lambda %*% matrix (1, rows = 1, cols = K)) * regularization;
 delta = 0.5 * sqrt (D) / max (sqrt (rowSums_X_sq));
 
 B = matrix (0, rows = D, cols = K);     ### LT = X %*% (SHIFT/SCALE TRANSFORM) %*% B;
@@ -162,7 +161,7 @@ converge = (norm_Grad < tol) | (iter > maxiter);
 
 print ("-- Initially:  Objective = " + obj + ",  Gradient Norm = " + norm_Grad + ",  Trust Delta = " + delta);
 
-if ($Log != " ") {
+if (fileLog != " ") {
     log_str = "OBJECTIVE,0," + obj;
     log_str = append (log_str, "GRADIENT_NORM,0," + norm_Grad);
     log_str = append (log_str, "TRUST_DELTA,0," + delta);
@@ -240,7 +239,7 @@ while (! converge)
     }
     
     LT = append ((X %*% ssX_B_new), matrix (0, rows = N, cols = 1));
-    if ($Log != " ") {
+    if (fileLog != " ") {
         log_str = append (log_str, "LINEAR_TERM_MIN,"  + iter + "," + min (LT));
         log_str = append (log_str, "LINEAR_TERM_MAX,"  + iter + "," + max (LT));
     }
@@ -258,7 +257,7 @@ while (! converge)
 	is_rho_accepted = (rho > eta0);
 	snorm = sqrt (sum (S ^ 2));
 
-    if ($Log != " ") {
+    if (fileLog != " ") {
         log_str = append (log_str, "NUM_CG_ITERS,"     + iter + "," + (inneriter - 1));
         log_str = append (log_str, "IS_TRUST_REACHED," + iter + "," + is_trust_boundary_reached);
         log_str = append (log_str, "POINT_STEP_NORM,"  + iter + "," + snorm);
@@ -318,17 +317,17 @@ while (! converge)
 		norm_Grad = sqrt (sum (Grad ^ 2));
 		obj = obj_new;
 	    print ("   -- New Objective = " + obj + ",  Beta Change Norm = " + snorm + ",  Gradient Norm = " + norm_Grad);
-        if ($Log != " ") {
+        if (fileLog != " ") {
             log_str = append (log_str, "IS_POINT_UPDATED," + iter + ",1");
             log_str = append (log_str, "GRADIENT_NORM,"    + iter + "," + norm_Grad);
         }
 	} else {
-        if ($Log != " ") {
+        if (fileLog != " ") {
             log_str = append (log_str, "IS_POINT_UPDATED," + iter + ",0");
         }
     }	
 	
-    if ($Log != " ") {
+    if (fileLog != " ") {
         log_str = append (log_str, "TRUST_DELTA," + iter + "," + delta);
     }	
 	
@@ -344,9 +343,9 @@ if (intercept_status == 2) {
 } else {
     B_out = B;
 }
-write (B_out, $B, format=$fmt);
+write (B_out, fileB, format=fmtB);
 
-if ($Log != " ") {
-    write (log_str, $Log);
+if (fileLog != " ") {
+    write (log_str, fileLog);
 }
 

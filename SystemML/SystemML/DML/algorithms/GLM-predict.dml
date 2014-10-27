@@ -73,21 +73,18 @@
 #   disp=3.0 fmt=csv X=INPUT_DIR/X B=INPUT_DIR/B Y=INPUT_DIR/Y M=OUTPUT_DIR/M O=OUTPUT_DIR/out.csv
 
 # Default values for input parameters:
-$M = " ";
-$Y = " ";
-$O = " ";
-$dfam = 1;
-$vpow = 0.0;
-$link = 0;
-$lpow = 1.0;
-$disp = 1.0;
-$fmt = "text";
+fileX = $X;
+fileB = $B;
+fileM = ifdef ($M, " ");
+fileY = ifdef ($Y, " ");
+fileO = ifdef ($O, " ");
+fmtM  = ifdef ($fmt, "text");
 
-dist_type  = $dfam;
-var_power  = 0.0 + $vpow;
-link_type  = $link;
-link_power = 0.0 + $lpow;
-dispersion = 0.0 + $disp;
+dist_type  = ifdef ($dfam, 1);         # $dfam = 1;
+var_power  = 0.0 + ifdef ($vpow, 0.0); # $vpow = 0.0;
+link_type  = ifdef ($link, 0);         # $link = 0;
+link_power = 0.0 + ifdef ($lpow, 1.0); # $lpow = 1.0;
+dispersion = 0.0 + ifdef ($disp, 1.0); # $disp = 1.0;
 
 if (dist_type == 3) {
     link_type = 2;
@@ -99,11 +96,11 @@ if (dist_type == 3) {
             link_type = 2;
 }}} }
 
-X = read ($X);
+X = read (fileX);
 num_records  = nrow (X);
 num_features = ncol (X);
 
-B_full = read ($B);
+B_full = read (fileB);
 if (dist_type == 3) {
     beta =  B_full [1 : ncol (X),  ];
     intercept = B_full [nrow(B_full),  ];
@@ -124,13 +121,13 @@ linear_terms = X %*% beta + ones_rec %*% intercept;
 [means, vars] =
     glm_means_and_vars (linear_terms, dist_type, var_power, link_type, link_power);
     
-if ($M != " ") {
-    write (means, $M, format=$fmt);
+if (fileM != " ") {
+    write (means, fileM, format=fmtM);
 }
 
-if ($Y != " ")
+if (fileY != " ")
 {
-    Y = read ($Y);
+    Y = read (fileY);
     ones_ctg = matrix (1, rows = ncol(Y), cols = 1);
     
     # Statistics To Compute:
@@ -309,8 +306,8 @@ if ($Y != " ")
         str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + castAsScalar (adjust_R2_nobias [1, i]));
     }
     
-    if ($O != " ") {
-        write (str, $O);
+    if (fileO != " ") {
+        write (str, fileO);
     } else {
         print (str);
     }

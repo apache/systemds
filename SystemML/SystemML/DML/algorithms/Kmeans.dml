@@ -22,7 +22,7 @@
 # C     String  "C.mtx" Location to store the output matrix with the centroids
 # isY   Int        0    0 = do not write Y,  1 = write Y
 # Y     String  "Y.mtx" Location to store the mapping of records to centroids
-# fmt   String "text"   Matrix output format, usually "text" or "csv"
+# fmt   String  "text"  Matrix output format, usually "text" or "csv"
 # verb  Int        0    0 = do not print per-iteration stats, 1 = print them
 # ----------------------------------------------------------------------------
 #
@@ -30,30 +30,27 @@
 # hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 C=centroids.mtx
 # hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=1 Y=clusters.mtx verb=1
 
-$runs=10;
-$maxi=1000;
-$tol=0.000001;
-$samp=50;
-$C="C.mtx";
-$isY=0;
-$Y="Y.mtx";
-$fmt="text";
-$verb=0;
+fileX = $X;
+fileY = ifdef ($Y, "Y.mtx");
+fileC = ifdef ($C, "C.mtx");
+
+num_centroids = $k;
+num_runs   = ifdef ($runs, 10);      # $runs=10;
+max_iter   = ifdef ($maxi, 1000);    # $maxi=1000;
+eps        = ifdef ($tol, 0.000001); # $tol=0.000001;
+is_write_Y = ifdef ($isY, 0);        # $isY=0;
+is_verbose = ifdef ($verb, 0);       # $verb=0;
+fmtCY      = ifdef ($fmt, "text");   # $fmt="text";
+avg_sample_size_per_centroid = ifdef ($samp, 50);  # $samp=50;
+
 
 print ("BEGIN K-MEANS SCRIPT");
 print ("Reading X...");
 
 # X : matrix of data points as rows
-X = read ($X);
-
+X = read (fileX);
 num_records   = nrow (X);
 num_features  = ncol (X);
-num_centroids = $k;
-num_runs      = $runs;
-max_iter      = $maxi;
-avg_sample_size_per_centroid = $samp;
-eps = $tol;
-is_verbose = $verb;
 
 sumXsq = sum (X ^ 2);
 # Remark - A useful rewrite: sum (A %*% B) = sum (t(colSums(A)) * rowSums(B))
@@ -203,14 +200,14 @@ if (num_successful_runs > 0) {
         + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
     print ("Writing out the best-WCSS centroids...");
-    write (C, $C, format=$fmt);
-    if ($isY == 1) {
+    write (C, fileC, format=fmtCY);
+    if (is_write_Y == 1) {
         print ("Writing out the best-WCSS cluster labels...");
         D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
         P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
         aggr_P = sumup_cols (P);
         Y = rowSums (ppred (aggr_P, 0, "==")) + 1
-        write (Y, $Y, format=$fmt);
+        write (Y, fileY, format=fmtCY);
     }
     print ("DONE.");
 } else {

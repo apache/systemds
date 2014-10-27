@@ -79,51 +79,52 @@
 #     hadoop jar SystemML.jar -f Kmeans-predict.dml -nvargs spY=INPUT_DIR/Y
 #         prY=INPUT_DIR/PredY O=OUTPUT_DIR/stats
 
-$prY = " ";
-$spY = " ";
-$X = " ";
-$C = " ";
-$O = " ";
-$fmt = "text";
+
+fmt_prY = ifdef ($fmt, "text");
+filePrY = ifdef ($prY, " ");
+fileSpY = ifdef ($spY, " ");
+fileX   = ifdef ($X, " ");
+fileC   = ifdef ($C, " ");
+fileO   = ifdef ($O, " ");
 
 is_str_empty = TRUE;
 str = " ";
 
 print ("BEGIN K-MEANS SCORING SCRIPT");
 
-if ($X != " ") {
+if (fileX != " ") {
     print ("Reading X...");
-    X = read ($X);
+    X = read (fileX);
     ones_X = matrix (1, rows = nrow (X), cols = 1);
     total_mean = colSums (X) / nrow (X);
     total_ss = sum ((X - ones_X %*% total_mean) ^ 2);
 }
 
-if (($C != " ") & ($X == " ")) {
+if ((fileC != " ") & (fileX == " ")) {
     print ("ERROR: Cannot provide C without providing X.");
 } else {
 
 
-if ($C != " ") {
+if (fileC != " ") {
     print ("Reading C...");
-    C = read ($C);
+    C = read (fileC);
     num_clusters = nrow (C);
     ones_C = matrix (1, rows = num_clusters, cols = 1);
     print ("Computing the predicted Y...");
     D = ones_X %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
     prY = rowIndexMin (D);
-    if ($prY != " ") {
+    if (filePrY != " ") {
         print ("Writing the predicted Y...");
-        write (prY, $prY, format=$fmt);
+        write (prY, filePrY, format=fmt_prY);
     }
 } else {
     print ("Reading the predicted Y...");
-    prY = read ($prY);
+    prY = read (filePrY);
     num_clusters = max (prY);
     ones_C = matrix (1, rows = num_clusters, cols = 1);
 }
 
-if ($X != " ") {
+if (fileX != " ") {
     print ("Computing the WCSS...");
     # Compute projection matrix from clusters to records
     P = matrix (0, rows = nrow (X), cols = num_clusters);
@@ -149,7 +150,7 @@ if ($X != " ") {
     is_str_empty = FALSE;
 }
 
-if ($C != " ") {        
+if (fileC != " ") {        
     # Compute the WCSS for the centroids
     wcss_centroids = sum ((X - P %*% C) ^ 2);
     wcss_centroids_pc = 100.0 * wcss_centroids / total_ss;
@@ -166,10 +167,10 @@ if ($C != " ") {
 
 
 
-if ($spY != " ") {
+if (fileSpY != " ") {
 
 print ("Reading the specified Y...");
-spY = read ($spY);
+spY = read (fileSpY);
 num_records = nrow (spY);
     
 if (num_records != nrow (prY) | ncol (spY) != 1 | ncol (prY) != 1) {
@@ -297,8 +298,8 @@ if (num_records != nrow (prY) | ncol (spY) != 1 | ncol (prY) != 1) {
     print (" ");
 }}}
 
-if (($O != " ") & (! is_str_empty)) {
-    write (str, $O);
+if ((fileO != " ") & (! is_str_empty)) {
+    write (str, fileO);
 }
 
 print ("DONE: K-MEANS SCORING SCRIPT");

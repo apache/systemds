@@ -78,37 +78,39 @@
 # hadoop jar SystemML.jar -f stratstats.dml -nvargs X=INPUT_DIR/Data.mtx Xcid=INPUT_DIR/Xcid.mtx
 #     Ycid=INPUT_DIR/Ycid.mtx Scid=1 O=OUTPUT_DIR/Out.mtx
 
-$Y = " ";
-$S = " ";
-$Xcid = " ";
-$Ycid = " ";
-$Scid = 1;
-$fmt = "text";
+fileX = $X;
+fileY = ifdef ($Y, " ");
+fileS = ifdef ($S, " ");
+fileO = $O;
+fmtO  = ifdef ($fmt, "text");
+
+fileXcid = ifdef ($Xcid, " ");
+fileYcid = ifdef ($Ycid, " ");
+stratum_column_id = ifdef ($Scid, 1);
 
 print ("BEGIN STRATIFIED STATISTICS SCRIPT");
 
 print ("Reading the input matrices...");
 
-XwithNaNs = read ($X);
-stratum_column_id = $Scid;
-if ($Y != " ") {
-    YwithNaNs = read ($Y);
+XwithNaNs = read (fileX);
+if (fileY != " ") {
+    YwithNaNs = read (fileY);
 } else {
     YwithNaNs = XwithNaNs;
 }
-if ($S != " ") {
-    SwithNaNsFull = read ($S);
+if (fileS != " ") {
+    SwithNaNsFull = read (fileS);
     SwithNaNs = SwithNaNsFull [, stratum_column_id];
 } else {
     SwithNaNs = XwithNaNs [, stratum_column_id];
 }
-if ($Xcid != " ") {
-    Xcols = read ($Xcid);
+if (fileXcid != " ") {
+    Xcols = read (fileXcid);
 } else {
     Xcols = t(seq (1, ncol (XwithNaNs), 1));
 }
-if ($Ycid != " ") {
-    Ycols = read ($Ycid);
+if (fileYcid != " ") {
+    Ycols = read (fileYcid);
 } else {
     Ycols = t(seq (1, ncol (YwithNaNs), 1));
 }
@@ -351,7 +353,7 @@ OutMtx [39, ] = colSums (ppred (Cnt_XY_per_stratum, 2, ">="));  # Number of stra
 OutMtx = t(OutMtx);
 
 print ("Writing the output matrix...");
-write (OutMtx, $O, format=$fmt);
+write (OutMtx, fileO, format=fmtO);
 print ("END STRATIFIED STATISTICS SCRIPT");
 
 

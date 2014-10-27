@@ -70,22 +70,22 @@
 # hadoop jar SystemML.jar -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
 #     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv Log=OUTPUT_DIR/log
 
-$O=" ";
-$Log=" ";
-$icpt=0;
-$reg=0.000001;
-$tol=0.000001;
-$maxi=0;
-$fmt="text";
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fileO = ifdef ($O, " ");
+fileLog = ifdef ($Log, " ");
+fmtB = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0);     # $icpt=0;
+tolerance = ifdef ($tol, 0.000001);      # $tol=0.000001;
+max_iteration = ifdef ($maxi, 0);        # $maxi=0;
+regularization = ifdef ($reg, 0.000001); # $reg=0.000001;
 
 print ("BEGIN LINEAR REGRESSION SCRIPT");
 print ("Reading X and Y...");
-X = read ($X);
-y = read ($Y);
-
-intercept_status = $icpt;
-tolerance = $tol;
-max_iteration = $maxi;
+X = read (fileX);
+y = read (fileY);
 
 n = nrow (X);
 m = ncol (X);
@@ -133,7 +133,7 @@ if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
 # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
 # tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
 
-lambda = scale_lambda * $reg;
+lambda = scale_lambda * regularization;
 beta_unscaled = matrix (0, rows = m_ext, cols = 1);
 
 if (max_iteration == 0) {
@@ -251,8 +251,8 @@ if (intercept_status == 0) {
     str = append (str, "ADJUSTED_R2_VS_0," + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
 }
 
-if ($O != " ") {
-    write (str, $O);
+if (fileO != " ") {
+    write (str, fileO);
 } else {
     print (str);
 }
@@ -265,9 +265,9 @@ if (intercept_status == 2) {
 } else {
     beta_out = beta;
 }
-write (beta_out, $B, format=$fmt);
+write (beta_out, fileB, format=fmtB);
 
-if ($Log != " ") {
-    write (log_str, $Log);
+if (fileLog != " ") {
+    write (log_str, fileLog);
 }
 print ("END LINEAR REGRESSION SCRIPT");

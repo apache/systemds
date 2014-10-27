@@ -25,22 +25,40 @@
 
 numTrainingSamples = $N;
 numTestSamples = $Nt;
-numSamples = numTrainingSamples + numTestSamples;
 numFeatures = $nf;
 numCategories = $nc;
-if ($nc == 1) {
+minIntercept = $iceptmin;
+maxIntercept = $iceptmax;
+minXentry = $Xmin;
+maxXentry = $Xmax;
+minAvgLT = $avgLTmin;
+maxAvgLT = $avgLTmax;
+sparsityLevel = $spars;
+stdevLT = $stdLT;
+fileB  = ifdef ($B,  "B");
+fileX  = ifdef ($X,  "X");
+fileY  = ifdef ($Y,  "Y");
+fileXt = ifdef ($Xt, "Xt");
+fileYt = ifdef ($Yt, "Yt");
+
+
+numSamples = numTrainingSamples + numTestSamples;
+
+isBinomialPMOne = FALSE;
+if (numCategories == 1) {
     numCategories = 2;
+    isBinomialPMOne = TRUE;
 }
 do_we_output_intercept = 1;
-if ($iceptmin == 0.0 & $iceptmax == 0.0) {
+if (minIntercept == 0.0 & maxIntercept == 0.0) {
     do_we_output_intercept = 0;
 }
 
-X = Rand (rows = numSamples, cols = numFeatures, min = $Xmin, max = $Xmax, pdf = "uniform", sparsity = $spars);
+X = Rand (rows = numSamples, cols = numFeatures, min = minXentry, max = maxXentry, pdf = "uniform", sparsity = sparsityLevel);
 
-meanLT  = Rand (rows = 1, cols = numCategories - 1, min = $avgLTmin, max = $avgLTmax, pdf = "uniform");
-sigmaLT = matrix ($stdLT, rows = 1, cols = numCategories - 1);
-b_intercept = Rand (rows = 1, cols = numCategories - 1, min = $iceptmin, max = $iceptmax, pdf = "uniform");
+meanLT  = Rand (rows = 1, cols = numCategories - 1, min = minAvgLT, max = maxAvgLT, pdf = "uniform");
+sigmaLT = matrix (stdevLT, rows = 1, cols = numCategories - 1);
+b_intercept = Rand (rows = 1, cols = numCategories - 1, min = minIntercept, max = maxIntercept, pdf = "uniform");
 
 meanLT_minus_intercept = meanLT - b_intercept;
 [B, new_sigmaLT] = generateWeights (X, meanLT_minus_intercept, sigmaLT);
@@ -69,7 +87,7 @@ Prob = sumup_cols (Prob);
 r = Rand (rows = numSamples, cols = 1, min = 0, max = 1, pdf = "uniform", seed = 0);
 R = r %*% ones;
 Y = 1 + rowSums (ppred (Prob, R, "<"));
-if ($nc == 1) {
+if (isBinomialPMOne) {
     Y = 3 - 2 * Y;
 }
 
@@ -86,9 +104,9 @@ if (do_we_output_intercept == 1) {
     new_B = matrix (0.0, rows = nrow(B) + 1, cols = ncol(B));
     new_B [1:nrow(B), 1:ncol(B)] = B;
     new_B [nrow(B)+1, 1:ncol(B)] = b_intercept;
-    writeMM (new_B, $B);
+    write (new_B, fileB, format="mm");
 } else {
-    writeMM (B, $B);
+    write (B, fileB, format="mm");
 }
 
 if (numTestSamples > 0) {
@@ -96,13 +114,13 @@ if (numTestSamples > 0) {
     Y_train = Y [1:numTrainingSamples,];
     X_test  = X [(numTrainingSamples+1):numSamples,];
     Y_test  = Y [(numTrainingSamples+1):numSamples,];
-    writeMM (X_train, $X);
-    writeMM (Y_train, $Y);
-    writeMM (X_test,  $Xt);
-    writeMM (Y_test,  $Yt);
+    write (X_train, fileX,  format="mm");
+    write (Y_train, fileY,  format="mm");
+    write (X_test,  fileXt, format="mm");
+    write (Y_test,  fileYt, format="mm");
 } else {
-    writeMM (X, $X);
-    writeMM (Y, $Y);
+    write (X, fileX, format="mm");
+    write (Y, fileY, format="mm");
 }
 
 

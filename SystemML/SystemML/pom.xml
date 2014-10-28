@@ -10,15 +10,24 @@
   <name>IBM BigInsights SystemML</name>
   <description />
 
+ <!--  
   <scm>
     <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
     <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
-  </scm>
+  </scm> 
+-->  
   
+  <scm>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+ </scm>
+  
+
   <parent>
     <groupId>com.ibm.biginsights</groupId>
     <artifactId>multimodule-parent</artifactId>
-    <version>1.3.6</version>
+    <version>1.3.10</version>
   </parent>
 
   <modules>

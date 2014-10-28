@@ -1,13 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
-	<version>3.0-SNAPSHOT</version>
+	<version>3.1-SNAPSHOT</version>
 	<name>SystemML compiler</name>
 
+ <!--  
   <scm>
     <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
     <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
-  </scm>
+  </scm> 
+-->  
+  
+  <scm>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+ </scm>
   
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>

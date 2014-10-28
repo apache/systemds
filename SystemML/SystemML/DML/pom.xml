@@ -144,6 +144,23 @@
 					</archive>
 				</configuration>
 			</plugin>
+		<plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <configuration>
+					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+					<outputDirectory>${basedir}/src/main/java</outputDirectory>
+					</configuration>
+        <version>4.3</version>
+        <executions>
+          <execution>
+            <id>antlr</id>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin> 
 
 		</plugins>
 
@@ -162,7 +179,7 @@
       <artifactId>hadoop-mapreduce-client-core</artifactId>
       <version>2.2.0</version>
       <scope>provided</scope>
-    </dependency -->
+    </dependency-->
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs</artifactId>
@@ -239,6 +256,48 @@
 			<version>3.2.1</version>
 			<scope>provided</scope>
 		</dependency>
+
+
+	 <dependency>
+	 	<groupId>org.antlr</groupId>
+	 	<artifactId>antlr4</artifactId>
+	 	<version>4.3</version>
+	 	<scope>provided</scope>
+	 </dependency>
+	 <dependency>
+	 	<groupId>org.antlr</groupId>
+	 	<artifactId>antlr4-runtime</artifactId>
+	 	<version>4.3</version>
+	 </dependency>
+
+      <!-- Libraries for yarn integration -->
+	  <dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-yarn-api</artifactId>
+		<version>2.4.1-4</version>
+		<scope>provided</scope>
+	  </dependency>     
+
+	 <dependency>
+	   	<groupId>org.apache.hadoop</groupId>
+	  	<artifactId>hadoop-yarn-common</artifactId>
+	  	<version>2.4.1-4</version>
+	  	<scope>provided</scope>
+	 </dependency>
+
+	 <dependency>
+	 	<groupId>org.apache.hadoop</groupId>
+	 	<artifactId>hadoop-yarn-client</artifactId>
+	 	<version>2.4.1-4</version>
+	 	<scope>provided</scope>
+	 </dependency>
+
+	 <dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-mapreduce-client-common</artifactId>
+		<version>2.4.1-4</version>
+		<scope>provided</scope>
+	 </dependency>
 
 	</dependencies>
 

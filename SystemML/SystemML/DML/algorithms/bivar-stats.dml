@@ -124,24 +124,51 @@ if(num_nominal_scale_tests == 0){
 basestats_nominal_scale = matrix(0, rows=11, cols=size_nominal_scale_tests)
 
 # Compute max domain size among all categorical attributes
+# and check if these cols have been recoded
+
+debug_str = "Stopping execution of DML script due to invalid input";
+
+error_flag = FALSE;
+
 maxs = colMaxs(D);
+mins = colMins(D)
 maxDomainSize = -1;
 for(k in 1:ncol(K1) ) {
-  if ( as.scalar(K1[1,k]) > 1) {
+  type = as.scalar(K1[1,k]);
+  
+  if ( type > 1) {
     colID = as.scalar(S1[1,k]);
+    
     colMaximum = as.scalar(maxs[1,colID]);
     if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
+  
+  	colMinimum = as.scalar(mins[1,colID]);
+  	if(colMinimum < 1){
+  	  debug_str = append(debug_str, "In column " + colID + " (declared with type " + type + ") minimum value is " + colMinimum)
+  	  error_flag = TRUE;
+  	}
   }
 }
 
 for(k in 1:ncol(K2) ) {
-  if ( as.scalar(K2[1,k]) > 1) {
+  type = as.scalar(K2[1,k]);
+  
+  if ( type > 1) {
     colID = as.scalar(S2[1,k]);
+    
     colMaximum = as.scalar(maxs[1,colID]);
     if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
+  
+  	colMinimum = as.scalar(mins[1,colID]);
+  	if(colMinimum < 1){
+  	  debug_str = append(debug_str, "In column " + colID + " (declared with type " + type + ") minimum value is " + colMinimum)
+  	  error_flag = TRUE;
+  	}
   }
 }
 maxDomain = as.integer(maxDomainSize);
+
+if(error_flag) stop(debug_str);
 
 parfor( i in 1:s1size, check=0) {
     a1 = castAsScalar(S1[1,i]);

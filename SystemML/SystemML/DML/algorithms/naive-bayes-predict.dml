@@ -20,7 +20,15 @@ cmdLine_probabilities = ifdef($probabilities, " ")
 cmdLine_fmt = ifdef($fmt, "text")
 
 D = read($X)
+min_feature_val = min(D)
+if(min_feature_val < 0)
+	stop("Stopping due to invalid argument: Multinomial naive Bayes is meant for count-based feature values, minimum value in X is negative")
+
 prior = read($prior)
+
+dimensions = as.scalar(prior[nrow(prior),1])
+prior = prior[1:(nrow(prior)-1),]
+
 conditionals = read($conditionals)
 
 numRows = nrow(D)
@@ -41,6 +49,9 @@ if(cmdLine_probabilities != " "){
 
 if(cmdLine_Y != " "){
 	C = read(cmdLine_Y)
+	if(min(C) < 1)
+		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
+	
 	pred = rowIndexMax(log_probs)
 	acc = sum(ppred(pred, C, "==")) / numRows * 100
 

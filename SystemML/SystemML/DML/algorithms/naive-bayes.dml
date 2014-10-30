@@ -19,11 +19,24 @@ cmdLine_fmt = ifdef($fmt, "text")
 
 # reading input args
 D = read($X)
-C = read($Y)
-laplace_correction = cmdLine_laplace
-
-numClasses = max(C)
+min_feature_val = min(D)
+if(min_feature_val < 0)
+	stop("Stopping due to invalid argument: Multinomial naive Bayes is meant for count-based feature values, minimum value in X is negative")
 numRows = nrow(D)
+if(numRows < 2)
+	stop("Stopping due to invalid inputs: Not possible to learn a classifier without at least 2 rows")
+
+C = read($Y)
+if(min(C) < 1)
+	stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
+numClasses = max(C)
+if(numClasses == 1)
+	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
+
+laplace_correction = cmdLine_laplace
+if(laplace_correction < 0)
+	stop("Stopping due to invalid argument: Laplacian correction (laplace) must be non-negative")
+
 numFeatures = ncol(D)
 
 # Compute conditionals
@@ -60,6 +73,10 @@ acc = sum(ppred(pred, C, "==")) / numRows * 100
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
 write(acc_str, $accuracy)
+
+extra_model_params = matrix(0, rows=1, cols=1)
+extra_model_params[1, 1] = numFeatures
+class_prior = t(append(t(class_prior), extra_model_params))
 
 # write out the model
 write(class_prior, $prior, format=cmdLine_fmt);

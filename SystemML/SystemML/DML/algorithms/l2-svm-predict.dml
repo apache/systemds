@@ -14,7 +14,7 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels icpt=intercept model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
+# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #
 # Note about inputs: 
 # labels (entries in Y) should either be set to +1/-1
@@ -26,12 +26,19 @@ cmdLine_confusion = ifdef($confusion, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")
 cmdLine_scores = ifdef($scores, " ")
 cmdLine_fmt = ifdef($fmt, "text")
-cmdLine_icpt = ifdef($icpt, 0)
 
 X = read($X)
 
-intercept = cmdLine_icpt
 w = read($model)
+
+dimensions = as.scalar(w[nrow(w),1])
+if(dimensions != ncol(X))
+	stop("Stopping due to invalid input: Model dimensions do not seem to match input data dimensions")
+	
+intercept = as.scalar(w[nrow(w)-1,1])
+negative_label = as.scalar(w[nrow(w)-2,1])
+positive_label = as.scalar(w[nrow(w)-3,1])
+w = w[1:(nrow(w)-4),]
 
 b = 0.0
 if(intercept == 1)
@@ -45,20 +52,9 @@ if(cmdLine_scores != " ")
 if(cmdLine_Y != " "){
 	y = read(cmdLine_Y)
 
-	# checking labels in y
-	# there should be only 2 distinct values in y
-	check_min = min(y)
-	check_max = max(y)
-	num_min = sum(ppred(y, check_min, "=="))
-	num_max = sum(ppred(y, check_max, "=="))
-	if(num_min + num_max != nrow(y)) print("please check y, it should contain only 2 labels")
-	else{
-		if(check_min != -1 | check_max != +1) 
-			y = 2/(check_max - check_min)*y - (check_min + check_max)/(check_max - check_min)
-	}
-
-	pred = 2*ppred(scores, 0, ">") - 1
-	num_correct = sum(ppred(pred, y, "=="))
+	pred = ppred(scores, 0, ">")
+	pred_labels = pred*positive_label + (1-pred)*negative_label
+	num_correct = sum(ppred(pred_labels, y, "=="))
 	acc = 100*num_correct/nrow(X)
 
 	acc_str = "Accuracy (%): " + acc
@@ -67,6 +63,10 @@ if(cmdLine_Y != " "){
 		write(acc_str, cmdLine_accuracy)
 
 	if(cmdLine_confusion != " "){
+		pred = 2*pred - 1
+		if(negative_label != -1 | positive_label != +1)
+        	y = 2/(positive_label - negative_label)*y - (negative_label + positive_label)/(positive_label - negative_label)
+		
 		pred_is_minus = ppred(pred, -1, "==")
 		pred_is_plus = 1 - pred_is_minus
 		y_is_minus = ppred(y, -1, "==")

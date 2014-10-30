@@ -31,23 +31,43 @@ cmdLine_maxiter = ifdef($maxiter, 100)
 X = read($X)
 Y = read($Y)
 
+if(nrow(X) < 2)
+	stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier from just 1 row")
+
 check_min = min(Y)
 check_max = max(Y)
 num_min = sum(ppred(Y, check_min, "=="))
 num_max = sum(ppred(Y, check_max, "=="))
-if(num_min + num_max != nrow(Y)){
-	print("please check Y, it should contain only 2 labels")
-	continue = 0
-}else{
-	if(check_min != -1 | check_max != +1) 
-		Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
-	continue = 1
-}
+
+if(check_min == check_max)
+	stop("Stopping due to invalid inputs: Y seems to contain exactly one label")
+
+if(num_min + num_max != nrow(Y))
+	stop("Stopping due to invalid inputs: Y seems to contain more than 2 labels")
+	
+if(check_min != -1 | check_max != +1) 
+	Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
+
+positive_label = check_max
+negative_label = check_min
+
+continue = 1
 
 intercept = cmdLine_icpt
+if(intercept != 0 & intercept != 1)
+	stop("Stopping due to invalid argument: Currently supported intercept options are 0 and 1")
+
 epsilon = cmdLine_tol
+if(epsilon < 0)
+	stop("Stopping due to invalid argument: Epsilon must be non-negative")
+	
 lambda = cmdLine_reg
+if(lambda < 0)
+	stop("Stopping due to invalid argument: Regularization constant (Lambda) must be non-negative")
+	
 maxiterations = cmdLine_maxiter
+if(maxiterations < 1)
+	stop("Stopping due to invalid argument: Maximum iterations should be a positive integer")
 
 num_samples = nrow(X)
 dimensions = ncol(X)
@@ -115,6 +135,13 @@ while(continue == 1 & iter < maxiterations)  {
     iter = iter + 1
 }
 
-write(w, $model, format=cmdLine_fmt)
-write(debug_str, $Log)
+extra_model_params = matrix(0, rows=4, cols=1)
+extra_model_params[1,1] = positive_label
+extra_model_params[2,1] = negative_label
+extra_model_params[3,1] = intercept
+extra_model_params[4,1] = dimensions
 
+w = t(append(t(w), t(extra_model_params)))
+write(w, $model, format=cmdLine_fmt)
+
+write(debug_str, $Log)

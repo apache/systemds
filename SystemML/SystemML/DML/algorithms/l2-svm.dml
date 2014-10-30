@@ -32,7 +32,7 @@ X = read($X)
 Y = read($Y)
 
 if(nrow(X) < 2)
-	stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier from just 1 row")
+	stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
 
 check_min = min(Y)
 check_max = max(Y)
@@ -59,11 +59,11 @@ if(intercept != 0 & intercept != 1)
 
 epsilon = cmdLine_tol
 if(epsilon < 0)
-	stop("Stopping due to invalid argument: Epsilon must be non-negative")
+	stop("Stopping due to invalid argument: Tolerance (tol) must be non-negative")
 	
 lambda = cmdLine_reg
 if(lambda < 0)
-	stop("Stopping due to invalid argument: Regularization constant (Lambda) must be non-negative")
+	stop("Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
 	
 maxiterations = cmdLine_maxiter
 if(maxiterations < 1)

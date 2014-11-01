@@ -85,10 +85,26 @@ public abstract class CostEstimator
 		double costs = 0;
 
 		for( ProgramBlock pb : rtprog.getProgramBlocks() )
-			costs += rGetTimeEstimate(pb, vars, stats, new HashSet<String>());
+			costs += rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), true);
 		
 		return costs;
 	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @param vars
+	 * @param stats
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		return rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), recursive);
+	}
+	
 		
 	/**
 	 * 
@@ -109,7 +125,7 @@ public abstract class CostEstimator
 		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, false, 0);
 		ProgramBlock pb = new ProgramBlock(null);
 		pb.setInstructions(linst);
-		costs = rGetTimeEstimate(pb, vars, stats, new HashSet<String>());
+		costs = rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), true);
 		
 		return costs;
 	}
@@ -123,7 +139,7 @@ public abstract class CostEstimator
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private double rGetTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, HashSet<String> memoFunc) 
+	private double rGetTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		double ret = 0;
@@ -131,26 +147,30 @@ public abstract class CostEstimator
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			for (ProgramBlock pb2 : tmp.getChildBlocks())
-				ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
+			if( recursive )
+				for (ProgramBlock pb2 : tmp.getChildBlocks())
+					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
 			ret *= DEFAULT_NUMITER;
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;
-			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
-				ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
-			if( tmp.getChildBlocksElseBody()!=null )
-				for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
-					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
-					ret /= 2; //weighted sum	
-				}
+			if( recursive ) {
+				for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+				if( tmp.getChildBlocksElseBody()!=null )
+					for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
+						ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+						ret /= 2; //weighted sum	
+					}
+			}
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			for( ProgramBlock pb2 : tmp.getChildBlocks() )
-				ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
+			if( recursive )
+				for( ProgramBlock pb2 : tmp.getChildBlocks() )
+					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
 			
 			ret *= getNumIterations(vars, stats, tmp.getIterablePredicateVars());			
 		}		
@@ -158,8 +178,9 @@ public abstract class CostEstimator
 				  && !(pb instanceof ExternalFunctionProgramBlock)) //see generic
 		{
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
-			for( ProgramBlock pb2 : tmp.getChildBlocks() )
-				ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
+			if( recursive )
+				for( ProgramBlock pb2 : tmp.getChildBlocks() )
+					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
 		}
 		else if( pb instanceof CVProgramBlock
 				//|| pb instanceof ELProgramBlock
@@ -207,7 +228,7 @@ public abstract class CostEstimator
 							Program prog = pb.getProgram();
 							FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
 							                            finst.getNamespace(), finst.getFunctionName());
-							ret += rGetTimeEstimate(fpb, vars, stats, memoFunc);
+							ret += rGetTimeEstimate(fpb, vars, stats, memoFunc, recursive);
 							memoFunc.remove(fkey);
 							
 							if(LOG.isDebugEnabled())

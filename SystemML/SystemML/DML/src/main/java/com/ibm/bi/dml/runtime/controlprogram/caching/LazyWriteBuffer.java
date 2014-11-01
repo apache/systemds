@@ -208,6 +208,16 @@ public class LazyWriteBuffer
 	
 	/**
 	 * 
+	 * @return
+	 */
+	public static long getWriteBufferSize()
+	{
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		return (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
+	}
+	
+	/**
+	 * 
 	 */
 	public static void printStatus( String position )
 	{

@@ -47,7 +47,8 @@ public class DMLYarnClientProxy
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.yarn").setLevel((Level) Level.DEBUG);
+			Logger.getLogger("com.ibm.bi.dml.yarn")
+			      .setLevel((Level) Level.DEBUG);
 		}
 	}
 	
@@ -74,6 +75,7 @@ public class DMLYarnClientProxy
 			//optimize resources (and update configuration)
 			if( RESOURCE_OPTIMIZER ){
 				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
+				DMLAppMasterUtils.setupRemoteParallelTasks( cc );
 				ArrayList<ProgramBlock> pb = DMLAppMasterUtils.getRuntimeProgramBlocks(rtprog);
 				ResourceConfig rc = ResourceOptimizer.optimizeResourceConfig( pb, cc, 
 						                 GridEnumType.HYBRID_MEM_EXP_GRID, GridEnumType.HYBRID_MEM_EXP_GRID );

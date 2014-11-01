@@ -99,6 +99,15 @@ public class InfrastructureAnalyzer
 	}
 	
 	/**
+	 * 
+	 * @param pmap
+	 */
+	public static void setRemoteParallelMapTasks(int pmap)
+	{
+		_remoteParMap = pmap;
+	}
+	
+	/**
 	 * Gets the total number of available reduce slots.
 	 * 
 	 * @return
@@ -109,6 +118,15 @@ public class InfrastructureAnalyzer
 			analyzeHadoopCluster();
 		
 		return _remoteParReduce;
+	}
+	
+	/**
+	 * 
+	 * @param preduce
+	 */
+	public static void setRemoteParallelReduceTasks(int preduce)
+	{
+		_remoteParReduce = preduce;
 	}
 	
 	/**

@@ -200,11 +200,12 @@ public class IfProgramBlock extends ProgramBlock
 			{
 				if( _sb != null )
 				{
+					if( DMLScript.isActiveAM() ) //set program block specific remote memory
+						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
+					
 					IfStatementBlock isb = (IfStatementBlock)_sb;
 					Hop predicateOp = isb.getPredicateHops();
 					boolean recompile = isb.requiresPredicateRecompilation();
-					if( recompile && DMLScript.isActiveAM() ) //set program block specific remote memory
-						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
 					result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BOOLEAN, ec);
 				}
 				else

@@ -9,9 +9,7 @@ package com.ibm.bi.dml.yarn.ropt;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
@@ -30,8 +28,9 @@ public class GridEnumerationMemory extends GridEnumeration
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final int DEFAULT_NSTEPS = 20;
-
+	public static final int DEFAULT_NSTEPS = 15;
+	public static final int DEFAULT_MEM_ADD = 1*1024*1024; //1MB
+	
 	private int _nsteps = -1;
 	
 	public GridEnumerationMemory( ArrayList<ProgramBlock> prog, long min, long max ) 
@@ -56,42 +55,42 @@ public class GridEnumerationMemory extends GridEnumeration
 		throws DMLRuntimeException, HopsException
 	{
 		ArrayList<Long> ret = new ArrayList<Long>();
-		long gap = (long)(_max - _min) / (_nsteps-1); //MB granularity
-		
-		//enumerate bins between equi grid points
-		HashMap<Long, Integer> map = new HashMap<Long,Integer>();
-		long v = _min;
-		for (int i = 0; i < _nsteps; i++) {
-			map.put( getKey(_min, gap, v), 0 );
-			v += gap;
-		}
+		long gap = (long)(_max - _min) / (_nsteps-1);
 		
 		//get memory estimates
 		ArrayList<Long> mem = new ArrayList<Long>();
 		getMemoryEstimates( _prog, mem );
-		for( Long est : mem ){
-			Integer cnt = map.get( getKey(_min, gap, est));
-			cnt = (cnt==null) ? 0 : cnt;
-			map.put(getKey(_min, gap, est), cnt+1);
-		}
 		
-		//prepare output (for disjointness)
+		//binning memory estimates to equi grid 
 		HashSet<Long> preRet = new HashSet<Long>();
-		for( Entry<Long, Integer> e : map.entrySet() ){
-			if( e.getValue() > 0 ){
-				preRet.add(_min+e.getKey()*gap);
-				if( e.getKey()>0 )
-					preRet.add(_min+(e.getKey()+1)*gap);
+		for( Long val : mem )
+		{
+			if( val < _min ) 
+				preRet.add( _min ); //only right side
+			else if( val > _max )
+				preRet.add( _max ); //only left side
+			else
+			{
+				long bin = Math.max((val-_min)/gap,0);				
+				preRet.add( filterMax(_min + bin*gap) );
+				preRet.add( filterMax(_min + (bin+1)*gap) );
 			}
 		}
 		
 		//create sorted output (to prevent over-provisioning)
 		for( Long val : preRet )
-			if( val <= _max )//filter max
-				ret.add(val);
+			ret.add(val);
 		Collections.sort(ret); //asc
 		
 		return ret;
+	}
+	
+	private long filterMax( long val )
+	{
+		if( val > _max ) //truncate max
+			return _max;
+		
+		return val;
 	}
 	
 	/**
@@ -163,60 +162,10 @@ public class GridEnumerationMemory extends GridEnumeration
 			getMemoryEstimates(hi, mem);
 		
 		//add memory estimates (scaled by CP memory ratio)
-		mem.add( (long)(hop.getMemEstimate()/OptimizerUtils.MEM_UTIL_FACTOR) );
+		mem.add( (long)( (hop.getMemEstimate()+DEFAULT_MEM_ADD)
+				          /OptimizerUtils.MEM_UTIL_FACTOR) );
 		
 		hop.set_visited(Hop.VISIT_STATUS.DONE);
 	}
 	
-	/**
-	 * 
-	 * @param min
-	 * @param gap
-	 * @param val
-	 * @return
-	 */
-	private static long getKey( long min, long gap, long val )
-	{
-		return Math.max( (val-min)/gap, 0 );
-	}
-	
-	
-	/*
-	 	public int countInterestPoints(double min, double max, ArrayList<Double> interested) {
-		int count = 0;
-		for (Double v : interested) {
-			if (v < min)
-				break;
-			if (v <= max)
-				count++;
-		}
-		return count;
-	}
-
-	public ArrayList<Double> genHybridGrid(double min, double max, int mainStep, int subStep, ArrayList<Double> interested) {
-		int i, j;
-		ArrayList<Double> ret = new ArrayList<Double> ();
-		
-		double mainGap = (max - min) / mainStep;
-		double subGap = mainGap / subStep;
-		
-		double current = min;
-		ret.add(current);
-		for (i = 0; i < mainStep; i++) {
-			if (countInterestPoints(current, current + mainGap, interested) > 0) {
-				double tmp = 0;
-				for (j = 0; j < subStep - 1; j++) {
-					tmp += subGap;
-					ret.add(current + tmp);
-				}
-			}
-			current += mainGap;
-			if (i + 1 == mainStep)
-				ret.add(max);	// just to make sure the last sample is exactly "max"
-			else
-				ret.add(current);
-		}
-		return ret;
-	}
-	 */
 }

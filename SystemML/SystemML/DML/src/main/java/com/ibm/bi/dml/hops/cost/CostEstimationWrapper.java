@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 
 public class CostEstimationWrapper 
@@ -81,6 +82,27 @@ public class CostEstimationWrapper
 		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
 		
 		double costs = _costEstim.getTimeEstimate(rtprog, vars, stats);
+		LOG.debug("Finished estimation in "+time.stop()+"ms.");
+		return costs;
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @param ec
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		Timing time = new Timing(true);
+		
+		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();		
+		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
+		
+		double costs = _costEstim.getTimeEstimate(pb, vars, stats, recursive);
 		LOG.debug("Finished estimation in "+time.stop()+"ms.");
 		return costs;
 	}

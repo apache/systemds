@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
 import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterConfig;
 
 public class DMLAppMasterUtils 
 {
@@ -100,15 +101,17 @@ public class DMLAppMasterUtils
 	 * 
 	 * @param sb
 	 */
-	public static void setupProgramBlockRemoteMaxMemory(ProgramBlock sb)
+	public static void setupProgramBlockRemoteMaxMemory(ProgramBlock pb)
 	{
 		if( DMLScript.isActiveAM() && DMLYarnClientProxy.RESOURCE_OPTIMIZER )
 		{
-			//set max map and reduce memory (to be used by the compiler)
-			long mem = _rcMap.get(sb);
-			InfrastructureAnalyzer.setRemoteMaxMemoryMap(mem);
-			InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);			
-			OptimizerUtils.setDefaultSize();
+			if( _rcMap != null && _rcMap.containsKey(pb) ){ 
+				//set max map and reduce memory (to be used by the compiler)
+				long mem = _rcMap.get(pb);
+				InfrastructureAnalyzer.setRemoteMaxMemoryMap(mem);
+				InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);			
+				OptimizerUtils.setDefaultSize();
+			}
 		}	
 	}
 	
@@ -160,5 +163,17 @@ public class DMLAppMasterUtils
 		ret.addAll(prog.getFunctionProgramBlocks().values());
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param cc
+	 */
+	protected static void setupRemoteParallelTasks( YarnClusterConfig cc )
+	{
+		int pmap = (int) cc.getNumCores();
+		int preduce = (int) cc.getNumCores()/2;
+		InfrastructureAnalyzer.setRemoteParallelMapTasks(pmap);
+		InfrastructureAnalyzer.setRemoteParallelReduceTasks(preduce);
 	}
 }

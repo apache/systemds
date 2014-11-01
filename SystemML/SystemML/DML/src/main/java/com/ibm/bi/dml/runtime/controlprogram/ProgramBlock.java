@@ -143,6 +143,9 @@ public class ProgramBlock
 		//dynamically recompile instructions if enabled and required
 		try 
 		{
+			if( DMLScript.isActiveAM() ) //set program block specific remote memory
+				DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
+			
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
@@ -150,9 +153,6 @@ public class ProgramBlock
 				&& _sb.requiresRecompilation() )
 				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
 			{
-				if( DMLScript.isActiveAM() ) //set program block specific remote memory
-					DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
-				
 				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), false, _tid);
 			}
 			if( DMLScript.STATISTICS ){

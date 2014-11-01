@@ -38,7 +38,7 @@ public class YarnClusterAnalyzer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
-	public static final int CPU_HYPER_FACTOR = 3; //actually 2 but slightly more aggressive
+	public static final int CPU_HYPER_FACTOR = 1; 
 	
 	//static local master node properties
 	public static int  _localPar        = -1;

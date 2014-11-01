@@ -110,11 +110,12 @@ public class WhileProgramBlock extends ProgramBlock
 			{
 				if( _sb!=null )
 				{
+					if( DMLScript.isActiveAM() ) //set program block specific remote memory
+						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
+					
 					WhileStatementBlock wsb = (WhileStatementBlock)_sb;
 					Hop predicateOp = wsb.getPredicateHops();
 					boolean recompile = wsb.requiresPredicateRecompilation();
-					if( recompile && DMLScript.isActiveAM() ) //set program block specific remote memory
-						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
 					result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BOOLEAN, ec);
 				}
 				else

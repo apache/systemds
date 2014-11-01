@@ -63,6 +63,12 @@ public class ExecutionContext
 		this( true, prog );
 		
 	}
+	
+	public ExecutionContext(LocalVariableMap vars)
+	{
+		this( false, null);
+		_variables = vars;
+	}
 
 	public ExecutionContext(NetezzaConnector nzCon)
 	{

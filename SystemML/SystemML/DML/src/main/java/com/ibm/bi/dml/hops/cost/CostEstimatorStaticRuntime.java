@@ -17,6 +17,7 @@ import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -38,6 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRU
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import com.ibm.bi.dml.yarn.ropt.MRJobResourceInstruction;
 
 /**
  * 
@@ -59,7 +61,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 	//MR job latency
 	private static final double DEFAULT_MR_LATENCY_LOCAL = 2;
-	private static final double DEFAULT_MR_LATENCY_REMOTE = 10;
+	private static final double DEFAULT_MR_LATENCY_REMOTE = 20;
 	
 	//IO READ throughput
 	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_DENSE = 200;
@@ -80,10 +82,16 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		double ltime = 0;
 		if( !vs[0]._inmem ){
 			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen );
+			//eviction costs
+			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (long)((vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz)) )
+				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen ));
 			vs[0]._inmem = true;
 		}
 		if( !vs[1]._inmem ){
 			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen );
+			//eviction costs
+			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (long)((vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz)) )
+				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen ));
 			vs[1]._inmem = true;
 		}
 				
@@ -116,6 +124,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		int maxPRed = Math.min( InfrastructureAnalyzer.getRemoteParallelReduceTasks(),
 				        Integer.parseInt(ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REDUCERS)) );
 		double blocksize = ((double)InfrastructureAnalyzer.getHDFSBlockSize())/(1024*1024);
+		
+		//yarn-specific: take degree of parallelism into account
+		if( jinst instanceof MRJobResourceInstruction ){
+			int maxTasks = (int)((MRJobResourceInstruction)jinst).getMaxMRTasks();
+			maxPMap = Math.min(maxPMap, maxTasks);
+			maxPRed = Math.min(maxPRed, maxTasks);
+		}
 		
 		//job properties
 		boolean mapOnly = jinst.isMapOnly();
@@ -179,6 +194,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			for( int i=0; i<mapOutIx.length; i++ )
 			{
 				shuffleCosts += ( getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPMap
+				                + getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPRed
 						        + getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPRed); 	
 			}
 						
@@ -708,14 +724,16 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			
 				case AggregateBinary: //opcodes: ba+*, cov
 					if( optype.equals("ba+*") ) { //matrix mult
+						//reduction by factor 2 because matrix mult better than
+						//average flop count
 						if( !leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n);
+							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n) /2;
 						else if( !leftSparse && rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n * d2s);
+							return 2 * (d1m * d1n * d1s * d2n * d2s) /2;
 						else if( leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n);
+							return 2 * (d1m * d1n * d1s * d2n) /2;
 						else //leftSparse && rightSparse
-							return 2 * (d1m * d1n * d1s * d2n * d2s);
+							return 2 * (d1m * d1n * d1s * d2n * d2s) /2;
 					}
 					else if( optype.equals("cov") ) {
 						//note: output always scalar, d3 used as weights block
@@ -945,18 +963,20 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 				case MMTSJ: //opcodes: tsmm
 					//diff to ba+* only upper triangular matrix
+					//reduction by factor 2 because matrix mult better than
+					//average flop count
 					if( MMTSJType.valueOf(args[0])==MMTSJType.LEFT ) { //lefttranspose
 						if( !rightSparse ) //dense						
-							return d1m * d1n * d1s * d1n;
+							return d1m * d1n * d1s * d1n /2;
 						else //sparse
-							return d1m * d1n * d1s * d1n * d1s; 
+							return d1m * d1n * d1s * d1n * d1s /2; 
 					}
 					else if(onlyLeft) { //righttranspose
 						if( !leftSparse ) //dense
-							return d1m * d1n * d1m;
+							return d1m * d1n * d1m /2;
 						else //sparse
 							return   d1m * d1n * d1s //reorg sparse
-							       + d1m * d1n * d1s * d1n * d1s; //core tsmm
+							       + d1m * d1n * d1s * d1n * d1s /2; //core tsmm
 					}					
 					return 0;
 				
@@ -992,15 +1012,17 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//note: copy from CP costs
 					if(    optype.equals("cpmm") || optype.equals("rmm") 
 						|| optype.equals("mapmult") ) //matrix mult
-					{ 
+					{
+						//reduction by factor 2 because matrix mult better than
+						//average flop count
 						if( !leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n);
+							return 2 * (d1m * d1n * ((d2n>1)?d1s:1.0) * d2n) /2;
 						else if( !leftSparse && rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n * d2s);
+							return 2 * (d1m * d1n * d1s * d2n * d2s) /2;
 						else if( leftSparse && !rightSparse )
-							return 2 * (d1m * d1n * d1s * d2n);
+							return 2 * (d1m * d1n * d1s * d2n) /2;
 						else //leftSparse && rightSparse
-							return 2 * (d1m * d1n * d1s * d2n * d2s);
+							return 2 * (d1m * d1n * d1s * d2n * d2s) /2;
 					}
 					return 0;
 					

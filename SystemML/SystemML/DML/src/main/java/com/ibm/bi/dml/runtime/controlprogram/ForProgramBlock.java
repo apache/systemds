@@ -227,6 +227,9 @@ public class ForProgramBlock extends ProgramBlock
 			{
 				if( _sb!=null )
 				{
+					if( DMLScript.isActiveAM() ) //set program block specific remote memory
+						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
+					
 					ForStatementBlock fsb = (ForStatementBlock)_sb;
 					Hop predHops = null;
 					boolean recompile = false;
@@ -242,9 +245,6 @@ public class ForProgramBlock extends ProgramBlock
 						predHops = fsb.getIncrementHops();
 						recompile = fsb.requiresIncrementRecompilation();
 					}
-					if( recompile && DMLScript.isActiveAM() ) //set program block specific remote memory
-						DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
-					
 					tmp = (IntObject) executePredicate(instructions, predHops, recompile, ValueType.INT, ec);
 				}
 				else

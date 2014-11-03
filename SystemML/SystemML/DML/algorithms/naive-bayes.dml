@@ -54,9 +54,10 @@ parfor (i in 1:numFeatures) {
 classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
 
 # Compute class conditional probabilities
-ones = matrix(1, rows=1, cols=numFeatures)
-repClassSums = classSums %*% ones
-class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
+#ones = matrix(1, rows=1, cols=numFeatures)
+#repClassSums = classSums %*% ones
+#class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
+class_conditionals = (classFeatureCounts + laplace_correction) / classSums
 
 # Compute class priors
 class_counts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses))

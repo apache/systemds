@@ -992,6 +992,7 @@ public class TertiaryOp extends Hop
 		
 		//copy specific attributes
 		ret.op = op;
+		ret.dimInputsPresent = dimInputsPresent;
 		
 		return ret;
 	}

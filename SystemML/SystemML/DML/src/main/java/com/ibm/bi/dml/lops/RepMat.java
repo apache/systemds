@@ -45,7 +45,7 @@ public class RepMat extends Lop
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 
 

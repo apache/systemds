@@ -7,110 +7,295 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# Implements regression trees (with scale/continuous features)
+# Implements classification trees (with scale/continuous features)
 #
 # Example Usage:
 #
-# hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y bins=100 depth=5 num_leaf=10 num_samples=250 model=$OUPUT_DIR/model Log=$OUTPUT_DIR/Log fmt="csv"
+# hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y types=$INPUT_DIR/types model=$OUPUT_DIR/model bins=50 depth=10 num_leaf=1 num_samples=10 Log=$OUTPUT_DIR/Log fmt="csv"
 #
 # Args:
-# X, Y: Input features and labels
-# bins: Generates this many number of equiheight bins per feature
+# X, Y: Input features and labels, respectively
+# types: a matrix with 1 column denoting whether columns in X are continuous (id=1) or categorical (id=2)
+# bins: Generates this many number of equiheight bins per scale feature to choose thresholds
 # depth: Defines max depth of the learnt tree
-# num_leaf: Defines the number of samples when splitting stops and a leaf node is built
+# num_leaf: Defines the number of samples when splitting stops and a leaf node is added
 # num_samples: Defines the number of samples at which point we switch to in-memory subtree building
 # model: HDFS location where the learnt tree is stored
 # Log: HDFS location where the log messages are stored
 # fmt: Preferred format of the model file (default is ijv/"text")
 #
 
-cmdLine_fmt = ifdef($fmt, "text")
-
 order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
-			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+	implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
 	
 /*
- * Computes label for regression trees
+ * Computes label for classification trees
+ * Determines the mode of y
  */ 		    
-findLabel = function(Matrix[Double] X, Matrix[Double] y) return (Double label){
-	label = mean(y)
+findLabel = function(Matrix[Double] y, Integer num_classes) 
+	    return (Double label){
+	label = as.scalar(rowIndexMax(t(aggregate(target=y, groups=y, fn="count", ngroups=num_classes))))
 }
 
 /*
- * Computes gain using variance
- * Takes as input arguments 6 scalars:
- * sum(y^2), sum(y), count of samples
- * for samples that go to the left: sum(y^2), sum(y) and count of samples
+ * Returns the indicator col determining the left samples
+ * defined by splitting on this (scale) feature col with this threshold
+ */
+computeLeftForScale = function(Matrix[Double] feature_vals, Double threshold) return(Matrix[Double] left){
+      left = ppred(feature_vals, threshold, "<")
+}
+
+/*
+ * Returns the indicator col determining the left samples
+ * defined by splitting on this (categorical) feature col with
+ * this subset of vals (provided as input in bit vector representation)
+ */
+computeLeftForCategorical = function(Matrix[Double] feature_vals, Matrix[Double] vals) return(Matrix[Double] left){
+      n = nrow(feature_vals)
+      left = matrix(0, rows=n, cols=1)
+      for(i in 1:n)
+	    if(as.scalar(vals[as.scalar(feature_vals[i,1]),1]) == 1) 
+	          left[i,1] = 1
+}
+
+/*
+ * Takes counts of labels and returns (Gini) impurity
+ */
+computeImpurity = function(Matrix[Double] label_counts) 
+		  return (Double impurity){
+  tot_count = sum(label_counts)
+  
+  if(tot_count == 0.0) tot_count = 1.0
+  
+  label_proportions = label_counts/tot_count
+
+  impurity = 1 - sum(label_proportions^2)
+}
+
+/*
+ * Takes label counts arriving at the parent node
+ * and label counts going to the left branch
+ * to compute the gain (calls computeImpurity)
+ */
+computeGainFromLabelCounts = function(Matrix[Double] label_counts_all,
+	      	       	              Matrix[Double] label_counts_left)
+	      		     return (Double gain){
+  tot_count_all = sum(label_counts_all)
+  impurity_all = computeImpurity(label_counts_all)
+
+  tot_count_left = sum(label_counts_left)
+  impurity_left = computeImpurity(label_counts_left)
+  
+  label_counts_right = label_counts_all - label_counts_left
+  tot_count_right = sum(label_counts_right)
+  impurity_right = computeImpurity(label_counts_right)
+
+  gain = computeGainFromImpurities(impurity_all, 
+         	     		   impurity_left,
+	 	     		   impurity_right,
+		     		   tot_count_all,
+		     		   tot_count_left,
+		     		   tot_count_right)
+}	       
+
+/*
+ * Takes impurities and counts at parent, left and right child nodes
+ * Computes information gain
  */ 
-computeGain = function(Double sum_y2_all, Double sum_y_all, Integer count_all, Double sum_y2_left, Double sum_y_left, Integer count_left)
-			  return (Double gain){
-	var_all = 0
-	if(count_all > 0) var_all = (sum_y2_all - sum_y_all^2/count_all)		#*count_all/(count_all-1)		  
+computeGainFromImpurities = function(Double impurity_parent, 
+	      	       	    	     Double impurity_left, 
+		       		     Double impurity_right, 
+		       		     Integer count_parent, 
+		       		     Integer count_left, 
+		       		     Integer count_right)
+	      		    return (Double gain){
+	gain = count_parent*impurity_parent - count_left*impurity_left - count_right*impurity_right			
+}
+
+/*
+ * Determines the best threshold to split
+ * Take the col of feature values, the labels and
+ * the label counts arriving at the parent as input args
+ * Returns the best threshold, the gain when splitting at
+ * that threshold, and if the split at that threshold 
+ * produces a left/right child that should be a label node
+ */
+scaleSplit = function(Matrix[Double] feature_vals,
+	              Matrix[Double] y,
+		      Matrix[Double] label_counts_at_parent,
+		      Integer num_classes)
+	     return(Double best_threshold_for_feature,
+	     	    Double best_gain_for_feature,
+		    Integer is_left_child_pure_4_best,
+		    Integer is_right_child_pure_4_best){
+      sorted_feature_vals = order(feature_vals, 1, FALSE)
+		
+      /*
+       * print("feature=" + i + " sorted feature values:")
+       * for(j in 1:nrow(sorted_feature_vals))
+       *	print(" " + j + " -> " + castAsScalar(sorted_feature_vals[j,1]))
+       */
+		 
+      best_threshold_pos_for_feature = 0
+      best_gain_for_feature = 0.0
+      is_left_child_pure_4_best = 0
+      is_right_child_pure_4_best = 0
+      for(j in 1:(nrow(sorted_feature_vals)-1)){
+	      threshold = castAsScalar((sorted_feature_vals[j,1] + sorted_feature_vals[j+1,1])/2)
+			
+	      left = computeLeftForScale(feature_vals, threshold)
+	      yl = removeEmpty(target=y*left, margin="rows")
+	      label_counts_left = aggregate(target=yl, groups=yl, fn="count", ngroups=num_classes)
+			
+	      gain = computeGainFromLabelCounts(label_counts_at_parent, label_counts_left)
+		
+              plc = 0	
+	      if(sum(label_counts_left) == max(label_counts_left)) plc = 1
+	      
+	      prc = 0
+	      if(sum(label_counts_at_parent - label_counts_left) == max(label_counts_at_parent - label_counts_left)) prc = 1
+
+	      #print("feature=" + i + " threshold=" + threshold + " gain=" + gain + " nl=" + nl + " nr=" + nr)
+			
+	      if(best_threshold_pos_for_feature == 0 | gain > best_gain_for_feature){
+		      best_gain_for_feature = gain
+		      best_threshold_pos_for_feature = j
+		      is_left_child_pure_4_best = plc
+		      is_right_child_pure_4_best = prc
+	      }
+      }
+		
+      best_threshold_for_feature = castAsScalar((sorted_feature_vals[best_threshold_pos_for_feature,1] + sorted_feature_vals[best_threshold_pos_for_feature + 1, 1])/2)
+}
+
+/*
+ * Determines the best subset of values from the domain
+ * of the feature to split on so we get the highest gain
+ * Takes as arg a domain X num_classes matrix of label counts
+ * Returns the bit vector corresponding to the best subset of 
+ * values, the gain at that split, and whether the split
+ * leads to left/right child that should be label nodes
+ */
+categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] ret, Double curr_gain, Integer pure_left_child, Integer pure_right_child){
+        num_classes = ncol(label_dist)
+	domain_size = nrow(label_dist)
 	
-	var_left = 0
-	if(count_left > 0) var_left = (sum_y2_left - sum_y_left^2/count_left)		#*count_left/(count_left-1)
-	
-	sum_y2_right = sum_y2_all - sum_y2_left
-	sum_y_right = sum_y_all - sum_y_left
-	count_right = count_all - count_left
-	
-	var_right = 0
-	if(count_right > 0) var_right = (sum_y2_right - sum_y_right^2/count_right)		#*count_right/(count_right-1)
-	
-	gain = var_all - var_left - var_right			
+	label_counts_all = colSums(label_dist)
+
+	ret = matrix(0, rows=domain_size, cols=1)
+
+	curr_gain = 0.0
+	vals_included = 0
+
+	curr_label_counts_left = matrix(0, rows=1, cols=num_classes)
+
+	continue = 1
+	while(continue == 1){
+		/*
+		 * print("current left counts:")
+		 * for(i in 1:ncol(curr_label_counts_left))
+		 *     print(" " + as.scalar(curr_label_counts_left[1,i]))
+		 */
+
+		best_gain = -1.0
+		best_val_to_include = -1
+		for(i in 1:domain_size){
+		      if(as.scalar(ret[i,1]) == 0){
+		            label_cnts = label_dist[i,]
+
+			    label_counts_left = curr_label_counts_left + label_cnts
+
+			    gain = computeGainFromLabelCounts(label_counts_all, label_counts_left)
+
+			    /*
+			     * print("trying val=" + i)
+			     * for(k in 1:num_classes)
+			     *   print(" " + as.scalar(label_counts_left[1,k]))
+			     * print("gain=" + gain)
+			     */
+
+			    if(best_val_to_include == -1 | best_gain < gain){
+			          best_val_to_include = i
+				  best_gain = gain
+			    }
+		      }
+		}
+		
+		#print("picked val=" + best_val_to_include + " gain=" + gain)
+		
+		if(best_gain >= curr_gain){
+		      curr_gain = best_gain
+		      curr_label_counts_left = curr_label_counts_left + label_dist[best_val_to_include,]
+		      ret[best_val_to_include,1] = 1
+		      vals_included = vals_included + 1
+		}else continue = 0
+	}
+
+	pure_left_child = 0
+	if(max(curr_label_counts_left) == max(curr_label_counts_left)) pure_left_child = 1
+
+	pure_right_child = 0
+	if(max(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left)) pure_right_child = 1
 }
 
 /*
  * Finds a the best split for a node
  * Meant for use when a 'small' number of samples reach this node
  */
-findSplit = function(Matrix[Double] X, Matrix[Double] y) return (Integer feature, Double threshold){
+findSplit = function(Matrix[Double] X, 
+	    	     Matrix[Double] y, 
+		     Integer num_classes, 
+		     Matrix[Double] kinds, 
+		     Matrix[Double] domain_sizes) 
+	    return (Integer feature, 
+	    	    Double threshold, 
+		    Matrix[Double] left_vals,
+		    Matrix[Double] left_rows){
 	n = nrow(X)
+
+	label_counts_all = aggregate(target=y, groups=y, fn="count", ngroups=num_classes)
 	
-	best_gain = 0
+	best_gain = 0.0
 	best_feature = -1
-	best_threshold = 0
+	best_threshold = 0.0
+	best_left_vals = matrix(0, rows=1, cols=1)
 	for(i in 1:ncol(X)){
 		feature_vals = X[,i]
-		sorted_feature_vals = order(feature_vals, 1, FALSE)
-		
-		/*
-		 * print("feature=" + i + " sorted feature values:")
-		 * for(j in 1:nrow(sorted_feature_vals))
-		 *	print(" " + j + " -> " + castAsScalar(sorted_feature_vals[j,1]))
-		 */
-		 
-		best_threshold_pos_for_feature = 0
-		best_gain_for_feature = 0
-		for(j in 1:(nrow(sorted_feature_vals)-1)){
-			threshold = castAsScalar((sorted_feature_vals[j,1] + sorted_feature_vals[j+1,1])/2)
-			
-			left = ppred(feature_vals, threshold, "<")
-			yl = y*left
-			nl = as.integer(sum(left))
-			
-			gain = computeGain(sum(y^2), sum(y), n, sum(yl^2), sum(yl), nl)
-			
-			#print("feature=" + i + " threshold=" + threshold + " gain=" + gain + " nl=" + nl + " nr=" + nr)
-			
-			if(best_threshold_pos_for_feature == 0 | gain > best_gain_for_feature){
-				best_gain_for_feature = gain
-				best_threshold_pos_for_feature = j
-			}
+
+		if(as.scalar(kinds[i,1]) == 1){
+		      [best_threshold_for_feature, best_gain_for_feature, plc, prc] = scaleSplit(feature_vals, y, label_counts_all, num_classes)
+
+		      #print("feature=" + i + " best_threshold=" + best_threshold_for_feature + " best_gain=" + best_gain_for_feature)
+
+		      if(best_feature == -1 | best_gain_for_feature > best_gain){
+		            best_gain = best_gain_for_feature
+			    best_feature = i
+			    best_threshold = best_threshold_for_feature
+		      }
+		}else{
+		      label_dist = table(feature_vals, y, as.scalar(domain_sizes[1,i]), num_classes)
+		      [left_vals_bit_vector, best_gain_for_feature, plc, prc] = categoricalSplit(label_dist)
+		      
+		      if(best_feature == -1 | best_gain_for_feature > best_gain){
+		            best_gain = best_gain_for_feature
+			    best_feature = i
+			    best_left_vals = left_vals_bit_vector
+		      }
 		}
-		
-		best_threshold_for_feature = castAsScalar((sorted_feature_vals[best_threshold_pos_for_feature,1] + sorted_feature_vals[best_threshold_pos_for_feature + 1, 1])/2)
-		#print("feature=" + i + " best_threshold=" + best_threshold_for_feature + " best_gain=" + best_gain_for_feature)
-		
-		if(best_feature == -1 | best_gain_for_feature > best_gain){
-			best_gain = best_gain_for_feature
-			best_feature = i
-			best_threshold = best_threshold_for_feature
-		}
+
 	}
 	
 	feature = best_feature
-	threshold = best_threshold
+	threshold = 0.0
+	left_vals = matrix(0, rows=1, cols=1)
+	if(as.scalar(kinds[feature,1]) == 1){
+	      threshold = best_threshold
+	      left_rows = computeLeftForScale(X[,feature], threshold)
+	}else{
+	      left_vals = best_left_vals
+	      left_rows = computeLeftForCategorical(X[,feature], best_left_vals)
+	}
+
 	#print("best_feature=" + feature + " best_threshold=" + threshold + " best_gain=" + best_gain)
 }
 
@@ -122,20 +307,32 @@ findSplit = function(Matrix[Double] X, Matrix[Double] y) return (Integer feature
  * Is a recursive function, but meant to run in memory
  */
 buildNode = function(Matrix[Double] X, 
-					 Matrix[Double] y, 
-					 Matrix[Double] features, 
-					 Matrix[Double] thresholds, 
-					 Integer pos, 
-					 Integer node_id, 
-					 Integer max_node_id, 
-					 Integer leaf_count) 
-		    return (Matrix[Double] features, Matrix[Double] thresholds){
-	if(nrow(X) > leaf_count & 2*node_id <= max_node_id & 2*node_id + 1 <= max_node_id){
-		[feature, threshold] = findSplit(X, y)
-		features[1,pos] = feature
-		thresholds[1,pos] = threshold
+		     Matrix[Double] y, 
+		     Matrix[Double] model,
+		     Integer pos, 
+		     Integer node_id, 
+		     Integer max_node_id, 
+		     Integer leaf_count,
+		     Integer num_classes,
+		     Matrix[Double] kinds,
+		     Matrix[Double] domain_sizes) 
+		    return (Matrix[Double] model){
+	if(nrow(X) > leaf_count & 2*node_id <= max_node_id & 2*node_id + 1 <= max_node_id & min(y) != max(y)){
+		[feature, threshold, left_vals_bit_vector_representation, left_rows] = findSplit(X, y, num_classes, kinds, domain_sizes)
 
-		#print("feature=" + feature + " threshold=" + threshold)		
+		model[1, pos] = feature
+
+		model[2, pos] = kinds[feature,1]
+
+		if(as.scalar(kinds[feature,1]) == 1) model[3, pos] = threshold
+		else{
+		      domain_size = as.scalar(domain_sizes[1,feature])
+
+	      	      left_vals_size = sum(left_vals_bit_vector_representation)
+	      	      model[3, pos] = left_vals_size
+
+		      model[4:(3+nrow(left_vals_bit_vector_representation)), pos] = t(left_vals_bit_vector_representation)
+		}	
 
 		/*
 		 * print("X:")
@@ -151,7 +348,6 @@ buildNode = function(Matrix[Double] X,
 	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(y[i,j]))
 		 */
 		 
-		left_rows = ppred(X[,feature], threshold, "<")
 		num_left = sum(left_rows)
 		num_right = nrow(X) - num_left
 		
@@ -204,13 +400,14 @@ buildNode = function(Matrix[Double] X,
 	 	 * for(j in 1:ncol(right_y))
 	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(right_y[i,j]))
 	 	 */ 
-	 	 
-		[features, thresholds] = buildNode(left_X, left_y, features, thresholds, 2*pos, 2*node_id, max_node_id, leaf_count)
-		[features, thresholds] = buildNode(right_X, right_y, features, thresholds, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count)
+
+		model = buildNode(left_X, left_y, model, 2*pos, 2*node_id, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
+		model = buildNode(right_X, right_y, model, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
 	}else{
-		label = mean(y) #findLabel(X, y)
-		features[1,pos] = -1
-		thresholds[1,pos] = label
+		label = findLabel(y, num_classes)
+				
+		model[1,pos] = -1
+		model[2,pos] = label
 	} 
 }
 
@@ -218,14 +415,22 @@ buildNode = function(Matrix[Double] X,
  * Merges a subtree into the master model
  * Is a recursive function, but meant to run in memory
  */
-recursiveCopy = function(Matrix[Double] local_features, Matrix[Double] local_thresholds, Integer local_pos, Matrix[Double] global_model, Integer global_pos)
-				return (Matrix[Double] global_model){
-	feature = local_features[1, local_pos]			
-	global_model[1, global_pos] = feature
-	global_model[2, global_pos] = local_thresholds[1, local_pos]
-	if(castAsScalar(feature) > 0){
-		global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos, global_model, 2*global_pos)
-		global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos + 1, global_model, 2*global_pos + 1)
+recursiveCopy = function(Matrix[Double] local_model, 
+	      		 Integer local_pos, 
+			 Matrix[Double] global_model, 
+			 Integer global_pos, 
+			 Matrix[Double] kinds, 
+			 Matrix[Double] maxs)
+		return (Matrix[Double] global_model){
+	feature = as.scalar(local_model[1, local_pos])
+	global_model[, global_pos] = local_model[, local_pos]
+
+	if(feature > 0){
+		#global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos, global_model, 2*global_pos)
+		#global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos + 1, global_model, 2*global_pos + 1)
+		
+		global_model = recursiveCopy(local_model, 2*local_pos, global_model, 2*global_pos)
+		global_model = recursiveCopy(local_model, 2*local_pos + 1, global_model, 2*global_pos + 1)
 	}
 	
 	/*
@@ -236,18 +441,37 @@ recursiveCopy = function(Matrix[Double] local_features, Matrix[Double] local_thr
 	 */
 }
 
+/*
+ * MAIN BEGINS HERE
+ */
+
+cmdLine_fmt = ifdef($fmt, "text")
+cmdLine_bins = ifdef($bins, 50)
+cmdLine_depth = ifdef($depth, 10)
+cmdLine_num_leaf = ifdef($num_leaf, 1)
+cmdLine_num_samples = ifdef($num_samples, 10)
+
 X = read($X)
 
-debug_str = "Building decision tree.. "
+/*
+ * print("X:")
+ * for(i in 1:nrow(X))
+ *	for(j in 1:ncol(X))
+ *		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
+*/
 
-print("X:")
-for(i in 1:nrow(X))
-	for(j in 1:ncol(X))
-		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
+kinds = read($types) #put 2 for categorical, 1 for scale (like bivar-stats)
 
-num_bins = $bins
+/*
+ * for(i in 1:nrow(kinds))
+ *     print(i + " feature: " + as.scalar(kinds[i,1]))
+ */
 
-bin_size = as.integer(0.5 + nrow(X)/num_bins)
+num_bins = cmdLine_bins
+
+bin_size = as.integer(nrow(X)/num_bins)
+if(bin_size == 0) bin_size = 1
+
 #print("bin size: " + bin_size)
 
 /*
@@ -261,126 +485,120 @@ bin_size = as.integer(0.5 + nrow(X)/num_bins)
 count_thresholds = matrix(0, rows=1, cols=ncol(X))
 thresholds = matrix(0, rows=num_bins+1, cols=ncol(X))
 parfor(i8 in 1:ncol(X)){
-	col = order(X[,i8], 1, FALSE)
-	
-	col_bins = matrix(0, rows=num_bins+1, cols=1)
-	col_bins[1,1] = col[1,1]
-	
-	pos_col = 0
-	bin_id = 1
-	while(pos_col < nrow(X) & bin_id <= num_bins){
-		#print("pos_col (before): " + pos_col)
-		if(pos_col + bin_size > nrow(X)) pos_col = nrow(X)
-		else pos_col = pos_col + bin_size
-		#print("pos_col (after): " + pos_col)
-		
-		end_val = col[pos_col,1]
-		col_bins[bin_id+1,1] = end_val
-		
-		continue = TRUE
-		while(continue & pos_col < nrow(X))
-			if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
-				pos_col = pos_col + 1
-			else continue = FALSE
-		#print("pos_col (changed): " + pos_col)
-		
-		bin_id = bin_id + 1
-	}
-	
-	/*
-	 * print("sorted vals:")
-	 * for(j in 1:nrow(col))
-	 *	print(" " + castAsScalar(col[j,1]))
-	 */
-	 
-	/* 	
-	 * print("bins:")
-	 * for(j in 1:nrow(col_bins))
-	 *	print(" " + castAsScalar(col_bins[j,1]))
-	 */
-	 
-	num_bins_defined = bin_id - 1
-	for(j in 1:num_bins_defined)
-		col_bins[j,1] = (col_bins[j,1] + col_bins[j+1,1])/2
-		
-	count_thresholds[,i8] = num_bins_defined
-	thresholds[,i8] = col_bins	
-}
+	if(as.scalar(kinds[i8,1]) == 1){
+	      col = order(X[,i8], 1, FALSE)
 
-tot_thresholds = sum(count_thresholds)
-#print("tot_thresholds: " + tot_thresholds)
+	      /*
+	       * print("sorted vals:")
+	       * for(j in 1:nrow(col))
+	       * print(" " + castAsScalar(col[j,1]))
+	       */
 
-cumulative_threshold_offsets = matrix(0, rows=1, cols=ncol(X))
-cumulative_threshold_offsets[1,1] = 0
-for(i in 2:ncol(X))
-	cumulative_threshold_offsets[1,i] = cumulative_threshold_offsets[1,i-1] + count_thresholds[1,i-1]
+	      col_bins = matrix(0, rows=num_bins+1, cols=1)
+	      col_bins[1,1] = col[1,1]
+	
+	      pos_col = 1
+	      bin_id = 1
+	      while(pos_col < nrow(X) & bin_id <= num_bins){
+	            #print("pos_col (before): " + pos_col)
+		    if(pos_col + bin_size > nrow(X)) pos_col = nrow(X)
+		    else pos_col = pos_col + bin_size
+		    #print("pos_col (after): " + pos_col)
+		
+		    end_val = col[pos_col,1]
+		    col_bins[bin_id+1,1] = end_val
+		
+		    continue = TRUE
+		    while(continue & pos_col < nrow(X))
+			  if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
+			        pos_col = pos_col + 1
+			  else continue = FALSE
+		    #print("pos_col (changed): " + pos_col)
+		
+		    bin_id = bin_id + 1
+	      }
+	
+	      #print("pos_col=" + pos_col + " bin_id=" + bin_id)
+	      
+	      /*
+	       * print("bins:")
+	       * for(j in 1:nrow(col_bins))
+	       *   print(" " + castAsScalar(col_bins[j,1]))
+	       */
 
-/*
- * print("cumulative_threshold_offsets:")
- * for(i in 1:ncol(cumulative_threshold_offsets))
- *	print(" " + castAsScalar(cumulative_threshold_offsets[1,i]))
- */
- 
-/*
- * A couple of useful data structures to help navigate thresholds:
- * pos2feature_and_threshold[threshold_pos,1] = gives feature id
- * corresponding to this threshold
- * pos2feature_and_threshold[threshold_pos,2] = gives the local
- * threshold pos corresponding to this threshold
- * threshold_positions[feature_id,local_threshold_id] = gives
- * the unique global threshold_id for this pair
- * Invariant: 
- * threshold_positions[pos2feature_and_threshold[threshold_pos,1],
- *					   pos2feature_and_threshold[threshold_pos,2]] 
- * = threshold_pos
- */
-pos2feature_and_threshold = matrix(0, rows=tot_thresholds, cols=2)
-threshold_positions = matrix(0, rows=ncol(X), cols=num_bins)
-parfor(i13 in 1:ncol(X), check=0){
-	threshold_offset = castAsScalar(cumulative_threshold_offsets[1,i13])
-	for(i14 in 1:castAsScalar(count_thresholds[1,i13])){
-		new_pos = threshold_offset + i14
-		threshold_positions[i13,i14] = new_pos
-		pos2feature_and_threshold[new_pos,1] = i13
-		pos2feature_and_threshold[new_pos,2] = i14
-	}	
+	      num_bins_defined = bin_id - 1
+	      for(j in 1:num_bins_defined)
+		    col_bins[j,1] = (col_bins[j,1] + col_bins[j+1,1])/2
+	
+	      /*
+	       * print("thresholds:")
+	       * for(j in 1:nrow(col_bins))
+	       *   print(" " + castAsScalar(col_bins[j,1]))
+	       */
+	      	
+	      count_thresholds[,i8] = num_bins_defined
+	      thresholds[,i8] = col_bins	
+      }
 }
 
 /*
- * print("threshold_positions:")
- * for(i in 1:nrow(threshold_positions))
- *	for(j in 1:castAsScalar(count_thresholds[1,i]))
- *		print(" feature=" + i + " threshold=" + j + " position=" + castAsScalar(threshold_positions[i,j]))
- */
- 
-/* 
- * print("pos2feature_and_threshold:")
- * for(i in 1:nrow(pos2feature_and_threshold))
- *	print(" pos=" + i + " -> feature=" + castAsScalar(pos2feature_and_threshold[i,1]) + " threshold=" + castAsScalar(pos2feature_and_threshold[i,2]))
+ * print("thresholds:")
+ * for(i in 1:ncol(thresholds)){
+ *	cnt = castAsScalar(count_thresholds[1,i])
+ *	print(" for feature=" + i + " cnt=" + cnt)
+ *	for(j in 1:cnt)
+ *		print("   " + castAsScalar(thresholds[j,i]))
+ * }
  */
 
-print("thresholds:")
-for(i in 1:ncol(thresholds)){
-	cnt = castAsScalar(count_thresholds[1,i])
-	print(" for feature=" + i + " cnt=" + cnt)
-	for(j in 1:cnt)
-		print("   " + castAsScalar(thresholds[j,i]))
+maxs = colMaxs(X);
+max_domain_size = 0.0;
+for(k in 1:ncol(X)){
+  kind = as.scalar(kinds[k,1]);
+  
+  if(kind == 2){
+    colMaximum = as.scalar(maxs[1,k]);
+    if(max_domain_size < colMaximum) max_domain_size = colMaximum;
+  }
 }
- 
+
+domain_offsets = matrix(0, rows=ncol(X), cols=2)
+curr_beg_pos = 1.0
+for(k in 1:ncol(X))
+      if(as.scalar(kinds[k,1]) == 2){
+            domain_offsets[k,1] = curr_beg_pos
+	    domain_offsets[k,2] = curr_beg_pos + as.scalar(maxs[1,k]) - 1
+	    curr_beg_pos = curr_beg_pos + as.scalar(maxs[1,k])
+      }
+
+/*
+ * print("domain range offsets")
+ * for(k in 1:ncol(X))
+ *     if(as.scalar(kinds[k,1]) == 2)
+ *           print("feature=" + k + " beg=" + as.scalar(domain_offsets[k,1]) + " end=" + as.scalar(domain_offsets[k,2]))
+ */
+#print("next curr_beg_pos=" + curr_beg_pos)
+
+#y must be recoded
 y = read($Y)
 
+num_classes = as.integer(max(y))
+
+#print("domain of y: [" + min(y) + ", " + max(y) + "] " + num_classes)
+
 #exposed to user
-depth = $depth - 1 #user counts depth from 1, but we count from 0
-leaf_count = $num_leaf
+depth = cmdLine_depth - 1 #user counts depth from 1, but we count from 0
+leaf_count = cmdLine_num_leaf
 
 #internal
-small_sample_count = $num_samples
+small_sample_count = cmdLine_num_samples
+#small_sample_count = 2 #set this to >1
 
 max_node_id = as.integer(2^(depth + 1) - 1)
 
 #first row contains feature id
 #second row contains threshold
-model = matrix(0, rows=2, cols=max_node_id)
+model = matrix(0, rows=(3+max_domain_size), cols=max_node_id)
 
 q = matrix(0, rows=max_node_id, cols=1)
 leaf_q = matrix(0, rows=max_node_id, cols=1)
@@ -389,17 +607,21 @@ if(2 <= max_node_id & 3 <= max_node_id & nrow(X) > leaf_count)
 else leaf_q[1,1] = 1
 
 while(sum(q) != 0 | sum(leaf_q) != 0){
-	str = "q:"
-	for(i in 1:nrow(q))
-		if(castAsScalar(q[i,1]) > 0)
-			str = append(str, " " + castAsScalar(q[i,1]))
-	print(str)
-	
-	str = "leaf_q:"
-	for(i in 1:nrow(leaf_q))
-		if(castAsScalar(leaf_q[i,1]) > 0)
-			str = append(str, " " + castAsScalar(leaf_q[i,1]))
-	print(str)
+	/*
+	 * str = "q:"
+	 * for(i in 1:nrow(q))
+	 *	if(castAsScalar(q[i,1]) > 0)
+	 *		str = append(str, " " + castAsScalar(q[i,1]))
+	 * print(str)
+	 */
+
+	/*
+	 * str = "leaf_q:"
+	 * for(i in 1:nrow(leaf_q))
+	 *	if(castAsScalar(leaf_q[i,1]) > 0)
+	 *		str = append(str, " " + castAsScalar(leaf_q[i,1]))
+	 * print(str)
+	 */
 
 	/*
 	 * Maps nodes in q, leaf_q to which cols store 
@@ -429,7 +651,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 	/*
 	 * print("position:")
 	 * for(i in 1:nrow(position))
-	 *	if(castAsScalar(position[i,1]) > 0)
+	 *   if(castAsScalar(position[i,1]) > 0)
 	 *		print(" " + i + " -> " + castAsScalar(position[i,1]))
 	 */
 
@@ -440,18 +662,34 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 	 */
 	reached = matrix(0, rows=nrow(X), cols=cnt)
 	parfor(i4 in 1:nrow(X)){
-	#for(i4 in 1:nrow(X)){
+		row = X[i4,]
 		curr_node = 1
-		while(castAsScalar(model[1,curr_node]) != 0 & castAsScalar(model[1,curr_node]) != -1){
+		while(as.scalar(model[1,curr_node]) > 0){
 			#print("curr_node=" + curr_node)
-			if(castAsScalar(X[i4,castAsScalar(model[1,curr_node])]) < castAsScalar(model[2,curr_node]))
-				curr_node = 2*curr_node
-			else curr_node = 2*curr_node + 1
+			curr_node_feature = as.scalar(model[1,curr_node])
+			curr_node_kind = as.scalar(model[2,curr_node])
+			row_value_for_curr_node_feature = as.scalar(row[1,curr_node_feature])
+			if(curr_node_kind == 1){
+			      threshold_at_curr_node = as.scalar(model[3,curr_node])
+			      if(row_value_for_curr_node_feature < threshold_at_curr_node)
+			            curr_node = 2*curr_node
+			      else curr_node = 2*curr_node + 1
+			}else{
+			      present = 0     
+			      count_vals_at_curr_node = as.scalar(model[3,curr_node])
+			      for(i in 1:count_vals_at_curr_node){
+			            val_at_curr_node = as.scalar(model[(3+i),curr_node])
+			            if(val_at_curr_node == row_value_for_curr_node_feature)
+				          present = 1
+			      }
+			      if(present == 1) curr_node = 2*curr_node
+			      else curr_node = 2*curr_node + 1
+			}
 		}
 		
 		#print("row " + i4 + " reached node " + curr_node)
-		if(castAsScalar(position[curr_node,1]) != 0)
-			reached[i4,castAsScalar(position[curr_node,1])] = 1
+		if(as.scalar(position[curr_node,1]) != 0)
+			reached[i4,as.scalar(position[curr_node,1])] = 1
 	}
 
 	/*
@@ -461,7 +699,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 	 *		str = append(str, i + " " + j + " -> " + castAsScalar(reached[i,j]))
 	 * print(str) 
 	 */
-	 
+	 	 
 	parfor(i7 in 1:nrow(leaf_q), check=0){
 	#for(i7 in 1:nrow(leaf_q)){
 		node = castAsScalar(leaf_q[i7,1])
@@ -473,13 +711,14 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		if(node > 0){
 			reach = reached[,castAsScalar(position[node,1])]
 			cnt_reach = sum(reach)
-			sum_y = sum(reach*y)
+			y_reaching_this_node = removeEmpty(target=reach*y, margin="rows")
+			mode_y = findLabel(y_reaching_this_node, num_classes)
 			
-			print("for node=" + node + " cnt=" + cnt_reach + " sum_y=" + sum_y)
+			#print("for node=" + node + " cnt=" + cnt_reach + " mode_y=" + mode_y)
 			
 			label = 0.0
 			if(cnt_reach > 0) 
-				label = sum_y/cnt_reach
+				label = mode_y
 			
 			# add leaf node
 			model[1,node] = -1
@@ -500,13 +739,13 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 	 *	print(" " + castAsScalar(num_reached[1,i]) + " samples reached at node=" + castAsScalar(q[i,1]))
 	 */
 	 
-	num_big = 0
-	num_small = 0
+	num_big = 0.0
+	num_small = 0.0
 	if(num_q > 0){
 		is_large_node = ppred(num_reached[,1:num_q], small_sample_count, ">")
 		num_big = sum(is_large_node)
 		num_small = num_q - num_big
-		print("num_big=" + num_big + " num_small=" + num_small)
+		#print("num_big=" + num_big + " num_small=" + num_small)
 	}
 	curr_big = 1
 	
@@ -519,85 +758,108 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		for(i in 1:nrow(q))
 			if(castAsScalar(q[i,1]) > 0)
 				if(castAsScalar(num_reached[1,i]) > small_sample_count){
-					big_q[curr_big, 1] = q[i,1]
+				        node_id = q[i,1]
+					big_q[curr_big, 1] =  node_id
 					curr_big = curr_big + 1
 				}
 	
 		#print big_q
-		str = "big_q:"
-		for(i in 1:nrow(big_q))
-			str = append(str, " " + castAsScalar(big_q[i,1]))
-		print(str)
-		
-		sum_y2_all = matrix(0, rows=num_big, cols=1)
-		sum_y_all = matrix(0, rows=num_big, cols=1)
-		count_all = matrix(0, rows=num_big, cols=1)
+		/*
+		 * str = "big_q:"
+		 * for(i in 1:nrow(big_q))
+		 *	str = append(str, " " + castAsScalar(big_q[i,1]))
+		 * print(str)
+		 */
+
+		count_all = matrix(0, rows=num_big, cols=num_classes)
 		parfor(i9 in 1:num_big){
-			big_node_id = castAsScalar(big_q[i9,1])
-			position_of_big_node = castAsScalar(position[big_node_id,1])
-			reach_col = reached[,position_of_big_node]
+		      big_node_id = castAsScalar(big_q[i9,1])
+		      position_of_big_node = castAsScalar(position[big_node_id,1])
+		      reach_col = reached[,position_of_big_node]
 		
-			y_reach_dot = y*reach_col	
-			sum_y2_all[i9,1] = sum((y_reach_dot)^2)
-			sum_y_all[i9,1] = sum(y_reach_dot)
-			count_all[i9,1] = sum(reach_col)
+		      count_reached = sum(reach_col)
+		      y_reach_dot = removeEmpty(target=y*reach_col, margin="rows")
+		      
+		      count_all_vector = t(aggregate(target=y_reach_dot, groups=y_reach_dot, fn="count", ngroups=num_classes))
+
+		      count_all[i9,] = count_all_vector
 		}
 		
-		reached_node = rowIndexMax(reached)
-		
-		sum_y2_left = matrix(0, rows=num_big, cols=tot_thresholds)
-		sum_y_left = matrix(0, rows=num_big, cols=tot_thresholds)
-		count_left = matrix(0, rows=num_big, cols=tot_thresholds)
+		gain_matrix = matrix(0, rows=num_big, cols=ncol(X))
+		threshold_matrix = matrix(0, rows=num_big, cols=ncol(X))
+		left_vals_matrix = matrix(0, rows=num_big, cols=max(domain_offsets))
+		pure_left_child = matrix(0, rows=num_big, cols=ncol(X))
+		pure_right_child = matrix(0, rows=num_big, cols=ncol(X))
+
 		parfor(i10 in 1:ncol(X), check=0){
 			X_col = X[,i10]
-			
-			parfor(i10_node in 1:num_big, check=0){
-				big_node_ID = castAsScalar(big_q[i10_node,1])
-				position_of_big_node_ID = castAsScalar(position[big_node_ID,1])
-				reach_col_big = reached[,position_of_big_node_ID]
+			kind_1 = as.scalar(kinds[i10,1])
+
+			if(kind_1 == 1){
+				#parfor(i10_node in 1:num_big, check=0){
+				for(i10_node in 1:num_big){
+				      big_node_ID = castAsScalar(big_q[i10_node,1])
+				      position_of_big_node_ID = castAsScalar(position[big_node_ID,1])
+				      reach_col_big = reached[,position_of_big_node_ID]
+				      all_counts = count_all[i10_node,]
 				
-				parfor(i12 in 1:castAsScalar(count_thresholds[1,i10]), check=0){
-					threshold = castAsScalar(thresholds[i12,i10])
-					left_X_col = ppred(X[,i10], threshold, "<")
-					
-					position_for_threshold = castAsScalar(threshold_positions[i10,i12])
-				
-					y_reach_dot_prod = y * reach_col_big * left_X_col
-					sum_y2_left[i10_node,position_for_threshold] = sum((y_reach_dot_prod)^2)
-					sum_y_left[i10_node,position_for_threshold] = sum(y_reach_dot_prod)
-					count_left[i10_node,position_for_threshold] = sum(reach_col_big * left_X_col)
+				      best_gain_for_this_feature = -1.0
+				      best_threshold_for_this_feature = 0.0
+				      pure_left_child_for_scale = 0.0
+				      pure_right_child_for_scale = 0.0
+				      for(i12 in 1:castAsScalar(count_thresholds[1,i10])){
+				      	    threshold = as.scalar(thresholds[i12,i10])
+					    left_X_col = computeLeftForScale(X_col, threshold)
+				      	    y_reach_dot_prod = removeEmpty(target=y*reach_col_big*left_X_col, margin="rows")
+					    
+					    if(nrow(y_reach_dot_prod) > 0)
+					        left_counts = t(aggregate(target=y_reach_dot_prod, groups=y_reach_dot_prod, fn="count", ngroups=num_classes))
+					    else left_counts = matrix(0, rows=1, cols=num_classes)
+
+				            gain = computeGainFromLabelCounts(all_counts, left_counts)
+					    
+					    if(best_gain_for_this_feature == -1 | gain > best_gain_for_this_feature){
+					          best_gain_for_this_feature = gain
+						  best_threshold_for_this_feature = threshold
+						  
+						  if(sum(left_counts) == max(left_counts))
+						        pure_left_child_for_scale = 1.0
+							
+						  if(sum(all_counts - left_counts) == max(all_counts - left_counts))
+						        pure_right_child_for_scale = 1.0
+					    }
+				      }
+				      
+				      gain_matrix[i10_node, i10] = best_gain_for_this_feature
+				      threshold_matrix[i10_node, i10] = best_threshold_for_this_feature
+				      pure_left_child[i10_node, i10] = pure_left_child_for_scale
+				      pure_right_child[i10_node, i10] = pure_right_child_for_scale
+				}
+			}else{
+				for(i10_node in 1:num_big){
+				      big_node_ID = castAsScalar(big_q[i10_node,1])
+				      position_of_big_node_ID = castAsScalar(position[big_node_ID,1])
+				      reach_col_big = reached[,position_of_big_node_ID]
+
+				      y_reach_dot_prod = removeEmpty(target=append(X_col*reach_col_big, y*reach_col_big), margin="rows")
+
+				      label_dist = table(y_reach_dot_prod[,1], y_reach_dot_prod[,2], as.scalar(maxs[1,i10]), num_classes)
+
+				      [left_vals_bit_vector, best_gain_categorical, plc, prc] = categoricalSplit(label_dist)
+
+				      gain_matrix[i10_node,i10] = best_gain_categorical
+				      
+				      feature_beg_pos = as.scalar(domain_offsets[i10,1])
+				      #feature_end_pos = as.scalar(domain_offsets[i10,2])
+				      left_vals_matrix[i10_node,feature_beg_pos:(feature_beg_pos + nrow(left_vals_bit_vector) - 1)] = t(left_vals_bit_vector)
+
+				      pure_left_child[i10_node, i10] = plc
+				      pure_right_child[i10_node, i10] = prc
 				}
 			}
 		}
-			
-		best_gains = matrix(0, rows=num_big, cols=1)
-		parfor(i13 in 1:num_big){
-			sum_y2_a = castAsScalar(sum_y2_all[i13,1])
-			sum_y_a = castAsScalar(sum_y_all[i13,1])
-			count_a = as.integer(castAsScalar(count_all[i13,1]))
-		
-			best_pos = -1			
-			best_gain = 0
-			for(i in 1:ncol(X))
-				for(j in 1:castAsScalar(count_thresholds[1,i])){
-					threshold_pos = castAsScalar(threshold_positions[i,j])
-					
-					sum_y2_l = castAsScalar(sum_y2_left[i13,threshold_pos])
-					sum_y_l = castAsScalar(sum_y_left[i13,threshold_pos])
-					count_l = as.integer(castAsScalar(count_left[i13,threshold_pos]))
-					
-					gain = computeGain(sum_y2_a, sum_y_a, count_a, sum_y2_l, sum_y_l, count_l)
-					
-					print("node=" + castAsScalar(big_q[i13,1]) + " feature=" + i + " threshold=" + castAsScalar(thresholds[j,i]) + " gain=" + gain)
-					
-					if(best_pos == -1 | best_gain < gain){
-						best_gain = gain
-						best_pos = threshold_pos
-					}
-				}
-			
-			best_gains[i13,1] = best_pos
-		}
+
+		best_gains = rowIndexMax(gain_matrix)
 			
 		/*	
 		 * print("best_gains:")
@@ -607,11 +869,27 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		 	
 		for(i in 1:num_big){
 			big_node = castAsScalar(big_q[i,1])
-			best_gain_pos = castAsScalar(best_gains[i,1])
-			feature = castAsScalar(pos2feature_and_threshold[best_gain_pos,1])
-			model[1,big_node] = feature
-			threshold_pos = castAsScalar(pos2feature_and_threshold[best_gain_pos,2])
-			model[2,big_node] = thresholds[threshold_pos, feature]
+			
+			best_gain_feature = as.scalar(best_gains[i,1])
+			
+			model[1,big_node] = best_gain_feature
+
+			kind = as.scalar(kinds[best_gain_feature, 1])
+			model[2,big_node] = kind
+
+			if(kind == 1)
+      			      model[3,big_node] = threshold_matrix[i,best_gain_feature]
+			else{
+   			      beg_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 1])
+			      end_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 2])
+
+			      left_vals_bit_vector_representation = left_vals_matrix[i,beg_for_best_feature:end_for_best_feature]
+
+			      left_vals_size = sum(left_vals_bit_vector_representation)
+			      model[3,big_node] = left_vals_size
+			      
+			      model[4:(3+ncol(left_vals_bit_vector_representation)),big_node] = t(left_vals_bit_vector_representation)
+			}
 		}
 	}
 		
@@ -637,10 +915,12 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			cumulative_small_q_cnts[i,1] = cumulative_small_q_cnts[i-1,1] + small_q_cnts[i-1,1]	
 			
 		#print small_q	
-		str = "small_q:"
-		for(i in 1:nrow(small_q))
-			str = append(str, " " + castAsScalar(small_q[i,1]) + "(" + castAsScalar(small_q_cnts[i,1]) + ")(" + castAsScalar(cumulative_small_q_cnts[i,1]) + ")")
-		print(str)
+		/*
+		 * str = "small_q:"
+		 * for(i in 1:nrow(small_q))
+		 *	str = append(str," "+castAsScalar(small_q[i,1])+"("+castAsScalar(small_q_cnts[i,1])+")("+castAsScalar(cumulative_small_q_cnts[i,1])+")")
+		 * print(str)
+		 */
 		
 		select_mat = matrix(0, rows=ncol(reached), cols=num_small)
 		for(i in 1:nrow(small_q))
@@ -690,29 +970,28 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		 *		print(" " + i + " " + j + " -> " + castAsScalar(reordered_y[i,j])) 
 		 */
 		 
-		subtree_features = matrix(0, rows=nrow(small_q), cols=max_node_id)
-		subtree_thresholds = matrix(0, rows=nrow(small_q), cols=max_node_id)
+		local_models = matrix(0, rows=nrow(small_q), cols=(nrow(model)*ncol(model)))
 		parfor(i6 in 1:nrow(small_q)){
 			beg = 1 + castAsScalar(cumulative_small_q_cnts[i6,1])
 			end = beg + castAsScalar(small_q_cnts[i6,1]) - 1
 			
-			print("beg=" + beg + " end=" + end)
+			#print("beg=" + beg + " end=" + end)
 			
 			if(end - beg > -1){
 				local_X = reordered_X[beg:end,]
 				local_y = reordered_y[beg:end,]
 		
-				#node = castAsScalar(small_q[i6,1])
+				node1 = castAsScalar(small_q[i6,1])
 			
 				/*
-			 	 * print("local_X " + node + ":")
-		 	     * for(i in 1:nrow(local_X))
+			 	 * print("local_X " + node1 + ":")
+		 	      	 *  for(i in 1:nrow(local_X))
 		 	 	 *	for(j in 1:ncol(local_X))
 		 	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(local_X[i,j]))
 			 	 */
 			
 				/*
-			 	 * print("local_y " + node + ":")
+			 	 * print("local_y " + node1 + ":")
 		 	 	 * for(i in 1:nrow(local_y))
 		 	 	 *	for(j in 1:ncol(local_y))
 		 	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(local_y[i,j]))
@@ -721,44 +1000,31 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 				/*
 			 	 * learn sub-tree from local_X and local_y
 			 	 */
-				local_model_features = matrix(0, rows=1, cols=max_node_id)
-				local_model_thresholds = matrix(0, rows=1, cols=max_node_id)
-				[learnt_local_features, learnt_local_thresholds] = 
-					buildNode(local_X, local_y, local_model_features, local_model_thresholds, 1, castAsScalar(small_q[i6,1]), max_node_id, leaf_count)
-			 
-				subtree_features[i6,] = learnt_local_features
-				subtree_thresholds[i6,] = learnt_local_thresholds
+				
+				local_node = as.scalar(small_q[i6,1])
+				
+				local_model = matrix(0, rows=nrow(model), cols=ncol(model))
+				local_model1 = buildNode(local_X, local_y, local_model, 1, local_node, max_node_id, leaf_count, num_classes, kinds, maxs)
+				
+				local_models[i6,] = matrix(local_model1, rows=1, cols=nrow(local_model1)*ncol(local_model1))
 			}else{
-				subtree_features[i6,1] = -1
-				subtree_thresholds[i6,1] = 0.0
+				local_model = matrix(0, rows=nrow(model), cols=ncol(model))
+				local_model[1,1] = -1.0
+
+				local_models[i6,] = matrix(local_model, rows=1, cols=nrow(local_model)*ncol(local_model))
 			}
 		}
 		
-		/*
-		 * print("subtree_features:")
-		 * for(i in 1:nrow(subtree_features))
-		 *	for(j in 1:ncol(subtree_features))
-		 *		print(" " + i + " " + j + " -> " + castAsScalar(subtree_features[i,j]))
-		 */
-		
-		/* 
-		 * print("subtree_thresholds:")
-		 * for(i in 1:nrow(subtree_thresholds))
-		 *	for(j in 1:ncol(subtree_thresholds))
-		 *		print(" " + i + " " + j + " -> " + castAsScalar(subtree_thresholds[i,j]))
-		 */
-		 
 		for(i in 1:nrow(small_q)){
-			subtree_feature = subtree_features[i,]
-			subtree_threshold = subtree_thresholds[i,]
-			
+			local_model = local_models[i,]
+
 			local_node = 1
 			global_node = as.integer(castAsScalar(small_q[i,1]))
 			
 			#take this out once matthias delivers his fix for recursion
-			model1 = recursiveCopy(subtree_feature, subtree_threshold, local_node, model, global_node)
+			model1 = recursiveCopy(local_model, local_node, model, global_node)
 			model = model1
-			#model = recursiveCopy(subtree_feature, subtree_threshold, local_node, model, global_node)
+			#model = recursiveCopy(local_model, local_node, model, global_node)
 		}
 		
 		/*
@@ -779,7 +1045,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			
 			if(par_node > 0){
 				l_child = 2*par_node
-				if(2*l_child <= max_node_id & 2*l_child + 1 <= max_node_id){
+				if(2*l_child <= max_node_id & 2*l_child + 1 <= max_node_id & as.scalar(pure_left_child[i,as.scalar(model[1,par_node])]) == 0){
 					new_q[curr,1] = l_child
 					curr = curr + 1
 				}else{
@@ -788,7 +1054,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 				}
 				
 				r_child = 2*par_node + 1
-				if(2*r_child <= max_node_id & 2*r_child + 1 <= max_node_id){
+				if(2*r_child <= max_node_id & 2*r_child + 1 <= max_node_id & as.scalar(pure_right_child[i,as.scalar(model[1,par_node])]) == 0){
 					new_q[curr,1] = r_child
 					curr = curr + 1
 				}else{
@@ -818,11 +1084,50 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 	q = new_q
 	leaf_q = new_leaf_q
 	
-	print("model:")
-	for(i in 1:nrow(model))
-		for(j in 1:ncol(model))
-			print(" " + i + " " + j + " -> " + castAsScalar(model[i,j]))
+	/*	
+	 * print("model:")
+	 * for(i in 1:nrow(model))
+	 *	for(j in 1:ncol(model))
+	 * 		print(" " + i + " " + j + " -> " + castAsScalar(model[i,j]))
+	 */
 }
 
 write(model, $model, format=cmdLine_fmt)
-write(debug_str, $Log)
+
+pred = matrix(0, rows=nrow(X), cols=1)
+
+parfor(j1 in 1:nrow(X)){
+      row_j1 = X[j1,]
+      curr_node_j1 = 1
+      while(as.scalar(model[1,curr_node_j1]) > 0){
+            curr_node_j1_feature = as.scalar(model[1,curr_node_j1])
+	    curr_node_j1_kind = as.scalar(model[2,curr_node_j1])
+	    row_value_for_curr_node_j1_feature = as.scalar(row_j1[1,curr_node_j1_feature])
+	    if(curr_node_j1_kind == 1){
+	          threshold_at_curr_node_j1 = as.scalar(model[3,curr_node_j1])
+		  if(row_value_for_curr_node_j1_feature < threshold_at_curr_node_j1)
+		        curr_node_j1 = 2*curr_node_j1
+		  else curr_node_j1 = 2*curr_node_j1 + 1
+	    }else{
+		  present_j1 = 0     
+		  count_vals_at_curr_node_j1 = as.scalar(model[3,curr_node_j1])
+		  for(i in 1:count_vals_at_curr_node_j1){
+		  	val_at_curr_node_j1 = as.scalar(model[(3+i),curr_node_j1])
+            		if(val_at_curr_node_j1 == row_value_for_curr_node_j1_feature)
+			      present_j1 = 1
+		  }
+		  
+		  if(present_j1 == 1) curr_node_j1 = 2*curr_node_j1
+		  else curr_node_j1 = 2*curr_node_j1 + 1
+	    }
+      }
+		
+      pred[j1,1] = model[2,curr_node_j1]
+}
+
+num_correct = sum(ppred(pred, y, "=="))
+acc = 100*num_correct/nrow(X)
+
+acc_str = "Training Accuracy (%): " + acc
+print(acc_str)
+write(acc_str, $Log)

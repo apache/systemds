@@ -11,7 +11,7 @@
 # Meant for use with a decision tree model on a held out test set
 #
 # Given ground truth labels, the script will compute an 
-# accuracy (%) for the predictions
+# accuracy (%) for the predictions (if requested)
 #
 # Example Usage:
 # hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=data Y=labels model=model predictions=predictions accuracy=accuracy confusion=confusion fmt="text"
@@ -27,35 +27,53 @@ model = read($model)
 
 pred = matrix(0, rows=nrow(X), cols=1)
 
-parfor(i4 in 1:nrow(X)){
-	curr_node = 1
-	while(castAsScalar(model[1,curr_node]) != 0 & castAsScalar(model[1,curr_node]) != -1){
-		if(castAsScalar(X[i4,castAsScalar(model[1,curr_node])]) < castAsScalar(model[2,curr_node]))
-			curr_node = 2*curr_node
-		else curr_node = 2*curr_node + 1
-	}
+parfor(i in 1:nrow(X)){
+      row = X[i,]
+      curr_node = 1
+      while(as.scalar(model[1,curr_node]) > 0){
+            curr_node_feature = as.scalar(model[1,curr_node])
+	    curr_node_kind = as.scalar(model[2,curr_node])
+	    row_value_for_curr_node_feature = as.scalar(row[1,curr_node_feature])
+	    if(curr_node_kind == 1){
+	          threshold_at_curr_node = as.scalar(model[3,curr_node])
+		  if(row_value_for_curr_node_feature < threshold_at_curr_node)
+		        curr_node = 2*curr_node
+		  else curr_node = 2*curr_node + 1
+	    }else{
+		  present = 0     
+		  count_vals_at_curr_node = as.scalar(model[3,curr_node])
+		  for(i in 1:count_vals_at_curr_node){
+		  	val_at_curr_node = as.scalar(model[(3+i),curr_node])
+            		if(val_at_curr_node == row_value_for_curr_node_feature)
+			      present = 1
+		  }
+		  
+		  if(present == 1) curr_node = 2*curr_node
+		  else curr_node = 2*curr_node + 1
+	    }
+      }
 		
-	pred[i4,1] = model[2,curr_node]
+      pred[i,1] = model[2,curr_node]
 }
 
 if(cmdLine_predictions != " ")
-	write(pred, cmdLine_predictions, format=cmdLine_fmt)
+      write(pred, cmdLine_predictions, format=cmdLine_fmt)
 
 if(cmdLine_Y != " "){
-	y = read(cmdLine_Y)
+      y = read(cmdLine_Y)
 
-	num_correct = sum(ppred(pred, y, "=="))
-	acc = 100*num_correct/nrow(X)
+      num_correct = sum(ppred(pred, y, "=="))
+      acc = 100*num_correct/nrow(X)
 
-	acc_str = "Accuracy (%): " + acc
-	print(acc_str)
-	if(cmdLine_accuracy != " ")
-		write(acc_str, cmdLine_accuracy)
-	
-	num_classes = max(y)
-	
-	if(cmdLine_confusion != " "){
-		confusion_mat = table(pred, y, num_classes, num_classes)
-		write(confusion_mat, cmdLine_confusion, format="csv")
-	}
+      acc_str = "Accuracy (%): " + acc
+      print(acc_str)
+      if(cmdLine_accuracy != " ")
+            write(acc_str, cmdLine_accuracy)
+				 
+      num_classes = max(y)
+				 
+      if(cmdLine_confusion != " "){
+            confusion_mat = table(pred, y, num_classes, num_classes)
+            write(confusion_mat, cmdLine_confusion, format="csv")
+      }
 }

@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
+# Sampling of a data set into number of samples specified as percentages in column vector
+#
+# Parameters:
+#    X       : (input)  input data set: filename of input data set
+#    sv      : (input)  sampling vector: filename of 1-column vector w/ percentages. sum(sv) must be 1.
+#                         e.g. sv = (0.2)   for a 20% sample
+#                         e.g. sv = (0.25, 0.25, 0.25, 0.25, 0.25) for 5 25% samples
+#                         e.g. sv = (0.5, 0.3, 0.2) for a 50%, 30%, and 20% sample
+#    O       : (output) folder name w/ samples generated
+#    ofmt    : (output, default "binary") format of O: "csv", "binary" 
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out
+#
+
+# ISSUES IN DWRITE
+# 1. dwrite needs to be scalable built in function
+# 2. dwrite needs to write mtd
+# 3. dwrite needs to support same format externsl, i.e "csv", and "binary"
+# format: "textcell" | "binaryblock"
+dwrite = externalFunction(Matrix[Double] m, String fname, String format)
+    return(Boolean success)
+    implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP", exectype="mem")
+
+# set defaults
+ofmt = ifdef($ofmt, "binaryblock")
+
+#
+# Read inputs
+#
+X = read ($X);
+sv = read ($sv);
+
+#
+# Construct sampling matrix SM
+#
+SM1 = Rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
+SM = matrix(0.0, rows = nrow(X), cols = 1)
+# Map sample value to sampled ID
+if (nrow(sv) == 1)  # just 1 sample
+  {
+    SM = ppred (SM1, as.scalar(sv[1,1]), "<=")
+  }
+else # multiple samples (sample fractions need to add up to 1)
+  {
+    for ( i in 1:nrow(X))
+      {
+        prefSumLB = 0.0;    # lower bound
+        prefSumUB = 0.0;    # upper bound
+        for ( j in 1:nrow(sv))
+          {
+            prefSumLB = prefSumUB;
+            prefSumUB = prefSumLB + as.scalar(sv[j,1]);  # compute moving prefix sum
+            if ( (prefSumLB < as.scalar(SM1[i,1])) & (as.scalar(SM1[i,1]) <= prefSumUB) )
+              {
+                SM[i,1] = j;
+              };
+          }
+      }
+  }
+
+#
+# Apply sampling matrix to produce and write nrow(sv) samples
+#
+parfor( i in 1:nrow(sv))
+  {
+    iSM = ppred(SM, i, "==");  
+    iX = X * iSM;
+    iX = removeEmpty( target=iX, margin="rows");
+    iret = dwrite (iX, $O + "/" + i, ofmt)
+  }

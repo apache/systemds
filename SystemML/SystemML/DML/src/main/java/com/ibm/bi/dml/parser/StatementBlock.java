@@ -25,6 +25,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
+import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 
@@ -158,7 +159,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement 
-			|| stmt instanceof FunctionStatement || stmt instanceof CVStatement /*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || stmt instanceof CVStatement || ( stmt instanceof PrintStatement && ((PrintStatement)stmt).getType() == PRINTTYPE.STOP )/*|| stmt instanceof ELStatement*/ )
 		{
 			return false;
 		}

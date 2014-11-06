@@ -7,12 +7,11 @@
 
 package com.ibm.bi.dml.runtime;
 
-import com.ibm.bi.dml.api.DMLException;
 
 /**
  * This exception should be thrown to flag DML Script errors.
  */
-public class DMLScriptException extends DMLException 
+public class DMLScriptException extends DMLRuntimeException 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +

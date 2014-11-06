@@ -1,0 +1,19 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.scalar.StopTest.java
+
+A = rand(rows=10, cols=1, seed=10);
+
+parfor(i in 1:10) {
+  #print("A[" + i + "] " + as.scalar(A[i,1]));
+  if (as.scalar(A[i,1]) > 0.6) {
+      stop("A[" + i + "] " + " > 0.6");
+  }
+}

@@ -16,7 +16,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 /**
  * Tests the print function
  */
-public class StopTest extends AutomatedTestBase 
+public class StopTest2 extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
@@ -32,35 +32,28 @@ public class StopTest extends AutomatedTestBase
 		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_STOP, new String[] {}));
 	}
 
-	String errMessage = "M is all 0 matrix.";
-	String outMessage = "Sum(M2) = 10.0";
+	String errMessage = "Stop Here.";
+	String outMessage = "10.0";
 	
 	@Test
-	public void testStop1_0() {
-		runStopTest(1,0);
+	public void testStop2() {
+		runStopTest(2);
 	}
 	
-	@Test
-	public void testStop1_1() {
-		runStopTest(1,1);
-	}
-	
-	public void runStopTest(int test_num, int val) {
+	public void runStopTest(int test_num) {
 		
 		TestConfiguration config = availableTestConfigurations.get("StopTest");
 		
 		String STOP_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = STOP_HOME + TEST_STOP + test_num + ".dml";
-		programArgs = new String[]{"-args", Integer.toString(val), errMessage};
+		programArgs = new String[]{"-args", errMessage};
 		
 		loadTestConfiguration(config);
 		boolean exceptionExpected = false;
 		int expectedNumberOfJobs = 0;
 		
-		if ( val == 0 )
-			setExpectedStdErr(errMessage);
-		else 
-			setExpectedStdOut(outMessage);
+		setExpectedStdErr(errMessage);
+		setExpectedStdOut(outMessage);
 			
 		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
 	}

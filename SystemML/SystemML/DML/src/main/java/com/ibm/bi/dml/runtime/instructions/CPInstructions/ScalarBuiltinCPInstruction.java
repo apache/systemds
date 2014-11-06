@@ -29,7 +29,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLScriptException 
+		throws DMLRuntimeException 
 	{	
 		String opcode = InstructionUtils.getOpCode(instString);
 		SimpleOperator dop = (SimpleOperator) optr;

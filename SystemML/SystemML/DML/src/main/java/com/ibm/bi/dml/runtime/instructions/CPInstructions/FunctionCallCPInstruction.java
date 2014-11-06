@@ -13,6 +13,7 @@ import java.util.HashMap;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -161,6 +162,9 @@ public class FunctionCallCPInstruction extends CPInstruction
 		// execute the function block
 		try {
 			fpb.execute(fn_ec);
+		}
+		catch (DMLScriptException e) {
+			throw e;
 		}
 		catch (Exception e){
 			String fname = this._namespace + "::" + this._functionName;

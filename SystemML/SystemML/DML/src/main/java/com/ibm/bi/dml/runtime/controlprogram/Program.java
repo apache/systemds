@@ -93,7 +93,7 @@ public class Program
 	}
 
 	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ec.initDebugProgramCounters();
 		

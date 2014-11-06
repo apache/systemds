@@ -88,6 +88,11 @@ public class PrintStatement extends Statement
 			DMLBreakpointManager.insertBreakpoint(_expr.getBeginLine());
 			return true;
 		}
+		
+		// Keep stop() statement in a separate statement block
+		if(getType() == PRINTTYPE.STOP)
+			return true;
+		
 		return false;
 	}
 

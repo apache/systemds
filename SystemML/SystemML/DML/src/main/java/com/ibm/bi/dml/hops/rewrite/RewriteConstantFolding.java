@@ -16,16 +16,15 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -172,10 +171,9 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * @throws LopsException 
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
-	 * @throws DMLScriptException 
 	 */
 	private LiteralOp evalScalarOperation( Hop bop ) 
-		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException, DMLScriptException
+		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
 	{
 		//Timing time = new Timing( true );
 		

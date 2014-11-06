@@ -14,7 +14,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -134,10 +133,9 @@ public abstract class ParWorker
 	 * @param task
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	protected void executeTask( Task task ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		LOG.trace("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
 		
@@ -159,10 +157,9 @@ public abstract class ParWorker
 	 * @param task
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	private void executeSetTask( Task task ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//monitoring start
 		Timing time1 = null, time2 = null;		
@@ -207,10 +204,9 @@ public abstract class ParWorker
 	 * @param task
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	private void executeRangeTask( Task task ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//monitoring start
 		Timing time1 = null, time2 = null;		

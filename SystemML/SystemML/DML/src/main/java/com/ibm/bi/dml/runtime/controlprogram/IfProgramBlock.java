@@ -130,7 +130,7 @@ public class IfProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		BooleanObject predResult = executePredicate(ec); 
 	

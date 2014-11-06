@@ -157,7 +157,7 @@ public class WhileProgramBlock extends ProgramBlock
 		return result;
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException {
+	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 
 		BooleanObject predResult = executePredicate(ec); 
 		
@@ -174,6 +174,10 @@ public class WhileProgramBlock extends ProgramBlock
 				
 				predResult = executePredicate(ec);
 			}
+		}
+		catch(DMLScriptException e) 
+		{
+			throw e;
 		}
 		catch(Exception e)
 		{

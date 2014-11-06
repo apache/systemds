@@ -133,10 +133,9 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		ArrayList<Instruction> tmp = _inst;
 
@@ -179,10 +178,9 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
-	 * @throws DMLScriptException 
 	 */
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, boolean requiresRecompile, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> tmp = inst;
 		
@@ -218,10 +216,9 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	protected void executeInstructions(ArrayList<Instruction> inst, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		for (int i = 0; i < inst.size(); i++) 
 		{
@@ -240,10 +237,9 @@ public class ProgramBlock
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLScriptException 
 	 */
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		ScalarObject ret = null;
 		String retName = null;
@@ -307,11 +303,10 @@ public class ProgramBlock
 	 * 
 	 * 
 	 * @param currInst
-	 * @throws DMLScriptException 
 	 * @throws DMLRuntimeException 
 	 */
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
-		throws DMLScriptException, DMLRuntimeException
+		throws DMLRuntimeException
 	{	
 		try 
 		{			

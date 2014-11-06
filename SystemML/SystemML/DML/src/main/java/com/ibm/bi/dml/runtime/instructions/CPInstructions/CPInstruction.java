@@ -12,7 +12,6 @@ import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import com.ibm.bi.dml.packagesupport.Matrix;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -63,7 +62,7 @@ public abstract class CPInstruction extends Instruction
 	 * @throws DMLUnsupportedOperationException
 	 */
 	public abstract void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException;
+		throws DMLRuntimeException, DMLUnsupportedOperationException;
 
 	@Override
 	public String getGraphString() {

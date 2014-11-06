@@ -145,7 +145,7 @@ public class ForProgramBlock extends ProgramBlock
 	
 	@Override	
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
@@ -183,6 +183,10 @@ public class ForProgramBlock extends ProgramBlock
 				//increment of iterVar (changes  in loop body get discarded)
 				iterVar = new IntObject( iterVarName, iterVar.getLongValue()+incr.getLongValue() );
 			}
+		}
+		catch (DMLScriptException e)
+		{
+			throw e;
 		}
 		catch (Exception e)
 		{

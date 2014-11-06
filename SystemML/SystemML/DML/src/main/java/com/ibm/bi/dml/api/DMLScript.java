@@ -202,7 +202,7 @@ public class DMLScript
 	} 
 
 	public static boolean executeScript( String[] args ) 
-		throws DMLException, DMLScriptException
+		throws DMLException
 	{
 		Configuration conf = new Configuration();
 		return executeScript( conf, args );
@@ -216,7 +216,6 @@ public class DMLScript
 	 * @param suppress
 	 * @return
 	 * @throws DMLException
-	 * @throws DMLScriptException
 	 */
 	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
 		throws DMLException
@@ -240,7 +239,7 @@ public class DMLScript
 	 * @throws LanguageException 
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException, DMLScriptException
+		throws DMLException
 	{
 		boolean ret = false;
 		
@@ -555,11 +554,10 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
-	 * @throws DMLScriptException 
 	 * @throws DMLException 
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs )
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, DMLScriptException 
+		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
@@ -741,11 +739,10 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
-	 * @throws DMLScriptException 
 	 * @throws DMLException 
 	 */
 	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig conf, String dmlScriptStr, String[] allArgs) 
-		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException 
+		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
 		          "Level = " + OptimizerUtils.getOptLevel() + "\n"

@@ -65,7 +65,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, DMLScriptException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		//dynamically recompile entire function body (according to function inputs)
 		/*//TODO in order to make this really useful we need CHAINED UPDATE of STATISTICS along PBs (see parfor)
@@ -89,6 +89,9 @@ public class FunctionProgramBlock extends ProgramBlock
 				ec.updateDebugState(i);
 				_childBlocks.get(i).execute(ec);
 			}
+		}
+		catch (DMLScriptException e) {
+			throw e;
 		}
 		catch (Exception e){
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function program block", e);

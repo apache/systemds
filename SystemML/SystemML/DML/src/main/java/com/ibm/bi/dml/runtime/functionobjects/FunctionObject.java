@@ -10,7 +10,6 @@ package com.ibm.bi.dml.runtime.functionobjects;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -87,7 +86,7 @@ public class FunctionObject
 	/*
 	 * execute() methods related to FileFunctions (rm, mv)
 	 */
-	public String execute ( String in1 ) throws DMLRuntimeException, DMLScriptException {
+	public String execute ( String in1 ) throws DMLRuntimeException {
 		throw new DMLRuntimeException("FunctionObject.execute(String): should never get called in the base class");
 	}
 	

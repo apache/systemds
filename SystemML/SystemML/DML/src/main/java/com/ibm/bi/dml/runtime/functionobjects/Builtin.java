@@ -362,7 +362,7 @@ public class Builtin extends ValueFunction
 
 	// currently, it is used only for PRINT and STOP
 	public String execute (String in1) 
-		throws DMLRuntimeException, DMLScriptException 
+		throws DMLRuntimeException 
 	{
 		switch (bFunc) {
 		case PRINT:

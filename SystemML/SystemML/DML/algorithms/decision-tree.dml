@@ -145,8 +145,11 @@ scaleSplit = function(Matrix[Double] feature_vals,
 			
 	      left = computeLeftForScale(feature_vals, threshold)
 	      yl = removeEmpty(target=y*left, margin="rows")
-	      label_counts_left = aggregate(target=yl, groups=yl, fn="count", ngroups=num_classes)
-			
+	      
+	      if(nrow(yl) > 0)
+                label_counts_left = aggregate(target=yl, groups=yl, fn="count", ngroups=num_classes)
+          else label_counts_left = matrix(0, rows=num_classes, cols=1)
+	      
 	      gain = computeGainFromLabelCounts(label_counts_at_parent, label_counts_left)
 		
               plc = 0	
@@ -223,7 +226,7 @@ categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] re
 		
 		#print("picked val=" + best_val_to_include + " gain=" + gain)
 		
-		if(best_gain >= curr_gain){
+		if(sum(label_dist[best_val_to_include,]) > 0 & as.scalar(ret[best_val_to_include,1]) == 0 & best_gain >= curr_gain){
 		      curr_gain = best_gain
 		      curr_label_counts_left = curr_label_counts_left + label_dist[best_val_to_include,]
 		      ret[best_val_to_include,1] = 1
@@ -232,10 +235,10 @@ categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] re
 	}
 
 	pure_left_child = 0
-	if(max(curr_label_counts_left) == max(curr_label_counts_left)) pure_left_child = 1
+	if(sum(curr_label_counts_left) == max(curr_label_counts_left)) pure_left_child = 1
 
 	pure_right_child = 0
-	if(max(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left)) pure_right_child = 1
+	if(sum(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left)) pure_right_child = 1
 }
 
 /*
@@ -328,10 +331,15 @@ buildNode = function(Matrix[Double] X,
 		else{
 		      domain_size = as.scalar(domain_sizes[1,feature])
 
-	      	      left_vals_size = sum(left_vals_bit_vector_representation)
-	      	      model[3, pos] = left_vals_size
+	      	  left_vals_size = sum(left_vals_bit_vector_representation)
+	      	  model[3, pos] = left_vals_size
 
-		      model[4:(3+nrow(left_vals_bit_vector_representation)), pos] = t(left_vals_bit_vector_representation)
+		      val_pos = 1
+              for(j in 1:nrow(left_vals_bit_vector_representation))
+                    if(as.scalar(left_vals_bit_vector_representation[j,1]) == 1){
+                          model[(3+val_pos),pos] = j
+                          val_pos = val_pos + 1
+                    }
 		}	
 
 		/*
@@ -416,19 +424,14 @@ buildNode = function(Matrix[Double] X,
  * Is a recursive function, but meant to run in memory
  */
 recursiveCopy = function(Matrix[Double] local_model, 
-	      		 Integer local_pos, 
-			 Matrix[Double] global_model, 
-			 Integer global_pos, 
-			 Matrix[Double] kinds, 
-			 Matrix[Double] maxs)
+	      		 		 Integer local_pos, 
+			 		     Matrix[Double] global_model, 
+			 			 Integer global_pos)
 		return (Matrix[Double] global_model){
 	feature = as.scalar(local_model[1, local_pos])
 	global_model[, global_pos] = local_model[, local_pos]
 
 	if(feature > 0){
-		#global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos, global_model, 2*global_pos)
-		#global_model = recursiveCopy(local_features, local_thresholds, 2*local_pos + 1, global_model, 2*global_pos + 1)
-		
 		global_model = recursiveCopy(local_model, 2*local_pos, global_model, 2*global_pos)
 		global_model = recursiveCopy(local_model, 2*local_pos + 1, global_model, 2*global_pos + 1)
 	}
@@ -816,7 +819,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 					        left_counts = t(aggregate(target=y_reach_dot_prod, groups=y_reach_dot_prod, fn="count", ngroups=num_classes))
 					    else left_counts = matrix(0, rows=1, cols=num_classes)
 
-				            gain = computeGainFromLabelCounts(all_counts, left_counts)
+				        gain = computeGainFromLabelCounts(all_counts, left_counts)
 					    
 					    if(best_gain_for_this_feature == -1 | gain > best_gain_for_this_feature){
 					          best_gain_for_this_feature = gain
@@ -824,9 +827,11 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 						  
 						  if(sum(left_counts) == max(left_counts))
 						        pure_left_child_for_scale = 1.0
+						  else pure_left_child_for_scale = 0.0
 							
 						  if(sum(all_counts - left_counts) == max(all_counts - left_counts))
 						        pure_right_child_for_scale = 1.0
+						  else pure_right_child_for_scale = 0.0
 					    }
 				      }
 				      
@@ -888,7 +893,13 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			      left_vals_size = sum(left_vals_bit_vector_representation)
 			      model[3,big_node] = left_vals_size
 			      
-			      model[4:(3+ncol(left_vals_bit_vector_representation)),big_node] = t(left_vals_bit_vector_representation)
+			      pos = 1
+                  for(j in 1:ncol(left_vals_bit_vector_representation))
+                        if(as.scalar(left_vals_bit_vector_representation[1,j]) == 1){
+                              model[(3+pos),big_node] = j
+                              pos = pos + 1
+                        }
+			      
 			}
 		}
 	}
@@ -1001,7 +1012,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			 	 * learn sub-tree from local_X and local_y
 			 	 */
 				
-				local_node = as.scalar(small_q[i6,1])
+				local_node = as.integer(as.scalar(small_q[i6,1]))
 				
 				local_model = matrix(0, rows=nrow(model), cols=ncol(model))
 				local_model1 = buildNode(local_X, local_y, local_model, 1, local_node, max_node_id, leaf_count, num_classes, kinds, maxs)
@@ -1016,7 +1027,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		}
 		
 		for(i in 1:nrow(small_q)){
-			local_model = local_models[i,]
+			local_model = matrix(local_models[i,], rows=nrow(model), cols=ncol(model))
 
 			local_node = 1
 			global_node = as.integer(castAsScalar(small_q[i,1]))

@@ -218,7 +218,7 @@ public class DataGenOp extends Hop
 			}
 		}
 		else {
-			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
 		}
 		
 		return ret;

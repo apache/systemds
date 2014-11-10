@@ -110,7 +110,9 @@ public class Data extends Lop
 				this.addInput(lop);
 				lop.addOutput(this);
 			}
-			if (inputParametersLops.get(DataExpression.IO_FILENAME)!= null){
+			if (   inputParametersLops.get(DataExpression.IO_FILENAME)!= null 
+				&& inputParametersLops.get(DataExpression.IO_FILENAME) instanceof Data )
+			{
 				OutputParameters outParams = ((Data)inputParametersLops.get(DataExpression.IO_FILENAME)).getOutputParameters();
 				String fName = outParams.getLabel();
 				this.getOutputParameters().setFile_name(fName);
@@ -287,6 +289,15 @@ public class Data extends Lop
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public boolean isPersistentWrite()
+	{
+		return operation == OperationTypes.WRITE && !transient_var;
+	}
+	
+	/**
 	 * Method to generate appropriate MR write instructions.
 	 * Explicit write instructions are generated only in case of external file formats 
 	 * (e.g., CSV) except for MatrixMarket. MM format is overridden by TextCell, instead.
@@ -360,91 +371,91 @@ public class Data extends Lop
 	public String getInstructions(String input1, String input2) 
 		throws LopsException 
 	{	
-		if ( getOutputParameters().getFile_name() != null) 
-		{
-			StringBuilder sb = new StringBuilder();
-			sb.append( "CP" );
-			sb.append( OPERAND_DELIMITOR );
-			if ( operation == OperationTypes.READ ) 
-			{
-				sb.append( "read" );
-				sb.append( OPERAND_DELIMITOR );
-				sb.append ( this.prepInputOperand(input1) );
-			}
-			else if ( operation == OperationTypes.WRITE)
-			{
-				sb.append( "write" );
-				sb.append( OPERAND_DELIMITOR );
-				sb.append ( getInputs().get(0).prepInputOperand(input1) );
-			}
-			else
-				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
+		if ( getOutputParameters().getFile_name() == null && operation == OperationTypes.READ ) 
+			throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
 			
+		StringBuilder sb = new StringBuilder();
+		sb.append( "CP" );
+		sb.append( OPERAND_DELIMITOR );
+		if ( operation == OperationTypes.READ ) 
+		{
+			sb.append( "read" );
 			sb.append( OPERAND_DELIMITOR );
-			// TODO: appropriate literal flag must be passed for the second operand, when dynamic read/write functionality is added.
-			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, true) ); //FIXME
-
-			// attach outputInfo in case of matrices
-			OutputParameters oparams = getOutputParameters();
-			if ( operation == OperationTypes.WRITE ) {
-				sb.append( OPERAND_DELIMITOR );
-				String fmt = "";
-				if ( get_dataType() == DataType.MATRIX ) {
-					if ( oparams.getFormat() == Format.MM )
-						fmt = "matrixmarket";
-					else if (oparams.getFormat() == Format.TEXT)
-						fmt = "textcell";
-					else if (oparams.getFormat() == Format.CSV)
-						fmt = "csv";
-					else if ( oparams.getFormat() == Format.BINARY ){
-						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
-							fmt = "binaryblock"; 
-						else
-							fmt = "binarycell" ;
-					}
-					else {
-						throw new LopsException("Unexpected format: " + oparams.getFormat());
-					}
+			sb.append ( this.prepInputOperand(input1) );
+		}
+		else if ( operation == OperationTypes.WRITE)
+		{
+			sb.append( "write" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append ( getInputs().get(0).prepInputOperand(input1) );
+		}
+		else
+			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
+		
+		sb.append( OPERAND_DELIMITOR );			
+		Lop fnameLop = _inputParams.get(DataExpression.IO_FILENAME);
+		boolean literal = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral());
+		sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, literal) ); 
+		
+		// attach outputInfo in case of matrices
+		OutputParameters oparams = getOutputParameters();
+		if ( operation == OperationTypes.WRITE ) {
+			sb.append( OPERAND_DELIMITOR );
+			String fmt = "";
+			if ( get_dataType() == DataType.MATRIX ) {
+				if ( oparams.getFormat() == Format.MM )
+					fmt = "matrixmarket";
+				else if (oparams.getFormat() == Format.TEXT)
+					fmt = "textcell";
+				else if (oparams.getFormat() == Format.CSV)
+					fmt = "csv";
+				else if ( oparams.getFormat() == Format.BINARY ){
+					if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
+						fmt = "binaryblock"; 
+					else
+						fmt = "binarycell" ;
 				}
 				else {
-					// scalars will always be written in text format
-					fmt = "textcell";
+					throw new LopsException("Unexpected format: " + oparams.getFormat());
 				}
+			}
+			else {
+				// scalars will always be written in text format
+				fmt = "textcell";
+			}
+			
+			sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
+			
+			if(oparams.getFormat() == Format.CSV) {
+				Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+				Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
+				Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
 				
-				sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
+				if (headerLop.isVariable())
+					throw new LopsException(this.printErrorLocation()
+							+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
+							+ " must be a literal for a seq operation.");
+				if (delimLop.isVariable())
+					throw new LopsException(this.printErrorLocation()
+							+ "Parameter " + DataExpression.DELIM_DELIMITER
+							+ " must be a literal for a seq operation.");
+				if (sparseLop.isVariable())
+					throw new LopsException(this.printErrorLocation()
+							+ "Parameter " + DataExpression.DELIM_SPARSE
+							+ " must be a literal for a seq operation.");
 				
-				if(oparams.getFormat() == Format.CSV) {
-					Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
-					Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
-					Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
-					
-					if (headerLop.isVariable())
-						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
-								+ " must be a literal for a seq operation.");
-					if (delimLop.isVariable())
-						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + DataExpression.DELIM_DELIMITER
-								+ " must be a literal for a seq operation.");
-					if (sparseLop.isVariable())
-						throw new LopsException(this.printErrorLocation()
-								+ "Parameter " + DataExpression.DELIM_SPARSE
-								+ " must be a literal for a seq operation.");
-					
-					sb.append(OPERAND_DELIMITOR);
-					sb.append(headerLop.getBooleanValue());
-					sb.append(OPERAND_DELIMITOR);
-					sb.append(delimLop.getStringValue());
-					sb.append(OPERAND_DELIMITOR);
-					sb.append(sparseLop.getBooleanValue());
-					
-				}
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(headerLop.getBooleanValue());
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(delimLop.getStringValue());
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(sparseLop.getBooleanValue());
 				
 			}
 			
-			return sb.toString();
 		}
-		throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
+		
+		return sb.toString();
 	}
 	
 	/**

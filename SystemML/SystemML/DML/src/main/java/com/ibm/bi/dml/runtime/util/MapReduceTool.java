@@ -445,12 +445,15 @@ public class MapReduceTool
 		writeMetaDataFile(mtdfile, v, mc, outinfo, null);
 	}
 	
-	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo, FileFormatProperties formatProperties ) throws IOException {
-		//MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
-        Path pt=new Path(mtdfile);
+	public static void writeMetaDataFile( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo, FileFormatProperties formatProperties ) 
+		throws IOException 
+	{
+		Path pt = new Path(mtdfile);
         FileSystem fs = FileSystem.get(_rJob);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
-		
+        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
+        formatProperties = (formatProperties==null && outinfo==OutputInfo.CSVOutputInfo) ? 
+        		           new CSVFileFormatProperties() : formatProperties;
+
         String line = "";
         
         try {

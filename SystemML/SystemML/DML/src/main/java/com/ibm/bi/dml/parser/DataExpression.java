@@ -896,7 +896,7 @@ public class DataExpression extends DataIdentifier
 				{
 					format = 1;
 				} else {
-					raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)+ " in statement: " + this.toString(), conditional);
+					raiseValidateError("Invalid format '" + getVarParam(FORMAT_TYPE)+ "' in statement: " + this.toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {

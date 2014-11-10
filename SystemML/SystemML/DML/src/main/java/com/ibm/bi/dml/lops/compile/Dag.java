@@ -48,6 +48,7 @@ import com.ibm.bi.dml.lops.PartitionLop;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.Unary;
 import com.ibm.bi.dml.meta.PartitionParams;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -2856,7 +2857,7 @@ public class Dag<N extends Lop>
 			
 			if ( node.get_dataType() == DataType.SCALAR ) {
 				// generate assignment operations for final and transient writes
-				if ( oparams.getFile_name() == null ) {
+				if ( oparams.getFile_name() == null && !(node instanceof Data && ((Data)node).isPersistentWrite()) ) {
 					String io_inst = prepareAssignVarInstruction(node.getInputs().get(0), node);
 					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
 					if(DMLScript.ENABLE_DEBUG_MODE) {
@@ -2868,7 +2869,9 @@ public class Dag<N extends Lop>
 					out.addLastInstruction(currInstr);
 				}
 				else {
-					String io_inst = node.getInstructions(node.getInputs().get(0).getOutputParameters().getLabel(), oparams.getFile_name());
+					//CP PERSISTENT WRITE SCALARS
+					Lop fname = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
+					String io_inst = node.getInstructions(node.getInputs().get(0).getOutputParameters().getLabel(), fname.getOutputParameters().getLabel());
 					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
@@ -2989,7 +2992,7 @@ public class Dag<N extends Lop>
 				} 
 				// rootNode is not a transient write. It is a persistent write.
 				else {
-					if(et == ExecType.MR) {
+					if(et == ExecType.MR) { //MR PERSISTENT WRITE
 						// create a variable to hold the result produced by this "rootNode"
 						oparams.setLabel("pVar" + var_index.getNextID() );
 						
@@ -2998,6 +3001,11 @@ public class Dag<N extends Lop>
 
 						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
 						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+						Lop fnameLop = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
+						String fnameStr = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral()) ? 
+								           fnameLop.getOutputParameters().getLabel() 
+								           : Lop.VARIABLE_NAME_PLACEHOLDER + fnameLop.getOutputParameters().getLabel() + Lop.VARIABLE_NAME_PLACEHOLDER;
+						
 						Instruction createvarInst;
 						
 						// for MatrixMarket format, the creatvar will output the result to a temporary file in textcell format 
@@ -3009,8 +3017,9 @@ public class Dag<N extends Lop>
 							
 							String createInst = node.getInstructions(tempFileName);
 							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
-							
-							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
+						
+							//NOTE: no instruction patching because final write from cp instruction
+							String writeInst = node.getInstructions(oparams.getLabel(), fnameLop.getOutputParameters().getLabel() );
 							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
 							if(DMLScript.ENABLE_DEBUG_MODE) {
 								currInstr.setLineNum(node._beginLine);
@@ -3038,7 +3047,9 @@ public class Dag<N extends Lop>
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 												);
-							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
+
+							//NOTE: no instruction patching because final write from cp instruction
+							String writeInst = node.getInstructions(oparams.getLabel(), fnameLop.getOutputParameters().getLabel());
 							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
 							if(DMLScript.ENABLE_DEBUG_MODE) {
 								currInstr.setLineNum(node._beginLine);
@@ -3058,7 +3069,7 @@ public class Dag<N extends Lop>
 						else {
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 									                oparams.getLabel(), 
-									                oparams.getFile_name(), 
+									                fnameStr, 
 									                false, 
 									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 									                new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
@@ -3081,14 +3092,15 @@ public class Dag<N extends Lop>
 						
 
 						// finally, add the filename and variable name to the list of outputs 
-						out.setFileName(oparams.getFile_name());
+						out.setFileName(oparams.getFile_name()); 
 						out.setVarName(oparams.getLabel());
 					}
-					else {
+					else { //CP PERSISTENT WRITE
 						// generate a write instruction that writes matrix to HDFS
+						Lop fname = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
 						String io_inst = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(), 
-								node.getOutputParameters().getFile_name());
+								fname.getOutputParameters().getLabel());
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							if (node.getInputs().size() > 0 && node.getInputs().get(0)._beginLine != 0)

@@ -415,7 +415,7 @@ public class DataConverter
 				readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, isMMFile);
 			} 
 			else if ( inputinfo == InputInfo.CSVInputInfo ) {
-				CSVFileFormatProperties csvprop = (CSVFileFormatProperties) prop.formatProperties;
+				CSVFileFormatProperties csvprop = (prop.formatProperties!=null && prop.formatProperties instanceof CSVFileFormatProperties) ? (CSVFileFormatProperties) prop.formatProperties : new CSVFileFormatProperties();
 				ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, csvprop.isHasHeader(), csvprop.getDelim(), csvprop.isFill(), csvprop.getFillValue());
 			}
 			else {
@@ -857,6 +857,7 @@ public class DataConverter
 			StringBuilder sb = new StringBuilder();
 			
 			CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)formatProperties;
+			csvProperties = (csvProperties==null)? new CSVFileFormatProperties() : csvProperties;
 			String delim = csvProperties.getDelim(); //Pattern.quote(csvProperties.getDelim());
 			boolean csvsparse = csvProperties.isSparse();
 			

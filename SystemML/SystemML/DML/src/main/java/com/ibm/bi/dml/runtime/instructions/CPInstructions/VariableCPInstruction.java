@@ -708,23 +708,29 @@ public class VariableCPInstruction extends CPInstruction
 	 * 
 	 * @throws DMLRuntimeException 
 	 */
-	private void processWriteInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private void processWriteInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
+		//get filename (literal or variable expression)
+		String fname = ec.getScalarInput(input2.get_name(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		
 		if ( input1.get_dataType() == DataType.SCALAR ) {
-			writeScalarToHDFS(ec);
+			writeScalarToHDFS(ec, fname);
 		}
-		else {
+		else 
+		{
 			String outFmt = input3.get_name();
 			
 			if (outFmt.equalsIgnoreCase("matrixmarket")) {
-				writeMMFile(ec);
+				writeMMFile(ec, fname);
 			}
 			else if (outFmt.equalsIgnoreCase("csv") ) {
-				writeCSVFile(ec);
+				writeCSVFile(ec, fname);
 			}
 			else {
 				// Default behavior
 				MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
-				mo.exportData(input2.get_name(), outFmt);
+				mo.exportData(fname, outFmt);
 			}
 		}
 	}
@@ -774,31 +780,33 @@ public class VariableCPInstruction extends CPInstruction
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 */
-	private void writeCSVFile(ExecutionContext ec) throws DMLRuntimeException {
+	private void writeCSVFile(ExecutionContext ec, String fname) 
+		throws DMLRuntimeException 
+	{
 		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
 		String outFmt = "csv";
 		
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
-			mo.exportData(input2.get_name(), outFmt, formatProperties);
+			mo.exportData(fname, outFmt, formatProperties);
 		}
 		else {
 			try {
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					DataConverter.addHeaderToCSV(mo.getFileName(), input2.get_name(), (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
+					DataConverter.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
-					mo.exportData(input2.get_name(), outFmt, formatProperties);
+					mo.exportData(fname, outFmt, formatProperties);
 				}
 				else {
 					throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into CSV format.");
 				}
 				
 				// Write Metadata file
-				MapReduceTool.writeMetaDataFile (input2.get_name() + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, formatProperties);
+				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
@@ -810,26 +818,28 @@ public class VariableCPInstruction extends CPInstruction
 	 * @param ec
 	 * @throws DMLRuntimeException
 	 */
-	private void writeMMFile(ExecutionContext ec) throws DMLRuntimeException {
+	private void writeMMFile(ExecutionContext ec, String fname) 
+		throws DMLRuntimeException 
+	{
 		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
 		String outFmt = "matrixmarket";
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
-			mo.exportData(input2.get_name(), outFmt);
+			mo.exportData(fname, outFmt);
 		}
 		else {
 			OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), input2.get_name(), mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+					DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}
 			}
 			else if ( oi == OutputInfo.BinaryBlockOutputInfo) {
-				mo.exportData(input2.get_name(), outFmt);
+				mo.exportData(fname, outFmt);
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into MatrixMarket format.");
@@ -840,27 +850,29 @@ public class VariableCPInstruction extends CPInstruction
 	 * Helper function to write scalars to HDFS based on its value type.
 	 * @throws DMLRuntimeException 
 	 */
-	private void writeScalarToHDFS(ExecutionContext ec) throws DMLRuntimeException {
+	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
+		throws DMLRuntimeException 
+	{
 		ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 		try {
 			switch ( input1.get_valueType() ) {
 			case DOUBLE:
-				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
+				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), fname);
 				break;
 			case INT:
-				MapReduceTool.writeIntToHDFS(scalar.getLongValue(), input2.get_name());
+				MapReduceTool.writeIntToHDFS(scalar.getLongValue(), fname);
 				break;
 			case BOOLEAN:
-				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());
+				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), fname);
 				break;
 			case STRING:
-				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), input2.get_name());
+				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), fname);
 				break;
 			default:
 				throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
 			}
 		  // write out .mtd file
-		  MapReduceTool.writeScalarMetaDataFile(input2.get_name() +".mtd", input1.get_valueType());
+		  MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.get_valueType());
 		} catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}

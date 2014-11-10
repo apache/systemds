@@ -44,6 +44,7 @@
 				<include>utils/project.dml</include>
 				<include>utils/splitXY.dml</include>
 				<include>utils/write.dml</include>
+				<include>utils/csv2bin.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>

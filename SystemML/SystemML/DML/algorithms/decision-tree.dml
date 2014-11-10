@@ -121,13 +121,14 @@ computeGainFromImpurities = function(Double impurity_parent,
  * produces a left/right child that should be a label node
  */
 scaleSplit = function(Matrix[Double] feature_vals,
-	              Matrix[Double] y,
-		      Matrix[Double] label_counts_at_parent,
-		      Integer num_classes)
-	     return(Double best_threshold_for_feature,
-	     	    Double best_gain_for_feature,
-		    Integer is_left_child_pure_4_best,
-		    Integer is_right_child_pure_4_best){
+	              	  Matrix[Double] y,
+		      		  Matrix[Double] label_counts_at_parent,
+		      		  Integer num_classes)
+	     	 return(Double best_threshold_for_feature,
+	     	    	Double best_gain_for_feature,
+		    		Integer is_left_child_pure_4_best,
+		    		Integer is_right_child_pure_4_best,
+		    		Double make_leaf){
       sorted_feature_vals = order(feature_vals, 1, FALSE)
 		
       /*
@@ -165,6 +166,13 @@ scaleSplit = function(Matrix[Double] feature_vals,
 		      best_threshold_pos_for_feature = j
 		      is_left_child_pure_4_best = plc
 		      is_right_child_pure_4_best = prc
+		      
+		      nl = sum(yl)
+              nr = sum(label_counts_at_parent - label_counts_left)
+              if(nl == 0 | nr == 0){
+                    if(nl > 0) make_leaf = as.scalar(rowIndexMax(t(label_counts_left)))
+                    else make_leaf = as.scalar(rowIndexMax(t(label_counts_at_parent - label_counts_left)))
+              }else make_leaf = 0.0
 	      }
       }
 		
@@ -179,7 +187,12 @@ scaleSplit = function(Matrix[Double] feature_vals,
  * values, the gain at that split, and whether the split
  * leads to left/right child that should be label nodes
  */
-categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] ret, Double curr_gain, Integer pure_left_child, Integer pure_right_child){
+categoricalSplit = function(Matrix[Double] label_dist) 
+				   return (Matrix[Double] ret, 
+				   		   Double curr_gain, 
+				   		   Integer pure_left_child, 
+				   		   Integer pure_right_child,
+				   		   Double make_leaf){
         num_classes = ncol(label_dist)
 	domain_size = nrow(label_dist)
 	
@@ -239,6 +252,10 @@ categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] re
 
 	pure_right_child = 0
 	if(sum(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left)) pure_right_child = 1
+	
+    make_leaf = 0.0
+    if(sum(curr_label_counts_left) == 0 | sum(label_counts_all - curr_label_counts_left) == 0)
+          make_leaf = as.scalar(rowIndexMax(colSums(label_dist)))
 }
 
 /*
@@ -246,14 +263,15 @@ categoricalSplit = function(Matrix[Double] label_dist) return (Matrix[Double] re
  * Meant for use when a 'small' number of samples reach this node
  */
 findSplit = function(Matrix[Double] X, 
-	    	     Matrix[Double] y, 
-		     Integer num_classes, 
-		     Matrix[Double] kinds, 
-		     Matrix[Double] domain_sizes) 
-	    return (Integer feature, 
-	    	    Double threshold, 
-		    Matrix[Double] left_vals,
-		    Matrix[Double] left_rows){
+	    	     	 Matrix[Double] y, 
+		     		 Integer num_classes, 
+		     		 Matrix[Double] kinds, 
+		     		 Matrix[Double] domain_sizes) 
+	    	return (Integer feature, 
+	    	    	Double threshold, 
+		    		Matrix[Double] left_vals,
+		    		Matrix[Double] left_rows,
+		    		Double make_leaf){
 	n = nrow(X)
 
 	label_counts_all = aggregate(target=y, groups=y, fn="count", ngroups=num_classes)
@@ -262,32 +280,37 @@ findSplit = function(Matrix[Double] X,
 	best_feature = -1
 	best_threshold = 0.0
 	best_left_vals = matrix(0, rows=1, cols=1)
-	for(i in 1:ncol(X)){
+	best_make_leaf = 0.0
+    for(i in 1:ncol(X)){
 		feature_vals = X[,i]
 
 		if(as.scalar(kinds[i,1]) == 1){
-		      [best_threshold_for_feature, best_gain_for_feature, plc, prc] = scaleSplit(feature_vals, y, label_counts_all, num_classes)
+		      [best_threshold_for_feature, best_gain_for_feature, plc, prc, make_leaf] = scaleSplit(feature_vals, y, label_counts_all, num_classes)
 
 		      #print("feature=" + i + " best_threshold=" + best_threshold_for_feature + " best_gain=" + best_gain_for_feature)
 
 		      if(best_feature == -1 | best_gain_for_feature > best_gain){
 		            best_gain = best_gain_for_feature
-			    best_feature = i
-			    best_threshold = best_threshold_for_feature
+			    	best_feature = i
+			    	best_threshold = best_threshold_for_feature
+			    	best_make_leaf = make_leaf
 		      }
 		}else{
 		      label_dist = table(feature_vals, y, as.scalar(domain_sizes[1,i]), num_classes)
-		      [left_vals_bit_vector, best_gain_for_feature, plc, prc] = categoricalSplit(label_dist)
+		      [left_vals_bit_vector, best_gain_for_feature, plc, prc, make_leaf] = categoricalSplit(label_dist)
 		      
 		      if(best_feature == -1 | best_gain_for_feature > best_gain){
 		            best_gain = best_gain_for_feature
-			    best_feature = i
-			    best_left_vals = left_vals_bit_vector
+			        best_feature = i
+			    	best_left_vals = left_vals_bit_vector
+			     	best_make_leaf = make_leaf
 		      }
 		}
 
 	}
 	
+	make_leaf = best_make_leaf
+
 	feature = best_feature
 	threshold = 0.0
 	left_vals = matrix(0, rows=1, cols=1)
@@ -321,96 +344,100 @@ buildNode = function(Matrix[Double] X,
 		     Matrix[Double] domain_sizes) 
 		    return (Matrix[Double] model){
 	if(nrow(X) > leaf_count & 2*node_id <= max_node_id & 2*node_id + 1 <= max_node_id & min(y) != max(y)){
-		[feature, threshold, left_vals_bit_vector_representation, left_rows] = findSplit(X, y, num_classes, kinds, domain_sizes)
+		[feature, threshold, left_vals_bit_vector_representation, left_rows, make_leaf] = findSplit(X, y, num_classes, kinds, domain_sizes)
 
-		model[1, pos] = feature
+		if(make_leaf > 0){
+              model[1,pos] = -1
+              model[2,pos] = make_leaf
+        }else{
+			  model[1, pos] = feature
+			  model[2, pos] = kinds[feature,1]
 
-		model[2, pos] = kinds[feature,1]
+		      if(as.scalar(kinds[feature,1]) == 1) model[3, pos] = threshold
+			  else{
+		            domain_size = as.scalar(domain_sizes[1,feature])
 
-		if(as.scalar(kinds[feature,1]) == 1) model[3, pos] = threshold
-		else{
-		      domain_size = as.scalar(domain_sizes[1,feature])
+	      	  	    left_vals_size = sum(left_vals_bit_vector_representation)
+	      	  	    model[3, pos] = left_vals_size
 
-	      	  left_vals_size = sum(left_vals_bit_vector_representation)
-	      	  model[3, pos] = left_vals_size
+		      	    val_pos = 1
+              		for(j in 1:nrow(left_vals_bit_vector_representation))
+                          if(as.scalar(left_vals_bit_vector_representation[j,1]) == 1){
+                                model[(3+val_pos),pos] = j
+                                val_pos = val_pos + 1
+                          }
+		      }	
 
-		      val_pos = 1
-              for(j in 1:nrow(left_vals_bit_vector_representation))
-                    if(as.scalar(left_vals_bit_vector_representation[j,1]) == 1){
-                          model[(3+val_pos),pos] = j
-                          val_pos = val_pos + 1
-                    }
-		}	
-
-		/*
-		 * print("X:")
-	 	 * for(i in 1:nrow(X))
-	 	 *	for(j in 1:ncol(X))
-	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
-		 */
+			  /*
+		 	   * print("X:")
+	 	 	   * for(i in 1:nrow(X))
+	 	       *	for(j in 1:ncol(X))
+	 	       *		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
+		       */
 		 
-		/*
-		 * print("y:")
-	 	 * for(i in 1:nrow(y))
-	 	 *	for(j in 1:ncol(y))
-	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(y[i,j]))
-		 */
+		      /*
+		       * print("y:")
+	 	       * for(i in 1:nrow(y))
+	 	       *	for(j in 1:ncol(y))
+	 	       * 		print(" " + i + " " + j + " -> " + castAsScalar(y[i,j]))
+		       */
 		 
-		num_left = sum(left_rows)
-		num_right = nrow(X) - num_left
+			  num_left = sum(left_rows)
+			  num_right = nrow(X) - num_left
 		
-		permut_mat = matrix(0, rows=nrow(X), cols=nrow(X))
-		left_pos = 1
-		right_pos = 1
-		for(i in 1:nrow(X)){
-			if(castAsScalar(left_rows[i,1]) == 1){
-				permut_mat[left_pos, i] = 1
-				left_pos = left_pos + 1
-			}else{
-				permut_mat[num_left + right_pos, i] = 1
-				right_pos = right_pos + 1
-			}
-		}
+		      permut_mat = matrix(0, rows=nrow(X), cols=nrow(X))
+			  left_pos = 1
+			  right_pos = 1
+			  for(i in 1:nrow(X)){
+				    if(castAsScalar(left_rows[i,1]) == 1){
+					      permut_mat[left_pos, i] = 1
+						  left_pos = left_pos + 1
+				    }else{
+					      permut_mat[num_left + right_pos, i] = 1
+					      right_pos = right_pos + 1
+					}
+			  }
 		
-		reordered_X = permut_mat %*% X
-		reordered_y = permut_mat %*% y
+			  reordered_X = permut_mat %*% X
+			  reordered_y = permut_mat %*% y
 		
-		left_X = reordered_X[1:num_left,]
-		left_y = reordered_y[1:num_left,]
+			  left_X = reordered_X[1:num_left,]
+			  left_y = reordered_y[1:num_left,]
 		
-		/*
-		 * print("left_X:")
-	 	 * for(i in 1:nrow(left_X))
-	 	 * 	for(j in 1:ncol(left_X))
-	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(left_X[i,j]))
-	 	 */
+			  /*
+		 	   * print("left_X:")
+	 	 	   * for(i in 1:nrow(left_X))
+	 	 	   * 	for(j in 1:ncol(left_X))
+	 	 	   *		print(" " + i + " " + j + " -> " + castAsScalar(left_X[i,j]))
+	 	 	   */
 	 	 
-	 	/* 		
-	 	 * print("left_y:")
-	 	 * for(i in 1:nrow(left_y))
-	 	 * 	for(j in 1:ncol(left_y))
-	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(left_y[i,j]))
-	 	 */ 
+	 		  /* 		
+	 	 	   * print("left_y:")
+	 	 	   * for(i in 1:nrow(left_y))
+	 	 	   * 	for(j in 1:ncol(left_y))
+	 	 	   * 		print(" " + i + " " + j + " -> " + castAsScalar(left_y[i,j]))
+	 	 	   */ 
 	 	 
-		right_X = reordered_X[(num_left+1):nrow(X),]
-		right_y = reordered_y[(num_left+1):nrow(y),]
+		      right_X = reordered_X[(num_left+1):nrow(X),]
+			  right_y = reordered_y[(num_left+1):nrow(y),]
 		
-		/*
-		 * print("right_X:")
-	 	 * for(i in 1:nrow(right_X))
-	 	 *	for(j in 1:ncol(right_X))
-	 	 *		print(" " + i + " " + j + " -> " + castAsScalar(right_X[i,j]))
-	 	 */
+		      /*
+		 	   * print("right_X:")
+	 	 	   * for(i in 1:nrow(right_X))
+	 	 	   *	for(j in 1:ncol(right_X))
+	 	 	   *		print(" " + i + " " + j + " -> " + castAsScalar(right_X[i,j]))
+	 	 	   */
 	 	 
-	 	/* 		
-	 	 * print("right_y:")
-	 	 * for(i in 1:nrow(right_y))
-	 	 * for(j in 1:ncol(right_y))
-	 	 * 		print(" " + i + " " + j + " -> " + castAsScalar(right_y[i,j]))
-	 	 */ 
+	 		  /* 		
+	 	 	   * print("right_y:")
+	 	 	   * for(i in 1:nrow(right_y))
+	 	 	   * for(j in 1:ncol(right_y))
+	 	 	   * 		print(" " + i + " " + j + " -> " + castAsScalar(right_y[i,j]))
+	 	 	   */ 
 
-		model = buildNode(left_X, left_y, model, 2*pos, 2*node_id, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
-		model = buildNode(right_X, right_y, model, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
+			  model = buildNode(left_X, left_y, model, 2*pos, 2*node_id, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
+			  model = buildNode(right_X, right_y, model, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
+		  }
 	}else{
 		label = findLabel(y, num_classes)
 				
@@ -793,6 +820,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		left_vals_matrix = matrix(0, rows=num_big, cols=max(domain_offsets))
 		pure_left_child = matrix(0, rows=num_big, cols=ncol(X))
 		pure_right_child = matrix(0, rows=num_big, cols=ncol(X))
+		make_leaf = matrix(0, rows=num_big, cols=ncol(X))
 
 		parfor(i10 in 1:ncol(X), check=0){
 			X_col = X[,i10]
@@ -810,35 +838,45 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 				      best_threshold_for_this_feature = 0.0
 				      pure_left_child_for_scale = 0.0
 				      pure_right_child_for_scale = 0.0
+				      make_leaf_for_scale = 0.0
 				      for(i12 in 1:castAsScalar(count_thresholds[1,i10])){
 				      	    threshold = as.scalar(thresholds[i12,i10])
-					    left_X_col = computeLeftForScale(X_col, threshold)
+					    	left_X_col = computeLeftForScale(X_col, threshold)
 				      	    y_reach_dot_prod = removeEmpty(target=y*reach_col_big*left_X_col, margin="rows")
 					    
-					    if(nrow(y_reach_dot_prod) > 0)
-					        left_counts = t(aggregate(target=y_reach_dot_prod, groups=y_reach_dot_prod, fn="count", ngroups=num_classes))
-					    else left_counts = matrix(0, rows=1, cols=num_classes)
+					    	if(nrow(y_reach_dot_prod) > 0)
+					        	  left_counts = t(aggregate(target=y_reach_dot_prod, groups=y_reach_dot_prod, fn="count", ngroups=num_classes))
+					    	else left_counts = matrix(0, rows=1, cols=num_classes)
 
-				        gain = computeGainFromLabelCounts(all_counts, left_counts)
+				        	gain = computeGainFromLabelCounts(all_counts, left_counts)
 					    
-					    if(best_gain_for_this_feature == -1 | gain > best_gain_for_this_feature){
-					          best_gain_for_this_feature = gain
-						  best_threshold_for_this_feature = threshold
+					    	if(best_gain_for_this_feature == -1 | gain > best_gain_for_this_feature){
+					          	  best_gain_for_this_feature = gain
+						  		  best_threshold_for_this_feature = threshold
 						  
-						  if(sum(left_counts) == max(left_counts))
-						        pure_left_child_for_scale = 1.0
-						  else pure_left_child_for_scale = 0.0
+						  		  nl = sum(left_counts)
+                                  nr = sum(all_counts - left_counts)
+                                                  
+						  		  if(nl == 0 | nr == 0){
+                                  	    if(nl > 0) make_leaf_for_scale = as.scalar(rowIndexMax(left_counts))
+                                        else make_leaf_for_scale = as.scalar(rowIndexMax(all_counts - left_counts))
+                                  }else make_leaf_for_scale = 0.0
+						  
+						  		  if(sum(left_counts) == max(left_counts))
+						        	    pure_left_child_for_scale = 1.0
+						  		  else pure_left_child_for_scale = 0.0
 							
-						  if(sum(all_counts - left_counts) == max(all_counts - left_counts))
-						        pure_right_child_for_scale = 1.0
-						  else pure_right_child_for_scale = 0.0
-					    }
+						  		  if(sum(all_counts - left_counts) == max(all_counts - left_counts))
+						        	    pure_right_child_for_scale = 1.0
+						  	      else pure_right_child_for_scale = 0.0
+					    	}
 				      }
 				      
 				      gain_matrix[i10_node, i10] = best_gain_for_this_feature
 				      threshold_matrix[i10_node, i10] = best_threshold_for_this_feature
 				      pure_left_child[i10_node, i10] = pure_left_child_for_scale
 				      pure_right_child[i10_node, i10] = pure_right_child_for_scale
+				      make_leaf[i10_node, i10] = make_leaf_for_scale
 				}
 			}else{
 				for(i10_node in 1:num_big){
@@ -850,7 +888,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 
 				      label_dist = table(y_reach_dot_prod[,1], y_reach_dot_prod[,2], as.scalar(maxs[1,i10]), num_classes)
 
-				      [left_vals_bit_vector, best_gain_categorical, plc, prc] = categoricalSplit(label_dist)
+				      [left_vals_bit_vector, best_gain_categorical, plc, prc, make_leaf_for_cat] = categoricalSplit(label_dist)
 
 				      gain_matrix[i10_node,i10] = best_gain_categorical
 				      
@@ -860,6 +898,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 
 				      pure_left_child[i10_node, i10] = plc
 				      pure_right_child[i10_node, i10] = prc
+				      make_leaf[i10_node, i10] = make_leaf_for_cat
 				}
 			}
 		}
@@ -877,31 +916,37 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			
 			best_gain_feature = as.scalar(best_gains[i,1])
 			
-			model[1,big_node] = best_gain_feature
+			ml = as.scalar(make_leaf[i,best_gain_feature])
+			
+			if(ml == 0){
+				  model[1,big_node] = best_gain_feature
 
-			kind = as.scalar(kinds[best_gain_feature, 1])
-			model[2,big_node] = kind
+				  kind = as.scalar(kinds[best_gain_feature, 1])
+				  model[2,big_node] = kind
 
-			if(kind == 1)
-      			      model[3,big_node] = threshold_matrix[i,best_gain_feature]
-			else{
-   			      beg_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 1])
-			      end_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 2])
+				  if(kind == 1)
+      			        model[3,big_node] = threshold_matrix[i,best_gain_feature]
+				  else{
+   			      		beg_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 1])
+			      		end_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 2])
 
-			      left_vals_bit_vector_representation = left_vals_matrix[i,beg_for_best_feature:end_for_best_feature]
+			      		left_vals_bit_vector_representation = left_vals_matrix[i,beg_for_best_feature:end_for_best_feature]
 
-			      left_vals_size = sum(left_vals_bit_vector_representation)
-			      model[3,big_node] = left_vals_size
+			      		left_vals_size = sum(left_vals_bit_vector_representation)
+			      		model[3,big_node] = left_vals_size
 			      
-			      pos = 1
-                  for(j in 1:ncol(left_vals_bit_vector_representation))
-                        if(as.scalar(left_vals_bit_vector_representation[1,j]) == 1){
-                              model[(3+pos),big_node] = j
-                              pos = pos + 1
-                        }
-			      
-			}
-		}
+			      		pos = 1
+                  		for(j in 1:ncol(left_vals_bit_vector_representation))
+                        	  if(as.scalar(left_vals_bit_vector_representation[1,j]) == 1){
+                              	    model[(3+pos),big_node] = j
+                              		pos = pos + 1
+                        	  }
+				  }
+			}else{
+            	  model[1,big_node] = -1
+                  model[2,big_node] = ml
+            }
+      }
 	}
 		
 	/*
@@ -1054,7 +1099,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		for(i in 1:nrow(big_q)){
 			par_node = castAsScalar(big_q[i,1])
 			
-			if(par_node > 0){
+			if(par_node > 0 & as.scalar(model[1,par_node]) != -1){
 				l_child = 2*par_node
 				if(2*l_child <= max_node_id & 2*l_child + 1 <= max_node_id & as.scalar(pure_left_child[i,as.scalar(model[1,par_node])]) == 0){
 					new_q[curr,1] = l_child

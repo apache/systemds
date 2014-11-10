@@ -42,9 +42,9 @@ parfor(i in 1:nrow(X)){
 	    }else{
 		  present = 0     
 		  count_vals_at_curr_node = as.scalar(model[3,curr_node])
-		  for(i in 1:count_vals_at_curr_node){
-		  	val_at_curr_node = as.scalar(model[(3+i),curr_node])
-            		if(val_at_curr_node == row_value_for_curr_node_feature)
+		  for(j in 1:count_vals_at_curr_node){
+		  	val_at_curr_node = as.scalar(model[(3+j),curr_node])
+            if(val_at_curr_node == row_value_for_curr_node_feature)
 			      present = 1
 		  }
 		  

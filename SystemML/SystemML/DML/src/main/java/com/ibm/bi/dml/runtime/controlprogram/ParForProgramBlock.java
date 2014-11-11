@@ -230,7 +230,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	
 	//specifics used for optimization
-	protected ParForStatementBlock _sb          = null;
 	protected long             _numIterations   = -1; 
 	protected String[]         _iterablePredicateVarsOriginal = null;
 	
@@ -475,20 +474,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		ALLOW_REUSE_MR_PAR_WORKER = ALLOW_REUSE_MR_JVMS;
 	}
 	
-	public ParForStatementBlock getStatementBlock( )
-	{
-		return _sb;
-	}
-	
-	public void setStatementBlock( ParForStatementBlock sb )
-	{
-		_sb = sb;
-	}
-	
 	@Override	
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
+		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+		
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
 
@@ -507,7 +498,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			updateIterablePredicateVars( iterVarName, from, to, incr );
 			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
-			OptimizationWrapper.optimize( _optMode, _sb, this, ec, _monitor ); //core optimize
+			OptimizationWrapper.optimize( _optMode, sb, this, ec, _monitor ); //core optimize
 			
 			//take changed iterable predicate into account
 			iterVarName = _iterablePredicateVars[0];
@@ -607,9 +598,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//reset flags/modifications made by optimizer
 		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
-		    ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, dpvar, ec, false);
+		    ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, dpvar, ec, false);
 		if( _execMode == PExecMode.REMOTE_MR_DP ) //release forced exectypes for fused dp/exec
-			ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb, this, _colocatedDPMatrix, ec, false); 
+			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, _colocatedDPMatrix, ec, false); 
 		resetIterablePredicateVars();
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
@@ -869,8 +860,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		boolean flagForced = checkMRAndRecompileToCP(0);
 		
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
+		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
 		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
-		PDataPartitionFormat inputDPF = _sb.determineDataPartitionFormat( _colocatedDPMatrix );
+		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
 		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
 			
 		// Step 2) init parallel workers (serialize PBs)
@@ -933,17 +925,18 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
-			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
+			ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
+			ArrayList<String> vars = (sb!=null) ? sb.getReadOnlyParentVars() : null;
 			for( String var : vars )
 			{
 				Data dat = ec.getVariable(var);
 				//skip non-existing input matrices (which are due to unknown sizes marked for
-				//partitioning but typically related branches are never exected)				
+				//partitioning but typically related branches are never executed)				
 				if( dat != null && dat instanceof MatrixObject )
 				{
 					MatrixObject moVar = (MatrixObject) dat; //unpartitioned input
 					
-					PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
+					PDataPartitionFormat dpf = sb.determineDataPartitionFormat( var );
 					//dpf = (_optMode != POptMode.NONE) ? OptimizerRuleBased.decideBlockWisePartitioning(moVar, dpf) : dpf;
 					LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 					
@@ -969,12 +962,12 @@ public class ParForProgramBlock extends ForProgramBlock
 						ec.setVariable(var, dpdatNew);
 						
 						//recompile parfor body program
-						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec,true);
+						ProgramRecompiler.rFindAndRecompileIndexingHOP(sb,this,var,ec,true);
 						
 						//store original and partitioned matrix (for reuse if applicable)
 						_variablesDPOriginal.put(var, moVar);
 						if(    ALLOW_REUSE_PARTITION_VARS 
-							&& ProgramRecompiler.isApplicableForReuseVariable(_sb.getDMLProg(), _sb, var) ) 
+							&& ProgramRecompiler.isApplicableForReuseVariable(sb.getDMLProg(), sb, var) ) 
 						{
 							_variablesDPReuse.put(var, dpdatNew);
 						}
@@ -1061,11 +1054,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void exportMatricesToHDFS( ExecutionContext ec ) 
 		throws CacheException 
 	{
-		if( LIVEVAR_AWARE_EXPORT && _sb != null)
+		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+		
+		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
 			//optimization to prevent unnecessary export of matrices
 			//export only variables that are read in the body
-			VariableSet varsRead = _sb.variablesRead();
+			VariableSet varsRead = sb.variablesRead();
 			for (String key : ec.getVariables().keySet() ) 
 			{
 				Data d = ec.getVariable(key);
@@ -1325,7 +1320,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			return false;
 		
 		//no statement block, failed
-		if( _sb == null ) {
+		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+		if( sb == null ) {
 			LOG.warn("Missing parfor statement block for recompile.");
 			return false;
 		}
@@ -1505,8 +1501,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//handle unscoped variables (vars created in parfor, but potentially used afterwards)
-		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
-			createEmptyUnscopedVariables( ec.getVariables(), _sb );
+		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+		if( CREATE_UNSCOPED_RESULTVARS && sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
+			createEmptyUnscopedVariables( ec.getVariables(), sb );
 		
 		//check expected counters
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
@@ -1698,8 +1695,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			try 
 			{
-				OptTree tree;
-				tree = OptTreeConverter.createAbstractOptTree(-1, -1, _sb, this, new HashSet<String>(), ec);
+				ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
+				OptTree tree = OptTreeConverter.createAbstractOptTree(-1, -1, sb, this, new HashSet<String>(), ec);
 				CostEstimator est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
 				double mem = est.getEstimate(TestMeasure.MEMORY_USAGE, tree.getRoot());
 				

@@ -28,11 +28,14 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.VariableSet;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -240,7 +243,7 @@ public class ProgramConverter
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
 		tmpPB.setPredicateResultVar( wpb.getPredicateResultVar() );
-		tmpPB.setStatementBlock( wpb.getStatementBlock() );
+		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
@@ -265,7 +268,7 @@ public class ProgramConverter
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
 		tmpPB.setPredicateResultVar( ipb.getPredicateResultVar() );
-		tmpPB.setStatementBlock( ipb.getStatementBlock() );
+		tmpPB.setStatementBlock( createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), pid, plain ) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
@@ -368,7 +371,7 @@ public class ProgramConverter
 		else //child of remote ParWorker at any level
 			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
-		tmpPB.setStatementBlock( pfpb.getStatementBlock() );
+		tmpPB.setStatementBlock( createForStatementBlockCopy( (ForStatementBlock) pfpb.getStatementBlock(), pid, plain) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
@@ -611,6 +614,169 @@ public class ProgramConverter
 					Recompiler.updateFunctionNames( hops, pid );
 				ret.set_hops( hops );
 				ret.updateRecompilationFlag();
+			}
+			else
+			{
+				ret = sb;
+			}
+		}
+		catch( Exception ex )
+		{
+			throw new DMLRuntimeException( ex );
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @param pid
+	 * @param plain
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static IfStatementBlock createIfStatementBlockCopy( IfStatementBlock sb, long pid, boolean plain ) 
+		throws DMLRuntimeException
+	{
+		IfStatementBlock ret = null;
+		
+		try
+		{
+			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& sb != null 
+				&& Recompiler.requiresRecompilation( sb.getPredicateHops() )  )
+			{
+				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				ret = new IfStatementBlock();
+				ret.setLiveIn( new VariableSet(sb.liveIn()) );
+				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setBeginLine(sb.getBeginLine());
+				ret.setBeginColumn(sb.getBeginColumn());
+				ret.setEndLine(sb.getEndLine());
+				ret.setEndColumn(sb.getEndColumn());
+				
+				//shallow copy child statements
+				ret.setStatements( sb.getStatements() );
+				
+				//deep copy predicate hops dag for concurrent recompile
+				Hop hops = Recompiler.deepCopyHopsDag( sb.getPredicateHops() );
+				ret.setPredicateHops( hops );
+				ret.updatePredicateRecompilationFlag();
+			}
+			else
+			{
+				ret = sb;
+			}
+		}
+		catch( Exception ex )
+		{
+			throw new DMLRuntimeException( ex );
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @param pid
+	 * @param plain
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static WhileStatementBlock createWhileStatementBlockCopy( WhileStatementBlock sb, long pid, boolean plain ) 
+		throws DMLRuntimeException
+	{
+		WhileStatementBlock ret = null;
+		
+		try
+		{
+			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& sb != null 
+				&& Recompiler.requiresRecompilation( sb.getPredicateHops() )  )
+			{
+				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				ret = new WhileStatementBlock();
+				ret.setLiveIn( new VariableSet(sb.liveIn()) );
+				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setBeginLine(sb.getBeginLine());
+				ret.setBeginColumn(sb.getBeginColumn());
+				ret.setEndLine(sb.getEndLine());
+				ret.setEndColumn(sb.getEndColumn());
+				
+				//shallow copy child statements
+				ret.setStatements( sb.getStatements() );
+				
+				//deep copy predicate hops dag for concurrent recompile
+				Hop hops = Recompiler.deepCopyHopsDag( sb.getPredicateHops() );
+				ret.setPredicateHops( hops );
+				ret.updatePredicateRecompilationFlag();
+			}
+			else
+			{
+				ret = sb;
+			}
+		}
+		catch( Exception ex )
+		{
+			throw new DMLRuntimeException( ex );
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @param pid
+	 * @param plain
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static ForStatementBlock createForStatementBlockCopy( ForStatementBlock sb, long pid, boolean plain ) 
+		throws DMLRuntimeException
+	{
+		ForStatementBlock ret = null;
+		
+		try
+		{
+			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& sb != null 
+				&& ( Recompiler.requiresRecompilation(sb.getFromHops()) ||
+					 Recompiler.requiresRecompilation(sb.getToHops()) ||
+					 Recompiler.requiresRecompilation(sb.getIncrementHops()))  )
+			{
+				ret = (sb instanceof ParForStatementBlock) ? new ParForStatementBlock() : new ForStatementBlock();
+				
+				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				ret.setLiveIn( new VariableSet(sb.liveIn()) );
+				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setBeginLine(sb.getBeginLine());
+				ret.setBeginColumn(sb.getBeginColumn());
+				ret.setEndLine(sb.getEndLine());
+				ret.setEndColumn(sb.getEndColumn());
+				
+				//shallow copy child statements
+				ret.setStatements( sb.getStatements() );
+				
+				//deep copy predicate hops dag for concurrent recompile
+				if( sb.requiresFromRecompilation() ){
+					Hop hops = Recompiler.deepCopyHopsDag( sb.getFromHops() );
+					ret.setFromHops( hops );	
+				}
+				if( sb.requiresToRecompilation() ){
+					Hop hops = Recompiler.deepCopyHopsDag( sb.getToHops() );
+					ret.setToHops( hops );	
+				}
+				if( sb.requiresIncrementRecompilation() ){
+					Hop hops = Recompiler.deepCopyHopsDag( sb.getIncrementHops() );
+					ret.setIncrementHops( hops );	
+				}
+				ret.updatePredicateRecompilationFlags();
 			}
 			else
 			{

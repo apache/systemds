@@ -122,6 +122,11 @@ public class StatementBlock extends LiveVariableAnalysis
 	{
 		return _statements;
 	}
+	
+	public void setStatements( ArrayList<Statement> s )
+	{
+		_statements = s;
+	}
 
 	public ArrayList<Hop> get_hops() throws HopsException {
 		return _hops;

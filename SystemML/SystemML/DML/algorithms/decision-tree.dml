@@ -32,9 +32,20 @@ order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Ma
  * Computes label for classification trees
  * Determines the mode of y
  */ 		    
-findLabel = function(Matrix[Double] y, Integer num_classes) 
-	    return (Double label){
-	label = as.scalar(rowIndexMax(t(aggregate(target=y, groups=y, fn="count", ngroups=num_classes))))
+findLabelFromVector = function(Matrix[Double] y, Integer num_classes) 
+	    			  return (Double label){
+	aggr_labels = t(aggregate(target=y, groups=y, fn="count", ngroups=num_classes))
+	label = findLabel(aggr_labels)
+}
+
+/*
+ * Accepts a row vector of label counts 
+ * and returns the label corresponding
+ * to the maximum count
+ */
+findLabel = function(Matrix[Double] aggr_labels)
+			return (Double label){
+	label = as.scalar(rowIndexMax(aggr_labels))
 }
 
 /*
@@ -65,7 +76,7 @@ computeImpurity = function(Matrix[Double] label_counts)
 		  return (Double impurity){
   tot_count = sum(label_counts)
   
-  if(tot_count == 0.0) tot_count = 1.0
+  tot_count = max(tot_count, 1.0)
   
   label_proportions = label_counts/tot_count
 
@@ -141,6 +152,7 @@ scaleSplit = function(Matrix[Double] feature_vals,
       best_gain_for_feature = 0.0
       is_left_child_pure_4_best = 0
       is_right_child_pure_4_best = 0
+      make_leaf = 0.0
       for(j in 1:(nrow(sorted_feature_vals)-1)){
 	      threshold = castAsScalar((sorted_feature_vals[j,1] + sorted_feature_vals[j+1,1])/2)
 			
@@ -153,11 +165,9 @@ scaleSplit = function(Matrix[Double] feature_vals,
 	      
 	      gain = computeGainFromLabelCounts(label_counts_at_parent, label_counts_left)
 		
-              plc = 0	
-	      if(sum(label_counts_left) == max(label_counts_left)) plc = 1
+	      plc = as.integer(sum(label_counts_left) == max(label_counts_left))
 	      
-	      prc = 0
-	      if(sum(label_counts_at_parent - label_counts_left) == max(label_counts_at_parent - label_counts_left)) prc = 1
+	      prc = as.integer(sum(label_counts_at_parent - label_counts_left) == max(label_counts_at_parent - label_counts_left))
 
 	      #print("feature=" + i + " threshold=" + threshold + " gain=" + gain + " nl=" + nl + " nr=" + nr)
 			
@@ -170,8 +180,13 @@ scaleSplit = function(Matrix[Double] feature_vals,
 		      nl = sum(yl)
               nr = sum(label_counts_at_parent - label_counts_left)
               if(nl == 0 | nr == 0){
-                    if(nl > 0) make_leaf = as.scalar(rowIndexMax(t(label_counts_left)))
-                    else make_leaf = as.scalar(rowIndexMax(t(label_counts_at_parent - label_counts_left)))
+                    if(nl > 0){
+                    	aggr_labels = t(label_counts_left)
+                    	make_leaf = findLabel(aggr_labels)
+                    }else{
+                    	aggr_labels = t(label_counts_at_parent - label_counts_left)
+                    	make_leaf = findLabel(aggr_labels)
+                    }
               }else make_leaf = 0.0
 	      }
       }
@@ -247,15 +262,15 @@ categoricalSplit = function(Matrix[Double] label_dist)
 		}else continue = 0
 	}
 
-	pure_left_child = 0
-	if(sum(curr_label_counts_left) == max(curr_label_counts_left)) pure_left_child = 1
+	pure_left_child = as.integer(sum(curr_label_counts_left) == max(curr_label_counts_left))
 
-	pure_right_child = 0
-	if(sum(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left)) pure_right_child = 1
+	pure_right_child = as.integer(sum(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left))
 	
     make_leaf = 0.0
-    if(sum(curr_label_counts_left) == 0 | sum(label_counts_all - curr_label_counts_left) == 0)
-          make_leaf = as.scalar(rowIndexMax(colSums(label_dist)))
+    if(sum(curr_label_counts_left) == 0 | sum(label_counts_all - curr_label_counts_left) == 0){
+    	  aggr_labels = colSums(label_dist)
+          make_leaf = findLabel(aggr_labels)
+    }
 }
 
 /*
@@ -439,7 +454,7 @@ buildNode = function(Matrix[Double] X,
 			  model = buildNode(right_X, right_y, model, 2*pos + 1, 2*node_id + 1, max_node_id, leaf_count, num_classes, kinds, domain_sizes)
 		  }
 	}else{
-		label = findLabel(y, num_classes)
+		label = findLabelFromVector(y, num_classes)
 				
 		model[1,pos] = -1
 		model[2,pos] = label
@@ -557,9 +572,8 @@ parfor(i8 in 1:ncol(X)){
 	       */
 
 	      num_bins_defined = bin_id - 1
-	      for(j in 1:num_bins_defined)
-		    col_bins[j,1] = (col_bins[j,1] + col_bins[j+1,1])/2
-	
+	      col_bins[1:num_bins_defined,1] = (col_bins[1:num_bins_defined,1] + col_bins[2:(num_bins_defined+1),1])/2
+		  
 	      /*
 	       * print("thresholds:")
 	       * for(j in 1:nrow(col_bins))
@@ -742,7 +756,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			reach = reached[,castAsScalar(position[node,1])]
 			cnt_reach = sum(reach)
 			y_reaching_this_node = removeEmpty(target=reach*y, margin="rows")
-			mode_y = findLabel(y_reaching_this_node, num_classes)
+			mode_y = findLabelFromVector(y_reaching_this_node, num_classes)
 			
 			#print("for node=" + node + " cnt=" + cnt_reach + " mode_y=" + mode_y)
 			
@@ -858,8 +872,11 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
                                   nr = sum(all_counts - left_counts)
                                                   
 						  		  if(nl == 0 | nr == 0){
-                                  	    if(nl > 0) make_leaf_for_scale = as.scalar(rowIndexMax(left_counts))
-                                        else make_leaf_for_scale = as.scalar(rowIndexMax(all_counts - left_counts))
+                                  	    if(nl > 0) make_leaf_for_scale = findLabel(left_counts)
+                                        else{
+                                        	aggr_labels = all_counts - left_counts
+                                        	make_leaf_for_scale = findLabel(aggr_labels)
+                                        }
                                   }else make_leaf_for_scale = 0.0
 						  
 						  		  if(sum(left_counts) == max(left_counts))

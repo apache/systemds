@@ -233,4 +233,13 @@ public class RuntimePiggybacking
 		
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isEmptyJobPool()
+	{
+		return ( _pool.size()<=0 );
+	}
 }

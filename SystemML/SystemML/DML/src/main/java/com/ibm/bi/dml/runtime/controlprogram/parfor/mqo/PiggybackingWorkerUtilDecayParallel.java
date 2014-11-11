@@ -81,6 +81,11 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 				
 				// wait until next submission
 				Thread.sleep(_minTime); //wait at least minTime
+				
+				//continue if (prevent cluster status requests)
+				if( RuntimePiggybacking.isEmptyJobPool() )
+					continue;
+				
 				double util = InfrastructureAnalyzer.getClusterUtilization(true);
 				double utilThreshold = 1-Math.pow(_utilDecay, Math.ceil(((double)currentTime-lastTime)/60000));
 				

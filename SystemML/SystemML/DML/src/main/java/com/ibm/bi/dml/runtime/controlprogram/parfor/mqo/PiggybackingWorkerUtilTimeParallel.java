@@ -84,6 +84,8 @@ public class PiggybackingWorkerUtilTimeParallel extends PiggybackingWorker
 				
 				// wait until next submission
 				Thread.sleep(_minTime); //wait at least minTime
+				if( RuntimePiggybacking.isEmptyJobPool() )
+					continue;
 				double util = InfrastructureAnalyzer.getClusterUtilization(false);
 				if(   util > _utilThreshold           //cluster utilization condition
 				   && currentTime-lastTime<_maxTime ) //timeout condition 

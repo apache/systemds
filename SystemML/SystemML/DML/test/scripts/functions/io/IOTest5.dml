@@ -14,8 +14,8 @@ if( 1==1 ){
    B = 14;
 }
 
-C = read("$$indir$$"+"12", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
-write(C, "$$outdir$$"+B, format="text");
+C = read("$$indir$$"+B, rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(C, "$$outdir$$"+"12", format="text");
 
 
 

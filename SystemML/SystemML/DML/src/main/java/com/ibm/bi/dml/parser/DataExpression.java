@@ -978,6 +978,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
+			/* NOTE MB: disabled filename concatenation because we now support dynamic rewrite
 			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
 				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
 								
@@ -1002,7 +1003,7 @@ public class DataExpression extends DataIdentifier
 									conditional);
 					}
 				}
-			}
+			}*/
 			
 			//validate read filename
 			String fnameWrite = getVarParam(IO_FILENAME).toString();

@@ -685,7 +685,7 @@ public class VariableCPInstruction extends CPInstruction
 			ScalarObject fromObj = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 			ScalarObject toObj = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			double ret = Double.NaN;
-			if ( fromObj.getDoubleValue() >= toObj.getDoubleValue() )
+			if ( fromObj.getDoubleValue() > toObj.getDoubleValue() )
 				ret = -1.0;
 			else
 				ret = 1.0;
@@ -746,12 +746,29 @@ public class VariableCPInstruction extends CPInstruction
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
 		throws DMLRuntimeException
 	{
+		// get variable from symbol table
 		Data input1_data = ec.getVariable(varname);
 		
 		if ( input1_data == null ) {
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmVar instruction.");
 		}
 
+		//cleanup matrix data on fs/hdfs (if necessary)
+		if ( input1_data instanceof MatrixObject ) 
+		{
+			MatrixObject mo = (MatrixObject) input1_data;
+			if ( mo.isCleanupEnabled() ) {
+				//compute ref count only if matrix cleanup actually necessary
+				int refCount = ec.getVariables().getNumReferences(input1_data, true);
+				if ( refCount == 1 ) {
+					mo.clearData(); //clean cached data	
+					if( mo.isFileExists() )
+						cleanDataOnHDFS( mo ); //clean hdfs data
+				}
+			}
+		}
+		
+		/*
 		// check if any other variable refers to the same Data object
 		int refCount = ec.getVariables().getNumReferences(input1_data, true);
 		if ( refCount == 1 ) {
@@ -769,8 +786,9 @@ public class VariableCPInstruction extends CPInstruction
 		}
 		else if ( refCount == 0 ) 
 			throw new DMLRuntimeException("Error while processing rmVar instruction: refCount=0 is unexpected!");
+		*/
 
-		// remove variable from the program block
+		// remove variable from symbol table
 		ec.removeVariable(varname);
 	}
 	

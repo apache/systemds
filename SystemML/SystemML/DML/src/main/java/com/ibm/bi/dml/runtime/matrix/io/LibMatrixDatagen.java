@@ -384,7 +384,7 @@ public class LibMatrixDatagen
 	{
 		boolean neg = (from > to);
 		if (neg != (incr < 0))
-			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq()");
+			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq(): from="+from+", to="+to+ ", incr="+incr);
 		
 		//System.out.println(System.nanoTime() + ": begin of seq()");
 		int rows = 1 + (int)Math.floor((to-from)/incr);

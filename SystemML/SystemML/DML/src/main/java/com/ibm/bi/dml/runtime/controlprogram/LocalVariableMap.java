@@ -97,13 +97,13 @@ public class LocalVariableMap implements Cloneable
 		if ( d == null )
 			return 0;
 		
-		int refCount = 0;
-		for( Entry<String, Data> e : localMap.entrySet() ) 
-			if ( e.getValue().equals(d) ) 
+		int refCount = 0;		
+		for( Data tmpdat : localMap.values() ) 
+			if ( tmpdat == d ) 
 				if( ++refCount > 1 && earlyAbort )
 					return refCount;
-		
-		return refCount;
+	
+		return refCount;		
 	}
 	
 	public String serialize () throws DMLRuntimeException

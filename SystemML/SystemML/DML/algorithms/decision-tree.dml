@@ -29,6 +29,30 @@ order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Ma
 	implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
 	
 /*
+ * Given a 1-column bit-vector returns the corresponding
+ * 1-column vector that contains the values corresponding
+ * to 1's in the input arg
+ */	
+gather = function( Matrix[Double] B ) return (Matrix[Double] V) {
+	# bitvector into position vector, e.g., 1011 -> 1034
+    Bv = seq(1,nrow(B),1) * B
+
+	# gather positions into condensed vector, e.g., 1034 -> 134
+    V = removeEmpty(target=Bv, margin="rows")     
+}
+
+/*
+ * Function to generate (row selecting) permutation matrix
+ * Given a list of row ids, the matrix returned by the following 
+ * function when pre-multiplied to the data matrix will return 
+ * only the rows whose row ids were provided, in order of
+ * the ids' appearance
+ */
+#expand = function( Matrix[Double] V ) return (Matrix[Double] M) {
+#    M = table( seq(1, nrow(V), 1), V );
+#}
+
+/*
  * Computes label for classification trees
  * Determines the mode of y
  */ 		    
@@ -162,8 +186,8 @@ scaleSplit = function(Matrix[Double] feature_vals,
 	      if(nrow(yl) > 0)
                 label_counts_left = aggregate(target=yl, groups=yl, fn="count", ngroups=num_classes)
           else label_counts_left = matrix(0, rows=num_classes, cols=1)
-	      
-	      gain = computeGainFromLabelCounts(label_counts_at_parent, label_counts_left)
+          
+          gain = computeGainFromLabelCounts(label_counts_at_parent, label_counts_left)
 		
 	      plc = as.integer(sum(label_counts_left) == max(label_counts_left))
 	      
@@ -177,16 +201,15 @@ scaleSplit = function(Matrix[Double] feature_vals,
 		      is_left_child_pure_4_best = plc
 		      is_right_child_pure_4_best = prc
 		      
+		      label_counts_right = label_counts_at_parent - label_counts_left
 		      nl = sum(yl)
-              nr = sum(label_counts_at_parent - label_counts_left)
+              nr = sum(label_counts_right)
               if(nl == 0 | nr == 0){
-                    if(nl > 0){
-                    	aggr_labels = t(label_counts_left)
-                    	make_leaf = findLabel(aggr_labels)
-                    }else{
-                    	aggr_labels = t(label_counts_at_parent - label_counts_left)
-                    	make_leaf = findLabel(aggr_labels)
-                    }
+                    aggr_labels =
+                    	as.integer(nl == 0) * t(label_counts_right)
+                    	+ as.integer(nr == 0) * t(label_counts_left)
+                    	
+                    make_leaf = findLabel(aggr_labels) 
               }else make_leaf = 0.0
 	      }
       }
@@ -375,12 +398,8 @@ buildNode = function(Matrix[Double] X,
 	      	  	    left_vals_size = sum(left_vals_bit_vector_representation)
 	      	  	    model[3, pos] = left_vals_size
 
-		      	    val_pos = 1
-              		for(j in 1:nrow(left_vals_bit_vector_representation))
-                          if(as.scalar(left_vals_bit_vector_representation[j,1]) == 1){
-                                model[(3+val_pos),pos] = j
-                                val_pos = val_pos + 1
-                          }
+		      	    left_vals = gather(left_vals_bit_vector_representation)
+                    model[4:(3+nrow(left_vals)), pos] = left_vals
 		      }	
 
 			  /*
@@ -401,18 +420,18 @@ buildNode = function(Matrix[Double] X,
 			  num_right = nrow(X) - num_left
 		
 		      permut_mat = matrix(0, rows=nrow(X), cols=nrow(X))
-			  left_pos = 1
-			  right_pos = 1
-			  for(i in 1:nrow(X)){
-				    if(castAsScalar(left_rows[i,1]) == 1){
-					      permut_mat[left_pos, i] = 1
-						  left_pos = left_pos + 1
-				    }else{
-					      permut_mat[num_left + right_pos, i] = 1
-					      right_pos = right_pos + 1
-					}
-			  }
-		
+		      
+		      permut_mat_4_left_rows = gather(left_rows)
+		      #permut_mat_4_left_rows = expand(permut_mat_4_left_rows)
+		      permut_mat_4_left_rows = table(seq(1, nrow(permut_mat_4_left_rows), 1), permut_mat_4_left_rows) 
+		      permut_mat[1:num_left, 1:ncol(permut_mat_4_left_rows)] = permut_mat_4_left_rows
+		      
+		      right_rows = 1 - left_rows
+		      permut_mat_4_right_rows = gather(right_rows)
+		      #permut_mat_4_right_rows = expand(permut_mat_4_right_rows)
+		      permut_mat_4_right_rows = table(seq(1, nrow(permut_mat_4_right_rows), 1), permut_mat_4_right_rows)
+		      permut_mat[(num_left+1):(num_left+nrow(permut_mat_4_right_rows)), 1:ncol(permut_mat_4_right_rows)] = permut_mat_4_right_rows
+		      
 			  reordered_X = permut_mat %*% X
 			  reordered_y = permut_mat %*% y
 		
@@ -553,11 +572,13 @@ parfor(i8 in 1:ncol(X)){
 		    end_val = col[pos_col,1]
 		    col_bins[bin_id+1,1] = end_val
 		
-		    continue = TRUE
-		    while(continue & pos_col < nrow(X))
-			  if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
-			        pos_col = pos_col + 1
-			  else continue = FALSE
+			# look for more end_vals and include them in this bin
+		    #continue = TRUE
+		    #while(continue & pos_col < nrow(X))
+			#  if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
+			#        pos_col = pos_col + 1
+			#  else continue = FALSE
+			pos_col = pos_col + as.integer(sum(ppred(col[pos_col:nrow(col),], as.scalar(end_val), "==")) - 1)
 		    #print("pos_col (changed): " + pos_col)
 		
 		    bin_id = bin_id + 1
@@ -713,22 +734,13 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			curr_node_feature = as.scalar(model[1,curr_node])
 			curr_node_kind = as.scalar(model[2,curr_node])
 			row_value_for_curr_node_feature = as.scalar(row[1,curr_node_feature])
-			if(curr_node_kind == 1){
-			      threshold_at_curr_node = as.scalar(model[3,curr_node])
-			      if(row_value_for_curr_node_feature < threshold_at_curr_node)
-			            curr_node = 2*curr_node
-			      else curr_node = 2*curr_node + 1
-			}else{
-			      present = 0     
-			      count_vals_at_curr_node = as.scalar(model[3,curr_node])
-			      for(i in 1:count_vals_at_curr_node){
-			            val_at_curr_node = as.scalar(model[(3+i),curr_node])
-			            if(val_at_curr_node == row_value_for_curr_node_feature)
-				          present = 1
-			      }
-			      if(present == 1) curr_node = 2*curr_node
-			      else curr_node = 2*curr_node + 1
-			}
+			
+			if(curr_node_kind == 1)
+				r_branch = 1.0 - as.integer(row_value_for_curr_node_feature < as.scalar(model[3,curr_node]))
+			else
+				r_branch = 1.0 - sum(ppred(model[4:nrow(model),curr_node], row_value_for_curr_node_feature, "=="))
+			
+			curr_node = 2*curr_node + r_branch
 		}
 		
 		#print("row " + i4 + " reached node " + curr_node)
@@ -850,8 +862,8 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 				
 				      best_gain_for_this_feature = -1.0
 				      best_threshold_for_this_feature = 0.0
-				      pure_left_child_for_scale = 0.0
-				      pure_right_child_for_scale = 0.0
+				      pure_left_child_for_scale = 0
+				      pure_right_child_for_scale = 0
 				      make_leaf_for_scale = 0.0
 				      for(i12 in 1:castAsScalar(count_thresholds[1,i10])){
 				      	    threshold = as.scalar(thresholds[i12,i10])
@@ -868,24 +880,23 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 					          	  best_gain_for_this_feature = gain
 						  		  best_threshold_for_this_feature = threshold
 						  
+						  		  right_counts = all_counts - left_counts	
+						  
 						  		  nl = sum(left_counts)
-                                  nr = sum(all_counts - left_counts)
+                                  nr = sum(right_counts)
                                                   
 						  		  if(nl == 0 | nr == 0){
-                                  	    if(nl > 0) make_leaf_for_scale = findLabel(left_counts)
-                                        else{
-                                        	aggr_labels = all_counts - left_counts
-                                        	make_leaf_for_scale = findLabel(aggr_labels)
-                                        }
+						  		  		aggr_labels = 
+						  		  			as.integer(nl == 0) * right_counts
+						  		  			+ as.integer(nr == 0) * left_counts
+						  		  
+                                  	    make_leaf_for_scale = findLabel(aggr_labels)
+                                        
                                   }else make_leaf_for_scale = 0.0
 						  
-						  		  if(sum(left_counts) == max(left_counts))
-						        	    pure_left_child_for_scale = 1.0
-						  		  else pure_left_child_for_scale = 0.0
+						  		  pure_left_child_for_scale = as.integer(sum(left_counts) == max(left_counts))
 							
-						  		  if(sum(all_counts - left_counts) == max(all_counts - left_counts))
-						        	    pure_right_child_for_scale = 1.0
-						  	      else pure_right_child_for_scale = 0.0
+						  		  pure_right_child_for_scale = as.integer(sum(all_counts - left_counts) == max(all_counts - left_counts))
 					    	}
 				      }
 				      
@@ -947,17 +958,13 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
    			      		beg_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 1])
 			      		end_for_best_feature = as.scalar(domain_offsets[best_gain_feature, 2])
 
-			      		left_vals_bit_vector_representation = left_vals_matrix[i,beg_for_best_feature:end_for_best_feature]
+			      		left_vals_bit_vector_representation = t(left_vals_matrix[i,beg_for_best_feature:end_for_best_feature])
 
 			      		left_vals_size = sum(left_vals_bit_vector_representation)
 			      		model[3,big_node] = left_vals_size
 			      
-			      		pos = 1
-                  		for(j in 1:ncol(left_vals_bit_vector_representation))
-                        	  if(as.scalar(left_vals_bit_vector_representation[1,j]) == 1){
-                              	    model[(3+pos),big_node] = j
-                              		pos = pos + 1
-                        	  }
+			      		left_vals = gather(left_vals_bit_vector_representation)
+			      		model[4:(3+nrow(left_vals)), big_node] = left_vals
 				  }
 			}else{
             	  model[1,big_node] = -1
@@ -1011,12 +1018,12 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 		permut_mat = matrix(0, rows=sum(small_q_cnts), cols=nrow(X))
 		parfor(i5 in 1:ncol(small_reached), check=0){
 			offset = castAsScalar(cumulative_small_q_cnts[i5,1])
-			filled = 1
-			for(i in 1:nrow(small_reached))
-				if(castAsScalar(small_reached[i,i5]) == 1){
-					permut_mat[offset + filled, i] = 1
-					filled = filled + 1
-				}
+			
+			small_reached_col = small_reached[,i5]
+			row_ids = gather(small_reached_col)
+			#permut_block = expand(row_ids)
+			permut_block = table( seq(1, nrow(row_ids), 1), row_ids)
+			permut_mat[(offset+1):(offset+nrow(permut_block)), 1:ncol(permut_block)] = permut_block
 		}
 		
 		/*
@@ -1094,10 +1101,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			local_node = 1
 			global_node = as.integer(castAsScalar(small_q[i,1]))
 			
-			#take this out once matthias delivers his fix for recursion
-			model1 = recursiveCopy(local_model, local_node, model, global_node)
-			model = model1
-			#model = recursiveCopy(local_model, local_node, model, global_node)
+			model = recursiveCopy(local_model, local_node, model, global_node)
 		}
 		
 		/*
@@ -1170,32 +1174,22 @@ write(model, $model, format=cmdLine_fmt)
 pred = matrix(0, rows=nrow(X), cols=1)
 
 parfor(j1 in 1:nrow(X)){
-      row_j1 = X[j1,]
-      curr_node_j1 = 1
-      while(as.scalar(model[1,curr_node_j1]) > 0){
-            curr_node_j1_feature = as.scalar(model[1,curr_node_j1])
+	row_j1 = X[j1,]
+    curr_node_j1 = 1
+    while(as.scalar(model[1,curr_node_j1]) > 0){
+		curr_node_j1_feature = as.scalar(model[1,curr_node_j1])
 	    curr_node_j1_kind = as.scalar(model[2,curr_node_j1])
 	    row_value_for_curr_node_j1_feature = as.scalar(row_j1[1,curr_node_j1_feature])
-	    if(curr_node_j1_kind == 1){
-	          threshold_at_curr_node_j1 = as.scalar(model[3,curr_node_j1])
-		  if(row_value_for_curr_node_j1_feature < threshold_at_curr_node_j1)
-		        curr_node_j1 = 2*curr_node_j1
-		  else curr_node_j1 = 2*curr_node_j1 + 1
-	    }else{
-		  present_j1 = 0     
-		  count_vals_at_curr_node_j1 = as.scalar(model[3,curr_node_j1])
-		  for(i in 1:count_vals_at_curr_node_j1){
-		  	val_at_curr_node_j1 = as.scalar(model[(3+i),curr_node_j1])
-            		if(val_at_curr_node_j1 == row_value_for_curr_node_j1_feature)
-			      present_j1 = 1
-		  }
-		  
-		  if(present_j1 == 1) curr_node_j1 = 2*curr_node_j1
-		  else curr_node_j1 = 2*curr_node_j1 + 1
-	    }
-      }
+	    
+	    if(curr_node_j1_kind == 1)
+	    	right_branch = 1.0 - as.integer(row_value_for_curr_node_j1_feature < as.scalar(model[3,curr_node_j1]))
+	    else
+	    	right_branch = 1.0 - sum(ppred(model[4:nrow(model),curr_node_j1], row_value_for_curr_node_j1_feature, "=="))
+	    	
+	    curr_node_j1 = 2*curr_node_j1 + right_branch
+	}
 		
-      pred[j1,1] = model[2,curr_node_j1]
+    pred[j1,1] = model[2,curr_node_j1]
 }
 
 num_correct = sum(ppred(pred, y, "=="))

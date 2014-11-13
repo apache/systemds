@@ -28,32 +28,26 @@ model = read($model)
 pred = matrix(0, rows=nrow(X), cols=1)
 
 parfor(i in 1:nrow(X)){
-      row = X[i,]
-      curr_node = 1
-      while(as.scalar(model[1,curr_node]) > 0){
-            curr_node_feature = as.scalar(model[1,curr_node])
-	    curr_node_kind = as.scalar(model[2,curr_node])
+	row = X[i,]
+    curr_node = 1
+      
+    while(as.scalar(model[1,curr_node]) > 0){
+		curr_node_feature = as.scalar(model[1,curr_node])
+		curr_node_kind = as.scalar(model[2,curr_node])
 	    row_value_for_curr_node_feature = as.scalar(row[1,curr_node_feature])
-	    if(curr_node_kind == 1){
-	          threshold_at_curr_node = as.scalar(model[3,curr_node])
-		  if(row_value_for_curr_node_feature < threshold_at_curr_node)
-		        curr_node = 2*curr_node
-		  else curr_node = 2*curr_node + 1
-	    }else{
-		  present = 0     
-		  count_vals_at_curr_node = as.scalar(model[3,curr_node])
-		  for(j in 1:count_vals_at_curr_node){
-		  	val_at_curr_node = as.scalar(model[(3+j),curr_node])
-            if(val_at_curr_node == row_value_for_curr_node_feature)
-			      present = 1
-		  }
-		  
-		  if(present == 1) curr_node = 2*curr_node
-		  else curr_node = 2*curr_node + 1
-	    }
-      }
+	    
+	    if(curr_node_kind == 1)
+	    	r_branch = 1.0 - as.integer(row_value_for_curr_node_feature < as.scalar(model[3, curr_node]))
+	    else
+	    	r_branch = 
+	    		1.0 
+	    		- sum(ppred(model[3:nrow(model), curr_node], row_value_for_curr_node_feature, "==")) 
+	    		+ as.integer(as.scalar(model[3, curr_node]) == row_value_for_curr_node_feature)
+	    
+	    curr_node = 2*curr_node + r_branch
+	}
 		
-      pred[i,1] = model[2,curr_node]
+	pred[i,1] = model[2,curr_node]
 }
 
 if(cmdLine_predictions != " ")

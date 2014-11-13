@@ -22,17 +22,8 @@
 #   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out
 #
 
-# ISSUES IN DWRITE
-# 1. dwrite needs to be scalable built in function
-# 2. dwrite needs to write mtd
-# 3. dwrite needs to support same format externsl, i.e "csv", and "binary"
-# format: "textcell" | "binaryblock"
-dwrite = externalFunction(Matrix[Double] m, String fname, String format)
-    return(Boolean success)
-    implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP", exectype="mem")
-
 # set defaults
-ofmt = ifdef($ofmt, "binaryblock")
+ofmt = ifdef($ofmt, "binary")
 
 #
 # Read inputs
@@ -76,5 +67,6 @@ parfor( i in 1:nrow(sv))
     iSM = ppred(SM, i, "==");  
     iX = X * iSM;
     iX = removeEmpty( target=iX, margin="rows");
-    iret = dwrite (iX, $O + "/" + i, ofmt)
+    tmp = $O + "/" + i
+    write (iX, tmp, format=ofmt)
   }

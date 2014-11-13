@@ -550,21 +550,22 @@ count_thresholds = matrix(0, rows=1, cols=ncol(X))
 thresholds = matrix(0, rows=num_bins+1, cols=ncol(X))
 parfor(i8 in 1:ncol(X)){
 	if(as.scalar(kinds[i8,1]) == 1){
-	      col = order(X[,i8], 1, FALSE)
+		col = order(X[,i8], 1, FALSE)
 
-	      /*
-	       * print("sorted vals:")
-	       * for(j in 1:nrow(col))
-	       * print(" " + castAsScalar(col[j,1]))
-	       */
+		/*
+	 	* print("sorted vals:")
+	  	* for(j in 1:nrow(col))
+	  	* print(" " + castAsScalar(col[j,1]))
+	 	*/
 
-	      col_bins = matrix(0, rows=num_bins+1, cols=1)
-	      col_bins[1,1] = col[1,1]
+	  	col_bins = matrix(0, rows=num_bins+1, cols=1)
+	    col_bins[1,1] = col[1,1]
 	
-	      pos_col = 1
-	      bin_id = 1
-	      while(pos_col < nrow(X) & bin_id <= num_bins){
-	            #print("pos_col (before): " + pos_col)
+	    pos_col = 1
+	    bin_id = 1
+	    while(pos_col < nrow(X) & bin_id <= num_bins){
+	      	#print("pos_col (before): " + pos_col)
+		    
 		    if(pos_col + bin_size > nrow(X)) pos_col = nrow(X)
 		    else pos_col = pos_col + bin_size
 		    #print("pos_col (after): " + pos_col)
@@ -572,38 +573,36 @@ parfor(i8 in 1:ncol(X)){
 		    end_val = col[pos_col,1]
 		    col_bins[bin_id+1,1] = end_val
 		
-			# look for more end_vals and include them in this bin
-		    #continue = TRUE
-		    #while(continue & pos_col < nrow(X))
-			#  if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
-			#        pos_col = pos_col + 1
-			#  else continue = FALSE
-			pos_col = pos_col + as.integer(sum(ppred(col[pos_col:nrow(col),], as.scalar(end_val), "==")) - 1)
-		    #print("pos_col (changed): " + pos_col)
+			continue = TRUE
+		    while(continue & pos_col < nrow(X))
+				if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
+		        	pos_col = pos_col + 1
+			  	else continue = FALSE
+			#print("pos_col (changed): " + pos_col)
 		
 		    bin_id = bin_id + 1
-	      }
+		}
 	
-	      #print("pos_col=" + pos_col + " bin_id=" + bin_id)
+	   	#print("pos_col=" + pos_col + " bin_id=" + bin_id)
 	      
-	      /*
-	       * print("bins:")
-	       * for(j in 1:nrow(col_bins))
-	       *   print(" " + castAsScalar(col_bins[j,1]))
-	       */
+	  	/*
+	   	* print("bins:")
+	   	* for(j in 1:nrow(col_bins))
+	   	*   print(" " + castAsScalar(col_bins[j,1]))
+	   	*/
 
-	      num_bins_defined = bin_id - 1
-	      col_bins[1:num_bins_defined,1] = (col_bins[1:num_bins_defined,1] + col_bins[2:(num_bins_defined+1),1])/2
+	  	num_bins_defined = bin_id - 1
+	   	col_bins[1:num_bins_defined,1] = (col_bins[1:num_bins_defined,1] + col_bins[2:(num_bins_defined+1),1])/2
 		  
-	      /*
-	       * print("thresholds:")
-	       * for(j in 1:nrow(col_bins))
-	       *   print(" " + castAsScalar(col_bins[j,1]))
-	       */
+	 	/*
+	   	* print("thresholds:")
+	   	* for(j in 1:nrow(col_bins))
+	   	*   print(" " + castAsScalar(col_bins[j,1]))
+	   	*/
 	      	
-	      count_thresholds[,i8] = num_bins_defined
-	      thresholds[,i8] = col_bins	
-      }
+	    count_thresholds[,i8] = num_bins_defined
+	    thresholds[,i8] = col_bins	
+	}
 }
 
 /*

@@ -66,6 +66,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -703,7 +704,7 @@ public class Recompiler
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> tmp = pb.getInstructions();
 
-			if(	sb != null 
+			if(	sb != null //recompile all for stats propagation and recompile flags
 				//&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
@@ -712,6 +713,14 @@ public class Recompiler
 				
 				//propagate stats across hops (should be executed on clone of vars)
 				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
+				
+				//reset recompilation flags (w/ special handling functions)
+				if(    ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
+					&& !containsRootFunctionOp(sb.get_hops())  ) 
+				{
+					Hop.resetRecompilationFlag(sb.get_hops(), ExecType.CP);
+					sb.updateRecompilationFlag();
+				}
 			}
 			
 			removeUpdatedScalars(vars, sb);			
@@ -845,6 +854,21 @@ public class Recompiler
 	
 	/**
 	 * 
+	 * @param hops
+	 * @return
+	 */
+	private static boolean containsRootFunctionOp( ArrayList<Hop> hops )
+	{
+		boolean ret = false;
+		for( Hop h : hops )
+			if( h instanceof FunctionOp )
+				ret |= true;
+		
+		return ret;
+	}
+	
+	/**
+	 * 
 	 * @param dim1
 	 * @param dim2
 	 * @param nnz
@@ -887,6 +911,10 @@ public class Recompiler
 			if( hops != null ) {
 				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
 				ipb.setPredicate( tmp );
+				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs ) {
+					Hop.resetRecompilationFlag(hops, ExecType.CP);
+					isb.updatePredicateRecompilationFlag();
+				}
 			}
 		}
 	}
@@ -912,6 +940,10 @@ public class Recompiler
 			if( hops != null ) {
 				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
 				wpb.setPredicate( tmp );
+				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs ) {
+					Hop.resetRecompilationFlag(hops, ExecType.CP);
+					wsb.updatePredicateRecompilationFlag();
+				}
 			}
 		}
 	}
@@ -937,17 +969,39 @@ public class Recompiler
 			Hop toHops = fsb.getToHops();
 			Hop incrHops = fsb.getIncrementHops();
 			
-			if( fromHops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
-				fpb.setFromInstructions(tmp);
+			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs ) 
+			{
+				if( fromHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
+					fpb.setFromInstructions(tmp);
+					Hop.resetRecompilationFlag(fromHops,ExecType.CP);
+				}
+				if( toHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
+					fpb.setToInstructions(tmp);
+					Hop.resetRecompilationFlag(toHops,ExecType.CP);
+				}
+				if( incrHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
+					fpb.setIncrementInstructions(tmp);
+					Hop.resetRecompilationFlag(incrHops,ExecType.CP);
+				}
+				fsb.updatePredicateRecompilationFlags();
 			}
-			if( toHops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
-				fpb.setToInstructions(tmp);
-			}
-			if( incrHops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
-				fpb.setIncrementInstructions(tmp);
+			else //no reset of recompilation flags
+			{
+				if( fromHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
+					fpb.setFromInstructions(tmp);
+				}
+				if( toHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
+					fpb.setToInstructions(tmp);
+				}
+				if( incrHops != null ) {
+					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
+					fpb.setIncrementInstructions(tmp);
+				}
 			}
 		}
 	}

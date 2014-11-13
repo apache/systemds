@@ -564,7 +564,7 @@ public class DataOp extends Hop
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==ExecType.MR && _recompileRead )
 				setRequiresRecompile();
 	    	
-			_etype = null;
+			_etype = letype;
 		}
 		
 		return _etype;

@@ -581,6 +581,35 @@ public abstract class Hop
 		this.set_visited(Hop.VISIT_STATUS.NOTVISITED);
 	}
 
+	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
+	{
+		resetVisitStatus( hops );
+		for( Hop hopRoot : hops )
+			hopRoot.resetRecompilationFlag( et );
+	}
+	
+	public static void resetRecompilationFlag( Hop hops, ExecType et )
+	{
+		hops.resetVisitStatus();
+		hops.resetRecompilationFlag( et );
+	}
+	
+	private void resetRecompilationFlag( ExecType et ) 
+	{
+		if( get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		//process child hops
+		for (Hop h : getInput())
+			h.resetRecompilationFlag( et );
+		
+		//reset recompile flag
+		if( et == null || getExecType() == et || getExecType()==null )
+			_requiresRecompile = false;
+		
+		this.set_visited(VISIT_STATUS.DONE);
+	}
+	
 		
 	/**
 	 * Test and debugging only.

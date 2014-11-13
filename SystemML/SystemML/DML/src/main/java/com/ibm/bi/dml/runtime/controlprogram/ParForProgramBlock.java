@@ -83,6 +83,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 
@@ -203,7 +204,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; //export only read variables according to live variable analysis
  	public static final boolean LIVEVAR_AWARE_CLEANUP       = true; //cleanup pinned variables according to live variable analysis
-	
+	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
+ 	
  	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = PARFOR_FNAME_PREFIX + "%ID%_MR_taskfile"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = PARFOR_FNAME_PREFIX + "%ID%_MR_results"; 
@@ -635,8 +637,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		 * Step 4) collect results from each parallel worker
 		 */
 
-		Timing time = (_monitor ? new Timing(true) : null );
-		
+		Timing time = new Timing(true);
 
 		int numExecutedTasks = 0;
 		int numExecutedIterations = 0;
@@ -666,8 +667,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( Thread thread : threads )
 				thread.start();
 			
+			//maintain statistics
+			long tinit = (long) time.stop();
+			if( DMLScript.STATISTICS )
+				Statistics.incrementParForInitTime(tinit);
 			if( _monitor ) 
-				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, tinit);
 			
 			// Step 2) create tasks 
 			TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
@@ -1443,6 +1448,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
+		Timing time = new Timing(true);
+		
 		//result merge
 		if( checkParallelRemoteResultMerge() )
 		{
@@ -1508,6 +1515,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		//check expected counters
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
+	
+		if( DMLScript.STATISTICS )
+			Statistics.incrementParForMergeTime((long) time.stop());
 	}
 	
 	/**

@@ -49,6 +49,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 /**
@@ -191,6 +192,10 @@ public class OptimizationWrapper
 	{
 		Timing time = new Timing(true);
 		
+		//maintain statistics
+		if( DMLScript.STATISTICS )
+			Statistics.incrementParForOptimCount();
+		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );
 		CostModelType cmtype = opt.getCostModelType();
@@ -275,8 +280,10 @@ public class OptimizationWrapper
 			}
 		}
 		
-		LOG.trace("ParFOR Opt: Optimized plan in "+time.stop()+"ms.");
-		
+		long ltime = (long) time.stop();
+		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
+		if( DMLScript.STATISTICS )
+			Statistics.incrementParForOptimTime(ltime);
 		
 		//cleanup phase
 		OptTreeConverter.clear();

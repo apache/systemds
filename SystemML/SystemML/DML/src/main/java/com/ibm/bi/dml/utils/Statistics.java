@@ -55,6 +55,12 @@ public class Statistics
 	private static long hopRecompilePred = 0; //count
 	private static long hopRecompileSB = 0;   //count
 	
+	//PARFOR optimization stats
+	private static long parforOptTime = 0; //in milli sec
+	private static long parforOptCount = 0; //count
+	private static long parforInitTime = 0; //in milli sec
+	private static long parforMergeTime = 0; //in milli sec
+	
 	
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
@@ -119,6 +125,22 @@ public class Statistics
 		hopRecompileSB += delta;
 	}
 
+	public static synchronized void incrementParForOptimCount(){
+		parforOptCount ++;
+	}
+	
+	public static synchronized void incrementParForOptimTime( long time ) {
+		parforOptTime += time;
+	}
+	
+	public static synchronized void incrementParForInitTime( long time ) {
+		parforInitTime += time;
+	}
+	
+	public static synchronized void incrementParForMergeTime( long time ) {
+		parforMergeTime += time;
+	}
+	
 	/**
 	 * Starts the timer, should be invoked immediately before invoking
 	 * Program.execute()
@@ -149,6 +171,11 @@ public class Statistics
 		hopRecompileTime = 0;
 		hopRecompilePred = 0;
 		hopRecompileSB = 0;
+		
+		parforOptCount = 0;
+		parforOptTime = 0;
+		parforInitTime = 0;
+		parforMergeTime = 0;
 		
 		resetJITCompileTime();
 		resetJVMgcTime();
@@ -306,6 +333,22 @@ public class Statistics
 	public static long getHopRecompiledSBDAGs(){
 		return hopRecompileSB;
 	}
+	
+	public static long getParforOptCount(){
+		return parforOptCount;
+	}
+	
+	public static long getParforOptTime(){
+		return parforOptTime;
+	}
+	
+	public static long getParforInitTime(){
+		return parforInitTime;
+	}
+	
+	public static long getParforMergeTime(){
+		return parforMergeTime;
+	}
 
 	/**
 	 * Prints statistics.
@@ -330,7 +373,13 @@ public class Statistics
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
-			sb.append("Total HOP DAG recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			if( parforOptCount>0 ){
+				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");
+				sb.append("ParFor optimize time:\t\t" + String.format("%.3f", ((double)getParforOptTime())/1000) + " sec.\n");	
+				sb.append("ParFor initialize time:\t\t" + String.format("%.3f", ((double)getParforInitTime())/1000) + " sec.\n");	
+				sb.append("ParFor result merge time:\t" + String.format("%.3f", ((double)getParforMergeTime())/1000) + " sec.\n");	
+			}
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");

@@ -168,7 +168,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		{
 			return false;
 		}
-				
+		
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
 			Expression sourceExpr = null;
 			if (stmt instanceof AssignmentStatement) {
@@ -185,6 +185,7 @@ public class StatementBlock extends LiveVariableAnalysis
 			if ( sourceExpr instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)sourceExpr).multipleReturns() )
 				return false;
 			
+			//function calls (only mergable if inlined dml-bodied function)
 			if (sourceExpr instanceof FunctionCallIdentifier){
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
@@ -192,27 +193,15 @@ public class StatementBlock extends LiveVariableAnalysis
 					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
-				if (fblock.getStatements().size() > 0 && fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
+				if( !rIsInlineableFunction(fblock, dmlProg) )
 					return false;
-				}
-				else {
-					 // check if statement block is a control block
-					 if (fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0){
-						 StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
-						 if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock){
-							 return false;
-						 }
-						 else {
-							 return true; 
-						 }
-					 }
-				}
 			}
 		}
+		
 		// regular function block
 		return true;
 	}
-
+   
     public boolean isRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) throws LanguageException{
 			
 		// for regular stmt, check if this is a function call stmt block
@@ -230,57 +219,72 @@ public class StatementBlock extends LiveVariableAnalysis
 					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
-				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1){
-					return false;
-				}
-				else {
-					// check if statement block is a control block
-					if (fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0){
-						StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
-						if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
-							return false;
-						else
-							return true;
-					}
-				}
-			}
-		}
-		
-		// regular statement
-		return false;
-	}
-    
-    public boolean isNonRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) throws LanguageException{
-		
-		// for regular stmt, check if this is a function call stmt block
-		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
-			Expression sourceExpr = null;
-			if (stmt instanceof AssignmentStatement)
-				sourceExpr = ((AssignmentStatement)stmt).getSource();
-			else
-				sourceExpr = ((MultiAssignmentStatement)stmt).getSource();
-			
-			if (sourceExpr instanceof FunctionCallIdentifier){
-				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
-				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-				if (fblock == null){
-					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
-				}
-				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
+				
+				if( rIsInlineableFunction(fblock, dmlProg) )
 					return true;
-				}
-				else {
-					return false;
-				}
 			}
 		}
 		
 		// regular statement
 		return false;
 	}
+   
+
+    /**
+     * 
+     * @param fblock
+     * @param prog
+     * @return
+     */
+    private boolean rIsInlineableFunction( FunctionStatementBlock fblock, DMLProgram prog )
+    {
+    	boolean ret = true;
+    	
+    	//reject external functions and function bodies with multiple blocks
+    	if(    fblock.getStatements().size() == 0 //empty blocks
+    		|| fblock.getStatement(0) instanceof ExternalFunctionStatement  
+    		|| ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 )
+    	{
+			return false;
+		}
+		
+    	//reject control flow and non-inlinable functions
+    	if(fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0) 
+    	{
+    		StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+			
+    		//reject control flow blocks
+        	if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
+				 return false;
+        	
+        	//recursively check that functions are inlinable
+        	for( Statement s : stmtBlock.getStatements() ){
+        		if( s instanceof AssignmentStatement && ((AssignmentStatement)s).getSource() instanceof FunctionCallIdentifier )
+        		{
+        			AssignmentStatement as = (AssignmentStatement)s;
+        			FunctionCallIdentifier fcall = (FunctionCallIdentifier) as.getSource();
+    				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+    				ret &= rIsInlineableFunction(fblock2, prog);
+    				if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && as.getSource().toString().contains("read"))
+    					return false;
+    				if( as.containsIndividualStatementBlockOperations() )
+    					return false;
+    				
+    				if( !ret ) return false;
+        		}
+        		if( s instanceof MultiAssignmentStatement && ((MultiAssignmentStatement)s).getSource() instanceof FunctionCallIdentifier )
+        		{
+        			FunctionCallIdentifier fcall = (FunctionCallIdentifier) ((MultiAssignmentStatement)s).getSource();
+    				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+    				ret &= rIsInlineableFunction(fblock2, prog);
+    				if( !ret ) return false;
+        		}
+        	}
+		}
+    	
+    	return ret;
+    }
     
-	
 	public static ArrayList<StatementBlock> mergeFunctionCalls(ArrayList<StatementBlock> body, DMLProgram dmlProg) throws LanguageException
 	{
 		for(int i = 0; i <body.size(); i++){
@@ -409,6 +413,11 @@ public class StatementBlock extends LiveVariableAnalysis
 					throw new LanguageException(fcall.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
+				
+				// recursive inlining (no memo required because update-inplace of function statement blocks, so no redundant inlining)
+				if( rIsInlineableFunction(fblock, dmlProg) ){
+					fstmt.getBody().get(0).setStatements(rewriteFunctionCallStatements(dmlProg, fstmt.getBody().get(0).getStatements()));
+				}
 				
 				//MB: we cannot use the hash since multiple interleaved inlined functions should be independent.
 				//String prefix = new Integer(fblock.hashCode()).toString() + "_";

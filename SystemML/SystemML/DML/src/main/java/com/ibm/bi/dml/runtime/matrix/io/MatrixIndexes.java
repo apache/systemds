@@ -18,6 +18,10 @@ import org.apache.hadoop.io.WritableComparator;
 
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
+/**
+ * This represent the indexes to the blocks of the matrix.
+ * Please note that these indexes are 1-based, whereas the data in the block are zero-based (as they are double arrays).
+ */
 public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>
 {
 	@SuppressWarnings("unused")

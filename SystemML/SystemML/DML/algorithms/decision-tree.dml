@@ -86,11 +86,14 @@ computeLeftForScale = function(Matrix[Double] feature_vals, Double threshold) re
  * this subset of vals (provided as input in bit vector representation)
  */
 computeLeftForCategorical = function(Matrix[Double] feature_vals, Matrix[Double] vals) return(Matrix[Double] left){
-      n = nrow(feature_vals)
-      left = matrix(0, rows=n, cols=1)
-      for(i in 1:n)
-	    if(as.scalar(vals[as.scalar(feature_vals[i,1]),1]) == 1) 
-	          left[i,1] = 1
+      #n = nrow(feature_vals)
+      #left = matrix(0, rows=n, cols=1)
+      #for(i in 1:n)
+	  #  if(as.scalar(vals[as.scalar(feature_vals[i,1]),1]) == 1) 
+	  #        left[i,1] = 1
+	  
+	  P = table(seq(1, nrow(feature_vals)), feature_vals, nrow(feature_vals), nrow(vals))
+	  left = P %*% vals
 }
 
 /*

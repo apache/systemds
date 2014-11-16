@@ -62,14 +62,11 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		ec.releaseMatrixInput(input2.get_name());
 	}
 	
-	void executeSolve(ExecutionContext ec) throws DMLRuntimeException {
-		long begin = System.nanoTime(), start = begin;
-		
+	void executeSolve(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		Array2DRowRealMatrix vectorInput = prepareInputForCommonsMath(ec, input2.get_name());
-		
-		//long inputPrep = System.nanoTime() - start;
-		start = System.nanoTime();
 		
 		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
 		DecompositionSolver lusolver = ludecompose.getSolver();
@@ -81,18 +78,11 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		// Invoke solve
 		RealMatrix solutionMatrix = solver.solve(vectorInput);
 		
-		//long compute = System.nanoTime() - start;
-		start = System.nanoTime();
-		
 		MatrixBlock solution = DataConverter.convertToMatrixBlock(solutionMatrix.getData());
 		
 		ec.setMatrixOutput(output.get_name(), solution);
 		ec.releaseMatrixInput(input1.get_name());
 		ec.releaseMatrixInput(input2.get_name());
-		//long outputPrep = System.nanoTime() - start;
-		//long total = System.nanoTime()-begin;
-		
-		//System.out.println("  extfunApache " + inputPrep*1e-6 + " " + compute*1e-6 + " " + outputPrep*1e-6 + " " + total*1e-6);
 		
 		return;
 	}

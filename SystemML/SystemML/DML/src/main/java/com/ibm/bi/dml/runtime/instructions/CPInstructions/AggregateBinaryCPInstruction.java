@@ -91,31 +91,20 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 	{	
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		long begin, st, tread, tcompute, twrite, ttotal;
-		
-		begin = System.currentTimeMillis();
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
-		tread = System.currentTimeMillis() - begin;
-		
 		String output_name = output.get_name(); 
 		
 		if ( opcode.equalsIgnoreCase("ba+*")) {
 			
-			st = System.currentTimeMillis();
 			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) optr;
 			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
-			tcompute = System.currentTimeMillis() - st;
-
+			
 			//release inputs/outputs
-			st = System.currentTimeMillis();
 			ec.releaseMatrixInput(input1.get_name());
 			ec.releaseMatrixInput(input2.get_name());
 			ec.setMatrixOutput(output_name, soresBlock);
-			twrite = System.currentTimeMillis()-st;
 			
-			ttotal = System.currentTimeMillis()-begin;
-			LOG.trace("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);			
 		} 
 		else if ( opcode.equalsIgnoreCase("cov") ) {
 			COVOperator cov_op = (COVOperator)optr;

@@ -333,7 +333,8 @@ public class Dag<N extends Lop>
 					rm_inst.setLineNum(node._beginLine);
 				}
 				
-				LOG.trace(rm_inst.toString());
+				if( LOG.isTraceEnabled() )
+					LOG.trace(rm_inst.toString());
 				inst.add(rm_inst);
 				
 			}
@@ -463,7 +464,8 @@ public class Dag<N extends Lop>
 				}
 				deleteInst.add(inst);
 
-				LOG.trace("  Adding " + inst.toString());
+				if( LOG.isTraceEnabled() )
+					LOG.trace("  Adding " + inst.toString());
 			}
 		}
 
@@ -529,8 +531,8 @@ public class Dag<N extends Lop>
 
 		for (int i = from; i < to; i++) {
 			if ((nodes.get(i).getCompatibleJobs() & base) == 0) {
-				LOG.trace("Not compatible "
-							+ nodes.get(i).toString());
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Not compatible "+ nodes.get(i).toString());
 				return false;
 			}
 		}
@@ -945,7 +947,8 @@ public class Dag<N extends Lop>
 				if (finishedNodes.contains(node))
 					continue;
 
-				LOG.trace("Processing node (" + node.getID()
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Processing node (" + node.getID()
 							+ ") " + node.toString() + " exec nodes size is " + execNodes.size());
 				
 				
@@ -953,9 +956,10 @@ public class Dag<N extends Lop>
 		        //its children nodes in execNodes 
 		        if(node.definesMRJob() && !compatibleWithChildrenInExecNodes(execNodes, node))
 		        {
-		          LOG.trace(indent + "Queueing node "
-		                + node.toString() + " (code 1)");
-		
+		        	if( LOG.isTraceEnabled() )			
+			          LOG.trace(indent + "Queueing node "
+			                + node.toString() + " (code 1)");
+			
 		          queuedNodes.add(node);
 		          removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
 		          continue;
@@ -965,7 +969,8 @@ public class Dag<N extends Lop>
 				// iteration
 				if (hasChildNode(node,queuedNodes)) {
 
-					LOG.trace(indent + "Queueing node "
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Queueing node "
 								+ node.toString() + " (code 2)");
 
 					queuedNodes.add(node);
@@ -996,7 +1001,8 @@ public class Dag<N extends Lop>
 						}
 					}
 					if ( queueit ) {
-						LOG.trace(indent + "Queueing node " + node.toString() + " (code 3)");
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Queueing node " + node.toString() + " (code 3)");
 						queuedNodes.add(node);
 						removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
 						continue;
@@ -1024,8 +1030,8 @@ public class Dag<N extends Lop>
 				boolean eliminate = false;
 				eliminate = canEliminateLop(node, execNodes);
 				if (eliminate) {
-					LOG.trace(indent + "Adding -"
-								+ node.toString());
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Adding -"+ node.toString());
 					execNodes.add(node);
 					finishedNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, eliminate);
@@ -1039,8 +1045,8 @@ public class Dag<N extends Lop>
 						// "node" must NOT be queued when node=group and the child that defines job is Rand
 						// this is because "group" can be pushed into the "Rand" job.
 						if (! (node.getType() == Lop.Type.Grouping && checkDataGenAsChildNode(node,execNodes))  ) {
-							LOG.trace(indent + "Queueing node "
-										+ node.toString() + " (code 4)");
+							if( LOG.isTraceEnabled() )
+								LOG.trace(indent + "Queueing node " + node.toString() + " (code 4)");
 
 							queuedNodes.add(node);
 
@@ -1074,8 +1080,8 @@ public class Dag<N extends Lop>
 
 					if (queue_it) {
 						// queue node
-						LOG.trace(indent + "Queueing -"
-									+ node.toString() + " (code 5)");
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Queueing -" + node.toString() + " (code 5)");
 						queuedNodes.add(node);
 						// TODO: does this have to be modified to handle
 						// recordreader lops?
@@ -1092,8 +1098,8 @@ public class Dag<N extends Lop>
 				// data node, always add if child not queued
 				// only write nodes are kept in execnodes
 				if (node.getExecLocation() == ExecLocation.Data) {
-					LOG.trace(indent + "Adding Data -"
-								+ node.toString());
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Adding Data -"+ node.toString());
 
 					finishedNodes.add(node);
 
@@ -1135,8 +1141,8 @@ public class Dag<N extends Lop>
 
 				// map or reduce node, can always be piggybacked with parent
 				if (node.getExecLocation() == ExecLocation.MapOrReduce) {
-					LOG.trace(indent + "Adding -"
-								+ node.toString());
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Adding -"+ node.toString());
 					execNodes.add(node);
 					finishedNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, false);
@@ -1151,14 +1157,14 @@ public class Dag<N extends Lop>
 					if (!hasChildNode(node, execNodes, ExecLocation.Map)
 							&& !hasChildNode(node, execNodes,
 									ExecLocation.MapAndReduce)) {
-						LOG.trace(indent + "Adding -"
-									+ node.toString());
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Adding -"+ node.toString());
 						execNodes.add(node);
 						finishedNodes.add(node);
 						addNodeByJobType(node, jobNodes, execNodes, false);
 					} else {
-						LOG.trace(indent + "Queueing -"
-									+ node.toString() + " (code 6)");
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 6)");
 						queuedNodes.add(node);
 						removeNodesForNextIteration(node, finishedNodes,
 								execNodes, queuedNodes, jobNodes);
@@ -1190,14 +1196,14 @@ public class Dag<N extends Lop>
 						}
 					}
 					if (!queueThisNode && !hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
-						LOG.trace(indent + "Adding -"
-									+ node.toString());
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Adding -"+ node.toString());
 						execNodes.add(node);
 						finishedNodes.add(node);
 						addNodeByJobType(node, jobNodes, execNodes, false);
 					} else {
-						LOG.trace(indent + "Queueing -"
-									+ node.toString() + " (code 7)");
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 7)");
 						queuedNodes.add(node);
 						removeNodesForNextIteration(node, finishedNodes,
 								execNodes, queuedNodes, jobNodes);
@@ -1218,8 +1224,8 @@ public class Dag<N extends Lop>
 					// TODO: statiko -- keep the middle condition
 					// discuss about having a lop that is MapAndReduce but does
 					// not define a job
-					LOG.trace(indent + "Adding -"
-								+ node.toString());
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Adding -"+ node.toString());
 					execNodes.add(node);
 					finishedNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, eliminate);
@@ -1239,14 +1245,14 @@ public class Dag<N extends Lop>
 					if (   hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
 						|| hasChildNode(node, execNodes, ExecLocation.Map)) 
 					{ 
-						LOG.trace(indent + "Adding -"
-									+ node.toString());
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Adding -"+ node.toString());
 						execNodes.add(node);
 						finishedNodes.add(node);
 						addNodeByJobType(node, jobNodes, execNodes, false);
 					} else {
-						LOG.trace(indent + "Queueing -"
-									+ node.toString() + " (code 8)");
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 8)");
 						queuedNodes.add(node);
 						removeNodesForNextIteration(node, finishedNodes,
 								execNodes, queuedNodes, jobNodes);
@@ -1263,8 +1269,8 @@ public class Dag<N extends Lop>
 						if (execNodes.contains(node.getInputs().get(j))
 								&& !(node.getInputs().get(j).getExecLocation() == ExecLocation.Data)
 								&& !(node.getInputs().get(j).getExecLocation() == ExecLocation.ControlProgram)) {
-							LOG.trace(indent + "Queueing -"
-										+ node.toString() + " (code 9)");
+							if( LOG.isTraceEnabled() )
+								LOG.trace(indent + "Queueing -"+ node.toString() + " (code 9)");
 
 							queuedNodes.add(node);
 							removeNodesForNextIteration(node, finishedNodes,
@@ -1275,9 +1281,8 @@ public class Dag<N extends Lop>
 
 					if (queuedNodes.contains(node))
 						continue;
-
-					LOG.trace(indent + "Adding - scalar"
-								+ node.toString());
+					if( LOG.isTraceEnabled() )
+						LOG.trace(indent + "Adding - scalar"+ node.toString());
 					execNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, false);
 					finishedNodes.add(node);
@@ -1295,14 +1300,15 @@ public class Dag<N extends Lop>
 			      throw new LopsException("Queued nodes should not be 0 at this point \n");
 			  }
 			  
-				LOG.trace("All done! queuedNodes = "
-							+ queuedNodes.size());
-				done = true;
+			  if( LOG.isTraceEnabled() )
+				LOG.trace("All done! queuedNodes = "+ queuedNodes.size());
+				
+			  done = true;
 			} else {
 				// work to do
 
-				LOG.trace("Generating jobs for group -- Node count="
-									+ execNodes.size());
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Generating jobs for group -- Node count="+ execNodes.size());
 
 				// first process scalar instructions
 				generateControlProgramJobs(execNodes, inst, writeInst, deleteInst);
@@ -1316,7 +1322,8 @@ public class Dag<N extends Lop>
 							addChildren(node, jobNodes.get(JobType.GMR.getId()), execNodes);
 						}
 						else {
-							LOG.trace(indent + "Queueing -" + node.toString() + " (code 10)");
+							if( LOG.isTraceEnabled() )
+								LOG.trace(indent + "Queueing -" + node.toString() + " (code 10)");
 							execNodes.remove(i);
 							finishedNodes.remove(node);
 							queuedNodes.add(node);
@@ -1606,7 +1613,8 @@ public class Dag<N extends Lop>
 				}
 				
 				try {
-					LOG.trace("Generating simple instruction - "+ inst_string);
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Generating simple instruction - "+ inst_string);
 					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
@@ -1700,7 +1708,8 @@ public class Dag<N extends Lop>
 		
 		for ( String var : var_deletions ) {
 			Instruction rmInst = VariableCPInstruction.prepareRemoveInstruction(var);
-			LOG.trace("  Adding var_deletions: " + rmInst.toString());
+			if( LOG.isTraceEnabled() )
+				LOG.trace("  Adding var_deletions: " + rmInst.toString());
 			if(DMLScript.ENABLE_DEBUG_MODE) {
 				rmInst.setLineNum(var_deletionsLineNum.get(var));
 			}
@@ -1745,7 +1754,8 @@ public class Dag<N extends Lop>
 		if ( allQueued )
 			return; 
 		
-	    LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
 
 		// Determine if <code>node</code> has inputs from the same job or multiple jobs
 	    int jobid = Integer.MIN_VALUE;
@@ -1812,8 +1822,8 @@ public class Dag<N extends Lop>
 				//       example: numInputs=4 and input2,input4 are queued, then evaluate only input1 and input3.
 				if(node.getInputs().contains(tmpNode) && tmpNode.isAligner()) {
 				    markedNodes.add(tmpNode);
-				    LOG.trace("Removing for next iteration: (" 
-				    		+ tmpNode.getID() + ") " + tmpNode.toString());
+				    if( LOG.isTraceEnabled() )
+				    	LOG.trace("Removing for next iteration: (" + tmpNode.getID() + ") " + tmpNode.toString());
 				}
  
 				else {
@@ -1827,9 +1837,11 @@ public class Dag<N extends Lop>
 							(node.getExecLocation() == ExecLocation.Reduce && branchCanBePiggyBackedReduce(tmpNode, node, execNodes, finishedNodes))  
 						    ) 
 						{
-					      LOG.trace("Removing for next iteration: ("
+							if( LOG.isTraceEnabled() )
+								LOG.trace("Removing for next iteration: ("
 									    + tmpNode.getID() + ") " + tmpNode.toString());
-		        				markedNodes.add(tmpNode);
+		        			
+							markedNodes.add(tmpNode);
 						}
 					 }
 				}
@@ -1857,7 +1869,8 @@ public class Dag<N extends Lop>
 						&& isChild(tmpNode, node, IDMap) &&
 						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
 						&& tmpNode.definesMRJob() != true) {
-					LOG.trace("Removing for next iteration:: ("
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removing for next iteration:: ("
 								+ tmpNode.getID() + ") " + tmpNode.toString());
 
 					markedNodes.add(tmpNode);
@@ -1874,7 +1887,8 @@ public class Dag<N extends Lop>
 						node.getInputs().contains(tmpNode) && tmpNode.isAligner()
 					) 
 				{
-					LOG.trace("Removing for next iteration ("
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removing for next iteration ("
 								+ tmpNode.getID() + ") " + tmpNode.toString());
 					markedNodes.add(tmpNode);
 				}
@@ -1921,7 +1935,8 @@ public class Dag<N extends Lop>
 	        && queuedNodes.contains(node.getInputs().get(1)))
 	      return;
 	    
-	    LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
+	    if( LOG.isTraceEnabled() )
+	    	LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
  
 	    
 
@@ -1978,8 +1993,9 @@ public class Dag<N extends Lop>
 			      tmpNode.isAligner())
 			  {
 			    markedNodes.add(tmpNode);
-			    LOG.trace("Removing for next iteration: ("
-                + tmpNode.getID() + ") " + tmpNode.toString());
+			    if( LOG.isTraceEnabled() )
+			    	LOG.trace("Removing for next iteration: ("
+			    			+ tmpNode.getID() + ") " + tmpNode.toString());
 			  }
 			  else {
 				if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
@@ -1993,15 +2009,15 @@ public class Dag<N extends Lop>
 						||
 						//e.g. Binary
 						(node.getExecLocation() == ExecLocation.Reduce && branchCanBePiggyBackedReduce(tmpNode, node, execNodes, finishedNodes))  )
-						{
+					{
 					
-				      LOG.trace("Removing for next iteration: ("
+				    	if( LOG.isTraceEnabled() )
+							LOG.trace("Removing for next iteration: ("
 								    + tmpNode.getID() + ") " + tmpNode.toString());
 					
 					
-	        				markedNodes.add(tmpNode);
-						
-						}
+	        			markedNodes.add(tmpNode);	
+					}
 				 }
 			  }
 			} else {
@@ -2027,7 +2043,8 @@ public class Dag<N extends Lop>
 						&& isChild(tmpNode, node, IDMap) &&
 						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
 						&& tmpNode.definesMRJob() != true) {
-					LOG.trace("Removing for next iteration:: ("
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removing for next iteration:: ("
 								+ tmpNode.getID() + ") " + tmpNode.toString());
 
 					markedNodes.add(tmpNode);
@@ -2044,7 +2061,8 @@ public class Dag<N extends Lop>
 						(tmpNode == node.getInputs().get(0) || tmpNode == node.getInputs().get(1)) && 
 		            tmpNode.isAligner()) 
 				{
-					LOG.trace("Removing for next iteration ("
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Removing for next iteration ("
 										+ tmpNode.getID()
 										+ ") "
 										+ tmpNode.toString());
@@ -2058,13 +2076,15 @@ public class Dag<N extends Lop>
 
 		// we also need to delete all parent nodes of marked nodes
 		for (int i = 0; i < execNodes.size(); i++) {
-			LOG.trace("Checking for removal - ("
+			if( LOG.isTraceEnabled() )
+				LOG.trace("Checking for removal - ("
 						+ execNodes.elementAt(i).getID() + ") "
 						+ execNodes.elementAt(i).toString());
 
 			if (hasChildNode(execNodes.elementAt(i), markedNodes)) {
 				markedNodes.add(execNodes.elementAt(i));
-				LOG.trace("Removing for next iteration - ("
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Removing for next iteration - ("
 							+ execNodes.elementAt(i).getID() + ") "
 							+ execNodes.elementAt(i).toString());
 			}
@@ -2310,6 +2330,7 @@ public class Dag<N extends Lop>
 				int i = jt.getId();
 				if (i > 0 && jobNodes.get(i) != null && jobNodes.get(i).size() > 0) {
 					LOG.trace(jt.getName() + " Job Nodes:");
+					
 					for (int j = 0; j < jobNodes.get(i).size(); j++) {
 						LOG.trace("    "
 								+ jobNodes.get(i).elementAt(j).getID() + ") "
@@ -2444,7 +2465,8 @@ public class Dag<N extends Lop>
 			// generate MR job
 			if (currNodes != null && currNodes.size() > 0) {
 
-				LOG.trace("Generating " + jt.getName() + " job");
+				if( LOG.isTraceEnabled() )
+					LOG.trace("Generating " + jt.getName() + " job");
 
 				if (jt.allowsRecordReaderInstructions() && hasANode(jobNodes.get(index), ExecLocation.RecordReader)) {
 					// split the nodes by recordReader lops
@@ -2542,7 +2564,8 @@ public class Dag<N extends Lop>
 		for (int i = 0; i < exec_n.size(); i++) {
 			if (isChild(node, exec_n.elementAt(i), IDMap)) {
 				if (!node_v.contains(exec_n.elementAt(i))) {
-					LOG.trace("Adding parent - "
+					if( LOG.isTraceEnabled() )
+						LOG.trace("Adding parent - "
 								+ exec_n.elementAt(i).toString());
 					node_v.add(exec_n.elementAt(i));
 				}
@@ -3164,7 +3187,8 @@ public class Dag<N extends Lop>
 		/* Find the nodes that produce an output */
 		Vector<N> rootNodes = new Vector<N>();
 		getOutputNodes(execNodes, rootNodes, !jt.producesIntermediateOutput());
-		LOG.trace("# of root nodes = " + rootNodes.size());
+		if( LOG.isTraceEnabled() )
+			LOG.trace("# of root nodes = " + rootNodes.size());
 		
 		
 		/* Remove transient writes that are simple copy of transient reads */

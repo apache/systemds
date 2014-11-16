@@ -824,26 +824,33 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				Hop hnew = null;
 				
+				//NOTE: these rewrites of binary cell operations need to be aware that right is 
+				//potentially a vector but the result is of the size of left
+				
 				switch( bop.getOp() ){
 				    //X * Y -> matrix(0,nrow(X),ncol(X));
 					case MULT: {
 						if( HopRewriteUtils.isEmpty(left) ) //empty left and size known
 							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
-						else if( HopRewriteUtils.isEmpty(right) ) //empty right and size known
+						else if( HopRewriteUtils.isEmpty(right) //empty right and right not a vector
+								&& right.get_dim2()>1  ) {
 							hnew = HopRewriteUtils.createDataGenOp(right, right, 0);
+						}
+						else if( HopRewriteUtils.isEmpty(right) )//empty right and right potentially a vector
+							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
 						break;
 					}
 					case PLUS: {
 						if( HopRewriteUtils.isEmpty(left) && HopRewriteUtils.isEmpty(right) ) //empty left/right and size known
-							hnew = HopRewriteUtils.createDataGenOp(left, right, 0);
-						else if( HopRewriteUtils.isEmpty(left) ) //empty left
+							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
+						else if( HopRewriteUtils.isEmpty(left) && (left.get_dim2()==1 || right.get_dim2()>1) ) //empty left
 							hnew = right;
 						else if( HopRewriteUtils.isEmpty(right) ) //empty right
 							hnew = left;
 						break;
 					}
 					case MINUS: {
-						if( HopRewriteUtils.isEmpty(left) ) { //empty left
+						if( HopRewriteUtils.isEmpty(left) && (left.get_dim2()==1 || right.get_dim2()>1) ) { //empty left
 							HopRewriteUtils.removeChildReference(hi, left);
 							HopRewriteUtils.addChildReference(hi, new LiteralOp("0",0), 0);
 							hnew = hi;

@@ -151,6 +151,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			
+			//NOTE: these rewrites of binary cell operations need to be aware that right is 
+			//potentially a vector but the result is of the size of left
+			
 			//check and remove right vectorized scalar
 			if( left.get_dataType() == DataType.MATRIX && right instanceof DataGenOp )
 			{
@@ -167,11 +170,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
 				}
 			}
+			//TODO move to dynamic rewrites (since size dependent to account for mv binary cell operations)
 			//check and remove left vectorized scalar
 			else if( right.get_dataType() == DataType.MATRIX && left instanceof DataGenOp )
 			{
 				DataGenOp dleft = (DataGenOp) left;
-				if( dleft.getDataGenMethod()==DataGenMethod.RAND && dleft.hasConstantValue() )
+				if( dleft.getDataGenMethod()==DataGenMethod.RAND && dleft.hasConstantValue()
+					&& (left.get_dim2()==1 || right.get_dim2()>1) )
 				{
 					Hop dleftIn = dleft.getInput().get(dleft.getParamIndex(DataExpression.RAND_MIN));
 					HopRewriteUtils.removeChildReference(bop, dleft);

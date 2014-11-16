@@ -1,0 +1,26 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+foo1 = function( Matrix[Double] B ) return (Matrix[Double] V) {
+   V = foo2(B+2);
+}
+foo2 = function( Matrix[Double] B ) return (Matrix[Double] V) {
+   if(sum(B)>0){
+      V = B+B;
+   }
+   else{
+      V = B
+   }
+}
+
+X = matrix($3, rows=$1, cols=$2);
+Y = foo1(X);
+z = sum(Y);
+
+write(z, $4);

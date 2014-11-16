@@ -35,15 +35,19 @@ public class LocalVariableMap implements Cloneable
 	private HashMap <String, Data> localMap = null;
 	private final long localID;
 	
-	public LocalVariableMap ()
+	public LocalVariableMap()
 	{
-		localMap = new HashMap <String, Data> ();
+		localMap = new HashMap <String, Data>();
 		localID = _seq.getNextID();
 	}
 	
-	public Set<String> keySet ()
+	/**
+	 * 
+	 * @return
+	 */
+	public Set<String> keySet()
 	{
-		return localMap.keySet ();
+		return localMap.keySet();
 	}
 	
 	/**
@@ -52,9 +56,9 @@ public class LocalVariableMap implements Cloneable
 	 * @param name : the variable name for the data object
 	 * @return the direct reference to the data object
 	 */
-	public Data get (String name)
+	public Data get( String name )
 	{
-		return localMap.get (name);
+		return localMap.get( name );
 	}
 	
 	/**
@@ -64,26 +68,50 @@ public class LocalVariableMap implements Cloneable
 	 * @param name : the variable name for the data value
 	 * @param val  : the data value object (such as envelope)
 	 */
-	public void put (String name, Data val)
+	public void put(String name, Data val)
 	{
-		localMap.put (name, val);
+		localMap.put( name, val );
 	}
 
-	public void putAll (LocalVariableMap vars)
+	/**
+	 * 
+	 * @param vars
+	 */
+	public void putAll( LocalVariableMap vars )
 	{
-		if (vars == this || vars == null)
+		if( vars == this || vars == null )
 			return;
 		localMap.putAll (vars.localMap);
 	}
 	
-	public void remove (String name)
+	/**
+	 * 
+	 * @param name
+	 */
+	public Data remove( String name )
 	{
-		localMap.remove (name);
+		return localMap.remove( name );
 	}
 	
+	/**
+	 * 
+	 */
 	public void removeAll()
 	{
 		localMap.clear();
+	}
+	
+	/**
+	 * 
+	 * @param d
+	 * @return
+	 */
+	public boolean hasReferences( Data d )
+	{
+		for( Data tmpdat : localMap.values() ) 
+			if ( tmpdat == d ) 
+				return true;
+		return false;
 	}
 	
 	/**
@@ -106,7 +134,13 @@ public class LocalVariableMap implements Cloneable
 		return refCount;		
 	}
 	
-	public String serialize () throws DMLRuntimeException
+	/**
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public String serialize() 
+		throws DMLRuntimeException
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -119,10 +153,17 @@ public class LocalVariableMap implements Cloneable
 			count++;
 		}
 		
-		return sb.toString ();		
+		return sb.toString();		
 	}
 	
-	public static LocalVariableMap deserialize (String varStr) throws DMLRuntimeException
+	/**
+	 * 
+	 * @param varStr
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static LocalVariableMap deserialize(String varStr) 
+		throws DMLRuntimeException
 	{
 		StringTokenizer st2 = new StringTokenizer (varStr, ELEMENT_DELIM );
 		LocalVariableMap vars = new LocalVariableMap ();
@@ -136,7 +177,7 @@ public class LocalVariableMap implements Cloneable
 	}
 
 	@Override
-	public String toString ()
+	public String toString()
 	{
 		String output = "Local Variable Map ID = \"" + localID + "\":" + eol;
 		for (Entry <String, Data> pair : localMap.entrySet())

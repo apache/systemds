@@ -159,8 +159,8 @@ public class ExecutionContext
 		_variables.put(name, val);
 	}
 
-	public void removeVariable(String name) {
-		_variables.remove(name);
+	public Data removeVariable(String name) {
+		return _variables.remove(name);
 	}
 
 	public String getVariableString(String name, boolean forSQL)

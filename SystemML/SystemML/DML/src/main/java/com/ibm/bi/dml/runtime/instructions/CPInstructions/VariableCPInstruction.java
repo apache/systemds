@@ -462,32 +462,28 @@ public class VariableCPInstruction extends CPInstruction
 		case CopyVariable:
 			// example instruction: cpvar <srcVar> <destVar>
 			
+			// get source variable 
 			Data dd = ec.getVariable(input1.get_name());		
 			
-			if ( dd == null ) {
+			if ( dd == null ) 
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
-			}
 			
-			// check if <destVar> has any existing references
-			Data input2_data = ec.getVariable(input2.get_name());
-			int destRefCount = ec.getVariables().getNumReferences( input2_data, true );
+			// remove existing variable bound to target name
+			Data input2_data = ec.removeVariable(input2.get_name());
 			
-			if ( destRefCount == 1 ) {
-				// input2.get_name() currently refers to a Data object.
-				// make sure to call clearData(), if it is a matrix object 
-				
-				//System.out.println("  " + this.instString + " ... clearing input2");
-				if( input2_data instanceof MatrixObject )
-				{
-					MatrixObject mo = (MatrixObject) input2_data;
-					mo.clearData();
-					if ( mo.isFileExists() && mo.isCleanupEnabled() )
-						cleanDataOnHDFS( mo );
+			//cleanup matrix data on fs/hdfs (if necessary)
+			if ( input2_data != null && input2_data instanceof MatrixObject ) 
+			{
+				MatrixObject mo = (MatrixObject) input2_data;
+				if ( mo.isCleanupEnabled() ) {
+					//compute ref count only if matrix cleanup actually necessary
+					if ( !ec.getVariables().hasReferences(input2_data) ) {
+						mo.clearData(); //clean cached data	
+						if( mo.isFileExists() )
+							cleanDataOnHDFS( mo ); //clean hdfs data
+					}
 				}
-			
-			} /*else if ( destRefCount > 1) {
-				System.err.println("  --- " + this.instString + " ... refCount for input2 > 1");
-			}*/
+			}
 			
 			// do the actual copy!
 			ec.setVariable(input2.get_name(), dd);
@@ -497,8 +493,8 @@ public class VariableCPInstruction extends CPInstruction
 		case RemoveVariableAndFile:
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) ec.getScalarInput(input2.get_name(), input2.get_valueType(), true) ).getBooleanValue();
+			MatrixObject m = (MatrixObject) ec.removeVariable(input1.get_name());
 			
-			MatrixObject m = (MatrixObject) ec.getVariable(input1.get_name());
 			if ( !del ) {
 				// HDFS file should be retailed after clearData(), 
 				// therefore data must be exported if dirty flag is set
@@ -512,18 +508,13 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			
 			// check if in-memory object can be cleaned up
-			int refCnt = ec.getVariables().getNumReferences(m, true);
-			if ( refCnt== 1 ) {
+			if ( !ec.getVariables().hasReferences(m) ) {
 				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 				
 				//remove matrix object from cache
 				m.clearData();
 			}
-			else if ( refCnt == 0 ) 
-				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
 
-			// remove the variable from the HashMap (_variables) in ProgramBlock.
-			ec.removeVariable( input1.get_name() );
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
@@ -746,12 +737,11 @@ public class VariableCPInstruction extends CPInstruction
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
 		throws DMLRuntimeException
 	{
-		// get variable from symbol table
-		Data input1_data = ec.getVariable(varname);
+		// remove variable from symbol table
+		Data input1_data = ec.removeVariable(varname);
 		
-		if ( input1_data == null ) {
-			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmVar instruction.");
-		}
+		if ( input1_data == null )
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmvar instruction.");
 
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if ( input1_data instanceof MatrixObject ) 
@@ -759,37 +749,13 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixObject mo = (MatrixObject) input1_data;
 			if ( mo.isCleanupEnabled() ) {
 				//compute ref count only if matrix cleanup actually necessary
-				int refCount = ec.getVariables().getNumReferences(input1_data, true);
-				if ( refCount == 1 ) {
+				if ( !ec.getVariables().hasReferences(input1_data) ) {
 					mo.clearData(); //clean cached data	
 					if( mo.isFileExists() )
 						cleanDataOnHDFS( mo ); //clean hdfs data
 				}
 			}
 		}
-		
-		/*
-		// check if any other variable refers to the same Data object
-		int refCount = ec.getVariables().getNumReferences(input1_data, true);
-		if ( refCount == 1 ) {
-			// no other variable in the symbol table points to the same Data object as that of input1.get_name()
-			
-			if ( input1_data instanceof MatrixObject ) {
-				// clean in-memory object
-				MatrixObject mo = (MatrixObject) input1_data;
-				mo.clearData();
-				
-				if ( mo.isFileExists() && mo.isCleanupEnabled() )
-					// clean data on hdfs, if exists
-					cleanDataOnHDFS( mo );
-			}
-		}
-		else if ( refCount == 0 ) 
-			throw new DMLRuntimeException("Error while processing rmVar instruction: refCount=0 is unexpected!");
-		*/
-
-		// remove variable from symbol table
-		ec.removeVariable(varname);
 	}
 	
 	/**

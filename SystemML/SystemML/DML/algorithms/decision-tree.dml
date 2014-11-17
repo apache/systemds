@@ -48,9 +48,9 @@ gather = function( Matrix[Double] B ) return (Matrix[Double] V) {
  * only the rows whose row ids were provided, in order of
  * the ids' appearance
  */
-#expand = function( Matrix[Double] V ) return (Matrix[Double] M) {
-#    M = table( seq(1, nrow(V), 1), V );
-#}
+expand = function( Matrix[Double] V ) return (Matrix[Double] M) {
+    M = table( seq(1, nrow(V), 1), V );
+}
 
 /*
  * Computes label for classification trees
@@ -425,14 +425,12 @@ buildNode = function(Matrix[Double] X,
 		      permut_mat = matrix(0, rows=nrow(X), cols=nrow(X))
 		      
 		      permut_mat_4_left_rows = gather(left_rows)
-		      #permut_mat_4_left_rows = expand(permut_mat_4_left_rows)
-		      permut_mat_4_left_rows = table(seq(1, nrow(permut_mat_4_left_rows), 1), permut_mat_4_left_rows) 
+		      permut_mat_4_left_rows = expand(permut_mat_4_left_rows)
 		      permut_mat[1:num_left, 1:ncol(permut_mat_4_left_rows)] = permut_mat_4_left_rows
 		      
 		      right_rows = 1 - left_rows
 		      permut_mat_4_right_rows = gather(right_rows)
-		      #permut_mat_4_right_rows = expand(permut_mat_4_right_rows)
-		      permut_mat_4_right_rows = table(seq(1, nrow(permut_mat_4_right_rows), 1), permut_mat_4_right_rows)
+		      permut_mat_4_right_rows = expand(permut_mat_4_right_rows)
 		      permut_mat[(num_left+1):(num_left+nrow(permut_mat_4_right_rows)), 1:ncol(permut_mat_4_right_rows)] = permut_mat_4_right_rows
 		      
 			  reordered_X = permut_mat %*% X
@@ -1023,8 +1021,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 			
 			small_reached_col = small_reached[,i5]
 			row_ids = gather(small_reached_col)
-			#permut_block = expand(row_ids)
-			permut_block = table( seq(1, nrow(row_ids), 1), row_ids)
+			permut_block = expand(row_ids)
 			permut_mat[(offset+1):(offset+nrow(permut_block)), 1:ncol(permut_block)] = permut_block
 		}
 		

@@ -69,6 +69,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return (_args.length >= 3 ? _args[2] : null);
 	}
 
+	public Expression[] getAllExpr(){
+		return _args;
+	}
+	
 	@Override
 	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
 			throws LanguageException 

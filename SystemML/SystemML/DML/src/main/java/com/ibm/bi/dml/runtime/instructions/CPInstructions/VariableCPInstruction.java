@@ -948,6 +948,7 @@ public class VariableCPInstruction extends CPInstruction
 	
 	@Override
 	public void updateInstructionThreadID(String pattern, String replace)
+		throws DMLRuntimeException
 	{
 		if(    opcode == VariableOperationCode.CreateVariable
 			|| opcode == VariableOperationCode.SetFileName )

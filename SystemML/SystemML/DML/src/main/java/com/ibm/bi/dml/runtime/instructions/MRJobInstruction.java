@@ -1050,14 +1050,15 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	@Override
-	public void updateInstructionThreadID(String pattern, String replace)
+	public void updateInstructionThreadID(String pattern, String replace) 
+		throws DMLRuntimeException
 	{
 		this.dimsUnknownFilePrefix.replaceAll(pattern, replace);
 		
 		if( getJobType() == JobType.DATAGEN )
 		{
 			//update string representation (because parsing might fail due to pending instruction patching)
-			String rndinst = getIv_randInstructions();
+			String rndinst = getIv_randInstructions().trim();
 			String rndinst2 = "";
 			if( rndinst!=null && rndinst.length()>0 )
 			{
@@ -1068,7 +1069,10 @@ public class MRJobInstruction extends Instruction
 						rndinst2 += Lop.INSTRUCTION_DELIMITOR;
 					
 					//handle single instruction
-					String[] parts = dginst.split(Lop.OPERAND_DELIMITOR);
+					String[] parts = dginst.split(Lop.OPERAND_DELIMITOR);					
+					if( parts==null || parts.length<2 )
+						throw new DMLRuntimeException("Invalid datagen instruction: "+dginst);
+					
 					int pos = -1;
 					if( parts[1].equals("Rand") ) pos = 13;
 					if( parts[1].equals("seq") ) pos = 11;

@@ -56,7 +56,7 @@ public class Tertiary extends Lop
 		
 		if ( et == ExecType.MR ) {
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN); 
+			//lps.addCompatibility(JobType.DATAGEN); MB: disabled due to piggybacking issues
 			//lps.addCompatibility(JobType.REBLOCK); MB: disabled since no runtime support
 			
 			if( operation==OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )

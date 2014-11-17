@@ -131,7 +131,9 @@ public class AssignmentStatement extends Statement
 			
 			//recompilation hook after ctable because worst estimates usually too conservative 
 			//(despite propagating worst-case estimates, especially if we not able to propagate sparsity)
-			if(_source != null && _source.toString().contains(Expression.BuiltinFunctionOp.TABLE.toString()) ) 
+			
+			if( _source != null && _source.toString().contains(Expression.BuiltinFunctionOp.TABLE.toString()) 
+				&& !isBuiltinCtableWithKnownDimensions(_source) ) //split only if unknown dimensions 
 				ret = true;
 		}
 		//System.out.println(_source +": "+ret);
@@ -139,7 +141,28 @@ public class AssignmentStatement extends Statement
 		return ret;
 	}
 	
-	public void initializeforwardLV(VariableSet activeIn){}
+	/**
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private static boolean isBuiltinCtableWithKnownDimensions( Expression expr )
+	{
+		boolean ret = false;
+		
+		if( expr instanceof BuiltinFunctionExpression ){
+			BuiltinFunctionExpression bexpr = (BuiltinFunctionExpression) expr;
+			ret = (    bexpr.getOpCode() == Expression.BuiltinFunctionOp.TABLE
+					&& bexpr.getAllExpr()!=null && bexpr.getAllExpr().length>3 );
+		}
+		
+		return ret;
+	}
+	
+	public void initializeforwardLV(VariableSet activeIn){
+		//do nothing
+	}
+	
 	public VariableSet initializebackwardLV(VariableSet lo){
 		return lo;
 	}

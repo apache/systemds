@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 public abstract class Instruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT };
@@ -110,8 +110,10 @@ public abstract class Instruction
 	 * 
 	 * @param pattern
 	 * @param replace
+	 * @throws DMLRuntimeException 
 	 */
-	public void updateInstructionThreadID(String pattern, String replace)
+	public void updateInstructionThreadID(String pattern, String replace) 
+		throws DMLRuntimeException
 	{
 		//do nothing
 	}

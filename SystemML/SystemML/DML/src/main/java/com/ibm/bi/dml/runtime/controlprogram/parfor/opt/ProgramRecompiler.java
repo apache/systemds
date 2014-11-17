@@ -7,9 +7,11 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
@@ -17,6 +19,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -34,6 +37,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
@@ -51,6 +55,30 @@ public class ProgramRecompiler
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	/**
+	 * 
+	 * @param rtprog
+	 * @param sbs
+	 * @return
+	 * @throws IOException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 * @throws LopsException 
+	 */
+	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
+		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
+		DMLConfig config = ConfigurationManager.getConfig();
+		
+		for( StatementBlock sb : sbs ) {
+			DMLProgram prog = sb.getDMLProg();
+			ret.add( prog.createRuntimeProgramBlock(rtprog, sb, config) );
+		}
+		
+		return ret;
+	}
 	
 	
 	/**
@@ -201,7 +229,9 @@ public class ProgramRecompiler
 	{
 		if( sb instanceof IfStatementBlock )
 		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement is = (IfStatement) sb.getStatement(0);
+			replacePredicateLiterals(isb.getPredicateHops(), vars);
 			for( StatementBlock lsb : is.getIfBody() )
 				replaceConstantScalarVariables(lsb, vars);
 			for( StatementBlock lsb : is.getElseBody() )
@@ -209,7 +239,9 @@ public class ProgramRecompiler
 		}
 		else if( sb instanceof WhileStatementBlock )
 		{
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			replacePredicateLiterals(wsb.getPredicateHops(), vars);
 			for( StatementBlock lsb : ws.getBody() )
 				replaceConstantScalarVariables(lsb, vars);		
 		}
@@ -217,6 +249,9 @@ public class ProgramRecompiler
 		{
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			replacePredicateLiterals(fsb.getFromHops(), vars);
+			replacePredicateLiterals(fsb.getToHops(), vars);
+			replacePredicateLiterals(fsb.getIncrementHops(), vars);
 			for( StatementBlock lsb : fs.getBody() )
 				replaceConstantScalarVariables(lsb, vars);
 		}
@@ -225,16 +260,26 @@ public class ProgramRecompiler
 			ArrayList<Hop> hops = sb.get_hops();
 			if( hops != null ) 
 			{	
-				//step 1) replace constant literals
+				//replace constant literals
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
 					Recompiler.rReplaceLiterals( hopRoot, vars );
-				
-				//step 2) run constant folding, currently not applied 
-				//Hop.resetVisitStatus(hops);
-				//hops = new RewriteConstantFolding().rewriteHopDAGs(hops);
-				//sb.set_hops(hops);		
 			}	
+		}
+	}
+	
+	/**
+	 * 
+	 * @param pred
+	 * @param vars
+	 * @throws DMLRuntimeException
+	 */
+	private static void replacePredicateLiterals( Hop pred, LocalVariableMap vars )
+		throws DMLRuntimeException
+	{
+		if( pred != null ){
+			pred.resetVisitStatus();
+			Recompiler.rReplaceLiterals(pred, vars);
 		}
 	}
 	

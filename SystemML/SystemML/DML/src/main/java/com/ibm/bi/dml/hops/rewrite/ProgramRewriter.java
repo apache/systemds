@@ -124,30 +124,64 @@ public class ProgramRewriter
 	}
 	
 	/**
+	 * Construct a program rewriter for a given rewrite which is passed from outside.
+	 * 
+	 * @param rewrite
+	 */
+	public ProgramRewriter( StatementBlockRewriteRule rewrite )
+	{
+		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
+		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		
+		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet.add( rewrite );
+	}
+	
+	/**
+	 * Construct a program rewriter for the given rewrite sets which are passed from outside.
+	 * 
+	 * @param rewrite
+	 */
+	public ProgramRewriter( ArrayList<HopRewriteRule> hRewrites, ArrayList<StatementBlockRewriteRule> sbRewrites )
+	{
+		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
+		_dagRuleSet = new ArrayList<HopRewriteRule>();
+		_dagRuleSet.addAll( hRewrites );
+		
+		_sbRuleSet = new ArrayList<StatementBlockRewriteRule>();
+		_sbRuleSet.addAll( sbRewrites );
+	}
+	
+	/**
 	 * 
 	 * @param dmlp
+	 * @return
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	public void rewriteProgramHopDAGs(DMLProgram dmlp) 
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) 
 		throws LanguageException, HopsException
 	{	
+		ProgramRewriteStatus state = new ProgramRewriteStatus();
+		
 		// for each namespace, handle function statement blocks
 		for (String namespaceKey : dmlp.getNamespaces().keySet())
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
 			{
 				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				rewriteStatementBlockHopDAGs(fsblock);
-				rewriteStatementBlock(fsblock);
+				rewriteStatementBlockHopDAGs(fsblock, state);
+				rewriteStatementBlock(fsblock, state);
 			}
 		
 		// handle regular statement blocks in "main" method
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) 
 		{
 			StatementBlock current = dmlp.getStatementBlock(i);
-			rewriteStatementBlockHopDAGs(current);
+			rewriteStatementBlockHopDAGs(current, state);
 		}
-		dmlp.setStatementBlocks( rewriteStatementBlocks(dmlp.getStatementBlocks()) );
+		dmlp.setStatementBlocks( rewriteStatementBlocks(dmlp.getStatementBlocks(), state) );
+		
+		return state;
 	}
 	
 	/**
@@ -156,47 +190,51 @@ public class ProgramRewriter
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	private void rewriteStatementBlockHopDAGs(StatementBlock current) 
+	public void rewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) 
 		throws LanguageException, HopsException
 	{	
+		//ensure robustness for calls from outside
+		if( state == null )
+			state = new ProgramRewriteStatus();
+		
 		if (current instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			for (StatementBlock sb : fstmt.getBody())
-				rewriteStatementBlockHopDAGs(sb);
+				rewriteStatementBlockHopDAGs(sb, state);
 		}
 		else if (current instanceof WhileStatementBlock)
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) current;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wsb.setPredicateHops(rewriteHopDAG(wsb.getPredicateHops()));
+			wsb.setPredicateHops(rewriteHopDAG(wsb.getPredicateHops(), state));
 			for (StatementBlock sb : wstmt.getBody())
-				rewriteStatementBlockHopDAGs(sb);
+				rewriteStatementBlockHopDAGs(sb, state);
 		}	
 		else if (current instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) current;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			isb.setPredicateHops(rewriteHopDAG(isb.getPredicateHops()));
+			isb.setPredicateHops(rewriteHopDAG(isb.getPredicateHops(), state));
 			for (StatementBlock sb : istmt.getIfBody())
-				rewriteStatementBlockHopDAGs(sb);
+				rewriteStatementBlockHopDAGs(sb, state);
 			for (StatementBlock sb : istmt.getElseBody())
-				rewriteStatementBlockHopDAGs(sb);
+				rewriteStatementBlockHopDAGs(sb, state);
 		}
 		else if (current instanceof ForStatementBlock) //incl parfor
 		{
 			ForStatementBlock fsb = (ForStatementBlock) current;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fsb.setFromHops(rewriteHopDAG(fsb.getFromHops()));
-			fsb.setToHops(rewriteHopDAG(fsb.getToHops()));
-			fsb.setIncrementHops(rewriteHopDAG(fsb.getIncrementHops()));
+			fsb.setFromHops(rewriteHopDAG(fsb.getFromHops(), state));
+			fsb.setToHops(rewriteHopDAG(fsb.getToHops(), state));
+			fsb.setIncrementHops(rewriteHopDAG(fsb.getIncrementHops(), state));
 			for (StatementBlock sb : fstmt.getBody())
-				rewriteStatementBlockHopDAGs(sb);
+				rewriteStatementBlockHopDAGs(sb, state);
 		}
 		else //generic (last-level)
 		{
-			current.set_hops(rewriteHopDAGs(current.get_hops()));
+			current.set_hops( rewriteHopDAGs(current.get_hops(), state) );
 		}
 	}
 	
@@ -206,13 +244,13 @@ public class ProgramRewriter
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
 	{	
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			Hop.resetVisitStatus( roots ); //reset for each rule
-			roots = r.rewriteHopDAGs(roots);
+			roots = r.rewriteHopDAGs(roots, state);
 		}
 		
 		return roots;
@@ -224,13 +262,13 @@ public class ProgramRewriter
 	 * @throws LanguageException
 	 * @throws HopsException
 	 */
-	public Hop rewriteHopDAG(Hop root) 
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{	
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			root.resetVisitStatus(); //reset for each rule
-			root = r.rewriteHopDAG(root);
+			root = r.rewriteHopDAG(root, state);
 		}
 		
 		return root;
@@ -242,14 +280,19 @@ public class ProgramRewriter
 	 * @return
 	 * @throws HopsException 
 	 */
-	private ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs ) 
+	public ArrayList<StatementBlock> rewriteStatementBlocks( ArrayList<StatementBlock> sbs, ProgramRewriteStatus state ) 
 		throws HopsException
 	{
+		//ensure robustness for calls from outside
+		if( state == null )
+			state = new ProgramRewriteStatus();
+				
+		
 		ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();
 		
 		//rewrite statement blocks (with potential expansion)
 		for( StatementBlock sb : sbs )
-			tmp.addAll( rewriteStatementBlock(sb) );
+			tmp.addAll( rewriteStatementBlock(sb, state) );
 		
 		//copy results into original collection
 		sbs.clear();
@@ -264,7 +307,7 @@ public class ProgramRewriter
 	 * @return
 	 * @throws HopsException
 	 */
-	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb ) 
+	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus state ) 
 		throws HopsException
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
@@ -275,26 +318,26 @@ public class ProgramRewriter
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );			
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), state) );			
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wstmt.setBody( rewriteStatementBlocks( wstmt.getBody() ) );
+			wstmt.setBody( rewriteStatementBlocks( wstmt.getBody(), state ) );
 		}	
 		else if (sb instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			istmt.setIfBody( rewriteStatementBlocks( istmt.getIfBody() ) );
-			istmt.setElseBody( rewriteStatementBlocks( istmt.getElseBody() ) );
+			istmt.setIfBody( rewriteStatementBlocks( istmt.getIfBody(), state ) );
+			istmt.setElseBody( rewriteStatementBlocks( istmt.getElseBody(), state ) );
 		}
 		else if (sb instanceof ForStatementBlock) //incl parfor
 		{
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody()) );
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), state) );
 		}
 		
 		//apply rewrite rules
@@ -302,7 +345,7 @@ public class ProgramRewriter
 		{
 			ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();			
 			for( StatementBlock sbc : ret )
-				tmp.addAll( r.rewriteStatementBlock(sbc) );
+				tmp.addAll( r.rewriteStatementBlock(sbc, state) );
 			
 			//take over set of rewritten sbs		
 			ret.clear();

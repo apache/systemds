@@ -176,7 +176,7 @@ public class Recompiler
 			
 			// dynamic hop rewrites
 			if( !inplace )
-				rewriter.rewriteHopDAGs( hops );
+				rewriter.rewriteHopDAGs( hops, null );
 			
 			// refresh memory estimates (based on updated stats)
 			Hop.resetVisitStatus(hops);
@@ -267,7 +267,7 @@ public class Recompiler
 			
 			// dynamic hop rewrites
 			if( !inplace )
-				rewriter.rewriteHopDAG( hops );
+				rewriter.rewriteHopDAG( hops, null );
 			
 			// refresh memory estimates (based on updated stats)
 			hops.resetVisitStatus();

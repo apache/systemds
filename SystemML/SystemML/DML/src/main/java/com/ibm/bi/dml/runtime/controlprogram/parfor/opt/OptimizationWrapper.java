@@ -20,6 +20,12 @@ import org.apache.log4j.Logger;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteRule;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriteStatus;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
+import com.ibm.bi.dml.hops.rewrite.RewriteConstantFolding;
+import com.ibm.bi.dml.hops.rewrite.RewriteRemoveUnnecessaryBranches;
+import com.ibm.bi.dml.hops.rewrite.StatementBlockRewriteRule;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -213,6 +219,8 @@ public class OptimizationWrapper
 		if(   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 		   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
 		{
+			ForStatement fs = (ForStatement) sb.getStatement(0);
+			
 			//debug output before recompilation
 			if( LOG.isDebugEnabled() ) 
 			{
@@ -233,6 +241,21 @@ public class OptimizationWrapper
 			try{
 				LocalVariableMap constVars = ProgramRecompiler.getReusableScalarVariables(sb.getDMLProg(), sb, ec.getVariables());
 				ProgramRecompiler.replaceConstantScalarVariables(sb, constVars);
+			}
+			catch(Exception ex){
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//program rewrites (e.g., branch removal) according to replaced literals
+			try {
+				ProgramRewriter rewriter = createProgramRewriterWithRuleSets();
+				ProgramRewriteStatus state = new ProgramRewriteStatus();
+				rewriter.rewriteStatementBlockHopDAGs( sb, state );
+				fs.setBody(rewriter.rewriteStatementBlocks(fs.getBody(), state));
+				if( state.getRemovedBranches() ){
+					LOG.debug("ParFOR Opt: Removed branches during program rewrites, rebuilding runtime program");
+					pb.setChildBlocks(ProgramRecompiler.generatePartitialRuntimeProgram(pb.getProgram(), fs.getBody()));
+				}
 			}
 			catch(Exception ex){
 				throw new DMLRuntimeException(ex);
@@ -449,5 +472,24 @@ public class OptimizationWrapper
 		}
 		
 		return est;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private static ProgramRewriter createProgramRewriterWithRuleSets()
+	{
+		//create hop rewrite set
+		ArrayList<HopRewriteRule> hRewrites = new ArrayList<HopRewriteRule>();
+		hRewrites.add( new RewriteConstantFolding() );
+		
+		//create statementblock rewrite set
+		ArrayList<StatementBlockRewriteRule> sbRewrites = new ArrayList<StatementBlockRewriteRule>();
+		sbRewrites.add( new RewriteRemoveUnnecessaryBranches() );
+		
+		ProgramRewriter rewriter = new ProgramRewriter( hRewrites, sbRewrites );
+		
+		return rewriter;
 	}
 }

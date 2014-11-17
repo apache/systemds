@@ -33,7 +33,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb)
+	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();

@@ -42,7 +42,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 	}
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots)
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
 		throws HopsException
 	{
 		if( roots == null )
@@ -55,7 +55,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root) 
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{
 		if( root == null )

@@ -33,7 +33,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots)
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
 		throws HopsException
 	{
 		if( roots == null )
@@ -46,7 +46,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root) 
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{
 		if( root != null )

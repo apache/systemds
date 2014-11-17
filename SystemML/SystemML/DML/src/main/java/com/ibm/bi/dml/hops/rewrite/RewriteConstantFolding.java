@@ -23,6 +23,7 @@ import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -53,7 +54,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException 
 	{
 		if( roots == null )
@@ -69,7 +70,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root) 
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException 
 	{
 		if( root == null )
@@ -181,7 +182,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		//generate runtime instruction
 		Dag<Lop> dag = new Dag<Lop>();
-		Lop lops = tmpWrite.constructLops();
+		Recompiler.rClearLops(tmpWrite); //prevent lops reuse
+		Lop lops = tmpWrite.constructLops(); //reconstruct lops
 		lops.addToDag( dag );	
 		ArrayList<Instruction> inst = dag.getJobs(null, ConfigurationManager.getConfig());
 		

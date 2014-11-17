@@ -23,7 +23,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 public abstract class StatementBlockRewriteRule 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	protected static final Log LOG = LogFactory.getLog(StatementBlockRewriteRule.class.getName());
@@ -32,10 +32,12 @@ public abstract class StatementBlockRewriteRule
 	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
 	 * within the individual rewrites.
 	 * 
-	 * @param root
-	 * @throws HopsException 
+	 * @param sb
+	 * @param sate
+	 * @return
+	 * @throws HopsException
 	 */
-	public abstract ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb ) 
+	public abstract ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus sate ) 
 		throws HopsException;
 	
 }

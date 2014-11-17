@@ -24,11 +24,11 @@ import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 public class RewriteTransientWriteParentHandling extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots) 
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
 	{
 		for (Hop h : roots) 
@@ -38,7 +38,7 @@ public class RewriteTransientWriteParentHandling extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root)
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state)
 		throws HopsException
 	{
 		// do nothing (does not apply to predicate hop DAGs) 	

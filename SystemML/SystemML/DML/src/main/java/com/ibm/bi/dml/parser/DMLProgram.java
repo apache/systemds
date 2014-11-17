@@ -197,8 +197,18 @@ public class DMLProgram
 		return rtprog ;
 	}
 	
-	
-	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
+	/**
+	 * 
+	 * @param prog
+	 * @param sb
+	 * @param config
+	 * @return
+	 * @throws IOException
+	 * @throws LopsException
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
 		throws IOException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		Dag<Lop> dag = null; 

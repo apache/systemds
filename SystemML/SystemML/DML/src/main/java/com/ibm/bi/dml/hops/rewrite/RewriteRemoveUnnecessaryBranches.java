@@ -29,7 +29,7 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb)
+	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 		throws HopsException 
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
@@ -62,6 +62,8 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 						ret.addAll( istmt.getElseBody() ); //pull else-branch
 					//otherwise: add nothing (remove if-else)
 				}
+				
+				state.setRemovedBranches();
 			}
 			else //keep original sb (non-constant condition)
 				ret.add( sb );

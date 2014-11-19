@@ -181,7 +181,8 @@ public class DMLProgram
 				// add program block to program
 				FunctionStatementBlock fsb = getFunctionStatementBlocks(namespace).get(fname);
 				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, config);
-				rtprog.addFunctionProgramBlock(namespace, fname,rtpb);
+				rtprog.addFunctionProgramBlock(namespace, fname, rtpb);
+				rtpb.setRecompileOnce( fsb.isRecompileOnce() );
 			}
 		}
 		
@@ -629,7 +630,7 @@ public class DMLProgram
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
-
+		
 		return retPB;
 	}	
 	

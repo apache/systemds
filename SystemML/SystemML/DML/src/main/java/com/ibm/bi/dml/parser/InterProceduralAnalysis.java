@@ -97,6 +97,7 @@ public class InterProceduralAnalysis
 	private static final boolean PROPAGATE_KNOWN_UDF_STATISTICS = true; //propagate statistics for known external functions 
 	private static final boolean ALLOW_MULTIPLE_FUNCTION_CALLS  = true; //propagate consistent statistics from multiple calls 
 	private static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //removed unused functions (inlined or never called)
+	private static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
 	
 	static{
 		// for internal debugging only
@@ -149,6 +150,11 @@ public class InterProceduralAnalysis
 		//step 3: remove unused functions (e.g., inlined or never called)
 		if( REMOVE_UNUSED_FUNCTIONS ) {
 			removeUnusedFunctions( dmlp, allFCandKeys );
+		}
+		
+		//step 4: flag functions with loops for 'recompile-on-entry'
+		if( FLAG_FUNCTION_RECOMPILE_ONCE ){
+			flagFunctionsForRecompileOnce( dmlp );
 		}
 	}
 	
@@ -307,7 +313,6 @@ public class InterProceduralAnalysis
 			for( String key : fcandCounts.keySet() )
 			{
 				LOG.debug("IPA: FUNC statistic propagation candidate (after pruning): "+key);
-				//System.out.println("IPA: FUNC statistic propagation candidate (after pruning): "+key);
 			}
 	}
 
@@ -746,7 +751,7 @@ public class InterProceduralAnalysis
 		if(    className.equals(OrderWrapper.class.getName()) 
 			|| className.equals(DeNaNWrapper.class.getCanonicalName())
 			|| className.equals(DeNegInfinityWrapper.class.getCanonicalName()) )
-		{
+		{			
 			Hop input = fop.getInput().get(0);
 			long lnnz = className.equals(OrderWrapper.class.getName()) ? input.getNnz() : -1;
 			MatrixObject moOut = createOutputMatrix(input.get_dim1(), input.get_dim2(),lnnz);
@@ -828,5 +833,93 @@ public class InterProceduralAnalysis
 					iter.remove();
 			}
 		}
+	}
+	
+	
+	/////////////////////////////
+	// FLAG FUNCTIONS FOR RECOMPILE_ONCE
+	//////
+	
+	/**
+	 * TODO call it after construct lops
+	 * 
+	 * @param dmlp
+	 * @throws LanguageException 
+	 */
+	public void flagFunctionsForRecompileOnce( DMLProgram dmlp ) 
+		throws LanguageException
+	{
+		for (String namespaceKey : dmlp.getNamespaces().keySet())
+			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
+			{
+				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+				if( rFlagFunctionForRecompileOnce( fsblock, false ) ) 
+				{
+					fsblock.setRecompileOnce( true ); 
+					LOG.debug("IPA: FUNC flagged for recompile-once: " + DMLProgram.constructFunctionKey(namespaceKey, fname));
+				}
+			}
+	}
+	
+	/**
+	 * Returns true if this statementblock requires recompilation inside a 
+	 * loop statement block.
+	 * 
+	 * 
+	 * 
+	 * @param sb
+	 */
+	public boolean rFlagFunctionForRecompileOnce( StatementBlock sb, boolean inLoop )
+	{
+		boolean ret = false;
+		
+		if (sb instanceof FunctionStatementBlock)
+		{
+			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
+			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			for( StatementBlock c : fstmt.getBody() )
+				ret |= rFlagFunctionForRecompileOnce( c, inLoop );			
+		}
+		else if (sb instanceof WhileStatementBlock)
+		{
+			//recompilation information not available at this point
+			ret = true;
+			
+			/*
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			ret |= (inLoop && wsb.requiresPredicateRecompilation() );
+			for( StatementBlock c : wstmt.getBody() )
+				ret |= rFlagFunctionForRecompileOnce( c, true );
+			*/
+		}
+		else if (sb instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			ret |= (inLoop && isb.requiresPredicateRecompilation() );
+			for( StatementBlock c : istmt.getIfBody() )
+				ret |= rFlagFunctionForRecompileOnce( c, inLoop );
+			for( StatementBlock c : istmt.getElseBody() )
+				ret |= rFlagFunctionForRecompileOnce( c, inLoop );
+		}
+		else if (sb instanceof ForStatementBlock)
+		{
+			//recompilation information not available at this point
+			ret = true;
+			
+			/* 
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			for( StatementBlock c : fstmt.getBody() )
+				ret |= rFlagFunctionForRecompileOnce( c, true );
+			*/
+		}
+		else
+		{
+			ret |= ( inLoop && sb.requiresRecompilation() );
+		}
+		
+		return ret;
 	}
 }

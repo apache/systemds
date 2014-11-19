@@ -167,12 +167,13 @@ public class ProgramConverter
 	 * @param childBlocks
 	 * @param pid
 	 * @param plain full deep copy without id replacement 
+	 * @param forceDeepCopy 
 	 * 
 	 * @return
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, HashSet<String> fnStack, boolean plain) 
+	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, HashSet<String> fnStack, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		ArrayList<ProgramBlock> tmp = new ArrayList<ProgramBlock>();
@@ -186,23 +187,23 @@ public class ProgramConverter
 			{
 				if( pb instanceof WhileProgramBlock ) 
 				{
-					tmpPB = createDeepCopyWhileProgramBlock((WhileProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain);
+					tmpPB = createDeepCopyWhileProgramBlock((WhileProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
 				}
 				else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
 				{
-					tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain );
+					tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy );
 				}
 				else if ( pb instanceof ParForProgramBlock )
 				{
 					ParForProgramBlock pfpb = (ParForProgramBlock) pb;
 					if( ParForProgramBlock.ALLOW_NESTED_PARALLELISM )
-						tmpPB = createDeepCopyParForProgramBlock(pfpb, pid, IDPrefix, prog, fnStack, plain);
+						tmpPB = createDeepCopyParForProgramBlock(pfpb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
 					else 
-						tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain);
+						tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
 				}				
 				else if ( pb instanceof IfProgramBlock )
 				{
-					tmpPB = createDeepCopyIfProgramBlock((IfProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain);
+					tmpPB = createDeepCopyIfProgramBlock((IfProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
 				}
 			}	
 			else
@@ -210,7 +211,7 @@ public class ProgramConverter
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
 				
 				//for recompile in the master node JVM
-				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock(), pid, plain)); 
+				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock(), pid, plain, forceDeepCopy)); 
 				//tmpPB.setStatementBlock(pb.getStatementBlock()); 
 				tmpPB.setThreadID(pid);
 			}
@@ -237,17 +238,17 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
+	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
 		tmpPB.setPredicateResultVar( wpb.getPredicateResultVar() );
-		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain) );
+		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
-		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, plain));
+		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, plain, forceDeepCopy));
 		
 		return tmpPB;
 	}
@@ -262,18 +263,18 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
+	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
 		tmpPB.setPredicateResultVar( ipb.getPredicateResultVar() );
-		tmpPB.setStatementBlock( createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), pid, plain ) );
+		tmpPB.setStatementBlock( createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), pid, plain, forceDeepCopy ) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
-		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, plain));
-		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, plain));
+		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, plain, forceDeepCopy));
+		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, plain, forceDeepCopy));
 		
 		return tmpPB;
 	}
@@ -288,18 +289,18 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static ForProgramBlock createDeepCopyForProgramBlock(ForProgramBlock fpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
+	public static ForProgramBlock createDeepCopyForProgramBlock(ForProgramBlock fpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterablePredicateVars());
-		tmpPB.setStatementBlock(fpb.getStatementBlock());
+		tmpPB.setStatementBlock( createForStatementBlockCopy((ForStatementBlock)fpb.getStatementBlock(), pid, plain, forceDeepCopy));
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 		tmpPB.setExitInstructions( createDeepCopyInstructionSet(fpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
-		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, plain) );
+		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, plain, forceDeepCopy) );
 		
 		return tmpPB;
 	}
@@ -361,7 +362,7 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
+	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain, boolean forceDeepCopy) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ParForProgramBlock tmpPB = null;
@@ -371,7 +372,7 @@ public class ProgramConverter
 		else //child of remote ParWorker at any level
 			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
-		tmpPB.setStatementBlock( createForStatementBlockCopy( (ForStatementBlock) pfpb.getStatementBlock(), pid, plain) );
+		tmpPB.setStatementBlock( createForStatementBlockCopy( (ForStatementBlock) pfpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
@@ -386,7 +387,7 @@ public class ProgramConverter
 		//NOTE: Normally, no recursive copy because (1) copied on each execution in this PB anyway 
 		//and (2) leave placeholders as they are. However, if plain, an explicit deep copy is requested.
 		if( plain )
-			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, plain) ); 
+			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, plain, forceDeepCopy) ); 
 		else
 			tmpPB.setChildBlocks( pfpb.getChildBlocks() );
 		
@@ -449,7 +450,8 @@ public class ProgramConverter
 			if( !fnStack.contains(fnameNewKey) ) {
 				fnStack.add(fnameNewKey);
 				copy = new FunctionProgramBlock(prog, tmp1, tmp2);
-				copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, plain) );
+				copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, plain, fpb.isRecompileOnce()) );
+				copy.setRecompileOnce( fpb.isRecompileOnce() );
 				fnStack.remove(fnameNewKey);
 			}
 			else //stop deep copy for recursive function calls
@@ -486,8 +488,9 @@ public class ProgramConverter
 			tmp2.addAll(fpb.getOutputParams());
 		
 		copy = new FunctionProgramBlock(fpb.getProgram(), tmp1, tmp2);
-		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), 0, -1, fnStack, true) );
+		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), 0, -1, fnStack, true, fpb.isRecompileOnce()) );
 		copy.setStatementBlock( fpb.getStatementBlock() );
+		copy.setRecompileOnce(fpb.isRecompileOnce());
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 	
@@ -587,7 +590,7 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static StatementBlock createStatementBlockCopy( StatementBlock sb, long pid, boolean plain ) 
+	public static StatementBlock createStatementBlockCopy( StatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
 		throws DMLRuntimeException
 	{
 		StatementBlock ret = null;
@@ -596,13 +599,15 @@ public class ProgramConverter
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				&& sb != null 
-				&& Recompiler.requiresRecompilation( sb.get_hops() )  )
+				&& sb != null  //forced deep copy for function recompilation
+				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
 			{
 				//create new statement (copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
 				ret.setLiveIn( new VariableSet(sb.liveIn()) );
 				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
+				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -636,7 +641,7 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static IfStatementBlock createIfStatementBlockCopy( IfStatementBlock sb, long pid, boolean plain ) 
+	public static IfStatementBlock createIfStatementBlockCopy( IfStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
 		throws DMLRuntimeException
 	{
 		IfStatementBlock ret = null;
@@ -645,13 +650,15 @@ public class ProgramConverter
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				&& sb != null 
-				&& Recompiler.requiresRecompilation( sb.getPredicateHops() )  )
+				&& sb != null //forced deep copy for function recompile
+				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (copy livein/liveout for recompile, line numbers for explain)
 				ret = new IfStatementBlock();
 				ret.setLiveIn( new VariableSet(sb.liveIn()) );
 				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
+				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -686,7 +693,7 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static WhileStatementBlock createWhileStatementBlockCopy( WhileStatementBlock sb, long pid, boolean plain ) 
+	public static WhileStatementBlock createWhileStatementBlockCopy( WhileStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
 		throws DMLRuntimeException
 	{
 		WhileStatementBlock ret = null;
@@ -695,13 +702,15 @@ public class ProgramConverter
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				&& sb != null 
-				&& Recompiler.requiresRecompilation( sb.getPredicateHops() )  )
+				&& sb != null  //forced deep copy for function recompile
+				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (copy livein/liveout for recompile, line numbers for explain)
 				ret = new WhileStatementBlock();
 				ret.setLiveIn( new VariableSet(sb.liveIn()) );
 				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
+				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -736,7 +745,7 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static ForStatementBlock createForStatementBlockCopy( ForStatementBlock sb, long pid, boolean plain ) 
+	public static ForStatementBlock createForStatementBlockCopy( ForStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
 		throws DMLRuntimeException
 	{
 		ForStatementBlock ret = null;
@@ -748,13 +757,16 @@ public class ProgramConverter
 				&& sb != null 
 				&& ( Recompiler.requiresRecompilation(sb.getFromHops()) ||
 					 Recompiler.requiresRecompilation(sb.getToHops()) ||
-					 Recompiler.requiresRecompilation(sb.getIncrementHops()))  )
+					 Recompiler.requiresRecompilation(sb.getIncrementHops()) ||
+					 forceDeepCopy )  )
 			{
 				ret = (sb instanceof ParForStatementBlock) ? new ParForStatementBlock() : new ForStatementBlock();
 				
 				//create new statement (copy livein/liveout for recompile, line numbers for explain)
 				ret.setLiveIn( new VariableSet(sb.liveIn()) );
 				ret.setLiveOut( new VariableSet(sb.liveOut()) );
+				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
+				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());

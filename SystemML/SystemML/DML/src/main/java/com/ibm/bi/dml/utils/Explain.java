@@ -149,7 +149,7 @@ public class Explain
 				if (fstmt instanceof ExternalFunctionStatement)
 					sb.append("----EXTERNAL FUNCTION " + namespace + "::" + fname + "\n");
 				else {
-					sb.append("----FUNCTION " + namespace + "::" + fname + "\n");
+					sb.append("----FUNCTION " + namespace + "::" + fname + " [recompile="+fsb.isRecompileOnce()+"]\n");
 					for (StatementBlock current : fstmt.getBody())
 						sb.append(explainStatementBlock(current, 3));
 				}
@@ -193,7 +193,7 @@ public class Explain
 					sb.append("----EXTERNAL FUNCTION "+fkey+"\n");
 				else
 				{
-					sb.append("----FUNCTION "+fkey+"\n");
+					sb.append("----FUNCTION "+fkey+" [recompile="+fpb.isRecompileOnce()+"]\n");
 					for( ProgramBlock pb : fpb.getChildBlocks() )
 						sb.append( explainProgramBlock(pb,3) );
 				}

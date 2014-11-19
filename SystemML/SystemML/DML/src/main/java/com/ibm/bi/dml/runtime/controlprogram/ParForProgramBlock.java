@@ -1160,13 +1160,13 @@ public class ParForProgramBlock extends ForProgramBlock
 				}
 				else
 				{
-					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false); 
+					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false, false); 
 					_pbcache.put(pwID, cpChildBlocks);
 				}
 			}
 			else
 			{
-				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false); 
+				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false, false); 
 			}             
 			
 			// Deep copy Execution Context
@@ -1549,6 +1549,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	/**
+	 * TODO rework id handling in order to enable worker reuse
 	 * 
 	 */
 	private void setLocalParWorkerIDs()
@@ -1557,6 +1558,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			return;
 		
 		//set all parworker IDs required if PExecMode.LOCAL is used
+			
 		_pwIDs = new long[ _numThreads ];
 		
 		for( int i=0; i<_numThreads; i++ )

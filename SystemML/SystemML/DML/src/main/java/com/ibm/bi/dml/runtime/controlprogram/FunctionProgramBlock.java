@@ -10,6 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
@@ -26,6 +28,8 @@ public class FunctionProgramBlock extends ProgramBlock
 	protected ArrayList<ProgramBlock> _childBlocks;
 	protected ArrayList<DataIdentifier> _inputParams;
 	protected ArrayList<DataIdentifier> _outputParams;
+	
+	private boolean _recompileOnce = false;
 	
 	public FunctionProgramBlock( Program prog, Vector <DataIdentifier> inputParams, Vector <DataIdentifier> outputParams) throws DMLRuntimeException
 	{
@@ -68,20 +72,18 @@ public class FunctionProgramBlock extends ProgramBlock
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		//dynamically recompile entire function body (according to function inputs)
-		/*//TODO in order to make this really useful we need CHAINED UPDATE of STATISTICS along PBs (see parfor)
 		try {
-			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				&& isRecompileOnce() 
+				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
 			{
-				System.out.println("FUNCTION RECOMPILE "+_beginLine);
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, _variables, _tid, true);
-				System.out.println("END FUNCTION RECOMPILE "+_beginLine);
+				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid);
 			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException("Error recompiling function body.", ex);
 		}
-		*/
 		
 		// for each program block
 		try {						
@@ -119,6 +121,14 @@ public class FunctionProgramBlock extends ProgramBlock
 				LOG.warn("Function output "+ varName +" has wrong value type: "+dat.getValueType()+".");
 			   
 		}
+	}
+	
+	public void setRecompileOnce( boolean flag ) {
+		_recompileOnce = flag;
+	}
+	
+	public boolean isRecompileOnce() {
+		return _recompileOnce;
 	}
 	
 	public void printMe() {

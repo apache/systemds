@@ -25,6 +25,8 @@ public class FunctionStatementBlock extends StatementBlock
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private boolean _recompileOnce = false;
+	
 	/**
 	 *  TODO: DRB:  This needs to be changed to reflect:
 	 *  
@@ -293,5 +295,13 @@ public class FunctionStatementBlock extends StatementBlock
 		liveInReturn.addVariables(_liveIn);
 		
 		return liveInReturn;
+	}
+	
+	public void setRecompileOnce( boolean flag ) {
+		_recompileOnce = flag;
+	}
+	
+	public boolean isRecompileOnce() {
+		return _recompileOnce;
 	}
 }

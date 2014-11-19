@@ -297,7 +297,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
 					&& min instanceof LiteralOp && max instanceof LiteralOp )
 				{
-					//create fused data gen opterator
+					//create fused data gen operator
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
@@ -325,7 +325,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
 					&& min instanceof LiteralOp && max instanceof LiteralOp )
 				{
-					//create fused data gen opterator
+					//create fused data gen operator
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
@@ -532,12 +532,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					OpOp2 op2 = bop2.getOp();
 					
 					if( op==op2 && left2.get_dataType()==DataType.MATRIX 
-						&& (left2 instanceof AggBinaryOp) )
+						&& (left2 instanceof AggBinaryOp) 
+						&& (right2.get_dim2() > 1 || right.get_dim2() == 1) ) //X not vector, or Y vector
 					{
 						//((op()*X)*Y) -> op()*(X*Y)
 						HopRewriteUtils.removeChildReference(parent, bop);
 						
-						BinaryOp bop3 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, op, right, right2);
+						BinaryOp bop3 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, op, right2, right);
 						HopRewriteUtils.refreshOutputParameters(bop3, bop2);
 						BinaryOp bop4 = new BinaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, op, left2, bop3);
 						HopRewriteUtils.refreshOutputParameters(bop4, bop);

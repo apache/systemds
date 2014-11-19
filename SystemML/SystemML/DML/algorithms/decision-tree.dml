@@ -517,27 +517,10 @@ cmdLine_num_leaf = ifdef($num_leaf, 1)
 cmdLine_num_samples = ifdef($num_samples, 10)
 
 X = read($X)
-
-/*
- * print("X:")
- * for(i in 1:nrow(X))
- *	for(j in 1:ncol(X))
- *		print(" " + i + " " + j + " -> " + castAsScalar(X[i,j]))
-*/
-
 kinds = read($types) #put 2 for categorical, 1 for scale (like bivar-stats)
 
-/*
- * for(i in 1:nrow(kinds))
- *     print(i + " feature: " + as.scalar(kinds[i,1]))
- */
-
 num_bins = cmdLine_bins
-
-bin_size = as.integer(nrow(X)/num_bins)
-if(bin_size == 0) bin_size = 1
-
-#print("bin size: " + bin_size)
+bin_size = max(as.integer(nrow(X)/num_bins),1);
 
 /*
  * Generating useful thresholds for each continuous feature
@@ -616,16 +599,9 @@ parfor(i8 in 1:ncol(X)){
  * }
  */
 
+#compute max domain size for categorical
 maxs = colMaxs(X);
-max_domain_size = 0.0;
-for(k in 1:ncol(X)){
-  kind = as.scalar(kinds[k,1]);
-  
-  if(kind == 2){
-    colMaximum = as.scalar(maxs[1,k]);
-    if(max_domain_size < colMaximum) max_domain_size = colMaximum;
-  }
-}
+max_domain_size = max( ppred(kinds, 2, "==") * t(maxs) );
 
 domain_offsets = matrix(0, rows=ncol(X), cols=2)
 curr_beg_pos = 1.0

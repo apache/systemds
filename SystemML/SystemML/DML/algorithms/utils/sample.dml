@@ -28,45 +28,42 @@ ofmt = ifdef($ofmt, "binary")
 #
 # Read inputs
 #
-X = read ($X);
-sv = read ($sv);
+X = read ($X);         # X dataset
+sv = read ($sv);       # sv sample vector
 
 #
-# Construct sampling matrix SM
+# Construct sampling lower/upper bounds for samples using prefix sum
 #
-SM1 = Rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
-SM = matrix(0.0, rows = nrow(X), cols = 1)
-# Map sample value to sampled ID
-if (nrow(sv) == 1)  # just 1 sample
+R = Rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
+svLowBnd = matrix (0, rows=nrow(sv), cols=1)
+svUpBnd  = matrix (0, rows=nrow(sv), cols=1)
+
+prefSum = 0.0; 
+for ( j in 1:nrow(sv))
   {
-    SM = ppred (SM1, as.scalar(sv[1,1]), "<=")
+    svLowBnd[j,1] = prefSum;
+    prefSum = prefSum + as.scalar(sv[j,1]);
+    svUpBnd [j,1] = prefSum;         
   }
-else # multiple samples (sample fractions need to add up to 1)
+
+#
+# Construct sampling matrix SM, and apply to create samples
+#
+parfor ( i in 1:nrow(sv))
   {
-    for ( i in 1:nrow(X))
+    T1 = ppred( R, as.scalar(svUpBnd[i,1]), "<=")
+    T2 = ppred( R, as.scalar(svLowBnd[i,1]), ">")
+    SM = T1 * T2
+    if (sum(SM) == 0)
       {
-        prefSumLB = 0.0;    # lower bound
-        prefSumUB = 0.0;    # upper bound
-        for ( j in 1:nrow(sv))
-          {
-            prefSumLB = prefSumUB;
-            prefSumUB = prefSumLB + as.scalar(sv[j,1]);  # compute moving prefix sum
-            if ( (prefSumLB < as.scalar(SM1[i,1])) & (as.scalar(SM1[i,1]) <= prefSumUB) )
-              {
-                SM[i,1] = j;
-              };
-          }
+        # empty sample
+        iX = matrix (0, rows=1, cols=ncol(X))
       }
-  }
-
-#
-# Apply sampling matrix to produce and write nrow(sv) samples
-#
-parfor( i in 1:nrow(sv))
-  {
-    iSM = ppred(SM, i, "==");  
-    iX = X * iSM;
-    iX = removeEmpty( target=iX, margin="rows");
-    tmp = $O + "/" + i
-    write (iX, tmp, format=ofmt)
+  else
+    {
+      P = removeEmpty(target=diag(SM), margin="rows")
+      iX = P %*% X
+    }
+    
+    write (iX, $O + "/" + i, format=ofmt)
   }

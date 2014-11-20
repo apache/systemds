@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,9 +21,9 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.COV;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.matrix.io.CM_N_COVCell;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
+import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.WeightedPair;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 
@@ -32,7 +32,7 @@ public class CMCOVMRMapper extends MapperBase
 implements Mapper<Writable, Writable, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private boolean firsttime=true;

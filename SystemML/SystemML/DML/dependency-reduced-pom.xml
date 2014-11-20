@@ -66,8 +66,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>**/packagesupport/EigenWrapper.java</exclude>
-            <exclude>**/packagesupport/LinearSolverWrapperCP.java</exclude>
+            <exclude>**/udf/lib/EigenWrapper.java</exclude>
+            <exclude>**/udf/lib/LinearSolverWrapperCP.java</exclude>
             <exclude>**/dml/utils/visualize/*.java</exclude>
           </excludes>
         </configuration>

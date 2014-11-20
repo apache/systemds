@@ -19,18 +19,18 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixPackedCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
 
 
 public class GMRReducer extends ReduceBase
 implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private MatrixValue realOutValue;

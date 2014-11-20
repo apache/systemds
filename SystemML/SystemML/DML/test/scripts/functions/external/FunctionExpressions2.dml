@@ -8,7 +8,7 @@
 #-------------------------------------------------------------
 
 order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
-			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+			    implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
 
 foo = function( Matrix[Double] A ) return (Matrix[Double] B)  
 {

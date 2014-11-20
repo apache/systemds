@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.debugger.DMLFrame;
-import com.ibm.bi.dml.debugger.DMLProgramCounter;
-import com.ibm.bi.dml.debugger.DebugState;
+import com.ibm.bi.dml.debug.DMLFrame;
+import com.ibm.bi.dml.debug.DMLProgramCounter;
+import com.ibm.bi.dml.debug.DebugState;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -28,7 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 public class ExecutionContext 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//program reference (e.g., function repository)

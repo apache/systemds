@@ -19,11 +19,11 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixPackedCell;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixPackedCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixPackedCell;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 /**

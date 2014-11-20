@@ -28,17 +28,6 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
-import com.ibm.bi.dml.packagesupport.FIO;
-import com.ibm.bi.dml.packagesupport.Matrix;
-import com.ibm.bi.dml.packagesupport.PackageFunction;
-import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
-import com.ibm.bi.dml.packagesupport.Scalar;
-import com.ibm.bi.dml.packagesupport.Scalar.ScalarType;
-import com.ibm.bi.dml.packagesupport.Type;
-import com.ibm.bi.dml.packagesupport.WrapperTaskForControlNode;
-import com.ibm.bi.dml.packagesupport.WrapperTaskForWorkerNode;
-import com.ibm.bi.dml.packagesupport.bObject;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -60,13 +49,24 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
+import com.ibm.bi.dml.udf.FunctionParameter;
+import com.ibm.bi.dml.udf.Matrix;
+import com.ibm.bi.dml.udf.PackageFunction;
+import com.ibm.bi.dml.udf.PackageRuntimeException;
+import com.ibm.bi.dml.udf.Scalar;
+import com.ibm.bi.dml.udf.FunctionParameter.FunctionParameterType;
+import com.ibm.bi.dml.udf.WrapperTaskForControlNode;
+import com.ibm.bi.dml.udf.WrapperTaskForWorkerNode;
+import com.ibm.bi.dml.udf.BinaryObject;
+import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	protected static IDSequence _idSeq = null;
@@ -724,11 +724,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				tokens.add(tk.nextToken());
 			}
 
-			if (returnFunc.getFunctionOutput(i).getType() == Type.Matrix) {
+			if (returnFunc.getFunctionOutput(i).getType() == FunctionParameterType.Matrix) {
 				Matrix m = (Matrix) returnFunc.getFunctionOutput(i);
 
 				if (!(tokens.get(0)
-						.compareTo(getFIODataTypeString(Type.Matrix)) == 0)
+						.compareTo(getFunctionParameterDataTypeString(FunctionParameterType.Matrix)) == 0)
 						|| !(tokens.get(2).compareTo(
 								getMatrixValueTypeString(m.getValueType())) == 0)) {
 					throw new PackageRuntimeException(
@@ -751,10 +751,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				continue;
 			}
 
-			if (returnFunc.getFunctionOutput(i).getType() == Type.Scalar) {
+			if (returnFunc.getFunctionOutput(i).getType() == FunctionParameterType.Scalar) {
 				Scalar s = (Scalar) returnFunc.getFunctionOutput(i);
 
-				if (!tokens.get(0).equals(getFIODataTypeString(Type.Scalar))
+				if (!tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Scalar))
 						|| !tokens.get(2).equals(
 								getScalarValueTypeString(s.getScalarType()))) {
 					throw new PackageRuntimeException(
@@ -763,7 +763,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 				// allocate and set appropriate object based on type
 				ScalarObject scalarObject = null;
-				ScalarType type = s.getScalarType();
+				ScalarValueType type = s.getScalarType();
 				switch (type) {
 				case Integer:
 					scalarObject = new IntObject(tokens.get(1),
@@ -790,8 +790,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				continue;
 			}
 
-			if (returnFunc.getFunctionOutput(i).getType() == Type.Object) {
-				if (!tokens.get(0).equals(getFIODataTypeString(Type.Object))) {
+			if (returnFunc.getFunctionOutput(i).getType() == FunctionParameterType.Object) {
+				if (!tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Object))) {
 					new PackageRuntimeException(
 							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
@@ -823,15 +823,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 
-	protected String getScalarValueTypeString(ScalarType scalarType) {
+	protected String getScalarValueTypeString(ScalarValueType scalarType) {
 
-		if (scalarType.equals(ScalarType.Double))
+		if (scalarType.equals(ScalarValueType.Double))
 			return "Double";
-		if (scalarType.equals(ScalarType.Integer))
+		if (scalarType.equals(ScalarValueType.Integer))
 			return "Integer";
-		if (scalarType.equals(ScalarType.Boolean))
+		if (scalarType.equals(ScalarValueType.Boolean))
 			return "Boolean";
-		if (scalarType.equals(ScalarType.Text))
+		if (scalarType.equals(ScalarValueType.Text))
 			return "String";
 
 		throw new PackageRuntimeException("Unknown scalar value type");
@@ -849,7 +849,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			LocalVariableMap variableMapping) {
 
 		ArrayList<String> inputs = getParameters(inputParams);
-		ArrayList<FIO> inputObjects = getInputObjects(inputs, variableMapping);
+		ArrayList<FunctionParameter> inputObjects = getInputObjects(inputs, variableMapping);
 		func.setNumFunctionInputs(inputObjects.size());
 		for (int i = 0; i < inputObjects.size(); i++)
 			func.setInput(inputObjects.get(i), i);
@@ -866,9 +866,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 
-	protected ArrayList<FIO> getInputObjects(ArrayList<String> inputs,
+	protected ArrayList<FunctionParameter> getInputObjects(ArrayList<String> inputs,
 			LocalVariableMap variableMapping) {
-		ArrayList<FIO> inputObjects = new ArrayList<FIO>();
+		ArrayList<FunctionParameter> inputObjects = new ArrayList<FunctionParameter>();
 
 		for (int i = 0; i < inputs.size(); i++) {
 			ArrayList<String> tokens = new ArrayList<String>();
@@ -901,7 +901,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			if (tokens.get(0).equals("Object")) {
 				String varName = tokens.get(1);
 				Object o = variableMapping.get(varName);
-				bObject obj = new bObject(o);
+				BinaryObject obj = new BinaryObject(o);
 				inputObjects.add(obj);
 
 			}
@@ -922,15 +922,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param string
 	 * @return
 	 */
-	protected ScalarType getScalarValueType(String string) {
+	protected ScalarValueType getScalarValueType(String string) {
 		if (string.equals("Double"))
-			return ScalarType.Double;
+			return ScalarValueType.Double;
 		if (string.equals("Integer"))
-			return ScalarType.Integer;
+			return ScalarValueType.Integer;
 		if (string.equals("Boolean"))
-			return ScalarType.Boolean;
+			return ScalarValueType.Boolean;
 		if (string.equals("String"))
-			return ScalarType.Text;
+			return ScalarValueType.Text;
 
 		throw new PackageRuntimeException("Unknown scalar type");
 
@@ -960,7 +960,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 
-	protected com.ibm.bi.dml.packagesupport.Matrix.ValueType getMatrixValueType(String string) {
+	protected com.ibm.bi.dml.udf.Matrix.ValueType getMatrixValueType(String string) {
 
 		if (string.equals("Double"))
 			return Matrix.ValueType.Double;
@@ -1015,14 +1015,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param t
 	 * @return
 	 */
-	protected String getFIODataTypeString(Type t) {
-		if (t.equals(Type.Matrix))
+	protected String getFunctionParameterDataTypeString(FunctionParameterType t) {
+		if (t.equals(FunctionParameterType.Matrix))
 			return "Matrix";
 
-		if (t.equals(Type.Scalar))
+		if (t.equals(FunctionParameterType.Scalar))
 			return "Scalar";
 
-		if (t.equals(Type.Object))
+		if (t.equals(FunctionParameterType.Object))
 			return "Object";
 
 		throw new PackageRuntimeException("Should never come here");

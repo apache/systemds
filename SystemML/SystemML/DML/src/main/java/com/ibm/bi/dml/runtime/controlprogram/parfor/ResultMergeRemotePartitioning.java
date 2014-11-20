@@ -10,8 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Partitioner;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class ResultMergeRemotePartitioning implements Partitioner<ResultMergeTaggedMatrixIndexes, TaggedMatrixBlock> 

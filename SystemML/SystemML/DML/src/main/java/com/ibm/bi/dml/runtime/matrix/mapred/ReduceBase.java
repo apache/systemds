@@ -24,10 +24,10 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 

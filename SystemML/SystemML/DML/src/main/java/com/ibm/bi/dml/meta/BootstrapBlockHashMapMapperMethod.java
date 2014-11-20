@@ -14,11 +14,11 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import com.ibm.bi.dml.runtime.matrix.io.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 
 
 public class BootstrapBlockHashMapMapperMethod extends BlockHashMapMapperMethod 

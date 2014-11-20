@@ -11,8 +11,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataOutput;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataOutput;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 
 /**
  * Customer DataOutput to serialize directly into the given byte array.

@@ -1,8 +1,6 @@
 # Principal Component Analysis (PCA)
-eigen = externalFunction(Matrix[Double] A) 
-        return (Matrix[Double] evec, Matrix[Double] eval) 
-        implemented in (classname="dml.packagesupport.JLapackEigenWrapper",
-                          execlocation="master")
+eigen = externalFunction(Matrix[Double] A) return (Matrix[Double] evec, Matrix[Double] eval) 
+        implemented in (classname="dml.udf.lib.JLapackEigenWrapper",execlocation="master")
 
 A = read("data.mtx");
 

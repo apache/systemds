@@ -36,15 +36,16 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -335,6 +336,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
@@ -367,7 +369,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					JobConf tmpJob = new JobConf();
 					Path tmpPath = new Path(in.getFileName());
 					
-					for(Path lpath : DataConverter.getSequenceFilePaths(fs, tmpPath) )
+					for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath) )
 					{
 						SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 						try
@@ -524,6 +526,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param mo
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
 	private void createBinaryBlockStagingFile( String fnameStaging, MatrixObject mo ) 
 		throws IOException
 	{		
@@ -534,7 +537,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		FileSystem fs = FileSystem.get(tmpJob);
 		Path tmpPath = new Path(mo.getFileName());
 		
-		for(Path lpath : DataConverter.getSequenceFilePaths(fs, tmpPath))
+		for(Path lpath : MatrixReader.getSequenceFilePaths(fs, tmpPath))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 			try
@@ -639,6 +642,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
@@ -655,7 +659,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		int brlen = mc.get_rows_per_block();
 		int bclen = mc.get_cols_per_block();
 		
-		for(Path lpath: DataConverter.getSequenceFilePaths(fs, path))
+		for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
 		{
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try
@@ -744,6 +748,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
@@ -1000,6 +1005,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MatrixFormatMetaData metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{

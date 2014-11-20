@@ -141,8 +141,8 @@ The source code for this program is not published or otherwise divested of its t
 		        javacchome="${javacc.home}"/>
 		<!-- start: comment this to disable antlr4 -->
 			<echo message="Running Antlr on Dml.g4"/>
-			<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/antlr4/">
-				<arg line="Dml.g4 -package com.ibm.bi.dml.antlr4"/>
+			<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/parser/antlr4/">
+				<arg line="Dml.g4 -package com.ibm.bi.dml.parser.antlr4"/>
 				<classpath>
 					<pathelement location="${hadoop.local.path}/antlr-4.3-complete.jar" />
 				</classpath>

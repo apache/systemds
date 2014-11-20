@@ -20,7 +20,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 /*

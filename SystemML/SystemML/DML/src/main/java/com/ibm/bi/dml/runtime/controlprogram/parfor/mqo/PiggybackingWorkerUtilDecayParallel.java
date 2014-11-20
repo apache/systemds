@@ -16,7 +16,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.utils.Statistics;
 
 /**

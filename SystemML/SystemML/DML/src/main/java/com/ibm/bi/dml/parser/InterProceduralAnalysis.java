@@ -29,13 +29,8 @@ import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
-import com.ibm.bi.dml.packagesupport.DeNaNWrapper;
-import com.ibm.bi.dml.packagesupport.DeNegInfinityWrapper;
-import com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP;
-import com.ibm.bi.dml.packagesupport.DynamicReadMatrixRcCP;
 //import com.ibm.bi.dml.packagesupport.EigenWrapper;
 //import com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP;
-import com.ibm.bi.dml.packagesupport.OrderWrapper;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -48,6 +43,11 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.udf.lib.DeNaNWrapper;
+import com.ibm.bi.dml.udf.lib.DeNegInfinityWrapper;
+import com.ibm.bi.dml.udf.lib.DynamicReadMatrixCP;
+import com.ibm.bi.dml.udf.lib.DynamicReadMatrixRcCP;
+import com.ibm.bi.dml.udf.lib.OrderWrapper;
 
 /**
  * This Inter Procedural Analysis (IPA) serves two major purposes:
@@ -757,14 +757,14 @@ public class InterProceduralAnalysis
 			MatrixObject moOut = createOutputMatrix(input.get_dim1(), input.get_dim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
-		else if( className.equals("com.ibm.bi.dml.packagesupport.EigenWrapper") ) 
+		else if( className.equals("com.ibm.bi.dml.udf.lib.EigenWrapper") ) 
 		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(0);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
 			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));			
 		}
-		else if( className.equals("com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP") ) 
+		else if( className.equals("com.ibm.bi.dml.udf.lib.LinearSolverWrapperCP") ) 
 		//else if( className.equals(LinearSolverWrapperCP.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(1);

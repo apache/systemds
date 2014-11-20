@@ -14,9 +14,10 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
+import com.ibm.bi.dml.runtime.io.ReaderBinaryBlock;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
 public class DistributedCacheInput 
 {	
@@ -114,10 +115,9 @@ public class DistributedCacheInput
 		//read matrix partition (or entire vector)
 		try 
 		{		
-			ArrayList<IndexedMatrixValue> tmp = DataConverter.readMatrixBlocksFromHDFS( 
-					  fname, InputInfo.BinaryBlockInputInfo,
-					  _rlen, _clen,_brlen, _bclen,
-					  !MRBaseForCommonInstructions.isJobLocal);
+			ReaderBinaryBlock reader = (ReaderBinaryBlock) MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
+			reader.setLocalFS( !MRBaseForCommonInstructions.isJobLocal );
+			ArrayList<IndexedMatrixValue> tmp = reader.readIndexedMatrixBlocksFromHDFS(fname, _rlen, _clen, _brlen, _bclen);
 			
 			int rowBlocks = (int) Math.ceil(_rlen / (double) _brlen);
 			int colBlocks = (int) Math.ceil(_clen / (double) _bclen);

@@ -17,8 +17,8 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.Converter;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.runtime.matrix.data.Converter;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 
 
 public class CollectMultipleConvertedOutputs 

@@ -12,7 +12,7 @@ import java.util.LinkedList;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.utils.Statistics;
 
 public class PiggybackingWorkerTimeSequential extends PiggybackingWorker

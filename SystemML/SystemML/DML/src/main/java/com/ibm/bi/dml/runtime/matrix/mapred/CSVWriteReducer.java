@@ -24,10 +24,10 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput.Situation;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;

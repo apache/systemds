@@ -11,17 +11,15 @@ import java.util.HashMap;
 
 import junit.framework.Assert;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -102,9 +100,8 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 1.0d, 7);
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
-			CSVFileFormatProperties fprop = new CSVFileFormatProperties();
-			DataConverter.writeCSVToHDFS(new Path(HOME + INPUT_DIR + "X"), new JobConf(), mb, 
-					                    rows, cols, -1, fprop);
+			CSVFileFormatProperties fprop = new CSVFileFormatProperties();			
+			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "X", OutputInfo.CSVOutputInfo, mc, -1, fprop);
 			mc.set(-1, -1, -1, -1);
 			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "X.mtd", ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
 			

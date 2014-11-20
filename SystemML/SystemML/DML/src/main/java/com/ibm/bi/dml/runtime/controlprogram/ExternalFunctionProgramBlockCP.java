@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,10 +13,6 @@ import java.util.Vector;
 
 import org.nimble.exception.NimbleCheckedRuntimeException;
 
-import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
-import com.ibm.bi.dml.packagesupport.Matrix;
-import com.ibm.bi.dml.packagesupport.PackageFunction;
-import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
@@ -27,8 +23,12 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
+import com.ibm.bi.dml.udf.Matrix;
+import com.ibm.bi.dml.udf.PackageFunction;
+import com.ibm.bi.dml.udf.PackageRuntimeException;
 
 /**
  * CP external function program block, that overcomes the need for 
@@ -45,7 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String DEFAULT_FILENAME = "ext_funct";

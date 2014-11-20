@@ -15,13 +15,13 @@ import java.util.Comparator;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
-import com.ibm.bi.dml.runtime.matrix.io.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.data.AdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.PartialBlock;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 
 /**
  * 

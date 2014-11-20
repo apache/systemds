@@ -13,7 +13,7 @@ import org.junit.Test;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheDataInput;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheDataOutput;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.test.utils.TestUtils;
 

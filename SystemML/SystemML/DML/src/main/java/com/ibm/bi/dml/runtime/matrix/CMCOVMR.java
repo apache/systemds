@@ -20,10 +20,10 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.io.CM_N_COVCell;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -33,7 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 public class CMCOVMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static final Log LOG = LogFactory.getLog(CMCOVMR.class.getName());

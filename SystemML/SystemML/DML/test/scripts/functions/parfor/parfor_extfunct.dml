@@ -9,11 +9,11 @@
 
 dynRead = externalFunction(String fname, Integer rows, Integer cols, String format)
 return (Matrix[Double] M) 
-implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP",exectype="mem")   
+implemented in (classname="com.ibm.bi.dml.udf.lib.DynamicReadMatrixCP",exectype="mem")   
 
 execCondense = externalFunction(Matrix[Double] input)
 return(Matrix[Double] out)
-implemented in (classname="com.ibm.bi.dml.packagesupport.RemoveEmptyRows",exectype="file", execlocation="master")   
+implemented in (classname="com.ibm.bi.dml.udf.lib.RemoveEmptyRows",exectype="file", execlocation="master")   
 
 
 V = read($1, rows=$2, cols=$3, format="text");   

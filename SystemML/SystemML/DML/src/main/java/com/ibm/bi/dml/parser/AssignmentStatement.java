@@ -10,7 +10,7 @@ package com.ibm.bi.dml.parser;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.debugger.DMLBreakpointManager;
+import com.ibm.bi.dml.debug.DMLBreakpointManager;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 
 

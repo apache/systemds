@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 
-import com.ibm.bi.dml.packagesupport.Matrix;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -18,6 +17,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.udf.Matrix;
 
 
 public abstract class CPInstruction extends Instruction 

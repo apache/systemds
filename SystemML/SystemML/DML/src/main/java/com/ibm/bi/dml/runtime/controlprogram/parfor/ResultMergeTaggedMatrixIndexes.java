@@ -13,7 +13,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * This class serves as composite key for the remote result merge job

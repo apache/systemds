@@ -83,8 +83,8 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
 
@@ -108,8 +108,8 @@ public class Recompiler
 	
 	//max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
-	private static final long CP_REBLOCK_THRESHOLD_SIZE = 1024*1024*1024; 
-	private static final long CP_CSV_REBLOCK_THRESHOLD_SIZE = 256*1024*1024;
+	private static final long CP_REBLOCK_THRESHOLD_SIZE = (long)1024*1024*1024; 
+	private static final long CP_CSV_REBLOCK_THRESHOLD_SIZE = (long)256*1024*1024;
 	
 	//reused rewriter for dynamic rewrites during recompile
 	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);

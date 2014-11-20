@@ -46,16 +46,17 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
+import com.ibm.bi.dml.runtime.io.MatrixWriter;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -327,6 +328,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
+		@SuppressWarnings("deprecation")
 		public void createBinaryCellStagingFile( String fnameOld, String stagingDir ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -342,7 +344,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 
-			for(Path lpath: DataConverter.getSequenceFilePaths(fs, path))
+			for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -385,6 +387,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
+		@SuppressWarnings("deprecation")
 		public boolean createBinaryBlockStagingFile( String fnameOld, String stagingDir ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -399,7 +402,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixBlock value = new MatrixBlock();
 			boolean diagBlocks = true;
 			
-			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path))
+			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path))
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				
@@ -685,6 +688,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
+		@SuppressWarnings("deprecation")
 		public void createCellResultFile( String fnameNew, String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -802,6 +806,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
+		@SuppressWarnings("deprecation")
 		public void createBlockResultFile( String fnameNew, String stagingDir, long rlen, long clen, long newlen, long nnz, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -820,7 +825,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			{
 				if( _margin.equals("rows") ) 
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
+					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
 							                     MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
@@ -836,7 +841,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							int maxRow = currentSize;
 							
 							//get reuse matrix block
-							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
 							
 							int rowPos = 0;
@@ -885,7 +890,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				else
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
+					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
 							                    MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					
 					for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
@@ -901,7 +906,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							int maxCol = currentSize;
 							
 							//get reuse matrix block
-							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
 							int colPos = 0;
 							
@@ -971,6 +976,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
+		@SuppressWarnings("deprecation")
 		public void createBlockResultFileDiag( String fnameNew, String stagingDir, long rlen, long clen, long newlen, long nnz, int brlen, int bclen, InputInfo ii ) 
 			throws IOException, DMLRuntimeException
 		{
@@ -989,7 +995,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			{
 				if( _margin.equals("rows") ) 
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
+					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, 
 							                       MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
@@ -1007,7 +1013,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
 							
 							//get reuse matrix block
-							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
 							
 							if( keyMap.containsKey(blockRow) )
@@ -1049,7 +1055,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				else //cols
 				{
-					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
+					MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, 
 							                     MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz), nnz);  
 					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
@@ -1067,7 +1073,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							int maxRow = (int)((blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen);
 							
 							//get reuse matrix block
-							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
 						
 							if( keyMap.containsKey(blockCol) )

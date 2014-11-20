@@ -21,16 +21,18 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.io.MatrixWriterFactory;
+import com.ibm.bi.dml.runtime.io.WriterMatrixMarket;
+import com.ibm.bi.dml.runtime.io.WriterTextCSV;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
-import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -780,7 +782,8 @@ public class VariableCPInstruction extends CPInstruction
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					DataConverter.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
+					WriterTextCSV writer = (WriterTextCSV) MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo, -1, formatProperties);
+					writer.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(fname, outFmt, formatProperties);
@@ -817,7 +820,8 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+					WriterMatrixMarket writer = (WriterMatrixMarket) MatrixWriterFactory.createMatrixWriter(OutputInfo.MatrixMarketOutputInfo);
+					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}

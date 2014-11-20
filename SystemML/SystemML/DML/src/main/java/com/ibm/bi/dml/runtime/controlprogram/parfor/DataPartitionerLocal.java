@@ -33,14 +33,14 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
-import com.ibm.bi.dml.runtime.matrix.io.IJV;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
@@ -235,6 +235,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void partitionBinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
 	{
@@ -254,7 +255,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 	
-			for( Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
+			for( Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -333,6 +334,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
 	{
@@ -351,7 +353,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
-			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
+			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -419,6 +421,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
 		throws DMLRuntimeException
 	{
@@ -436,7 +439,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
 			
-			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
+			for(Path lpath : MatrixReader.getSequenceFilePaths(fs, path) )
 			{
 				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
@@ -646,6 +649,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	// read/write in different formats //
 	/////////////////////////////////////
 	
+	@SuppressWarnings("deprecation")
 	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir, boolean threadsafe ) 
 		throws IOException
 	{
@@ -683,6 +687,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void writeBinaryCellSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{

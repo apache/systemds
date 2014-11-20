@@ -13,8 +13,8 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataInput;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataInput;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 
 /**
  * 

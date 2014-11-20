@@ -10,8 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram.caching;
 import java.io.DataInput;
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataInput;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataInput;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {

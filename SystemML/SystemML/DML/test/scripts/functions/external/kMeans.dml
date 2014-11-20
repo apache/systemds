@@ -16,7 +16,7 @@
 
 kMeans = externalFunction(Matrix[Double] D, Integer k) 
 return (Matrix[Double] C) 
-implemented in (classname="com.ibm.bi.dml.packagesupport.kMeansWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.udf.lib.kMeansWrapper",execlocation="master")
 
 M = read($1, rows=$2, cols=$3, format="text");
 

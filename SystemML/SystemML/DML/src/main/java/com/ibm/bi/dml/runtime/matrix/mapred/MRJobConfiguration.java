@@ -61,27 +61,28 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
+import com.ibm.bi.dml.runtime.io.BinaryBlockSerialization;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.AddDummyWeightConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToRowBlockConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToRowBlockConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToTextConverter;
-import com.ibm.bi.dml.runtime.matrix.io.Converter;
-import com.ibm.bi.dml.runtime.matrix.io.IdenticalConverter;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.MultipleOutputCommitter;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.TextCellToRowBlockConverter;
-import com.ibm.bi.dml.runtime.matrix.io.TextToBinaryCellConverter;
-import com.ibm.bi.dml.runtime.matrix.io.WeightedCellToSortInputConverter;
-import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
-import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
+import com.ibm.bi.dml.runtime.matrix.data.AddDummyWeightConverter;
+import com.ibm.bi.dml.runtime.matrix.data.BinaryBlockToBinaryCellConverter;
+import com.ibm.bi.dml.runtime.matrix.data.BinaryBlockToRowBlockConverter;
+import com.ibm.bi.dml.runtime.matrix.data.BinaryBlockToTextCellConverter;
+import com.ibm.bi.dml.runtime.matrix.data.BinaryCellToRowBlockConverter;
+import com.ibm.bi.dml.runtime.matrix.data.BinaryCellToTextConverter;
+import com.ibm.bi.dml.runtime.matrix.data.Converter;
+import com.ibm.bi.dml.runtime.matrix.data.IdenticalConverter;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
+import com.ibm.bi.dml.runtime.matrix.data.MultipleOutputCommitter;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.TextCellToRowBlockConverter;
+import com.ibm.bi.dml.runtime.matrix.data.TextToBinaryCellConverter;
+import com.ibm.bi.dml.runtime.matrix.data.WeightedCellToSortInputConverter;
+import com.ibm.bi.dml.runtime.matrix.data.WeightedPair;
+import com.ibm.bi.dml.runtime.matrix.data.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -1991,7 +1992,7 @@ public class MRJobConfiguration
 	public static void addBinaryBlockSerializationFramework( JobConf job )
 	{
 		String frameworkList = job.get("io.serializations");
-		String frameworkClassBB = "com.ibm.bi.dml.runtime.util.BinaryBlockSerialization";
+		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();
 		job.set("io.serializations", frameworkClassBB+","+frameworkList);
 	}
 }

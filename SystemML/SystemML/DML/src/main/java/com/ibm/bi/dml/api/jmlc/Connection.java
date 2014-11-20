@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.bi.dml.antlr4.Antlr4ParserWrapper;
 import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -32,6 +31,8 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.antlr4.Antlr4ParserWrapper;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -41,8 +42,10 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
+import com.ibm.bi.dml.runtime.io.ReaderTextCell;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 
 /**
@@ -220,12 +223,22 @@ public class Connection
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
 		throws IOException
 	{
-		//read input matrix
-		InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
-		MatrixBlock mb = DataConverter.readMatrixFromInputStream(is, InputInfo.TextCellInputInfo, rows, cols, 1000, 1000, 1.0d);
+		double[][] ret = null;
 		
-		//convert to double array
-		double[][] ret = DataConverter.convertToDoubleMatrix( mb );
+		try 
+		{
+			//read input matrix
+			InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
+			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
+			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, (long)rows*cols);
+		
+			//convert to double array
+			ret = DataConverter.convertToDoubleMatrix( mb );
+		}
+		catch(DMLRuntimeException rex) 
+		{
+			throw new IOException( rex );
+		}
 		
 		return ret;
 	}

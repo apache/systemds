@@ -37,16 +37,16 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.Converter;
-import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.data.Converter;
+import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
@@ -500,7 +500,7 @@ public class MapReduceTool
           
           if ( outinfo == OutputInfo.CSVOutputInfo) {
         	  CSVFileFormatProperties csvProperties = (CSVFileFormatProperties) formatProperties;
-              line += "    ,\"" +  DataExpression.DELIM_HAS_HEADER_ROW 	+  "\": " + csvProperties.isHasHeader() + "\n";
+              line += "    ,\"" +  DataExpression.DELIM_HAS_HEADER_ROW 	+  "\": " + csvProperties.hasHeader() + "\n";
               line += "    ,\"" +  DataExpression.DELIM_DELIMITER 	+  "\": \"" + csvProperties.getDelim() + "\"\n";
           }
         

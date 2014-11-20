@@ -12,8 +12,8 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDataOutput;
-import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataOutput;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 
 /**
  * This buffered output stream is essentially a merged copy of the IBM JDK

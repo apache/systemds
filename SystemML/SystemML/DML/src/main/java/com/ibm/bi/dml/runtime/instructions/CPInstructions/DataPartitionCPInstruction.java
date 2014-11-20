@@ -19,13 +19,14 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.io.MatrixWriterFactory;
+import com.ibm.bi.dml.runtime.io.WriterBinaryBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 
 /**
  * 
@@ -87,11 +88,10 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		try
 		{
 			//write matrix partitions to hdfs
-			DataConverter.writePartitionedBinaryBlockMatrixToHDFS(
-					new Path(fname), new JobConf(), mb, 
-					moIn.getNumRows(), moIn.getNumColumns(), 
-					(int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), 
-					_pformat);
+			WriterBinaryBlock writer = (WriterBinaryBlock) MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
+			writer.writePartitionedBinaryBlockMatrixToHDFS(
+					   new Path(fname), new JobConf(), mb, moIn.getNumRows(), moIn.getNumColumns(), 
+					   (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), _pformat);
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)
 			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), moIn.getNnz()); 

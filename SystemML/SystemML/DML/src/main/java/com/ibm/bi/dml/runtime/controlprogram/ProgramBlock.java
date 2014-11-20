@@ -44,7 +44,7 @@ import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstru
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 

@@ -3,7 +3,7 @@
 
 eigen = externalFunction(Matrix[Double] A) 
 return(Matrix[Double] eval, Matrix[Double] evec)
-  implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper", exectype="mem")   
+  implemented in (classname="com.ibm.bi.dml.udf.lib.EigenWrapper", exectype="mem")   
 
 A = read($1); # input data, must be a square matrix
 

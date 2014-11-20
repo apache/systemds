@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.debugger.DMLBreakpointManager;
+import com.ibm.bi.dml.debug.DMLBreakpointManager;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 
  

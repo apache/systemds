@@ -59,7 +59,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Converter for creating an internal plan representation for a given runtime program

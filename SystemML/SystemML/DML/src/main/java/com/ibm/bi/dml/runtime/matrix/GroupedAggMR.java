@@ -17,10 +17,10 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedInt;
-import com.ibm.bi.dml.runtime.matrix.io.WeightedCell;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.TaggedInt;
+import com.ibm.bi.dml.runtime.matrix.data.WeightedCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRReducer;
@@ -32,7 +32,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class GroupedAggMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static final Log LOG = LogFactory.getLog(GroupedAggMR.class.getName());

@@ -26,7 +26,7 @@
 #
 
 order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
-	implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+	implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
 	
 /*
  * Given a 1-column bit-vector returns the corresponding

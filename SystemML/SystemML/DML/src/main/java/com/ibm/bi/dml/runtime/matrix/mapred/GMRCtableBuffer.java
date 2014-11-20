@@ -15,10 +15,10 @@ import java.util.Map.Entry;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.io.MatrixWriter;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
 
 public class GMRCtableBuffer 
@@ -170,7 +170,7 @@ public class GMRCtableBuffer
 					else {
 						//Following code is similar to that in DataConverter.DataConverter.writeBinaryBlockMatrixToHDFS
 						//initialize blocks for reuse (at most 4 different blocks required)
-						MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, clen, brlen, bclen, true, outBlock.getNonZeros());  
+						MatrixBlock[] blocks = MatrixWriter.createMatrixBlocksForReuse(rlen, clen, brlen, bclen, true, outBlock.getNonZeros());  
 						
 						//create and write subblocks of matrix
 						for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++) {
@@ -183,7 +183,7 @@ public class GMRCtableBuffer
 								int col_offset = blockCol*bclen;
 								
 								//get reuse matrix block
-								MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+								MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 			
 								//copy submatrix to block
 								outBlock.sliceOperations( row_offset+1, row_offset+maxRow, 

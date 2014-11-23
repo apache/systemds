@@ -20,50 +20,32 @@
 #
 # Example:
 #   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out
-#
 
 # set defaults
 ofmt = ifdef($ofmt, "binary")
 
-#
 # Read inputs
-#
 X = read ($X);         # X dataset
 sv = read ($sv);       # sv sample vector
 
-#
 # Construct sampling lower/upper bounds for samples using prefix sum
-#
-R = Rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
-svLowBnd = matrix (0, rows=nrow(sv), cols=1)
-svUpBnd  = matrix (0, rows=nrow(sv), cols=1)
+R = rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
+svLowBnd = cumsum(sv) - sv;
+svUpBnd = cumsum(sv);
 
-prefSum = 0.0; 
-for ( j in 1:nrow(sv))
-  {
-    svLowBnd[j,1] = prefSum;
-    prefSum = prefSum + as.scalar(sv[j,1]);
-    svUpBnd [j,1] = prefSum;         
-  }
-
-#
 # Construct sampling matrix SM, and apply to create samples
-#
-parfor ( i in 1:nrow(sv))
-  {
-    T1 = ppred( R, as.scalar(svUpBnd[i,1]), "<=")
-    T2 = ppred( R, as.scalar(svLowBnd[i,1]), ">")
-    SM = T1 * T2
-    if (sum(SM) == 0)
-      {
+parfor ( i in 1:nrow(sv)) {
+    T1 = ppred(R, as.scalar(svUpBnd[i,1]), "<=");
+    T2 = ppred(R, as.scalar(svLowBnd[i,1]), ">");
+    SM = T1 * T2; 
+    if (sum(SM) == 0) {
         # empty sample
-        iX = matrix (0, rows=1, cols=ncol(X))
-      }
-  else
-    {
+        iX = matrix(0, rows=1, cols=ncol(X)),
+    }
+    else {
       P = removeEmpty(target=diag(SM), margin="rows")
       iX = P %*% X
     }
     
     write (iX, $O + "/" + i, format=ofmt)
-  }
+}

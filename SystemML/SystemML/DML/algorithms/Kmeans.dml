@@ -86,7 +86,7 @@ for (i in 1 : num_centroids)
     # "Matricize" and prefix-sum to compute the cumulative distribution function:
     min_distances_matrix_form = 
         matrix (min_distances, rows = sample_block_size, cols = num_runs, byrow = FALSE);
-    cdf_min_distances = sumup_rows (min_distances_matrix_form);
+    cdf_min_distances = cumsum (min_distances_matrix_form);
     
     # Select the i-th centroid in each sample as a random sample row id with
     # probability ~ min_distances:
@@ -194,7 +194,7 @@ if (num_successful_runs > 0) {
     best_wcss = min (final_wcss_successful + (10 * worst_wcss + 10) * (1 - termination_bitmap [, 1]));
     avg_wcss = sum (final_wcss_successful) / num_successful_runs;
     best_index_vector = ppred (final_wcss_successful, best_wcss, "==");
-    aggr_best_index_vector = sumup_rows (best_index_vector);
+    aggr_best_index_vector = cumsum (best_index_vector);
     best_index = as.integer (sum (ppred (aggr_best_index_vector, 0, "==")) + 1);
     print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss 
         + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
@@ -205,7 +205,7 @@ if (num_successful_runs > 0) {
         print ("Writing out the best-WCSS cluster labels...");
         D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
         P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
-        aggr_P = sumup_cols (P);
+        aggr_P = cumsum (t(P));
         Y = rowSums (ppred (aggr_P, 0, "==")) + 1
         write (Y, fileY, format=fmtCY);
     }
@@ -230,7 +230,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
         sample_rec_ids = Rand (rows = sample_block_size, cols = num_samples, min = 0.0, max = 1.0);
         sample_rec_ids = round (log (sample_rec_ids) / log (1.0 - approx_sample_size / num_records) + 0.5);
         # Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1) = Prob [k-1 zeros before a one]
-        sample_rec_ids = sumup_rows (sample_rec_ids);  #  (skip to next one) --> (skip to i-th one)
+        sample_rec_ids = cumsum (sample_rec_ids);  #  (skip to next one) --> (skip to i-th one)
         
         # Replace all sample record ids over "num_records" (i.e. out of range) by "num_records + 1":
         is_sample_rec_id_within_range = ppred (sample_rec_ids, num_records, "<=");
@@ -272,26 +272,4 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
             sample_maps    [(num_records * (i - 1) + 1) : (num_records * i),  ] = diag (one_per_record);
             sample_col_map [(num_records * (i - 1) + 1) : (num_records * i), i] = one_per_record;
 }   }   }
-
-sumup_rows = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    m_A = nrow(A);
-    sum_A = A;
-    while (shift < m_A) {
-        sum_A [(shift+1):m_A, ] = sum_A [(shift+1):m_A, ] + sum_A [1:(m_A-shift), ];
-        shift = 2 * shift;
-    } 
-}
-
-sumup_cols = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    n_A = ncol(A);
-    sum_A = A;
-    while (shift < n_A) {
-        sum_A [, (shift+1):n_A] = sum_A [, (shift+1):n_A] + sum_A [, 1:(n_A-shift)];
-        shift = 2 * shift;
-    } 
-}
 

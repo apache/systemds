@@ -517,6 +517,7 @@ cmdLine_num_leaf = ifdef($num_leaf, 1)
 cmdLine_num_samples = ifdef($num_samples, 10)
 
 X = read($X)
+y = read($Y) #y must be recoded
 kinds = read($types) #put 2 for categorical, 1 for scale (like bivar-stats)
 
 num_bins = cmdLine_bins
@@ -603,29 +604,11 @@ parfor(i8 in 1:ncol(X)){
 maxs = colMaxs(X);
 max_domain_size = max( ppred(kinds, 2, "==") * t(maxs) );
 
-domain_offsets = matrix(0, rows=ncol(X), cols=2)
-curr_beg_pos = 1.0
-for(k in 1:ncol(X))
-      if(as.scalar(kinds[k,1]) == 2){
-            domain_offsets[k,1] = curr_beg_pos
-	    domain_offsets[k,2] = curr_beg_pos + as.scalar(maxs[1,k]) - 1
-	    curr_beg_pos = curr_beg_pos + as.scalar(maxs[1,k])
-      }
-
-/*
- * print("domain range offsets")
- * for(k in 1:ncol(X))
- *     if(as.scalar(kinds[k,1]) == 2)
- *           print("feature=" + k + " beg=" + as.scalar(domain_offsets[k,1]) + " end=" + as.scalar(domain_offsets[k,2]))
- */
-#print("next curr_beg_pos=" + curr_beg_pos)
-
-#y must be recoded
-y = read($Y)
+# compute begin/end domain offsets via prefix sums 
+cum_maxs = cumsum( t(append(as.matrix(1),maxs*t(ppred(kinds,2,"==")))) );
+domain_offsets = append(cum_maxs[1:ncol(X),1], cum_maxs[2:(ncol(X)+1),1]-1);
 
 num_classes = as.integer(max(y))
-
-#print("domain of y: [" + min(y) + ", " + max(y) + "] " + num_classes)
 
 #exposed to user
 depth = cmdLine_depth - 1 #user counts depth from 1, but we count from 0

@@ -12,6 +12,7 @@ import java.util.Arrays;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 
@@ -563,22 +564,32 @@ public class LibMatrixBincell
 			}
 			else //that.sparseRows==null
 			{
-				for(int r=0; r<rlen; r++)
-				{
-					SparseRow arow = m1ret.sparseRows[r];
-					if( arow!=null && arow.size()>0 )
-						appendLeftForSparseBinary(op, arow.getValueContainer(), arow.getIndexContainer(), arow.size(), 0, r, m1ret);
+				if( !(op.fn instanceof Plus || op.fn instanceof Minus || op.fn instanceof Or) ){
+					for(int r=0; r<rlen; r++){
+						SparseRow arow = m1ret.sparseRows[r];
+						if( arow!=null && arow.size()>0 )
+						{
+							int alen = arow.size();
+							double[] avals = arow.getValueContainer();
+							for( int j=0; j<alen; j++ )
+								avals[j] = op.fn.execute(avals[j], 0);
+							arow.compact(); //handle removed entries (e.g., mult, and)
+							
+							//NOTE: for left in-place, we cannot use append because it would create duplicates
+							//appendLeftForSparseBinary(op, arow.getValueContainer(), arow.getIndexContainer(), arow.size(), 0, r, m1ret);
+						}
+					}
 				}
 			}
-		}else
+		}
+		else //one side dense
 		{
-			double thisvalue, thatvalue, resultvalue;
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					thisvalue=m1ret.quickGetValue(r, c);
-					thatvalue=m2.quickGetValue(r, c);
-					resultvalue=op.fn.execute(thisvalue, thatvalue);
+					double thisvalue = m1ret.quickGetValue(r, c);
+					double thatvalue = m2.quickGetValue(r, c);
+					double resultvalue = op.fn.execute(thisvalue, thatvalue);
 					m1ret.quickSetValue(r, c, resultvalue);
 				}	
 		}

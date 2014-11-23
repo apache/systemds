@@ -378,6 +378,22 @@ public class SparseRow
 	}
 	
 	/**
+	 * In-place compaction of non-zero-entries; removes zero entries and
+	 * shifts non-zero entries to the left if necessary.
+	 */
+	public void compact() 
+	{
+		int nnz = 0;
+		for( int i=0; i<size; i++ ) 
+			if( values[i] != 0 ){
+				values[nnz] = values[i];
+				indexes[nnz] = indexes[i];
+				nnz++;
+			}
+		size = nnz; //adjust row size
+	}
+	
+	/**
 	 * 
 	 */
 	@Override

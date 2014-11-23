@@ -48,17 +48,9 @@ baseStats = matrix(0, rows=numBaseStats, cols=n);
 
 # Compute max domain size among all categorical attributes
 maxs = colMaxs(A);
-maxDomainSize = -1;
-for(i in 1:ncol(A)) {
-  if( as.scalar(K[1,i]) > 1) {
-      colMaximum = as.scalar(maxs[1,i]);
-      if(maxDomainSize < colMaximum) {
-        maxDomainSize = colMaximum;
-      }
-  }
-}
+maxDomainSize = max( ppred(K, 1, ">") * maxs );
 maxDomain = as.integer(maxDomainSize);
-#print("Maximum domain size = " + maxDomainSize);
+
 
 parfor(i in 1:n, check=0) {
 

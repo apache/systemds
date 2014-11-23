@@ -56,6 +56,7 @@ public abstract class Expression
 		COLSUM,
 		COS,
 		COV, 
+		CUMSUM,
 		DIAG,
 		EXP,
 		INTERQUANTILE, 

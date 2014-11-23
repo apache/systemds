@@ -717,7 +717,7 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM,
 	}
 
 	// Operations that require two operands
@@ -904,6 +904,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.ROUND, com.ibm.bi.dml.lops.Unary.OperationTypes.ROUND);
 		HopsOpOp1LopsU.put(OpOp1.CEIL, com.ibm.bi.dml.lops.Unary.OperationTypes.CEIL);
 		HopsOpOp1LopsU.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.Unary.OperationTypes.FLOOR);
+		HopsOpOp1LopsU.put(OpOp1.CUMSUM, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMSUM);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
@@ -1488,6 +1489,16 @@ public abstract class Hop
 	
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	/**
+	 * Sets the linenumbers of this hop to a given lop.
+	 * 
+	 * @param lop
+	 */
+	protected void setLineNumbers(Lop lop)
+	{
+		lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	}
 	
 	/////////////////////////////////////////////////

@@ -129,6 +129,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "round" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "ceil"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "floor" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ucumk+" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions

@@ -2541,12 +2541,22 @@ public class MatrixBlock extends MatrixValue
 		if (!op.sparseSafe)
 			sp = false; // if the operation is not sparse safe, then result will be in dense format
 		
+		//allocate output
 		if(result==null)
 			result=new MatrixBlock(rlen, clen, sp, this.nonZeros);
-		result.copy(this);
+		else 
+			result.reset(rlen, clen, sp);
 		
-		//core execution
-		((MatrixBlock)result).unaryOperationsInPlace(op);
+		//core execute
+		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) //e.g., cumsum
+		{
+			LibMatrixAgg.aggregateUnaryMatrix(this, (MatrixBlock)result, op);
+		}
+		else
+		{
+			result.copy(this);
+			((MatrixBlock)result).unaryOperationsInPlace(op);
+		}
 		
 		return result;
 	}
@@ -4014,7 +4024,7 @@ public class MatrixBlock extends MatrixValue
 	 * 
 	 * @param correctionLocation
 	 */
-	private void dropLastRowsOrColums(CorrectionLocationType correctionLocation) 
+	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) 
 	{
 		//do nothing 
 		if(   correctionLocation==CorrectionLocationType.NONE 

@@ -23,6 +23,8 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruct
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumSplitInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -195,12 +197,16 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
 		}
 		else if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
-				|| ins instanceof RangeBasedReIndexInstruction)
+				|| ins instanceof RangeBasedReIndexInstruction || ins instanceof CumsumSplitInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
+			if( ins instanceof CumsumAggregateInstruction )
+				((CumsumAggregateInstruction)ins).setMatrixCharacteristics(dim);
+			if( ins instanceof CumsumSplitInstruction )
+				((CumsumSplitInstruction)ins).setMatrixCharacteristics(dim);
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
 		}
 		else if( ins instanceof ReorgInstruction )

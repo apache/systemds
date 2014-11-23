@@ -1032,16 +1032,6 @@ public class AggBinaryOp extends Hop
 		else 
 			return MMultMethod.RMM;
 	}
-
-	/**
-	 * Sets the linenumbers of this hop to a given lop.
-	 * 
-	 * @param lop
-	 */
-	private void setLineNumbers(Lop lop)
-	{
-		lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	}
 	
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {

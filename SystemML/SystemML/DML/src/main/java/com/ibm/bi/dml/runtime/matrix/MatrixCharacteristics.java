@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
@@ -188,6 +189,12 @@ public class MatrixCharacteristics
 			MatrixCharacteristics in_dim1 = dims.get(realIns.input1);
 			MatrixCharacteristics in_dim2 = dims.get(realIns.input2);
 			dim_out.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
+		}
+		else if(ins instanceof CumsumAggregateInstruction)
+		{
+			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;
+			MatrixCharacteristics in = dims.get(realIns.input);
+			dim_out.set((long)Math.ceil( (double)in.get_rows()/in.get_rows_per_block()), in.get_cols(), in.get_rows_per_block(), in.get_cols_per_block());
 		}
 		else if(ins instanceof AggregateUnaryInstruction)
 		{

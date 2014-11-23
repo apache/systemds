@@ -317,6 +317,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(id.getValueType());
 			
 			break;
+		
+		case CUMSUM:
+			// cumsum(X);
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
+			output.setValueType(id.getValueType());
+			
+			break;
+			
 		case CAST_AS_SCALAR:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1137,6 +1150,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
 		else if (functionName.equals("colMeans"))
 			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
+		else if (functionName.equals("cumsum"))
+			 bifop = Expression.BuiltinFunctionOp.CUMSUM;
 		//'castAsScalar' for backwards compatibility
 		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) 
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;

@@ -25,7 +25,7 @@ public class UnaryCP extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, PRINT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM, NOTSUPPORTED
 	};
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -119,6 +119,9 @@ public class UnaryCP extends Lop
 			
 		case FLOOR:
 			return "floor";
+		
+		case CUMSUM:
+			return "ucumk+";
 			
 		// CAST_AS_SCALAR, NROW, NCOL, LENGTH builtins take matrix as the input
 		// and produces a scalar

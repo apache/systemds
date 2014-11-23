@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
@@ -59,6 +60,7 @@ public class LibMatrixAgg
 	
 	private enum AggType {
 		KAHAN_SUM,
+		CUM_KAHAN_SUM,
 		MIN,
 		MAX,
 		MEAN,
@@ -159,10 +161,37 @@ public class LibMatrixAgg
 	
 	/**
 	 * 
+	 * @param in
+	 * @param out
+	 * @param uop
+	 * @throws DMLRuntimeException
+	 */
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) 
+		throws DMLRuntimeException
+	{
+		//Timing time = new Timing(true);
+		
+		AggType aggtype = getAggType(uop);
+		if( !in.sparse )
+			aggregateUnaryMatrixDense(in, out, aggtype, null, null);
+		else
+			aggregateUnaryMatrixSparse(in, out, aggtype, null, null);
+		
+		//System.out.println("uop ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+	}
+	
+	/**
+	 * 
 	 * @param op
 	 * @return
 	 */
 	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator op )
+	{
+		AggType type = getAggType( op );
+		return (type != AggType.INVALID);
+	}
+	
+	public static boolean isSupportedUnaryOperator( UnaryOperator op )
 	{
 		AggType type = getAggType( op );
 		return (type != AggType.INVALID);
@@ -233,6 +262,24 @@ public class LibMatrixAgg
 				case MAXINDEX: return AggType.MAX_INDEX;
 				case MININDEX: return AggType.MIN_INDEX;
 			}
+		}
+		
+		return AggType.INVALID;
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	private static AggType getAggType( UnaryOperator op )
+	{
+		ValueFunction vfn = op.fn;
+	
+		//cumsum
+		if( vfn instanceof Builtin && ((Builtin) vfn).bFunc == BuiltinFunctionCode.CUMSUM )
+		{
+			return AggType.CUM_KAHAN_SUM;
 		}
 		
 		return AggType.INVALID;
@@ -634,6 +681,13 @@ public class LibMatrixAgg
 					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn);
 				break;
 			}
+			case CUM_KAHAN_SUM: //CUMSUM
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				d_ucumkp(a, c, m, n, kbuff, kplus);
+				break;
+			}
 			case MAX: 
 			case MIN: //MAX/MIN
 			{
@@ -736,6 +790,13 @@ public class LibMatrixAgg
 					
 				break;
 			}
+			case CUM_KAHAN_SUM: //CUMSUM
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				s_ucumkp(a, c, m, n, kbuff, kplus);
+				break;
+			}
 			case MIN:
 			case MAX: //MAX/MIN
 			{
@@ -801,8 +862,11 @@ public class LibMatrixAgg
 	private static void aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn)
 	{
 		//do nothing for pseudo sparse-safe operations
-		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD)
+		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD 
+			|| optype == AggType.CUM_KAHAN_SUM )
+		{
 			return;
+		}
 		
 		//compute result based on meta data only
 		switch( optype )
@@ -897,6 +961,29 @@ public class LibMatrixAgg
 	{
 		for( int i=0, aix=0; i<m; i++, aix+=n )
 			sumAgg( a, c, aix, 0, n, kbuff, kplus );
+	}
+	
+	/**
+	 * CUMSUM, opcode: ucumk+, dense input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param kbuff
+	 * @param kplus
+	 */
+	private static void d_ucumkp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	{
+		//init current sum/correction arrays 
+		double[] csums = new double[ 2*n ]; 
+		Arrays.fill(csums, 0);
+		
+		//scan once and compute prefix sums
+		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+			sumAgg( a, csums, aix, 0, n, kbuff, kplus );
+			System.arraycopy(csums, 0, c, aix, n);	
+		}			
 	}
 	
 	/**
@@ -1167,6 +1254,37 @@ public class LibMatrixAgg
 				int[] aix = arow.getIndexContainer();
 				sumAgg( avals, c, aix, alen, n, kbuff, kplus );
 			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param kbuff
+	 * @param kplus
+	 */
+	private static void s_ucumkp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus )
+	{
+		//init current sum/correction arrays 
+		double[] csums = new double[ 2*n ]; 
+		Arrays.fill(csums, 0);
+		
+		//scan once and compute prefix sums
+		for( int i=0, ix=0; i<m; i++, ix+=n )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				sumAgg( avals, csums, aix, alen, n, kbuff, kplus );
+			}
+			//always copy current sum (not sparse-safe)
+			System.arraycopy(csums, 0, c, ix, n);
 		}
 	}
 	

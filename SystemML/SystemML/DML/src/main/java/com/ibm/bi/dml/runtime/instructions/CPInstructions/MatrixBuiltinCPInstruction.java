@@ -30,8 +30,8 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
 		UnaryOperator u_op = (UnaryOperator) optr;
 		String output_name = output.get_name();
@@ -39,8 +39,6 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		MatrixBlock resultBlock = (MatrixBlock) (matBlock.unaryOperations(u_op, new MatrixBlock()));
 		
 		ec.setMatrixOutput(output_name, resultBlock);
-
-		resultBlock = matBlock = null;
 		ec.releaseMatrixInput(input1.get_name());
 	}
 }

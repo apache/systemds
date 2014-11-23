@@ -25,7 +25,8 @@ public abstract class MRInstruction extends Instruction
 	public enum MRINSTRUCTION_TYPE { INVALID, Append, Aggregate, ArithmeticBinary, AggregateBinary, AggregateUnary, 
 		Rand, Seq, CSVReblock, CSVWrite,
 		Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTertiary, PickByCount, Partition,
-		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut, MMTSJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain }; 
+		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut, MMTSJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain,
+		CumsumAggregate, CumsumSplit, CumsumOffset,}; 
 	
 	
 	MRINSTRUCTION_TYPE mrtype;

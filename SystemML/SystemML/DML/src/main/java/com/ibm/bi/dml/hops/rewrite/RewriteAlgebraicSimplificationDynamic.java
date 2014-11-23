@@ -57,7 +57,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static AggOp[] LOOKUP_VALID_EMPTY_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.PROD, AggOp.TRACE}; 
 	
 	//valid unary operation types for empty (sparse-safe) operations (not all operations apply)
-	private static OpOp1[] LOOKUP_VALID_EMPTY_UNARY = new OpOp1[]{OpOp1.ABS, OpOp1.SIN, OpOp1.TAN, OpOp1.SQRT, OpOp1.ROUND}; 
+	private static OpOp1[] LOOKUP_VALID_EMPTY_UNARY = new OpOp1[]{OpOp1.ABS, OpOp1.SIN, OpOp1.TAN, OpOp1.SQRT, OpOp1.ROUND, OpOp1.CUMSUM}; 
 	
 	
 	
@@ -128,6 +128,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryRightIndexing(hop, hi, i);  //e.g., X[,1] -> X, if output == input size 
 			hi = removeEmptyLeftIndexing(hop, hi, i);         //e.g., X[,1]=Y -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0 and nnz(Y)==0 
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input size 
+			hi = removeUnnecessaryCumSum(hop, hi, i);         //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
@@ -272,6 +273,35 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = input;
 				
 				LOG.debug("Applied removeUnnecessaryLeftIndexing");
+			}			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop removeUnnecessaryCumSum(Hop parent, Hop hi, int pos)
+	{
+		if( hi instanceof UnaryOp && ((UnaryOp)hi).get_op()==OpOp1.CUMSUM  )
+		{
+			Hop input = hi.getInput().get(0); //input matrix
+			
+			if(   HopRewriteUtils.isDimsKnown(input)  //dims input known
+		       && input.get_dim1()==1 ) //1 row
+			{
+				//remove unnecessary unary cumsum operator
+				HopRewriteUtils.removeChildReference(parent, hi);				
+				HopRewriteUtils.addChildReference(parent, input, pos);
+				parent.refreshSizeInformation();
+				hi = input;
+				
+				LOG.debug("Applied removeUnnecessaryCumSum");
 			}			
 		}
 		

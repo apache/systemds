@@ -7,9 +7,14 @@
 
 package com.ibm.bi.dml.hops;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.CombineUnary;
+import com.ibm.bi.dml.lops.CumsumOffsetBinary;
+import com.ibm.bi.dml.lops.CumsumPartialAggregate;
+import com.ibm.bi.dml.lops.CumsumSplitAggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
@@ -20,6 +25,7 @@ import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Unary;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -203,6 +209,90 @@ public class UnaryOp extends Hop
 		}
 	}
 	
+	/**
+	 * MR Cumsum is currently based on a multipass algorithm of (1) preaggregation and (2) subsequent offsetting. 
+	 * Note that we currently support one robust physical operator but many alternative
+	 * realizations are possible for specific scenarios (e.g., when the preaggregated intermediate
+	 * fit into the map task memory budget) or by creating custom job types.
+	 * 
+	 * 
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop handleMRCumsum() 
+		throws HopsException, LopsException 
+	{
+		Hop input = getInput().get(0);
+		long rlen = input.get_dim1();
+		long clen = input.get_dim2();
+		long brlen = input.get_rows_in_block();
+		long bclen = input.get_cols_in_block();
+		boolean unknownSize = !dimsKnown();
+		
+		Lop X = input.constructLops();
+		Lop TEMP = X;
+		ArrayList<Lop> DATA = new ArrayList<Lop>();
+		int level = 0;
+		
+		//recursive preaggregation until aggregates fit into CP memory budget
+		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNum_rows(), clen, 1.0) + OptimizerUtils.estimateSize(1, clen, 1.0)) 
+				 > OptimizerUtils.getLocalMemBudget()
+			   && TEMP.getOutputParameters().getNum_rows()>1) || unknownSize )
+		{
+			DATA.add(TEMP);
+	
+			//preaggregation per block
+			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNum_rows()/brlen);
+			Lop preagg = new CumsumPartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE);
+			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			setLineNumbers(preagg);
+			
+			Group group = new Group( preagg, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
+			group.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			setLineNumbers(group);
+			
+			Aggregate agg = new Aggregate(group, HopsAgg2Lops.get(AggOp.SUM), get_dataType(), get_valueType(), ExecType.MR);
+			agg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			agg.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
+			setLineNumbers(agg);
+			TEMP = agg;	
+			level++;
+			unknownSize = false; //in case of unknowns, generate one level
+		}
+		
+		//in-memory cum sum (of partial aggregates)
+		if( TEMP.getOutputParameters().getNum_rows()!=1 ){
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
+			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNum_rows(), clen, brlen, bclen, -1);
+			setLineNumbers(unary1);
+			TEMP = unary1;
+		}
+		
+		//split, group and mr cumsum
+		while( level-- > 0  ) {
+			CumsumSplitAggregate split = new CumsumSplitAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE);
+			split.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(split);
+			
+			Group group1 = new Group( DATA.get(level), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
+			group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(group1);
+			
+			Group group2 = new Group( split, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
+			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(group2);
+			
+			CumsumOffsetBinary binary = new CumsumOffsetBinary(group1, group2, DataType.MATRIX, ValueType.DOUBLE);
+			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(binary);
+			TEMP = binary;
+		}
+		
+		return TEMP;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -238,12 +328,21 @@ public class UnaryOp extends Hop
 			else //general case MATRIX
 			{
 				ExecType et = optFindExecType();
-				Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
-						                 get_dataType(), get_valueType(), et);
-				unary1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-				unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				set_lops(unary1);
+				
+				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
+				{
+					Lop cumsumLop = handleMRCumsum();
+					set_lops(cumsumLop);
+				}
+				else //default unary 
+				{
+					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
+							                 get_dataType(), get_valueType(), et);
+					unary1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					set_lops(unary1);
+				}
 			}
 		} 
 		catch (Exception e) 

@@ -25,6 +25,9 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumOffsetInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumSplitInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataPartitionMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
@@ -207,10 +210,13 @@ public class MRInstructionParser extends InstructionParser
 		//misc
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 		
-		
 		//partitioning
 		String2MRInstructionType.put( "partition", MRINSTRUCTION_TYPE.Partition);
 		
+		//cumsum
+		String2MRInstructionType.put( "ucumack+", MRINSTRUCTION_TYPE.CumsumAggregate);
+		String2MRInstructionType.put( "ucumsplit", MRINSTRUCTION_TYPE.CumsumSplit);
+		String2MRInstructionType.put( "bcumoffk+", MRINSTRUCTION_TYPE.CumsumOffset);
 		
 		//dummy (pseudo instructions)
 		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
@@ -332,7 +338,17 @@ public class MRInstructionParser extends InstructionParser
 		case Partition:
 			return (MRInstruction)DataPartitionMRInstruction.parseInstruction(str);
 			
+		case CumsumAggregate:
+			return (MRInstruction)CumsumAggregateInstruction.parseInstruction(str);
+			
+		case CumsumSplit:
+			return (MRInstruction)CumsumSplitInstruction.parseInstruction(str);
+		
+		case CumsumOffset:
+			return (MRInstruction)CumsumOffsetInstruction.parseInstruction(str);
+		
 		case INVALID:
+		
 		default: 
 			throw new DMLRuntimeException("Invalid MR Instruction Type: " + mrtype );
 		}

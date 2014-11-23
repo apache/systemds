@@ -41,6 +41,7 @@ public abstract class Lop
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
 		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock, RepMat,
+		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary,
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}

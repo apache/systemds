@@ -64,17 +64,7 @@ write(sp, $5);
 # Function to compute ranks
 # takes a column vector as input, and produces a vector of same size in which each cell denotes to the computed score for that category
 computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
-    dummy = Rand(rows=1, cols=1, min=1, max=1);
-    Rks = X;
-    size = nrow(X);
-    for(i in 1:size) {
-        prefixSum = 0.0;
-        if( i>1 ){
-           prefixSum = sum(X[1:(i-1),1]);
-        }
-        Rks[i,1] = dummy * (prefixSum + ((castAsScalar(X[i,1])+1)/2));
-    }
-    Ranks = Rks;
+    Ranks = cumsum(X) - X/2 + 1/2;
 }
 #-------------------------------------------------------------------------
 

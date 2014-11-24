@@ -127,8 +127,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeEmptyRightIndexing(hop, hi, i);        //e.g., X[,1] -> matrix(0,ru-rl+1,cu-cl+1), if nnz(X)==0 
 			hi = removeUnnecessaryRightIndexing(hop, hi, i);  //e.g., X[,1] -> X, if output == input size 
 			hi = removeEmptyLeftIndexing(hop, hi, i);         //e.g., X[,1]=Y -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0 and nnz(Y)==0 
-			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input size 
+			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input dims 
 			hi = removeUnnecessaryCumSum(hop, hi, i);         //e.g., cumsum(X) -> X, if nrow(X)==1;
+			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
@@ -302,6 +303,39 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = input;
 				
 				LOG.debug("Applied removeUnnecessaryCumSum");
+			}			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
+	{
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp() == ReOrgOp.RESHAPE ) //reshape operation
+		{
+			Hop input = hi.getInput().get(0); 
+
+			if(   HopRewriteUtils.isDimsKnown(hi)  //dims output known
+			   && HopRewriteUtils.isDimsKnown(input)  //dims input known
+		       && HopRewriteUtils.isEqualSize(hi, input)) //equal dims
+			{
+				//equal dims of reshape input and output -> no need for reshape because 
+				//byrow always refers to both input/output and hence gives the same result
+				
+				//remove unnecessary right indexing
+				HopRewriteUtils.removeChildReference(parent, hi);				
+				HopRewriteUtils.addChildReference(parent, input, pos);
+				parent.refreshSizeInformation();
+				hi = input;
+				
+				LOG.debug("Applied removeUnnecessaryReshape");
 			}			
 		}
 		

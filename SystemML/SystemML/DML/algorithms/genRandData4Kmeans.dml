@@ -84,7 +84,7 @@ print ("Computing record-to-cluster assignments by minimum centroid distance..."
 
 D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
 P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
-aggr_P = sumup_cols (P);
+aggr_P = cumsum (t(P));
 Y_by_C = rowSums (ppred (aggr_P, 0, "==")) + 1;
 
 print ("Computing useful statistics...");
@@ -106,16 +106,4 @@ write (Y_by_C, fileYbyC, format = "text");
 print ("Please run the scoring script to compare " + fileY + " with " + fileYbyC); 
 
 print ("DONE: K-MEANS GENERATOR SCRIPT");
-
-
-sumup_cols = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    n_A = ncol(A);
-    sum_A = A;
-    while (shift < n_A) {
-        sum_A [, (shift+1):n_A] = sum_A [, (shift+1):n_A] + sum_A [, 1:(n_A-shift)];
-        shift = 2 * shift;
-    } 
-}
 

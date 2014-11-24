@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.BinaryM;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -165,8 +166,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "rep"     , MRINSTRUCTION_TYPE.Replicate);
 		
 		// DataGen Instruction Opcodes 
-		String2MRInstructionType.put( "Rand"   , MRINSTRUCTION_TYPE.Rand);
-		String2MRInstructionType.put( "seq"   , MRINSTRUCTION_TYPE.Seq);
+		String2MRInstructionType.put( DataGen.RAND_OPCODE   , MRINSTRUCTION_TYPE.Rand);
+		String2MRInstructionType.put( DataGen.SEQ_OPCODE   , MRINSTRUCTION_TYPE.Seq);
 		
 		// REBLOCK Instruction Opcodes 
 		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);

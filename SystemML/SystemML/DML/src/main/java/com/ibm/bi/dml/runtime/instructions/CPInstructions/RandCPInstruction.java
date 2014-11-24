@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -84,11 +85,11 @@ public class RandCPInstruction extends UnaryCPInstruction
 	{
 		String opcode = InstructionUtils.getOpCode(str);
 		DataGenMethod method = DataGenMethod.INVALID;
-		if ( opcode.equalsIgnoreCase("Rand") ) {
+		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
 			InstructionUtils.checkNumFields ( str, 10 );
 		}
-		else if ( opcode.equalsIgnoreCase("seq") ) {
+		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
 			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( str, 8 ); 

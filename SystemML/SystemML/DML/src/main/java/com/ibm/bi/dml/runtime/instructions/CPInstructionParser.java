@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstru
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.SortCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringInitCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.TertiaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
@@ -165,8 +167,10 @@ public class CPInstructionParser extends InstructionParser
 		
 		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
-		String2CPInstructionType.put( "Rand"  , CPINSTRUCTION_TYPE.Rand);
-		String2CPInstructionType.put( "seq"  , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( DataGen.RAND_OPCODE  , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( DataGen.SEQ_OPCODE  , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPINSTRUCTION_TYPE.StringInit);
+		
 		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Tertiary);
 		String2CPInstructionType.put( "ctableexpand", CPINSTRUCTION_TYPE.Tertiary);
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
@@ -256,6 +260,9 @@ public class CPInstructionParser extends InstructionParser
 			
 		case Rand:
 			return (CPInstruction) RandCPInstruction.parseInstruction(str);
+			
+		case StringInit:
+			return (CPInstruction) StringInitCPInstruction.parseInstruction(str);
 			
 		case External:
 			//return (CPInstruction) ExtBuiltinCPInstruction.parseInstruction(str);

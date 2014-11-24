@@ -11,6 +11,7 @@ import java.util.HashSet;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
@@ -254,7 +255,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		String opcode = parts[0];
 		
 		
-		if( opcode.equals("Rand") )
+		if( opcode.equals(DataGen.RAND_OPCODE) )
 		{
 			vs[0] = _unknownStats;
 			vs[1] = _unknownStats;
@@ -270,7 +271,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				type = 1;
 			attr = new String[]{String.valueOf(type)};
 		}	
-		if( opcode.equals("seq") )
+		if( opcode.equals(DataGen.SEQ_OPCODE) )
 		{
 			vs[0] = _unknownStats;
 			vs[1] = _unknownStats;
@@ -876,8 +877,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else
 						return DEFAULT_NFLOP_NOOP;
 			
-				case Rand: //opcodes: Rand, seq
-					if( optype.equals("Rand") ){
+				case Rand: //opcodes: rand, seq
+					if( optype.equals(DataGen.RAND_OPCODE) ){
 						int nflopRand = 32; //per random number
 						switch(Integer.parseInt(args[0])) {
 							case 0: return DEFAULT_NFLOP_NOOP; //empty matrix

@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
@@ -1074,8 +1075,8 @@ public class MRJobInstruction extends Instruction
 						throw new DMLRuntimeException("Invalid datagen instruction: "+dginst);
 					
 					int pos = -1;
-					if( parts[1].equals("Rand") ) pos = 13;
-					if( parts[1].equals("seq") ) pos = 11;
+					if( parts[1].equals(DataGen.RAND_OPCODE) ) pos = 13;
+					if( parts[1].equals(DataGen.SEQ_OPCODE) ) pos = 11;
 					if( pos>0 )
 					{
 						StringBuilder sb = new StringBuilder();

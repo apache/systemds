@@ -48,6 +48,10 @@ if(min_y < 1)
 num_classes = max(Y)
 if(num_classes == 1)
 	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
+mod1 = Y - floor(Y/1)
+mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
+if(mod1_should_be_nrow != nrow(Y))
+	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")
 	
 epsilon = cmdLine_tol
 if(epsilon < 0)

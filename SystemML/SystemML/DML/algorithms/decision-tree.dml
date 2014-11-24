@@ -517,10 +517,18 @@ cmdLine_num_leaf = ifdef($num_leaf, 1)
 cmdLine_num_samples = ifdef($num_samples, 10)
 
 X = read($X)
+
+numRows = nrow(X)
+if(numRows < 2)
+	stop("Stopping due to invalid inputs: Not possible to learn a classifier without at least 2 rows")
+
 y = read($Y) #y must be recoded
 kinds = read($types) #put 2 for categorical, 1 for scale (like bivar-stats)
 
 num_bins = cmdLine_bins
+if(num_bins <= 1)
+	stop("Stopping due to invalid argument: bins must be greater than 1")
+
 bin_size = max(as.integer(nrow(X)/num_bins),1);
 
 /*
@@ -608,16 +616,32 @@ max_domain_size = max( ppred(kinds, 2, "==") * t(maxs) );
 cum_maxs = cumsum( t(append(as.matrix(1),maxs*t(ppred(kinds,2,"==")))) );
 domain_offsets = append(cum_maxs[1:ncol(X),1], cum_maxs[2:(ncol(X)+1),1]-1);
 
+min_y = min(y)
+if(min_y < 1)
+	stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
 num_classes = as.integer(max(y))
+if(num_classes == 1)
+	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
+mod1 = y - floor(y/1)
+mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
+if(mod1_should_be_nrow != nrow(y))
+	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")
 
 #exposed to user
 depth = cmdLine_depth - 1 #user counts depth from 1, but we count from 0
+if(depth <= 0)
+	stop("Stopping due to invalid argument: depth must be positive")
+
 leaf_count = cmdLine_num_leaf
+if(leaf_count < 1)
+	stop("Stopping due to invalid argument: num_leaf must be at least 1")
 
 #internal
 small_sample_count = cmdLine_num_samples
 #small_sample_count = 2 #set this to >1
-
+if(small_sample_count < 0)
+	stop("Stopping due to invalid argument: num_samples must be non-negative")
+	
 max_node_id = as.integer(2^(depth + 1) - 1)
 
 #first row contains feature id

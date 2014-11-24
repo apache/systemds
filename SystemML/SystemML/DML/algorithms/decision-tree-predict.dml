@@ -55,7 +55,9 @@ if(cmdLine_predictions != " ")
 
 if(cmdLine_Y != " "){
       y = read(cmdLine_Y)
-
+	  if(min(y) < 1)
+		stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
+		
       num_correct = sum(ppred(pred, y, "=="))
       acc = 100*num_correct/nrow(X)
 

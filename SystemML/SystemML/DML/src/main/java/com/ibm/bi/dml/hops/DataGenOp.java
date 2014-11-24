@@ -42,11 +42,10 @@ public class DataGenOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
 	public static final long UNSPECIFIED_SEED = -1;
 	
-	
-	private DataGenMethod _method; // defines the specific data generation method -- random matrix or sequence
+	 // defines the specific data generation method
+	private DataGenMethod _method;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -101,7 +100,7 @@ public class DataGenOp extends Hop
 		}
 		if ( mthd == DataGenMethod.RAND )
 			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).get_name());
-
+		
 		//generate base dir
 		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
 		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
@@ -238,7 +237,7 @@ public class DataGenOp extends Hop
 	@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
-		if( _method == DataGenMethod.RAND &&
+		if( (_method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ) &&
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
 		{
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
@@ -267,11 +266,16 @@ public class DataGenOp extends Hop
 				_etype = ExecType.CP;
 			else
 				_etype = ExecType.MR;
-			
+		
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
 				setRequiresRecompile();
 		}
+		
+		//always force string initialization into CP (not supported in MR)
+		if( _method == DataGenMethod.SINIT )
+			_etype = ExecType.CP;
+		
 		return _etype;
 	}
 	
@@ -282,7 +286,7 @@ public class DataGenOp extends Hop
 		Hop input2 = null; 
 		Hop input3 = null;
 
-		if ( _method == DataGenMethod.RAND ) 
+		if ( _method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
 			input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
@@ -340,8 +344,16 @@ public class DataGenOp extends Hop
 		return _paramIndexMap.get(key);
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean hasConstantValue() 
 	{
+		//string initialization does not exhibit constant values
+		if( _method == DataGenMethod.SINIT )
+			return false;
+		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
 		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
 		
@@ -362,8 +374,17 @@ public class DataGenOp extends Hop
 		return (min == max);
 	}
 	
+	/**
+	 * 
+	 * @param val
+	 * @return
+	 */
 	public boolean hasConstantValue(double val) 
 	{
+		//string initialization does not exhibit constant values
+		if( _method == DataGenMethod.SINIT )
+			return false;
+		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
 		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
 		
@@ -444,7 +465,7 @@ public class DataGenOp extends Hop
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
 			//note: if min and max is constant, we can safely merge those hops
-			if( _method == DataGenMethod.RAND ){
+			if( _method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ){
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));

@@ -1338,7 +1338,7 @@ public class Recompiler
 		{
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
-			if ( d.getDataGenMethod() == DataGenMethod.RAND ) {
+			if ( d.getDataGenMethod() == DataGenMethod.RAND || d.getDataGenMethod()==DataGenMethod.SINIT ) {
 				int ix1 = params.get(DataExpression.RAND_ROWS);
 				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops

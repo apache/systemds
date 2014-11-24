@@ -2516,7 +2516,9 @@ public class DMLTranslator
 			
 		case RAND:
 			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
-			currBuiltinOp = new DataGenOp(DataGenMethod.RAND, target, paramHops);
+			DataGenMethod method = (paramHops.get(DataExpression.RAND_MIN).get_valueType()==ValueType.STRING) ?
+					               DataGenMethod.SINIT : DataGenMethod.RAND;
+			currBuiltinOp = new DataGenOp(method, target, paramHops);
 			break;
 		
 		case MATRIX:

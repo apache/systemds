@@ -103,7 +103,7 @@ public class DataExpression extends DataIdentifier
 	
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
-	
+	private boolean _strInit = false; //string initialize
 		
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
@@ -1026,6 +1026,7 @@ public class DataExpression extends DataIdentifier
 			case RAND: 
 			
 			Expression dataParam = getVarParam(RAND_DATA);
+			
 			if (dataParam != null){
 				if( dataParam instanceof DataIdentifier )
 				{
@@ -1054,6 +1055,15 @@ public class DataExpression extends DataIdentifier
 							this.getEndLine(), this.getEndColumn());
 					addVarParam(RAND_MIN, minExpr);
 					addVarParam(RAND_MAX, minExpr);				
+				}
+				else if (dataParam instanceof StringIdentifier){
+					String data = ((StringIdentifier)dataParam).getValue();
+					Expression minExpr = new StringIdentifier(data, this.getFilename(), 
+							this.getBeginLine(), this.getBeginColumn(), 
+							this.getEndLine(), this.getEndColumn());
+					addVarParam(RAND_MIN, minExpr);
+					addVarParam(RAND_MAX, minExpr);	
+					_strInit = true;
 				}
 				else {
 					raiseValidateError("for matrix statement, parameter " 
@@ -1090,11 +1100,11 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for Rand statement " + RAND_COLS + " has incorrect data type", conditional);
 			}
 				
-			if (getVarParam(RAND_MAX) instanceof StringIdentifier || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
+			if ((getVarParam(RAND_MAX) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
 				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect data type", conditional);
 			}
 			
-			if (getVarParam(RAND_MIN) instanceof StringIdentifier || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
+			if ((getVarParam(RAND_MIN) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
 				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect data type", conditional);
 			}
 			

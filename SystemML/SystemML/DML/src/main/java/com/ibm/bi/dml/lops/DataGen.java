@@ -29,8 +29,9 @@ public class DataGen extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final String RAND_OPCODE = "Rand";
-	public static final String SEQ_OPCODE = "seq";
+	public static final String RAND_OPCODE = "rand"; //rand
+	public static final String SEQ_OPCODE = "seq"; //sequence
+	public static final String SINIT_OPCODE = "sinit"; //string initialize
 	
 	/** base dir for rand input */
 	private String baseDir;
@@ -104,13 +105,15 @@ public class DataGen extends Lop
 	@Override
 	public String getInstructions(String output) throws LopsException {
 		switch(method) {
-		case RAND:
-			return getCPInstruction_Rand(output);
-		case SEQ:
-			return getCPInstruction_Seq(output);
+			case RAND:
+				return getCPInstruction_Rand(output);
+			case SINIT:
+				return getCPInstruction_SInit(output);
+			case SEQ:
+				return getCPInstruction_Seq(output);
 			
-		default:
-			throw new LopsException("Unknown data generation method: " + method);
+			default:
+				throw new LopsException("Unknown data generation method: " + method);
 		}
 	}
 	
@@ -218,6 +221,60 @@ public class DataGen extends Lop
 					+ ") for a Rand operation");
 		}
 	}
+
+	/**
+	 * 
+	 * @param output
+	 * @return
+	 * @throws LopsException
+	 */
+	private String getCPInstruction_SInit(String output) 
+		throws LopsException 
+	{
+		if ( method != DataGenMethod.SINIT )
+			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		
+		//prepare instruction parameters
+		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
+		String rowsString = iLop.prepScalarLabel();
+		
+		iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
+		String colsString = iLop.prepScalarLabel();
+		
+		String rowsInBlockString = String.valueOf(this
+				.getOutputParameters().num_rows_in_block);
+		String colsInBlockString = String.valueOf(this
+				.getOutputParameters().num_cols_in_block);
+
+		iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
+		String minString = iLop.getOutputParameters().getLabel();
+		if (iLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + DataExpression.RAND_MIN
+					+ " must be a literal for a Rand operation.");
+
+		//generate instruction		
+		StringBuilder sb = new StringBuilder( );
+		ExecType et = getExecType();
+		
+		sb.append( et );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append(SINIT_OPCODE);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(rowsString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(colsString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(rowsInBlockString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(colsInBlockString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(minString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append( this.prepOutputOperand(output));
+
+		return sb.toString();
+	}
 	
 	/**
 	 * Private method that generates CP Instruction for Seq.
@@ -250,7 +307,7 @@ public class DataGen extends Lop
 		String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
 		String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);
 		
-		sb.append( "seq" );
+		sb.append( DataGen.SEQ_OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( rowsString );
 		sb.append( OPERAND_DELIMITOR );
@@ -417,7 +474,7 @@ public class DataGen extends Lop
 		String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
 		String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);
 		
-		sb.append( "seq" );
+		sb.append( DataGen.SEQ_OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( inputIndex );
 		sb.append( OPERAND_DELIMITOR );

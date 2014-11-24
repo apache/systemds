@@ -746,7 +746,7 @@ public abstract class Hop
 	};
 	
 	public enum DataGenMethod {
-		RAND, SEQ, INVALID
+		RAND, SEQ, SINIT, INVALID
 	};
 
 	public enum ParamBuiltinOp {

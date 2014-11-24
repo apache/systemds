@@ -82,7 +82,7 @@ for (i in 1:(numCategories - 1)) {
 ones = matrix (1.0, rows = 1, cols = numCategories - 1);
 Prob = exp (LT);
 Prob = Prob / ((1.0 + rowSums (Prob)) %*% ones);
-Prob = sumup_cols (Prob);
+Prob = cumsum (t(Prob));
 
 r = Rand (rows = numSamples, cols = 1, min = 0, max = 1, pdf = "uniform", seed = 0);
 R = r %*% ones;
@@ -208,26 +208,4 @@ straightenX =
     # END LEAST SQUARES
     
     w = (nrow(X) / sum (w_X * z_LS)) * z_LS;
-}
-
-sumup_rows = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    m_A = nrow(A);
-    sum_A = A;
-    while (shift < m_A) {
-        sum_A [(shift+1):m_A, ] = sum_A [(shift+1):m_A, ] + sum_A [1:(m_A-shift), ];
-        shift = 2 * shift;
-    } 
-}
-
-sumup_cols = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    n_A = ncol(A);
-    sum_A = A;
-    while (shift < n_A) {
-        sum_A [, (shift+1):n_A] = sum_A [, (shift+1):n_A] + sum_A [, 1:(n_A-shift)];
-        shift = 2 * shift;
-    } 
 }

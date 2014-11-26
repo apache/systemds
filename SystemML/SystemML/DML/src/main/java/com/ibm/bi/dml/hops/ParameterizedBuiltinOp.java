@@ -49,6 +49,10 @@ public class ParameterizedBuiltinOp extends Hop
 	private ParameterizedBuiltinOp() {
 		//default constructor for clone
 	}
+
+	public HashMap<String, Integer> getParamIndexMap(){
+		return _paramIndexMap;
+	}
 	
 	/**
 	 * Creates a new HOP for a function call
@@ -496,6 +500,30 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 		
 		return ret;	
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isCountFunction()
+	{
+		boolean ret = false;
+		
+		try
+		{
+			if( _op == ParamBuiltinOp.GROUPEDAGG )
+			{
+				int ix = _paramIndexMap.get(Statement.GAGG_FN);
+				Hop fnHop = getInput().get(ix);
+				ret = (fnHop instanceof LiteralOp && Statement.GAGG_FN_COUNT.equals(((LiteralOp)fnHop).getStringValue()) );
+			}
+		}
+		catch(Exception ex){
+			//silent false
+		}
+		
+		return ret;
 	}
 	
 	/**

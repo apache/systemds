@@ -21,12 +21,15 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.Direction;
+import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
@@ -126,6 +129,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
+			hi = simplifyGroupedAggregate(hi);          	    //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -746,6 +750,40 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				LOG.debug("Applied removeUnecessaryTranspose");
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param hi
+	 * @return
+	 */
+	private Hop simplifyGroupedAggregate(Hop hi)
+	{
+		if( hi instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hi).getOp()==ParamBuiltinOp.GROUPEDAGG  ) //aggregate
+		{
+			ParameterizedBuiltinOp phi = (ParameterizedBuiltinOp)hi;
+			
+			if( phi.isCountFunction() ) //aggregate(fn="count")
+			{
+				HashMap<String, Integer> params = phi.getParamIndexMap();
+				int ix1 = params.get(Statement.GAGG_TARGET);
+				int ix2 = params.get(Statement.GAGG_GROUPS);
+				
+				//check for unnecessary memory consumption for "count"
+				if( ix1 != ix2 && phi.getInput().get(ix1)!=phi.getInput().get(ix2) ) 
+				{
+					Hop th = phi.getInput().get(ix1);
+					Hop gh = phi.getInput().get(ix2);
+					
+					HopRewriteUtils.removeChildReference(hi, th);
+					HopRewriteUtils.addChildReference(hi, gh, ix1);
+					
+					LOG.debug("Applied simplifyGroupedAggregateCount");	
+				}
 			}
 		}
 		

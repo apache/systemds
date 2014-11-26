@@ -972,7 +972,9 @@ public class Dag<N extends Lop>
 					if( LOG.isTraceEnabled() )
 						LOG.trace(indent + "Queueing node "
 								+ node.toString() + " (code 2)");
-
+					//for(N q: queuedNodes) {
+					//	LOG.trace(indent + "  " + q.getType() + "," + q.getID());
+					//}
 					queuedNodes.add(node);
 
 					// if node has more than two inputs,
@@ -1190,10 +1192,13 @@ public class Dag<N extends Lop>
 						}
 						
 						// Limit the number of distributed cache inputs based on the available memory in mappers
-						gmrMapperFootprint += computeFootprintInMapper(node);
-						if ( !checkMemoryLimits(node, gmrMapperFootprint ) ) {
+						double memsize = computeFootprintInMapper(node);
+						//gmrMapperFootprint += computeFootprintInMapper(node);
+						if ( gmrMapperFootprint>0 && !checkMemoryLimits(node, gmrMapperFootprint+memsize ) ) {
 							queueThisNode = true;
 						}
+						if(!queueThisNode)
+							gmrMapperFootprint += memsize;
 					}
 					if (!queueThisNode && !hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
 						if( LOG.isTraceEnabled() )
@@ -1755,20 +1760,18 @@ public class Dag<N extends Lop>
 			return; 
 		
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
+			LOG.trace("  Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
 
 		// Determine if <code>node</code> has inputs from the same job or multiple jobs
 	    int jobid = Integer.MIN_VALUE;
 		boolean inputs_in_same_job = true;
 		for(int idx=0; idx < node.getInputs().size(); idx++) {
 			int input_jobid = jobType(node.getInputs().get(idx), jobvec);
-			if (input_jobid != -1) {
-				if ( jobid == Integer.MIN_VALUE )
-					jobid = input_jobid;
-				else if ( jobid != input_jobid ) { 
-					inputs_in_same_job = false;
-					break;
-				}
+			if ( jobid == Integer.MIN_VALUE )
+				jobid = input_jobid;
+			else if ( jobid != input_jobid ) { 
+				inputs_in_same_job = false;
+				break;
 			}
 		}
 
@@ -1778,7 +1781,7 @@ public class Dag<N extends Lop>
 		for(int i=0; i < numInputs; i++) {
 			Lop input = node.getInputs().get(i);
 			//if ( input.getExecLocation() != ExecLocation.ControlProgram && jobType(input, jobvec) == -1 ) {
-			if ( input.getExecType() == ExecType.MR && jobType(input, jobvec) == -1 ) {
+			if ( input.getExecType() == ExecType.MR && !execNodes.contains(input)) { //jobType(input, jobvec) == -1 ) {
 				unassigned_inputs = true;
 				break;
 			}
@@ -1793,10 +1796,10 @@ public class Dag<N extends Lop>
 			}
 		}
 		if (LOG.isTraceEnabled()) {
-			LOG.trace("Property Flags:");
-			LOG.trace("  Inputs in same job: " + inputs_in_same_job);
-			LOG.trace("  Unassigned inputs: " + unassigned_inputs);
-			LOG.trace("  Child queued: " + child_queued);
+			LOG.trace("  Property Flags:");
+			LOG.trace("    Inputs in same job: " + inputs_in_same_job);
+			LOG.trace("    Unassigned inputs: " + unassigned_inputs);
+			LOG.trace("    Child queued: " + child_queued);
 		}
 
 		// Evaluate each lop in <code>execNodes</code> for removal.
@@ -1808,45 +1811,56 @@ public class Dag<N extends Lop>
 			N tmpNode = execNodes.elementAt(i);
 
 			if (LOG.isTraceEnabled()) {
-				LOG.trace("Checking for removal (" + tmpNode.getID()
-						+ ") " + tmpNode.toString());
+				LOG.trace("  Checking for removal (" + tmpNode.getID() + ") " + tmpNode.toString());
 			}
 			
-			// TODO: statiko -- check if this is too conservative?
-			if (child_queued) {
+			// if tmpNode is not a descendant of 'node', then there is no advantage in removing tmpNode for later iterations.
+			if(!isChild(tmpNode, node, IDMap))
+				continue;
+			
+			// handle group input lops
+			if(node.getInputs().contains(tmpNode) && tmpNode.isAligner()) {
+			    markedNodes.add(tmpNode);
+			    if( LOG.isTraceEnabled() )
+			    	LOG.trace("    Removing for next iteration (code 1): (" + tmpNode.getID() + ") " + tmpNode.toString());
+			}
+			
+			//if (child_queued) {
 				// if one of the children are queued, 
 				// remove some child nodes on other leg that may be needed later on. 
 				// For e.g. Group lop. 
 				
-				// TODO: do we need to focus this check only on those nodes that are NOT queued? 
-				//       example: numInputs=4 and input2,input4 are queued, then evaluate only input1 and input3.
-				if(node.getInputs().contains(tmpNode) && tmpNode.isAligner()) {
-				    markedNodes.add(tmpNode);
-				    if( LOG.isTraceEnabled() )
-				    	LOG.trace("Removing for next iteration: (" + tmpNode.getID() + ") " + tmpNode.toString());
+				if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
+					&& branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
+					
+					boolean queueit = false;
+					int code = -1;
+					switch(node.getExecLocation()) {
+					case Map:
+						if(branchCanBePiggyBackedMap(tmpNode, node, execNodes, queuedNodes))
+							queueit = true;
+						code=2;
+						break;
+						
+					case MapAndReduce:
+						if(branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)&& !tmpNode.definesMRJob())
+							queueit = true;
+						code=3;
+						break;
+					case Reduce:
+						if(branchCanBePiggyBackedReduce(tmpNode, node, execNodes, queuedNodes))
+							queueit = true;
+						code=4;
+						break;
+					}
+					
+					if(queueit) {
+						if( LOG.isTraceEnabled() )
+							LOG.trace("    Removing for next iteration (code " + code + "): (" + tmpNode.getID() + ") " + tmpNode.toString());
+			        		
+						markedNodes.add(tmpNode);
+					}
 				}
- 
-				else {
-					if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
-						&& isChild(tmpNode, node, IDMap)  && branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
-						if( //e.g. MMCJ
-					        (node.getExecLocation() == ExecLocation.MapAndReduce &&
-							branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes) && !tmpNode.definesMRJob() )
-							||
-							//e.g. Binary
-							(node.getExecLocation() == ExecLocation.Reduce && branchCanBePiggyBackedReduce(tmpNode, node, execNodes, finishedNodes))  
-						    ) 
-						{
-							if( LOG.isTraceEnabled() )
-								LOG.trace("Removing for next iteration: ("
-									    + tmpNode.getID() + ") " + tmpNode.toString());
-		        			
-							markedNodes.add(tmpNode);
-						}
-					 }
-				}
-			} 
-			else {
 				/*
 				 * "node" has no other queued children.
 				 * 
@@ -1864,48 +1878,25 @@ public class Dag<N extends Lop>
 				 */
 				if ((inputs_in_same_job || unassigned_inputs)
 						&& node.getExecLocation() == ExecLocation.MapAndReduce
-						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,
-								node)
-						&& isChild(tmpNode, node, IDMap) &&
-						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
+						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,node)
+						&& branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
 						&& tmpNode.definesMRJob() != true) {
 					if( LOG.isTraceEnabled() )
-						LOG.trace("Removing for next iteration:: ("
-								+ tmpNode.getID() + ") " + tmpNode.toString());
+						LOG.trace("    Removing for next iteration (code 5): ("+ tmpNode.getID() + ") " + tmpNode.toString());
 
 					markedNodes.add(tmpNode);
 				}
-
-				// as this node has inputs coming from different jobs, need to
-				// free up everything
-				// below and include the closest MapAndReduce lop if this is of
-				// type Reduce.
-				// if it is of type MapAndReduce, don't need to free any nodes
-
-				if (!inputs_in_same_job && !unassigned_inputs
-						&& isChild(tmpNode, node, IDMap) &&
-						node.getInputs().contains(tmpNode) && tmpNode.isAligner()
-					) 
-				{
-					if( LOG.isTraceEnabled() )
-						LOG.trace("Removing for next iteration ("
-								+ tmpNode.getID() + ") " + tmpNode.toString());
-					markedNodes.add(tmpNode);
-				}
-			}
 		} // for i
 
 		// we also need to delete all parent nodes of marked nodes
 		for (int i = 0; i < execNodes.size(); i++) {
-			LOG.trace("Checking for removal - ("
+			LOG.trace("  Checking for removal - ("
 						+ execNodes.elementAt(i).getID() + ") "
 						+ execNodes.elementAt(i).toString());
 
-			if (hasChildNode(execNodes.elementAt(i), markedNodes)) {
+			if (hasChildNode(execNodes.elementAt(i), markedNodes) && !markedNodes.contains(execNodes.elementAt(i))) {
 				markedNodes.add(execNodes.elementAt(i));
-				LOG.trace("Removing for next iteration - ("
-							+ execNodes.elementAt(i).getID() + ") "
-							+ execNodes.elementAt(i).toString());
+				LOG.trace("    Removing for next iteration (code 6) (" + execNodes.elementAt(i).getID() + ") " + execNodes.elementAt(i).toString());
 			}
 		}
 
@@ -2100,25 +2091,73 @@ public class Dag<N extends Lop>
 		}
 	}
 
-	private boolean branchCanBePiggyBackedReduce(N tmpNode, N node,
-      Vector<N> execNodes, Vector<N> finishedNodes) {
-	   for(int i=0; i < execNodes.size(); i++)
-     {
-       N n = execNodes.elementAt(i);
+	private boolean branchCanBePiggyBackedReduce(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes) {
+		if(node.getExecLocation() != ExecLocation.Reduce)
+			return false;
+	    
+		// if tmpNode is descendant of any queued child of node, then branch can not be piggybacked
+		for(Lop ni : node.getInputs()) {
+			if(queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
+				return false;
+		}
+		
+		for(int i=0; i < execNodes.size(); i++) {
+		   N n = execNodes.elementAt(i);
        
-       if(n.equals(node))
-         continue;
+		   if(n.equals(node))
+			   continue;
        
-       if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-         return false;
+		   if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+			   return false;
        
-       if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) && !node.getInputs().contains(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-         return false;
-         
-      }
-     return true;
-  }
+		   // check if n is on the branch tmpNode->*->node
+		   if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap)) {
+			   if(!node.getInputs().contains(tmpNode) // redundant
+				   && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+				   return false;
+		   }
+		   /*if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) 
+				   && !node.getInputs().contains(tmpNode) 
+				   && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+			   return false;*/
+	   }
+	   return true;
+	}
 
+	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes) {
+		if(node.getExecLocation() != ExecLocation.Map)
+			return false;
+		
+		// if tmpNode is descendant of any queued child of node, then branch can not be piggybacked
+		for(Lop ni : node.getInputs()) {
+			if(queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
+				return false;
+		}
+		
+		// since node.location=Map: only Map & MapOrReduce lops must be considered
+		if( tmpNode.definesMRJob() || (tmpNode.getExecLocation() != ExecLocation.Map && tmpNode.getExecLocation() != ExecLocation.MapOrReduce))
+			return false;
+
+		// if there exist a node "dcInput" that is 
+		//   -- a) parent of tmpNode, and b) feeds into "node" via distributed cache
+		//   then, tmpNode should not be removed.
+		// "dcInput" must be executed prior to "node", and removal of tmpNode does not make that happen.
+		if(node.usesDistributedCache() ) {
+			for(int dcInputIndex : node.distributedCacheInputIndex()) { 
+				N dcInput = (N) node.getInputs().get(dcInputIndex-1);
+				if(isChild(tmpNode, dcInput, IDMap))
+					return false;
+			}
+		}
+		
+		// node.getInputs().contains(tmpNode) && 
+		if( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0)
+			return true;
+		else
+			return false;
+			
+	}
+	  
 	/**
 	 * Function that checks if <code>tmpNode</code> can be piggybacked with MapAndReduce 
 	 * lop <code>node</code>. 
@@ -2134,41 +2173,40 @@ public class Dag<N extends Lop>
 	 * @param finishedNodes
 	 * @return
 	 */
-  private boolean branchCanBePiggyBackedMapAndReduce(N tmpNode, N node,
-      Vector<N> execNodes, Vector<N> finishedNodes) {
-	   
-	  if ( node.getExecLocation() != ExecLocation.MapAndReduce ) 
-		  return false;
-	  JobType jt = JobType.findJobTypeFromLop(node);
-	  
-	  for(int i=0; i < execNodes.size(); i++)
-	    {
-	      N n = execNodes.elementAt(i);
-	      
-	      if(n.equals(node))
-	        continue;
-	      
-	      boolean eval = false;
-	      if ( n.equals(tmpNode) || (isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap)) )
-	    	  eval = true;
-	      
-	      if ( eval ) {
-	    	  ExecLocation el = n.getExecLocation();
-	    	  if ( el != ExecLocation.Map && el != ExecLocation.MapOrReduce )
-	    		  return false;
-	    	  else if ( !isCompatible(n, jt) )
-	    		  return false;
-	      }
-	      
-	      /*if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-	        return false;
-	      
-	      if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-	        return false;*/
-	        
-	     }
-	    return true;
-  }
+	private boolean branchCanBePiggyBackedMapAndReduce(N tmpNode, N node,
+			Vector<N> execNodes, Vector<N> finishedNodes) {
+
+		if (node.getExecLocation() != ExecLocation.MapAndReduce)
+			return false;
+		JobType jt = JobType.findJobTypeFromLop(node);
+
+		for (int i = 0; i < execNodes.size(); i++) {
+			N n = execNodes.elementAt(i);
+
+			if (n.equals(node))
+				continue;
+
+			// Evaluate only nodes on the branch between tmpNode->..->node
+			if (n.equals(tmpNode) || (isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap))) {
+				ExecLocation el = n.getExecLocation();
+				if (el != ExecLocation.Map && el != ExecLocation.MapOrReduce)
+					return false;
+				else if (!isCompatible(n, jt))
+					return false;
+			}
+
+			/*
+			 * if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map
+			 * && n.getExecLocation() != ExecLocation.MapOrReduce) return false;
+			 * 
+			 * if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) &&
+			 * n.getExecLocation() != ExecLocation.Map && n.getExecLocation() !=
+			 * ExecLocation.MapOrReduce) return false;
+			 */
+
+		}
+		return true;
+	}
 
   private boolean branchHasNoOtherUnExecutedParents(N tmpNode, N node,
       Vector<N> execNodes, Vector <N> finishedNodes) {
@@ -2304,13 +2342,13 @@ public class Dag<N extends Lop>
 		
 		boolean[] nodeMarked = node.get_reachable();
 		boolean[] tmpMarked  = tmpNode.get_reachable();
-		//long nodeid = IDMap.get(node.getID());
-		//long tmpid = IDMap.get(tmpNode.getID());
+		long nodeid = IDMap.get(node.getID());
+		long tmpid = IDMap.get(tmpNode.getID());
 		
 		for ( int i=0; i < queuedNodes.size(); i++ ) {
 			int id = IDMap.get(queuedNodes.get(i).getID());
-			//if ((id != nodeid && nodeMarked[id]) && (id != tmpid && tmpMarked[id]) )
-			if (nodeMarked[id] && tmpMarked[id])
+			if ((id != nodeid && nodeMarked[id]) && (id != tmpid && tmpMarked[id]) )
+			//if (nodeMarked[id] && tmpMarked[id])
 				return true;
 		}
 		
@@ -4296,8 +4334,22 @@ public class Dag<N extends Lop>
 			for (int i = 0; i < v.size(); i++) {
 				// System.out.print(sortedNodes.get(i).getID() + "("
 				// + levelmap.get(sortedNodes.get(i).getID()) + "), ");
-				LOG.trace(v.get(i).getID() + "(" + v.get(i).getLevel()
-						+ "), ");
+				StringBuffer sb = new StringBuffer();
+				sb.append(v.get(i).getID());
+				sb.append("(");
+				sb.append(v.get(i).getLevel());
+				sb.append(") ");
+				sb.append(v.get(i).getType());
+				sb.append("(");
+				for(Lop vin : v.get(i).getInputs()) {
+					sb.append(vin.getID());
+					sb.append(",");
+				}
+				sb.append("), ");
+				
+				LOG.trace(sb.toString());
+				//LOG.trace(v.get(i).getID() + "(" + v.get(i).getLevel()
+				//		+ ")  " + v.get(i).getType()  + ", ");
 				//System.out.print(v.get(i).getID() + "(" + v.get(i).getLevel()+ "), ");
 			}
 			

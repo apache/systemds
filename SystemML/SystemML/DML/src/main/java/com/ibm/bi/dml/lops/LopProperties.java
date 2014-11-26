@@ -97,6 +97,15 @@ public class LopProperties
 		compatibleJobs = compatibleJobs ^ jt.getBase();
 	}
 	
+	public void removeNonPiggybackableJobs() {
+		// Remove compatibility with those jobs which do not allow any "other" instructions 
+		for ( JobType jt : JobType.values()) {
+			if(jt.allowsNoOtherInstructions()) {
+				compatibleJobs = compatibleJobs ^ jt.getBase();
+			}
+		}
+	}
+	
 	public void setCompatibleJobs(int cj) {
 		compatibleJobs = cj;
 	}

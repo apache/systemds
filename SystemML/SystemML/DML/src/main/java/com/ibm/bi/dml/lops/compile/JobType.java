@@ -41,22 +41,22 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 public enum JobType 
 {
 	/* Add new job types to the following list */
-	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction)
-	INVALID			(-1, "INVALID", false, false, false), 
-	ANY				(0, "ANY", false, false, false), 
-	GMR				(1, "GMR", false, false, false), 
-	DATAGEN			(2, "DATAGEN", false, true, false), 
-	REBLOCK			(3, "REBLOCK", false, false, false), 
-	MMCJ			(4, "MMCJ", true, false, true), 
-	MMRJ			(5, "MMRJ", false, false, false), 
-	COMBINE			(6, "COMBINE", true, false, false), 
-	SORT			(7, "SORT", true, false, true), 
-	CM_COV			(8, "CM_COV", false, false, false), 
-	GROUPED_AGG		(9, "GROUPED_AGG", false, false, false), 
-	PARTITION		(10, "PARTITION", false, false, false),
-	DATA_PARTITION	(11, "DATAPARTITION", false, false, false),
-	CSV_REBLOCK		(12, "CSV_REBLOCK", false, false, false),
-	CSV_WRITE		(13, "CSV_WRITE", false, false, false);
+	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction, allowsNoOtherInstructions)
+	INVALID			(-1, "INVALID", false, false, false, false), 
+	ANY				(0, "ANY", false, false, false, false), 
+	GMR				(1, "GMR", false, false, false, false), 
+	DATAGEN			(2, "DATAGEN", false, true, false, false), 
+	REBLOCK			(3, "REBLOCK", false, false, false, false), 
+	MMCJ			(4, "MMCJ", true, false, true, false), 
+	MMRJ			(5, "MMRJ", false, false, false, false), 
+	COMBINE			(6, "COMBINE", true, false, false, true), 
+	SORT			(7, "SORT", true, false, true, true),  			// allows only "InstructionsBeforeSort" and nothing else. 
+	CM_COV			(8, "CM_COV", false, false, false, false),  	// allows only instructions in the mapper 
+	GROUPED_AGG		(9, "GROUPED_AGG", false, false, false, false), 
+	PARTITION		(10, "PARTITION", false, false, false, true),	// CV partition: not used currently
+	DATA_PARTITION	(11, "DATAPARTITION", false, false, false, true),
+	CSV_REBLOCK		(12, "CSV_REBLOCK", false, false, false, false),
+	CSV_WRITE		(13, "CSV_WRITE", false, false, false, true);
 
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
@@ -72,12 +72,19 @@ public enum JobType
 	
 	private final boolean allowsSingleShuffleInstruction;
 
-	JobType(int id, String name, boolean aio, boolean aei, boolean assi) {
+	/**
+	 * Indicates whether a job can piggyback "other" operations. 
+	 * For example, COMBINE job can only piggyback multiple combine operators but can not perform any other operations.
+	 */
+	private final boolean allowsNoOtherInstructions;
+	
+	JobType(int id, String name, boolean aio, boolean aei, boolean assi, boolean anoi) {
 		this.id = id;
 		this.name = name;
 		this.producesIntermediateOutput = aio;
 		this.emptyInputsAllowed = aei;
 		this.allowsSingleShuffleInstruction = assi;
+		this.allowsNoOtherInstructions = anoi;
 	}
 
 	public int getId() {
@@ -98,6 +105,10 @@ public enum JobType
 
 	public boolean allowsSingleShuffleInstruction() {
 		return allowsSingleShuffleInstruction;
+	}
+
+	public boolean allowsNoOtherInstructions() {
+		return allowsNoOtherInstructions;
 	}
 
 	public Lop.Type getShuffleLopType() throws DMLRuntimeException {

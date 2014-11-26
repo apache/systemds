@@ -76,10 +76,8 @@ public class Unary extends Lop
 			 * jobs MMCJ: only in mapper.
 			 */
 			lps.addCompatibility(JobType.ANY);
-			lps.removeCompatibility(JobType.PARTITION);
-			lps.removeCompatibility(JobType.SORT);
-			lps.removeCompatibility(JobType.CM_COV);
-			lps.removeCompatibility(JobType.COMBINE);
+			lps.removeNonPiggybackableJobs();
+			lps.removeCompatibility(JobType.CM_COV); // CM_COV allows only reducer instructions but this is MapOrReduce. TODO: piggybacking should be updated to take this extra constraint.
 			this.lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
@@ -122,10 +120,8 @@ public class Unary extends Lop
 			 * in mapper. GroupedAgg: only in reducer.
 			 */
 			lps.addCompatibility(JobType.ANY);
-			lps.removeCompatibility(JobType.PARTITION);
-			lps.removeCompatibility(JobType.SORT);
-			lps.removeCompatibility(JobType.CM_COV);
-			lps.removeCompatibility(JobType.COMBINE);
+			lps.removeNonPiggybackableJobs();
+			lps.removeCompatibility(JobType.CM_COV); // CM_COV allows only reducer instructions but this is MapOrReduce. TODO: piggybacking should be updated to take this extra constraint.
 			this.lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {

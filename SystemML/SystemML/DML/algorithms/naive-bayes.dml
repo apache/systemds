@@ -32,7 +32,7 @@ if(min(C) < 1)
 numClasses = max(C)
 if(numClasses == 1)
 	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
-mod1 = C - floor(C/1)
+mod1 = C %% 1
 mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
 if(mod1_should_be_nrow != numRows)
 	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")

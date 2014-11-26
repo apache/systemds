@@ -189,24 +189,56 @@ public abstract class Hop
 	 * 
 	 * @return
 	 */
-	protected double getOutputSize() {
+	protected double getOutputSize() 
+	{
 		return _outputMemEstimate;
 	}
 	
-	protected double getInputOutputSize() {
-		double sum = this._outputMemEstimate;
-		sum += this._processingMemEstimate;
-		for(Hop h : _input ) {
-			sum += h._outputMemEstimate;
+	/**
+	 * 
+	 * @return
+	 */
+	protected double getInputSize() 
+	{
+		double sum = 0;		
+		int len = _input.size();
+		
+		for( int i=0; i<len; i++ ) //for all inputs
+		{
+			Hop hi = _input.get(i);
+			double hmout = hi.getOutputMemEstimate();
+			
+			if( hmout > 1024*1024 ) {//for relevant sizes
+				//check if already included in estimate (if an input is used
+				//multiple times it is still only required once in memory)
+				//(not that this check benefits from common subexpression elimination)
+				boolean flag = false;
+				for( int j=0; j<i; j++ )
+					flag |= (hi == _input.get(j));
+				hmout = flag ? 0 : hmout;
+			}
+			
+			sum += hmout;
 		}
+		
+		//for(Hop h : _input ) {
+		//	sum += h._outputMemEstimate;
+		//}
+		
 		return sum;
 	}
 	
-	protected double getInputSize() {
+	/**
+	 * 
+	 * @return
+	 */
+	protected double getInputOutputSize() 
+	{
 		double sum = 0;
-		for(Hop h : _input ) {
-			sum += h._outputMemEstimate;
-		}
+		sum += _outputMemEstimate;
+		sum += _processingMemEstimate;
+		sum += getInputSize();
+		
 		return sum;
 	}
 	

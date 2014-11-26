@@ -211,7 +211,7 @@ if (num_successful_runs > 0) {
     }
     print ("DONE.");
 } else {
-    print ("No output is produced.  Try increasing the number of iterations and/or runs.");
+    stop ("No output is produced.  Try increasing the number of iterations and/or runs.");
 }
 
 

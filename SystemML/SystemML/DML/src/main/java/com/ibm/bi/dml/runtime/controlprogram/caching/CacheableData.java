@@ -19,6 +19,7 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -426,20 +427,27 @@ public abstract class CacheableData extends Data
 		String dir = null;
 		DMLConfig conf = ConfigurationManager.getConfig();
 		
-		switch (CacheableData.cacheEvictionStorageType)
+		try
 		{
-			case LOCAL:
-			    dir = LocalFileUtils.getWorkingDir( LocalFileUtils.CATEGORY_CACHE );
-				LocalFileUtils.createLocalFileIfNotExist(dir);
-				cacheEvictionLocalFilePath = dir;
-				
-				break;
-			case HDFS:
-				//get directory
-				dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
-				      + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + uuid + Lop.FILE_SEPARATOR;
-				cacheEvictionHDFSFilePath = dir;
-				break;
+			switch (CacheableData.cacheEvictionStorageType)
+			{
+				case LOCAL:
+				    dir = LocalFileUtils.getWorkingDir( LocalFileUtils.CATEGORY_CACHE );
+					LocalFileUtils.createLocalFileIfNotExist(dir);
+					cacheEvictionLocalFilePath = dir;
+					
+					break;
+				case HDFS:
+					//get directory
+					dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
+					      + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + uuid + Lop.FILE_SEPARATOR;
+					cacheEvictionHDFSFilePath = dir;
+					break;
+			}
+		}
+		catch(DMLRuntimeException e)
+		{
+			throw new IOException(e);
 		}
 	
 		//init write-ahead buffer

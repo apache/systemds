@@ -20,6 +20,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -235,14 +236,18 @@ public class LocalFileUtils
 	/**
 	 * 
 	 * @param dir
+	 * @return
 	 */
-	public static void createLocalFileIfNotExist(String dir) 
+	public static boolean createLocalFileIfNotExist(String dir) 
 	{
+		boolean ret = true;
+		
 		File fdir = new File(dir);
-		if( !fdir.exists() )
-		{
-			fdir.mkdirs();
+		if( !fdir.exists() ) {
+			ret = fdir.mkdirs();
 		}
+		
+		return ret;
 	}
 	
 	/**
@@ -288,15 +293,19 @@ public class LocalFileUtils
 	 * 
 	 * @param dir
 	 * @param permission
+	 * @return
 	 */
-	public static void createLocalFileIfNotExist( String dir, String permission )
+	public static boolean createLocalFileIfNotExist( String dir, String permission )
 	{
+		boolean ret = true;
+		
 		File fdir = new File(dir);
-		if( !fdir.exists() )
-		{
-			fdir.mkdirs();
+		if( !fdir.exists() ) {
+			ret = fdir.mkdirs();
 			setLocalFilePermissions(fdir, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		}
+		
+		return ret;
 	}
 	
 	/**
@@ -338,8 +347,10 @@ public class LocalFileUtils
 	/**
 	 * 
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
 	public static String createWorkingDirectory() 
+		throws DMLRuntimeException 
 	{
 		return createWorkingDirectoryWithUUID( DMLScript.getUUID() );
 	}
@@ -347,8 +358,10 @@ public class LocalFileUtils
 	/**
 	 * 
 	 * @return
+	 * @throws IOException 
 	 */
-	public static String createWorkingDirectoryWithUUID( String uuid ) 
+	public static String createWorkingDirectoryWithUUID( String uuid )
+		throws DMLRuntimeException 
 	{
 		//create local tmp dir if not existing
 		String dirRoot = null;
@@ -357,8 +370,11 @@ public class LocalFileUtils
 			dirRoot = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
 		else 
 			dirRoot = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR);		
+		
 		//create shared staging dir if not existing
-		LocalFileUtils.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		if( !LocalFileUtils.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION) ){
+			throw new DMLRuntimeException("Failed to create non-existing local working directory: "+dirRoot);
+		}
 		
 		//create process specific sub tmp dir
 		StringBuilder sb = new StringBuilder();
@@ -370,7 +386,9 @@ public class LocalFileUtils
 		_workingDir = sb.toString();
 		
 		//create process-specific staging dir if not existing
-		LocalFileUtils.createLocalFileIfNotExist(_workingDir);
+		if( !LocalFileUtils.createLocalFileIfNotExist(_workingDir) ){
+			throw new DMLRuntimeException("Failed to create local working directory: "+_workingDir);
+		}
 		
 		return _workingDir;
 	}
@@ -454,8 +472,10 @@ public class LocalFileUtils
 	/**
 	 * 
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static String getWorkingDir()
+	public static String getWorkingDir() 
+		throws DMLRuntimeException
 	{
 		if( _workingDir == null )
 			createWorkingDirectory();
@@ -466,8 +486,10 @@ public class LocalFileUtils
 	 * 
 	 * @param category
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static String getWorkingDir( String category )
+	public static String getWorkingDir( String category ) 
+		throws DMLRuntimeException
 	{
 		if( _workingDir == null )
 			createWorkingDirectory();
@@ -485,8 +507,10 @@ public class LocalFileUtils
 	 * 
 	 * @param category
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static String getUniqueWorkingDir( String category )
+	public static String getUniqueWorkingDir( String category ) 
+		throws DMLRuntimeException
 	{
 		if( _workingDir == null )
 			createWorkingDirectory();

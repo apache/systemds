@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -86,7 +85,7 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 				if( RuntimePiggybacking.isEmptyJobPool() )
 					continue;
 				
-				double util = InfrastructureAnalyzer.getClusterUtilization(true);
+				double util = RuntimePiggybackingUtils.getCurrentClusterUtilization();
 				double utilThreshold = 1-Math.pow(_utilDecay, Math.ceil(((double)currentTime-lastTime)/60000));
 				
 				//continue to collect jobs if cluster util too high (decay to prevent starvation)
@@ -168,4 +167,5 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 		}
 		
 	}
+	
 }

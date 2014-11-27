@@ -13,7 +13,6 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 
@@ -44,7 +43,7 @@ public class InfrastructureAnalyzer
 	public static long _remoteMRSortMem = -1;
 	public static boolean _localJT      = false;
 	public static long _blocksize       = -1;
-	
+	public static boolean _yarnEnabled  = false;
 	
 	//static initialization, called for each JVM (on each node)
 	static 
@@ -304,6 +303,20 @@ public class InfrastructureAnalyzer
 		return _blocksize;		
 	}
 	
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isYarnEnabled()
+	{
+		if( _remoteJVMMaxMemMap == -1 )
+			analyzeHadoopCluster();
+		
+		return _yarnEnabled;
+	}
+	
+	
 	/**
 	 * 
 	 * @param javaOpts
@@ -400,7 +413,7 @@ public class InfrastructureAnalyzer
 		
 		double ret = 0.0;
 		if( stat != null ) //if in cluster mode
-		{
+		{	
 			if( mapOnly )
 			{
 				int capacity = stat.getMaxMapTasks();
@@ -417,7 +430,6 @@ public class InfrastructureAnalyzer
 		
 		return ret;
 	}
-	
 	
 	///////
 	//internal methods for analysis
@@ -469,6 +481,10 @@ public class InfrastructureAnalyzer
 				//HDFS blocksize
 				String blocksize = job.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
 				_blocksize = Long.parseLong(blocksize);
+				
+				//is yarn enabled
+				String framework = job.get("mapreduce.framework.name");
+				_yarnEnabled = (framework!=null && framework.equals("yarn"));
 			}		
 		} 
 		catch (IOException e) 

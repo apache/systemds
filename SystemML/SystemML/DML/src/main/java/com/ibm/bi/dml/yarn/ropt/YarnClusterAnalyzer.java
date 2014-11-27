@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.yarn.ropt;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,6 +70,9 @@ public class YarnClusterAnalyzer
 	public static int clusterTotalCores = -1;
 	public static long minimalPhyAllocate = -1;
 	public static long maximumPhyAllocate = -1;
+	
+	//client for resource utilization updates
+	private static YarnClient _client = null;
 	
 	//static initialization, called for each JVM (on each node)
 	static 
@@ -590,6 +594,48 @@ public class YarnClusterAnalyzer
 		
 		return cc;
 	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws YarnException
+	 * @throws IOException
+	 */
+	public static double getClusterUtilization() 
+		throws IOException
+	{
+		double util = 0;
+		
+		try
+		{
+			if( _client == null )
+				_client = createYarnClient();
+			List<NodeReport> nodesReport = _client.getNodeReports();
+			
+			double maxMem = 0;
+			double currMem = 0;
+			long maxCores = 0;
+			long currCores = 0;
+			for (NodeReport node : nodesReport) {
+				Resource max = node.getCapability();
+				Resource used = node.getUsed();
+				maxMem += max.getMemory();
+				currMem += used.getMemory();
+				maxCores += max.getVirtualCores();
+				currCores += used.getVirtualCores();
+			}
+		
+			util = Math.max( 
+					  Math.min(1, currMem/maxMem),  //memory util
+					  Math.min(1, (double)currCores/maxCores) ); //vcore util 	
+		}
+		catch(Exception ex )
+		{
+			throw new IOException(ex);
+		}
+		
+		return util;
+	}
 
 	/**
 	 * Analyzes properties of Yarn cluster and Hadoop configurations.
@@ -695,6 +741,19 @@ public class YarnClusterAnalyzer
 			resource = node.getCapability();
 			LOG.info(node.getNodeId() + " updated with " + resource.getMemory() + " memory and " + resource.getVirtualCores() + " cores");
 		}*/
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private static YarnClient createYarnClient()
+	{
+		YarnConfiguration conf = new YarnConfiguration();
+		YarnClient yarnClient = YarnClient.createYarnClient();
+		yarnClient.init(conf);
+		yarnClient.start();
+		return yarnClient;
 	}
 }
 

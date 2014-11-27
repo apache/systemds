@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
@@ -86,7 +85,7 @@ public class PiggybackingWorkerUtilTimeParallel extends PiggybackingWorker
 				Thread.sleep(_minTime); //wait at least minTime
 				if( RuntimePiggybacking.isEmptyJobPool() )
 					continue;
-				double util = InfrastructureAnalyzer.getClusterUtilization(false);
+				double util = RuntimePiggybackingUtils.getCurrentClusterUtilization();
 				if(   util > _utilThreshold           //cluster utilization condition
 				   && currentTime-lastTime<_maxTime ) //timeout condition 
 				{

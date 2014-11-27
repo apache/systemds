@@ -44,14 +44,10 @@ K2 = read($types2); # kind for attributes in S2
 
 s1size = ncol(S1);
 s2size = ncol(S2);
-
 numPairs = s1size * s2size;
-#print(s1size + ", " + s2size + ", " + numPairs);
 
 #test: 1 is Pearson'R, 2 is F-test, 3 is chi-squared, 4 is Spearman'sRho
 # R, (chisq, df, pval, cramersv,) spearman, eta, anovaf, feature_col_index1, feature_col_index2, test
-numstats = 11;
-basestats = matrix(0, rows=numstats, cols=numPairs);
 
 num_scale_scale_tests = 0
 num_nominal_nominal_tests = 0
@@ -94,34 +90,17 @@ for( i in 1:s1size, check=0) {
     }
 }
 
+size_scale_scale_tests     = max(num_scale_scale_tests, 1);
+size_nominal_nominal_tests = max(num_nominal_nominal_tests, 1)
+size_ordinal_ordinal_tests = max(num_ordinal_ordinal_tests, 1);
+size_nominal_scale_tests   = max(num_nominal_scale_tests, 1);
 
-if(num_scale_scale_tests == 0){
-  size_scale_scale_tests = 1
-}else{
-  size_scale_scale_tests = num_scale_scale_tests
-}
-basestats_scale_scale = matrix(0, rows=6, cols=size_scale_scale_tests)
-
-if(num_nominal_nominal_tests == 0){
-  size_nominal_nominal_tests = 1
-}else{
-  size_nominal_nominal_tests = num_nominal_nominal_tests
-}
+basestats                 = matrix(0, rows=11, cols=numPairs);
+basestats_scale_scale     = matrix(0, rows=6, cols=size_scale_scale_tests)
 basestats_nominal_nominal = matrix(0, rows=6, cols=size_nominal_nominal_tests)
-
-if(num_ordinal_ordinal_tests == 0){
-  size_ordinal_ordinal_tests = 1
-}else{
-  size_ordinal_ordinal_tests = num_ordinal_ordinal_tests
-}
 basestats_ordinal_ordinal = matrix(0, rows=3, cols=size_ordinal_ordinal_tests)
+basestats_nominal_scale   = matrix(0, rows=11, cols=size_nominal_scale_tests)
 
-if(num_nominal_scale_tests == 0){
-  size_nominal_scale_tests = 1
-}else{
-  size_nominal_scale_tests = num_nominal_scale_tests
-}
-basestats_nominal_scale = matrix(0, rows=11, cols=size_nominal_scale_tests)
 
 # Compute max domain size among all categorical attributes
 # and check if these cols have been recoded
@@ -345,13 +324,13 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain)
 
     Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
 
-	bw_ss = sum( (CFreqs*(CMeans-my)^2) );
-	bw_df = R-1;
-	bw_mean_square = bw_ss/bw_df;
+    bw_ss = sum( (CFreqs*(CMeans-my)^2) );
+    bw_df = R-1;
+    bw_mean_square = bw_ss/bw_df;
 	
-	within_ss = sum( (CFreqs-1)*CVars );
-	within_df = W-R;
-	within_mean_square = within_ss/within_df;
+    within_ss = sum( (CFreqs-1)*CVars );
+    within_df = W-R;
+    within_mean_square = within_ss/within_df;
 	
     AnovaF = bw_mean_square/within_mean_square;
     
@@ -394,11 +373,7 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B, Double maxDomain) return
     W = sum(F); # total weight, or total #cases
     varX = moment(C,R,2)*(W/(W-1.0));
     varY = moment(D,columnS,2)*(W/(W-1.0));
-
-    covXY = 0.0;
-    for(i in 1:catA) {
-        covXY = covXY + sum((F[i,]/(W-1)) * (castAsScalar(C[i,1])-meanX) * (t(D[,1])-meanY));
-    }
+    covXY = sum( t(F/(W-1) * (C-meanX)) * (D-meanY) );
 
     sp = covXY/(sqrt(varX)*sqrt(varY));
 }

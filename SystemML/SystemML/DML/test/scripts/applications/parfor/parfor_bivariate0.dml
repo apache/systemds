@@ -244,11 +244,7 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
     W = sum(F); # total weight, or total #cases
     varX = moment(C,R,2)*(W/(W-1.0));
     varY = moment(D,columnS,2)*(W/(W-1.0));
-
-    covXY = 0.0;
-    for(i in 1:catA) {
-        covXY = covXY + sum((F[i,]/(W-1)) * (castAsScalar(C[i,1])-meanX) * (t(D[,1])-meanY));
-    }
+    covXY = sum( t(F/(W-1) * (C-meanX)) * (D-meanY) );
 
     sp = covXY/(sqrt(varX)*sqrt(varY));
 }

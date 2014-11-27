@@ -55,11 +55,6 @@ num_features  = ncol (X);
 sumXsq = sum (X ^ 2);
 # Remark - A useful rewrite: sum (A %*% B) = sum (t(colSums(A)) * rowSums(B))
 
-one_per_record   = matrix (1, rows = num_records,   cols = 1);
-one_per_feature  = matrix (1, rows = num_features,  cols = 1);
-one_per_centroid = matrix (1, rows = num_centroids, cols = 1);
-one_per_run      = matrix (1, rows = num_runs,      cols = 1);
-
 # STEP 1: INITIALIZE CENTROIDS FOR ALL RUNS FROM DATA SAMPLES:
 
 print ("Taking data samples for initialization...");
@@ -70,7 +65,6 @@ print ("Taking data samples for initialization...");
 is_row_in_samples = rowSums (sample_maps);
 X_samples = sample_maps %*% X;
 X_samples_sq_norms = rowSums (X_samples ^ 2);
-one_per_sample_block_rec = matrix (1, rows = sample_block_size, cols = 1);
 
 print ("Initializing the centroids for all runs...");
 All_Centroids = matrix (0, rows = (num_runs * num_centroids), cols = num_features);
@@ -90,9 +84,9 @@ for (i in 1 : num_centroids)
     
     # Select the i-th centroid in each sample as a random sample row id with
     # probability ~ min_distances:
-    random_row = Rand (rows = 1, cols = num_runs, min = 0.0, max = 1.0);
-    threshold_matrix = one_per_sample_block_rec %*% (random_row * cdf_min_distances [sample_block_size, ]);
-    centroid_ids = t(colSums (ppred (cdf_min_distances, threshold_matrix, "<")) + 1);
+    random_row = Rand (rows = 1, cols = num_runs, min = 0.0, max = 1.0);  
+    threshold_matrix = random_row * cdf_min_distances [sample_block_size, ];
+    centroid_ids = rowSums (ppred (t(cdf_min_distances), t(threshold_matrix), "<")) + 1;
     
     # Place the selected centroids together, one per run, into a matrix:
     centroid_placer = matrix (0, rows = num_runs, cols = (sample_block_size * num_runs));
@@ -137,7 +131,7 @@ parfor (run_index in 1 : num_runs, check = 0)
     {
         # Compute Euclidean squared distances from records (X rows) to centroids (C rows)
         # without the C-independent term, then take the minimum for each record
-        D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
+        D = t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
         minD = rowMins (D);
         # Compute the current centroid-based within-cluster sum of squares (WCSS)
         wcss_old = wcss;
@@ -203,8 +197,8 @@ if (num_successful_runs > 0) {
     write (C, fileC, format=fmtCY);
     if (is_write_Y == 1) {
         print ("Writing out the best-WCSS cluster labels...");
-        D = one_per_record %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
-        P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
+        D =  t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
+        P = ppred (D, rowMins (D), "<=");
         aggr_P = cumsum (t(P));
         Y = rowSums (ppred (aggr_P, 0, "==")) + 1
         write (Y, fileY, format=fmtCY);

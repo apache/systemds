@@ -114,9 +114,10 @@ public class OptimizerRuleBased extends Optimizer
 	
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
-	public static final double PROB_SIZE_THRESHOLD_MB = 8*1024*1024; //wrt overall memory consumption (min)
+	public static final double PROB_SIZE_THRESHOLD_MB = 128*1024*1024; //wrt overall memory consumption (min)
 	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;     
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 5;    
+	public static final boolean ALLOW_REMOTE_NESTED_PARALLELISM = false;
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
@@ -868,7 +869,7 @@ public class OptimizerRuleBased extends Optimizer
 	protected boolean isLargeProblem(OptNode pn, double M0)
 	{
 		return ((_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE )
-				&& M0 > PROB_SIZE_THRESHOLD_MB ); //original operations at least larger than 8MB
+				&& M0 > PROB_SIZE_THRESHOLD_MB ); //original operations at least larger than 128MB
 	}
 	
 	/**
@@ -1304,13 +1305,15 @@ public class OptimizerRuleBased extends Optimizer
 				kMax = _rkmax / tmpK; //per node (CP only inside)
 			}
 			
-			//ensure remote memory constraint
-			kMax = Math.min( kMax, (int)Math.floor( _rm / M ) ); //guaranteed >= 1 (see exec strategy)
-			if( kMax < 1 )
-				kMax = 1;
-				
-			//distribute remaining parallelism
-			rAssignRemainingParallelism( n, kMax ); 
+			if( ALLOW_REMOTE_NESTED_PARALLELISM ) {
+				//ensure remote memory constraint
+				kMax = Math.min( kMax, (int)Math.floor( _rm / M ) ); //guaranteed >= 1 (see exec strategy)
+				if( kMax < 1 )
+					kMax = 1;
+					
+				//distribute remaining parallelism
+				rAssignRemainingParallelism( n, kMax ); 
+			}
 		}		
 		
 		_numEvaluatedPlans++;

@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
 # generates random data to test bi- and multinomial logistic regression
 
 # $N  = number of training samples
@@ -82,7 +91,7 @@ for (i in 1:(numCategories - 1)) {
 ones = matrix (1.0, rows = 1, cols = numCategories - 1);
 Prob = exp (LT);
 Prob = Prob / ((1.0 + rowSums (Prob)) %*% ones);
-Prob = cumsum (t(Prob));
+Prob = t(cumsum (t(Prob)));
 
 r = Rand (rows = numSamples, cols = 1, min = 0, max = 1, pdf = "uniform", seed = 0);
 R = r %*% ones;

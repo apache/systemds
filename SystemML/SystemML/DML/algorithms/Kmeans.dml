@@ -199,7 +199,7 @@ if (num_successful_runs > 0) {
         print ("Writing out the best-WCSS cluster labels...");
         D =  t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
         P = ppred (D, rowMins (D), "<=");
-        aggr_P = cumsum (t(P));
+        aggr_P = t(cumsum (t(P)));
         Y = rowSums (ppred (aggr_P, 0, "==")) + 1
         write (Y, fileY, format=fmtCY);
     }

@@ -68,8 +68,10 @@ public class Transform extends Lop
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
+			lps.addCompatibility(JobType.CSV_REBLOCK);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
+			
 			if( op == OperationTypes.Reshape )
 				//reshape should be executed in map because we have potentially large intermediate data and want to exploit the combiner.
 				this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );

@@ -95,9 +95,8 @@ print ("BEGIN K-MEANS SCORING SCRIPT");
 if (fileX != " ") {
     print ("Reading X...");
     X = read (fileX);
-    ones_X = matrix (1, rows = nrow (X), cols = 1);
     total_mean = colSums (X) / nrow (X);
-    total_ss = sum ((X - ones_X %*% total_mean) ^ 2);
+    total_ss = sum ((t(X) - t(total_mean)) ^ 2);
 }
 
 if ((fileC != " ") & (fileX == " ")) {
@@ -111,7 +110,7 @@ if (fileC != " ") {
     num_clusters = nrow (C);
     ones_C = matrix (1, rows = num_clusters, cols = 1);
     print ("Computing the predicted Y...");
-    D = ones_X %*% t(rowSums (C ^ 2)) - 2 * (X %*% t(C));
+    D =  t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
     prY = rowIndexMin (D);
     if (filePrY != " ") {
         print ("Writing the predicted Y...");
@@ -320,19 +319,8 @@ return (Matrix[double] row_ids, Matrix[double] col_ids, Matrix[double] margins,
     one_per_column = matrix (1, rows = 1, cols = ncol (pos_counts));
     max_counts_ppred = max_counts %*% one_per_column;
     is_max_count = ppred (pos_counts, max_counts_ppred, "==");
-    aggr_is_max_count = sumup_cols (is_max_count);
+    aggr_is_max_count = t(cumsum (t(is_max_count)));
     col_ids = rowSums (ppred (aggr_is_max_count, 0, "==")) + 1;
     rounded_percentages = round (1000000.0 * max_counts / pos_margins) / 10000.0;
-}
-
-sumup_cols = function (Matrix[double] A) return (Matrix[double] sum_A)
-{
-    shift = 1;
-    n_A = ncol(A);
-    sum_A = A;
-    while (shift < n_A) {
-        sum_A [, (shift+1):n_A] = sum_A [, (shift+1):n_A] + sum_A [, 1:(n_A-shift)];
-        shift = 2 * shift;
-    } 
 }
 

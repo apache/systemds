@@ -307,7 +307,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX)?
 				                   DataType.MATRIX : DataType.SCALAR;				
 				if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
-					checkMatchingDimensions(getFirstExpr(), getSecondExpr());
+					checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
 				//determine output dimensions
 				long[] dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
 				output.setDataType( dtOut );
@@ -437,7 +437,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if( dt2 == DataType.MATRIX )
 				checkMatrixParam(getSecondExpr());
 			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) //dt1==dt2
-			      checkMatchingDimensions(getFirstExpr(), getSecondExpr());
+			      checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
 			
 			//check operator
 			if (getThirdExpr().getOutput().getDataType() != DataType.SCALAR || 
@@ -1032,6 +1032,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	private void checkMatchingDimensions(Expression expr1, Expression expr2) 
 		throws LanguageException 
 	{
+		checkMatchingDimensions(expr1, expr2, false);
+	}
+	
+	/**
+	 * 
+	 * @param expr1
+	 * @param expr2
+	 * @throws LanguageException
+	 */
+	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
+		throws LanguageException 
+	{
 		if (expr1 != null && expr2 != null) {
 			
 			// if any matrix has unknown dimensions, simply return
@@ -1041,8 +1053,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				return;
 			}
 			else if (expr1.getOutput().getDim1() != expr2.getOutput().getDim1() 
-				|| expr1.getOutput().getDim2() != expr2.getOutput().getDim2() ) {
-			
+				|| (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
+				|| (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
+			{
 				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
 						+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}

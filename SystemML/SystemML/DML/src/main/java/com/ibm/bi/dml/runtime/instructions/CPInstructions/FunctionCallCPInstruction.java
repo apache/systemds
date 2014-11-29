@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 /**
@@ -130,8 +131,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 					double defaultVal = (i > this._boundInputParamNames.size()) ? new Double(fpb.getInputParams().get(i).getDefaultValue()).doubleValue() : new Double(this._boundInputParamNames.get(i)).doubleValue();
 					currFormalParamValue = new DoubleObject(defaultVal);
 				}
-				else if (valType == ValueType.INT){
-					long defaultVal = (i > this._boundInputParamNames.size()) ? new Long(fpb.getInputParams().get(i).getDefaultValue()).intValue() : new Integer(this._boundInputParamNames.get(i)).intValue();
+				else if (valType == ValueType.INT){ //via safe case for robustness
+					long defaultVal = (i > this._boundInputParamNames.size()) ? UtilFunctions.parseToInt(fpb.getInputParams().get(i).getDefaultValue()) : UtilFunctions.parseToInt(this._boundInputParamNames.get(i));
 					currFormalParamValue = new IntObject(defaultVal);
 				}
 				else if (valType == ValueType.STRING){

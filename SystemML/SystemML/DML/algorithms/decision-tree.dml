@@ -28,6 +28,9 @@
 order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
 	implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
 	
+binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
+	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
+  
 /*
  * Given a 1-column bit-vector returns the corresponding
  * 1-column vector that contains the values corresponding
@@ -56,8 +59,7 @@ expand = function( Matrix[Double] V ) return (Matrix[Double] M) {
  * Computes label for classification trees
  * Determines the mode of y
  */ 		    
-findLabelFromVector = function(Matrix[Double] y, Integer num_classes) 
-	    			  return (Double label){
+findLabelFromVector = function(Matrix[Double] y, Integer num_classes) return (Double label){
 	aggr_labels = t(aggregate(target=y, groups=y, fn="count", ngroups=num_classes))
 	label = findLabel(aggr_labels)
 }
@@ -67,8 +69,7 @@ findLabelFromVector = function(Matrix[Double] y, Integer num_classes)
  * and returns the label corresponding
  * to the maximum count
  */
-findLabel = function(Matrix[Double] aggr_labels)
-			return (Double label){
+findLabel = function(Matrix[Double] aggr_labels) return (Double label){
 	label = as.scalar(rowIndexMax(aggr_labels))
 }
 
@@ -85,13 +86,7 @@ computeLeftForScale = function(Matrix[Double] feature_vals, Double threshold) re
  * defined by splitting on this (categorical) feature col with
  * this subset of vals (provided as input in bit vector representation)
  */
-computeLeftForCategorical = function(Matrix[Double] feature_vals, Matrix[Double] vals) return(Matrix[Double] left){
-      #n = nrow(feature_vals)
-      #left = matrix(0, rows=n, cols=1)
-      #for(i in 1:n)
-	  #  if(as.scalar(vals[as.scalar(feature_vals[i,1]),1]) == 1) 
-	  #        left[i,1] = 1
-	  
+computeLeftForCategorical = function(Matrix[Double] feature_vals, Matrix[Double] vals) return(Matrix[Double] left){	  
 	  P = table(seq(1, nrow(feature_vals)), feature_vals, nrow(feature_vals), nrow(vals))
 	  left = P %*% vals
 }
@@ -100,14 +95,21 @@ computeLeftForCategorical = function(Matrix[Double] feature_vals, Matrix[Double]
  * Takes counts of labels and returns (Gini) impurity
  */
 computeImpurity = function(Matrix[Double] label_counts) 
-		  return (Double impurity){
-  tot_count = sum(label_counts)
-  
+		  return (Double impurity)
+{
+  tot_count = sum(label_counts)  
   tot_count = max(tot_count, 1.0)
-  
   label_proportions = label_counts/tot_count
-
   impurity = 1 - sum(label_proportions^2)
+}
+
+vComputeImpurity = function(Matrix[Double] label_counts) 
+		  return (Matrix[Double] impurity)
+{
+  tot_count = rowSums(label_counts)
+  tot_count = max(tot_count, 1.0)
+  label_proportions = label_counts/tot_count
+  impurity = 1 - rowSums(label_proportions^2)
 }
 
 /*
@@ -233,8 +235,9 @@ categoricalSplit = function(Matrix[Double] label_dist)
 				   		   Double curr_gain, 
 				   		   Integer pure_left_child, 
 				   		   Integer pure_right_child,
-				   		   Double make_leaf){
-        num_classes = ncol(label_dist)
+				   		   Double make_leaf)
+{
+  num_classes = ncol(label_dist)
 	domain_size = nrow(label_dist)
 	
 	label_counts_all = colSums(label_dist)
@@ -246,57 +249,41 @@ categoricalSplit = function(Matrix[Double] label_dist)
 
 	curr_label_counts_left = matrix(0, rows=1, cols=num_classes)
 
-	continue = 1
-	while(continue == 1){
-		/*
-		 * print("current left counts:")
-		 * for(i in 1:ncol(curr_label_counts_left))
-		 *     print(" " + as.scalar(curr_label_counts_left[1,i]))
-		 */
+  continue = TRUE;
+	while( continue ) {
+     I = ppred(ret[1:domain_size,1],0,"==");
+     label_counts_left = t(t(label_dist)+t(curr_label_counts_left))
+     tot_count_all = sum(label_counts_all); 
+     impurity_all = computeImpurity(label_counts_all) 
+     tot_count_left = rowSums(label_counts_left)
+     impurity_left = vComputeImpurity(label_counts_left)
+     label_counts_right = t(t(-label_counts_left)+t(label_counts_all))
+     tot_count_right = rowSums(label_counts_right)
+     impurity_right = vComputeImpurity(label_counts_right)  
+     gain = tot_count_all*impurity_all - tot_count_left*impurity_left - tot_count_right*impurity_right
 
-		best_gain = -1.0
-		best_val_to_include = -1
-		for(i in 1:domain_size){
-		      if(as.scalar(ret[i,1]) == 0){
-		            label_cnts = label_dist[i,]
-
-			    label_counts_left = curr_label_counts_left + label_cnts
-
-			    gain = computeGainFromLabelCounts(label_counts_all, label_counts_left)
-
-			    /*
-			     * print("trying val=" + i)
-			     * for(k in 1:num_classes)
-			     *   print(" " + as.scalar(label_counts_left[1,k]))
-			     * print("gain=" + gain)
-			     */
-
-			    if(best_val_to_include == -1 | best_gain < gain){
-			          best_val_to_include = i
-				  best_gain = gain
-			    }
-		      }
-		}
-		
-		#print("picked val=" + best_val_to_include + " gain=" + gain)
-		
-		if(sum(label_dist[best_val_to_include,]) > 0 & as.scalar(ret[best_val_to_include,1]) == 0 & best_gain >= curr_gain){
-		      curr_gain = best_gain
-		      curr_label_counts_left = curr_label_counts_left + label_dist[best_val_to_include,]
-		      ret[best_val_to_include,1] = 1
-		      vals_included = vals_included + 1
-		}else continue = 0
+     G = I * gain;  
+     best_gain = max(G);
+     best_val_to_include = as.integer(as.scalar(rowIndexMax(t(G))));
+	
+	   if(sum(label_dist[best_val_to_include,]) > 0 & as.scalar(ret[best_val_to_include,1]) == 0 & best_gain >= curr_gain){
+	      curr_gain = best_gain
+	      curr_label_counts_left = curr_label_counts_left + label_dist[best_val_to_include,]
+	      ret[best_val_to_include,1] = 1
+	      vals_included = vals_included + 1
+	   }
+    else 
+        continue = FALSE;
 	}
 
 	pure_left_child = as.integer(sum(curr_label_counts_left) == max(curr_label_counts_left))
-
 	pure_right_child = as.integer(sum(label_counts_all - curr_label_counts_left) == max(label_counts_all - curr_label_counts_left))
 	
-    make_leaf = 0.0
-    if(sum(curr_label_counts_left) == 0 | sum(label_counts_all - curr_label_counts_left) == 0){
-    	  aggr_labels = colSums(label_dist)
-          make_leaf = findLabel(aggr_labels)
-    }
+  make_leaf = 0.0
+  if(sum(curr_label_counts_left) == 0 | sum(label_counts_all - curr_label_counts_left) == 0){
+     aggr_labels = colSums(label_dist)
+     make_leaf = findLabel(aggr_labels)
+  }
 }
 
 /*
@@ -541,72 +528,14 @@ bin_size = max(as.integer(nrow(X)/num_bins),1);
  */
 count_thresholds = matrix(0, rows=1, cols=ncol(X))
 thresholds = matrix(0, rows=num_bins+1, cols=ncol(X))
-parfor(i8 in 1:ncol(X)){
-	if(as.scalar(kinds[i8,1]) == 1){
-		col = order(X[,i8], 1, FALSE)
-
-		/*
-	 	* print("sorted vals:")
-	  	* for(j in 1:nrow(col))
-	  	* print(" " + castAsScalar(col[j,1]))
-	 	*/
-
-	  	col_bins = matrix(0, rows=num_bins+1, cols=1)
-	    col_bins[1,1] = col[1,1]
-	
-	    pos_col = 1
-	    bin_id = 1
-	    while(pos_col < nrow(X) & bin_id <= num_bins){
-	      	#print("pos_col (before): " + pos_col)
-		    
-		    if(pos_col + bin_size > nrow(X)) pos_col = nrow(X)
-		    else pos_col = pos_col + bin_size
-		    #print("pos_col (after): " + pos_col)
-		
-		    end_val = col[pos_col,1]
-		    col_bins[bin_id+1,1] = end_val
-		
-			continue = TRUE
-		    while(continue & pos_col < nrow(X))
-				if(castAsScalar(end_val) == castAsScalar(col[pos_col+1,1]))
-		        	pos_col = pos_col + 1
-			  	else continue = FALSE
-			#print("pos_col (changed): " + pos_col)
-		
-		    bin_id = bin_id + 1
-		}
-	
-	   	#print("pos_col=" + pos_col + " bin_id=" + bin_id)
-	      
-	  	/*
-	   	* print("bins:")
-	   	* for(j in 1:nrow(col_bins))
-	   	*   print(" " + castAsScalar(col_bins[j,1]))
-	   	*/
-
-	  	num_bins_defined = bin_id - 1
-	   	col_bins[1:num_bins_defined,1] = (col_bins[1:num_bins_defined,1] + col_bins[2:(num_bins_defined+1),1])/2
-		  
-	 	/*
-	   	* print("thresholds:")
-	   	* for(j in 1:nrow(col_bins))
-	   	*   print(" " + castAsScalar(col_bins[j,1]))
-	   	*/
-	      	
-	    count_thresholds[,i8] = num_bins_defined
-	    thresholds[,i8] = col_bins	
-	}
+parfor(i8 in 1:ncol(X)) {
+   if(as.scalar(kinds[i8,1]) == 1){
+      [col] = order(X[,i8], 1, FALSE);
+      [col_bins, num_bins_defined] = binning(col, bin_size, num_bins);
+      count_thresholds[,i8] = num_bins_defined;
+      thresholds[,i8] = col_bins;	
+   }
 }
-
-/*
- * print("thresholds:")
- * for(i in 1:ncol(thresholds)){
- *	cnt = castAsScalar(count_thresholds[1,i])
- *	print(" for feature=" + i + " cnt=" + cnt)
- *	for(j in 1:cnt)
- *		print("   " + castAsScalar(thresholds[j,i]))
- * }
- */
 
 #compute max domain size for categorical
 maxs = colMaxs(X);

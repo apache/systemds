@@ -41,6 +41,8 @@ public class AggUnaryOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final boolean ALLOW_UNARYAGG_WO_FINAL_AGG = true;
+	
 	private AggOp _op;
 	private Direction _direction;
 
@@ -84,69 +86,72 @@ public class AggUnaryOp extends Hop
 		if (get_lops() == null) {
 			try {
 				ExecType et = optFindExecType();
-				if ( et == ExecType.CP ) {
-					PartialAggregate agg1 = new PartialAggregate(
-							getInput().get(0).constructLops(), HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), get_dataType(),
-							get_valueType(), et);
-					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				if ( et == ExecType.CP ) 
+				{
+					PartialAggregate agg1 = new PartialAggregate(getInput().get(0).constructLops(), 
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), get_dataType(),get_valueType(), et);
+					agg1.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					setLineNumbers(agg1);
 					set_lops(agg1);
+					
 					if (get_dataType() == DataType.SCALAR) {
-						agg1.getOutputParameters().setDimensions(1, 1, 
-								get_rows_in_block(), get_cols_in_block(), getNnz());
+						agg1.getOutputParameters().setDimensions(1, 1, get_rows_in_block(), get_cols_in_block(), getNnz());
 					}
 				}
-				else {
-					PartialAggregate transform1 = new PartialAggregate(
-							getInput().get(0).constructLops(), HopsAgg2Lops
-									.get(_op), HopsDirection2Lops.get(_direction),
-							DataType.MATRIX, get_valueType());
+				else //ExecType.MR
+				{
+					Hop input = getInput().get(0);
 					
-					transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					//unary aggregate
+					PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, get_valueType());
+					transform1.setDimensionsBasedOnDirection(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block());
+					setLineNumbers(transform1);
 					
-					transform1.setDimensionsBasedOnDirection(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block());
-	
-					Group group1 = new Group(
-							transform1, Group.OperationTypes.Sort, DataType.MATRIX,
-							get_valueType());
-					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
-	
-					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					Lop aggregate = null;
+					Group group1 = null; 
+					Aggregate agg1 = null;
+					if( requiresAggregation(input, _direction) )
+					{
+						group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, get_valueType());
+						group1.getOutputParameters().setDimensions(get_dim1(), get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
+						setLineNumbers(group1);
+						
+						agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, get_valueType(), et);
+						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
+						setLineNumbers(agg1);
+						
+						aggregate = agg1;
+					}
+					else
+					{
+						transform1.setDropCorrection();
+						aggregate = transform1;
+					}
 					
-					Aggregate agg1 = new Aggregate(
-							group1, HopsAgg2Lops.get(_op), DataType.MATRIX,
-							get_valueType(), et);
-					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
-					
-					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					set_lops(agg1);
+					set_lops(aggregate);
 	
 					if (get_dataType() == DataType.SCALAR) {
 	
 						// Set the dimensions of PartialAggregate LOP based on the
 						// direction in which aggregation is performed
-						transform1.setDimensionsBasedOnDirection(getInput().get(0)
-								.get_dim1(), getInput().get(0).get_dim2(),
-								 get_rows_in_block(), get_cols_in_block());
-						group1.getOutputParameters().setDimensions(
-								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						agg1.getOutputParameters().setDimensions(1, 1, 
-								get_rows_in_block(), get_cols_in_block(), getNnz());
+						transform1.setDimensionsBasedOnDirection(input.get_dim1(), input.get_dim2(),
+								get_rows_in_block(), get_cols_in_block());
+						
+						if( group1 != null && agg1 != null ) { //if aggregation required
+							group1.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), 
+									get_rows_in_block(), get_cols_in_block(), getNnz());
+							agg1.getOutputParameters().setDimensions(1, 1, 
+									get_rows_in_block(), get_cols_in_block(), getNnz());
+						}
+						
 						UnaryCP unary1 = new UnaryCP(
-								agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+								aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 								get_dataType(), get_valueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-						unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setLineNumbers(unary1);
 						set_lops(unary1);
-	
 					}
 				}
 			} catch (Exception e) {
@@ -158,6 +163,8 @@ public class AggUnaryOp extends Hop
 		return get_lops();
 	}
 
+	
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -385,6 +392,24 @@ public class AggUnaryOp extends Hop
 				setRequiresRecompile();
 		}
 		return _etype;
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param dir
+	 * @return
+	 */
+	private boolean requiresAggregation( Hop input, Direction dir ) 
+	{
+		if( !ALLOW_UNARYAGG_WO_FINAL_AGG )
+			return false; //customization not allowed
+		
+		boolean noAggRequired = 
+				  ( input.get_dim1()>1 && input.get_dim1()<=input.get_rows_in_block() && dir==Direction.Col ) //e.g., colSums(X) with nrow(X)<=1000
+				||( input.get_dim2()>1 && input.get_dim2()<=input.get_cols_in_block() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
+	
+		return !noAggRequired;
 	}
 	
 	@Override

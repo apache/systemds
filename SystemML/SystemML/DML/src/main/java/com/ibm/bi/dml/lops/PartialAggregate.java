@@ -33,6 +33,8 @@ public class PartialAggregate extends Lop
 	Aggregate.OperationTypes operation;
 	DirectionTypes direction;
 
+	private boolean _dropCorr = false;
+	
 	/**
 	 * Constructor to setup a partial aggregate operation.
 	 * 
@@ -90,6 +92,11 @@ public class PartialAggregate extends Lop
 		init(input, op, direct, dt, vt, et);
 	}
 
+	public void setDropCorrection()
+	{
+		_dropCorr = true;
+	}
+	
 	public static CorrectionLocationType decodeCorrectionLocation(String loc) throws LopsException {
 		if ( loc.equals("NONE") )
 			return CorrectionLocationType.NONE;
@@ -198,92 +205,11 @@ public class PartialAggregate extends Lop
 	}
 	
 	private String getOpcode() {
-		if (operation == Aggregate.OperationTypes.Sum
-				&& direction == DirectionTypes.RowCol) {
-			return "ua+";
-		} else if (operation == Aggregate.OperationTypes.Sum
-				&& direction == DirectionTypes.Row) {
-			return "uar+";
-		} else if (operation == Aggregate.OperationTypes.Sum
-				&& direction == DirectionTypes.Col) {
-			return "uac+";
-		}
-
-		if (operation == Aggregate.OperationTypes.Mean
-				&& direction == DirectionTypes.RowCol) {
-			return "uamean";
-		} else if (operation == Aggregate.OperationTypes.Mean
-				&& direction == DirectionTypes.Row) {
-			return "uarmean";
-		} else if (operation == Aggregate.OperationTypes.Mean
-				&& direction == DirectionTypes.Col) {
-			return "uacmean";
-		}
-
-		// instructions that use kahanSum are similar to ua+,uar+,uac+
-		// except that they also produce correction values along with partial
-		// sums.
-		else if (operation == Aggregate.OperationTypes.KahanSum
-				&& direction == DirectionTypes.RowCol) {
-			return "uak+";
-		} else if (operation == Aggregate.OperationTypes.KahanSum
-				&& direction == DirectionTypes.Row) {
-			return "uark+";
-		} else if (operation == Aggregate.OperationTypes.KahanSum
-				&& direction == DirectionTypes.Col) {
-			return "uack+";
-		}
-
-		else if (operation == Aggregate.OperationTypes.Product
-				&& direction == DirectionTypes.RowCol) {
-			return "ua*";
-		}
-
-		else if (operation == Aggregate.OperationTypes.Max
-				&& direction == DirectionTypes.RowCol) {
-			return "uamax";
-		} else if (operation == Aggregate.OperationTypes.Max
-				&& direction == DirectionTypes.Row) {
-			return "uarmax";
-		} else if (operation == Aggregate.OperationTypes.Max
-				&& direction == DirectionTypes.Col) {
-			return "uacmax";
-		}
-		
-		else if (operation == Aggregate.OperationTypes.MaxIndex
-				 && direction == DirectionTypes.Row){
-			return "uarimax";
-		}
-
-		else if (operation == Aggregate.OperationTypes.MinIndex
-				 && direction == DirectionTypes.Row){
-			return "uarimin";
-		}
-
-		else if (operation == Aggregate.OperationTypes.Min
-				&& direction == DirectionTypes.RowCol) {
-			return "uamin";
-		} else if (operation == Aggregate.OperationTypes.Min
-				&& direction == DirectionTypes.Row) {
-			return "uarmin";
-		} else if (operation == Aggregate.OperationTypes.Min
-				&& direction == DirectionTypes.Col) {
-			return "uacmin";
-		}
-
-		else if (operation == Aggregate.OperationTypes.Trace
-				&& direction == DirectionTypes.RowCol) {
-			return "uatrace";
-		} else if (operation == Aggregate.OperationTypes.KahanTrace
-				&& direction == DirectionTypes.RowCol) {
-			return "uaktrace";
-		} else {
-			throw new UnsupportedOperationException(this.printErrorLocation() +
-					"Instruction is not defined for PartialAggregate operation "
-							+ operation);
-		}
+		return getOpcode(operation, direction);
 	}
+
 	
+		
 	@Override
 	public String getInstructions(String input1, String output) 
 		throws LopsException 
@@ -312,8 +238,108 @@ public class PartialAggregate extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input_index) );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output_index) );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _dropCorr );
 
 		return sb.toString();
+	}
+
+	/**
+	 * 
+	 * @param op
+	 * @param dir
+	 * @return
+	 */
+	public static String getOpcode(Aggregate.OperationTypes op, DirectionTypes dir) 
+	{
+		switch( op )
+		{
+			case Sum: {
+				if( dir == DirectionTypes.RowCol ) 
+					return "ua+";
+				else if( dir == DirectionTypes.Row ) 
+					return "uar+";
+				else if( dir == DirectionTypes.Col ) 
+					return "uac+";
+				break;
+			}
+
+			case Mean: {
+				if( dir == DirectionTypes.RowCol ) 
+					return "uamean";
+				else if( dir == DirectionTypes.Row ) 
+					return "uarmean";
+				else if( dir == DirectionTypes.Col ) 
+					return "uacmean";
+				break;
+			}			
+			
+			case KahanSum: {
+				// instructions that use kahanSum are similar to ua+,uar+,uac+
+				// except that they also produce correction values along with partial
+				// sums.
+				if( dir == DirectionTypes.RowCol )
+					return "uak+";
+				else if( dir == DirectionTypes.Row )
+					return "uark+";
+				else if( dir == DirectionTypes.Col ) 
+					return "uack+";
+				break;
+			}
+			
+			case Product: {
+				if( dir == DirectionTypes.RowCol )
+					return "ua*";
+				break;
+			}
+			
+			case Max: {
+				if( dir == DirectionTypes.RowCol ) 
+					return "uamax";
+				else if( dir == DirectionTypes.Row ) 
+					return "uarmax";
+				else if( dir == DirectionTypes.Col )
+					return "uacmax";
+				break;
+			}
+			
+			case Min: {
+				if( dir == DirectionTypes.RowCol ) 
+					return "uamin";
+				else if( dir == DirectionTypes.Row ) 
+					return "uarmin";
+				else if( dir == DirectionTypes.Col ) 
+					return "uacmin";
+				break;
+			}
+			
+			case MaxIndex:{
+				if( dir == DirectionTypes.Row )
+					return "uarimax";
+				break;
+			}
+			
+			case MinIndex: {
+				if( dir == DirectionTypes.Row )
+					return "uarimin";
+				break;
+			}
+		
+			case Trace: {
+				if( dir == DirectionTypes.RowCol)
+					return "uatrace";
+				break;	
+			}
+			
+			case KahanTrace: {
+				if( dir == DirectionTypes.RowCol ) 
+					return "uaktrace";
+				break;
+			}
+		}
+		
+		//should never come here for normal compilation
+		throw new UnsupportedOperationException("Instruction is not defined for PartialAggregate operation " + op);
 	}
 
 }

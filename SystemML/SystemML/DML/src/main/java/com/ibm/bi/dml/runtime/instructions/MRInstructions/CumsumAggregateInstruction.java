@@ -38,7 +38,7 @@ public class CumsumAggregateInstruction extends AggregateUnaryInstruction
 	
 	public CumsumAggregateInstruction(Operator op, byte in, byte out, String istr)
 	{
-		super(op, in, out, istr);
+		super(op, in, out, true, istr);
 	}
 	
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn )

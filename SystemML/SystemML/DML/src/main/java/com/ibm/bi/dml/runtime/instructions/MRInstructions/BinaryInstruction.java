@@ -59,50 +59,66 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		in2 = Byte.parseByte(parts[2]);
 		out = Byte.parseByte(parts[3]);
 		
+		BinaryOperator bop = parseBinaryOperator(opcode);
+		if( bop != null )
+			return new BinaryInstruction(bop, in1, in2, out, str);
+		else
+			return null;
+	}
+
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static BinaryOperator parseBinaryOperator( String opcode ) 
+		throws DMLRuntimeException 
+	{
 		if ( opcode.equalsIgnoreCase("+") ) {
-			return new BinaryInstruction(new BinaryOperator(Plus.getPlusFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Plus.getPlusFnObject());
 		} 
 		else if ( opcode.equalsIgnoreCase("-") ) {
-			return new BinaryInstruction(new BinaryOperator(Minus.getMinusFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Minus.getMinusFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("*") ) {
-			return new BinaryInstruction(new BinaryOperator(Multiply.getMultiplyFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Multiply.getMultiplyFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("/") ) {
-			return new BinaryInstruction(new BinaryOperator(Divide.getDivideFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Divide.getDivideFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("^") ) {
-			return new BinaryInstruction(new BinaryOperator(Power.getPowerFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Power.getPowerFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("%%") ) {
-			return new BinaryInstruction(new BinaryOperator(Modulus.getModulusFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Modulus.getModulusFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("%/%") ) {
-			return new BinaryInstruction(new BinaryOperator(IntegerDivide.getIntegerDivideFnObject()), in1, in2, out, str);
+			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("min") ) {
-			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("min")), in1, in2, out, str);
+			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
 		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
-			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
+			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
-			return new BinaryInstruction(new BinaryOperator(GreaterThan.getGreaterThanFnObject()), in1, in2, out, str);
+			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
-			return new BinaryInstruction(new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject()), in1, in2, out, str);
+			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
-			return new BinaryInstruction(new BinaryOperator(LessThan.getLessThanFnObject()), in1, in2, out, str);
+			return new BinaryOperator(LessThan.getLessThanFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
-			return new BinaryInstruction(new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject()), in1, in2, out, str);
+			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
-			return new BinaryInstruction(new BinaryOperator(Equals.getEqualsFnObject()), in1, in2, out, str);
+			return new BinaryOperator(Equals.getEqualsFnObject());
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
-			return new BinaryInstruction(new BinaryOperator(NotEquals.getNotEqualsFnObject()), in1, in2, out, str);
+			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
 		}
 		return null;
 	}

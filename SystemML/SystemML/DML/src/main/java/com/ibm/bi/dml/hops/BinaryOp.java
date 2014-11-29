@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.AppendR;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.BinaryM;
+import com.ibm.bi.dml.lops.BinaryUAggChain;
 import com.ibm.bi.dml.lops.CentralMoment;
 import com.ibm.bi.dml.lops.CoVariance;
 import com.ibm.bi.dml.lops.CombineBinary;
@@ -78,6 +79,7 @@ public class BinaryOp extends Hop
 		CP_BINARY,
 		MR_BINARY_R, //both mm, mv 
 		MR_BINARY_M, //only mv
+		MR_BINARY_UAGG_CHAIN,
 	}
 	
 	private BinaryOp() {
@@ -467,7 +469,7 @@ public class BinaryOp extends Hop
 					{
 						Hop left = getInput().get(0);
 						Hop right = getInput().get(1);
-						MMBinaryMethod mbin = optFindMMBinaryMethod(left.get_dim1(), left.get_dim2(), right.get_dim1(), right.get_dim2(), left.get_rows_in_block(), left.get_cols_in_block());
+						MMBinaryMethod mbin = optFindMMBinaryMethod(left, right);
 				
 						if( mbin == MMBinaryMethod.MR_BINARY_M )
 						{
@@ -489,6 +491,16 @@ public class BinaryOp extends Hop
 							binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							
 							set_lops(binary);
+						}
+						else if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN )
+						{
+							AggUnaryOp uRight = (AggUnaryOp)right;
+							BinaryUAggChain bin = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
+									HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
+									get_dataType(), get_valueType());
+							bin.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							setLineNumbers(bin);
+							set_lops(bin);
 						}
 						else //MMBinaryMethod.MR_BINARY_R
 						{
@@ -1583,18 +1595,28 @@ public class BinaryOp extends Hop
 	
 	/**
 	 * 
-	 * @param m1_dim1
-	 * @param m1_dim2
-	 * @param m2_dim1
-	 * @param m2_dim2
-	 * @param m1_rpb
-	 * @param m1_cpb
+	 * @param left
+	 * @param right
 	 * @return
 	 */
-	private MMBinaryMethod optFindMMBinaryMethod(long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb)
+	private MMBinaryMethod optFindMMBinaryMethod(Hop left, Hop right)
 	{
-		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
+		long m1_dim1 = left.get_dim1();
+		long m1_dim2 = left.get_dim2();
+		long m2_dim1 =  right.get_dim1();
+		long m2_dim2 = right.get_dim2();
+		long m1_rpb = left.get_rows_in_block();
+		long m1_cpb = left.get_cols_in_block();
 		
+		//MR_BINARY_UAGG_CHAIN only applied if result is column vector since MV only supported for column vectors.
+		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
+			&& ((AggUnaryOp) right).getDirection() == Direction.Row	
+		    && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //only if single block
+		{
+			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
+		}
+		
+		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
 		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 
 			&& m2_dim2 == 1  //rhs column vector	
 			&& m1_dim2 >1 ) //lhs not a column vector

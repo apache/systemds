@@ -26,7 +26,7 @@ public abstract class MRInstruction extends Instruction
 		Rand, Seq, CSVReblock, CSVWrite,
 		Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTertiary, PickByCount, Partition,
 		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut, MMTSJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain,
-		CumsumAggregate, CumsumSplit, CumsumOffset,}; 
+		CumsumAggregate, CumsumSplit, CumsumOffset, BinUaggChain}; 
 	
 	
 	MRINSTRUCTION_TYPE mrtype;

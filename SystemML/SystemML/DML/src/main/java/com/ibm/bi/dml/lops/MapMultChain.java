@@ -41,7 +41,7 @@ public class MapMultChain extends Lop
 	public MapMultChain(Lop input1, Lop input2, DataType dt, ValueType vt) 
 		throws LopsException 
 	{
-		super(Lop.Type.MapMult, dt, vt);		
+		super(Lop.Type.MapMultChain, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //v
 		input1.addOutput(this); 
@@ -70,7 +70,7 @@ public class MapMultChain extends Lop
 	public MapMultChain(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
 		throws LopsException 
 	{
-		super(Lop.Type.MapMult, dt, vt);		
+		super(Lop.Type.MapMultChain, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //w
 		addInput(input3); //v

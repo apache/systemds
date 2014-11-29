@@ -37,10 +37,10 @@ public abstract class Lop
 	};
 
 	public enum Type {
-		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
+		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, BinUaggChain, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock, RepMat,
+		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MapMultChain, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock, RepMat,
 		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary,
 	};
 

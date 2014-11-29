@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruc
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinUaggChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
@@ -118,7 +119,7 @@ public class MRInstructionParser extends InstructionParser
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
 		String2MRInstructionType.put( "mapmultchain", MRINSTRUCTION_TYPE.MapMultChain);
-		
+		String2MRInstructionType.put( "binuaggchain", MRINSTRUCTION_TYPE.BinUaggChain);
 		
 		// BINARY and SCALAR Instruction Opcodes 
 		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
@@ -296,6 +297,9 @@ public class MRInstructionParser extends InstructionParser
 		
 		case MapMultChain:
 			return (MRInstruction) MapMultChainInstruction.parseInstruction(str);
+		
+		case BinUaggChain:
+			return (MRInstruction) BinUaggChainInstruction.parseInstruction(str);
 			
 		case CombineTertiary:
 			return (MRInstruction) CombineTertiaryInstruction.parseInstruction(str);

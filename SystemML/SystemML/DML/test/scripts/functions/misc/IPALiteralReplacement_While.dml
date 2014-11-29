@@ -1,0 +1,29 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+foo = function( Matrix[Double] A ) return( Matrix[Double] B )
+{
+   continue = TRUE;
+   iter = 0;
+   while( continue )
+   {
+      iter = iter+1;
+      if( iter<10 )
+          continue = TRUE;
+      else
+          continue = FALSE;
+   }
+   B = A+iter;
+}
+
+
+A = matrix(1, rows=10, cols=10);
+R = foo(A);
+
+write(R, $1);

@@ -111,9 +111,14 @@ public class IfProgramBlock extends ProgramBlock
 		return _predicate;
 	}
 
-	public void setPredicate(ArrayList<Instruction> predicate) {
+	public void setPredicate(ArrayList<Instruction> predicate) 
+	{
 		_predicate = predicate;
-		_predicateResultVar = findPredicateResultVar ();
+		
+		//update result var if non-empty predicate (otherwise,
+		//do not overwrite varname predicate in predicateResultVar)
+		if( _predicate != null && _predicate.size()>0  )
+			_predicateResultVar = findPredicateResultVar();
 	}
 	
 	public String getPredicateResultVar(){

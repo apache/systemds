@@ -88,7 +88,11 @@ public class WhileProgramBlock extends ProgramBlock
 	public void setPredicate( ArrayList<Instruction> predicate )
 	{ 
 		_predicate = predicate;
-		_predicateResultVar = findPredicateResultVar();
+		
+		//update result var if non-empty predicate (otherwise,
+		//do not overwrite varname predicate in predicateResultVar)
+		if( _predicate != null && _predicate.size()>0  )
+			_predicateResultVar = findPredicateResultVar();
 	}
 	
 	public String getPredicateResultVar()
@@ -216,6 +220,7 @@ public class WhileProgramBlock extends ProgramBlock
 			else if(si instanceof SQLScalarAssignInstruction)
 				result = ((SQLScalarAssignInstruction) si).getVariableName();
 		}
+		
 		return result;
 	}
 	

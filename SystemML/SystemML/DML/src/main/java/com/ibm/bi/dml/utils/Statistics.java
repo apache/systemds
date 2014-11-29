@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -35,8 +36,6 @@ public class Statistics
 	
 	private static long lStartTime = 0;
 	private static long lEndTime = 0;
-	
-	//public static long parseTime=0, hopsTime=0, lopsTime=0, piggybackTime=0, execTime=0;
 	public static long execTime=0;
 
 	/** number of executed MR jobs */
@@ -50,18 +49,18 @@ public class Statistics
 	private static long jvmGCTime = 0; //in milli sec
 	private static long jvmGCCount = 0; //count
 	
-	//HOP DAG recompile stats
-	private static long hopRecompileTime = 0; //in nano sec
-	private static long hopRecompilePred = 0; //count
-	private static long hopRecompileSB = 0;   //count
+	//HOP DAG recompile stats (potentially high update frequency)
+	private static AtomicLong hopRecompileTime = new AtomicLong(0); //in nano sec
+	private static AtomicLong hopRecompilePred = new AtomicLong(0); //count
+	private static AtomicLong hopRecompileSB = new AtomicLong(0);   //count
 	
-	//PARFOR optimization stats
+	//PARFOR optimization stats 
 	private static long parforOptTime = 0; //in milli sec
 	private static long parforOptCount = 0; //count
 	private static long parforInitTime = 0; //in milli sec
 	private static long parforMergeTime = 0; //in milli sec
 	
-	
+	//heavy hitter counts and times 
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
 	
@@ -105,24 +104,29 @@ public class Statistics
 		jvmGCCount += delta;
 	}
 	
-	public static synchronized void incrementHOPRecompileTime( long time ) {
-		hopRecompileTime += time;
+	public static void incrementHOPRecompileTime( long delta ) {
+		//note: not synchronized due to use of atomics
+		hopRecompileTime.addAndGet(delta);
 	}
 	
-	public static synchronized void incrementHOPRecompilePred() {
-		hopRecompilePred ++;
+	public static void incrementHOPRecompilePred() {
+		//note: not synchronized due to use of atomics
+		hopRecompilePred.incrementAndGet();
 	}
 	
-	public static synchronized void incrementHOPRecompilePred(long delta) {
-		hopRecompilePred += delta;
+	public static void incrementHOPRecompilePred(long delta) {
+		//note: not synchronized due to use of atomics
+		hopRecompilePred.addAndGet(delta);
 	}
 	
-	public static synchronized void incrementHOPRecompileSB() {
-		hopRecompileSB ++;
+	public static void incrementHOPRecompileSB() {
+		//note: not synchronized due to use of atomics
+		hopRecompileSB.incrementAndGet();
 	}
 	
-	public static synchronized void incrementHOPRecompileSB(long delta) {
-		hopRecompileSB += delta;
+	public static void incrementHOPRecompileSB(long delta) {
+		//note: not synchronized due to use of atomics
+		hopRecompileSB.addAndGet(delta);
 	}
 
 	public static synchronized void incrementParForOptimCount(){
@@ -168,9 +172,9 @@ public class Statistics
 	
 	public static void reset()
 	{
-		hopRecompileTime = 0;
-		hopRecompilePred = 0;
-		hopRecompileSB = 0;
+		hopRecompileTime.set(0);
+		hopRecompilePred.set(0);
+		hopRecompileSB.set(0);
 		
 		parforOptCount = 0;
 		parforOptTime = 0;
@@ -323,15 +327,15 @@ public class Statistics
 	}
 	
 	public static long getHopRecompileTime(){
-		return hopRecompileTime;
+		return hopRecompileTime.get();
 	}
 	
 	public static long getHopRecompiledPredDAGs(){
-		return hopRecompilePred;
+		return hopRecompilePred.get();
 	}
 	
 	public static long getHopRecompiledSBDAGs(){
-		return hopRecompileSB;
+		return hopRecompileSB.get();
 	}
 	
 	public static long getParforOptCount(){

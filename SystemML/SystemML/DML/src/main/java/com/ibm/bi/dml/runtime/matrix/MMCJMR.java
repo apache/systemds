@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -58,7 +59,8 @@ public class MMCJMR
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
+
+	private static final boolean AUTOMATIC_CONFIG_NUM_REDUCERS = true;
 	private static final Log LOG = LogFactory.getLog(MMCJMR.class);
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -242,73 +244,64 @@ public class MMCJMR
 		//TODO: cannot set up combiner, because it will destroy the stable numerical algorithms 
 		// for sum or for central moments 
 		
-	//	if(aggInstructionsInReducer!=null && !aggInstructionsInReducer.isEmpty())
-	//		job.setCombinerClass(MMCJMRCombiner.class);
+	    //if(aggInstructionsInReducer!=null && !aggInstructionsInReducer.isEmpty())
+	    //	job.setCombinerClass(MMCJMRCombiner.class);
 		
 		MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
 				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, null, resultIndexes, 
 				mapoutputIndexes, true);
 		
 		//set up the number of reducers
-		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
-		
+		if( AUTOMATIC_CONFIG_NUM_REDUCERS ){
+			int numRed = determineNumReducers(rlens, clens, numReducers, ret.numReducerGroups);
+			job.setNumReduceTasks(numRed);
+		}
+		else
+			MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
+
 		//configure reducer
 		// note: the alternative MMCJMRReducer is not maintained
 		job.setReducerClass(MMCJMRReducerWithAggregator.class);
 		
-		
 		return ret.stats;
 	}
 	
-	/*public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-			int[] brlens, int[] bclens, String instructionsInMapper, 
-			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
-			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo, int partialAggCacheSize) 
-	throws Exception
+	/**
+	 * Determine number of reducers based on configured number of reducers, number of results groups
+	 * and input data divided by blocksize (as heuristic for useful degree of parallelism).
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param defaultNumRed
+	 * @param numRedGroups
+	 * @return
+	 */
+	protected static int determineNumReducers( long[] rlen, long[] clen, int defaultNumRed, long numRedGroups )
 	{
-		JobConf job;
-		job = new JobConf(MMCJMR.class);
-		MatrixCharacteristics[] stats=commonSetup(job, inBlockRepresentation, inputs, inputInfos, rlens, clens, 
-				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, numReducers, 
-				replication, resultDimsUnknown, output, outputinfo);
+		//init return with default value
+		int ret = defaultNumRed;
 		
-		MRJobConfiguration.setPartialAggCacheSize(job, partialAggCacheSize);
-		
-		// By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
-		MatrixCharacteristics[] inputStats = new MatrixCharacteristics[inputs.length];
-		for ( int i=0; i < inputs.length; i++ ) {
-			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
-		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.MMCJ, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
+		//determine max output matrix size
+		long maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		long blockSize = InfrastructureAnalyzer.getHDFSBlockSize()/(1024*1024);
+		long maxSize = -1; //in MB
+		for( int i=0; i<rlen.length; i++ )
+		{			
+			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], rlen[i]*clen[i]) / (1024*1024);
+			maxSize = Math.max(maxSize, tmp);
 		}
 		
-		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)
+		//as a heuristic we allow an increase up to 2x the configured default, now disabled
+		//maxNumRed = Math.min(2 * defaultNumRed, maxNumRed);
+		ret = (int)Math.max(ret, Math.min(maxSize/blockSize, maxNumRed));
 		
+		//reduce num reducers for few result blocks
+		ret = (int) Math.min(ret, numRedGroups);
 		
-		RunningJob runjob=JobClient.runJob(job);
+		//ensure there is at least one reducer
+		ret = Math.max(ret, 1);
 		
-		
-		 * Process different counters
-		 *   NOTE: MMCJ job always has only a single output. 
-		 *   Hence, no need to scan resultIndexes[] like other jobs
- 		 
-		
-		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		//stats[0].nonZeros=group.getCounter(Byte.toString(MRInstructionParser.parseSingleInstruction(aggBinInstrction).output));
-		
-		int outputIndex = 0;
-		Byte outputMatrixID = MRInstructionParser.parseSingleInstruction(aggBinInstrction).output;
-		
-		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		
-		// number of non-zeros
-		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
-		
-		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
-	}*/
+		return ret;
+	}
 }

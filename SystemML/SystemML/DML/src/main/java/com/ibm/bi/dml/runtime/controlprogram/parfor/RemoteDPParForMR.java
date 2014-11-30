@@ -81,7 +81,7 @@ public class RemoteDPParForMR
 	{
 		RemoteParForJobReturn ret = null;
 		String jobname = "ParFor-DPEMR";
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		JobConf job;
 		job = new JobConf( RemoteDPParForMR.class );

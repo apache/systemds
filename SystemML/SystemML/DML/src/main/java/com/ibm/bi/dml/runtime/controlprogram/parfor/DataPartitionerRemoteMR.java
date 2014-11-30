@@ -74,7 +74,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-DPMR";
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );

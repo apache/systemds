@@ -79,7 +79,7 @@ public class RemoteParForMR
 	{
 		RemoteParForJobReturn ret = null;
 		String jobname = "ParFor-EMR";
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		JobConf job;
 		job = new JobConf( RemoteParForMR.class );

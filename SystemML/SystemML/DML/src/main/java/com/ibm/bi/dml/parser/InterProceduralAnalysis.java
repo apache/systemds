@@ -20,6 +20,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
@@ -153,7 +155,7 @@ public class InterProceduralAnalysis
 		}
 		
 		//step 4: flag functions with loops for 'recompile-on-entry'
-		if( FLAG_FUNCTION_RECOMPILE_ONCE ){
+		if( FLAG_FUNCTION_RECOMPILE_ONCE && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ){
 			flagFunctionsForRecompileOnce( dmlp );
 		}
 	}

@@ -106,7 +106,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			OutputCollector<NullWritable, RowBlockForTextOutput> out, Reporter reporter)
 			throws IOException 
 	{
-		long begin = System.nanoTime();
+		long begin = System.currentTimeMillis();
 		
 		cachedReporter = reporter;
 
@@ -157,7 +157,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 		}
 		rowIndexes[tag]=inkey.getFirstIndex();
 
-		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, (System.nanoTime()-begin));
+		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, (System.currentTimeMillis()-begin));
 	}
 	
 	@Override

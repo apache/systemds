@@ -47,7 +47,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 	private String delim=" ";
 	private boolean ignoreFirstLine=false;
 	private boolean headerFile=false;
-	
+	private Pattern _compiledDelim = null;
 
 	@Override
 	public void map(LongWritable key, Text value,
@@ -62,7 +62,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		if(key.get()==0 && headerFile && ignoreFirstLine)
 			return;
 		
-		String[] cells=value.toString().split(delim);
+		String[] cells = _compiledDelim.split( value.toString() );
+		
 		
 		for(int i=0; i<representativeMatrixes.size(); i++)
 			for(CSVReblockInstruction ins: csv_reblock_instructions.get(i))
@@ -151,10 +152,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 			throw new RuntimeException(e);
 		}
 		CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
-		delim=Pattern.quote(ins.delim);
+		delim = Pattern.quote(ins.delim);
 		ignoreFirstLine=ins.hasHeader;
-		//missingValue=ins.missingValue;
-		
 		row = new BlockRow();
 		row.data = new MatrixBlock();
 		int maxBclen=0;
@@ -165,8 +164,11 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 				if(maxBclen<in.bclen)
 					maxBclen=in.bclen;
 			}
-		row.data.reset(1, maxBclen);		
+		//always dense since common csv usecase
+		row.data.reset(1, maxBclen, false);		
 	
+		//precompile regex pattern for better efficiency
+		_compiledDelim = Pattern.compile(delim);
 	}
 
 	@Override

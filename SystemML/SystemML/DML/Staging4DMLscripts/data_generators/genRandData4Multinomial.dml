@@ -1,0 +1,60 @@
+
+num_records = $1;
+num_features = $2;
+
+p = $3; #sparsity
+num_categories = $4; #num classes
+is_intercept = $5==1; 
+
+stdevLT = 1.0;
+beta_range = 3.0 * stdevLT / sqrt (num_features * p);
+
+if (is_intercept) {
+    intercept = Rand (rows = 1, cols = num_categories - 1, min = -1.0, max = 1.0);
+}
+
+X = Rand( rows = num_records, 
+          cols = num_features, 
+          min = 1, 
+          max = 5, 
+          pdf = "uniform", 
+          sparsity = p );
+
+B = Rand (rows = num_features, 
+          cols = num_categories - 1, 
+          min = -1.0, 
+          max = 1.0, 
+          pdf = "uniform", 
+          sparsity = 1.0) * beta_range;
+
+LT = X %*% B;
+if (is_intercept) {
+    LT = LT + matrix (1, rows = num_records, cols = 1) %*% intercept;
+}
+
+Prob = exp (LT);
+Prob = Prob / (1.0 + rowSums(Prob));
+Prob = t(cumsum (t(Prob)));
+
+r = Rand (rows = num_records, cols = 1, min = 0, max = 1, pdf = "uniform");
+Y = 1 + rowSums (ppred (Prob, r, "<"));
+
+#MB ensure all classes are represented
+Y[(num_records-num_categories):num_records,1] = seq(1,num_categories);
+
+# To convert "2" into "-1" for binomial:
+# Y = 3 - 2 * Y;
+
+/*
+if (is_intercept) {
+    new_B = matrix (0.0, rows = nrow(B) + 1, cols = ncol(B));
+    new_B [1:nrow(B), 1:ncol(B)] = B;
+    new_B [nrow(B)+1, 1:ncol(B)] = intercept;
+    writeMM (new_B, $B);
+} else {
+    writeMM (B, $B);
+}
+*/
+
+write(X, $6, format=$8)
+write(Y, $7, format=$8);

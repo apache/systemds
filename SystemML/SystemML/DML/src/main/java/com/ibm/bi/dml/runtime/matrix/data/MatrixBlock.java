@@ -5044,10 +5044,15 @@ public class MatrixBlock extends MatrixValue
 
 	public MatrixValue removeEmptyOperations( MatrixValue ret, boolean rows )
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//check for empty inputs
+	{	
+		//check for empty inputs 
+		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
+		//is an empty 1-by-n or m-by-1 matrix because we dont allow matrices with dims 0)
 		if( nonZeros==0 ) {
-			ret.reset(0, 0, false);
+			if( rows )
+				ret.reset(1, clen, false);
+			else //cols
+				ret.reset(rlen, 1, false);	
 			return ret;
 		}
 		
@@ -5100,6 +5105,7 @@ public class MatrixBlock extends MatrixValue
 		}
 
 		//reset result and copy rows
+		rlen2 = Math.max(rlen2, 1); //ensure valid output
 		ret.reset(rlen2, clen, sparse);
 		int rindex = 0;
 		for( int i=0; i<rlen; i++ )
@@ -5165,6 +5171,7 @@ public class MatrixBlock extends MatrixValue
 		}
 
 		//reset result and copy rows
+		clen2 = Math.max(clen2, 1); //ensure valid output
 		ret.reset(rlen, clen2, sparse);
 		
 		int cindex = 0;

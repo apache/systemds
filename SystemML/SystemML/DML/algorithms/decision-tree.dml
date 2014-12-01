@@ -188,7 +188,7 @@ scaleSplit = function(Matrix[Double] feature_vals,
 	      left = computeLeftForScale(feature_vals, threshold)
 	      yl = removeEmpty(target=y*left, margin="rows")
 	      
-	      if(nrow(yl) > 0)
+	      if(sum(yl) > 0)
                 label_counts_left = aggregate(target=yl, groups=yl, fn="count", ngroups=num_classes)
           else label_counts_left = matrix(0, rows=num_classes, cols=1)
           
@@ -782,7 +782,7 @@ while(sum(q) != 0 | sum(leaf_q) != 0){
 					    	left_X_col = computeLeftForScale(X_col, threshold)
 				      	    y_reach_dot_prod = removeEmpty(target=y*reach_col_big*left_X_col, margin="rows")
 					    
-					    	if(nrow(y_reach_dot_prod) > 0)
+					    	if(sum(y_reach_dot_prod) > 0)
 					        	  left_counts = t(aggregate(target=y_reach_dot_prod, groups=y_reach_dot_prod, fn="count", ngroups=num_classes))
 					    	else left_counts = matrix(0, rows=1, cols=num_classes)
 

@@ -42,15 +42,7 @@ parfor ( i in 1:nrow(sv))
   T1 = ppred(R, as.scalar(svUpBnd[i,1]), "<=");
   T2 = ppred(R, as.scalar(svLowBnd[i,1]), ">");
   SM = T1 * T2; 
-  if (sum(SM) == 0)
-    {
-      # empty sample
-      iX = matrix(0, rows=1, cols=ncol(X))
-    }
-  else
-    {
-      P = removeEmpty(target=diag(SM), margin="rows")
-      iX = P %*% X
-    }
-  write (iX, $O + "/" + i, format=ofmt)
+  P = removeEmpty(target=diag(SM), margin="rows");
+  iX = P %*% X;
+  write (iX, $O + "/" + i, format=ofmt);
 }

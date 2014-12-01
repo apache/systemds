@@ -36,6 +36,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -235,8 +236,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @param rows
 		 * @param cols
 		 * @return
+		 * @throws DMLRuntimeException 
 		 */
-		private MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols )
+		private MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
+			throws DMLRuntimeException
 		{
 			String varName = out.getVarName();
 			String fName = out.getFileName();
@@ -246,6 +249,19 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixObject moNew = new MatrixObject( vt, fName );
 			moNew.setVarName( varName );
 			moNew.setDataType( DataType.MATRIX );
+			
+			//handle empty output block (ensure valid dimensions)
+			if( rows==0 || cols ==0 ){
+				rows = Math.max(rows, 1);
+				cols = Math.max(cols, 1);
+				try {
+					moNew.acquireModify(new MatrixBlock((int)rows, (int) cols, true));
+					moNew.release();
+				} 
+				catch (CacheException e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
 			
 			//create deep copy of metadata obj
 			MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();

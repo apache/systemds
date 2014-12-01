@@ -32,9 +32,6 @@ sv = read ($sv);       # sv sample.dml vector
 R = rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
 svLowBnd = cumsum(sv) - sv;
 svUpBnd = cumsum(sv);
-write(svLowBnd, "/tmp/svLowBnd", format="csv")
-write(svUpBnd, "/tmp/svUpBnd", format="csv")
-
 
 # Construct sampling matrix SM, and apply to create samples
 parfor ( i in 1:nrow(sv))

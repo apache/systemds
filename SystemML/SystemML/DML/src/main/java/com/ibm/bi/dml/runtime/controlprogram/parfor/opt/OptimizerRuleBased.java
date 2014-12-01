@@ -69,6 +69,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
@@ -304,6 +305,16 @@ public class OptimizerRuleBased extends Optimizer
 		_lm      = OptimizerUtils.getLocalMemBudget();
 		_rm      = OptimizerUtils.getRemoteMemBudgetMap(false); 	
 		_rm2     = OptimizerUtils.getRemoteMemBudgetReduce(); 	
+		
+		//correction of max parallelism if yarn enabled because yarn
+		//does not have the notion of map/reduce slots and hence returns 
+		//small constants of map=10*nodes, reduce=2*nodes
+		//(not doing this correction would loose available degree of parallelism)
+		if( InfrastructureAnalyzer.isYarnEnabled() ) {
+			long tmprk = YarnClusterAnalyzer.getNumCores();
+			_rk = (int) Math.max( _rk, tmprk );
+			_rk2 = (int) Math.max( _rk2, tmprk );
+		}
 	}
 	
 	///////

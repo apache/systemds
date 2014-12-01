@@ -140,6 +140,10 @@ public class PiggybackingWorkerUtilDecayParallel extends PiggybackingWorker
 				JobReturn mret = RunMRJobs.submitJob(_minst.inst);
 				Statistics.incrementNoOfExecutedMRJobs();
 				
+				// error handling
+				if( !mret.successful )
+					LOG.error("Failed to run merged mr-job instruction:\n"+_minst.inst.toString()); 
+				
 				// split job return
 				LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
 				for( Long id : _minst.ids ){

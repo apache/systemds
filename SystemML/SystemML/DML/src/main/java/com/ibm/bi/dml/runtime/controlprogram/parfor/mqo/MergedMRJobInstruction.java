@@ -59,8 +59,10 @@ public class MergedMRJobInstruction
 		//create partial output meta data 
 		JobReturn ret = new JobReturn();
 		ret.successful = retAll.successful;
-		ret.metadata = new MetaData[len];
-		System.arraycopy(retAll.metadata, off, ret.metadata, 0, len);
+		if( ret.successful ) {
+			ret.metadata = new MetaData[len];
+			System.arraycopy(retAll.metadata, off, ret.metadata, 0, len);
+		}
 		
 		return ret;
 	}

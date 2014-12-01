@@ -71,6 +71,10 @@ public class PiggybackingWorkerTimeSequential extends PiggybackingWorker
 					JobReturn mret = RunMRJobs.submitJob(minst.inst);
 					Statistics.incrementNoOfExecutedMRJobs();
 					
+					// error handling
+					if( !mret.successful )
+						LOG.error("Failed to run merged mr-job instruction:\n"+minst.inst.toString()); 
+					
 					// split job return
 					LinkedList<JobReturn> ret = new LinkedList<JobReturn>();
 					for( Long id : minst.ids ){

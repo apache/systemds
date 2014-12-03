@@ -33,44 +33,55 @@ public class Program
 		_programBlocks = new ArrayList<ProgramBlock>();
 	}
 
-	public void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
+	/**
+	 * 
+	 * @param namespace
+	 * @param fname
+	 * @param fpb
+	 */
+	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
 		
 		if (namespace == null) 
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
 		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
-		
-		synchronized( _namespaceFunctions )
-		{
-			namespaceBlocks = _namespaceFunctions.get(namespace);
-			if (namespaceBlocks == null){
-				namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
-				_namespaceFunctions.put(namespace,namespaceBlocks);
-			}
+		namespaceBlocks = _namespaceFunctions.get(namespace);
+		if (namespaceBlocks == null){
+			namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
+			_namespaceFunctions.put(namespace,namespaceBlocks);
 		}
 		
 		namespaceBlocks.put(fname,fpb);
 	}
 	
-	public HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
+	/**
+	 * 
+	 * @return
+	 */
+	public synchronized HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
 		
 		HashMap<String,FunctionProgramBlock> retVal = new HashMap<String,FunctionProgramBlock>();
 		
-		synchronized( _namespaceFunctions )
-		{
-			for (String namespace : _namespaceFunctions.keySet()){
-				HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
-				for (String fname : namespaceFSB.keySet()){
-					String fKey = DMLProgram.constructFunctionKey(namespace, fname);
-					retVal.put(fKey, namespaceFSB.get(fname));
-				}
+		//create copy of function program blocks
+		for (String namespace : _namespaceFunctions.keySet()){
+			HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
+			for (String fname : namespaceFSB.keySet()){
+				String fKey = DMLProgram.constructFunctionKey(namespace, fname);
+				retVal.put(fKey, namespaceFSB.get(fname));
 			}
 		}
 		
 		return retVal;
 	}
 	
-	public FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
+	/**
+	 * 
+	 * @param namespace
+	 * @param fname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
 		
 		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
@@ -80,7 +91,7 @@ public class Program
 		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
 		if (retVal == null)
 			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);
-		//retVal._variables = new LocalVariableMap();
+		
 		return retVal;
 	}
 	

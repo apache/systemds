@@ -130,6 +130,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input dims 
 			hi = removeUnnecessaryCumSum(hop, hi, i);         //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
+			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
@@ -337,6 +338,40 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				LOG.debug("Applied removeUnnecessaryReshape");
 			}			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop removeUnnecessaryOuterProduct(Hop parent, Hop hi, int pos)
+	{
+		if( hi instanceof BinaryOp  ) //binary cell operation 
+		{
+			Hop right = hi.getInput().get(1); 
+			if(    right instanceof AggBinaryOp //matrix mult with datagen
+				&& right.getInput().get(1) instanceof DataGenOp 
+				&& ((DataGenOp)right.getInput().get(1)).hasConstantValue(1d)
+				&& right.getInput().get(1).get_dim1() == 1 //row vector for replication
+				&& right.getInput().get(0).get_dim2() == 1 ) //column vector for mv binary
+			{
+				//remove unnecessary outer product
+				HopRewriteUtils.removeChildReference(hi, right);				
+				HopRewriteUtils.addChildReference(hi, right.getInput().get(0) );
+				hi.refreshSizeInformation();
+				
+				//cleanup refs to matrix mult if no remaining consumers
+				if( right.getParent().size()<1 ) 
+					HopRewriteUtils.removeAllChildReferences( right );
+				
+				LOG.debug("Applied removeUnnecessaryOuterProduct");
+			}				
 		}
 		
 		return hi;

@@ -84,6 +84,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 
 
@@ -1254,9 +1255,12 @@ public class ParForProgramBlock extends ForProgramBlock
 				break;
 			case REMOTE_MR:
 				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+				int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+				//correction max number of reducers on yarn clusters
+				if( InfrastructureAnalyzer.isYarnEnabled() )
+					maxNumRed = (int)Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );				
 				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, 
-						                          //Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
-						                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
+						                          Math.min(numReducers,maxNumRed),
 						                          _replicationDP, 
 						                          MAX_RETRYS_ON_ERROR, 
 						                          ALLOW_REUSE_MR_JVMS, false );
@@ -1295,9 +1299,16 @@ public class ParForProgramBlock extends ForProgramBlock
 				break;
 			case REMOTE_MR:
 				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+				int maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+				int maxRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+				//correction max number of reducers on yarn clusters
+				if( InfrastructureAnalyzer.isYarnEnabled() ) {					
+					maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );	
+					maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );	
+				}
 				rm = new ResultMergeRemoteMR( out, in, fname, _ID, 
-					                          Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
-					                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
+					                          Math.max(_numThreads, maxMap), 
+					                          Math.min(numReducers, maxRed),
 					                          WRITE_REPLICATION_FACTOR, 
 					                          MAX_RETRYS_ON_ERROR, 
 					                          ALLOW_REUSE_MR_JVMS );

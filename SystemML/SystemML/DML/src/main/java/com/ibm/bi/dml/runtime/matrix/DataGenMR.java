@@ -30,6 +30,7 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
@@ -44,13 +45,13 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 
 /**
@@ -290,12 +291,14 @@ public class DataGenMR
 			DMLConfig config = ConfigurationManager.getConfig();
 			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
-			JobClient client=new JobClient(job);
-			int capacity=client.getClusterStatus().getMaxMapTasks();
-			int dfsblocksize=job.getInt(MRConfigurationNames.DFS_BLOCK_SIZE, 134217728);
-			          
-			//nmappers: 1<=n<=capacity, TODO use maxsparsity whenever we have a way of generating sparse rand data
-			int nmapers=Math.max(Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/(long)dfsblocksize), capacity),1);
+			//determine degree of parallelism (nmappers: 1<=n<=capacity)
+			//TODO use maxsparsity whenever we have a way of generating sparse rand data
+			int capacity = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			long dfsblocksize = InfrastructureAnalyzer.getHDFSBlockSize();
+			//correction max number of mappers on yarn clusters
+			if( InfrastructureAnalyzer.isYarnEnabled() )
+				capacity = (int)Math.max( capacity, YarnClusterAnalyzer.getNumCores() );
+			int nmapers = Math.max(Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/dfsblocksize), capacity),1);
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer

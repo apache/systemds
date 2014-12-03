@@ -35,6 +35,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 
 /*
@@ -290,6 +291,10 @@ public class MMCJMR
 			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], rlen[i]*clen[i]) / (1024*1024);
 			maxSize = Math.max(maxSize, tmp);
 		}
+		
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() )
+			maxNumRed = Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );
 		
 		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)
 		//as a heuristic we allow an increase up to 2x the configured default, now disabled

@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 
 /*
@@ -207,6 +208,11 @@ public class ReblockMR
 			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], nnz[i]) / (1024*1024);
 			maxSize = Math.max(maxSize, tmp);
 		}
+		
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() )
+			maxNumRed = Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );
+		
 		//increase num reducers wrt input size / hdfs blocksize (up to max reducers)
 		ret = (int)Math.max(ret, Math.min(maxSize/blockSize, maxNumRed));
 		

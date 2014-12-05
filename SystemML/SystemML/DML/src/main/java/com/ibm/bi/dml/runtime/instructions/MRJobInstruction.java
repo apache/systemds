@@ -1109,7 +1109,7 @@ public class MRJobInstruction extends Instruction
 	{
 		boolean ret = true;
 		
-		//check job type (just in case its called with wrong assumptions)
+		//check compatible job type (just in case its called with wrong assumptions)
 		if( jobType != that.jobType )
 		{
 			ret = false;
@@ -1146,8 +1146,10 @@ public class MRJobInstruction extends Instruction
 	 */
 	public void mergeMRJobInstruction( MRJobInstruction that )
 	{	
-		LOG.debug("Current instruction:\n"+this.toString());
-		LOG.debug("Next instruction:\n"+that.toString());
+		if( LOG.isDebugEnabled() ){
+			LOG.debug("Current instruction:\n"+this.toString());
+			LOG.debug("Next instruction:\n"+that.toString());
+		}
 		
 		//compute offsets (inputs1, inputs2, intermediates1, intermediates2, outputs1, outputs2)
 		byte maxIxInst1 = UtilFunctions.max(_resultIndices);
@@ -1202,6 +1204,7 @@ public class MRJobInstruction extends Instruction
 		int[] lbclens = new int[llen];
 		String[] loutputs = new String[olen];
 		OutputInfo[] loutputInfos = new OutputInfo[olen];
+		MatrixObject[] loutputMatrices = new MatrixObject[olen];
 		byte[] lresultIndexes = new byte[olen];
 		System.arraycopy(inputs, 0, linputs, 0, len);
 		System.arraycopy(inputInfos, 0, linputInfos, 0, len);
@@ -1213,6 +1216,7 @@ public class MRJobInstruction extends Instruction
 		System.arraycopy(bclens, 0, lbclens, 0, len);
 		System.arraycopy(outputs, 0, loutputs, 0, outputs.length);
 		System.arraycopy(outputInfos, 0, loutputInfos, 0, outputs.length);
+		System.arraycopy(outputMatrices, 0, loutputMatrices, 0, outputs.length);
 		for( int i=0; i<that.inputs.length; i++ ){
 			byte ixSrc = (byte) i;
 			byte ixTgt = transMap2.get((byte)i);
@@ -1230,11 +1234,12 @@ public class MRJobInstruction extends Instruction
 		for( int i=0; i<that._resultIndices.length; i++ ){
 			loutputs[_resultIndices.length+i] = that.outputs[i];
 			loutputInfos[_resultIndices.length+i] = that.outputInfos[i];
+			loutputMatrices[_resultIndices.length+i] = that.outputMatrices[i];
 			lresultIndexes[_resultIndices.length+i] = transMap2.get(that._resultIndices[i]);
 		}
 		inputs = linputs; inputInfos = linputInfos; inputMatrices = linputMatrices;
 		pformats = lpformats;
-		outputs = loutputs; outputInfos = loutputInfos;
+		outputs = loutputs; outputInfos = loutputInfos; outputMatrices = loutputMatrices;
 		rlens = lrlens; clens = lclens; brlens = lbrlens; bclens = lbclens;
 		_resultIndices = lresultIndexes;
 		

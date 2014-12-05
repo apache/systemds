@@ -72,7 +72,6 @@ public class DMLDebugger
 		debuggerUI = new DMLDebuggerInterface();
 		dbFunctions = new DMLDebuggerFunctions();		
 		preEC = new ExecutionContext(dbprog.rtprog);
-		preEC.initDebugState();
 		setupDMLRuntime();
 	}
 	

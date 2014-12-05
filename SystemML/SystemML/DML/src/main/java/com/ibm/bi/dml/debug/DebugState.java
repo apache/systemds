@@ -28,6 +28,16 @@ public class DebugState
 	public boolean suspend = false;
 	public volatile boolean nextCommand = false;
 	
+	private static DebugState instance = null;
+	protected DebugState() { 
+		// So that one cannot instantiate DebugState and violate singleton pattern
+	}
+	public static DebugState getInstance() {
+	  if(instance == null) {
+		instance = new DebugState();  
+	  }
+	  return instance;
+	}
 	
 	/////////////////////////////////
 	// DML debugger public methods //

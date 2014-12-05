@@ -86,6 +86,9 @@ public class ExecutionContext
 		else
 			_variables = null;
 		_prog = prog;
+		if (DMLScript.ENABLE_DEBUG_MODE){
+			_dbState = DebugState.getInstance();
+		}
 	}
 	
 	public void addStatistic(int instructionId, long runtime, String opString)
@@ -367,17 +370,6 @@ public class ExecutionContext
 	// Debug State Functionality
 	///////////////////////////////
 	
-	/**
-	 * 
-	 */
-	public void initDebugState() 
-	{
-		if (DMLScript.ENABLE_DEBUG_MODE){
-			_dbState = new DebugState();
-		}
-	}
-
-
 	public void initDebugProgramCounters() 
 	{
 		if (DMLScript.ENABLE_DEBUG_MODE){

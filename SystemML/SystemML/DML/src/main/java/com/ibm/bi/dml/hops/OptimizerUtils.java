@@ -9,6 +9,7 @@ package com.ibm.bi.dml.hops;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
@@ -213,6 +214,13 @@ public class OptimizerUtils
 		if( optlevel < 0 || optlevel > 4 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-4).");
 	
+		// This overrides any optimization level that is present in the configuration file.
+		// Why ? This simplifies the calling logic: User doesnot have to maintain two config file or worse
+		// edit config file everytime he/she is trying to call the debugger.
+		if(DMLScript.ENABLE_DEBUG_MODE) {
+			optlevel = 4;
+		}
+		
 		switch( optlevel )
 		{
 			// opt level 0: static dimensionality

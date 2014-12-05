@@ -1660,6 +1660,7 @@ public class DMLTranslator
 						if( target.getDataType() != DataType.MATRIX ) {
 							target.setDataType(DataType.MATRIX);
 							target.setValueType(ValueType.DOUBLE);
+							target.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 						}
 						
 						Integer statementId = liveOutToTemp.get(target.getName());

@@ -1416,7 +1416,9 @@ public class MRJobConfiguration
 				setOutputInfo(job, i, outputInfos[i], false);
 			}
 			else
+			{
 				setOutputInfo(job, i, outputInfos[i], inBlockRepresentation);
+			}
 			MultipleOutputs.addNamedOutput(job, Integer.toString(i), 
 					outputInfos[i].outputFormatClass, outputInfos[i].outputKeyClass, 
 					outputInfos[i].outputValueClass);
@@ -1936,8 +1938,7 @@ public class MRJobConfiguration
 	public static boolean deriveRepresentation(InputInfo[] inputInfos) {
 		for(InputInfo input: inputInfos)
 		{
-			if(!(input.inputValueClass==MatrixBlock.class 
-					|| input.inputValueClass==MatrixBlock.class))
+			if(!(input.inputValueClass==MatrixBlock.class))
 			{
 				return false;
 			}	

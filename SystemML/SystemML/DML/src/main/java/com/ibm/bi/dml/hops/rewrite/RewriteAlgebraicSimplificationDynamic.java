@@ -28,6 +28,7 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
@@ -418,6 +419,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						//create cast to keep same output datatype
 						UnaryOp cast = new UnaryOp(uhi.get_name(), DataType.MATRIX, ValueType.DOUBLE, 
 				                   OpOp1.CAST_AS_MATRIX, uhi);
+						HopRewriteUtils.setOutputParameters(cast, 1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
 						
 						//rehang cast under all parents
 						for( Hop p : parents ) {
@@ -478,6 +480,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						//create cast to keep same output datatype
 						UnaryOp cast = new UnaryOp(uhi.get_name(), DataType.MATRIX, ValueType.DOUBLE, 
 				                   OpOp1.CAST_AS_MATRIX, uhi);
+						HopRewriteUtils.setOutputParameters(cast, 1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
 						
 						//rehang cast under all parents
 						for( Hop p : parents ) {

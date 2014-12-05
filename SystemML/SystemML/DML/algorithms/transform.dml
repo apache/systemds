@@ -43,24 +43,17 @@ if(isMissingValueImputationRequired > 0){
 	#col_sums = colSums(X)
 }
 
-parfor(i in 1:nrow(missing_index), check=0){
-	attr_index_mv = castAsScalar(missing_index[i,1])
-	if(attr_index_mv > 0) attrinfo[attr_index_mv, 1] = i
-}
+if( min(missing_index) > 0 )
+    attrinfo[,1] = table(missing_index, 1, seq(1,nrow(missing_index)), ncol(X), 1)
 
-parfor(i in 1:nrow(binning_index), check=0){
-	attr_index_bin = castAsScalar(binning_index[i,1])
-	if(attr_index_bin > 0) attrinfo[attr_index_bin,2] = castAsScalar(binning_index[i,2])
-}
-
+if( min(binning_index) > 0 )
+    attrinfo[,2] = table(binning_index[,1], 1, binning_index[,2], ncol(X), 1)
+  
 # matrix to store mean and std for columns that require normalization
 normalization_map = matrix(0, rows=nrow(normalization), cols=3)
-parfor(i in 1:nrow(normalization), check=0){
-	attr_index_normalization = castAsScalar(normalization[i,1])
-	if(attr_index_normalization > 0){
-		normalization_map[i,1] = attr_index_normalization
-		attrinfo[attr_index_normalization,5] = castAsScalar(normalization[i,2])
-	}
+if( min(normalization) > 0 ){
+  normalization_map[,1] = normalization[,1];
+  attrinfo[,5] = table(normalization[,1], 1, normalization[,2], ncol(X), 1)
 }
 
 # computing number of distinct vals using table

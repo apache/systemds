@@ -1876,10 +1876,13 @@ public class Dag<N extends Lop>
 				 * MapAndReduce (say GMR) -- Inputs coming from two different
 				 * jobs .. GMR & REBLOCK
 				 */
+				//boolean himr = hasOtherMapAndReduceParentNode(tmpNode, execNodes,node);
+				//boolean bcbp = branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes);
+				//System.out.println("      .. " + inputs_in_same_job + "," + himr + "," + bcbp);
 				if ((inputs_in_same_job || unassigned_inputs)
 						&& node.getExecLocation() == ExecLocation.MapAndReduce
-						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,node)
-						&& branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
+						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,node)  // don't remove since it already piggybacked with a MapReduce node
+						&& branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)
 						&& tmpNode.definesMRJob() != true) {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("    Removing for next iteration (code 5): ("+ tmpNode.getID() + ") " + tmpNode.toString());
@@ -2174,7 +2177,7 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 	private boolean branchCanBePiggyBackedMapAndReduce(N tmpNode, N node,
-			Vector<N> execNodes, Vector<N> finishedNodes) {
+			Vector<N> execNodes, Vector<N> queuedNodes) {
 
 		if (node.getExecLocation() != ExecLocation.MapAndReduce)
 			return false;
@@ -2188,6 +2191,8 @@ public class Dag<N extends Lop>
 
 			// Evaluate only nodes on the branch between tmpNode->..->node
 			if (n.equals(tmpNode) || (isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap))) {
+				if ( hasOtherMapAndReduceParentNode(tmpNode, queuedNodes,node) )
+					return false;
 				ExecLocation el = n.getExecLocation();
 				if (el != ExecLocation.Map && el != ExecLocation.MapOrReduce)
 					return false;
@@ -2297,27 +2302,27 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * Method to see if there is a node of type Reduce between tmpNode and node
-	 * in execNodes
+	 * Method to see if there is a node of type MapAndReduce between tmpNode and node
+	 * in given node collection
 	 * 
 	 * @param tmpNode
-	 * @param execNodes
+	 * @param nodeList
 	 * @param node
 	 * @return
 	 */
 
 	@SuppressWarnings("unchecked")
 	private boolean hasOtherMapAndReduceParentNode(N tmpNode,
-			Vector<N> execNodes, N node) {
+			Vector<N> nodeList, N node) {
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
 
-			if (execNodes.contains(n) && !n.equals(node)
+			if (nodeList.contains(n) && !n.equals(node)
 					&& n.getExecLocation() == ExecLocation.MapAndReduce
 					&& isChild(n, node, IDMap)) {
 				return true;
 			} else {
-				if (hasOtherMapAndReduceParentNode(n, execNodes, node))
+				if (hasOtherMapAndReduceParentNode(n, nodeList, node))
 					return true;
 			}
 

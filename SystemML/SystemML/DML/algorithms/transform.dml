@@ -78,7 +78,7 @@ for(i in 1:ncol(X)){
 	# if this attr is being binned also, then #bins defines dom size
 	number_of_bins_this_attr = castAsScalar(attrinfo[i,2])
 	
-	if(i == 1) id_of_last_filled_col = 0
+	if(i == 1) id_of_last_filled_col = 0.0
 	else id_of_last_filled_col = castAsScalar(attrinfo[(i-1),4])
 	
 	dummy_coding_indicator = castAsScalar(attrinfo[i,3])

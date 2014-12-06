@@ -32,6 +32,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /*
@@ -1110,14 +1111,20 @@ public class MRJobInstruction extends Instruction
 		boolean ret = true;
 		
 		//check compatible job type (just in case its called with wrong assumptions)
-		if( jobType != that.jobType )
-		{
+		if( jobType != that.jobType ) {
 			ret = false;
 		}
 		
+		//check consistent input representation (other forced into common cell representation)
+		boolean blockedThis = MRJobConfiguration.deriveRepresentation(inputInfos);
+		boolean blockedThat = MRJobConfiguration.deriveRepresentation(that.inputInfos);
+		if( blockedThis != blockedThat ) {
+			ret = false;
+		}
+
 		//check max memory requirements of mapper instructions
 		if(   (_mapperMem + that._mapperMem) 
-			> OptimizerUtils.getRemoteMemBudgetMap(true) )
+			> OptimizerUtils.getRemoteMemBudgetMap(true) ) 
 		{
 			ret = false;
 		}
@@ -1125,15 +1132,13 @@ public class MRJobInstruction extends Instruction
 		//check max possible byte indexes (worst-case: no sharing)
 		int maxIx1 = UtilFunctions.max(_resultIndices);
 		int maxIx2 = UtilFunctions.max(that._resultIndices);
-		if( (maxIx1+maxIx2) > Byte.MAX_VALUE )
-		{
+		if( (maxIx1+maxIx2) > Byte.MAX_VALUE ) {
 			ret = false;
 		}
 		
 		//TODO conceptually this check should not be necessary
 		//check map only jobs versus full map-reduce jobs
-		if( isMapOnly() != that.isMapOnly() )
-		{
+		if( isMapOnly() != that.isMapOnly() ) {
 			ret = false;
 		}
 			

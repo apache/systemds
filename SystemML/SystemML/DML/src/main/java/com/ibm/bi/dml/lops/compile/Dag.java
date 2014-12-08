@@ -90,12 +90,14 @@ public class Dag<N extends Lop>
 	private static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
 	private static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
 
-	private static int total_reducers = -1;
-	private static String scratch = "";
-	private static String scratchFilePath = "";
-	
 	private static IDSequence job_id = null;
 	private static IDSequence var_index = null;
+	
+	private int total_reducers = -1;
+	private String scratch = "";
+	private String scratchFilePath = "";
+	
+	private double gmrMapperFootprint = 0;
 	
 	static {
 		job_id = new IDSequence();
@@ -183,7 +185,7 @@ public class Dag<N extends Lop>
 		
 	}
 	
-	private static String getFilePath() {
+	private String getFilePath() {
 		if ( scratchFilePath.equalsIgnoreCase("") ) {
 			scratchFilePath = scratch + Lop.FILE_SEPARATOR
 								+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
@@ -868,7 +870,7 @@ public class Dag<N extends Lop>
 	private boolean checkMemoryLimits(N node, double footprintInMapper) {
 		boolean addNode = true;
 		
-		// Memory limits must be chcked only for nodes that use distributed cache
+		// Memory limits must be checked only for nodes that use distributed cache
 		if ( ! node.usesDistributedCache() )
 			// default behavior
 			return addNode;
@@ -907,7 +909,6 @@ public class Dag<N extends Lop>
 
 		ArrayList<Vector<N>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
 		
-		double gmrMapperFootprint = 0;
 
 		// list of instructions
 		ArrayList<Instruction> inst = new ArrayList<Instruction>();
@@ -1178,6 +1179,7 @@ public class Dag<N extends Lop>
 				// map node, add, if no parent needs reduce, else queue
 				if (node.getExecLocation() == ExecLocation.Map) {
 					boolean queueThisNode = false;
+					int subcode = -1;
 					if ( node.usesDistributedCache() ) {
 						// if an input to <code>node</code> comes from distributed cache
 						// then that input must get executed in one of the previous jobs.
@@ -1188,6 +1190,7 @@ public class Dag<N extends Lop>
 								  &&  execNodes.contains(dcInput) )
 							{
 								queueThisNode = true;
+								subcode = 1;
 							}
 						}
 						
@@ -1196,6 +1199,7 @@ public class Dag<N extends Lop>
 						//gmrMapperFootprint += computeFootprintInMapper(node);
 						if ( gmrMapperFootprint>0 && !checkMemoryLimits(node, gmrMapperFootprint+memsize ) ) {
 							queueThisNode = true;
+							subcode = 2;
 						}
 						if(!queueThisNode)
 							gmrMapperFootprint += memsize;
@@ -1208,7 +1212,7 @@ public class Dag<N extends Lop>
 						addNodeByJobType(node, jobNodes, execNodes, false);
 					} else {
 						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 7)");
+							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 7 - " + "subcode " + subcode + ")");
 						queuedNodes.add(node);
 						removeNodesForNextIteration(node, finishedNodes,
 								execNodes, queuedNodes, jobNodes);
@@ -1837,7 +1841,7 @@ public class Dag<N extends Lop>
 					int code = -1;
 					switch(node.getExecLocation()) {
 					case Map:
-						if(branchCanBePiggyBackedMap(tmpNode, node, execNodes, queuedNodes))
+						if(branchCanBePiggyBackedMap(tmpNode, node, execNodes, queuedNodes, markedNodes))
 							queueit = true;
 						code=2;
 						break;
@@ -1905,12 +1909,20 @@ public class Dag<N extends Lop>
 
 		// delete marked nodes from finishedNodes and execNodes
 		// add to queued nodes
-		for (int i = 0; i < markedNodes.size(); i++) {
+		for(N n : markedNodes) {
+			if ( n.usesDistributedCache() )
+				gmrMapperFootprint -= computeFootprintInMapper(n);
+			finishedNodes.remove(n);
+			execNodes.remove(n);
+			removeNodeByJobType(n, jobvec);
+			queuedNodes.add(n);
+		}
+		/*for (int i = 0; i < markedNodes.size(); i++) {
 			finishedNodes.remove(markedNodes.elementAt(i));
 			execNodes.remove(markedNodes.elementAt(i));
 			removeNodeByJobType(markedNodes.elementAt(i), jobvec);
 			queuedNodes.add(markedNodes.elementAt(i));
-		}
+		}*/
 	}
 
 	@SuppressWarnings("unused")
@@ -2127,7 +2139,7 @@ public class Dag<N extends Lop>
 	   return true;
 	}
 
-	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes) {
+	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes, Vector<N> markedNodes) {
 		if(node.getExecLocation() != ExecLocation.Map)
 			return false;
 		
@@ -2153,7 +2165,21 @@ public class Dag<N extends Lop>
 			}
 		}
 		
-		// node.getInputs().contains(tmpNode) && 
+		// if tmpNode requires an input from distributed cache,
+		//   remove tmpNode only if that input can fit into mappers' memory. If not, 
+		if ( tmpNode.usesDistributedCache() ) {
+			double memsize = computeFootprintInMapper(tmpNode);
+			if (node.usesDistributedCache() )
+				memsize += computeFootprintInMapper(node);
+			for(N n : markedNodes) {
+				if ( n.usesDistributedCache() ) 
+					memsize += computeFootprintInMapper(n);
+			}
+			if ( !checkMemoryLimits(node, memsize ) ) {
+				return false;
+			}
+		}
+		
 		if( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0)
 			return true;
 		else

@@ -749,14 +749,14 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM,
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN
 	}
 
 	// Operations that require two operands
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, INVALID,
+		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN, INVALID,
 		//fused operators for performance 
 		POW2CM, 
 	};
@@ -979,6 +979,7 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.EIGEN, "eigen");
 		HopsOpOp12String.put(OpOp1.EXP, "exp");
 		HopsOpOp12String.put(OpOp1.IQM, "iqm");
+		HopsOpOp12String.put(OpOp1.MEDIAN, "median");
 		HopsOpOp12String.put(OpOp1.LENGTH, "length");
 		HopsOpOp12String.put(OpOp1.LOG, "log");
 		HopsOpOp12String.put(OpOp1.NCOL, "ncol");
@@ -1029,6 +1030,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.QUANTILE, "quantile");
 		HopsOpOp2String.put(OpOp2.INTERQUANTILE, "interquantile");
 		HopsOpOp2String.put(OpOp2.IQM, "IQM");
+		HopsOpOp2String.put(OpOp2.MEDIAN, "median");
 		HopsOpOp2String.put(OpOp2.CENTRALMOMENT, "centraMoment");
 		HopsOpOp2String.put(OpOp2.COVARIANCE, "cov");
 		HopsOpOp2String.put(OpOp2.APPEND, "APP");

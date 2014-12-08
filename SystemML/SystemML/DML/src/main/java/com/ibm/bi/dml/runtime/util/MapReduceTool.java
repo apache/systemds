@@ -617,7 +617,24 @@ public class MapReduceTool
 		return array[0];
 	}
 	
-	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p) 
+	public static double median(String dir, NumItemsByEachReducerMetaData metadata) throws IOException {
+		long[] counts=metadata.getNumItemsArray();
+		long[] ranges=new long[counts.length];
+		ranges[0]=counts[0];
+		for(int i=1; i<counts.length; i++)
+			ranges[i]=ranges[i-1]+counts[i];
+		
+		long total=ranges[ranges.length-1];
+		
+		return pickValue(dir, metadata, 0.5, total%2==0);
+	}
+	
+
+	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p) throws IOException {
+		return pickValue(dir, metadata, p, false);
+	}
+	
+	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p, boolean average) 
 	throws IOException
 	{
 		long[] counts=metadata.getNumItemsArray();
@@ -628,6 +645,9 @@ public class MapReduceTool
 		
 		long total=ranges[ranges.length-1];
 		
+		// do averaging only if it is asked for; and sum_wt is even
+		average = average && (total%2 == 0);
+
 		int currentPart=0;
 		long pos=(long)Math.ceil(total*p);
 		while(ranges[currentPart]<pos)
@@ -672,8 +692,14 @@ public class MapReduceTool
 			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
 			numRead+=readValue.get();
 		}
+	    
+	    double ret = readKey.get();
+	    if(average) {
+	    	reader.readNextKeyValuePairs(readKey, readValue);;
+	    	ret = (ret+readKey.get())/2;
+	    }
 	    currentStream.close();
-		return readKey.get();
+		return ret;
 		
 	}
 	

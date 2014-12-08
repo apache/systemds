@@ -86,7 +86,7 @@ out_minus = ppred(V, mu-5*std_dev, "<")*V
 out_plus = ppred(V, mu+5*std_dev, ">")*V
 
 # median
-md = quantile(V, W, 0.5)
+md = median(V,W); #quantile(V, W, 0.5)
 
 # quantile
 Q = quantile(V, W, P)

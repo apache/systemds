@@ -3040,6 +3040,17 @@ public class DMLTranslator
 			}
 			break;	
 		
+		case MEDIAN:
+			if ( expr2 == null ) {
+				currBuiltinOp=new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+						Hop.OpOp1.MEDIAN, expr);
+			}
+			else {
+				currBuiltinOp=new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+					Hop.OpOp2.MEDIAN, expr, expr2);
+			}
+			break;	
+		
 		case SEQ:
 			HashMap<String,Hop> randParams = new HashMap<String,Hop>();
 			randParams.put(Statement.SEQ_FROM, expr);

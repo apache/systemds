@@ -74,7 +74,9 @@ public class VariableCPInstruction extends CPInstruction
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
 		ValuePick, 
-		InMemValuePick, 
+		InMemValuePick,
+		Median,
+		InMemMedian,
 		InMemIQM, 
 		IQSize, 
 		Write, 
@@ -136,6 +138,12 @@ public class VariableCPInstruction extends CPInstruction
 		
 		else if ( str.equalsIgnoreCase("inmem-valuepick") ) 
 			return VariableOperationCode.InMemValuePick;
+		
+		else if ( str.equalsIgnoreCase("median") ) 
+			return VariableOperationCode.Median;
+		
+		else if ( str.equalsIgnoreCase("inmem-median") ) 
+			return VariableOperationCode.InMemMedian;
 		
 		else if ( str.equalsIgnoreCase("inmem-iqm") ) 
 			return VariableOperationCode.InMemIQM;
@@ -371,6 +379,8 @@ public class VariableCPInstruction extends CPInstruction
 			out = new CPOperand(parts[3]); // output variable name
 			break;
 		
+		case Median:
+		case InMemMedian: 
 		case InMemIQM:
 			in1 = new CPOperand(parts[1]); // sorted data, which is input to IQM
 			out = new CPOperand(parts[2]);
@@ -590,6 +600,32 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			matBlock = null;
 			ec.releaseMatrixInput(input1.get_name());
+			break;
+			
+		case InMemMedian:
+			double picked = ec.getMatrixInput(input1.get_name()).median();
+			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
+			ec.releaseMatrixInput(input1.get_name());
+			break;
+		
+		case Median:
+			MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.get_name());
+			String fname1 = mat1.getFileName();
+			MetaData mdata1 = mat1.getMetaData();
+			
+			if ( mdata1 != null ) {
+				try {
+					double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
+					//double picked = MapReduceTool.pickValue(fname1, (NumItemsByEachReducerMetaData) mdata1, 0.5);
+					ScalarObject result = (ScalarObject) new DoubleObject(median);
+					ec.setVariable(output.get_name(), result);
+				} catch (Exception e ) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname1 + ") not found." );
+			}
 			break;
 			
 		case InMemIQM:

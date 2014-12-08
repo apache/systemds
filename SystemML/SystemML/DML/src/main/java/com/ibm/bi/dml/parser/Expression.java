@@ -93,7 +93,8 @@ public abstract class Expression
 		EIGEN,
 		SOLVE,
 		CEIL,
-		FLOOR
+		FLOOR,
+		MEDIAN
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {

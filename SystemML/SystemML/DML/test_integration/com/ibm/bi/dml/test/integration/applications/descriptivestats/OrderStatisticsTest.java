@@ -76,7 +76,7 @@ public class OrderStatisticsTest extends AutomatedTestBase
 			weight[i][0]=Math.floor(weight[i][0]);
 	}
 	
-	@Test
+	//@Test
 	public void testSimpleQuantile()
 	{
 		int rows = 10;

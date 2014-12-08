@@ -83,7 +83,7 @@ g2 = moment(V[,1], order=4, central=TRUE)/(var^2)-3
 se_g2= sqrt( (4*(n^2-1)*se_g1^2)/((n+5)*(n-3)) )
 
 # median
-md = quantile(V[,1], 0.5, type = 1)
+md = median(V[,1]) #quantile(V[,1], 0.5, type = 1)
 
 # quantile
 Q = t(quantile(V[,1], P[,1], type = 1))

@@ -72,7 +72,7 @@ for(i in 1:n) {
 		#se_g2= sqrt( (4*(m^2-1)*se_g1^2)/((m+5.0)*(m-3.0)) );  
 		se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
 
-		md = quantile(F, 0.5, type = 1);
+		md = median(F); #quantile(F, 0.5, type = 1);
 		iqm = mean( subset(F, F>quantile(F,1/4,type = 1) & F<=quantile(F,3/4,type = 1) ) )
     
 		# place the computed statistics in output matrices

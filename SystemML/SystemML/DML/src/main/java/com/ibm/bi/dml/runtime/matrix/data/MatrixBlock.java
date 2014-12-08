@@ -4460,10 +4460,22 @@ public class MatrixBlock extends MatrixValue
 		return output;
 	}
 	
-	public double pickValue(double quantile) 
+	public double median() throws DMLRuntimeException {
+		double sum_wt = sumWeightForQuantile();
+		return pickValue(0.5, sum_wt%2==0);
+	}
+	
+	public double pickValue(double quantile) throws DMLRuntimeException{
+		return pickValue(quantile, false);
+	}
+	
+	public double pickValue(double quantile, boolean average) 
 		throws DMLRuntimeException 
 	{
 		double sum_wt = sumWeightForQuantile();
+		
+		// do averaging only if it is asked for; and sum_wt is even
+		average = average && (sum_wt%2 == 0);
 		
 		int pos = (int) Math.ceil(quantile*sum_wt);
 		
@@ -4473,7 +4485,32 @@ public class MatrixBlock extends MatrixValue
 			t += quickGetValue(i,1);
 		} while(t<pos && i < getNumRows());
 		
-		return quickGetValue(i,0);
+		//System.out.println("values: " + quickGetValue(i,0) + "," + quickGetValue(i,1) + " -- " + quickGetValue(i+1,0) + "," +  quickGetValue(i+1,1));
+		if ( quickGetValue(i,1) != 0 ) {
+			// i^th value is present in the data set, simply return it
+			if ( average ) {
+				if(pos < t) {
+					return quickGetValue(i,0);
+				}
+				if(quickGetValue(i+1,1) != 0)
+					return (quickGetValue(i,0)+quickGetValue(i+1,0))/2;
+				else
+					// (i+1)^th value is 0. So, fetch (i+2)^th value
+					return (quickGetValue(i,0)+quickGetValue(i+2,0))/2;
+			}
+			else 
+				return quickGetValue(i, 0);
+		}
+		else {
+			// i^th value is not present in the data set. 
+			// It can only happen in the case where i^th value is 0.0; and 0.0 is not present in the data set (but introduced by sort).
+			if ( i+1 < getNumRows() )
+				// when 0.0 is not the last element in the sorted order
+				return quickGetValue(i+1,0);
+			else
+				// when 0.0 is the last element in the sorted order (input data is all negative)
+				return quickGetValue(i-1,0);
+		}
 	}
 	
 	/**

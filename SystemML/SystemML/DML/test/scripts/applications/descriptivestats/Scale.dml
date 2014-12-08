@@ -71,7 +71,7 @@ g2 = m4/(std_dev^4) - 3
 se_g2= sqrt( (4*(n^2-1)*se_g1^2)/((n+5.0)*(n-3.0)) )
 
 # median
-md = quantile(V, 0.5)
+md = median(V)
 
 # quantile
 Q = quantile(V, P)

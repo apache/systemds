@@ -20,7 +20,7 @@ public class PickByCount extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum OperationTypes {VALUEPICK, RANGEPICK, IQM};	
+	public enum OperationTypes {VALUEPICK, RANGEPICK, IQM, MEDIAN};	
 	OperationTypes operation;
 	boolean inMemoryInput = false;
 	
@@ -123,7 +123,11 @@ public class PickByCount extends Lop
 			}
 			opString = "inmem-iqm";
 			break;
-		
+			
+		case MEDIAN:
+			opString = (inMemoryInput ? "inmem-median" : "median");
+			break;
+			
 		default:
 			throw new LopsException(this.printErrorLocation() + "Invalid operation specified for PickByCount: " + operation);
 				
@@ -139,12 +143,14 @@ public class PickByCount extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) 
-			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
-		else {
-			sb.append( getInputs().get(1).prepInputOperand(input2));
+		if(operation != OperationTypes.MEDIAN) {
+			if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) 
+				sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
+			else {
+				sb.append( getInputs().get(1).prepInputOperand(input2));
+			}
+			sb.append( OPERAND_DELIMITOR );
 		}
-		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( this.prepOutputOperand(output));
 

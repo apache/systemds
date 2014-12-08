@@ -730,7 +730,30 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.SCALAR);
 
 			break;
+		
+		case MEDIAN:
+			if (getSecondExpr() != null){
+			    checkNumParameters(2);
+		    }
+			else {
+				checkNumParameters(1);
+			}
+			checkMatrixParam(getFirstExpr());
 
+			if (getSecondExpr() != null) {
+				// i.e., second input is weight vector
+				checkMatrixParam(getSecondExpr());
+				checkMatchingDimensions(getFirstExpr(), getSecondExpr());
+			}
+
+			// Output is a scalar
+			output.setValueType(id.getValueType());
+			output.setDimensions(0, 0);
+			output.setBlockDimensions(0,0);
+			output.setDataType(DataType.SCALAR);
+
+			break;
+			
 		case SEQ:
 			
 			checkScalarParam(getFirstExpr());
@@ -869,6 +892,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ROUND:
 		case CEIL:
 		case FLOOR:
+		case MEDIAN:
 			return true;
 		default:
 			return false;
@@ -889,6 +913,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ROUND:
 		case CEIL:
 		case FLOOR:
+		case MEDIAN:
 			checkNumParameters(1);
 			break;
 		case LOG:
@@ -1206,6 +1231,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.CEIL;
 		else if (functionName.equals("floor"))
 			bifop = Expression.BuiltinFunctionOp.FLOOR;
+		else if (functionName.equals("median"))
+			bifop = Expression.BuiltinFunctionOp.MEDIAN;
 		else
 			return null;
 		

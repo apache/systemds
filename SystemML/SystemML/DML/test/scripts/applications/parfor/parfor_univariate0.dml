@@ -92,7 +92,7 @@ else {
 			#se_g2= sqrt( (4*(m^2-1)*se_g1^2)/((m+5.0)*(m-3.0)) );  
 			se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
 
-			md = quantile(F, 0.5);
+			md = median(F); #quantile(F, 0.5);
 			iqm = interQuartileMean(F);
 
 			# place the computed statistics in output matrices

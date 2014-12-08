@@ -151,8 +151,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "valuepick"   , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "iqsize"      , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "read"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "write" 		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);
@@ -177,7 +175,11 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
 		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "valuepick"   	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "inmem-valuepick" , CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "iqsize"      	, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "median"   		, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "inmem-median" 	, CPINSTRUCTION_TYPE.Variable);
 		
 		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);

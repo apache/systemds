@@ -304,7 +304,13 @@ public class BinaryOp extends Hop
 				// 1st arguments needs to be a 1-dimensional matrix
 				// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 				// For INTERQUANTILE: 2nd argument is always a scalar
-				
+
+				PickByCount.OperationTypes pick_op = null;
+				if(op == Hop.OpOp2.QUANTILE)
+					pick_op = PickByCount.OperationTypes.VALUEPICK;
+				else
+					pick_op = PickByCount.OperationTypes.RANGEPICK;
+
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
 					CombineUnary combine = CombineUnary.constructCombineLop(
@@ -328,13 +334,13 @@ public class BinaryOp extends Hop
 	
 					// If only a single quantile is computed, then "pick" operation executes in CP.
 					ExecType et_pick = (getInput().get(1).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
+					
 					PickByCount pick = new PickByCount(
 							sort,
 							getInput().get(1).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hop.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
+							pick_op, et_pick, false);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -359,8 +365,77 @@ public class BinaryOp extends Hop
 							getInput().get(1).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hop.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-									: PickByCount.OperationTypes.RANGEPICK, et, true);
+							pick_op, et, true);
+	
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	
+					set_lops(pick);
+				}
+			}
+			else if (op==Hop.OpOp2.MEDIAN) {
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					CombineBinary combine = CombineBinary
+							.constructCombineLop(
+									OperationTypes.PreSort,
+									getInput().get(0).constructLops(),
+									getInput().get(1).constructLops(),
+									DataType.MATRIX, get_valueType());
+
+					SortKeys sort = SortKeys
+							.constructSortByValueLop(
+									combine,
+									SortKeys.OperationTypes.WithWeights,
+									DataType.MATRIX, get_valueType(), et);
+	
+					combine.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+	
+					// Sort dimensions are same as the first input
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
+	
+					ExecType et_pick = ExecType.CP;
+					
+					PickByCount pick = new PickByCount(
+							sort,
+							Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+							get_dataType(),
+							get_valueType(),
+							PickByCount.OperationTypes.MEDIAN, et_pick, false);
+	
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	
+					set_lops(pick);
+				}
+				else {
+					SortKeys sort = SortKeys.constructSortByValueLop(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							SortKeys.OperationTypes.WithWeights, 
+							getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
+					PickByCount pick = new PickByCount(
+							sort,
+							Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+							get_dataType(),
+							get_valueType(),
+							PickByCount.OperationTypes.MEDIAN, et, true);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -1187,7 +1262,7 @@ public class BinaryOp extends Hop
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
 		double ret = 0;
-		if ( op == OpOp2.QUANTILE || op == OpOp2.IQM ) {
+		if ( op == OpOp2.QUANTILE || op == OpOp2.IQM  || op == OpOp2.MEDIAN ) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation 
 			// getMemEstimate works for both cases of known dims and worst-case
 			ret = getInput().get(0).getMemEstimate() * 3; 

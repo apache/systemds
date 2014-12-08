@@ -96,6 +96,73 @@ public class UnaryOp extends Hop
 		return s;
 	}
 
+	private Lop handleMedian() throws HopsException, LopsException {
+		ExecType et = optFindExecType();
+		if ( et == ExecType.MR ) {
+			CombineUnary combine = CombineUnary.constructCombineLop(
+					getInput().get(0).constructLops(),
+					get_dataType(), get_valueType());
+
+			SortKeys sort = SortKeys.constructSortByValueLop(
+					combine, SortKeys.OperationTypes.WithNoWeights,
+					DataType.MATRIX, ValueType.DOUBLE, et);
+
+			combine.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+
+			// Sort dimensions are same as the first input
+			sort.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(),
+					getInput().get(0).get_rows_in_block(),
+					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getNnz());
+
+			// If only a single quantile is computed, then "pick" operation executes in CP.
+			ExecType et_pick = ExecType.CP;
+			
+			PickByCount pick = new PickByCount(
+					sort,
+					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+					get_dataType(),
+					get_valueType(),
+					PickByCount.OperationTypes.MEDIAN, et_pick, false);
+
+			pick.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			return pick;
+		}
+		else {
+			SortKeys sort = SortKeys.constructSortByValueLop(
+								getInput().get(0).constructLops(), 
+								SortKeys.OperationTypes.WithNoWeights, 
+								DataType.MATRIX, ValueType.DOUBLE, et );
+			sort.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(),
+					getInput().get(0).get_rows_in_block(),
+					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getNnz());
+			PickByCount pick = new PickByCount(
+					sort,
+					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+					get_dataType(),
+					get_valueType(),
+					PickByCount.OperationTypes.MEDIAN, et, true);
+
+			pick.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			set_lops(pick);
+			return pick;
+		}
+	}
+	
 	private Lop handleIQM() throws HopsException, LopsException {
 		ExecType et = optFindExecType();
 		Hop input = getInput().get(0);
@@ -312,6 +379,10 @@ public class UnaryOp extends Hop
 					Lop iqmLop = handleIQM();
 					set_lops(iqmLop);
 				} 
+				else if(_op == Hop.OpOp1.MEDIAN) {
+					Lop medianLop = handleMedian();
+					set_lops(medianLop);
+				}
 				else //general case SCALAR/CAST (always in CP)
 				{
 					UnaryCP.OperationTypes optype = HopsOpOp1LopsUS.get(_op);
@@ -571,7 +642,7 @@ public class UnaryOp extends Hop
 	{
 		double ret = 0;
 		
-		if ( _op == OpOp1.IQM ) {
+		if ( _op == OpOp1.IQM  || _op == OpOp1.MEDIAN) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 

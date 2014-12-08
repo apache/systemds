@@ -31,6 +31,9 @@ build.configfile=SystemML-config.xml
 # SystemML.jar
 build.jarnamerun=SystemML.jar
 
+# SystemML for Stand-alone systems (w/o Hadoop) as a Java appln
+build.standalonejar=jSystemML.jar
+
 # machine-learning.tar.gz
 build.configjartgz=machine-learning.tar.gz
 

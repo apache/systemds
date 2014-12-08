@@ -191,6 +191,50 @@ The source code for this program is not published or otherwise divested of its t
 		</jar>
 	</target>
 	
+	<!-- Make sure the Standalone jSystemML.jar depends on build -->
+	<target depends="build" name="standalone">
+		<echo message="Unpackaging hadoop jars and zipfileset-ing them in StandaloneSystemML."/>
+		<jar jarfile="${build.folder}/${build.standalonejar}" basedir="${build.folder}">
+			<exclude name="com/ibm/bi/dml/test/**" />
+			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble_hadoop2.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-annotations-4.3.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-runtime-4.3.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar"/>
+			<zipfileset includes="**/*.class" src="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->          
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar" />  <!-- for random number generation -->
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/log4j-1.2.15.jar" /> <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/opencsv-1.8.jar" /> <!-- for read/write csv -->
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" />
+			<zipfileset includes="META-INF/services/*" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" />
+			<zipfileset includes="**/*.xml" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" /> <!-- for sourcing hadoop config -->
+			<zipfileset includes="**/*.properties" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-configuration-1.6.jar" /> 
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-lang-2.5.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/jackson-core-asl-1.8.8.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/jackson-mapper-asl-1.8.8.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-logging-1.1.1.jar" />  <!-- for LogFactory used by com.ibm.bi.dml.sgd.Summit.java -->
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-httpclient-3.1.jar" /> <!-- for running "auto" in local mode -->
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-cli-1.2.jar" /> <!-- for GenericOptionParser -->
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/commons-collections-3.2.1.jar" /> 
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/guava-11.0.2.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/slf4j-api-1.7.5.jar" />
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/slf4j-log4j12-1.7.5.jar" />
+			<zipfileset dir="./standalone/" includes="log4j.properties" fullpath="log4j.properties" />
+			<manifest>
+				<attribute name="Class-Path" value="./" />
+				<attribute name="Main-Class" value="com.ibm.bi.dml.api.DMLScript" />
+				<section name="versioninfo">
+					<attribute name="SystemML" value="${systemml.version}" />
+					<attribute name="BuildTime" value="${release.timestamp}" />
+					<attribute name="ReleaseNotes" value="${release.notes}" />
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
 	<!-- TZ: This target is a hack for building SystemML-1.4.jar based on BigInsights 1.4 release and it should be removed.
 	     Berthold requested a special SystemML-1.4.jar for customer PoC that includes common-math-2.2.jar. -->
 	<target depends="build" name="specialjar">

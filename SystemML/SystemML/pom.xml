@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.ibm.biginsights</groupId>
-  <version>3.4-SNAPSHOT</version>
+  <version>3.4</version>
   <artifactId>systemml-reactor</artifactId>
   <packaging>pom</packaging>
 
@@ -18,9 +18,9 @@
 -->  
   
   <scm>
-		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.4</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.4</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.4</developerConnection>
  </scm>
   
 

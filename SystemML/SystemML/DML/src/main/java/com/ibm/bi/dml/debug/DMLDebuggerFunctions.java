@@ -301,37 +301,53 @@ public class DMLDebuggerFunctions {
 			System.err.println("No matrix variable name entered.");
 			return;
 		}
+		
 		if (variables != null && !variables.keySet().isEmpty()) {
 			if (variables.get(varname) != null) {
 				if (variables.get(varname).getDataType() == DataType.MATRIX) {
 					try {
-						MatrixObject mo = (MatrixObject) variables.get(varname);
-						if (mo.getStatusAsString() == "EMPTY" && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
-							//TODO @jlugoma Need to add functionality to bring and display a block. 
-							System.err.println("ERROR: Matrix dimensions are too large to fit in main memory.");
+						MatrixObject mo = null;
+						
+						try {
+							mo = (MatrixObject) variables.get(varname);
+							if (mo.getStatusAsString() == "EMPTY" && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
+								//TODO @jlugoma Need to add functionality to bring and display a block. 
+								System.err.println("ERROR: Matrix dimensions are too large to fit in main memory.");
+								return;
+							}
+						}
+						catch(Exception fetchMatrixException) {
+							System.err.println("ERROR: While fetching the matrix from symbol table.");
 							return;
 						}
-						MatrixBlock mb = mo.acquireRead();
 						
 						if(displayFunction.compareTo("value") == 0) {
-							prettyPrintMatrixBlock(mb, rowIndex, colIndex);
+							MatrixBlock mb = null;
+							try {
+								// Only read the MatrixBlock when asked to print, but not for whatis
+								mb = mo.acquireRead();
+								prettyPrintMatrixBlock(mb, rowIndex, colIndex);
+								mo.release();
+							}
+							catch(Exception fetchMatrixException) {
+								System.err.println("ERROR: Matrix dimensions are too large to fit in main memory.");
+								return;
+							}
 						}
 						else if(displayFunction.compareTo("metadata") == 0) {
 							System.out.println("Metadata of " + varname + ": matrix"+variables.get(varname).getMetaData().toString());
 						}
-						mo.release();
-						/*
-						if(displayFunction.compareTo("value") == 0) {
-							if (mb.getNumRows() > DISPLAY_MAX_ROWS || mb.getNumColumns() > DISPLAY_MAX_COLUMNS) {
-								System.out.format("WARNING: DML matrix/vector is too large to display on the screen."
-										+ "\nOnly a snapshot of %d row(s) and %d column(s) is being displayed.\n", 
-										min(mb.getNumRows(), DISPLAY_MAX_ROWS), min(mb.getNumColumns(), DISPLAY_MAX_COLUMNS));
-							}
-						}
-						*/
+						
 												
 					} catch (Exception e) {
-						System.err.println("Error processing \'print\' command for variable "+varname+".");
+						String command = "";
+						if(displayFunction.compareTo("value") == 0) {
+							command = "print";
+						}
+						else {
+							command = "whatis";
+						}
+						System.err.println("Error processing \'" + command + "\' command for variable "+varname+".");
 						return;
 					}
 				}

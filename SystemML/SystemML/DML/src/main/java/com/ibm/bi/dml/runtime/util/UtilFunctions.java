@@ -113,6 +113,16 @@ public class UtilFunctions
 		return true;
 	}
 	
+	public static boolean isSimpleDoubleNumber( String str )
+	{
+		//true if all chars numeric or - or .
+		byte[] c = str.getBytes();
+		for( int i=0; i<c.length; i++ )
+			if( (c[i] < 48 || c[i] > 57) && !(c[i]==45 || c[i]==46) )
+				return false;
+		return true;
+	}
+	
 	public static byte max( byte[] array )
 	{
 		byte ret = Byte.MIN_VALUE;

@@ -98,13 +98,44 @@ public class FastStringTokenizer
     	return Double.parseDouble( nextToken() );
     }
     
-    /*
-    public void parseMatrixCell( IJV target, String value )
+    public double nextDoubleForParallel()
     {
-    	reset( value );
-    	target.i = nextInt();
-    	target.j = nextInt();
-    	target.v = nextDouble();
+    	//return Double.parseDouble( nextToken() );
+    	
+    	//NOTE: Depending on the platform string-2-double conversions were
+    	//the main bottleneck in reading text data. Furthermore, we observed
+    	//severe contention on multi-threaded parsing on Linux JDK.
+    	// ---
+    	//This is a known issue and has been fixed in JDK8.
+    	//JDK-7032154 : Performance tuning of sun.misc.FloatingDecimal/FormattedFloatingDecimal
+    	
+    	// Simple workaround without JDK8 code, however, this does NOT guarantee exactly
+    	// the same result due to potential for round off errors. 
+    	
+    	String val = nextToken();
+    	double ret = 0;
+    
+    	if( UtilFunctions.isSimpleDoubleNumber(val) )
+    	{ 
+    		int ix = val.indexOf('.'); 
+    		if( ix > 0 ) //DOUBLE parsing  
+        	{
+        		String s1 = val.substring(0, ix);
+        		String s2 = val.substring(ix+1);
+        		long tmp1 = Long.parseLong(s1);
+        		long tmp2 = Long.parseLong(s2);
+        		ret = (double)tmp2 / Math.pow(10, s2.length()) + tmp1;
+        	}
+        	else //LONG parsing and cast to double  
+        		ret = (double)Long.parseLong(val);
+    	}
+    	else 
+    	{
+    		//fall-back to slow default impl if special characters
+    		//e.g., ...E-0X, NAN, +-INFINITY, etc
+    		ret = Double.parseDouble( val );
+    	}
+    	
+    	return ret;
     }
-    */
 }

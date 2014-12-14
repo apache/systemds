@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -94,8 +95,10 @@ public abstract class MatrixReader
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)estnnz);
-		if( !sparse && mallocDense )
+		if( !sparse && mallocDense ){
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
+			Arrays.fill(ret.getDenseArray(),0);
+		}
 		else if( sparse )
 			ret.adjustSparseRows((int)rlen-1);
 		

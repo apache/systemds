@@ -97,6 +97,11 @@ public class OptimizerUtils
 	public static boolean ALLOW_BRANCH_REMOVAL = true;
 	
 	/**
+	 * 
+	 */
+	public static boolean ALLOW_AUTO_VECTORIZATION = true;
+	
+	/**
 	 * Enables simple expression evaluation for datagen parameters 'rows', 'cols'. Simple
 	 * expressions are defined as binary operations on literals and nrow/ncol. This applies
 	 * only to exact size information.

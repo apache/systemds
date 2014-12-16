@@ -54,6 +54,11 @@ public class VariableSet
 		}
 	}
 	
+	public void removeVariable(String name)
+	{
+		_variables.remove(name);
+	}
+	
 	public boolean containsVariable(String name){
 		return _variables.containsKey(name);
 	}

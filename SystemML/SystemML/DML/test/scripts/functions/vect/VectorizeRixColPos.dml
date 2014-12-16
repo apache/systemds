@@ -1,0 +1,17 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A = read($1);
+
+R = A;
+s1 = A[7,3];
+s2 = A[8,3];
+R[1,1] = s1+s2;
+
+write(R, $2);

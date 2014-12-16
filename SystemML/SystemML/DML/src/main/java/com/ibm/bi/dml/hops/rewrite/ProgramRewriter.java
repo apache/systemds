@@ -84,12 +84,16 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: cse
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     ); 
+			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
+				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
 			
 			//add statment block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
- 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock			
+ 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock	
+ 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
+				_sbRuleSet.add(  new RewriteForLoopVectorization()               );
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

@@ -1,0 +1,17 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A = read($1);
+
+R = matrix(0, rows=nrow(A), cols=ncol(A));
+for( i in 1:ncol(A) ){
+   R[,i] = round(A[,i]);
+}
+
+write(R, $2);

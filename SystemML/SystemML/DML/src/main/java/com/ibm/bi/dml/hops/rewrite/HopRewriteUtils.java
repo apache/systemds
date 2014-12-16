@@ -505,4 +505,14 @@ public class HopRewriteUtils
 		return false;
 	}
 	
+	public static int getValidOpPos( OpOp2 input, OpOp2[] validTab )
+	{
+		for( int i=0; i<validTab.length; i++ ) {
+			 OpOp2 valid = validTab[i];
+			 if( valid == input )
+					return i;
+		}
+		return -1;
+	}
+	
 }

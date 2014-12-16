@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
  * 
  * 
  */
+@SuppressWarnings("rawtypes")
 public class BinaryBlockSerialization implements Serialization
 {
 	@SuppressWarnings("unused")

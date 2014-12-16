@@ -57,6 +57,7 @@ public class WriterBinaryCell extends MatrixWriter
 	 * @param bclen
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
 	private static void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{

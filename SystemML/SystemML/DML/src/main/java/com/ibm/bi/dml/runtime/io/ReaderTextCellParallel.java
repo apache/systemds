@@ -38,6 +38,10 @@ import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
  * TODO thorough experimental evaluation for dense/sparse, different data sizes
  * TODO clarify unsynchronized double parsing (unsafe vs copy of jdk8 sources)
  * 
+ * Notes on differences to sequential textcell reader
+ *   * The parallel textcell reader does not support MM files as well and hence will throw 
+ *     exceptions if MM file headers are present in the given dataset.
+ * 
  */
 public class ReaderTextCellParallel extends MatrixReader
 {
@@ -45,12 +49,10 @@ public class ReaderTextCellParallel extends MatrixReader
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private boolean _isMMFile = false;
 	private int _numThreads = 1;
 	
 	public ReaderTextCellParallel(InputInfo info)
 	{
-		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
 		_numThreads = InfrastructureAnalyzer.getLocalParallelism();
 	}
 	

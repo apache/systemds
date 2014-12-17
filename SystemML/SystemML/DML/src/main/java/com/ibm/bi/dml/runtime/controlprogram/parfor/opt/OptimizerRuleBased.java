@@ -1881,17 +1881,20 @@ public class OptimizerRuleBased extends Optimizer
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			for( Hop ch : h.getInput() )
 			{
+				//note: we replaxed the contraint of non-partitioned inputs for additional 
+				//latecy hiding and scan sharing of partitions which are read multiple times
+				
 				if(    ch instanceof DataOp && ch.get_dataType() == DataType.MATRIX
-					&& inputVars.contains(ch.get_name())
-					&& !partitionedVars.contains(ch.get_name()))
+					&& inputVars.contains(ch.get_name()) )
+					//&& !partitionedVars.contains(ch.get_name()))
 				{
 					ret = true;
 					sharedVars.add(ch.get_name());
 				}
 				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
 					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).get_dataType() == DataType.MATRIX
-					&& inputVars.contains(ch.getInput().get(0).get_name())
-					&& !partitionedVars.contains(ch.getInput().get(0).get_name()))
+					&& inputVars.contains(ch.getInput().get(0).get_name()) )
+					//&& !partitionedVars.contains(ch.getInput().get(0).get_name()))
 				{
 					ret = true;
 					sharedVars.add(ch.getInput().get(0).get_name());

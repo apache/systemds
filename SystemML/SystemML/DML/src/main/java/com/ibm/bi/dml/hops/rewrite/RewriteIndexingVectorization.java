@@ -130,6 +130,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
 							            ihop0.getInput().get(1), ihop0.getInput().get(1), new LiteralOp("1",1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newRix.refreshSizeInformation();
 					//rewire current operator and all candidates
 					for( Hop c : ihops ) {
@@ -168,6 +169,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					IndexingOp newRix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, 
 							         new LiteralOp("1",1), HopRewriteUtils.createValueHop(input, true),
 				                    ihop0.getInput().get(3), ihop0.getInput().get(3), false, true); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newRix.refreshSizeInformation();
 					//rewire current operator and all candidates
 					for( Hop c : ihops ) {
@@ -226,6 +228,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
 							            rowExpr, rowExpr, new LiteralOp("1",1), 
 							            HopRewriteUtils.createValueHop(input, false), true, false); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newRix.refreshSizeInformation();
 					
 					//rewrite bottom left indexing operator
@@ -248,6 +251,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 													rowExpr, rowExpr, new LiteralOp("1",1), 
 													HopRewriteUtils.createValueHop(input, false), true, false); 
+					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newLix.refreshSizeInformation();
 					HopRewriteUtils.addChildReference(parent, newLix, 0);
 					
@@ -281,6 +285,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					IndexingOp newRix = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, input, 
 							        new LiteralOp("1",1), HopRewriteUtils.createValueHop(input, true),            
 									colExpr, colExpr, false, true); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newRix.refreshSizeInformation();
 					
 					//rewrite bottom left indexing operator
@@ -303,6 +308,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 							                        new LiteralOp("1",1), HopRewriteUtils.createValueHop(input, true), 
 													colExpr, colExpr, false, true); 
+					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.get_rows_in_block(), input.get_cols_in_block(), -1);
 					newLix.refreshSizeInformation();
 					HopRewriteUtils.addChildReference(parent, newLix, 0);
 					

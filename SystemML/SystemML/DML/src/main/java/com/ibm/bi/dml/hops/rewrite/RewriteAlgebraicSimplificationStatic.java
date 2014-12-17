@@ -122,6 +122,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryVectorizeOperation(hi);       //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);  //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);     //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
+			hi = fuseDatagenAndMinusOperation(hop, hi, i);     //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
  			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);      //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
@@ -129,6 +130,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
+			hi = removeUnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	    //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
@@ -209,7 +211,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * handle removal of unnecessary binary operations
 	 * 
 	 * X/1 or X*1 or 1*X or X-0 -> X
-	 * 		
+	 * -1*X or X*-1-> -X		
+	 * 
 	 * @param parent
 	 * @param hi
 	 * @param pos
@@ -262,7 +265,36 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					LOG.debug("Applied removeUnnecessaryBinaryOperation3");
 				}
 			}
-			
+			//-1*X -> -X
+			//note: this rewrite is necessary since the new antlr parser always converts 
+			//-X to -1*X due to mechanical reasons
+			else if(   right.get_dataType()==DataType.MATRIX 
+					&& left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==-1.0 )
+			{
+				if( bop.getOp()==OpOp2.MULT )
+				{
+					bop.setOp(OpOp2.MINUS);
+					HopRewriteUtils.removeChildReferenceByPos(bop, left, 0);
+					HopRewriteUtils.addChildReference(bop, new LiteralOp("0",0), 0);
+					hi = bop;
+
+					LOG.debug("Applied removeUnnecessaryBinaryOperation4");
+				}
+			}
+			//X*-1 -> -X (see comment above)
+			else if(   left.get_dataType()==DataType.MATRIX 
+					&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==-1.0 )
+			{
+				if( bop.getOp()==OpOp2.MULT )
+				{
+					bop.setOp(OpOp2.MINUS);
+					HopRewriteUtils.removeChildReferenceByPos(bop, right, 1);
+					HopRewriteUtils.addChildReference(bop, new LiteralOp("0",0), 0);
+					hi = bop;
+					
+					LOG.debug("Applied removeUnnecessaryBinaryOperation5");
+				}
+			}
 		}
 		
 		return hi;
@@ -342,6 +374,60 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					hi = gen;
 					
 					LOG.debug("Applied fuseDatagenAndBinaryOperation2");
+				}
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop fuseDatagenAndMinusOperation( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		if( hi instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			if( right instanceof DataGenOp && ((DataGenOp)right).getDataGenMethod()==DataGenMethod.RAND &&
+				left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==0.0 )
+			{
+				DataGenOp inputGen = (DataGenOp)right;
+				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				int ixMin = params.get(DataExpression.RAND_MIN);
+				int ixMax = params.get(DataExpression.RAND_MAX);
+				Hop min = right.getInput().get(ixMin);
+				Hop max = right.getInput().get(ixMax);
+				
+				//apply rewrite under additional conditions (for simplicity)
+				if( inputGen.getParent().size()==1 
+					&& min instanceof LiteralOp && max instanceof LiteralOp )
+				{
+					//exchange and *-1 (special case 0 stays 0 instead of -0 for consistency)
+					double newMinVal = (((LiteralOp)max).getDoubleValue()==0)?0:(-1 * ((LiteralOp)max).getDoubleValue());
+					double newMaxVal = (((LiteralOp)min).getDoubleValue()==0)?0:(-1 * ((LiteralOp)min).getDoubleValue());
+					Hop newMin = new LiteralOp(String.valueOf(newMinVal), newMinVal);
+					Hop newMax = new LiteralOp(String.valueOf(newMaxVal), newMaxVal);
+					
+					HopRewriteUtils.removeChildReferenceByPos(inputGen, min, ixMin);
+					HopRewriteUtils.addChildReference(inputGen, newMin, ixMin);
+					HopRewriteUtils.removeChildReferenceByPos(inputGen, max, ixMax);
+					HopRewriteUtils.addChildReference(inputGen, newMax, ixMax);
+					
+					HopRewriteUtils.removeChildReference(parent, bop);
+					HopRewriteUtils.addChildReference(parent, inputGen, pos);
+					hi = inputGen;
+
+					LOG.debug("Applied fuseDatagenAndMinusOperation");		
 				}
 			}
 		}
@@ -750,6 +836,46 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				LOG.debug("Applied removeUnecessaryTranspose");
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop removeUnecessaryMinus(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi.get_dataType() == DataType.MATRIX && hi instanceof BinaryOp 
+			&& ((BinaryOp)hi).getOp()==OpOp2.MINUS  						//first minus
+			&& hi.getInput().get(0) instanceof LiteralOp && ((LiteralOp)hi.getInput().get(0)).getDoubleValue()==0 )
+		{
+			Hop hi2 = hi.getInput().get(1);
+			if( hi2.get_dataType() == DataType.MATRIX && hi2 instanceof BinaryOp 
+				&& ((BinaryOp)hi2).getOp()==OpOp2.MINUS  						//second minus
+				&& hi2.getInput().get(0) instanceof LiteralOp && ((LiteralOp)hi2.getInput().get(0)).getDoubleValue()==0 )
+				
+			{
+				Hop hi3 = hi2.getInput().get(1);
+				//remove unnecessary chain of -(-())
+				HopRewriteUtils.removeChildReference(parent, hi);
+				HopRewriteUtils.addChildReference(parent, hi3, pos);
+				hi = hi3;
+				
+				//cleanup if only consumer of intermediate
+				if( hi.getParent().size()<1 ) 
+					HopRewriteUtils.removeAllChildReferences( hi );
+				if( hi2.getParent().size()<1 ) 
+					HopRewriteUtils.removeAllChildReferences( hi2 );
+				
+				LOG.debug("Applied removeUnecessaryMinus");
 			}
 		}
 		

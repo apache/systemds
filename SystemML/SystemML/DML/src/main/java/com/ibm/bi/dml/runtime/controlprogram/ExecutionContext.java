@@ -27,6 +27,8 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
@@ -191,6 +193,11 @@ public class ExecutionContext
 	
 	public void removeMetaData(String varname) throws DMLRuntimeException {
 		_variables.get(varname).removeMetaData();
+	}
+	
+	public MatrixCharacteristics getMatrixCharacteristics( String varname ) throws DMLRuntimeException{
+		MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData) getMetaData(varname);
+		return dims.getMatrixCharacteristics();
 	}
 	
 	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {

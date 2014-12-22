@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
@@ -237,51 +237,36 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	@Override
-	public void processInstruction (ExecutionContext ec)
+	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		String output_name = output.get_name();
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		if(opcode.equalsIgnoreCase("nrow")){
-			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
+		if( opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")  )
+		{
+			//get meta data information
+			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.get_name());
+			long rval = -1;
+			if(opcode.equalsIgnoreCase("nrow"))
+				rval = mc.get_rows();
+			else if(opcode.equalsIgnoreCase("ncol"))
+				rval = mc.get_cols();
+			else if(opcode.equalsIgnoreCase("length"))
+				rval = mc.get_rows() * mc.get_cols();
+			
+			//create and set output scalar
 			ScalarObject ret = null;
-			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, dims.getMatrixCharacteristics().get_rows());
-			}
-			else if ( output.get_valueType() == ValueType.DOUBLE ) {
-				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
+			switch( output.get_valueType() ) {
+				case INT:	  ret = new IntObject(output_name, rval); break;
+				case DOUBLE:  ret = new DoubleObject(output_name, rval); break;
+				case STRING:  ret = new StringObject(output_name, String.valueOf(rval)); break;
 			}
 			ec.setScalarOutput(output_name, ret);
 			return;
 		}
-		else if(opcode.equalsIgnoreCase("ncol")){
-			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
-			ScalarObject ret = null;
-			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, dims.getMatrixCharacteristics().get_cols());
-			}
-			else if ( output.get_valueType() == ValueType.DOUBLE ) {
-				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
-			}
-			ec.setScalarOutput(output_name, ret);
-			return;
-		}
-		else if(opcode.equalsIgnoreCase("length")){
-			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(ec.getMetaData(input1.get_name()));
-			ScalarObject ret = null;
-			if ( output.get_valueType() == ValueType.INT ) {
-				ret = new IntObject(output_name, (dims.getMatrixCharacteristics().get_cols()
-						 * dims.getMatrixCharacteristics().get_rows()));
-			}
-			else if ( output.get_valueType() == ValueType.DOUBLE ) {
-				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols()
-						 * dims.getMatrixCharacteristics().get_rows());
-			}
-			ec.setScalarOutput(output_name, ret);
-			return;
-		}
-		else if (opcode.equalsIgnoreCase("cm")) {
+		else if (opcode.equalsIgnoreCase("cm")) 
+		{
 			/*
 			 * The "order" of the central moment in the instruction can 
 			 * be set to INVALID when the exact value is unknown at 
@@ -318,23 +303,24 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			ec.setScalarOutput(output_name, ret);
 			return;
 		} 
-		
-		/* Default behavior for AggregateUnary Instruction */
-		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());		
-		AggregateUnaryOperator au_op = (AggregateUnaryOperator) optr;
-		
-		MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
-		
-		ec.releaseMatrixInput(input1.get_name());
-		
-		if(output.get_dataType() == DataType.SCALAR){
-			DoubleObject ret = new DoubleObject(output_name, resultBlock.getValue(0, 0));
-			ec.setScalarOutput(output_name, ret);
-		} else{
-			// since the computed value is a scalar, allocate a "temp" output matrix
-			ec.setMatrixOutput(output_name, resultBlock);
+		else 
+		{
+			/* Default behavior for AggregateUnary Instruction */
+			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());		
+			AggregateUnaryOperator au_op = (AggregateUnaryOperator) optr;
+			
+			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+			
+			ec.releaseMatrixInput(input1.get_name());
+			
+			if(output.get_dataType() == DataType.SCALAR){
+				DoubleObject ret = new DoubleObject(output_name, resultBlock.getValue(0, 0));
+				ec.setScalarOutput(output_name, ret);
+			} else{
+				// since the computed value is a scalar, allocate a "temp" output matrix
+				ec.setMatrixOutput(output_name, resultBlock);
+			}
 		}
-		resultBlock = null;
 	}
 
 }

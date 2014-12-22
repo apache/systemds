@@ -1,0 +1,13 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+X = rand(rows=$1,cols=$2,sparsity=0.01);
+Y = removeEmpty(target=X,margin="rows");
+
+print(length(Y));

@@ -104,7 +104,7 @@ public class DataExpression extends DataIdentifier
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
 	private boolean _strInit = false; //string initialize
-		
+	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
 		
@@ -505,7 +505,7 @@ public class DataExpression extends DataIdentifier
 		return filename;
 	}
 	
-	private String getMTDFileName(String inputFileName) throws LanguageException {
+	public static String getMTDFileName(String inputFileName) throws LanguageException {
 		String mtdName = inputFileName + ".mtd";
 		
 		//validate read filename
@@ -526,7 +526,7 @@ public class DataExpression extends DataIdentifier
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional)
 			throws LanguageException 
-	{	
+	{		
 		// validate all input parameters
 		Set<String> varParamKeySet = getVarParams().keySet();
 		for ( String s : varParamKeySet ) {
@@ -2081,6 +2081,15 @@ public class DataExpression extends DataIdentifier
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isRead()
+	{
+		return (_opcode == DataOp.READ);
 	}
 	
 } // end class

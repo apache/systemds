@@ -7,7 +7,9 @@
 
 package com.ibm.bi.dml.lops.compile;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +28,7 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
@@ -87,6 +90,7 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
+import com.ibm.json.java.JSONObject;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -1330,10 +1334,19 @@ public class Recompiler
 					d.set_dim1(mo.getNumRows());
 					d.set_dim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
-					//System.out.println("Update statistics ("+d.getHopID()+") "+varName+": "+d.get_dim1()+" "+d.get_dim2()+" "+d.getNnz()+" "+d.getDataOpType());
 				}
 			}
 		}
+		//special case for persistent reads with unknown size (read-after-write)
+		else if( hop instanceof DataOp 
+				&& ((DataOp)hop).get_dataop() == DataOpTypes.PERSISTENTREAD
+				&& !hop.dimsKnown() && ((DataOp)hop).getFormatType()!=FileFormatTypes.CSV )
+		{
+			//update hop with read meta data
+			DataOp dop = (DataOp) hop; 
+			tryReadMetaDataFileMatrixCharacteristics(dop);
+		}
+		//update size expression for rand/seq according to symbol table entries
 		else if ( hop instanceof DataGenOp )
 		{
 			DataGenOp d = (DataGenOp) hop;
@@ -1371,6 +1384,7 @@ public class Recompiler
 				throw new DMLRuntimeException("Unexpect data generation method: " + d.getDataGenMethod());
 			}
 		}
+		//update size expression for reshape according to symbol table entries
 		else if (    hop instanceof ReorgOp 
 				 && ((ReorgOp)(hop)).getOp()==Hop.ReOrgOp.RESHAPE )
 		{
@@ -1378,6 +1392,7 @@ public class Recompiler
 			d.refreshRowsParameterInformation(d.getInput().get(1), vars);
 			d.refreshColsParameterInformation(d.getInput().get(2), vars);
 		}
+		//update size expression for indexing according to symbol table entries
 		else if( hop instanceof IndexingOp )
 		{
 			IndexingOp iop = (IndexingOp)hop;
@@ -1708,5 +1723,41 @@ public class Recompiler
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param fname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static void tryReadMetaDataFileMatrixCharacteristics( DataOp dop )
+		throws DMLRuntimeException
+	{
+		try
+		{
+			//get meta data filename
+			String mtdname = DataExpression.getMTDFileName(dop.getFileName());
+			
+			JobConf job = ConfigurationManager.getCachedJobConf();
+			FileSystem fs = FileSystem.get(job);
+			Path path = new Path(mtdname);
+			if( fs.exists(path) ){
+				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
+				JSONObject mtd = JSONObject.parse(br);
+				
+				DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+				dop.set_dataType(dt);
+				dop.set_valueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
+				dop.set_dim1((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
+				dop.set_dim2((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+				
+				br.close();
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
 	}
 }

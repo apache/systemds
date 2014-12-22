@@ -74,6 +74,7 @@ public class ProgramRewriter
 		{
 			//add static HOP DAG rewrite rules
 			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
+			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
 			_dagRuleSet.add(     new RewriteRemoveUnnecessaryCasts()             );		
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )

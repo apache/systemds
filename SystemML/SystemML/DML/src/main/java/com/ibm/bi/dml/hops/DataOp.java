@@ -66,7 +66,7 @@ public class DataOp extends Hop
 		setNnz(nnz);
 		set_rows_in_block(rowsPerBlock);
 		set_cols_in_block(colsPerBlock);
-				
+		
 		if (dop == DataOpTypes.TRANSIENTREAD)
 			setFormatType(FileFormatTypes.BINARY);
 	}
@@ -165,6 +165,10 @@ public class DataOp extends Hop
 		return _fileName;
 	}
 
+	public int getParameterIndex(String name)
+	{
+		return _paramIndexMap.get(name);
+	}
 	
 	@Override
 	public Lop constructLops()

@@ -745,7 +745,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				
 				// check that variables referenced in print statement expression are scalars
 				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){
-					raiseValidateError("print statement can only print scalars", conditional);
+				   raiseValidateError("print statement can only print scalars", conditional);
 				}
 			}
 			

@@ -50,6 +50,7 @@ import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -103,8 +104,13 @@ public class DMLTranslator
 	 * @throws LanguageException
 	 * @throws IOException 
 	 */
-	public void validateParseTree(DMLProgram dmlp) throws LanguageException, ParseException, IOException {
+	public void validateParseTree(DMLProgram dmlp) 
+		throws LanguageException, ParseException, IOException 
+	{
+		//STEP1: Pre-processing steps for validate - e.g., prepare read-after-write meta data
+		boolean fWriteRead = prepareReadAfterWrite(dmlp, new HashMap<String, DataIdentifier>());
 		
+		//STEP2: Actual Validate
 		// handle functions in namespaces (current program has default namespace)
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
 		
@@ -137,18 +143,30 @@ public class DMLTranslator
 		
 		// handle regular blocks -- "main" program
 		VariableSet vs = new VariableSet();
-		
-		//dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
-		
 		HashMap<String, ConstIdentifier> constVars = new HashMap<String, ConstIdentifier>();
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock sb = dmlp.getStatementBlock(i);
-			vs = sb.validate(dmlp, vs, constVars, false);
+			vs = sb.validate(dmlp, vs, constVars, fWriteRead);
 			constVars = sb.getConstOut();
 		}
 
+		//STEP3: Post-processing steps after validate - e.g., prepare read-after-write meta data
+		if( fWriteRead ) 
+		{
+			//propagate size and datatypes into read
+			prepareReadAfterWrite(dmlp, new HashMap<String, DataIdentifier>());
+		
+			//re-validate main program for datatype propagation
+			vs = new VariableSet();
+			constVars = new HashMap<String, ConstIdentifier>();
+			for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
+				StatementBlock sb = dmlp.getStatementBlock(i);
+				vs = sb.validate(dmlp, vs, constVars, fWriteRead);
+				constVars = sb.getConstOut();
+			}	
+		}
+		
 		return;
-
 	}
 
 	public void liveVariableAnalysis(DMLProgram dmlp) throws LanguageException {
@@ -3098,4 +3116,108 @@ public class DMLTranslator
 		h.set_cols_in_block(source.get_cols_in_block());
 	}
 
+	/**
+	 * 
+	 * @param prog
+	 * @param pWrites
+	 * @throws LanguageException 
+	 */
+	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) 
+		throws LanguageException
+	{
+		boolean ret = false;
+		
+		//process functions 
+		/*MB: for the moment we only support read-after-write in the main program 
+		for( FunctionStatementBlock fsb : prog.getFunctionStatementBlocks() )
+			ret |= prepareReadAfterWrite(fsb, pWrites);
+		*/
+		
+		//process main program
+		for( StatementBlock sb : prog.getStatementBlocks() )
+			ret |= prepareReadAfterWrite(sb, pWrites);
+	
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @param pWrites
+	 */
+	private boolean prepareReadAfterWrite( StatementBlock sb, HashMap<String, DataIdentifier> pWrites )
+	{
+		boolean ret = false;
+		
+		if(sb instanceof FunctionStatementBlock)
+		{
+			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
+			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			for (StatementBlock csb : fstmt.getBody())
+				ret |= prepareReadAfterWrite(csb, pWrites);
+		}
+		else if(sb instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			for (StatementBlock csb : wstmt.getBody())
+				ret |= prepareReadAfterWrite(csb, pWrites);
+		}	
+		else if(sb instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			for (StatementBlock csb : istmt.getIfBody())
+				ret |= prepareReadAfterWrite(csb, pWrites);
+			for (StatementBlock csb : istmt.getElseBody())
+				ret |= prepareReadAfterWrite(csb, pWrites);
+		}
+		else if(sb instanceof ForStatementBlock) //incl parfor
+		{
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			for (StatementBlock csb : fstmt.getBody())
+				ret |= prepareReadAfterWrite(csb, pWrites);
+		}
+		else //generic (last-level)
+		{
+			for( Statement s : sb.getStatements() )
+			{
+				//collect persistent write information
+				if( s instanceof OutputStatement )
+				{
+					OutputStatement os = (OutputStatement) s;
+					String pfname = os.getExprParam(DataExpression.IO_FILENAME).toString();
+					DataIdentifier di = (DataIdentifier) os.getSource().getOutput();
+					pWrites.put(pfname, di);
+				}
+				//propagate size information into reads-after-write
+				else if( s instanceof AssignmentStatement 
+						&& ((AssignmentStatement)s).getSource() instanceof DataExpression )
+				{
+					DataExpression dexpr = (DataExpression) ((AssignmentStatement)s).getSource();
+					if( dexpr.isRead() ){
+						String pfname = dexpr.getVarParam(DataExpression.IO_FILENAME).toString();
+						if( pWrites.containsKey(pfname) ) //found read-after-write
+						{
+							//update read with essential write meta data
+							DataIdentifier di = pWrites.get(pfname);
+							FormatType ft = (di.getFormatType()!=null) ? di.getFormatType() : FormatType.TEXT;
+							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+							if( di.getDataType()!=DataType.UNKNOWN ){
+								dexpr.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(di.getDim1(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+								dexpr.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(di.getDim2(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+								dexpr.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier(di.getDataType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+								dexpr.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier(di.getValueType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+							}
+						
+							ret = true;
+						}
+					}
+				}
+			}
+		}
+		
+		return ret;
+	}
 }

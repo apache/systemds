@@ -745,6 +745,10 @@ public abstract class Hop
 	public ValueType get_valueType() {
 		return _valueType;
 	}
+	
+	public void set_valueType(ValueType vt) {
+		_valueType = vt;
+	}
 
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 

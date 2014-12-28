@@ -175,9 +175,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
 		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "mr-iqm"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "valuepick"   	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "inmem-valuepick" , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "iqsize"      	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "median"   		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "inmem-median" 	, CPINSTRUCTION_TYPE.Variable);
 		

@@ -77,7 +77,8 @@ public class VariableCPInstruction extends CPInstruction
 		InMemValuePick,
 		Median,
 		InMemMedian,
-		InMemIQM, 
+		InMemIQM,
+		MRIQM,
 		IQSize, 
 		Write, 
 		Read, 
@@ -148,8 +149,8 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( str.equalsIgnoreCase("inmem-iqm") ) 
 			return VariableOperationCode.InMemIQM;
 		
-		else if ( str.equalsIgnoreCase("iqsize") ) 
-			return VariableOperationCode.IQSize;
+		else if ( str.equalsIgnoreCase("mr-iqm") ) 
+			return VariableOperationCode.MRIQM;
 		
 		else if ( str.equalsIgnoreCase("write") ) 
 			return VariableOperationCode.Write;
@@ -232,11 +233,11 @@ public class VariableCPInstruction extends CPInstruction
 		switch(op) {
 		case RemoveVariable:
 			return 1;
-		case IQSize:
 		case ValuePick:
 		case InMemValuePick:
 		case Write:
 		case SetFileName:
+		case MRIQM:
 		case SequenceIncrement:
 			return 3;
 		default:
@@ -373,7 +374,6 @@ public class VariableCPInstruction extends CPInstruction
 			
 		case ValuePick:
 		case InMemValuePick: 
-		case IQSize:
 			in1 = new CPOperand(parts[1]); // sorted data, which is input to Valuepick 
 			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double
 			out = new CPOperand(parts[3]); // output variable name
@@ -385,6 +385,12 @@ public class VariableCPInstruction extends CPInstruction
 			in1 = new CPOperand(parts[1]); // sorted data, which is input to IQM
 			out = new CPOperand(parts[2]);
 			break;
+			
+		case MRIQM:
+			in1 = new CPOperand(parts[1]);
+			in2 = new CPOperand(parts[2]);
+			out = new CPOperand(parts[3]);
+			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str); 
 			
 		case Write:
 			in1 = new CPOperand(parts[1]);
@@ -636,30 +642,36 @@ public class VariableCPInstruction extends CPInstruction
 			ec.releaseMatrixInput(input1.get_name());
 			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(iqm));
 			break;
+		
+		case MRIQM:
+			MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.get_name());
+			ScalarObject iqsum = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			
-		case IQSize:
-			// example = iqsize:::temp3:DOUBLE:::0.25:DOUBLE:::Var0:DOUBLE
-			// compute the number of records in interquartile
-			
-			// get otherMetadata associated with the matrix
-			String iqs_fname = input1.get_name();
-			MetaData iqs_md = ec.getMetaData(iqs_fname);
-			
-			// ge the range
-			ScalarObject pickrange = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
-			
-			if ( iqs_md != null ) {
-				try {
-					double rangesize = UtilFunctions.getLengthForInterQuantile((NumItemsByEachReducerMetaData) iqs_md, pickrange.getDoubleValue());
-					ScalarObject result = (ScalarObject) new DoubleObject(rangesize);
-					ec.setVariable(output.get_name(), result);
-				} catch (Exception e ) {
-					throw new DMLRuntimeException(e);
-				}
+			double[] q25, q75;
+			q25 = q75 = null;
+			try {
+				q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.25, false);
+				q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.75, false);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				throw new DMLRuntimeException(e1);
 			}
-			else {
-				throw new DMLRuntimeException("Unexpected error while executing IQSize: otherMetaData for file (" + iqs_fname + ") not found." );
-			}
+			
+			double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.get_name()));
+			double q25d = sumwt*0.25;
+			double q75d = sumwt*0.75;
+			
+			// iqsum = interQuartileSum that includes complete portions of q25 and q75
+			//   . exclude top portion of q25 and bottom portion of q75 
+			double q25entry_weight = q25[0]*q25[1];
+			double q25portion_include = (q25[2]-q25d)*q25[0];
+			double q25portion_exclude = q25entry_weight-q25portion_include;
+			double q75portion_exclude = (q75[2]-q75d)*q75[0];
+			
+			double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
+
+			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(mriqm));
 			break;
 			
 		case Read:

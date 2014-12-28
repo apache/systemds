@@ -219,7 +219,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 			V value=values.next();
 			out.collect(key, value);
 		//	LOG.info("** sort result: "+key+": "+value);
-			//System.out.println("sort "+count+": "+key+": "+value);
+			// System.out.println("sort "+count+": "+key+": "+value);
 			if(valueIsWeight)
 				sum+=((IntWritable)value).get();
 			else

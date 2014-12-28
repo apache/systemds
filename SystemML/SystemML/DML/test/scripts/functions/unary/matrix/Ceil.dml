@@ -7,7 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-
 V = read($1);
-R = round(V);
+R = ceil(V);
 write(R, $2);
+

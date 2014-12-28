@@ -63,15 +63,21 @@ public class UtilFunctions
 		return (point>=s && point<=f);
 	}
 	
-	public static long getLengthForInterQuantile(NumItemsByEachReducerMetaData metadata, double p)
-	{
+	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
 		long[] counts=metadata.getNumItemsArray();
 		long total=0;
 		for(long count: counts)
 			total+=count;
-		long lpos=(long)Math.ceil(total*p)+1;//lower bound is inclusive
-		long upos=(long)Math.ceil(total*(1-p))+1;//upper bound is non inclusive
-		return upos-lpos;
+		return total;
+	}
+	
+	public static long getLengthForInterQuantile(NumItemsByEachReducerMetaData metadata, double p)
+	{
+		long total = UtilFunctions.getTotalLength(metadata);
+		long lpos=(long)Math.ceil(total*p);//lower bound is inclusive
+		long upos=(long)Math.ceil(total*(1-p));//upper bound is inclusive
+		//System.out.println("getLengthForInterQuantile(): " + (upos-lpos+1));
+		return upos-lpos+1;
 	}
 
 	public static int parseToInt( String str )

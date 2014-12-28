@@ -4380,6 +4380,37 @@ public class MatrixBlock extends MatrixValue
 		return result;
 	}
 	
+	public double interQuartileMean() throws DMLRuntimeException {
+		double sum_wt = sumWeightForQuantile();
+		
+		double q25d = 0.25*sum_wt;
+		double q75d = 0.75*sum_wt;
+		
+		int q25i = (int) Math.ceil(q25d);
+		int q75i = (int) Math.ceil(q75d);
+		
+		// skip until (but excluding) q25
+		int t = 0, i=-1;
+		while(i<getNumRows() && t < q25i) {
+			i++;
+			//System.out.println("    " + i + ": " + quickGetValue(i,0) + "," + quickGetValue(i,1));
+			t += quickGetValue(i,1);
+		}
+		// compute the portion of q25
+		double runningSum = (t-q25d)*quickGetValue(i,0);
+		
+		// add until (including) q75
+		while(i<getNumRows() && t < q75i) {
+			i++;
+			t += quickGetValue(i,1);
+			runningSum += quickGetValue(i,0)*quickGetValue(i,1);
+		}
+		// subtract additional portion of q75
+		runningSum -= (t-q75d)*quickGetValue(i,0);
+		
+		return runningSum/(sum_wt*0.5);
+	}
+	
 	/**
 	 * Computes the weighted interQuartileMean.
 	 * The matrix block ("this" pointer) has two columns, in which the first column 
@@ -4388,7 +4419,7 @@ public class MatrixBlock extends MatrixValue
 	 * @return InterQuartileMean
 	 * @throws DMLRuntimeException
 	 */
-	public double interQuartileMean() throws DMLRuntimeException {
+	public double interQuartileMeanOLD() throws DMLRuntimeException {
 		double sum_wt = sumWeightForQuantile();
 		
 		int fromPos = (int) Math.ceil(0.25*sum_wt);

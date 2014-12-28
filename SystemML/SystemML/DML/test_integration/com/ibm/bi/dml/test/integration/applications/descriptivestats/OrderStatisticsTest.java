@@ -149,36 +149,4 @@ public class OrderStatisticsTest extends AutomatedTestBase
         compareResults(5e-14);
 	}
 	
-	@Test
-	public void testIQM()
-	{
-		int rows = 10;
-        int cols = 1;
-
-        TestConfiguration config = getTestConfiguration("IQMTest");
-        config.addVariable("rows", rows);
-
-        loadTestConfiguration("IQMTest");
-
-        createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
-        double[][] weight = getRandomMatrix(rows, 1, 1, 10, 1, System.currentTimeMillis());
-        round(weight);
-        
-        double[] sorted=sort(vector);
-        double iqm = IQM(sorted);
-        
-        writeInputMatrix("vector", vector);
-        writeExpectedHelperMatrix("iqm", iqm);
-        
-        
-        double[] fullsorted=sort(blowUp(vector, weight));
-        double weightediqm=IQM(fullsorted);
-        writeInputMatrix("weight", weight);
-        writeExpectedHelperMatrix("weighted_iqm", weightediqm);
-        
-        runTest();
-
-        compareResults(5e-14);
-	}
 }

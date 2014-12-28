@@ -8,6 +8,12 @@
 #-------------------------------------------------------------
 
 
-V = read($1);
-R = round(V);
-write(R, $2);
+V = matrix($1, rows=$3, cols=1);
+W = matrix($2, rows=$3, cols=1);
+
+iqm = interQuartileMean(V);
+iqm_wt = interQuartileMean(V,W);
+
+write(iqm, $4);
+write(iqm_wt, $5);
+

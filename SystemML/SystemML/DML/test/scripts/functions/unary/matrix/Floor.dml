@@ -9,5 +9,5 @@
 
 
 V = read($1);
-R = round(V);
+R = floor(V);
 write(R, $2);

@@ -626,15 +626,15 @@ public class MapReduceTool
 		
 		long total=ranges[ranges.length-1];
 		
-		return pickValue(dir, metadata, 0.5, total%2==0);
+		return pickValueWeight(dir, metadata, 0.5, total%2==0)[0];
 	}
 	
 
 	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p) throws IOException {
-		return pickValue(dir, metadata, p, false);
+		return pickValueWeight(dir, metadata, p, false)[0];
 	}
 	
-	public static double pickValue(String dir, NumItemsByEachReducerMetaData metadata, double p, boolean average) 
+	public static double[] pickValueWeight(String dir, NumItemsByEachReducerMetaData metadata, double p, boolean average) 
 	throws IOException
 	{
 		long[] counts=metadata.getNumItemsArray();
@@ -649,9 +649,12 @@ public class MapReduceTool
 		average = average && (total%2 == 0);
 
 		int currentPart=0;
+		double cum_weight = 0;
 		long pos=(long)Math.ceil(total*p);
-		while(ranges[currentPart]<pos)
+		while(ranges[currentPart]<pos) {
 			currentPart++;
+			cum_weight += ranges[currentPart];
+		}
 		int offset;
 		if(currentPart>0)
 			offset=(int)(pos-ranges[currentPart-1]-1);
@@ -689,18 +692,23 @@ public class MapReduceTool
 	    while(numRead<=offset)
 		{
 	    	reader.readNextKeyValuePairs(readKey, readValue);
-			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
 			numRead+=readValue.get();
+			cum_weight += readValue.get();
+			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue + ", " + numRead + " " + cum_weight);
 		}
 	    
 	    double ret = readKey.get();
 	    if(average) {
-	    	reader.readNextKeyValuePairs(readKey, readValue);;
-	    	ret = (ret+readKey.get())/2;
+	    	if(numRead<=offset+1) {
+	    		reader.readNextKeyValuePairs(readKey, readValue);;
+				numRead+=readValue.get();
+				cum_weight += readValue.get();
+				//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue + ", " + numRead + " " + cum_weight);
+		    	ret = (ret+readKey.get())/2;
+	    	}
 	    }
 	    currentStream.close();
-		return ret;
-		
+		return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
 	}
 	
 	/**

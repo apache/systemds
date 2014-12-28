@@ -25,7 +25,6 @@ n = ncol(A);
 
 # number of data records
 m = nrow(A);
-m
 
 # number of statistics
 numBaseStats = 17; # (14 scale stats, 3 categorical stats)
@@ -73,7 +72,18 @@ for(i in 1:n) {
 		se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
 
 		md = median(F); #quantile(F, 0.5, type = 1);
-		iqm = mean( subset(F, F>quantile(F,1/4,type = 1) & F<=quantile(F,3/4,type = 1) ) )
+
+		S = sort(F)
+		q25d=m*0.25
+		q75d=m*0.75
+		q25i=ceiling(q25d)
+		q75i=ceiling(q75d)
+
+		iqm = sum(S[(q25i+1):q75i])
+		iqm = iqm + (q25i-q25d)*S[q25i] - (q75i-q75d)*S[q75i]
+		iqm = iqm/(m*0.5)
+
+		#iqm = mean( subset(F, F>quantile(F,1/4,type = 1) & F<=quantile(F,3/4,type = 1) ) )
     
 		# place the computed statistics in output matrices
 		baseStats[1,i] = minimum;

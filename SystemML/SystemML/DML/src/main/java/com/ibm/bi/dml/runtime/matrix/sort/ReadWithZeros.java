@@ -8,6 +8,7 @@
 
 package com.ibm.bi.dml.runtime.matrix.sort;
 
+import java.io.EOFException;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -37,15 +38,28 @@ public class ReadWithZeros
 	
 	public void readNextKeyValuePairs(DoubleWritable readKey, IntWritable readValue)throws IOException 
 	{
-		if(contain0s && justFound0)
-		{
-			readKey.set(keyAfterZero.get());
-			readValue.set(valueAfterZero.get());
-			contain0s=false;
-		}else
-		{
-			readKey.readFields(currentStream);
-			readValue.readFields(currentStream);
+		try {
+			if(contain0s && justFound0)
+			{
+				readKey.set(keyAfterZero.get());
+				readValue.set(valueAfterZero.get());
+				contain0s=false;
+			}else
+			{
+				readKey.readFields(currentStream);
+				readValue.readFields(currentStream);
+			}
+		} catch(EOFException e) {
+			// case in which zero is the maximum value in the matrix. 
+			// The zero value from the last entry is not present in the input sorted matrix, but needs to be accounted for.
+			if (contain0s && !justFound0 ) {
+				justFound0=true;
+				readKey.set(0);
+				readValue.set((int)numZeros);
+			}
+			else {
+				throw e;
+			}
 		}
 		
 		if(contain0s && !justFound0 && readKey.get()>=0)

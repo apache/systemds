@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.Vector;
 import java.util.Map.Entry;
 
@@ -43,9 +42,10 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	static final String VALUE_IS_WEIGHT="value.is.weight";
-	private boolean inputIsVector=true;
+	// private boolean inputIsVector=true;
 	public static final String INPUT_IS_VECTOR="input.is.vector";
-	public static final String SELECTED_RANGES_PREFIX="selected.ranges.in.";
+	public static final String SELECTED_RANGES="selected.ranges";
+	//public static final String SELECTED_RANGES_PREFIX="selected.ranges.in.";
 	public static final String SELECTED_POINTS_PREFIX="selected.points.in.";
 	//public static final String KEY_CLASS="key.class.to.read";
 	public static final String VALUE_CLASS="value.class.to.read";
@@ -60,11 +60,6 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	{
 		job.setInt(PARTITION_OF_ZERO, metadata.getPartitionOfZero());
 		job.setLong(NUMBER_OF_ZERO, metadata.getNumberOfZero());
-	}
-	
-	public static void setValueIsWeight(JobConf job, boolean viw)
-	{
-		job.setBoolean(VALUE_IS_WEIGHT, viw);
 	}
 	
 	public static void setKeyValueClasses(JobConf job, 
@@ -142,65 +137,48 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		return posMap.keySet();
 	}
 	
-	public static Set<Integer> setPickRecordsInEachPartFile(JobConf job, NumItemsByEachReducerMetaData metadata, double lbound, double ubound)
-	{
-		TreeMap<Integer, Pair<Integer, Integer>> posMap
-		=new TreeMap<Integer, Pair<Integer, Integer>>();
-		getRangeInEachPartitionFile(metadata.getNumItemsArray(), lbound, ubound, posMap);
+	public static void setRangePickPartFiles(JobConf job, NumItemsByEachReducerMetaData metadata, double lbound, double ubound) {
 		
-		int startIndex=0;
-		for(Entry<Integer, Pair<Integer, Integer>> e: posMap.entrySet())
-		{
-			job.set(SELECTED_RANGES_PREFIX+e.getKey(), e.getValue().getKey()+":"+e.getValue().getValue()+":"+(startIndex+1));
-			//System.out.println("++ range for "+e.getKey()+" is "+e.getValue().getKey()+":"+e.getValue().getValue()+":"+(startIndex+1));
-			startIndex+=e.getValue().getValue();
+		if(lbound<0 || lbound > 1 || ubound <0 || ubound >1 || lbound >= ubound ) {
+			throw new RuntimeException("Invalid ranges for range pick: [" + lbound + "," + ubound + "]");
 		}
-		job.setBoolean(INPUT_IS_VECTOR, false);
-		return posMap.keySet();
-	}
-	
-	
-	private static void getRangeInEachPartitionFile(long[] counts,
-			double lbound, double ubound,
-			TreeMap<Integer, Pair<Integer, Integer>> posMap) {
 		
+		long[] counts = metadata.getNumItemsArray();
 		long[] ranges=new long[counts.length];
 		ranges[0]=counts[0];
 		for(int i=1; i<counts.length; i++)
 			ranges[i]=ranges[i-1]+counts[i];
-		long total=ranges[ranges.length-1];
-		long lpos=(long)Math.ceil(total*lbound)+1;//lower bound is inclusive
-		long upos=(long)Math.ceil(total*ubound)+1;//upper bound is non inclusive
-		//System.out.println("bound: "+lpos+", "+upos);
+		long sumwt=ranges[ranges.length-1];
 		
-		int i=0;
-		while(ranges[i]<lpos)
-			i++;
-		int start;
-		if(i>0)
-			start=(int) (lpos-ranges[i-1]-1);
-		else
-			start=(int) (lpos-1);
+		double qbegin = lbound*sumwt;
+		double qend   = ubound*sumwt;
 		
-		while(i<ranges.length && ranges[i]<upos)
-		{
-			posMap.put(i, new Pair<Integer, Integer>(start, (int)(counts[i]-start)));
-			//System.out.println("add range: "+start+" num:"+(int)(counts[i]-start));
-			i++;
-			start=0;
+		// Find part files that overlap with range [qbegin,qend]
+		int partID = -1;
+		long wt = 0;
+		
+		// scan until the part containing qbegin
+		while(wt < qbegin) {
+			partID++;
+			wt += counts[partID];
 		}
-		int endCount;
-		if(i>0)
-			endCount=(int) (upos-ranges[i-1]-1);
-		else
-			endCount=(int) (upos-1);
-		if(endCount>0)
-		{
-			posMap.put(i, new Pair<Integer, Integer>(start, endCount-start));
-			//System.out.println("add range: "+start+" num:"+(int)(endCount-start));
+		
+		StringBuilder sb = new StringBuilder();
+		while(wt <= qend) {
+			sb.append(partID+"," + (wt-counts[partID]) + ";"); // partID, weight until this part
+			partID++;
+			if(partID < counts.length) 
+				wt += counts[partID];
 		}
-	}
+		sb.append(partID+"," + (wt-counts[partID]) + ";"); 
+		
+		sb.append(sumwt + "," + lbound + "," + ubound);
+		//System.out.println("range string: " + sb.toString());
+		job.set(SELECTED_RANGES, sb.toString());
 
+		job.setBoolean(INPUT_IS_VECTOR, false);
+	}
+	
 	private static String getString(Vector<Pair<Integer, Integer>> value) {
 		String str="";
 		for(Pair<Integer, Integer> i: value)
@@ -216,10 +194,9 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			return new RangePickRecordReader(job, (FileSplit) split);
 	}
 	
-	
 	public static class RangePickRecordReader implements RecordReader<MatrixIndexes, MatrixCell>
 	{
-		private boolean valueIsWeight=true;
+		//private boolean valueIsWeight=true;
 		protected long totLength;
 		protected FileSystem fs;
 		protected Path path;
@@ -230,11 +207,18 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		private int startPos=0;
 		private int numToRead=0;
 		DoubleWritable readKey=new DoubleWritable();
-		Writable readValue;
+		Writable readValue = new IntWritable(0);
 		private boolean noRecordsNeeded=false;
 		private int rawKeyValuesRead=0;
 		private int index=0;
-		private int currentRepeat=0;
+		//private int currentRepeat=0;
+		
+		int beginPart=-1, endPart=-1, currPart=-1;
+		double sumwt = 0.0, readWt, wtUntilCurrPart;  // total weight (set in JobConf)
+		double lbound, ubound;
+		double[] partWeights = null;
+		boolean isFirstRecord = true;
+		
 		
 		//to handle zeros
 		ReadWithZeros reader=null;
@@ -251,25 +235,46 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			return Integer.parseInt(name.substring(i+5));
 		}
 		
-		public RangePickRecordReader(JobConf job, FileSplit split)
-				throws IOException{
-			fs = FileSystem.get(job);
+		private void parseSelectedRangeString(String str) {
+			String[] f1 = str.split(";");
+			String[] f2 = null;
+			
+			// Each field of the form: "pid,wt" where wt is the total wt until the part pid
+			partWeights = new double[f1.length-1];
+			for(int i=0; i < f1.length-1; i++) {
+				f2 = f1[i].split(",");
+				if(i==0) {
+					beginPart = Integer.parseInt(f2[0]);
+				}
+				if (i==f1.length-2) {
+					endPart = Integer.parseInt(f2[0]);
+				}
+				partWeights[i] = Double.parseDouble(f2[1]);
+			}
+			
+			// last field: "sumwt, lbound, ubound"
+			f2 = f1[f1.length-1].split(",");
+			sumwt  = Double.parseDouble(f2[0]);
+			lbound = Double.parseDouble(f2[1]);
+			ubound = Double.parseDouble(f2[2]);
+		}
+
+		public RangePickRecordReader(JobConf job, FileSplit split) throws IOException {
+			parseSelectedRangeString(job.get(SELECTED_RANGES));
+			
+			// check if the current part file needs to be processed
 	    	path = split.getPath();
 	    	totLength = split.getLength();
-	    	currentStream = fs.open(path);
-	    	int partIndex=getIndexInTheArray(path.getName());
+	    	currentStream = FileSystem.get(job).open(path);
+	    	currPart = getIndexInTheArray(path.getName());
+	    	//System.out.println("RangePickRecordReader(): sumwt " + sumwt + " currPart " + currPart + " partRange [" + beginPart + "," + endPart + "]");
 	    	
-	    	String str=job.get(SELECTED_RANGES_PREFIX+partIndex);
-	    	if(str==null || str.isEmpty()) 
-	    	{
-	    		noRecordsNeeded=true;
+	    	if ( currPart < beginPart || currPart > endPart ) {
+	    		System.out.println("    currPart is out of range. Skipping part!");
+	    		noRecordsNeeded = true;
 	    		return;
 	    	}
-	    	String[] temp=str.split(":");
-	    	startPos=Integer.parseInt(temp[0]);
-	    	numToRead=Integer.parseInt(temp[1]);
-	    	index=Integer.parseInt(temp[2]);
-	    	assert(numToRead>0);
+	    	
 	    	Class<? extends Writable> valueClass=(Class<? extends Writable>) job.getClass(VALUE_CLASS, Writable.class);
 	    	try {
 	    	//	readKey=keyClass.newInstance();
@@ -277,92 +282,74 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
-			valueIsWeight=job.getBoolean(VALUE_IS_WEIGHT, true);
+			//valueIsWeight=job.getBoolean(VALUE_IS_WEIGHT, true);
 			
 			int part0=job.getInt(PARTITION_OF_ZERO, -1);
 			boolean contain0s=false;
 			long numZeros =0;
-	    	if(part0==partIndex)
+	    	if(part0==currPart)
 	    	{
 	    		contain0s = true;
 	    		numZeros = job.getLong(NUMBER_OF_ZERO, 0);
 	    	}
 	    	reader=new ReadWithZeros(currentStream, contain0s, numZeros);
 		}
-		/*
-		private void readNextKeyValuePairs()throws IOException 
-		{
-			if(contain0s && justFound0)
-			{
-				readKey=keyAfterZero;
-				readValue=valueAfterZero;
-				contain0s=false;
-			}else
-			{
-				readKey.readFields(currentStream);
-				readValue.readFields(currentStream);
-			}
-			
-			if(contain0s && !justFound0 && readKey.get()>=0)
-			{
-				justFound0=true;
-				keyAfterZero=readKey;
-				valueAfterZero=readValue;
-				readKey=new DoubleWritable(0);
-				readValue=new IntWritable((int)numZeros);
-			}
-		}*/
 		
-		public boolean next(MatrixIndexes key, MatrixCell value)
-		throws IOException {
+		public boolean next(MatrixIndexes key, MatrixCell value) throws IOException {
+			assert(currPart!=-1);
 			
-			if(noRecordsNeeded || rawKeyValuesRead>=startPos+numToRead)
+			if(noRecordsNeeded)
+				// this part file does not fall within the required range of values
 				return false;
-			
-			//search from start
-			while(rawKeyValuesRead+currentRepeat<=startPos)
-			{
-				rawKeyValuesRead+=currentRepeat;
-				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
-				//System.out.println("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
-			//	LOG.info("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
-				if(valueIsWeight)
-					currentRepeat=((IntWritable)readValue).get();
-				else
-					currentRepeat=1;
-			}
-			if(rawKeyValuesRead<=startPos && rawKeyValuesRead+currentRepeat>startPos)
-			{
-				currentRepeat=rawKeyValuesRead+currentRepeat-startPos;
-				rawKeyValuesRead=startPos;
-			}
-			
-			if(currentRepeat<=0)
-			{
-				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
-			//	System.out.println("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
-			//	LOG.info("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
-				if(valueIsWeight)
-					currentRepeat=((IntWritable)readValue).get();
-				else
-					currentRepeat=1;
-			}
 
-			if(currentRepeat>0)
-			{
-				key.setIndexes(index, 1);
-				index++;
-				value.setValue(readKey.get());
-			//	System.out.println("next: "+key+", "+value);
-			//	LOG.info("next: "+key+", "+value);
-				rawKeyValuesRead++;
-				currentRepeat--;
+			double qLowerD = sumwt*lbound; // lower quantile in double 
+			double qUpperD = sumwt*ubound;
+			
+			// weight until current part
+			if (isFirstRecord) {
+				readWt = partWeights[currPart];
+				wtUntilCurrPart = partWeights[currPart];
+				isFirstRecord = false;
+			}
+			double tmpWt = 0;
+			
+			if ( currPart == beginPart || currPart == endPart ) {
+				//readWt = partWeights[currPart];
+				
+				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
+				tmpWt = ((IntWritable)readValue).get();
+
+				while(readWt+tmpWt < qLowerD) {
+					readWt += tmpWt;
+					reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
+					tmpWt = ((IntWritable)readValue).get();
+				}
+				
+				if((readWt<qLowerD && readWt+tmpWt >= qLowerD) || (readWt+tmpWt <= qUpperD) || (readWt<qUpperD && readWt+tmpWt>=qUpperD)) {
+					key.setIndexes(++index,1);
+					value.setValue(readKey.get()*tmpWt);
+					readWt += tmpWt;
+					//System.out.println("currpart " + currPart + ", return (" + index +",1): " + readKey.get()*tmpWt + "| [" + readKey.get() + "," + tmpWt +"] readWt=" + readWt);
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			else { //if(currPart != beginPart && currPart != endPart) {
+				// read full part
+				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
+				tmpWt = ((IntWritable)readValue).get();
+				
+				key.setIndexes(++index,1);
+				value.setValue(readKey.get()*tmpWt);
+				
+				readWt += tmpWt;
+				//System.out.println("currpart " + currPart + ", return (" + index +",1): " + readKey.get()*tmpWt + "| [" + readKey.get() + "," + tmpWt +"] readWt=" + readWt);
 				return true;
 			}
-			
-			return false;
 		}
-
+		
 		@Override
 		public void close() throws IOException {
 			//DO Nothing

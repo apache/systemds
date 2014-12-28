@@ -10,7 +10,6 @@ package com.ibm.bi.dml.hops;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.CumsumOffsetBinary;
 import com.ibm.bi.dml.lops.CumsumPartialAggregate;
@@ -18,25 +17,25 @@ import com.ibm.bi.dml.lops.CumsumSplitAggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Unary;
 import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
-import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
+import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
+import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
+import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
@@ -238,19 +237,11 @@ public class UnaryOp extends Hop
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			BinaryCP binScalar1 = new BinaryCP(
-					sort, lit, BinaryCP.OperationTypes.IQSIZE,
-					DataType.SCALAR, get_valueType());
-			binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			Unary iqm = new Unary(sort, unary1, Unary.OperationTypes.MR_IQM, DataType.SCALAR, ValueType.DOUBLE, ExecType.CP);
+			iqm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			iqm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			
-			BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1, HopsOpOp2LopsBS.get(Hop.OpOp2.DIV), 
-					                           DataType.SCALAR,get_valueType());
-			binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			
-			binScalar2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			return binScalar2;
+			return iqm;
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(

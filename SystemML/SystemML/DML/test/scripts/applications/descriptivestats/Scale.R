@@ -90,10 +90,17 @@ Q = t(quantile(V[,1], P[,1], type = 1))
 
 # inter-quartile mean
 S=c(sort(V[,1]))
-n25=ceiling(length(S)*0.25)
-n75=ceiling(length(S)*0.75)
-T=S[(n25+1):n75]
-iqm=mean(T)
+
+q25d=n*0.25
+q75d=n*0.75
+q25i=ceiling(q25d)
+q75i=ceiling(q75d)
+
+iqm = sum(S[(q25i+1):q75i])
+iqm = iqm + (q25i-q25d)*S[q25i] - (q75i-q75d)*S[q75i]
+iqm = iqm/(n*0.5)
+
+#print(paste("IQM ", iqm));
 
 # outliers use ppred to describe it
 out_minus = t(as.numeric(V< mu-5*std_dev)*V) 
@@ -118,4 +125,5 @@ write(iqm, paste(args[2], "iqm", sep=""));
 writeMM(as(t(out_minus),"CsparseMatrix"), paste(args[2], "out_minus", sep=""), format="text");
 writeMM(as(t(out_plus),"CsparseMatrix"), paste(args[2], "out_plus", sep=""), format="text");
 writeMM(as(t(Q),"CsparseMatrix"), paste(args[2], "quantile", sep=""), format="text");
+
 

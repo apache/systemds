@@ -768,6 +768,28 @@ public class MatrixObject extends CacheableData
 		}
 	}
 
+	public boolean moveData(String fName, String outputFormat) throws CacheIOException {
+		
+		try
+		{
+				if ( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty()))
+					exportData(fName, outputFormat);
+				else if ( isEqualOutputFormat(outputFormat) ){
+					MapReduceTool.deleteFileIfExistOnHDFS(fName);
+					MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
+					writeMetaData( fName, outputFormat, null );
+					MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
+				}
+				else {
+					return false;
+				}
+				return true;
+		}
+		catch (Exception e)
+		{
+			throw new CacheIOException ("Move to " + fName + " failed.", e);
+		}
+	}
 	
 	// *********************************************
 	// ***                                       ***

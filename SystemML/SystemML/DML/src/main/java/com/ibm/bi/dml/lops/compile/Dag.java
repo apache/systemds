@@ -811,7 +811,17 @@ public class Dag<N extends Lop>
 		N in = (N) node.getInputs().get(0);
 		Format nodeFormat = node.getOutputParameters().getFormat();
 		
-		//send write lop to MR if (1) it is marked with exec type MR (based on its memory consumption), or
+		// Case of a transient read feeding into only one output persistent binaryblock write
+		// Move the temporary file on HDFS to required persistent location, insteadof copying.
+		if ( in.getExecLocation() == ExecLocation.Data && in.getOutputs().size() == 1
+				&& !((Data)node).isTransient()
+				&& ((Data)in).isTransient()
+				&& ((Data)in).getOutputParameters().isBlocked_representation()
+				&& node.getOutputParameters().isBlocked_representation() ) {
+			return false;
+		}
+		
+		//send write lop to MR if (1) it is marked with exec type MR (based on its memory estimate), or
 		//(2) if the input lop is in MR and the write format allows to pack it into the same job (this does
 		//not apply to csv write because MR csvwrite is a separate MR job type)
 		if( node.getExecType() == ExecType.MR || (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV ) )
@@ -1670,7 +1680,7 @@ public class Dag<N extends Lop>
 								doRmVar = false;
 							}
 							else {
-								// In case of persistent write lop, write() instruction will be generated 
+								// In case of persistent write lop, write instruction will be generated 
 								// and that instruction must be added to <code>inst</code> so that it gets
 								// executed immediately. If it is added to <code>deleteInst</code> then it
 								// gets executed at the end of program block's execution
@@ -3190,10 +3200,30 @@ public class Dag<N extends Lop>
 					else { //CP PERSISTENT WRITE
 						// generate a write instruction that writes matrix to HDFS
 						Lop fname = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
-						String io_inst = node.getInstructions(
-								node.getInputs().get(0).getOutputParameters().getLabel(), 
-								fname.getOutputParameters().getLabel());
-						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+						CPInstruction currInstr = null;
+						Lop inputLop = node.getInputs().get(0);
+						
+						// Case of a transient read feeding into only one output persistent binaryblock write
+						// Move the temporary file on HDFS to required persistent location, insteadof copying.
+						if (inputLop.getExecLocation() == ExecLocation.Data
+								&& inputLop.getOutputs().size() == 1
+								&& ((Data)inputLop).isTransient() 
+								&& ((Data)inputLop).getOutputParameters().isBlocked_representation()
+								&& node.getOutputParameters().isBlocked_representation() ) {
+							// transient read feeding into persistent write in blocked representation
+							// simply, move the file
+							currInstr = (CPInstruction) VariableCPInstruction.prepareMoveInstruction(
+											inputLop.getOutputParameters().getLabel(), 
+											fname.getOutputParameters().getLabel(),
+											"binaryblock" );
+						}
+						else {
+							String io_inst = node.getInstructions(
+									node.getInputs().get(0).getOutputParameters().getLabel(), 
+									fname.getOutputParameters().getLabel());
+							currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+						}
+
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							if (node.getInputs().size() > 0 && node.getInputs().get(0)._beginLine != 0)
 								currInstr.setLineNum(node.getInputs().get(0)._beginLine);

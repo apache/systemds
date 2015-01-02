@@ -65,8 +65,9 @@ public class VariableCPInstruction extends CPInstruction
 	{
 		CreateVariable, 
 		AssignVariable, 
+		CopyVariable,
+		MoveVariable,
 		RemoveVariable, 
-		CopyVariable, 
 		RemoveVariableAndFile,		 
 		CastAsScalarVariable, 
 		CastAsMatrixVariable,
@@ -110,11 +111,14 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( str.equalsIgnoreCase("assignvar"))
 			return VariableOperationCode.AssignVariable;
 		
-		else if ( str.equalsIgnoreCase("rmvar") ) 
-			return VariableOperationCode.RemoveVariable;
-		
 		else if ( str.equalsIgnoreCase("cpvar"))
 			return VariableOperationCode.CopyVariable;
+		
+		else if ( str.equalsIgnoreCase("mvvar"))
+			return VariableOperationCode.MoveVariable;
+		
+		else if ( str.equalsIgnoreCase("rmvar") ) 
+			return VariableOperationCode.RemoveVariable;
 		
 		else if ( str.equalsIgnoreCase("rmfilevar") ) 
 			return VariableOperationCode.RemoveVariableAndFile;
@@ -239,6 +243,7 @@ public class VariableCPInstruction extends CPInstruction
 		case SetFileName:
 		case MRIQM:
 		case SequenceIncrement:
+		case MoveVariable:
 			return 3;
 		default:
 			return 2;
@@ -345,14 +350,20 @@ public class VariableCPInstruction extends CPInstruction
 			//	throw new DMLRuntimeException("Value type mismatch while assigning variables ("+in1.get_valueType()+", "+in2.get_valueType()+").");
 			break;
 			
-		case RemoveVariable:
-			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.SCALAR);
-			break;
-			
 		case CopyVariable:
 			// Value types are not given here
 			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
 			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
+			break;
+			
+		case MoveVariable:
+			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
+			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
+			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN);
+			break;
+			
+		case RemoveVariable:
+			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.SCALAR);
 			break;
 			
 		case RemoveVariableAndFile:
@@ -472,40 +483,16 @@ public class VariableCPInstruction extends CPInstruction
 			ec.setScalarOutput(input2.get_name(), ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral()));			
 			break;
 			
-		case RemoveVariable:
-			processRemoveVariableInstruction(ec, input1.get_name());
-			
+		case CopyVariable:
+			processCopyInstruction(ec);
 			break;
 			
-		case CopyVariable:
-			// example instruction: cpvar <srcVar> <destVar>
+		case MoveVariable:
+			processMoveInstruction(ec);
+			break;
 			
-			// get source variable 
-			Data dd = ec.getVariable(input1.get_name());		
-			
-			if ( dd == null ) 
-				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
-			
-			// remove existing variable bound to target name
-			Data input2_data = ec.removeVariable(input2.get_name());
-			
-			//cleanup matrix data on fs/hdfs (if necessary)
-			if ( input2_data != null && input2_data instanceof MatrixObject ) 
-			{
-				MatrixObject mo = (MatrixObject) input2_data;
-				if ( mo.isCleanupEnabled() ) {
-					//compute ref count only if matrix cleanup actually necessary
-					if ( !ec.getVariables().hasReferences(input2_data) ) {
-						mo.clearData(); //clean cached data	
-						if( mo.isFileExists() )
-							cleanDataOnHDFS( mo ); //clean hdfs data
-					}
-				}
-			}
-			
-			// do the actual copy!
-			ec.setVariable(input2.get_name(), dd);
-			
+		case RemoveVariable:
+			processRemoveVariableInstruction(ec, input1.get_name());
 			break;
 			
 		case RemoveVariableAndFile:
@@ -739,7 +726,67 @@ public class VariableCPInstruction extends CPInstruction
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}
 	}	
-
+	
+	/**
+	 * Handler for mvvar instructions.
+	 * Example: mvvar <srcvar> <destFile> <format>
+	 * Move the file pointed by srcvar to destFile. 
+	 * Currently, applicable only when format=binaryblock.
+	 *  
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 */
+	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		// example instruction: mvvar <srcVar> <destFile> <format>
+		if ( ec.getVariable(input1.get_name()) == null ) 
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+		
+		MatrixObject mo = (MatrixObject) ec.getVariable(input1.get_name());
+		if ( input3.get_name().equalsIgnoreCase("binaryblock") ) {
+			boolean success = mo.moveData(input2.get_name(), input3.get_name());
+			if (!success) {
+				throw new DMLRuntimeException("Failed to move var " + input1.get_name() + " to file " + input2.get_name() + ".");
+			}
+		}
+		else 
+			throw new DMLRuntimeException("Unexpected formats while copying: from blocks [" 
+						+ mo.getNumRowsPerBlock() + "," + mo.getNumColumnsPerBlock() + "] to " + input3.get_name());
+	}
+	
+	/**
+	 * Handler for cpvar instructions.
+	 * Example: cpvar <srcvar> <destvar>
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException 
+	 */
+	private void processCopyInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		// get source variable 
+		Data dd = ec.getVariable(input1.get_name());		
+			
+		if ( dd == null ) 
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+			
+		// remove existing variable bound to target name
+		Data input2_data = ec.removeVariable(input2.get_name());
+			
+		//cleanup matrix data on fs/hdfs (if necessary)
+		if ( input2_data != null && input2_data instanceof MatrixObject ) 
+		{
+			MatrixObject mo = (MatrixObject) input2_data;
+			if ( mo.isCleanupEnabled() ) {
+				//compute ref count only if matrix cleanup actually necessary
+				if ( !ec.getVariables().hasReferences(input2_data) ) {
+					mo.clearData(); //clean cached data	
+					if( mo.isFileExists() )
+						cleanDataOnHDFS( mo ); //clean hdfs data
+				}
+			}
+		}
+		// do the actual copy!
+		ec.setVariable(input2.get_name(), dd);
+	}
+	
 	/**
 	 * Handler for write instructions.
 	 * 
@@ -953,6 +1000,24 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(srcVar);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(destVar);
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}
+	
+	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		// (example
+		// "CP+Lops.OPERAND_DELIMITOR+cpvar+Lops.OPERAND_DELIMITOR+mVar7+Lops.OPERAND_DELIMITOR+mVar8")
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append("mvvar");
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(srcVar);
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(destFileName);
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(format);
 		String str = sb.toString();
 
 		return parseInstruction(str);

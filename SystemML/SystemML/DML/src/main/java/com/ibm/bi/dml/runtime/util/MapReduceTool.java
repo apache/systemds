@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -195,6 +196,9 @@ public class MapReduceTool
 		FileSystem fs = FileSystem.get(_rJob);
 		if (fs.exists(originalpath)) {
 			fs.rename(originalpath, newpath);
+		}
+		else {
+			throw new FileNotFoundException(originalDir);
 		}
 	}
 

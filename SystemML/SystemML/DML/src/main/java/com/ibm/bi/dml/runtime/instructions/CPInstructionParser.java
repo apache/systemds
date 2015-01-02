@@ -143,6 +143,7 @@ public class CPInstructionParser extends InstructionParser
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "cpvar"    	, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "mvvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPINSTRUCTION_TYPE.Variable);

@@ -275,7 +275,7 @@ public class DataConverter
 			throw new IOException(rex);
 		}	
 		
-		//System.out.println("read matrix ("+rlen+","+clen+","+ret.getNonZeros()+") in "+time.stop());
+		//System.out.println("read matrix ("+prop.rlen+","+prop.clen+","+ret.getNonZeros()+") in "+time.stop());
 				
 		return ret;
 	}

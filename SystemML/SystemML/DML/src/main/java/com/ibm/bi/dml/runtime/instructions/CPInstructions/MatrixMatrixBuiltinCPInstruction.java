@@ -7,10 +7,10 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.DecompositionSolver;
-import org.apache.commons.math.linear.QRDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.DecompositionSolver;
+import org.apache.commons.math3.linear.QRDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -73,7 +73,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		RealMatrix solutionMatrix = lusolver.solve(vectorInput);*/
 		
 		// Setup a solver based on QR Decomposition
-		QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
+		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
 		DecompositionSolver solver = qrdecompose.getSolver();
 		// Invoke solve
 		RealMatrix solutionMatrix = solver.solve(vectorInput);

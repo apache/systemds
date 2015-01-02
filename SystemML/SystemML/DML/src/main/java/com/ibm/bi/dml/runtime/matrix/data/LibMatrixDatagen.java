@@ -13,7 +13,7 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.math.random.Well1024a;
+import org.apache.commons.math3.random.Well1024a;
 
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;

@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;

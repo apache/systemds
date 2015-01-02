@@ -10,11 +10,11 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.EigenDecompositionImpl;
-import org.apache.commons.math.linear.LUDecompositionImpl;
-import org.apache.commons.math.linear.QRDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.QRDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -144,7 +144,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		
 		// Perform LUP decomposition
-		LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
+		LUDecomposition ludecompose = new LUDecomposition(matrixInput);
 		RealMatrix P = ludecompose.getP();
 		RealMatrix L = ludecompose.getL();
 		RealMatrix U = ludecompose.getU();
@@ -165,7 +165,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		
 		// Perform QR decomposition
-		QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
+		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
 		RealMatrix H = qrdecompose.getH();
 		RealMatrix R = qrdecompose.getR();
 		
@@ -191,7 +191,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		}
 		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
 		
-		EigenDecompositionImpl eigendecompose = new EigenDecompositionImpl(matrixInput, 0.0);
+		EigenDecomposition eigendecompose = new EigenDecomposition(matrixInput, 0.0);
 		RealMatrix eVectorsMatrix = eigendecompose.getV();
 		double[][] eVectors = eVectorsMatrix.getData();
 		double[] eValues = eigendecompose.getRealEigenvalues();

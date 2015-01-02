@@ -9,12 +9,12 @@ package com.ibm.bi.dml.runtime.functionobjects;
 
 import java.util.HashMap;
 
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.distribution.ChiSquaredDistributionImpl;
-import org.apache.commons.math.distribution.ExponentialDistributionImpl;
-import org.apache.commons.math.distribution.FDistributionImpl;
-import org.apache.commons.math.distribution.NormalDistributionImpl;
-import org.apache.commons.math.distribution.TDistributionImpl;
+import org.apache.commons.math3.distribution.ChiSquaredDistribution;
+import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.FDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.exception.MathArithmeticException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -129,7 +129,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		case CDF_T:
 			try {
 				return computeCDF(bFunc, params);
-			} catch (MathException e) {
+			} catch (MathArithmeticException e) {
 				throw new DMLRuntimeException(e);
 			}
 			
@@ -138,7 +138,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		}
 	}
 	
-	private double computeCDF (ParameterizedBuiltinCode bFunc, HashMap<String,String> params ) throws MathException, DMLRuntimeException {
+	private double computeCDF (ParameterizedBuiltinCode bFunc, HashMap<String,String> params ) throws MathArithmeticException, DMLRuntimeException {
 		
 		double quantile = Double.parseDouble(params.get("target"));
 		
@@ -159,7 +159,7 @@ public class ParameterizedBuiltin extends ValueFunction
 			if ( sd <= 0 ) {
 				throw new DMLRuntimeException("Standard deviation for Normal distribution must be positive (" + sd + ")");
 			}
-			NormalDistributionImpl ndist = new NormalDistributionImpl(mean, sd);
+			NormalDistribution ndist = new NormalDistribution(mean, sd);
 			return ndist.cumulativeProbability(quantile);
 		
 		case CDF_EXP:
@@ -172,7 +172,7 @@ public class ParameterizedBuiltin extends ValueFunction
 			if ( exp_mean <= 0 ) {
 				throw new DMLRuntimeException("Mean for Exponential distribution must be positive (" + exp_mean + ")");
 			}
-			ExponentialDistributionImpl expdist = new ExponentialDistributionImpl(exp_mean);
+			ExponentialDistribution expdist = new ExponentialDistribution(exp_mean);
 			return expdist.cumulativeProbability(quantile);
 		
 		case CDF_CHISQ:
@@ -186,7 +186,7 @@ public class ParameterizedBuiltin extends ValueFunction
 			if ( df <= 0 ) {
 				throw new DMLRuntimeException("Degrees of Freedom for ChiSquared distribution must be positive (" + df + ")");
 			}
-			ChiSquaredDistributionImpl chdist = new ChiSquaredDistributionImpl(df);
+			ChiSquaredDistribution chdist = new ChiSquaredDistribution(df);
 			return chdist.cumulativeProbability(quantile);
 		
 		case CDF_F:
@@ -200,7 +200,7 @@ public class ParameterizedBuiltin extends ValueFunction
 			if ( df1 <= 0 || df2 <= 0) {
 				throw new DMLRuntimeException("Degrees of Freedom for F-distribution must be positive (" + df1 + "," + df2 + ")");
 			}
-			FDistributionImpl fdist = new FDistributionImpl(df1, df2);
+			FDistribution fdist = new FDistribution(df1, df2);
 			return fdist.cumulativeProbability(quantile);
 		case CDF_T:
 			if ( params.get("df") == null ) {
@@ -212,7 +212,7 @@ public class ParameterizedBuiltin extends ValueFunction
 			if ( t_df <= 0 ) {
 				throw new DMLRuntimeException("Degrees of Freedom for t-distribution must be positive (" + t_df + ")");
 			}
-			TDistributionImpl tdist = new TDistributionImpl(t_df);
+			TDistribution tdist = new TDistribution(t_df);
 			return tdist.cumulativeProbability(quantile);
 		}
 		

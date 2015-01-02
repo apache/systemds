@@ -9,7 +9,7 @@ package com.ibm.bi.dml.meta;
 
 import java.io.IOException;
 
-import org.apache.commons.math.random.Well1024a;
+import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;

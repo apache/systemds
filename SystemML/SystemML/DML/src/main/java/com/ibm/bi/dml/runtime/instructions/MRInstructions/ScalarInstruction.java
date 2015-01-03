@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -37,7 +37,6 @@ import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.RightScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
@@ -45,14 +44,17 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 public class ScalarInstruction extends UnaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public ScalarInstruction(Operator op, byte in, byte out, String istr)
+	public ScalarInstruction(ScalarOperator op, byte in, byte out, String istr)
 	{
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
+		
+		//value dependent safe-safeness (trigger re-evaluation sparse-safe)
+		op.setConstant(op.getConstant());
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {

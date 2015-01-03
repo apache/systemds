@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,7 +32,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 public class StatementBlock extends LiveVariableAnalysis
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
@@ -176,8 +176,6 @@ public class StatementBlock extends LiveVariableAnalysis
 				// for now, ensure that an assignment statement containing a read from csv ends up in own statement block
 				if(astmt.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && astmt.getSource().toString().contains("read"))
 					return false;
-				if( astmt.containsIndividualStatementBlockOperations() )
-					return false;
 				sourceExpr = astmt.getSource();
 			}
 			else
@@ -266,8 +264,6 @@ public class StatementBlock extends LiveVariableAnalysis
     				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
     				ret &= rIsInlineableFunction(fblock2, prog);
     				if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && as.getSource().toString().contains("read"))
-    					return false;
-    				if( as.containsIndividualStatementBlockOperations() )
     					return false;
     				
     				if( !ret ) return false;

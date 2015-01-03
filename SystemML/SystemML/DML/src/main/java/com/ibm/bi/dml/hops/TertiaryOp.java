@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -59,12 +59,12 @@ import com.ibm.bi.dml.sql.sqllops.SQLUnion.UNIONTYPE;
 public class TertiaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITE = true;
 	
-	private Hop.OpOp3 op = null;
+	private OpOp3 op = null;
 	
 	// flag to indicate the existence of additional inputs representing output dimensions
 	private boolean dimInputsPresent = false;
@@ -104,37 +104,42 @@ public class TertiaryOp extends Hop
 		dimInputsPresent = true;
 	}
 	
-	
+	public OpOp3 getOp(){
+		return op;
+	}
 	
 	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{	
-		if (get_lops() == null) {
-			try {
+		if (get_lops() == null) 
+		{
+			try 
+			{
 				switch(op) {
-				case CENTRALMOMENT:
-					handleCentralMoment();
-					break;
-					
-				case COVARIANCE:
-					handleCovariance();
-					break;
-					
-				case QUANTILE:
-				case INTERQUANTILE:
-					handleQuantile();
-					break;
-					
-				case CTABLE:
-					handleCtable();
-					break;
-					
+					case CENTRALMOMENT:
+						constructLopsCentralMoment();
+						break;
+						
+					case COVARIANCE:
+						constructLopsCovariance();
+						break;
+						
+					case QUANTILE:
+					case INTERQUANTILE:
+						constructLopsQuantile();
+						break;
+						
+					case CTABLE:
+						constructLopsCtable();
+						break;
+						
 					default:
 						throw new HopsException(this.printErrorLocation() + "Unknown TertiaryOp (" + op + ") while constructing Lops \n");
 
 				}
-			} catch(LopsException e) {
+			} 
+			catch(LopsException e) {
 				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 			}
 		}
@@ -148,7 +153,7 @@ public class TertiaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void handleCentralMoment() throws HopsException, LopsException {
+	private void constructLopsCentralMoment() throws HopsException, LopsException {
 		
 		if ( op != OpOp3.CENTRALMOMENT )
 			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CENTRALMOMENT );
@@ -199,7 +204,7 @@ public class TertiaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void handleCovariance() throws HopsException, LopsException {
+	private void constructLopsCovariance() throws HopsException, LopsException {
 		
 		if ( op != OpOp3.COVARIANCE )
 			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.COVARIANCE );
@@ -255,7 +260,7 @@ public class TertiaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void handleQuantile() throws HopsException, LopsException {
+	private void constructLopsQuantile() throws HopsException, LopsException {
 		
 		if ( op != OpOp3.QUANTILE && op != OpOp3.INTERQUANTILE )
 			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
@@ -337,7 +342,7 @@ public class TertiaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void handleCtable() throws HopsException, LopsException {
+	private void constructLopsCtable() throws HopsException, LopsException {
 		
 		if ( op != OpOp3.CTABLE )
 			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CTABLE );

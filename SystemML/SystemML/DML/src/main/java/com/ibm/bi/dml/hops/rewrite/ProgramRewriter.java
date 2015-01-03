@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
 public class ProgramRewriter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -93,6 +93,8 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding		
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock	
+ 			if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
+ 				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               );
 		}

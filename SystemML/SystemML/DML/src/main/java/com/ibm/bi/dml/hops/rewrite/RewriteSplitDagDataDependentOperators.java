@@ -78,34 +78,69 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				ArrayList<Hop> sb1hops = new ArrayList<Hop>();			
 				for( Hop c : cand )
 				{
-					String varname = _varnamePredix + _seq.getNextID();
+					//if there are already transient writes use them and don't introduce artificial variables 
+					boolean hasTWrites = hasTransientWriteParents(c);
+					
+					String varname = null;
 					long rlen = c.get_dim1();
 					long clen = c.get_dim2();
 					long nnz = c.getNnz();
 					long brlen = c.get_rows_in_block();
 					long bclen = c.get_cols_in_block();
-	
-					//create new transient read
-					DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
-		                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
-					HopRewriteUtils.copyLineNumbers(c, tread);
 					
-					//replace reblock with transient read
-					ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
-					for( int i=0; i<parents.size(); i++ )
+					if( hasTWrites ) //reuse existing transient_write
 					{
-						Hop parent = parents.get(i);
-						int pos = HopRewriteUtils.getChildReferencePos(parent, c);
-						HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
-						HopRewriteUtils.addChildReference(parent, tread, pos);
+						Hop twrite = getFirstTransientWriteParent(c);
+						varname = twrite.get_name();
+						
+						//create new transient read
+						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
+						HopRewriteUtils.copyLineNumbers(c, tread);
+						
+						//replace data-dependent operator with transient read
+						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
+						for( int i=0; i<parents.size(); i++ )
+						{
+							Hop parent = parents.get(i);
+							if( parent != twrite ) {
+								int pos = HopRewriteUtils.getChildReferencePos(parent, c);
+								HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
+								HopRewriteUtils.addChildReference(parent, tread, pos);
+							}
+							else
+								sb.get_hops().remove(parent);
+						}
+						
+						//add data-dependent operator sub dag to first statement block
+						sb1hops.add(twrite);
 					}
-					
-					//add reblock sub dag to first statement block
-					DataOp twrite = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
-							                   c, DataOpTypes.TRANSIENTWRITE, null);
-					twrite.setOutputParams(rlen, clen, nnz, brlen, bclen);
-					HopRewriteUtils.copyLineNumbers(c, twrite);
-					sb1hops.add(twrite);
+					else //create transient write to artificial variables
+					{
+						varname = _varnamePredix + _seq.getNextID();
+						
+						//create new transient read
+						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
+						HopRewriteUtils.copyLineNumbers(c, tread);
+						
+						//replace data-dependent operator with transient read
+						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
+						for( int i=0; i<parents.size(); i++ )
+						{
+							Hop parent = parents.get(i);
+							int pos = HopRewriteUtils.getChildReferencePos(parent, c);
+							HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
+							HopRewriteUtils.addChildReference(parent, tread, pos);
+						}
+						
+						//add data-dependent operator sub dag to first statement block
+						DataOp twrite = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+								                   c, DataOpTypes.TRANSIENTWRITE, null);
+						twrite.setOutputParams(rlen, clen, nnz, brlen, bclen);
+						HopRewriteUtils.copyLineNumbers(c, twrite);
+						sb1hops.add(twrite);	
+					}
 					
 					//update live in and out of new statement block (for piggybacking)
 					DataIdentifier diVar = new DataIdentifier(varname);
@@ -115,7 +150,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					diVar.setValueType(ValueType.DOUBLE);
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
 					sb.liveIn().addVariable(varname, new DataIdentifier(diVar));
-					
 				}
 				
 				//deep copy new dag (in order to prevent any dangling references)
@@ -204,7 +238,27 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		
 		hop.set_visited(VISIT_STATUS.DONE);
 	}
+
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	private boolean hasTransientWriteParents( Hop hop )
+	{
+		for( Hop p : hop.getParent() )
+			if( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE )
+				return true;
+		return false;
+	}
 	
+	private Hop getFirstTransientWriteParent( Hop hop )
+	{
+		for( Hop p : hop.getParent() )
+			if( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE )
+				return p;
+		return null;
+	}
 	
 	/* OLD code from AssignmentStatement.controlStatement():
 	 --- 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class IQMTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private enum TEST_TYPE { 
@@ -71,8 +71,7 @@ public class IQMTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put(TEST_TYPE.IQM.scriptName, new TestConfiguration(TEST_TYPE.IQM.scriptName, new String[] { "iqmFile", "iqmWtFile" }));
+		availableTestConfigurations.put(TEST_TYPE.IQM.scriptName, new TestConfiguration(TEST_DIR,TEST_TYPE.IQM.scriptName, new String[] { "iqmFile", "iqmWtFile" }));
 	}
 	
 	@Test
@@ -200,58 +199,64 @@ public class IQMTest extends AutomatedTestBase
 		RUNTIME_PLATFORM rtOld = rtplatform;
 		rtplatform = rt;
 		
-		TEST_TYPE test = TEST_TYPE.IQM;
-		TestConfiguration config = getTestConfiguration(test.scriptName);
-		
-		int rows;
-		double expectedIQM;
-		String dataString = null, weightsString = null;
-
-		if(isWeighted) {
-			rows = (int) weightedDataLengths[datasetIndex-1];
-			expectedIQM = weigthtedExpectedResults[datasetIndex-1];
-			dataString = weightedDatasets[datasetIndex-1];
-			weightsString = weights[datasetIndex-1];
-		}
-		else {
-			rows = (int) dataLengths[datasetIndex-1];
-			expectedIQM = expectedResults[datasetIndex-1];
-			dataString = datasets[datasetIndex-1];
-			// construct weights string
-			weightsString = "1";
-			int i=1;
-			while(i<rows) {
-				weightsString += " 1";
-				i++;
+		try
+		{
+			TEST_TYPE test = TEST_TYPE.IQM;
+			TestConfiguration config = getTestConfiguration(test.scriptName);
+			
+			int rows;
+			double expectedIQM;
+			String dataString = null, weightsString = null;
+	
+			if(isWeighted) {
+				rows = (int) weightedDataLengths[datasetIndex-1];
+				expectedIQM = weigthtedExpectedResults[datasetIndex-1];
+				dataString = weightedDatasets[datasetIndex-1];
+				weightsString = weights[datasetIndex-1];
+			}
+			else {
+				rows = (int) dataLengths[datasetIndex-1];
+				expectedIQM = expectedResults[datasetIndex-1];
+				dataString = datasets[datasetIndex-1];
+				// construct weights string
+				weightsString = "1";
+				int i=1;
+				while(i<rows) {
+					weightsString += " 1";
+					i++;
+				}
+			}
+			
+			config.addVariable("rows", rows);
+			config.addVariable("cols", 1);
+	
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + test.scriptName + ".dml";
+			String outFile=HOME + OUTPUT_DIR + "iqmFile", wtOutFile=HOME + OUTPUT_DIR + "iqmWtFile";
+			programArgs = new String[]{"-args", dataString, weightsString, Integer.toString(rows), 
+					                        outFile, wtOutFile };
+	
+			loadTestConfiguration(config);
+			
+			runTest(true, false, null, -1);
+	
+			double IQM = TestUtils.readDMLScalar(outFile);
+			double wtIQM = TestUtils.readDMLScalar(wtOutFile);
+			
+			if(isWeighted) {
+				assertTrue("Incorrect weighted inter quartile mean", wtIQM == expectedIQM);
+			}
+			else {
+				assertTrue("Incorrect inter quartile mean", wtIQM == IQM);
+				assertTrue("Incorrect inter quartile mean", wtIQM == expectedIQM);
 			}
 		}
-		
-		config.addVariable("rows", rows);
-		config.addVariable("cols", 1);
-
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + test.scriptName + ".dml";
-		String outFile=HOME + OUTPUT_DIR + "iqmFile", wtOutFile=HOME + OUTPUT_DIR + "iqmWtFile";
-		programArgs = new String[]{"-args", dataString, weightsString, Integer.toString(rows), 
-				                        outFile, wtOutFile };
-
-		loadTestConfiguration(test.scriptName);
-		
-		runTest(true, false, null, -1);
-
-		double IQM = TestUtils.readDMLScalar(outFile);
-		double wtIQM = TestUtils.readDMLScalar(wtOutFile);
-		
-		if(isWeighted) {
-			assertTrue("Incorrect weighted inter quartile mean", wtIQM == expectedIQM);
+		finally
+		{
+			//reset runtime platform
+			rtplatform = rtOld;
 		}
-		else {
-			assertTrue("Incorrect inter quartile mean", wtIQM == IQM);
-			assertTrue("Incorrect inter quartile mean", wtIQM == expectedIQM);
-		}
-		
-		rtplatform = rtOld;
 	}
 	
 	

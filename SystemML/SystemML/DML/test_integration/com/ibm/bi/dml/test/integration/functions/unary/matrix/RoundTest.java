@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class RoundTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private enum TEST_TYPE { 
@@ -45,10 +45,9 @@ public class RoundTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put(TEST_TYPE.ROUND.scriptName, new TestConfiguration(TEST_TYPE.ROUND.scriptName, new String[] { "R" }));
-		availableTestConfigurations.put(TEST_TYPE.FLOOR.scriptName, new TestConfiguration(TEST_TYPE.FLOOR.scriptName, new String[] { "R" }));
-		availableTestConfigurations.put(TEST_TYPE.CEIL.scriptName,  new TestConfiguration(TEST_TYPE.CEIL.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.ROUND.scriptName, new TestConfiguration(TEST_DIR, TEST_TYPE.ROUND.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.FLOOR.scriptName, new TestConfiguration(TEST_DIR, TEST_TYPE.FLOOR.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.CEIL.scriptName,  new TestConfiguration(TEST_DIR, TEST_TYPE.CEIL.scriptName, new String[] { "R" }));
 	}
 	
 	@Test
@@ -234,36 +233,42 @@ public class RoundTest extends AutomatedTestBase
 	private void runTest(RUNTIME_PLATFORM rt, TEST_TYPE test, int rows, int cols, double sparsity) {
 		RUNTIME_PLATFORM rtOld = rtplatform;
 		rtplatform = rt;
-		
-		TestConfiguration config = getTestConfiguration(test.scriptName);
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + test.scriptName + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "math" , 
-						                //Integer.toString(rows),
-						                //Integer.toString(cols),
-						                //Double.toString(sparsity),
-				                        HOME + OUTPUT_DIR + "R" };
-
-		fullRScriptName = HOME + test + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;	
-
-		loadTestConfiguration(test.scriptName);
-		
-		long seed = System.nanoTime();
-        double[][] matrix = getRandomMatrix(rows, cols, 10, 20, sparsity, seed);
-		writeInputMatrixWithMTD("math", matrix, true);
-		
-		runTest(true, false, null, -1);
-		runRScript(true); 
-
-		
-		TestUtils.compareDMLHDFSFileWithRFile(HOME + EXPECTED_DIR + "R", HOME + OUTPUT_DIR + "R", 1e-9);
-
-		rtplatform = rtOld;
+	
+		try
+		{
+			TestConfiguration config = getTestConfiguration(test.scriptName);
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
+			
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + test.scriptName + ".dml";
+			programArgs = new String[]{"-args", HOME + INPUT_DIR + "math" , 
+							                //Integer.toString(rows),
+							                //Integer.toString(cols),
+							                //Double.toString(sparsity),
+					                        HOME + OUTPUT_DIR + "R" };
+	
+			fullRScriptName = HOME + test + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;	
+	
+			loadTestConfiguration(config);
+			
+			long seed = System.nanoTime();
+	        double[][] matrix = getRandomMatrix(rows, cols, 10, 20, sparsity, seed);
+			writeInputMatrixWithMTD("math", matrix, true);
+			
+			runTest(true, false, null, -1);
+			runRScript(true); 
+	
+			
+			TestUtils.compareDMLHDFSFileWithRFile(HOME + EXPECTED_DIR + "R", HOME + OUTPUT_DIR + "R", 1e-9);
+		}
+		finally
+		{
+			//reset runtime platform
+			rtplatform = rtOld;
+		}
 	}
 	
 	

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -12,24 +12,27 @@ import org.junit.Test;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
 public class SqrtTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static String TEST_DIR = "functions/unary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("SqrtTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("NegativeVectorTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "out" }));
-		availableTestConfigurations.put("NegativeMatrixTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "out" }));
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "SqrtTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("NegativeVectorTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "out" }));
+		addTestConfiguration("NegativeMatrixTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "out" }));
 	}
 	
 	@Test
@@ -41,7 +44,7 @@ public class SqrtTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] SqrtVector = new double[rows][1];
@@ -75,7 +78,7 @@ public class SqrtTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeVectorTest");
+		loadTestConfiguration(config);
 		
 		createRandomMatrix("in", rows, cols, -1, 0, 1, -1);
 		
@@ -91,7 +94,7 @@ public class SqrtTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeMatrixTest");
+		loadTestConfiguration(config);
 		
 		createRandomMatrix("in", rows, cols, -1, 0, 1, -1);
 		

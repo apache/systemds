@@ -30,11 +30,13 @@ public class UnivariateStatsTest extends AutomatedTestBase
 	private final static int rows1 = 2000;
 	private final static int rows2 = 5;
 	//private final static int cols = 1;
-	private final static int min=-100;
-	private final static int max=100;
+	//private final static int min=-100;
+	//private final static int max=100;
 
 	@Override
 	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		
 		addTestConfiguration("Scale", new TestConfiguration(TEST_DIR, "Scale", 
 				new String[] {"mean"+".scalar", "std"+".scalar", "se"+".scalar", "var"+".scalar", "cv"+".scalar", 
 				              /*"har", "geom",*/ 
@@ -313,81 +315,86 @@ public class UnivariateStatsTest extends AutomatedTestBase
 		RUNTIME_PLATFORM oldrt = rtplatform;
 		rtplatform = rt;
 		
-	    TestConfiguration config = getTestConfiguration("Scale");
-        config.addVariable("rows1", sz.size);
-        config.addVariable("rows2", rows2);
-
-		// This is for running the junit test the new way, i.e., construct the arguments directly 
-		String S_HOME = SCRIPT_DIR + TEST_DIR;	
-		fullDMLScriptName = S_HOME + "Scale" + ".dml";
-		programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
-	                        Integer.toString(sz.size),
-	                         S_HOME + INPUT_DIR + "prob" ,
-	                        Integer.toString(rows2),
-	                         S_HOME + OUTPUT_DIR + "mean" , 
-	                         S_HOME + OUTPUT_DIR + "std" , 
-	                         S_HOME + OUTPUT_DIR + "se" ,
-	                         S_HOME + OUTPUT_DIR + "var" ,
-	                         S_HOME + OUTPUT_DIR + "cv" ,
-	                         S_HOME + OUTPUT_DIR + "min" ,
-	                         S_HOME + OUTPUT_DIR + "max" ,
-	                         S_HOME + OUTPUT_DIR + "rng" ,
-	                         S_HOME + OUTPUT_DIR + "g1" ,
-	                         S_HOME + OUTPUT_DIR + "se_g1" ,
-	                         S_HOME + OUTPUT_DIR + "g2" ,
-	                         S_HOME + OUTPUT_DIR + "se_g2" ,
-	                         S_HOME + OUTPUT_DIR + "median" ,
-	                         S_HOME + OUTPUT_DIR + "iqm" ,
-	                         S_HOME + OUTPUT_DIR + "out_minus" ,
-	                         S_HOME + OUTPUT_DIR + "out_plus" ,
-	                         S_HOME + OUTPUT_DIR + "quantile" };
-		fullRScriptName = S_HOME + "Scale" + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       S_HOME + INPUT_DIR + " " + S_HOME + EXPECTED_DIR;
-
-
-		loadTestConfiguration(config);
-
-		long seed1 = System.currentTimeMillis(); 
-		long seed2 = System.currentTimeMillis(); 
-        double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, seed1);
-        double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, seed2); 
-		System.out.println("seeds: " + seed1 + " " + seed2);
-
-        writeInputMatrix("vector", vector, true);
-        writeInputMatrix("prob", prob, true);
-
-		// Expected number of jobs:
-		// Reblock - 1 job 
-		// While loop iteration - 10 jobs
-		// Final output write - 1 job
-		//
-        //boolean exceptionExpected = false;
-		//int expectedNumberOfJobs = 12;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runTest(true, false, null, -1);
-		
-		runRScript(true);
-		//disableOutAndExpectedDeletion();
-	
-		for(String file: config.getOutputFiles())
+		try
 		{
-			// NOte that some files do not contain matrix, but just a single scalar value inside 
-			HashMap<CellIndex, Double> dmlfile;
-			HashMap<CellIndex, Double> rfile;
-			if (file.endsWith(".scalar")) {
-				file = file.replace(".scalar", "");
-				dmlfile = readDMLScalarFromHDFS(file);
-				rfile = readRScalarFromFS(file);
-			}
-			else {
-				dmlfile = readDMLMatrixFromHDFS(file);
-				rfile = readRMatrixFromFS(file);
-			}
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
-		}
+		    TestConfiguration config = getTestConfiguration("Scale");
+	        config.addVariable("rows1", sz.size);
+	        config.addVariable("rows2", rows2);
+	
+			// This is for running the junit test the new way, i.e., construct the arguments directly 
+			String S_HOME = SCRIPT_DIR + TEST_DIR;	
+			fullDMLScriptName = S_HOME + "Scale" + ".dml";
+			programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
+		                        Integer.toString(sz.size),
+		                         S_HOME + INPUT_DIR + "prob" ,
+		                        Integer.toString(rows2),
+		                         S_HOME + OUTPUT_DIR + "mean" , 
+		                         S_HOME + OUTPUT_DIR + "std" , 
+		                         S_HOME + OUTPUT_DIR + "se" ,
+		                         S_HOME + OUTPUT_DIR + "var" ,
+		                         S_HOME + OUTPUT_DIR + "cv" ,
+		                         S_HOME + OUTPUT_DIR + "min" ,
+		                         S_HOME + OUTPUT_DIR + "max" ,
+		                         S_HOME + OUTPUT_DIR + "rng" ,
+		                         S_HOME + OUTPUT_DIR + "g1" ,
+		                         S_HOME + OUTPUT_DIR + "se_g1" ,
+		                         S_HOME + OUTPUT_DIR + "g2" ,
+		                         S_HOME + OUTPUT_DIR + "se_g2" ,
+		                         S_HOME + OUTPUT_DIR + "median" ,
+		                         S_HOME + OUTPUT_DIR + "iqm" ,
+		                         S_HOME + OUTPUT_DIR + "out_minus" ,
+		                         S_HOME + OUTPUT_DIR + "out_plus" ,
+		                         S_HOME + OUTPUT_DIR + "quantile" };
+			fullRScriptName = S_HOME + "Scale" + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       S_HOME + INPUT_DIR + " " + S_HOME + EXPECTED_DIR;
+	
+	
+			loadTestConfiguration(config);
+	
+			long seed1 = System.currentTimeMillis(); 
+			long seed2 = System.currentTimeMillis(); 
+	        double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, seed1);
+	        double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, seed2); 
+			System.out.println("seeds: " + seed1 + " " + seed2);
+	
+	        writeInputMatrix("vector", vector, true);
+	        writeInputMatrix("prob", prob, true);
+	
+			// Expected number of jobs:
+			// Reblock - 1 job 
+			// While loop iteration - 10 jobs
+			// Final output write - 1 job
+			//
+	        //boolean exceptionExpected = false;
+			//int expectedNumberOfJobs = 12;
+			//runTest(exceptionExpected, null, expectedNumberOfJobs);
+			runTest(true, false, null, -1);
+			
+			runRScript(true);
+			//disableOutAndExpectedDeletion();
 		
-		rtplatform = oldrt;
+			for(String file: config.getOutputFiles())
+			{
+				// NOte that some files do not contain matrix, but just a single scalar value inside 
+				HashMap<CellIndex, Double> dmlfile;
+				HashMap<CellIndex, Double> rfile;
+				if (file.endsWith(".scalar")) {
+					file = file.replace(".scalar", "");
+					dmlfile = readDMLScalarFromHDFS(file);
+					rfile = readRScalarFromFS(file);
+				}
+				else {
+					dmlfile = readDMLMatrixFromHDFS(file);
+					rfile = readRMatrixFromFS(file);
+				}
+				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			}
+		}
+		finally
+		{
+			rtplatform = oldrt;
+		}
 	}
 	
 	// -------------------------------------------------------------------------------------------------------
@@ -642,81 +649,86 @@ public class UnivariateStatsTest extends AutomatedTestBase
 		RUNTIME_PLATFORM oldrt = rtplatform;
 		rtplatform = rt;
 		
-        TestConfiguration config = getTestConfiguration("WeightedScaleTest");
-        config.addVariable("rows1", sz.size);
-        config.addVariable("rows2", rows2);
-
-		// This is for running the junit test the new way, i.e., construct the arguments directly 
-		String S_HOME = SCRIPT_DIR + TEST_DIR;	
-		fullDMLScriptName = S_HOME + "WeightedScaleTest" + ".dml";
-		programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
-	                        Integer.toString(sz.size),
-	                         S_HOME + INPUT_DIR + "weight" ,
-	                         S_HOME + INPUT_DIR + "prob" ,
-	                        Integer.toString(rows2),
-	                         S_HOME + OUTPUT_DIR + "mean" , 
-	                         S_HOME + OUTPUT_DIR + "std" , 
-	                         S_HOME + OUTPUT_DIR + "se" ,
-	                         S_HOME + OUTPUT_DIR + "var" ,
-	                         S_HOME + OUTPUT_DIR + "cv" ,
-	                         S_HOME + OUTPUT_DIR + "min" ,
-	                         S_HOME + OUTPUT_DIR + "max" ,
-	                         S_HOME + OUTPUT_DIR + "rng" ,
-	                         S_HOME + OUTPUT_DIR + "g1" ,
-	                         S_HOME + OUTPUT_DIR + "se_g1" ,
-	                         S_HOME + OUTPUT_DIR + "g2" ,
-	                         S_HOME + OUTPUT_DIR + "se_g2" ,
-	                         S_HOME + OUTPUT_DIR + "median" ,
-	                         S_HOME + OUTPUT_DIR + "iqm" ,
-	                         S_HOME + OUTPUT_DIR + "out_minus" ,
-	                         S_HOME + OUTPUT_DIR + "out_plus" ,
-	                         S_HOME + OUTPUT_DIR + "quantile" };
-		fullRScriptName = S_HOME + "WeightedScaleTest" + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       S_HOME + INPUT_DIR + " " + S_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
-
-		createHelperMatrix();
-        double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, System.currentTimeMillis());
-        double[][] weight = getRandomMatrix(sz.size, 1, 1, 10, 1, System.currentTimeMillis());
-        OrderStatisticsTest.round(weight);
-        double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());
-
-        writeInputMatrix("vector", vector, true);
-        writeInputMatrix("weight", weight, true);
-        writeInputMatrix("prob", prob, true);
-
-		//
-		// Expected number of jobs:
-		// Reblock - 1 job 
-		// While loop iteration - 10 jobs
-		// Final output write - 1 job
-		
-		runTest(true, false, null, -1);
-		
-		runRScript(true);
-		//disableOutAndExpectedDeletion();
-	
-		for(String file: config.getOutputFiles())
+		try
 		{
-			// NOte that some files do not contain matrix, but just a single scalar value inside
-			HashMap<CellIndex, Double> dmlfile;
-			HashMap<CellIndex, Double> rfile;
-			if (file.endsWith(".scalar")) {
-				file = file.replace(".scalar", "");
-				dmlfile = readDMLScalarFromHDFS(file);
-				rfile = readRScalarFromFS(file);
-			}
-			else {
-				dmlfile = readDMLMatrixFromHDFS(file);
-				rfile = readRMatrixFromFS(file);
-			}
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
-		}
+	        TestConfiguration config = getTestConfiguration("WeightedScaleTest");
+	        config.addVariable("rows1", sz.size);
+	        config.addVariable("rows2", rows2);
+	
+			// This is for running the junit test the new way, i.e., construct the arguments directly 
+			String S_HOME = SCRIPT_DIR + TEST_DIR;	
+			fullDMLScriptName = S_HOME + "WeightedScaleTest" + ".dml";
+			programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
+		                        Integer.toString(sz.size),
+		                         S_HOME + INPUT_DIR + "weight" ,
+		                         S_HOME + INPUT_DIR + "prob" ,
+		                        Integer.toString(rows2),
+		                         S_HOME + OUTPUT_DIR + "mean" , 
+		                         S_HOME + OUTPUT_DIR + "std" , 
+		                         S_HOME + OUTPUT_DIR + "se" ,
+		                         S_HOME + OUTPUT_DIR + "var" ,
+		                         S_HOME + OUTPUT_DIR + "cv" ,
+		                         S_HOME + OUTPUT_DIR + "min" ,
+		                         S_HOME + OUTPUT_DIR + "max" ,
+		                         S_HOME + OUTPUT_DIR + "rng" ,
+		                         S_HOME + OUTPUT_DIR + "g1" ,
+		                         S_HOME + OUTPUT_DIR + "se_g1" ,
+		                         S_HOME + OUTPUT_DIR + "g2" ,
+		                         S_HOME + OUTPUT_DIR + "se_g2" ,
+		                         S_HOME + OUTPUT_DIR + "median" ,
+		                         S_HOME + OUTPUT_DIR + "iqm" ,
+		                         S_HOME + OUTPUT_DIR + "out_minus" ,
+		                         S_HOME + OUTPUT_DIR + "out_plus" ,
+		                         S_HOME + OUTPUT_DIR + "quantile" };
+			fullRScriptName = S_HOME + "WeightedScaleTest" + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       S_HOME + INPUT_DIR + " " + S_HOME + EXPECTED_DIR;
+	
+			loadTestConfiguration(config);
+	
+			createHelperMatrix();
+	        double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, System.currentTimeMillis());
+	        double[][] weight = getRandomMatrix(sz.size, 1, 1, 10, 1, System.currentTimeMillis());
+	        OrderStatisticsTest.round(weight);
+	        double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());
+	
+	        writeInputMatrix("vector", vector, true);
+	        writeInputMatrix("weight", weight, true);
+	        writeInputMatrix("prob", prob, true);
+	
+			//
+			// Expected number of jobs:
+			// Reblock - 1 job 
+			// While loop iteration - 10 jobs
+			// Final output write - 1 job
+			
+			runTest(true, false, null, -1);
+			
+			runRScript(true);
+			//disableOutAndExpectedDeletion();
 		
-		//reset runtime platform
-		rtplatform = oldrt;
+			for(String file: config.getOutputFiles())
+			{
+				// NOte that some files do not contain matrix, but just a single scalar value inside
+				HashMap<CellIndex, Double> dmlfile;
+				HashMap<CellIndex, Double> rfile;
+				if (file.endsWith(".scalar")) {
+					file = file.replace(".scalar", "");
+					dmlfile = readDMLScalarFromHDFS(file);
+					rfile = readRScalarFromFS(file);
+				}
+				else {
+					dmlfile = readDMLMatrixFromHDFS(file);
+					rfile = readRMatrixFromFS(file);
+				}
+				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			}
+		}
+		finally
+		{
+			//reset runtime platform
+			rtplatform = oldrt;
+		}
 	}
 	
 	@Test

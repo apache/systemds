@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
@@ -26,16 +27,17 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class NegationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static String TEST_DIR = "functions/unary/scalar/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
+		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		availableTestConfigurations.put("NegationTest", new TestConfiguration("NegationTest",
-				new String[] { }));
+		addTestConfiguration("NegationTest", new TestConfiguration(TEST_DIR, "NegationTest", new String[] { }));
 		
 		// negative tests
 	}
@@ -53,7 +55,7 @@ public class NegationTest extends AutomatedTestBase
 		config.addVariable("double", doubleValue);
 		config.addVariable("negativedouble", negativeDoubleValue);
 		
-		loadTestConfiguration("NegationTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("int", -intValue);

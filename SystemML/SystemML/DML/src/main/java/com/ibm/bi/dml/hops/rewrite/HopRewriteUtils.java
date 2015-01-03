@@ -23,6 +23,7 @@ import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -406,6 +407,25 @@ public class HopRewriteUtils
 		}
 		
 		return ret;
+	}
+	
+	public static DataGenOp createSeqDataGenOp( Hop input ) 
+		throws HopsException
+	{		
+		Hop to = (input.get_dim1()>0) ? new LiteralOp(String.valueOf(input.get_dim1()),input.get_dim1()) : 
+			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+		
+		HashMap<String, Hop> params = new HashMap<String, Hop>();
+		params.put(Statement.SEQ_FROM, new LiteralOp("1",1));
+		params.put(Statement.SEQ_TO, to);
+		params.put(Statement.SEQ_INCR, new LiteralOp("1",1));
+		
+		//note internal refresh size information
+		DataGenOp datagen = new DataGenOp(DataGenMethod.SEQ, new DataIdentifier("tmp"), params);
+		datagen.set_rows_in_block(input.get_rows_in_block());
+		datagen.set_cols_in_block(input.get_cols_in_block());
+		
+		return datagen;
 	}
 	
 	public static void setOutputBlocksizes( Hop hop, long brlen, long bclen )

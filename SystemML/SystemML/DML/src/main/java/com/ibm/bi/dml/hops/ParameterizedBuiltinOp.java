@@ -134,11 +134,6 @@ public class ParameterizedBuiltinOp extends Hop
 				ExecType et = optFindExecType();
 				et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
 				
-				//check for diag input (we still use CP_FILE here until we have a special MR operator for it)
-				if( et==ExecType.MR && getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.DIAG )
-					et = ExecType.CP_FILE;
-				
-				//TODO additional physical operator if offsets fit in memory
 				constructLopsRemoveEmpty(inputlops, et);
 			} 
 			else if(   _op == ParamBuiltinOp.REPLACE ) 
@@ -285,9 +280,89 @@ public class ParameterizedBuiltinOp extends Hop
 			setLineNumbers(pbilop);
 			set_lops(pbilop);
 		}
-		else //ExecType.MR
+		//special compile for mr removeEmpty-diag 
+		else if( et == ExecType.MR && getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.DIAG 
+				&& getInput().get(0).getInput().get(0).get_dim2() == 1  //input vector (guarantees diagV2M), implies remove rows
+				&& getInput().get(_paramIndexMap.get("margin")) instanceof LiteralOp && ((LiteralOp)getInput().get(_paramIndexMap.get("margin"))).getStringValue().equals("rows") )
+ 		{
+			//get input vector (without materializing diag())
+			Hop input = getInput().get(0).getInput().get(0);
+			long brlen = input.get_rows_in_block();
+			long bclen = input.get_cols_in_block();
+			MemoTable memo = new MemoTable();
+			
+			//step1: compute index vectors
+			BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+			HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+			ppred0.refreshSizeInformation();
+			ppred0.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, ppred0);
+			
+			UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
+			HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
+			cumsum.refreshSizeInformation(); 
+			cumsum.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, cumsum);	
+		
+			DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
+			seq.refreshSizeInformation(); 
+			seq.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, seq);	
+		
+			BinaryOp bin1 = new BinaryOp("tmp4", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
+			HopRewriteUtils.setOutputBlocksizes(bin1, brlen, bclen);
+			bin1.refreshSizeInformation();
+			bin1.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, bin1);	
+			
+			BinaryOp bin2 = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, seq);
+			HopRewriteUtils.setOutputBlocksizes(bin2, brlen, bclen);
+			bin2.refreshSizeInformation();
+			bin2.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, bin2);	
+
+			//step2: compute removeEmpty output via table (removeEmpty required because table does not accept 0s)
+			
+			HashMap<String, Hop> params1 = new HashMap<String, Hop>();
+			params1.put("target", bin1);
+			params1.put("margin", new LiteralOp("rows", "rows"));
+			ParameterizedBuiltinOp rmEmpty1 = new ParameterizedBuiltinOp("tmp6", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params1);
+			HopRewriteUtils.setOutputBlocksizes(rmEmpty1, brlen, bclen);
+			rmEmpty1.refreshSizeInformation();
+			rmEmpty1.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, rmEmpty1);	
+			
+			HashMap<String, Hop> params2 = new HashMap<String, Hop>();
+			params2.put("target", bin2);
+			params2.put("margin", new LiteralOp("rows", "rows"));
+			ParameterizedBuiltinOp rmEmpty2 = new ParameterizedBuiltinOp("tmp7", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params2);
+			HopRewriteUtils.setOutputBlocksizes(rmEmpty2, brlen, bclen);
+			rmEmpty2.refreshSizeInformation();
+			rmEmpty2.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, rmEmpty2);	
+			
+			HashMap<String, Hop> params3 = new HashMap<String, Hop>();
+			params3.put("target", input);
+			params3.put("margin", new LiteralOp("rows", "rows"));
+			ParameterizedBuiltinOp rmEmpty3 = new ParameterizedBuiltinOp("tmp8", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params3);
+			HopRewriteUtils.setOutputBlocksizes(rmEmpty3, brlen, bclen);
+			rmEmpty3.refreshSizeInformation();
+			rmEmpty3.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, rmEmpty3);	
+			
+			TertiaryOp table = new TertiaryOp("tmp9", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, rmEmpty1, rmEmpty2, rmEmpty3);
+			HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
+			table.refreshSizeInformation();
+			table.setForcedExecType(ExecType.MR); //force MR 
+			HopRewriteUtils.copyLineNumbers(this, table);				
+			Lop ltable = table.constructLops();
+			
+			set_lops( ltable );
+		}
+		//default mr remove empty
+		else if( et == ExecType.MR )
 		{
-			//TODO opt for diag-remove empty
+			//TODO additional physical operator if offsets fit in memory
 			
 			if( !(getInput().get(_paramIndexMap.get("margin")) instanceof LiteralOp) )
 				throw new HopsException("Parameter 'margin' must be a literal argument.");
@@ -355,7 +430,7 @@ public class ParameterizedBuiltinOp extends Hop
 			offsets.refreshSizeInformation();
 			offsets.computeMemEstimate(new MemoTable()); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, offsets);	
-		
+			
 			//Step 3: gather non-empty rows/cols into final results 
 			Lop linput = input.constructLops();
 			Lop loffset = offsets.constructLops();
@@ -574,6 +649,7 @@ public class ParameterizedBuiltinOp extends Hop
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException 
 	{
 		ParameterizedBuiltinOp ret = new ParameterizedBuiltinOp();	

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,11 +17,13 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class RepMat extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String OPCODE = "rep";
-
+	
+	private boolean _repCols = true;
+	
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication
 	 * 
@@ -30,7 +32,7 @@ public class RepMat extends Lop
 	 * @return 
 	 * @throws LopsException
 	 */	
-	public RepMat(Lop input1, Lop input2, DataType dt, ValueType vt) 
+	public RepMat(Lop input1, Lop input2, boolean repCols, DataType dt, ValueType vt) 
 		throws LopsException 
 	{
 		super(Lop.Type.RepMat, dt, vt);		
@@ -38,6 +40,8 @@ public class RepMat extends Lop
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
+	
+		_repCols = repCols;
 		
 		//setup MR parameters 
 		boolean breaksAlignment = true;
@@ -65,6 +69,9 @@ public class RepMat extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_repCols);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,18 +25,20 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 public class ReplicateInstruction extends UnaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private long _clenM = -1;
+	private boolean _repCols = true;
+	private long _lenM = -1; //clen/rlen
 	
-	public ReplicateInstruction(byte in, byte out, long clenM, String istr)
+	public ReplicateInstruction(byte in, byte out, boolean repCols, long lenM, String istr)
 	{
 		super(null, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
 		
-		_clenM = clenM;
+		_repCols = repCols;
+		_lenM = lenM;
 	}
 	
 	/**
@@ -49,16 +51,17 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 		throws DMLRuntimeException 
 	{
 		//check instruction format
-		InstructionUtils.checkNumFields ( str, 3 );
+		InstructionUtils.checkNumFields ( str, 4 );
 		
 		//parse instruction
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		byte in = Byte.parseByte(parts[1]);
-		long clen = Long.parseLong(parts[2]);
-		byte out = Byte.parseByte(parts[3]);
+		boolean repCols = Boolean.parseBoolean(parts[2]);
+		long len = Long.parseLong(parts[3]);
+		byte out = Byte.parseByte(parts[4]);
 		
 		//construct instruction
-		return new ReplicateInstruction(in, out, clen, str);
+		return new ReplicateInstruction(in, out, repCols, len, str);
 	}
 
 	/**
@@ -86,31 +89,65 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 				//process instruction
 				MatrixIndexes inIx = in.getIndexes();
 				MatrixValue inVal = in.getValue();
-				if( inIx.getColumnIndex()>1 || inVal.getNumColumns()>1) //pass-through
+				
+				if( _repCols ) //replicate columns
 				{
-					//pass through of index/value (unnecessary rep); decision based on
-					//if not column vector (MV binary cell operations only support col vectors)
-					out.set(inIx, inVal);
-				}
-				else
-				{
-					//compute num additional replicates based on num column blocks lhs matrix
-					//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
-					if( blockColFactor<=1 ) //blocksize should be 1000 or similar
-						LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
-					int numRep = (int)Math.ceil((double)_clenM / blockColFactor) - 1; 
-					
-					//replicate block (number of replicates is potentially unbounded, however,
-					//because the vector is not modified we can passed the original data and
-					//hence the memory overhead is very small)
-					for( int i=0; i<numRep; i++ ){
-						IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
-						MatrixIndexes repIX= repV.getIndexes();
-						repV.set(repIX, inVal);
+					if( inIx.getColumnIndex()>1 || inVal.getNumColumns()>1) //pass-through
+					{
+						//pass through of index/value (unnecessary rep); decision based on
+						//if not column vector (MV binary cell operations only support col vectors)
+						out.set(inIx, inVal);
 					}
-					
-					//output original block
-					out.set(inIx, inVal);	
+					else
+					{
+						//compute num additional replicates based on num column blocks lhs matrix
+						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
+						if( blockColFactor<=1 ) //blocksize should be 1000 or similar
+							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
+						int numRep = (int)Math.ceil((double)_lenM / blockColFactor) - 1; 
+						
+						//replicate block (number of replicates is potentially unbounded, however,
+						//because the vector is not modified we can passed the original data and
+						//hence the memory overhead is very small)
+						for( int i=0; i<numRep; i++ ){
+							IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
+							MatrixIndexes repIX= repV.getIndexes();
+							repIX.setIndexes(inIx.getRowIndex(), 2+i);
+							repV.set(repIX, inVal);
+						}
+						
+						//output original block
+						out.set(inIx, inVal);	
+					}
+				}
+				else //replicate rows
+				{
+					if( inIx.getRowIndex()>1 || inVal.getNumRows()>1) //pass-through
+					{
+						//pass through of index/value (unnecessary rep); 
+						out.set(inIx, inVal);
+					}
+					else
+					{
+						//compute num additional replicates based on num column blocks lhs matrix
+						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
+						if( blockRowFactor<=1 ) //blocksize should be 1000 or similar
+							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
+						int numRep = (int)Math.ceil((double)_lenM / blockRowFactor) - 1; 
+						
+						//replicate block (number of replicates is potentially unbounded, however,
+						//because the vector is not modified we can passed the original data and
+						//hence the memory overhead is very small)
+						for( int i=0; i<numRep; i++ ){
+							IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
+							MatrixIndexes repIX= repV.getIndexes();
+							repIX.setIndexes(2+i, inIx.getColumnIndex());
+							repV.set(repIX, inVal);
+						}
+						
+						//output original block
+						out.set(inIx, inVal);	
+					}
 				}
 				
 				//put the output value in the cache

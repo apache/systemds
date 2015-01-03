@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -45,7 +45,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 public class UnaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private OpOp1 _op = null;
@@ -95,7 +95,73 @@ public class UnaryOp extends Hop
 		return s;
 	}
 
-	private Lop handleMedian() throws HopsException, LopsException {
+	@Override
+	public Lop constructLops()
+		throws HopsException, LopsException 
+	{		
+		//reuse existing lop
+		if( get_lops() != null )
+			return get_lops();
+		
+		try 
+		{
+			Hop input = getInput().get(0);
+			
+			if (get_dataType() == DataType.SCALAR || _op == OpOp1.CAST_AS_MATRIX) 
+			{
+				if (_op == Hop.OpOp1.IQM)  //special handling IQM
+				{
+					Lop iqmLop = constructLopsIQM();
+					set_lops(iqmLop);
+				} 
+				else if(_op == Hop.OpOp1.MEDIAN) {
+					Lop medianLop = constructLopsMedian();
+					set_lops(medianLop);
+				}
+				else //general case SCALAR/CAST (always in CP)
+				{
+					UnaryCP.OperationTypes optype = HopsOpOp1LopsUS.get(_op);
+					if( optype == null )
+						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
+					
+					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, get_dataType(), get_valueType());
+					unary1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+							             get_rows_in_block(), get_cols_in_block(), getNnz());
+					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					set_lops(unary1);
+				}
+			} 
+			else //general case MATRIX
+			{
+				ExecType et = optFindExecType();
+				
+				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
+				{
+					//TODO additional physical operation if offsets fit in memory
+					Lop cumsumLop = constructLopsMRCumsum();
+					set_lops(cumsumLop);
+				}
+				else //default unary 
+				{
+					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
+							                 get_dataType(), get_valueType(), et);
+					unary1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					set_lops(unary1);
+				}
+			}
+		} 
+		catch (Exception e) 
+		{
+			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
+		}
+		
+		return get_lops();
+	}
+	
+
+	private Lop constructLopsMedian() throws HopsException, LopsException {
 		ExecType et = optFindExecType();
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(
@@ -162,7 +228,7 @@ public class UnaryOp extends Hop
 		}
 	}
 	
-	private Lop handleIQM() throws HopsException, LopsException {
+	private Lop constructLopsIQM() throws HopsException, LopsException {
 		ExecType et = optFindExecType();
 		Hop input = getInput().get(0);
 		if ( et == ExecType.MR ) {
@@ -279,7 +345,7 @@ public class UnaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop handleMRCumsum() 
+	private Lop constructLopsMRCumsum() 
 		throws HopsException, LopsException 
 	{
 		Hop input = getInput().get(0);
@@ -351,69 +417,6 @@ public class UnaryOp extends Hop
 		return TEMP;
 	}
 	
-	@Override
-	public Lop constructLops()
-		throws HopsException, LopsException 
-	{		
-		//reuse existing lop
-		if( get_lops() != null )
-			return get_lops();
-		
-		try 
-		{
-			Hop input = getInput().get(0);
-			
-			if (get_dataType() == DataType.SCALAR || _op == OpOp1.CAST_AS_MATRIX) 
-			{
-				if (_op == Hop.OpOp1.IQM)  //special handling IQM
-				{
-					Lop iqmLop = handleIQM();
-					set_lops(iqmLop);
-				} 
-				else if(_op == Hop.OpOp1.MEDIAN) {
-					Lop medianLop = handleMedian();
-					set_lops(medianLop);
-				}
-				else //general case SCALAR/CAST (always in CP)
-				{
-					UnaryCP.OperationTypes optype = HopsOpOp1LopsUS.get(_op);
-					if( optype == null )
-						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
-					
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, get_dataType(), get_valueType());
-					unary1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-							             get_rows_in_block(), get_cols_in_block(), getNnz());
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
-				}
-			} 
-			else //general case MATRIX
-			{
-				ExecType et = optFindExecType();
-				
-				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
-				{
-					Lop cumsumLop = handleMRCumsum();
-					set_lops(cumsumLop);
-				}
-				else //default unary 
-				{
-					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
-							                 get_dataType(), get_valueType(), et);
-					unary1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
-				}
-			}
-		} 
-		catch (Exception e) 
-		{
-			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
-		}
-		
-		return get_lops();
-	}
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {

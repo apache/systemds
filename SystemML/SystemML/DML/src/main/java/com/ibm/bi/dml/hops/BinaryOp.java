@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -60,7 +60,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class BinaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//we use the full remote memory budget (but reduced by sort buffer), 
@@ -108,7 +108,53 @@ public class BinaryOp extends Hop
 		 op = iop;
 	}
 	
-	private void handleIQM(ExecType et) throws HopsException, LopsException {
+	@Override
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{	
+		if (get_lops() == null) 
+		{
+			switch(op) {
+				case IQM: {
+					ExecType et = optFindExecType();
+					constructLopsIQM(et);
+					break;
+				}
+				case CENTRALMOMENT: {
+					ExecType et = optFindExecType();
+					constructLopsCentralMoment(et);
+					break;
+				}	
+				case COVARIANCE: {
+					ExecType et = optFindExecType();
+					constructLopsCovariance(et);
+					break;
+				}
+				case QUANTILE:
+				case INTERQUANTILE: {
+					ExecType et = optFindExecType();
+					constructLopsQuantile(et);
+					break;
+				}
+				case MEDIAN: {
+					ExecType et = optFindExecType();
+					constructLopsMedian(et);
+					break;
+				}
+				case APPEND: {
+					ExecType et = optFindExecType();
+					constructLopsAppend(et);
+					break;
+				}
+				default:
+					constructLopsBinaryDefault();	
+			}
+		}
+	
+		return get_lops();
+	}
+	
+	private void constructLopsIQM(ExecType et) throws HopsException, LopsException {
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary.constructCombineLop(
 					OperationTypes.PreSort, (Lop) getInput().get(0)
@@ -217,7 +263,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleMedian(ExecType et) throws HopsException, LopsException {
+	private void constructLopsMedian(ExecType et) throws HopsException, LopsException {
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary
 					.constructCombineLop(
@@ -287,7 +333,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleCentralMoment(ExecType et) throws HopsException, LopsException {
+	private void constructLopsCentralMoment(ExecType et) throws HopsException, LopsException {
 		// The output data type is a SCALAR if central moment 
 		// gets computed in CP, and it will be MATRIX otherwise.
 		DataType dt = (et == ExecType.MR ? DataType.MATRIX : DataType.SCALAR );
@@ -312,7 +358,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleCovariance(ExecType et) throws LopsException, HopsException {
+	private void constructLopsCovariance(ExecType et) throws LopsException, HopsException {
 		if ( et == ExecType.MR ) {
 			// combineBinary -> CoVariance -> CastAsScalar
 			CombineBinary combine = CombineBinary.constructCombineLop(
@@ -353,7 +399,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleQuantile(ExecType et) throws HopsException, LopsException {
+	private void constructLopsQuantile(ExecType et) throws HopsException, LopsException {
 		// 1st arguments needs to be a 1-dimensional matrix
 		// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 		// For INTERQUANTILE: 2nd argument is always a scalar
@@ -428,7 +474,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleAppend(ExecType et) throws HopsException, LopsException {
+	private void constructLopsAppend(ExecType et) throws HopsException, LopsException {
 		DataType dt1 = getInput().get(0).get_dataType();
 		DataType dt2 = getInput().get(1).get_dataType();
 		ValueType vt1 = getInput().get(0).get_valueType();
@@ -447,7 +493,7 @@ public class BinaryOp extends Hop
 		{
 			AppendCP app = null;
 			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) {
-				Lop offset = createOffsetLop( getInput().get(0) ); //offset 1st input
+				Lop offset = createOffsetLop( getInput().get(0), true ); //offset 1st input
 				app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, get_dataType(), get_valueType());
 				app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
 						                                get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -462,7 +508,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void handleDefault() throws HopsException, LopsException {
+	private void constructLopsBinaryDefault() throws HopsException, LopsException {
 		/* Default behavior for BinaryOp */
 		// it depends on input data types
 		DataType dt1 = getInput().get(0).get_dataType();
@@ -565,8 +611,8 @@ public class BinaryOp extends Hop
 					
 					Lop rightLop = right.constructLops();
 					if( requiresRep ) {
-						Lop offset = createOffsetLop(left); //ncol of left input (determines num replicates)
-						rightLop = new RepMat(rightLop, offset, right.get_dataType(), right.get_valueType());
+						Lop offset = createOffsetLop(left, true); //ncol of left input (determines num replicates)
+						rightLop = new RepMat(rightLop, offset, true, right.get_dataType(), right.get_valueType());
 						rightLop.getOutputParameters().setDimensions(right.get_dim1(),
 								right.get_dim2(), right.get_rows_in_block(),
 								right.get_cols_in_block(), right.getNnz());
@@ -600,55 +646,6 @@ public class BinaryOp extends Hop
 				}
 			}
 		}
-	}
-	
-	@Override
-	public Lop constructLops() 
-		throws HopsException, LopsException 
-	{	
-		if (get_lops() == null) {
-
-			ExecType et = null;
-			
-			switch(op) {
-			case IQM:
-				et = optFindExecType();
-				handleIQM(et);
-				break;
-				
-			case CENTRALMOMENT:
-				et = optFindExecType();
-				handleCentralMoment(et);
-				break;
-				
-			case COVARIANCE:
-				et = optFindExecType();
-				handleCovariance(et);
-				break;
-				
-			case QUANTILE:
-			case INTERQUANTILE:
-				et = optFindExecType();
-				handleQuantile(et);
-				break;
-				
-			case MEDIAN:
-				et = optFindExecType();
-				handleMedian(et);
-				break;
-				
-			case APPEND:
-				et = optFindExecType();
-				handleAppend(et);
-				break;
-			
-			default:
-				handleDefault();
-					
-			}
-		}
-	
-		return get_lops();
 	}
 
 	@Override
@@ -1458,7 +1455,7 @@ public class BinaryOp extends Hop
 		long brlen = left.get_rows_in_block();
 		long bclen = left.get_cols_in_block();
 		
-		Lop offset = createOffsetLop( left ); //offset 1st input
+		Lop offset = createOffsetLop( left, true ); //offset 1st input
 		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
 	
 		switch( am )
@@ -1504,7 +1501,7 @@ public class BinaryOp extends Hop
 			case MR_GAPPEND:
 			{
 				//general case: map expand append, reduce aggregate
-				Lop offset2 = createOffsetLop( right ); //offset second input
+				Lop offset2 = createOffsetLop( right, true ); //offset second input
 				
 				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt);
 				appG.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
@@ -1668,7 +1665,7 @@ public class BinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private static Lop createOffsetLop( Hop hop ) 
+	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
 		throws HopsException, LopsException
 	{
 		Lop offset = null;
@@ -1678,12 +1675,13 @@ public class BinaryOp extends Hop
 			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
 			// a literal in order to increase the piggybacking potential. This is safe because append 
 			// is always marked for recompilation and hence, we have propagated the exact dimensions.
-			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(hop.get_dim2()));
+			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(repCols ? hop.get_dim2() : hop.get_dim1()));
 		}
 		else
 		{
 			offset = new UnaryCP(hop.constructLops(), 
-					UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+					      repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
+					      DataType.SCALAR, ValueType.INT);
 		}
 		
 		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
@@ -1691,6 +1689,7 @@ public class BinaryOp extends Hop
 		
 		return offset;
 	}
+
 	
 	/**
 	 * 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,11 +23,13 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruct
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumSplitInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
@@ -39,7 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 public class MRBaseForCommonInstructions extends MapReduceBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//indicate whether the matrix value in this mapper is a matrix cell or a matrix block
@@ -240,9 +242,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
 		}
-		else if(ins instanceof BinaryMInstruction)
+		else if(ins instanceof BinaryMInstruction || ins instanceof RemoveEmptyMRInstruction )
 		{
-			byte input=((BinaryMInstruction) ins).input1;
+			byte input=((BinaryMRInstructionBase) ins).input1;
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
@@ -256,6 +258,14 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			if( dimIn==null )
 				throw new DMLRuntimeException("Dimensions for instruction "+arinst+"  is unset!!!");
 			arinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+		}
+		else if(ins instanceof UnaryMRInstructionBase)
+		{
+			UnaryMRInstructionBase rinst = (UnaryMRInstructionBase) ins;
+			MatrixCharacteristics dimIn=dimensions.get(rinst.input);
+			if( dimIn==null )
+				throw new DMLRuntimeException("Dimensions for instruction "+rinst+"  is unset!!!");
+			rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
 		}
 		else
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);

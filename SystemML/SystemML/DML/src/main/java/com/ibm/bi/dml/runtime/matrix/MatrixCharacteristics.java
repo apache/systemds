@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -34,7 +34,9 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruc
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
@@ -49,7 +51,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class MatrixCharacteristics
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public long numRows=-1;
@@ -169,7 +171,7 @@ public class MatrixCharacteristics
 	}
 	
 	public static void computeDimension(HashMap<Byte, MatrixCharacteristics> dims, MRInstruction ins) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		MatrixCharacteristics dim_out=dims.get(ins.output);
 		if(dim_out==null)
@@ -237,10 +239,10 @@ public class MatrixCharacteristics
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
 				||(ins instanceof UnaryInstruction && !(ins instanceof MMTSJMRInstruction))
+				|| ins instanceof ReplicateInstruction
 				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;
-			//if( realIns.input!=-1 ) 
 			dim_out.set(dims.get(realIns.input));
 		}
 		else if (ins instanceof MMTSJMRInstruction)
@@ -251,6 +253,15 @@ public class MatrixCharacteristics
 			dim_out.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
+		}
+		else if( ins instanceof RemoveEmptyMRInstruction )
+		{
+			RemoveEmptyMRInstruction realIns=(RemoveEmptyMRInstruction)ins;
+			MatrixCharacteristics mc = dims.get(realIns.input1);
+			if( realIns.isRemoveRows() )
+				dim_out.set(realIns.getOutputLen(), mc.get_cols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+			else
+				dim_out.set(mc.get_rows(), realIns.getOutputLen(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{
@@ -281,6 +292,7 @@ public class MatrixCharacteristics
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
 			dim_out.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
+		
 		else { 
 			/*
 			 * if ins is none of the above cases then we assume that dim_out dimensions are unknown

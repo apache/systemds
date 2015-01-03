@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,9 +10,13 @@ package com.ibm.bi.dml.hops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
+import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
@@ -31,10 +35,12 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 public class ParameterizedBuiltinOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	ParamBuiltinOp _op;
+	private static boolean COMPILE_PARALLEL_REMOVEEMPTY = true;
+	
+	private ParamBuiltinOp _op;
 
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -117,27 +123,23 @@ public class ParameterizedBuiltinOp extends Hop
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} 
-			else if (_op == ParamBuiltinOp.GROUPEDAGG) {
-				ExecType et = optFindExecType();
-				handleGroupedAggregate(inputlops, et);
-			}
-			else if(   _op == ParamBuiltinOp.RMEMPTY ) 
+			else if (_op == ParamBuiltinOp.GROUPEDAGG) 
 			{
 				ExecType et = optFindExecType();
-				if( et == ExecType.MR ) //no MR version for rmempty
-					et = ExecType.CP_FILE; //use file-based function for robustness
 				
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
-						et, inputlops,
-						HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+				constructLopsGroupedAggregate(inputlops, et);
+			}
+			else if( _op == ParamBuiltinOp.RMEMPTY ) 
+			{
+				ExecType et = optFindExecType();
+				et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
 				
-				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				//check for diag input (we still use CP_FILE here until we have a special MR operator for it)
+				if( et==ExecType.MR && getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.DIAG )
+					et = ExecType.CP_FILE;
 				
-				set_lops(pbilop);
-
-				// set the dimesnions for the lop for the output
-				get_lops().getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+				//TODO additional physical operator if offsets fit in memory
+				constructLopsRemoveEmpty(inputlops, et);
 			} 
 			else if(   _op == ParamBuiltinOp.REPLACE ) 
 			{
@@ -151,7 +153,7 @@ public class ParameterizedBuiltinOp extends Hop
 				
 				set_lops(pbilop);
 
-				// set the dimesnions for the lop for the output
+				// set the dimensions for the lop for the output
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} 
@@ -161,7 +163,9 @@ public class ParameterizedBuiltinOp extends Hop
 		return get_lops();
 	}
 	
-	private void handleGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) throws HopsException, LopsException {
+	private void constructLopsGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) 
+		throws HopsException, LopsException 
+	{
 		if ( et == ExecType.MR ) 
 		{
 			// construct necessary lops: combineBinary/combineTertiary and
@@ -269,6 +273,138 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 	}
 
+	private void constructLopsRemoveEmpty(HashMap<String, Lop> inputlops, ExecType et) 
+		throws HopsException, LopsException 
+	{
+		if( et == ExecType.CP || et == ExecType.CP_FILE )
+		{
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
+					HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+			
+			pbilop.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(pbilop);
+			set_lops(pbilop);
+		}
+		else //ExecType.MR
+		{
+			//TODO opt for diag-remove empty
+			
+			if( !(getInput().get(_paramIndexMap.get("margin")) instanceof LiteralOp) )
+				throw new HopsException("Parameter 'margin' must be a literal argument.");
+				
+			Hop input = getInput().get(0);
+			long rlen = input.get_dim1();
+			long clen = input.get_dim2();
+			long brlen = input.get_rows_in_block();
+			long bclen = input.get_cols_in_block();
+			long nnz = input.getNnz();
+			boolean rmRows = ((LiteralOp)getInput().get(_paramIndexMap.get("margin"))).getStringValue().equals("rows");
+			
+			//construct lops via new partial hop dag and subsequent lops construction 
+			//in order to reuse of operator selection decisions
+			
+			//Step1: compute row/col non-empty indicators 
+			BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+			HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+			ppred0.refreshSizeInformation();
+			ppred0.setForcedExecType(ExecType.MR); //always MR 
+			HopRewriteUtils.copyLineNumbers(this, ppred0);
+			
+			Hop emptyInd = ppred0;
+			if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
+				emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+				HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+				emptyInd.refreshSizeInformation();
+				emptyInd.setForcedExecType(ExecType.MR); //always MR
+				HopRewriteUtils.copyLineNumbers(this, emptyInd);
+			}
+			
+			//Step 2: compute row offsets for non-empty rows
+			Hop cumsumInput = emptyInd;
+			if( !rmRows ){
+				cumsumInput = new ReorgOp( "tmp3a", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, emptyInd );
+				HopRewriteUtils.setOutputBlocksizes(cumsumInput, brlen, bclen);
+				cumsumInput.refreshSizeInformation();
+				cumsumInput.computeMemEstimate(new MemoTable()); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, cumsumInput);	
+			}
+		
+			UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
+			HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
+			cumsum.refreshSizeInformation(); 
+			cumsum.computeMemEstimate(new MemoTable()); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, cumsum);	
+		
+			Hop cumsumOutput = cumsum;
+			if( !rmRows ){
+				cumsumOutput = new ReorgOp( "tmp3b", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, cumsum );
+				HopRewriteUtils.setOutputBlocksizes(cumsumOutput, brlen, bclen);
+				cumsumOutput.refreshSizeInformation();
+				cumsumOutput.computeMemEstimate(new MemoTable()); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, cumsumOutput);	
+			}
+			
+			Hop maxDim = new AggUnaryOp("tmp4", DataType.SCALAR, ValueType.DOUBLE, AggOp.MAX, Direction.RowCol, cumsumOutput); //alternative: right indexing
+			HopRewriteUtils.setOutputBlocksizes(maxDim, brlen, bclen);
+			maxDim.refreshSizeInformation();
+			maxDim.computeMemEstimate(new MemoTable()); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, maxDim);
+			
+			BinaryOp offsets = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, cumsumOutput, emptyInd);
+			HopRewriteUtils.setOutputBlocksizes(offsets, brlen, bclen);
+			offsets.refreshSizeInformation();
+			offsets.computeMemEstimate(new MemoTable()); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, offsets);	
+		
+			//Step 3: gather non-empty rows/cols into final results 
+			Lop linput = input.constructLops();
+			Lop loffset = offsets.constructLops();
+			Lop lmaxdim = maxDim.constructLops();
+			
+			boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
+					             || ((rlen>brlen || rlen<=0) && !rmRows);
+			
+			if( requiresRep ) {
+				Lop pos = BinaryOp.createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
+				loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
+				loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+				setLineNumbers(loffset);
+			}
+			
+			Group group1 = new Group(linput, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			setLineNumbers(group1);
+			group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+		
+			Group group2 = new Group( loffset, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			setLineNumbers(group2);
+			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+		
+			HashMap<String, Lop> inMap = new HashMap<String, Lop>();
+			inMap.put("target", group1);
+			inMap.put("offset", group2);
+			inMap.put("maxdim", lmaxdim);
+			inMap.put("margin", inputlops.get("margin"));
+			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inMap,
+					HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());			
+			pbilop.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(pbilop);
+		
+			Group group3 = new Group( pbilop, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			setLineNumbers(group3);
+			group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
+			
+			Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, get_valueType(), ExecType.MR);
+			finalagg.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			setLineNumbers(finalagg);
+			
+			//Step 4: cleanup hops (allow for garbage collection)
+			HopRewriteUtils.removeChildReference(ppred0, input);
+			
+			set_lops(finalagg);
+		}
+	}
+	
 	@Override
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){

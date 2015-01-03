@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
@@ -55,7 +56,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRU
 public class MRInstructionParser extends InstructionParser 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	static public HashMap<String, MRINSTRUCTION_TYPE> String2MRInstructionType;
@@ -225,9 +226,11 @@ public class MRInstructionParser extends InstructionParser
 		
 		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
 		
+		//parameterized builtins
 		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
-		
+		//remove empty (special type since binary not unary)
+		String2MRInstructionType.put( "rmempty", MRINSTRUCTION_TYPE.RemoveEmpty);
 	}
 	
 	
@@ -339,6 +342,9 @@ public class MRInstructionParser extends InstructionParser
 			
 		case ParameterizedBuiltin:
 			return (MRInstruction)ParameterizedBuiltinMRInstruction.parseInstruction(str);
+		
+		case RemoveEmpty:
+			return (MRInstruction)RemoveEmptyMRInstruction.parseInstruction(str);
 			
 		case Partition:
 			return (MRInstruction)DataPartitionMRInstruction.parseInstruction(str);

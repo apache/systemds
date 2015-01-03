@@ -8,6 +8,7 @@
 #-------------------------------------------------------------
 
 V = read($1, rows=$2, cols=$3, format="text");
-V1 = removeEmpty(target=V, margin="rows");
-Vp = removeEmpty(target=V1, margin="cols");
+V1 = diag(V); #diagV2M
+V2 = removeEmpty(target=V1, margin=$4);
+Vp = rowSums(V2);
 write(Vp, $5, format="text");  

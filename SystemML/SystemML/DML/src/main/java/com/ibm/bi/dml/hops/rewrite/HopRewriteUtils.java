@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class HopRewriteUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 
@@ -406,6 +406,12 @@ public class HopRewriteUtils
 		}
 		
 		return ret;
+	}
+	
+	public static void setOutputBlocksizes( Hop hop, long brlen, long bclen )
+	{
+		hop.set_rows_in_block( brlen );
+		hop.set_cols_in_block( bclen );
 	}
 	
 	public static void setOutputParameters( Hop hop, long rlen, long clen, long brlen, long bclen, long nnz )

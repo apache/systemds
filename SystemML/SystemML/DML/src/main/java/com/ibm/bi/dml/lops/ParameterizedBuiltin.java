@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class ParameterizedBuiltin extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes { INVALID, CDF, RMEMPTY, REPLACE };
@@ -94,6 +94,15 @@ public class ParameterizedBuiltin extends Lop
 			//lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.REBLOCK);
+		}
+		else if( _operation == OperationTypes.RMEMPTY && et==ExecType.MR )
+		{
+			eloc = ExecLocation.Reduce;
+			//lps.addCompatibility(JobType.CSV_REBLOCK);
+			//lps.addCompatibility(JobType.DATAGEN);
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.REBLOCK);
+			breaksAlignment=true;
 		}
 		else //executed in CP / CP_FILE
 		{
@@ -177,7 +186,6 @@ public class ParameterizedBuiltin extends Lop
 		return sb.toString();
 	}
 
-
 	@Override 
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) 
 		throws LopsException
@@ -189,6 +197,7 @@ public class ParameterizedBuiltin extends Lop
 		switch(_operation) 
 		{
 			case REPLACE:
+			{
 				sb.append( "replace" );
 				sb.append( OPERAND_DELIMITOR );
 		
@@ -206,7 +215,61 @@ public class ParameterizedBuiltin extends Lop
 				Lop iLop3 = _inputParams.get("replacement");
 				sb.append(iLop3.prepScalarLabel());
 				sb.append( OPERAND_DELIMITOR );
-			break;	
+				
+				break;
+			}	
+				
+			default:
+				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+		}
+		
+		sb.append( prepOutputOperand(output_index));
+		
+		return sb.toString();
+	}
+
+	@Override 
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		switch(_operation) 
+		{
+			case RMEMPTY:
+			{
+				sb.append("rmempty");
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop1 = _inputParams.get("target");
+				int pos1 = getInputs().indexOf(iLop1);
+				int index1 = (pos1==0)? input_index1 : (pos1==1)? input_index2 : (pos1==2)? input_index3 : input_index4;
+				sb.append(prepInputOperand(index1));
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop2 = _inputParams.get("offset");
+				int pos2 = getInputs().indexOf(iLop2);
+				int index2 = (pos2==0)? input_index1 : (pos2==1)? input_index2 : (pos1==2)? input_index3 : input_index4;
+				sb.append(prepInputOperand(index2));
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop3 = _inputParams.get("maxdim");
+				sb.append( iLop3.prepScalarLabel() );
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop4 = _inputParams.get("margin");
+				sb.append( iLop4.prepScalarLabel() );
+				
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			}
 				
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);

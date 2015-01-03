@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -45,7 +45,6 @@ import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
@@ -56,11 +55,9 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.io.BinaryBlockSerialization;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.AddDummyWeightConverter;
@@ -89,7 +86,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class MRJobConfiguration 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	 //internal param: custom deserializer/serializer (usually 30% faster than WritableSerialization)
@@ -1509,6 +1506,25 @@ public class MRJobConfiguration
 		}
 	}
 	
+	/**
+	 * NOTE: this method needs to be in-sync with MRBaseForCommonInstructions.processOneInstruction,
+	 * otherwise, the latter will potentially fail with missing dimension information.
+	 * 
+	 * @param job
+	 * @param inputIndexes
+	 * @param dataGenInstructions
+	 * @param instructionsInMapper
+	 * @param reblockInstructions
+	 * @param aggInstructionsInReducer
+	 * @param aggBinInstructions
+	 * @param otherInstructionsInReducer
+	 * @param resultIndexes
+	 * @param mapOutputIndexes
+	 * @param forMMCJ
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
 			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -1536,7 +1552,7 @@ public class MRJobConfiguration
 			for(MRInstruction ins: insMapper)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction || ins instanceof ReorgInstruction)
+				if( ins instanceof UnaryMRInstructionBase )
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
@@ -1678,13 +1694,19 @@ public class MRJobConfiguration
 			for(MRInstruction ins: insReducer)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction
-						|| ins instanceof RangeBasedReIndexInstruction ||ins instanceof ReorgInstruction)
+				if( ins instanceof UnaryMRInstructionBase )
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
 							dims.get(tempIns.input));
 					intermediateMatrixIndexes.add(tempIns.input);
+				}
+				else if( ins instanceof RemoveEmptyMRInstruction )
+				{
+					RemoveEmptyMRInstruction tempIns = (RemoveEmptyMRInstruction) ins;
+					setIntermediateMatrixCharactristics(job, tempIns.input1, 
+							dims.get(tempIns.input1));
+					intermediateMatrixIndexes.add(tempIns.input1);	
 				}
 			}
 		}

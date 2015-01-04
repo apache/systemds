@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -56,7 +56,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 public class MapReduceTool 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 			
 	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
@@ -239,6 +239,27 @@ public class MapReduceTool
 				ret += ",";
 			ret += name;
 		}
+		return ret;
+	}
+	
+	/**
+	 * Returns the size of a file or directory on hdfs in bytes.
+	 * 
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 */
+	public static long getFilesizeOnHDFS( Path path ) 
+		throws IOException
+	{
+		FileSystem fs = FileSystem.get(_rJob);
+		long ret = 0; //in bytes
+		if( fs.isDirectory(path) )
+			ret = fs.getContentSummary(path).getLength();
+		else
+			ret = fs.getFileStatus(path).getLen();
+		//note: filestatus would return 0 on directories
+		
 		return ret;
 	}
 

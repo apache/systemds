@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,6 @@ import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -88,6 +87,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
 import com.ibm.json.java.JSONObject;
@@ -105,7 +105,7 @@ import com.ibm.json.java.JSONObject;
 public class Recompiler 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
@@ -1586,7 +1586,22 @@ public class Recompiler
 			String shuffleInst = inst.getIv_shuffleInstructions();
 			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
 			for( String rblk : instParts )
-				if( !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) && !InstructionUtils.getOpCode(rblk).equals(CSVReBlock.OPCODE) )
+				if(    !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) 
+					&& !InstructionUtils.getOpCode(rblk).equals(CSVReBlock.OPCODE) )
+				{
+					ret = false;
+					break;
+				}
+		}
+		
+		//check output empty blocks (for outputEmptyBlocks=false, a CP reblock can be 
+		//counter-productive because any export from CP would reintroduce the empty blocks)
+		if( ret ){
+			String shuffleInst = inst.getIv_shuffleInstructions();
+			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
+			for( String rblk : instParts )
+				if(    InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) 
+				    && rblk.endsWith("false") ) //no output of empty blocks
 				{
 					ret = false;
 					break;
@@ -1605,10 +1620,9 @@ public class Recompiler
 				// however, we do a conservative check with the CSV filesize
 				if ( rows == -1 || cols == -1 ) 
 				{
-					JobConf job = ConfigurationManager.getCachedJobConf();
-					FileSystem fs = FileSystem.get(job);
-					FileStatus fstatus = fs.getFileStatus(new Path(mo.getFileName()));
-					if( fstatus.getLen() > CP_CSV_REBLOCK_THRESHOLD_SIZE || CP_CSV_REBLOCK_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
+					Path path = new Path(mo.getFileName());
+					long size = MapReduceTool.getFilesizeOnHDFS(path);
+					if( size > CP_CSV_REBLOCK_THRESHOLD_SIZE || CP_CSV_REBLOCK_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;
@@ -1620,8 +1634,7 @@ public class Recompiler
 					long nnz = mo.getNnz();
 					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
-					if( mem >= OptimizerUtils.getLocalMemBudget() )
-					{
+					if( mem >= OptimizerUtils.getLocalMemBudget() ) {
 						ret = false;
 						break;
 					}
@@ -1637,14 +1650,13 @@ public class Recompiler
 				MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
 				if((   iimd.getInputInfo()==InputInfo.TextCellInputInfo
 					|| iimd.getInputInfo()==InputInfo.MatrixMarketInputInfo
-					|| iimd.getInputInfo()==InputInfo.CSVInputInfo)
+					|| iimd.getInputInfo()==InputInfo.CSVInputInfo
+					|| iimd.getInputInfo()==InputInfo.BinaryCellInputInfo)
 					&& !mo.isDirty() )
 				{
-					JobConf job = ConfigurationManager.getCachedJobConf();
-					FileSystem fs = FileSystem.get(job);
-					FileStatus fstatus = fs.getFileStatus(new Path(mo.getFileName()));
-					if( fstatus.getLen() > CP_REBLOCK_THRESHOLD_SIZE )
-					{
+					Path path = new Path(mo.getFileName());
+					long size = MapReduceTool.getFilesizeOnHDFS(path);
+					if( size > CP_REBLOCK_THRESHOLD_SIZE ) {
 						ret = false;
 						break;
 					}

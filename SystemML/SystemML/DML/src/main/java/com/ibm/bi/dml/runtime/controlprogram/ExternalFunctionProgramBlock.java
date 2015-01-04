@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -66,7 +66,7 @@ import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	protected static IDSequence _idSeq = null;
@@ -401,14 +401,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-									DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;
+									DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + "true";
 					
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						//Create a copy of reblock instruction but as a single instruction (FOR DEBUGGER)
 						reblockStr = "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
 										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
 										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-										DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;					
+										DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize  + ReBlock.OPERAND_DELIMITOR + "true";					
 						//Set MR reblock instruction line number (FOR DEBUGGER)
 						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
 							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 

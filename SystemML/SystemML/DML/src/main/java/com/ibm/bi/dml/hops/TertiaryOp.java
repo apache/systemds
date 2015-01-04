@@ -66,8 +66,12 @@ public class TertiaryOp extends Hop
 	
 	private OpOp3 op = null;
 	
+	//ctable specific flags 
 	// flag to indicate the existence of additional inputs representing output dimensions
 	private boolean dimInputsPresent = false;
+	private boolean _disjointInputs = false;
+	private boolean _outputEmptyBlocks = true;
+	
 	
 	private TertiaryOp() {
 		//default constructor for clone
@@ -106,6 +110,14 @@ public class TertiaryOp extends Hop
 	
 	public OpOp3 getOp(){
 		return op;
+	}
+	
+	public void setDisjointInputs(boolean flag){
+		_disjointInputs = flag;
+	}
+	
+	public void setOutputEmptyBlocks(boolean flag){
+		_outputEmptyBlocks = flag;
 	}
 	
 	@Override
@@ -558,35 +570,40 @@ public class TertiaryOp extends Hop
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
-			group4 = new Group(
-					tertiary, Group.OperationTypes.Sort, get_dataType(),
-					get_valueType());
-			group4.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
-			group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-			Aggregate agg1 = new Aggregate(
-					group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
-					get_valueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
-
-			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			Lop lctable = tertiary;
 			
-			// kahamSum is used for aggreagtion but inputs do not have
-			// correction values
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
+			if( !_disjointInputs ) { //no need for aggregation if input indexed disjoint		
+				
+				group4 = new Group(
+						tertiary, Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
+				group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	
+				Aggregate agg1 = new Aggregate(
+						group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
+						get_valueType(), ExecType.MR);
+				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
+	
+				agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+				// kahamSum is used for aggreagtion but inputs do not have
+				// correction values
+				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
+				lctable = agg1;
+			}
 
 			if ( dimsKnown() || dimInputsPresent ) {
 				// In this case, output dimensions are known at the time of its execution
 				// No need introduce reblock lop since table() itself outputs in blocked format, whenever the output dimensions are known.
-				set_lops(agg1);
+				set_lops(lctable);
 			}
 			else {
 				ReBlock reblock = null;
 				try {
-					reblock = new ReBlock(
-							agg1, get_rows_in_block(),
+					reblock = new ReBlock( lctable, get_rows_in_block(),
 							get_cols_in_block(), get_dataType(),
-							get_valueType());
+							get_valueType(), _outputEmptyBlocks);
 				} catch (Exception e) {
 					throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 				}

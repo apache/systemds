@@ -9,8 +9,10 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.OpOp3;
 import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
@@ -18,6 +20,7 @@ import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
+import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -217,6 +220,15 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		{
 			cand.add(hop);
 			investigateChilds = false;
+			
+			//keep interesting consumer information 
+			boolean noEmptyBlocks = true; 
+			for( Hop p : hop.getParent() ) {
+				//list of operators without need for empty blocks to be extended as needed
+				noEmptyBlocks &= (   p instanceof AggBinaryOp && hop == p.getInput().get(0) 
+				                  || p instanceof UnaryOp && ((UnaryOp)p).get_op()==OpOp1.NROW);
+			}
+			((ParameterizedBuiltinOp) hop).setOutputEmptyBlocks(!noEmptyBlocks);
 		}
 		
 		//#2 ctable with unknown dims

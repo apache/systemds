@@ -40,8 +40,12 @@ public class ParameterizedBuiltinOp extends Hop
 	
 	private static boolean COMPILE_PARALLEL_REMOVEEMPTY = true;
 	
+	//operator type
 	private ParamBuiltinOp _op;
-
+	
+	//removeEmpty hints
+	private boolean _outputEmptyBlocks = true;
+	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
 	 * parameter names (String) are mapped as indices (Integer) into getInput()
@@ -56,10 +60,6 @@ public class ParameterizedBuiltinOp extends Hop
 		//default constructor for clone
 	}
 
-	public HashMap<String, Integer> getParamIndexMap(){
-		return _paramIndexMap;
-	}
-	
 	/**
 	 * Creates a new HOP for a function call
 	 */
@@ -83,6 +83,10 @@ public class ParameterizedBuiltinOp extends Hop
 		refreshSizeInformation();
 	}
 
+	public HashMap<String, Integer> getParamIndexMap(){
+		return _paramIndexMap;
+	}
+		
 	@Override
 	public String getOpString() {
 		return "" + _op;
@@ -92,6 +96,11 @@ public class ParameterizedBuiltinOp extends Hop
 		return _op;
 	}
 
+	public void setOutputEmptyBlocks(boolean flag)
+	{
+		_outputEmptyBlocks = flag;
+	}
+	
 	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 
@@ -239,7 +248,7 @@ public class ParameterizedBuiltinOp extends Hop
 				reblock = new ReBlock(
 						grp_agg, get_rows_in_block(),
 						get_cols_in_block(), get_dataType(),
-						get_valueType());
+						get_valueType(), true);
 			} catch (Exception e) {
 				throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
 			}
@@ -304,57 +313,27 @@ public class ParameterizedBuiltinOp extends Hop
 			cumsum.computeMemEstimate(memo); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, cumsum);	
 		
+			//max ensures non-zero entries and at least one output row
+			BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
+			HopRewriteUtils.setOutputBlocksizes(max, brlen, bclen); 
+			max.refreshSizeInformation();
+			max.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, max);
+			
 			DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
+			seq.set_name("tmp4");
 			seq.refreshSizeInformation(); 
 			seq.computeMemEstimate(memo); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, seq);	
-		
-			BinaryOp bin1 = new BinaryOp("tmp4", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
-			HopRewriteUtils.setOutputBlocksizes(bin1, brlen, bclen);
-			bin1.refreshSizeInformation();
-			bin1.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, bin1);	
 			
-			BinaryOp bin2 = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, seq);
-			HopRewriteUtils.setOutputBlocksizes(bin2, brlen, bclen);
-			bin2.refreshSizeInformation();
-			bin2.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, bin2);	
-
-			//step2: compute removeEmpty output via table (removeEmpty required because table does not accept 0s)
-			
-			HashMap<String, Hop> params1 = new HashMap<String, Hop>();
-			params1.put("target", bin1);
-			params1.put("margin", new LiteralOp("rows", "rows"));
-			ParameterizedBuiltinOp rmEmpty1 = new ParameterizedBuiltinOp("tmp6", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params1);
-			HopRewriteUtils.setOutputBlocksizes(rmEmpty1, brlen, bclen);
-			rmEmpty1.refreshSizeInformation();
-			rmEmpty1.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, rmEmpty1);	
-			
-			HashMap<String, Hop> params2 = new HashMap<String, Hop>();
-			params2.put("target", bin2);
-			params2.put("margin", new LiteralOp("rows", "rows"));
-			ParameterizedBuiltinOp rmEmpty2 = new ParameterizedBuiltinOp("tmp7", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params2);
-			HopRewriteUtils.setOutputBlocksizes(rmEmpty2, brlen, bclen);
-			rmEmpty2.refreshSizeInformation();
-			rmEmpty2.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, rmEmpty2);	
-			
-			HashMap<String, Hop> params3 = new HashMap<String, Hop>();
-			params3.put("target", input);
-			params3.put("margin", new LiteralOp("rows", "rows"));
-			ParameterizedBuiltinOp rmEmpty3 = new ParameterizedBuiltinOp("tmp8", DataType.MATRIX, ValueType.DOUBLE, ParamBuiltinOp.RMEMPTY, params3);
-			HopRewriteUtils.setOutputBlocksizes(rmEmpty3, brlen, bclen);
-			rmEmpty3.refreshSizeInformation();
-			rmEmpty3.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, rmEmpty3);	
-			
-			TertiaryOp table = new TertiaryOp("tmp9", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, rmEmpty1, rmEmpty2, rmEmpty3);
+			//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
+			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
 			HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
 			table.refreshSizeInformation();
 			table.setForcedExecType(ExecType.MR); //force MR 
-			HopRewriteUtils.copyLineNumbers(this, table);				
+			HopRewriteUtils.copyLineNumbers(this, table);
+			table.setDisjointInputs(true);
+			table.setOutputEmptyBlocks(_outputEmptyBlocks);
 			Lop ltable = table.constructLops();
 			
 			set_lops( ltable );
@@ -659,6 +638,7 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		//copy specific attributes
 		ret._op = _op;
+		ret._outputEmptyBlocks = _outputEmptyBlocks;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
 		
@@ -673,7 +653,8 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;	
 		boolean ret = (_op == that2._op
-					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+					  && _paramIndexMap!=null && that2._paramIndexMap!=null
+					  && _outputEmptyBlocks == that2._outputEmptyBlocks );
 		if( ret )
 		{
 			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )

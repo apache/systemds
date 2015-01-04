@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 public class ReblockRewrite extends Rewrite 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
@@ -169,7 +169,7 @@ public class ReblockRewrite extends Rewrite
 				try {
 					reblock = new ReBlock(constructedLop, (long)this.toBlockSize,
 							(long)this.toBlockSize, operator.get_dataType(), operator
-									.get_valueType());
+									.get_valueType(), true);
 					reblock.getOutputParameters().setFormat(Format.BINARY);
 					reblock.getOutputParameters().setDimensions(
 							operator.get_dim1(), operator.get_dim2(),
@@ -233,7 +233,7 @@ public class ReblockRewrite extends Rewrite
 				ReBlock reblock;
 				try {
 					reblock = new ReBlock(constructedLop, -1L, -1L, operator
-							.get_dataType(), operator.get_valueType());
+							.get_dataType(), operator.get_valueType(), true);
 					if (value==FormatType.TEXT_CELL.ordinal()) {
 						reblock.getOutputParameters().setFormat(Format.TEXT);
 					} else {
@@ -289,7 +289,7 @@ public class ReblockRewrite extends Rewrite
 					ReBlock reblock;
 					try {
 						reblock = new ReBlock(constructedLop, -1L, -1L, operator
-								.get_dataType(), operator.get_valueType());
+								.get_dataType(), operator.get_valueType(), true);
 						reblock.getOutputParameters().setFormat(Format.TEXT);
 						reblock.getOutputParameters().setDimensions(
 								operator.get_dim1(), operator.get_dim2(), -1, -1,
@@ -346,7 +346,7 @@ public class ReblockRewrite extends Rewrite
 		try {
 			reblock = new ReBlock(constructedLop, (long)this.toBlockSize,
 					(long)this.toBlockSize, operator.get_dataType(), operator
-							.get_valueType());
+							.get_valueType(), true);
 			reblock.getOutputParameters().setFormat(Format.BINARY);
 			reblock.getOutputParameters().setDimensions(
 					operator.get_dim1(), operator.get_dim2(),

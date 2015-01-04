@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,10 +21,12 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class ReBlock extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String OPCODE = "rblk"; 
+	
+	private boolean _outputEmptyBlocks = true;
 	
 	/**
 	 * Constructor to perform a reblock operation. 
@@ -35,7 +37,8 @@ public class ReBlock extends Lop
 	Long rows_per_block;
 	Long cols_per_block;
 
-	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt) throws LopsException 
+	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks)
+		throws LopsException 
 	{
 		super(Lop.Type.ReBlock, dt, vt);		
 		this.addInput(input);
@@ -43,6 +46,8 @@ public class ReBlock extends Lop
 		
 		this.rows_per_block = rows_per_block;
 		this.cols_per_block = cols_per_block;
+		
+		_outputEmptyBlocks = outputEmptyBlocks;
 		
 		/*
 		 * This lop can be executed only in REBLOCK job.
@@ -66,19 +71,24 @@ public class ReBlock extends Lop
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
+		
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( OPCODE );
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index));
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append ( this.prepOutputOperand(output_index));
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append( rows_per_block );
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( cols_per_block );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append(_outputEmptyBlocks);
 		
 		return sb.toString();
 	}

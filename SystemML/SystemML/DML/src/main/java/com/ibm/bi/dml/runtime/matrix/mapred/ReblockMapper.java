@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -39,7 +39,7 @@ public class ReblockMapper extends MapperBase
 	implements Mapper<Writable, Writable, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//state of reblock mapper
@@ -47,6 +47,7 @@ public class ReblockMapper extends MapperBase
 	private JobConf cachedJobConf = null;
 	private HashMap<Byte, MatrixCharacteristics> dimensionsOut = new HashMap<Byte, MatrixCharacteristics>();
 	private HashMap<Byte, MatrixCharacteristics> dimensionsIn = new HashMap<Byte, MatrixCharacteristics>();
+	private HashMap<Byte, Boolean> emptyBlocks = new HashMap<Byte, Boolean>();
 	
 	//reblock buffer
 	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<Byte,ReblockBuffer>();
@@ -78,6 +79,7 @@ public class ReblockMapper extends MapperBase
 			{
 				dimensionsIn.put(ins.input, MRJobConfiguration.getMatrixCharacteristicsForInput(job, ins.input));
 				dimensionsOut.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+				emptyBlocks.put(ins.output, ins.outputEmptyBlocks);
 			}
 		
 			//compute reblock buffer size (according to relevant rblk inst of this task only)
@@ -128,8 +130,11 @@ public class ReblockMapper extends MapperBase
 			long nnz = mc.nonZero;
 			
 			//output empty blocks on demand (not required if nnz ensures that values exist in each block)
-			if( nnz >= (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) )
+			if( nnz >= (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) 
+				|| !emptyBlocks.get(e.getKey()) )
+			{
 				continue; //safe to skip empty block output
+			}
 			
 			//output part of empty blocks (all mappers contribute for better load balance),
 			//where mapper responsibility is distributed over row blocks 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.data.Pair;
 public class MMCJMRInputCache extends MMCJMRCache
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//in-memory buffer
@@ -117,14 +117,28 @@ public class MMCJMRInputCache extends MMCJMRCache
 	}
 	
 	/**
-	 * @throws IOException 
 	 * 
+	 * @throws IOException
 	 */
 	public void resetCache() 
 		throws IOException
 	{
+		//by default don't reset buffersize (e.g., for aggregator)
+		resetCache(false);
+	}
+	
+	/**
+	 * @throws IOException 
+	 * 
+	 */
+	public void resetCache(boolean fullreset) 
+		throws IOException
+	{
 		cacheSize = 0;
 		flushedAll = false;
+		
+		if(fullreset)
+			_bufferSize = 0;
 		
 		if( !memOnly )
 			super.deleteAllWorkingFiles();

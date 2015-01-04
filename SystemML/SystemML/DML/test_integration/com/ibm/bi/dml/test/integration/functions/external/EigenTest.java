@@ -33,17 +33,15 @@ public class EigenTest extends AutomatedTestBase
 		int rows = 3;
 		int cols = rows;
 
-		TestConfiguration config = availableTestConfigurations.get("EigenTest");
+		TestConfiguration config = getTestConfiguration("EigenTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 
+		loadTestConfiguration(config);
+		
 		double[][] A = {{0, 1, -1},{1, 1, 0},{-1, 0, 1}};
-		
-		
 		writeInputMatrix("A", A);
 		
-		loadTestConfiguration(config);
-
 		runTest();
 		
 		double [][] val = {{-1}, {1}, {2}};

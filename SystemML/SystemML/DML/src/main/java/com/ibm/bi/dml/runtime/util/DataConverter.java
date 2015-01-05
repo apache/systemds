@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,7 +10,11 @@ package com.ibm.bi.dml.runtime.util;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.io.MatrixReader;
 import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.io.MatrixWriter;
@@ -24,6 +28,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
+import com.ibm.bi.dml.udf.Matrix;
 
 
 /**
@@ -35,7 +40,7 @@ import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 public class DataConverter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	
@@ -402,5 +407,26 @@ public class DataConverter
 		
 		return mb;
 	}
+
 	
+	/**
+	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
+	 * which is useful in invoking Apache CommonsMath.
+	 * 
+	 * @param ec
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixObject mo) 
+		throws DMLRuntimeException 
+	{
+		Matrix.ValueType vt = (mo.getValueType() == ValueType.DOUBLE ? Matrix.ValueType.Double : Matrix.ValueType.Integer);
+		Matrix mathInput = new Matrix(mo.getFileName(), mo.getNumRows(), mo.getNumColumns(), vt);
+		mathInput.setMatrixObject(mo);
+		double[][] data = mathInput.getMatrixAsDoubleArray();
+		Array2DRowRealMatrix matrixInput = new Array2DRowRealMatrix(data, false);
+		
+		return matrixInput;
+	}
 }

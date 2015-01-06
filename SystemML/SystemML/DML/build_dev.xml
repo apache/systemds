@@ -50,7 +50,7 @@ The source code for this program is not published or otherwise divested of its t
 	</path>
 	
 	<path id="SHARED.classpath">
-		<pathelement location="${build.sharedlib}/commons-math3-3.0.jar" />  <!-- for random number generation -->
+		<pathelement location="${build.sharedlib}/commons-math3-3.1.1.jar" />  <!-- for random number generation -->
 		<pathelement location="${build.sharedlib}/log4j-1.2.15.jar" /> <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
 		<pathelement location="${build.sharedlib}/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
@@ -199,8 +199,8 @@ The source code for this program is not published or otherwise divested of its t
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-annotations-4.3.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-runtime-4.3.jar"/>
-			<!--zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math3-3.0.jar"/--> 
-			<!-- TZ: IHC 1.0.3 has commons-math3-3.0.jar already, but Cloudera does not have it yet, so we need to include it for now. -->
+			<!--zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math3-3.1.1.jar"/--> 
+			<!-- TZ: IHC 1.0.3 has commons-math3-3.1.1.jar already, but Cloudera does not have it yet, so we need to include it for now. -->
 			<!-- TZ: To include any other jar, we need code scan and legal approval -->
 			<manifest>
 				<attribute name="Class-Path" value="./" />
@@ -286,7 +286,7 @@ The source code for this program is not published or otherwise divested of its t
 		</copy>
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
 			<fileset dir="${build.sharedlib}/">
-				<include name="commons-math3-3.0.jar" /> <!-- This will be removed once we use BI 2.0 cluster -->
+				<include name="commons-math3-3.1.1.jar" /> <!-- This will be removed once we use BI 2.0 cluster -->
 			</fileset>
 		</copy>
 		<jar jarfile="${build.folder}/${build.jarnamejunit}" basedir="${build.folder}">

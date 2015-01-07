@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -41,7 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class LibMatrixMult 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
@@ -122,8 +122,7 @@ public class LibMatrixMult
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
-		//if( m1.denseBlock==null || m2.denseBlock==null )
-		//	return;
+		
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
@@ -193,8 +192,9 @@ public class LibMatrixMult
 				    			
 				    			//determine nnz of a (for sparsity-aware skipping of rows)
 				    			int knnz = copyNonZeroElements(a, aixi, bk, bj, n, ta, tbi, bklen);
+				    			//if( knnz > 0 ) //for skipping empty rows
 				    			
-				    			//rest not aligned to blocks of 4 rows
+			    				//rest not aligned to blocks of 4 rows
 				    			final int bn = knnz % 4;
 				    			switch( bn ){
 					    			case 1: vectMultiplyAdd(ta[0], b, c, tbi[0], cixj, bjlen); break;
@@ -244,8 +244,7 @@ public class LibMatrixMult
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
-		//if( m1.denseBlock==null || m2.sparseRows==null  )
-		//	return;
+		
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
@@ -314,8 +313,7 @@ public class LibMatrixMult
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
-		//if( m1.sparseRows==null || m2.denseBlock==null )
-		//	return;	
+		
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
@@ -368,19 +366,27 @@ public class LibMatrixMult
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();					
 						
-						//rest not aligned to blocks of 4 rows
-		    			final int bn = alen % 4;
-		    			switch( bn ){
-			    			case 1: vectMultiplyAdd(avals[0], b, c, aix[0]*n, cix, n); break;
-			    	    	case 2: vectMultiplyAdd2(avals[0],avals[1], b, c, aix[0]*n, aix[1]*n, cix, n); break;
-			    			case 3: vectMultiplyAdd3(avals[0],avals[1],avals[2], b, c, aix[0]*n, aix[1]*n, aix[2]*n, cix, n); break;
-		    			}
-		    			
-		    			//compute blocks of 4 rows (core inner loop)
-		    			for( int k = bn; k<alen; k+=4 ) {
-		    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
-		    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
-		    			}
+						if( alen==1 && avals[0]==1 ) //ROW SELECTION 
+						{
+							//plain memcopy for permutation matrices
+							System.arraycopy(b, aix[0]*n, c, cix, n);
+						}
+						else //GENERAL CASE
+						{
+							//rest not aligned to blocks of 4 rows
+			    			final int bn = alen % 4;
+			    			switch( bn ){
+				    			case 1: vectMultiplyAdd(avals[0], b, c, aix[0]*n, cix, n); break;
+				    	    	case 2: vectMultiplyAdd2(avals[0],avals[1], b, c, aix[0]*n, aix[1]*n, cix, n); break;
+				    			case 3: vectMultiplyAdd3(avals[0],avals[1],avals[2], b, c, aix[0]*n, aix[1]*n, aix[2]*n, cix, n); break;
+			    			}
+			    			
+			    			//compute blocks of 4 rows (core inner loop)
+			    			for( int k = bn; k<alen; k+=4 ) {
+			    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+			    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+			    			}
+						}
 					}
 				}					
 			}
@@ -426,8 +432,7 @@ public class LibMatrixMult
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
 			return;
-		//if( m1.sparseRows==null || m2.sparseRows==null )
-		//	return;	
+		
 		ret.sparse=false;
 		ret.allocateDenseBlock();
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
@@ -524,6 +529,8 @@ public class LibMatrixMult
 		
 		if( leftUS ) //left is ultra-sparse (IKJ)
 		{
+			boolean rightSparse = m2.sparse;
+			
 			for( int i=0; i<m; i++ )
 			{
 				SparseRow arow = m1.sparseRows[ i ];
@@ -532,16 +539,35 @@ public class LibMatrixMult
 					int alen = arow.size();
 					int[] aixs = arow.getIndexContainer();
 					double[] avals = arow.getValueContainer();	
-					for( int k=0; k<alen; k++ )
+					
+					if( alen==1 && avals[0]==1 ) //ROW SELECTION (no aggregation)
 					{
-						double aval = avals[k];
-						int aix = aixs[k];
-						for( int j=0; j<n; j++ )
+						int aix = aixs[0];
+						if( rightSparse ) { //sparse right matrix (full row copy)
+							if( m2.sparseRows!=null && m2.sparseRows[aix]!=null ) {
+								ret.adjustSparseRows( m ); //ensure allocated sparse rows ret
+								ret.sparseRows[i] = new SparseRow(m2.sparseRows[aix]); 
+								ret.nonZeros += ret.sparseRows[i].size();
+							}
+						}
+						else { //dense right matrix (append all values)
+							for( int j=0; j<n; j++ )
+								ret.appendValue(i, j, m2.quickGetValue(aix, j));
+						}
+					}
+					else //GENERAL CASE
+					{
+						for( int k=0; k<alen; k++ )
 						{
-							double cval = ret.quickGetValue(i, j);
-							double cvald = aval*m2.quickGetValue(aix, j);
-							if( cvald != 0 )
-								ret.quickSetValue(i, j, cval+cvald);
+							double aval = avals[k];
+							int aix = aixs[k];
+							for( int j=0; j<n; j++ )
+							{
+								double cval = ret.quickGetValue(i, j);
+								double cvald = aval*m2.quickGetValue(aix, j);
+								if( cvald != 0 )
+									ret.quickSetValue(i, j, cval+cvald);
+							}
 						}
 					}
 				}
@@ -575,6 +601,7 @@ public class LibMatrixMult
 		}
 		
 		//check if sparse output if correct
+		//no need to recompute nonzeros because maintained internally
 		ret.examSparsity();	
 	}
 

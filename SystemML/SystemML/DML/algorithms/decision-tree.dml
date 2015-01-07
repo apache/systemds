@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2014
+# (C) Copyright IBM Corp. 2010, 2015
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -252,12 +252,12 @@ categoricalSplit = function(Matrix[Double] label_dist)
   continue = TRUE;
 	while( continue ) {
      I = ppred(ret[1:domain_size,1],0,"==");
-     label_counts_left = t(t(label_dist)+t(curr_label_counts_left))
+     label_counts_left = label_dist + curr_label_counts_left
      tot_count_all = sum(label_counts_all); 
      impurity_all = computeImpurity(label_counts_all) 
      tot_count_left = rowSums(label_counts_left)
      impurity_left = vComputeImpurity(label_counts_left)
-     label_counts_right = t(t(-label_counts_left)+t(label_counts_all))
+     label_counts_right = -label_counts_left + label_counts_all
      tot_count_right = rowSums(label_counts_right)
      impurity_right = vComputeImpurity(label_counts_right)  
      gain = tot_count_all*impurity_all - tot_count_left*impurity_left - tot_count_right*impurity_right

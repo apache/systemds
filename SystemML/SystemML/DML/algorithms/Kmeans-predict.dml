@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2014
+# (C) Copyright IBM Corp. 2010, 2015
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -96,7 +96,7 @@ if (fileX != " ") {
     print ("Reading X...");
     X = read (fileX);
     total_mean = colSums (X) / nrow (X);
-    total_ss = sum ((t(X) - t(total_mean)) ^ 2);
+    total_ss = sum( (X - total_mean)^2 );
 }
 
 if ((fileC != " ") & (fileX == " ")) {
@@ -110,7 +110,7 @@ if (fileC != " ") {
     num_clusters = nrow (C);
     ones_C = matrix (1, rows = num_clusters, cols = 1);
     print ("Computing the predicted Y...");
-    D =  t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
+    D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
     prY = rowIndexMin (D);
     if (filePrY != " ") {
         print ("Writing the predicted Y...");

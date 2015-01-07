@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.AggOp;
@@ -492,14 +493,39 @@ public class HopRewriteUtils
 		return ( val1 == val2 );
 	}
 	
+	public static boolean isNotMatrixVectorBinaryOperation( Hop hop )
+	{
+		boolean ret = true;
+		
+		if( hop instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp) hop;
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			boolean mv = (left.get_dim1()>1 && right.get_dim1()==1)
+					|| (left.get_dim2()>1 && right.get_dim2()==1);
+			ret = isDimsKnown(bop) && !mv;
+		}
+		
+		return ret;
+	}
 	
-	public static boolean hasOnlyTransientWriteParents( Hop hop )
+	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
 	{
 		boolean ret = true;
 		
 		ArrayList<Hop> parents = hop.getParent();
 		for( Hop p : parents )
-			ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE );
+		{
+			if( inclTransient && inclPersistent )
+				ret &= ( p instanceof DataOp && (((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE
+				|| ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE));
+			else if(inclTransient)
+				ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE);
+			else if(inclPersistent)
+				ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE);
+		}
+			
 				
 		return ret;
 	}

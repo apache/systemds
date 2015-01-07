@@ -209,7 +209,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			return;
 		
 		//prevent unnecessary dag split (dims known or no consumer operations)
-		boolean noSplitRequired = ( hop.dimsKnown() || HopRewriteUtils.hasOnlyTransientWriteParents(hop) );
+		boolean noSplitRequired = ( hop.dimsKnown() || HopRewriteUtils.hasOnlyWriteParents(hop, true, true) );
 		boolean investigateChilds = true;
 		
 		//collect data dependent operations (to be extended as necessary)

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,22 +18,22 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class FullMatrixVectorCellwiseOperationTest extends AutomatedTestBase 
+public class FullMatrixVectorRowCellwiseOperationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "FullMatrixVectorCellwiseOperation_Addition";
-	private final static String TEST_NAME2 = "FullMatrixVectorCellwiseOperation_Substraction";
-	private final static String TEST_NAME3 = "FullMatrixVectorCellwiseOperation_Multiplication";
-	private final static String TEST_NAME4 = "FullMatrixVectorCellwiseOperation_Division";
+	private final static String TEST_NAME1 = "FullMatrixVectorRowCellwiseOperation_Addition";
+	private final static String TEST_NAME2 = "FullMatrixVectorRowCellwiseOperation_Substraction";
+	private final static String TEST_NAME3 = "FullMatrixVectorRowCellwiseOperation_Multiplication";
+	private final static String TEST_NAME4 = "FullMatrixVectorRowCellwiseOperation_Division";
 	
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 1100;
-	private final static int cols = 900;
+	private final static int rows = 207;
+	private final static int cols = 1101;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	
@@ -545,7 +545,7 @@ public class FullMatrixVectorCellwiseOperationTest extends AutomatedTestBase
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, (lsparsity1==0)?0:1, lsparsity1, 7); 
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = getRandomMatrix(rows, 1, 0, (lsparsity2==0)?0:1, lsparsity2, 3); 
+			double[][] B = getRandomMatrix(1, cols, 0, (lsparsity2==0)?0:1, lsparsity2, 3); 
 			writeInputMatrixWithMTD("B", B, true);
 	
 			boolean exceptionExpected = false;
@@ -569,7 +569,7 @@ public class FullMatrixVectorCellwiseOperationTest extends AutomatedTestBase
 				double C[][] = new double[rows][cols];
 				for( int i=0; i<rows; i++ )
 					for( int j=0; j<cols; j++ )
-						C[i][j] = A[i][j]/B[i][0];
+						C[i][j] = A[i][j]/B[0][j];
 				writeExpectedMatrix("C", C);
 				
 				compareResults();

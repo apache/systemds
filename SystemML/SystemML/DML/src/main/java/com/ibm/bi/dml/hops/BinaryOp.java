@@ -582,13 +582,13 @@ public class BinaryOp extends Hop
 						//right side in distributed cache
 						ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(right.get_dim1(), right.get_dim2(), OptimizerUtils.getSparsity(right.get_dim1(), right.get_dim2(), right.getNnz())) 
 						          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
-						dcInput = new DataPartition(dcInput, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+						dcInput = new DataPartition(dcInput, DataType.MATRIX, ValueType.DOUBLE, etPart, (right.get_dim2()==1)?PDataPartitionFormat.ROW_BLOCK_WISE_N:PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
 						dcInput.getOutputParameters().setDimensions(right.get_dim1(), right.get_dim2(), right.get_rows_in_block(), right.get_cols_in_block(), right.getNnz());
 						dcInput.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
 					}					
 					
 					BinaryM binary = new BinaryM(left.constructLops(), dcInput, HopsOpOp2LopsB.get(op),
-							get_dataType(), get_valueType(), needPart);
+							get_dataType(), get_valueType(), needPart, (right.get_dim2()==1));
 					binary.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 											get_rows_in_block(), get_cols_in_block(), getNnz());
 					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -612,7 +612,7 @@ public class BinaryOp extends Hop
 					Lop rightLop = right.constructLops();
 					if( requiresRep ) {
 						Lop offset = createOffsetLop(left, true); //ncol of left input (determines num replicates)
-						rightLop = new RepMat(rightLop, offset, true, right.get_dataType(), right.get_valueType());
+						rightLop = new RepMat(rightLop, offset, (right.get_dim2()<=1), right.get_dataType(), right.get_valueType());
 						rightLop.getOutputParameters().setDimensions(right.get_dim1(),
 								right.get_dim2(), right.get_rows_in_block(),
 								right.get_cols_in_block(), right.getNnz());
@@ -736,6 +736,7 @@ public class BinaryOp extends Hop
 		return prop;
 	}
 
+	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect() throws HopsException {
 		Hop hop1 = this.getInput().get(0);
 		Hop hop2 = this.getInput().get(1);
@@ -1340,7 +1341,8 @@ public class BinaryOp extends Hop
 			{
 				//propagate if either input is known, rows need always be identical,
 				//for cols we need to be careful with regard to matrix-vector operations
-				ldim1 = (mc[0].get_rows()>0) ? mc[0].get_rows() : mc[1].get_rows();
+				ldim1 = (mc[0].get_rows()>0) ? mc[0].get_rows() : 
+				        (mc[1].get_rows()>1) ? mc[1].get_rows() : -1;
 				ldim2 = (mc[0].get_cols()>0) ? mc[0].get_cols() : 
 					    (mc[1].get_cols()>1) ? mc[1].get_cols() : -1;
 				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
@@ -1654,8 +1656,8 @@ public class BinaryOp extends Hop
 	private static boolean requiresReplication( Hop left, Hop right )
 	{
 		return (!(left.get_dim2()>=1 && right.get_dim2()>=1) //cols of any input unknown 
-				||(left.get_dim2() > 1 && right.get_dim2()==1 
-				   && left.get_dim2()>=left.get_cols_in_block() )); //MV and more than 1 block
+				||(left.get_dim2() > 1 && right.get_dim2()==1 && left.get_dim2()>=left.get_cols_in_block() ) //col MV and more than 1 block
+				||(left.get_dim1() > 1 && right.get_dim1()==1 && left.get_dim1()>=left.get_rows_in_block() )); //row MV and more than 1 block
 	}
 	
 	/**
@@ -1707,6 +1709,7 @@ public class BinaryOp extends Hop
 		long m1_cpb = left.get_cols_in_block();
 		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column vector since MV only supported for column vectors.
+		//TODO generalization to colwise
 		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
 			&& ((AggUnaryOp) right).getDirection() == Direction.Row	
 		    && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //only if single block
@@ -1716,8 +1719,8 @@ public class BinaryOp extends Hop
 		
 		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
 		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 
-			&& m2_dim2 == 1  //rhs column vector	
-			&& m1_dim2 >1 ) //lhs not a column vector
+			&& ((m1_dim2 >1 && m2_dim2 == 1)  //rhs column vector	
+			  ||(m1_dim1 >1 && m2_dim1 == 1 )) ) //rhs row vector
 		{
 			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
 			if ( footprint < OptimizerUtils.getRemoteMemBudgetMap(true) )
@@ -1766,7 +1769,7 @@ public class BinaryOp extends Hop
 			}
 			else //general case
 			{
-				long ldim1, ldim2, lnnz1 = -1, lnnz2 = -1;
+				long ldim1, ldim2, lnnz1 = -1;
 				
 				if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR )
 				{
@@ -1778,17 +1781,18 @@ public class BinaryOp extends Hop
 				{
 					ldim1 = input2.get_dim1();
 					ldim2 = input2.get_dim2();	
-					lnnz2 = input2.getNnz();
+					//lnnz2 = input2.getNnz();
 				}
 				else //MATRIX - MATRIX 
 				{
 					//propagate if either input is known, rows need always be identical,
 					//for cols we need to be careful with regard to matrix-vector operations
-					ldim1 = (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1();
+					ldim1 = (input1.get_dim1()>0) ? input1.get_dim1()
+							: ((input2.get_dim1()>1)?input2.get_dim1():-1);
 					ldim2 = (input1.get_dim2()>0) ? input1.get_dim2() 
 							: ((input2.get_dim2()>1)?input2.get_dim2():-1);
 					lnnz1 = input1.getNnz();
-					lnnz2 = input2.getNnz();
+					//lnnz2 = input2.getNnz();
 				}
 				
 				set_dim1( ldim1 );
@@ -1845,5 +1849,16 @@ public class BinaryOp extends Hop
 		         ||op==OpOp2.AND     ||op==OpOp2.OR
 		         ||op==OpOp2.LOG     ||op==OpOp2.POW
 		         ||op==OpOp2.POW2CM );
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isPPredOperation()
+	{
+		return (   op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
+		         ||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
+		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
 	}
 }

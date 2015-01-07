@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -15,7 +15,7 @@ import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected Expression[] 	  _args = null;
@@ -1077,9 +1077,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			{
 				return;
 			}
-			else if (expr1.getOutput().getDim1() != expr2.getOutput().getDim1() 
-				|| (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
-				|| (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
+			else if( (!allowsMV && expr1.getOutput().getDim1() != expr2.getOutput().getDim1())
+				  || (allowsMV && expr1.getOutput().getDim1() != expr2.getOutput().getDim1() && expr2.getOutput().getDim1() != 1)
+				  || (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
+				  || (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
 			{
 				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
 						+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);

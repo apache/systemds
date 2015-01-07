@@ -182,7 +182,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				DataGenOp dleft = (DataGenOp) left;
 				if( dleft.getDataGenMethod()==DataGenMethod.RAND && dleft.hasConstantValue()
-					&& (left.get_dim2()==1 || right.get_dim2()>1) )
+					&& (left.get_dim2()==1 || right.get_dim2()>1) 
+					&& (left.get_dim1()==1 || right.get_dim1()>1))
 				{
 					Hop dleftIn = dleft.getInput().get(dleft.getParamIndex(DataExpression.RAND_MIN));
 					HopRewriteUtils.removeChildReference(bop, dleft);
@@ -623,7 +624,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					if( op==op2 && left2.get_dataType()==DataType.MATRIX 
 						&& (left2 instanceof AggBinaryOp) 
-						&& (right2.get_dim2() > 1 || right.get_dim2() == 1) ) //X not vector, or Y vector
+						&& (right2.get_dim2() > 1 || right.get_dim2() == 1)   //X not vector, or Y vector
+						&& (right2.get_dim1() > 1 || right.get_dim1() == 1) ) //X not vector, or Y vector
 					{
 						//((op()*X)*Y) -> op()*(X*Y)
 						HopRewriteUtils.removeChildReference(parent, bop);

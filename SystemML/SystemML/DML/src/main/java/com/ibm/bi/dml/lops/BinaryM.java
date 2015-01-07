@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,7 +22,7 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class BinaryM extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum CacheType {
@@ -30,9 +30,14 @@ public class BinaryM extends Lop
 		RIGHT_PART,
 	}
 	
+	public enum VectorType{
+		COL_VECTOR,
+		ROW_VECTOR,
+	}
+	
 	private OperationTypes _operation;
 	private CacheType _cacheType = null;
-	
+	private VectorType _vectorType = null; 
 	
 	/**
 	 * Constructor to perform a binary operation.
@@ -40,11 +45,12 @@ public class BinaryM extends Lop
 	 * @param op
 	 */
 
-	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, boolean partitioned ) {
+	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, boolean partitioned, boolean colVector ) {
 		super(Lop.Type.Binary, dt, vt);
 		
 		_operation = op;
 		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
+		_vectorType = colVector ? VectorType.COL_VECTOR : VectorType.ROW_VECTOR;
 		
 		this.addInput(input1);
 		this.addInput(input2);
@@ -162,6 +168,9 @@ public class BinaryM extends Lop
 		sb.append( this.prepOutputOperand(output));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(_cacheType);
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append(_vectorType);
 		
 		return sb.toString();
 	}

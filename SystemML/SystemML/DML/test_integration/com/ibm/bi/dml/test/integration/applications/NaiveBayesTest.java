@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 @RunWith(value = Parameterized.class)
 public class NaiveBayesTest  extends AutomatedTestBase{
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "applications/naive-bayes/";
@@ -44,9 +44,14 @@ public class NaiveBayesTest  extends AutomatedTestBase{
 	 public static Collection<Object[]> data() {
 	   Object[][] data = new Object[][] { 
 			   //sparse tests (sparsity=0.01)
-			   {100, 50, 10, 0.01}, {1000, 500, 10, 0.01}, {10000, 750, 10, 0.01}, {100000, 1000, 10, 0.01},
+			   {100, 50, 10, 0.01}, 
+			   {1000, 500, 10, 0.01}, 
+			   {10000, 750, 10, 0.01}, 
+			   {100000, 1000, 10, 0.01},
 			   //dense tests (sparsity=0.7)
-			   {100, 50, 10, 0.7}, {1000, 500, 10, 0.7}, {10000, 750, 10, 0.7} 
+			   {100, 50, 10, 0.7}, 
+			   {1000, 500, 10, 0.7}, 
+			   {10000, 750, 10, 0.7} 
 			   };
 	   
 	   return Arrays.asList(data);

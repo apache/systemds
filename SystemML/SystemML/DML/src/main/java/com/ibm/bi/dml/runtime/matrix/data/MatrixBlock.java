@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -63,7 +64,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class MatrixBlock extends MatrixValue
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
@@ -2370,8 +2371,11 @@ public class MatrixBlock extends MatrixValue
 		double nz2=m2.getNonZeros();
 		
 		//account for matrix vector
-		if( LibMatrixBincell.isMatrixVectorBinary(m1, m2) )
+		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 			nz2 = nz2 * n;
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
+			nz2 = nz2 * m;
 		
 		double estimated=0;
 		if(op.fn instanceof And || op.fn instanceof Multiply)//p*q

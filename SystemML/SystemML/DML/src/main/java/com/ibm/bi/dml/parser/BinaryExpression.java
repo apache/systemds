@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class BinaryExpression extends Expression 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Expression _left;
@@ -173,8 +173,8 @@ public class BinaryExpression extends Expression
 			//check dimensions binary operations (if dims known)
 			if (isSameDimensionBinaryOp(this.getOpCode()) && pivot.dimsKnown() && aux.dimsKnown() )
 			{
-				if(   pivot.getDim1() != aux.getDim1()  //number of rows must always be equivalent
-				   || (pivot.getDim2() != aux.getDim2() & aux.getDim2()>1)) //number of cols must be equivalent if not matrix-vector
+				if(   (pivot.getDim1() != aux.getDim1() && aux.getDim1()>1)  //number of rows must always be equivalent if not row vector
+				   || (pivot.getDim2() != aux.getDim2() && aux.getDim2()>1)) //number of cols must be equivalent if not col vector
 				{
 					raiseValidateError("Mismatch in dimensions for operation "+ this.toString(), conditional, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				} 
@@ -213,6 +213,8 @@ public class BinaryExpression extends Expression
 	public static boolean isSameDimensionBinaryOp(BinaryOp op) {
 		return (op == BinaryOp.PLUS) || (op == BinaryOp.MINUS)
 				|| (op == BinaryOp.MULT) || (op == BinaryOp.DIV)
-				|| (op == BinaryOp.MODULUS) || (op == BinaryOp.INTDIV);
+				|| (op == BinaryOp.MODULUS) || (op == BinaryOp.INTDIV)
+				|| (op == BinaryOp.POW);
+		
 	}
 }

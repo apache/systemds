@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,9 +31,15 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 public class LibMatrixBincell 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	public enum BinaryAccessType {
+		MATRIX_MATRIX,
+		MATRIX_COL_VECTOR,
+		MATRIX_ROW_VECTOR,
+		INVALID,
+	}
 	
 	///////////////////////////////////
 	// public matrix bincell interface
@@ -78,13 +84,24 @@ public class LibMatrixBincell
 	 * @param m2
 	 * @return
 	 */
-	public static boolean isMatrixVectorBinary(MatrixBlock m1, MatrixBlock m2)
+	public static BinaryAccessType getBinaryAccessType(MatrixBlock m1, MatrixBlock m2)
 	{
+		int rlen1 = m1.rlen;
+		int rlen2 = m2.rlen;
 		int clen1 = m1.clen;
 		int clen2 = m2.clen;
 		
-		return (clen1 > 1 && clen2 == 1);
+		if( rlen1 == rlen2 && clen1 == clen2 )
+			return BinaryAccessType.MATRIX_MATRIX;
+		else if( clen1 > 1 && clen2 == 1 )
+			return BinaryAccessType.MATRIX_COL_VECTOR;
+		else if( rlen1 > 1 && rlen2 == 1 )
+			return BinaryAccessType.MATRIX_ROW_VECTOR;
+		else
+			return BinaryAccessType.INVALID;
 	}
+	
+	
 	
 	/**
 	 * 
@@ -102,7 +119,8 @@ public class LibMatrixBincell
 		//currently we support MM (where both dimensions need to match) and
 		//MV operations w/ V always being a column vector (where row dimensions 
 		//need to match, and the second input has exactly 1 column)
-		return ( rlen1 == rlen2 && ( clen1 == clen2 || (clen1 > 1 && clen2 == 1) ) );
+		return (   ( rlen1 == rlen2 || (rlen1 > 1 && rlen2 == 1) ) 
+				&& ( clen1 == clen2 || (clen1 > 1 && clen2 == 1) ) );
 	}
 	
 	//////////////////////////////////////////////////////
@@ -126,8 +144,10 @@ public class LibMatrixBincell
 	
 		int rlen = m1.rlen;
 		int clen = m1.clen;
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
-		if( isMatrixVectorBinary(m1, m2) ) //MATRIX - VECTOR
+		if(    atype == BinaryAccessType.MATRIX_COL_VECTOR //MATRIX - VECTOR
+			|| atype == BinaryAccessType.MATRIX_ROW_VECTOR)  
 		{
 			//note: m2 vector and hence always dense
 			if( !m1.sparse && !m2.sparse && !ret.sparse ) //DENSE all
@@ -311,6 +331,7 @@ public class LibMatrixBincell
 		throws DMLRuntimeException 
 	{
 		boolean skipEmpty = (op.fn instanceof Multiply);
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		int rlen = m1.rlen;
 		int clen = m1.clen;
 		
@@ -322,18 +343,44 @@ public class LibMatrixBincell
 		double[] a = m1.denseBlock;
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
-		
-		for( int i=0, ix=0; i<rlen; i++, ix+=clen )
+
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
-			//replicate vector value
-			double v2 = (b==null) ? 0 : b[i];
-			if( !skipEmpty || v2 != 0 ) //skip empty rows
+			for( int i=0, ix=0; i<rlen; i++, ix+=clen )
 			{
-				if( a != null )
+				//replicate vector value
+				double v2 = (b==null) ? 0 : b[i];
+				if( !skipEmpty || v2 != 0 ) //skip empty rows
+				{
+					if( a != null )
+						for( int j=0; j<clen; j++ )
+							c[ix+j] = op.fn.execute( a[ix+j], v2 );	
+					else
+						Arrays.fill(c, ix, ix+clen, op.fn.execute( 0, v2 ));	
+				}
+			}
+		}
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
+		{
+			if( a==null && b==null ) //both empty
+			{
+				double v = op.fn.execute( 0, 0 );
+				Arrays.fill(c, 0, rlen*clen, v);
+			}
+			else if( a==null ) //left empty
+			{
+				//compute first row
+				for( int j=0; j<clen; j++ )
+					c[j] = op.fn.execute( 0, b[j] );
+				//copy first to all other rows
+				for( int i=1, ix=clen; i<rlen; i++, ix+=clen )
+					System.arraycopy(c, 0, c, ix, clen);
+			}
+			else //default case (incl right empty) 
+			{
+				for( int i=0, ix=0; i<rlen; i++, ix+=clen )
 					for( int j=0; j<clen; j++ )
-						c[ix+j] = op.fn.execute( a[ix+j], v2 );	
-				else
-					Arrays.fill(c, ix, ix+clen, op.fn.execute( 0, v2 ));	
+						c[ix+j] = op.fn.execute( a[ix+j], ((b!=null) ? b[j] : 0) );	
 			}
 		}
 		
@@ -341,6 +388,7 @@ public class LibMatrixBincell
 	}
 	
 	/**
+	 * TODO: custom implementation for sparse-sparse (row vector) possible
 	 * 
 	 * @param m1
 	 * @param m2
@@ -356,8 +404,9 @@ public class LibMatrixBincell
 		int rlen = m1.rlen;
 		int clen = m1.clen;
 		SparseRow[] a = m1.sparseRows;
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
-		//early abort on skip and empy
+		//early abort on skip and empty
 		if( skipEmpty && (m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) )
 			return; // skip entire empty block
 		
@@ -365,43 +414,87 @@ public class LibMatrixBincell
 		if( ret.sparse )
 			ret.adjustSparseRows(ret.rlen-1);
 		
-		for( int i=0; i<rlen; i++ )
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
-			double v2 = m2.quickGetValue(i, 0);
-			SparseRow arow = (a==null) ? null : a[i];
-			
-			if( (skipEmpty && (arow==null || arow.size()==0 || v2 == 0 ))
-				|| ((arow==null || arow.size()==0) && v2 == 0) )
+			for( int i=0; i<rlen; i++ )
 			{
-				continue; //skip empty rows
-			}
+				double v2 = m2.quickGetValue(i, 0);
+				SparseRow arow = (a==null) ? null : a[i];
 				
-			int lastIx = -1;
-			if( arow != null && arow.size()>0 ) 
-			{
-				int alen = arow.size();
-				int[] aix = arow.getIndexContainer();
-				double[] avals = arow.getValueContainer();
-				for( int j=0; j<alen; j++ )
+				if( (skipEmpty && (arow==null || arow.size()==0 || v2 == 0 ))
+					|| ((arow==null || arow.size()==0) && v2 == 0) )
 				{
-					//empty left
-					for( int k = lastIx+1; k<aix[j]; k++ ){
-						double v = op.fn.execute( 0, v2 );
-						ret.appendValue(i, k, v);
+					continue; //skip empty rows
+				}
+					
+				int lastIx = -1;
+				if( arow != null && arow.size()>0 ) 
+				{
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();
+					for( int j=0; j<alen; j++ )
+					{
+						//empty left
+						for( int k = lastIx+1; k<aix[j]; k++ ){
+							double v = op.fn.execute( 0, v2 );
+							ret.appendValue(i, k, v);
+						}
+						//actual value
+						double v = op.fn.execute( avals[j], v2 );
+						ret.appendValue(i, aix[j], v);	
+						lastIx = aix[j];
 					}
-					//actual value
-					double v = op.fn.execute( avals[j], v2 );
-					ret.appendValue(i, aix[j], v);	
-					lastIx = aix[j];
+				}
+				
+				//empty left
+				for( int k = lastIx+1; k<clen; k++ ){
+					double v = op.fn.execute( 0, v2 );
+					ret.appendValue(i, k, v);
 				}
 			}
-			
-			//empty left
-			for( int k = lastIx+1; k<clen; k++ ){
-				double v = op.fn.execute( 0, v2 );
-				ret.appendValue(i, k, v);
+		}
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
+		{
+			for( int i=0; i<rlen; i++ )
+			{
+				SparseRow arow = (a==null) ? null : a[i];
+				
+				if( skipEmpty && (arow==null || arow.size()==0) )
+					continue; //skip empty rows
+					
+				int lastIx = -1;
+				if( arow != null && arow.size()>0 ) 
+				{
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();
+					for( int j=0; j<alen; j++ )
+					{
+						//empty left
+						for( int k = lastIx+1; k<aix[j]; k++ ){
+							double v2 = m2.quickGetValue(0, k);
+							double v = op.fn.execute( 0, v2 );
+							ret.appendValue(i, k, v);
+						}
+						//actual value
+						double v2 = m2.quickGetValue(0, aix[j]);
+						double v = op.fn.execute( avals[j], v2 );
+						ret.appendValue(i, aix[j], v);	
+						lastIx = aix[j];
+					}
+				}
+				
+				//empty left
+				for( int k = lastIx+1; k<clen; k++ ){
+					double v2 = m2.quickGetValue(0, k);
+					double v = op.fn.execute( 0, v2 );
+					ret.appendValue(i, k, v);
+				}
 			}
 		}
+		
+		//no need to recomputeNonZeros since maintained in append value
 	}
 	
 	/**
@@ -418,6 +511,7 @@ public class LibMatrixBincell
 		boolean skipEmpty = (op.fn instanceof Multiply);
 		int rlen = m1.rlen;
 		int clen = m1.clen;
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
 		//early abort on skip and empy
 		if( skipEmpty && (m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) )
@@ -427,19 +521,35 @@ public class LibMatrixBincell
 		if( ret.sparse )
 			ret.adjustSparseRows(ret.rlen-1);
 		
-		for( int i=0; i<rlen; i++ )
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
-			//replicate vector value
-			double v2 = m2.quickGetValue(i, 0);
-			if( !skipEmpty || v2 != 0 ) {//skip zero rows
-				for( int j=0; j<clen; j++ )
-				{
-					double v1 = m1.quickGetValue(i, j);
-					double v = op.fn.execute( v1, v2 );
-					ret.appendValue(i, j, v);		
+			for( int i=0; i<rlen; i++ )
+			{
+				//replicate vector value
+				double v2 = m2.quickGetValue(i, 0);
+				if( !skipEmpty || v2 != 0 ) {//skip zero rows
+					for( int j=0; j<clen; j++ )
+					{
+						double v1 = m1.quickGetValue(i, j);
+						double v = op.fn.execute( v1, v2 );
+						ret.appendValue(i, j, v);		
+					}
 				}
 			}
 		}
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
+		{
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double v1 = m1.quickGetValue(i, j);
+					double v2 = m2.quickGetValue(0, j); //replicated vector value
+					double v = op.fn.execute( v1, v2 );
+					ret.appendValue(i, j, v);		
+				}
+		}
+			
+		//no need to recomputeNonZeros since maintained in append value
 	}
 	
 	/**
@@ -455,8 +565,9 @@ public class LibMatrixBincell
 	{
 		int rlen = m1.rlen;
 		int clen = m1.clen;
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
-		if( isMatrixVectorBinary(m1, m2) ) //MATRIX - VECTOR
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR ) //MATRIX - COL_VECTOR
 		{
 			for(int r=0; r<rlen; r++)
 			{
@@ -470,6 +581,17 @@ public class LibMatrixBincell
 					ret.appendValue(r, c, v);
 				}
 			}
+		}
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR ) //MATRIX - ROW_VECTOR
+		{
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++)
+				{
+					double v1 = m1.quickGetValue(r, c);	
+					double v2 = m2.quickGetValue(0, c);
+					double v = op.fn.execute( v1, v2 );
+					ret.appendValue(r, c, v);
+				}
 		}
 		else // MATRIX - MATRIX
 		{
@@ -606,8 +728,9 @@ public class LibMatrixBincell
 	{
 		int rlen = m1ret.rlen;
 		int clen = m1ret.clen;
+		BinaryAccessType atype = getBinaryAccessType(m1ret, m2);
 		
-		if( isMatrixVectorBinary(m1ret, m2) ) //MATRIX - VECTOR
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR ) //MATRIX - COL_VECTOR
 		{
 			for(int r=0; r<rlen; r++)
 			{
@@ -621,6 +744,17 @@ public class LibMatrixBincell
 					m1ret.quickSetValue(r, c, v);
 				}
 			}
+		}
+		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR ) //MATRIX - ROW_VECTOR
+		{
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++)
+				{
+					double v1 = m1ret.quickGetValue(r, c);
+					double v2 = m2.quickGetValue(0, c); //replicated value
+					double v = op.fn.execute( v1, v2 );
+					m1ret.quickSetValue(r, c, v);
+				}
 		}
 		else // MATRIX - MATRIX
 		{

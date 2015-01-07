@@ -355,7 +355,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	{
 		if( hi instanceof BinaryOp  ) //binary cell operation 
 		{
-			Hop right = hi.getInput().get(1); 
+			Hop right = hi.getInput().get(1);
+			
+			//check for column replication
 			if(    right instanceof AggBinaryOp //matrix mult with datagen
 				&& right.getInput().get(1) instanceof DataGenOp 
 				&& ((DataGenOp)right.getInput().get(1)).hasConstantValue(1d)
@@ -371,8 +373,26 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( right.getParent().size()<1 ) 
 					HopRewriteUtils.removeAllChildReferences( right );
 				
-				LOG.debug("Applied removeUnnecessaryOuterProduct");
-			}				
+				LOG.debug("Applied removeUnnecessaryOuterProduct1");
+			}
+			//check for row replication
+			else if(    right instanceof AggBinaryOp //matrix mult with datagen
+				&& right.getInput().get(0) instanceof DataGenOp 
+				&& ((DataGenOp)right.getInput().get(0)).hasConstantValue(1d)
+				&& right.getInput().get(0).get_dim2() == 1 //colunm vector for replication
+				&& right.getInput().get(1).get_dim1() == 1 ) //row vector for mv binary
+			{
+				//remove unnecessary outer product
+				HopRewriteUtils.removeChildReference(hi, right);				
+				HopRewriteUtils.addChildReference(hi, right.getInput().get(1) );
+				hi.refreshSizeInformation();
+				
+				//cleanup refs to matrix mult if no remaining consumers
+				if( right.getParent().size()<1 ) 
+					HopRewriteUtils.removeAllChildReferences( right );
+				
+				LOG.debug("Applied removeUnnecessaryOuterProduct2");
+			}
 		}
 		
 		return hi;
@@ -931,13 +951,15 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//NOTE: these rewrites of binary cell operations need to be aware that right is 
 				//potentially a vector but the result is of the size of left
 				
+				boolean notBinaryMV = HopRewriteUtils.isNotMatrixVectorBinaryOperation(bop);
+				
 				switch( bop.getOp() ){
 				    //X * Y -> matrix(0,nrow(X),ncol(X));
 					case MULT: {
 						if( HopRewriteUtils.isEmpty(left) ) //empty left and size known
 							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
 						else if( HopRewriteUtils.isEmpty(right) //empty right and right not a vector
-								&& right.get_dim2()>1  ) {
+								&& right.get_dim1()>1 && right.get_dim2()>1  ) {
 							hnew = HopRewriteUtils.createDataGenOp(right, right, 0);
 						}
 						else if( HopRewriteUtils.isEmpty(right) )//empty right and right potentially a vector
@@ -947,14 +969,14 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					case PLUS: {
 						if( HopRewriteUtils.isEmpty(left) && HopRewriteUtils.isEmpty(right) ) //empty left/right and size known
 							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
-						else if( HopRewriteUtils.isEmpty(left) && (left.get_dim2()==1 || right.get_dim2()>1) ) //empty left
+						else if( HopRewriteUtils.isEmpty(left) && notBinaryMV ) //empty left
 							hnew = right;
 						else if( HopRewriteUtils.isEmpty(right) ) //empty right
 							hnew = left;
 						break;
 					}
 					case MINUS: {
-						if( HopRewriteUtils.isEmpty(left) && (left.get_dim2()==1 || right.get_dim2()>1) ) { //empty left
+						if( HopRewriteUtils.isEmpty(left) && notBinaryMV ) { //empty left
 							HopRewriteUtils.removeChildReference(hi, left);
 							HopRewriteUtils.addChildReference(hi, new LiteralOp("0",0), 0);
 							hnew = hi;

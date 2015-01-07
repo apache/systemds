@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2014
+# (C) Copyright IBM Corp. 2010, 2015
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -37,7 +37,7 @@ D = ncol(A);
 if (zscore == 1) {
     cm = colMeans(A);
     cvars = (colSums (A^2) - N*(cm^2))/(N-1);
-    Azscored = t((t(A)-t(cm))/t(sqrt(cvars)));
+    Azscored = (A-cm)/sqrt(cvars);
     #write(Azscored, $OUTPUT+"/Az.mtx", format=ofmt);
     A = Azscored;
 }

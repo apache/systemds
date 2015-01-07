@@ -299,13 +299,18 @@ public class ParameterizedBuiltinOp extends Hop
 			long brlen = input.get_rows_in_block();
 			long bclen = input.get_cols_in_block();
 			MemoTable memo = new MemoTable();
+		
+			boolean isPPredInput = input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation();
 			
 			//step1: compute index vectors
-			BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
-			HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-			ppred0.refreshSizeInformation();
-			ppred0.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, ppred0);
+			Hop ppred0 = input;
+			if( !isPPredInput ) { //ppred only if required
+				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+				ppred0.refreshSizeInformation();
+				ppred0.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, ppred0);
+			}
 			
 			UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
 			HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
@@ -327,7 +332,8 @@ public class ParameterizedBuiltinOp extends Hop
 			HopRewriteUtils.copyLineNumbers(this, seq);	
 			
 			//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
-			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
+			Hop table_weights = input; //note: isPPredInput ? new LiteralOp("1",1), but currently blocksize issues
+			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, table_weights);
 			HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
 			table.refreshSizeInformation();
 			table.setForcedExecType(ExecType.MR); //force MR 

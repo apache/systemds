@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 */
 
@@ -77,7 +77,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class DMLTranslator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static int DMLBlockSize = 1000;
@@ -3198,19 +3198,20 @@ public class DMLTranslator
 					DataExpression dexpr = (DataExpression) ((AssignmentStatement)s).getSource();
 					if( dexpr.isRead() ){
 						String pfname = dexpr.getVarParam(DataExpression.IO_FILENAME).toString();
-						if( pWrites.containsKey(pfname) ) //found read-after-write
+						if( pWrites.containsKey(pfname) && !pfname.trim().isEmpty() ) //found read-after-write
 						{
 							//update read with essential write meta data
 							DataIdentifier di = pWrites.get(pfname);
 							FormatType ft = (di.getFormatType()!=null) ? di.getFormatType() : FormatType.TEXT;
-							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-							if( di.getDataType()!=DataType.UNKNOWN ){
+							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));							
+							if( di.getDim1()>=0 )
 								dexpr.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(di.getDim1(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+							if( di.getDim2()>=0 )
 								dexpr.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(di.getDim2(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-								dexpr.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier(di.getDataType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
+							if( di.getValueType()!=ValueType.UNKNOWN )
 								dexpr.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier(di.getValueType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
-							}
-						
+							if( di.getDataType()!=DataType.UNKNOWN )
+								dexpr.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier(di.getDataType().toString(),di.getFilename(),di.getBeginLine(),di.getBeginColumn(),di.getEndLine(),di.getEndColumn()));
 							ret = true;
 						}
 					}

@@ -18,7 +18,7 @@ public class MatrixGNMF
 			System.out.println("expected parameters: [directory of v] [directory of w] [directory of h] " +
 					"[k] [num mappers] [num reducers] [replication] [working directory] " +
 					"[final directory of w] [final directory of h]");
-			System.exit(1);
+			return;
 		}
 		
 		String vDir			= args[0];

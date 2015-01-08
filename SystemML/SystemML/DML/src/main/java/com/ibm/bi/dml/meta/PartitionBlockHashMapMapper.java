@@ -17,6 +17,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -83,9 +84,8 @@ implements Mapper<Writable, Writable, BlockHashMapMapOutputKey, BlockHashMapMapO
 			hmwidth = (pp.toReplicate == true) ? pp.numIterations : 1;
 		}
 		else {
-			System.out.println("Unknown methods in partnblkhshmpmapper configure!" +
+			throw new RuntimeException("Unknown methods in partnblkhshmpmapper configure!" +
 					"pp.isEL:" +pp.isEL + ",pp.cvt:"+pp.cvt+"pp.pt:"+pp.pt+",pp.et:"+pp.et);
-			System.exit(1);
 		}
 		//read the hashmap into memory
 		try {

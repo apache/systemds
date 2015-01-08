@@ -58,7 +58,7 @@ class DAGFrame extends JFrame implements ActionListener
 			Window w = wev.getWindow();
 			w.setVisible(false);
 			w.dispose();
-			System.exit(0);
+			return;
 		    }
 		});
 	

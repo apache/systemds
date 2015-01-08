@@ -218,8 +218,7 @@ public class PartitionBlockJoinMR
 			}
 		}
 		else {
-			System.out.println("Unsupported method in join MR job!");
-			System.exit(1);
+			throw new RuntimeException("Unsupported method in join MR job!");
 		}
 
 		sfwriter.close();
@@ -317,15 +316,13 @@ public class PartitionBlockJoinMR
 			for(int i = 0 ; i < mc.length; i++) {
 				if(pp.isColumn == false) {	//we had subrowblks
 					if((ctr[i] % numblksx) != 0) {
-						System.out.println("Error! Number of subrowblocks don't tally in blockhashmap reducer! !");
-						System.exit(1);
+						throw new RuntimeException("Error! Number of subrowblocks don't tally in blockhashmap reducer! !");
 					}
 					mc[i] = new MatrixCharacteristics(ctr[i] / numblksx, nc, 1, bnc);	//same num cols though; rowblk o/p
 				}
 				else {
 					if((ctr[i] % numblksy) != 0) {
-						System.out.println("Error! Number of subcolblocks don't tally in blockhashmap reducer! !");
-						System.exit(1);
+						throw new RuntimeException("Error! Number of subcolblocks don't tally in blockhashmap reducer! !");
 					}
 					mc[i] = new MatrixCharacteristics(nr, ctr[i] / numblksy, bnr, 1);	//same num rows; colblk o/p
 				}

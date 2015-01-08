@@ -99,7 +99,7 @@ public class BreakPointInstruction extends Instruction
 	}
 
 	//@Override
-	public void processInstruction(ExecutionContext ec)
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException
 	{
 		if( isBPInstructionEnabled()) {
 			DebugState dbState = ec.getDebugState();

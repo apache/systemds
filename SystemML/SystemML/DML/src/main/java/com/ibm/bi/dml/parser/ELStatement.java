@@ -112,7 +112,6 @@ public class ELStatement extends Statement {
 //		}
 //		else if (elmethod.equals("adaboost")) { 
 //			LOG.error("Adaboost not yet implemented!");
-//			System.exit(1);
 //		}
 //		
 //		if(map.containsKey("replicate") == true) {

@@ -83,7 +83,6 @@ public class DMLYarnClientProxy
 				//alternative: only use the max mr memory for all statement blocks
 				//conf.updateYarnMemorySettings(String.valueOf(rc.getCPResource()), String.valueOf(rc.getMaxMRResource()));
 			}
-			//System.exit(1);
 			
 			//launch dml yarn app master
 			DMLYarnClient yclient = new DMLYarnClient(dmlScriptStr, conf, allArgs);

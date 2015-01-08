@@ -154,7 +154,7 @@ public class DMLMatrixBlockToMatrixVectorsConverter
 			System.out.println("missing parameters");
 			System.out.println("expected parameters: inputDir outputDir convertionType " +
 					"blkRowSize blkColSize numMappers numReducers replication");
-			System.exit(1);
+			return;
 		}
 		
 		String inputDir		= args[0];

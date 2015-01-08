@@ -174,8 +174,7 @@ public class PartitionParams
 		else if (cvt == CrossvalType.bootstrap) {
 			if(pt == PartitionType.row) {
 				if(isColumn == true) {
-					System.out.println("Sorry, bootstrap on columns not supported!");
-					System.exit(1);
+					throw new RuntimeException("Sorry, bootstrap on columns not supported!");
 				}
 				outputs = new String[numIterations] ;
 				for(int i = 0 ; i <numIterations; i++)
@@ -183,8 +182,7 @@ public class PartitionParams
 				//outputs[i] = "ensemble" + i ;
 			}	
 			else {
-				System.out.println("Sorry, bootstrap supported only for rows!");
-				System.exit(1);
+				throw new RuntimeException("Sorry, bootstrap supported only for rows!");
 			}
 		
 		}
@@ -241,8 +239,7 @@ public class PartitionParams
 				outputs[0] = partitionOutputs.get(0) + "0";
 			}
 			else {
-				System.out.println("Sorry, Bootstrap supports only row!");
-				System.exit(1);
+				throw new RuntimeException("Sorry, Bootstrap supports only row!");
 			}
 			/*outputs = new String[numFolds] ;
 			for(int i = 0 ; i <numFolds; i++)
@@ -344,8 +341,7 @@ public class PartitionParams
 		set(input,cvt,pt) ;
 		this.frac = frac ;
 		if(frac >= 1) {
-			System.out.println("The value of frac must be less than 1") ;
-			System.exit(-1) ;
+			throw new RuntimeException("The value of frac must be less than 1") ;
 		}
 		this.idToStratify = idToStratify ;
 	}
@@ -356,8 +352,7 @@ public class PartitionParams
 		this.numIterations = numiter;
 		this.frac = frac;
 		if(frac >= 1) {
-			System.out.println("The value of frac must be less than 1") ;
-			System.exit(-1) ;
+			throw new RuntimeException("The value of frac must be less than 1") ;
 		}
 	}
 	

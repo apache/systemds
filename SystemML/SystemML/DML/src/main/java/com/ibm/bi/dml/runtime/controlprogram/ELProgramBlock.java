@@ -48,8 +48,7 @@
 //				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
 //				//Note that submitjob has the varblnames as inputs; runjob call takes in filepathsnames after updatelabels on varblname inputs
 //				if(jb.getMetaData().length != currMRInst.getOutputVars().length) {
-//					System.out.println("Error after partitioning in cv progm blk - no. matrices don't match!");
-//					System.exit(1);
+//					throw new RuntimeException("Error after partitioning in cv progm blk - no. matrices don't match!");
 //				}
 //				//Populate returned stats into symbol table of matrices
 //				for ( int index=0; index < jb.getMetaData().length; index++) {
@@ -120,8 +119,7 @@
 //		
 //		JobReturn jb = RunMRJobs.submitJob(reblksmr, this);
 //		if(jb.getMetaData().length != nummats) {
-//			System.out.println("Error after reblocking in cv progm blk - no. matrices don't match!");
-//			System.exit(1);
+//			throw new RuntimeException("Error after reblocking in cv progm blk - no. matrices don't match!");
 //		}
 //		//Populate returned stats into symbol table of matrices; also delete pre-reblk files from hdfs and entries in vars and mats
 //		for ( int index=0; index < jb.getMetaData().length; index++) {
@@ -187,8 +185,7 @@
 //if(hashmapsize <= availmem)	//we can simply use the hashmap MR job!
 //return PartitionParams.AccessPath.HM;	//FOR DEBUGGING
 //else {
-//System.out.println("Not enough memory, HM dies!");
-//System.exit(1);
+//throw new RuntimeException("Not enough memory, HM dies!");
 //} //FORDEBUGGING
 //
 //return retapt;

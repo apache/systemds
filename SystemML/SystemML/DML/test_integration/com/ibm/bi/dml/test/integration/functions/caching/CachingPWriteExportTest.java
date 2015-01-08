@@ -100,8 +100,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
-			System.exit(1);
-		}
+			throw new RuntimeException(ex);		}
 		
 		//compare
 		for( int i=0; i<rows; i++ )

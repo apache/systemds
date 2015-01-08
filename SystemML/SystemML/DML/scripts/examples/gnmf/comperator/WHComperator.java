@@ -148,7 +148,7 @@ public class WHComperator
 		{
 			System.out.println("expected parameters: [dml input dir] [raw input dir] [epsilon] " +
 					"[working dir] [num mappers] [num reducers] [replication]");
-			System.exit(1);
+			return;
 		}
 		
 		String dmlInputDir = args[0];

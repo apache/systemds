@@ -246,7 +246,7 @@ public class FullPowerTest extends AutomatedTestBase
 		catch(IOException e)
 		{
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -266,7 +266,7 @@ public class FullPowerTest extends AutomatedTestBase
 		catch(IOException e)
 		{
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 		
 		return dmlfile;

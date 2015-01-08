@@ -91,8 +91,7 @@ implements Reducer<LongWritable, BlockJoinMapOutputValue, MatrixIndexes, MatrixV
 						outrowcolid = -1 * apair.getKey() - 1;
 					}
 					else {
-						System.out.println("Unrecognized method in join reducer!");
-						System.exit(1);
+						throw new RuntimeException("Unrecognized method in join reducer!");
 					}
 					MatrixIndexes indexes = (pp.isColumn == false) ? new MatrixIndexes(outrowcolid + 1, 1) :
 									new MatrixIndexes(1, outrowcolid + 1) ;	//rowid/colid of subblk; systemml matrxblks from (1,1)
@@ -162,8 +161,7 @@ implements Reducer<LongWritable, BlockJoinMapOutputValue, MatrixIndexes, MatrixV
 						outrowcolid = -1 * apair.getKey() - 1;
 					}
 					else {
-						System.out.println("Unrecognized method in join reducer!");
-						System.exit(1);
+						throw new RuntimeException("Unrecognized method in join reducer!");
 					}
 					MatrixIndexes indexes = (pp.isColumn == false) ? new MatrixIndexes(outrowcolid + 1, p.getKey() + 1) :
 									new MatrixIndexes(p.getKey() + 1, outrowcolid + 1) ;	//rowid/colid of subblk; systemml matrxblks from (1,1)

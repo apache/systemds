@@ -200,8 +200,7 @@ public class PartitionBlockHashMapMR
 			}
 		}
 		else {
-			System.out.println("Unsupported method in hashmap MR job!");
-			System.exit(1);
+			throw new RuntimeException("Unsupported method in hashmap MR job!");
 		}
 		//write out the hashmap to a seqfile
 		String uri = new String(pp.sfmapfile);
@@ -311,15 +310,13 @@ public class PartitionBlockHashMapMR
 			for(int i = 0 ; i < mc.length; i++) {
 				if(pp.isColumn == false) {	//we had subrowblks
 					if((ctr[i] % numblksx) != 0) {
-						System.out.println("Error! Number of subrowblocks don't tally in blockhashmap reducer! !");
-						System.exit(1);
+						throw new RuntimeException("Error! Number of subrowblocks don't tally in blockhashmap reducer! !");
 					}
 					mc[i] = new MatrixCharacteristics(ctr[i] / numblksx, nc, bnr, bnc);	//same num cols though
 				}
 				else {
 					if((ctr[i] % numblksy) != 0) {
-						System.out.println("Error! Number of subcolblocks don't tally in blockhashmap reducer! !");
-						System.exit(1);
+						throw new RuntimeException("Error! Number of subcolblocks don't tally in blockhashmap reducer! !");
 					}
 					mc[i] = new MatrixCharacteristics(nr, ctr[i] / numblksy, bnr, bnc);	//same num rows though
 				}

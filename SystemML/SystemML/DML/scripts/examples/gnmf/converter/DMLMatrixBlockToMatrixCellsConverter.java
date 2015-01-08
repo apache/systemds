@@ -120,7 +120,7 @@ public class DMLMatrixBlockToMatrixCellsConverter
 			System.out.println("missing parameters");
 			System.out.println("expected parameters: inputDir outputDir blkRowSize blkColSize " +
 					"numMappers replication");
-			System.exit(1);
+			return;
 		}
 		
 		String inputDir		= args[0];

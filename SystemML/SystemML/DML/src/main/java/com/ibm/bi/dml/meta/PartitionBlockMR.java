@@ -43,8 +43,7 @@ public class PartitionBlockMR
 
 if((pp.isEL == true && ((pp.et == PartitionParams.EnsembleType.rsm) || (pp.et == PartitionParams.EnsembleType.bagging))) ||
 	(pp.isEL == false && pp.cvt == PartitionParams.CrossvalType.bootstrap)){
-	System.out.println("Reblock based partitioning should not arise for pp.isEL:"+pp.isEL+",pp.cvt:"+pp.cvt+",pp.et:"+pp.et+"!");
-	System.exit(1);
+	throw new RuntimeException("Reblock based partitioning should not arise for pp.isEL:"+pp.isEL+",pp.cvt:"+pp.cvt+",pp.et:"+pp.et+"!");
 }
 		
 		if(pp.isEL == false && pp.pt == PartitionParams.PartitionType.submatrix)

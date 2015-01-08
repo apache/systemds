@@ -117,7 +117,6 @@ public class ELUseStatement extends Statement {
 //			//		_pp.columns_in_block = (new Integer(map.get("columns_in_block"))).intValue();
 //			} else if (element.equals("cell")) {
 //				LOG.error("Partitioning method currently unsupported in the framework");
-//				System.exit(-1);
 //			}
 //		}
 //
@@ -134,7 +133,6 @@ public class ELUseStatement extends Statement {
 //
 //			else if (element.equals("submatrix")) {
 //				LOG.error("Partitioning method currently unsupported in the framework");
-//				System.exit(-1);
 //			}
 //
 //			else if (element.equals("cell")) {
@@ -154,7 +152,6 @@ public class ELUseStatement extends Statement {
 //				_pp.numIterations = numIterations;
 //			} else {
 //				LOG.error("Bootstrapping supported only for row partitions");
-//				System.exit(-1);
 //			}
 //		}
 //		_pp.partitionOutputs = _params.getPartitionReturnParams();

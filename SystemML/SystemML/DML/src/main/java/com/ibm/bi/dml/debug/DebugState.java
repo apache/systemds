@@ -11,6 +11,7 @@ package com.ibm.bi.dml.debug;
 import java.util.Stack;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 
 public class DebugState 
@@ -46,11 +47,13 @@ public class DebugState
 	/**
 	 * Getter for current frame's program counter
 	 * @return Current frame program counter
+	 * @throws DMLRuntimeException 
 	 */
-	public DMLProgramCounter getPC() {
+	public DMLProgramCounter getPC() throws DMLRuntimeException {
 		if(!DMLScript.ENABLE_DEBUG_MODE) {
 			System.err.println("Error: This functionality (getPC) is available only in debug mode");
-			System.exit(-1); // Fatal error to avoid unintentional bugs
+			//// Fatal error to avoid unintentional bugs 
+			throw new DMLRuntimeException("Error: This functionality (getPC) is available only in debug mode");
 		}
 		return pc;
 	}

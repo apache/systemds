@@ -388,8 +388,9 @@ public class ExecutionContext
 	/**
 	 * 
 	 * @param index
+	 * @throws DMLRuntimeException 
 	 */
-	public void updateDebugState( int index ) 
+	public void updateDebugState( int index ) throws DMLRuntimeException 
 	{
 		if(DMLScript.ENABLE_DEBUG_MODE) {
 			_dbState.getPC().setProgramBlockNumber(index);
@@ -399,8 +400,9 @@ public class ExecutionContext
 	/**
 	 * 
 	 * @param currInst
+	 * @throws DMLRuntimeException 
 	 */
-	public void updateDebugState( Instruction currInst )
+	public void updateDebugState( Instruction currInst ) throws DMLRuntimeException
 	{
 		if (DMLScript.ENABLE_DEBUG_MODE) {
 			// New change so that shell doesnot seem like it is hanging while running MR job
@@ -431,7 +433,7 @@ public class ExecutionContext
 		_dbState.suspend = true;
 	}
 
-	public void handleDebugFunctionEntry( FunctionCallCPInstruction funCallInst )
+	public void handleDebugFunctionEntry( FunctionCallCPInstruction funCallInst ) throws DMLRuntimeException
 	{
 		//push caller frame into call stack
 		_dbState.pushFrame(getVariables(), _dbState.getPC());
@@ -458,9 +460,10 @@ public class ExecutionContext
 	 * then it will wait until user issues a new debugger command.
 	 * @param currInst
 	 * @param ec
+	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
-	private void suspendIfAskedInDebugMode(Instruction currInst ) {
+	private void suspendIfAskedInDebugMode(Instruction currInst ) throws DMLRuntimeException {
 		if (!DMLScript.ENABLE_DEBUG_MODE) {
 			System.err.println("ERROR: The function suspendIfAskedInDebugMode should not be called in non-debug mode.");
 		}

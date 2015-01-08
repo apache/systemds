@@ -384,7 +384,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	  if(args.length<4)
 	  {
 		  System.err.println("<input> <output> <numReducers> <selectVector>");
-		  System.exit(-1);
+		  return;
 	  }
     
     InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
@@ -420,7 +420,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	  if(args.length<5)
 	  {
 		  System.err.println("<input> <inputweight> <output> <numReducers> <selectVector>");
-		  System.exit(-1);
+		  return;
 	  }
 	  
     OutputInfo outputInfo=OutputInfo.OutputInfoForSortInput;

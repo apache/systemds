@@ -293,7 +293,7 @@ public abstract class AutomatedTestBase
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 		
 		TestUtils.writeTestMatrix(completePath, matrix);
@@ -327,7 +327,7 @@ public abstract class AutomatedTestBase
 		catch(IOException e)
 		{
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 	
 		return matrix;
@@ -400,7 +400,7 @@ public abstract class AutomatedTestBase
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(e);
 		}
 		
 		if (rowsInBlock == 1 && colsInBlock == 1) {
@@ -813,8 +813,7 @@ public abstract class AutomatedTestBase
 		else if (rtplatform == RUNTIME_PLATFORM.NZ)
 			args.add("nz");
 		else {
-			System.err.println("Unknown runtime platform: " + rtplatform);
-			System.exit(1);
+			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}
 		//use optional config file since default under SystemML/DML
 		args.add("-config="+CONFIG_DIR+"SystemML-config.xml");

@@ -119,7 +119,7 @@ public class GenerateTestMatrix{
 		{
 			System.err.println("expect 8 paramers: numMappers numRows numColumns " +
 					"outputDir replication sequenceOutputFile? seed sparcity");
-			System.exit(-1);
+			return;
 		}
 		
 		int numMappers=Integer.parseInt(args[0]);

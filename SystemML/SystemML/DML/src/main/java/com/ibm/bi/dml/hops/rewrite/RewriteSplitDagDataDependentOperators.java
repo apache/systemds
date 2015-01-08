@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
@@ -18,6 +19,7 @@ import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -28,6 +30,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 
 /**
  * Rule: Split Hop DAG after specific data-dependent operators. This is
@@ -52,7 +55,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private static String _varnamePredix = "_sbcutvar";
+	private static String _varnamePredix = "_sbcvar";
 	private static IDSequence _seq = new IDSequence();
 	
 	@Override
@@ -99,6 +102,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//create new transient read
 						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
+						tread.set_visited(VISIT_STATUS.DONE);
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
@@ -125,6 +129,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//create new transient read
 						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
+						tread.set_visited(VISIT_STATUS.DONE);
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
@@ -140,6 +145,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						//add data-dependent operator sub dag to first statement block
 						DataOp twrite = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
 								                   c, DataOpTypes.TRANSIENTWRITE, null);
+						twrite.set_visited(VISIT_STATUS.DONE);
 						twrite.setOutputParams(rlen, clen, nnz, brlen, bclen);
 						HopRewriteUtils.copyLineNumbers(c, twrite);
 						sb1hops.add(twrite);	
@@ -154,6 +160,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
 					sb.liveIn().addVariable(varname, new DataIdentifier(diVar));
 				}
+	
+				//ensure disjoint operators across DAGs (prevent replicated operations)
+				handleReplicatedOperators( sb1hops, sb.get_hops() );
 				
 				//deep copy new dag (in order to prevent any dangling references)
 				sb1.set_hops(Recompiler.deepCopyHopsDag(sb1hops));
@@ -264,6 +273,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
 	private Hop getFirstTransientWriteParent( Hop hop )
 	{
 		for( Hop p : hop.getParent() )
@@ -272,56 +286,95 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		return null;
 	}
 	
-	/* OLD code from AssignmentStatement.controlStatement():
-	 --- 
-	public boolean containsIndividualStatementBlockOperations()
+	/**
+	 * 
+	 * @param rootsSB1
+	 * @param rootsSB2
+	 */
+	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2 )
 	{
-		// if (DMLScript.ENABLE_DEBUG_MODE && !DMLScript.ENABLE_DEBUG_OPTIMIZER)
-		if (DMLScript.ENABLE_DEBUG_MODE)
-			return true;
+		//step 1: create probe set SB1
+		HashSet<Hop> probeSet = new HashSet<Hop>();
+		Hop.resetVisitStatus(rootsSB1);
+		for( Hop h : rootsSB1 )
+			rAddHopsToProbeSet( h, probeSet );
 		
-		boolean ret = false;
+		//step 2: probe SB2 operators top-down (collect cut candidates)
+		HashSet<Pair<Hop,Hop>> candSet = new HashSet<Pair<Hop,Hop>>();
+		Hop.resetVisitStatus(rootsSB2);
+		for( Hop h : rootsSB2 )
+			rProbeAndAddHopsToCandidateSet(h, probeSet, candSet);
 		
-		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
+		//step 3: create additional cuts
+		for( Pair<Hop,Hop> p : candSet ) 
 		{
-			//1) Leaf nodes with unknown size:
-			//recompilation hook after reads with unknown size (this can currently only happen for csv)
-			if( _source instanceof DataExpression && ((DataExpression)_source).isCSVReadWithUnknownSize() )
-				ret = true;	
+			String varname = _varnamePredix + _seq.getNextID();
+			Hop hop = p.getKey();
+			Hop c = p.getValue();
 			
-			//2) Data-dependent operations:
+			DataOp tread = new DataOp(varname, c.get_dataType(), c.get_valueType(), DataOpTypes.TRANSIENTREAD, 
+					null, c.get_dim1(), c.get_dim2(), c.getNnz(), c.get_rows_in_block(), c.get_cols_in_block());
+			tread.set_visited(VISIT_STATUS.DONE);
+			HopRewriteUtils.copyLineNumbers(c, tread);
 			
-			//TODO additional candidates (currently, not enabled because worst-case estimates usually reasonable)
-			//if( _source.toString().contains(Expression.DataOp.RAND.toString()) )
-			//	ret = true;	
-			//if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG.toString()) )
-			//	ret = true;	
-			if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.RMEMPTY.toString()) )
-				ret = true;	
+			DataOp twrite = new DataOp(varname, c.get_dataType(), c.get_valueType(), c, DataOpTypes.TRANSIENTWRITE, null);
+			twrite.set_visited(VISIT_STATUS.DONE);
+			twrite.setOutputParams(c.get_dim1(), c.get_dim2(), c.getNnz(), c.get_rows_in_block(), c.get_cols_in_block());
+			HopRewriteUtils.copyLineNumbers(c, twrite);
 			
-			//recompilation hook after ctable because worst estimates usually too conservative 
-			//(despite propagating worst-case estimates, especially if we not able to propagate sparsity)
-			
-			if( _source != null && _source.toString().contains(Expression.BuiltinFunctionOp.TABLE.toString()) 
-				&& !isBuiltinCtableWithKnownDimensions(_source) ) //split only if unknown dimensions 
-				ret = true;
+			//create additional cut by rewriting both hop dags 
+			int pos = HopRewriteUtils.getChildReferencePos(hop, c);
+			HopRewriteUtils.removeChildReferenceByPos(hop, c, pos);
+			HopRewriteUtils.addChildReference(hop, tread, pos);			
+			rootsSB1.add(twrite);
 		}
-		//System.out.println(_source +": "+ret);
-		
-		return ret;
 	}
 	
-	private static boolean isBuiltinCtableWithKnownDimensions( Expression expr )
-	{
-		boolean ret = false;
-		
-		if( expr instanceof BuiltinFunctionExpression ){
-			BuiltinFunctionExpression bexpr = (BuiltinFunctionExpression) expr;
-			ret = (    bexpr.getOpCode() == Expression.BuiltinFunctionOp.TABLE
-					&& bexpr.getAllExpr()!=null && bexpr.getAllExpr().length>3 );
-		}
-		
-		return ret;
-	}
+	/**
+	 * 
+	 * @param hop
+	 * @param probeSet
 	 */
+	private void rAddHopsToProbeSet( Hop hop, HashSet<Hop> probeSet )
+	{
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
+			probeSet.add(hop);
+		
+		if( hop.getInput() != null )
+			for( Hop c : hop.getInput() )
+				rAddHopsToProbeSet(c, probeSet);
+		
+		hop.set_visited(VISIT_STATUS.DONE);	
+	}
+	
+	/**
+	 * 
+	 * 
+	 * NOTE: candset is a set of parent-child pairs because a parent might have 
+	 * multiple references to replicated hops.
+	 * 
+	 * @param hop
+	 * @param probeSet
+	 * @param candSet
+	 */
+	private void rProbeAndAddHopsToCandidateSet( Hop hop, HashSet<Hop> probeSet, HashSet<Pair<Hop,Hop>> candSet )
+	{
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return;
+
+		if( hop.getInput() != null )
+			for( Hop c : hop.getInput() )  {
+				//probe for replicated operator, if any child is replicated, keep parent
+				//for cut between parent-child; otherwise recursively descend.
+				if( !probeSet.contains(c) )
+					rProbeAndAddHopsToCandidateSet(c, probeSet, candSet);
+				else
+					candSet.add(new Pair<Hop,Hop>(hop,c)); 
+			}
+		
+		hop.set_visited(VISIT_STATUS.DONE);	
+	}
 }

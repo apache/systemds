@@ -332,8 +332,8 @@ public class ParameterizedBuiltinOp extends Hop
 			HopRewriteUtils.copyLineNumbers(this, seq);	
 			
 			//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
-			Hop table_weights = input; //note: isPPredInput ? new LiteralOp("1",1), but currently blocksize issues
-			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, table_weights);
+			//note: weights always the input (even if isPPredInput) because input also includes 0s
+			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
 			HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
 			table.refreshSizeInformation();
 			table.setForcedExecType(ExecType.MR); //force MR 

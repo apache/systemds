@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 public class MatrixCell extends MatrixValue implements WritableComparable
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected double value;
@@ -476,7 +476,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
-			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
+			MatrixValue result, AggregateBinaryOperator op)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.aggregateBinaryOperations should never be called");
 	}

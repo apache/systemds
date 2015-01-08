@@ -17,8 +17,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -4566,366 +4564,61 @@ public class MatrixBlock extends MatrixValue
 		}
 		return sum_wt;
 	}
-	
-	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		MatrixBlock m1=checkType(m1Value);
-		MatrixBlock m2=checkType(m2Value);
-		checkType(result);
-		if(m1.clen!=m2.rlen)
-			throw new RuntimeException("dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+")");
-		int rl=m1.rlen;
-		int cl=m2.clen;
-		SparsityEstimate sp=estimateSparsityOnAggBinary(m1, m2, op);
-		if(result==null)
-			result=new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
-		else
-			result.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
-		
-		if(op.sparseSafe)
-			sparseAggregateBinaryHelp(m1, m2, (MatrixBlock)result, op);
-		else
-			aggBinSparseUnsafe(m1, m2, (MatrixBlock)result, op);
 
-		return result;
-	}
-	
+	/**
+	 * 
+	 * @param m1Index
+	 * @param m1Value
+	 * @param m2Index
+	 * @param m2Value
+	 * @param result
+	 * @param op
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
-			MatrixValue result, AggregateBinaryOperator op, boolean partialMult) 
+			MatrixValue result, AggregateBinaryOperator op ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		MatrixBlock m1=checkType(m1Value);
-		MatrixBlock m2=checkType(m2Value);
-		checkType(result);
+		return aggregateBinaryOperations(m1Value, m2Value, result, op);
+	}
 
-		if (  partialMult ) {
-			// check if matrix block's row-column range falls within the whole vector's row-column range 
-		}
-		else if(m1.clen!=m2.rlen)
-			throw new RuntimeException("dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+")");
+	/**
+	 * 
+	 */
+	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//check input types and dimensions
+		MatrixBlock m1 = checkType(m1Value);
+		MatrixBlock m2 = checkType(m2Value);
+		MatrixBlock ret = checkType(result);
+		if(m1.clen!=m2.rlen)
+			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+").");
 
-		int rl, cl;
-		SparsityEstimate sp;
-		if ( partialMult ) {
-			// TODO: avoid this code!!
-			rl = m1.rlen;
-			cl = 1;
-			sp = new SparsityEstimate(false,m1.rlen);
+		//setup meta data (dimensions, sparsity)
+		int rl = m1.rlen;
+		int cl = m2.clen;
+		SparsityEstimate sp = estimateSparsityOnAggBinary(m1, m2, op);
+		
+		//create output matrix block
+		if( ret==null )
+			ret = new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
+		else
+			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
+		
+		//compute matrix multiplication (only supported binary aggregate operation)
+		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus ) {
+			LibMatrixMult.matrixMult(m1, m2, ret);
 		}
 		else {
-			rl=m1.rlen;
-			cl=m2.clen;
-			sp = estimateSparsityOnAggBinary(m1, m2, op);
+			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
 		}
 		
-		if(result==null)
-			result=new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
-		else
-			result.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
-		
-		if(op.sparseSafe)
-			sparseAggregateBinaryHelp(m1Index, m1, m2Index, m2, (MatrixBlock)result, op, partialMult);
-		else
-			aggBinSparseUnsafe(m1, m2, (MatrixBlock)result, op);
-		return result;
-	}
-
-	private static void sparseAggregateBinaryHelp(MatrixIndexes m1Index, MatrixBlock m1, MatrixIndexes m2Index, MatrixBlock m2, 
-			MatrixBlock result, AggregateBinaryOperator op, boolean partialMult) throws DMLRuntimeException 
-	{
-		//matrix multiplication
-		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus && !partialMult)
-		{
-			LibMatrixMult.matrixMult(m1, m2, result);
-		}
-		else
-		{
-			if(!m1.sparse && m2 != null && !m2.sparse )
-				aggBinDenseDense(m1, m2, result, op);
-			else if(m1.sparse && m2 != null && m2.sparse)
-				aggBinSparseSparse(m1, m2, result, op);
-			else if(m1.sparse)
-				aggBinSparseDense(m1Index, m1, m2Index, m2, result, op, partialMult);
-			else
-				aggBinDenseSparse(m1, m2, result, op);
-		}
+		return ret;
 	}
 	
-	private static void sparseAggregateBinaryHelp(MatrixBlock m1, MatrixBlock m2, 
-			MatrixBlock result, AggregateBinaryOperator op) throws DMLRuntimeException 
-	{
-		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus )
-		{
-			LibMatrixMult.matrixMult(m1, m2, result);
-		}
-		else
-		{
-			if(!m1.sparse && !m2.sparse)
-				aggBinDenseDense(m1, m2, result, op);
-			else if(m1.sparse && m2.sparse)
-				aggBinSparseSparse(m1, m2, result, op);
-			else if(m1.sparse)
-				aggBinSparseDense(m1, m2, result, op);
-			else
-				aggBinDenseSparse(m1, m2, result, op);
-		}
-	}
-	
-	/**
-	 * to perform aggregateBinary when both matrices are dense
-	 */
-	private static void aggBinDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock result, AggregateBinaryOperator op) throws DMLRuntimeException
-	{
-		int j, l, i, aIndex, bIndex;
-		double temp;
-		double v;
-		double[] a = m1.getDenseArray();
-		double[] b = m2.getDenseArray();
-		if(a==null || b==null)
-			return;
-		
-		for(l = 0; l < m1.clen; l++)
-		{
-			aIndex = l;
-			//cIndex = 0;
-			for(i = 0; i < m1.rlen; i++)
-			{
-				// aIndex = l + i * m1clen
-				temp = a[aIndex];
-			
-				bIndex = l * m1.rlen;
-				for(j = 0; j < m2.clen; j++)
-				{
-					// cIndex = i * m1.rlen + j
-					// bIndex = l * m1.rlen + j
-					v = op.aggOp.increOp.fn.execute(result.quickGetValue(i, j), op.binaryFn.execute(temp, b[bIndex]));
-					result.quickSetValue(i, j, v);
-					//cIndex++;
-					bIndex++;
-				}
-				
-				aIndex += m1.clen;
-			}
-		}
-	}
-	
-	/*
-	 * to perform aggregateBinary when the first matrix is dense and the second is sparse
-	 */
-	private static void aggBinDenseSparse(MatrixBlock m1, MatrixBlock m2,
-			MatrixBlock result, AggregateBinaryOperator op) 
-		throws DMLRuntimeException 
-	{
-		if(m2.sparseRows==null)
-			return;
-
-		for(int k=0; k<Math.min(m2.rlen, m2.sparseRows.length); k++)
-		{
-			if(m2.sparseRows[k]==null) continue;
-			int[] cols=m2.sparseRows[k].getIndexContainer();
-			double[] values=m2.sparseRows[k].getValueContainer();
-			for(int p=0; p<m2.sparseRows[k].size(); p++)
-			{
-				int j=cols[p];
-				for(int i=0; i<m1.rlen; i++)
-				{
-					double old=result.quickGetValue(i, j);
-					double aik=m1.quickGetValue(i, k);
-					double addValue=op.binaryFn.execute(aik, values[p]);
-					double newvalue=op.aggOp.increOp.fn.execute(old, addValue);
-					result.quickSetValue(i, j, newvalue);
-				}
-			}
-		}
-	}
-	
-	private static void aggBinSparseDense(MatrixIndexes m1Index,
-			MatrixBlock m1, MatrixIndexes m2Index, MatrixBlock m2,
-			MatrixBlock result, AggregateBinaryOperator op,
-			boolean partialMult) throws DMLRuntimeException {
-		if (m1.sparseRows == null)
-			return;
-
-		//System.out.println("#*#*#**# in special aggBinSparseDense ... ");
-		int end_l, incrA = 0, incrB = 0;
-
-		// l varies from 0..end_l, where the upper bound end_l is determined by
-		// the Matrix Input (not the vector input)
-		if (partialMult == false) {
-			// both A and B are matrices
-			end_l = m1.clen;
-		} else {
-			if (m2.isVector()) {
-				// A is a matrix and B is a vector
-				incrB = (int) UtilFunctions.cellIndexCalculation(m1Index
-						.getColumnIndex(), 1000, 0) - 1; // matrixB.l goes from
-															// incr+start_l to
-															// incr+end_l
-				end_l = incrB + m1.clen;
-			} else if (m1.isVector()) {
-				// A is a vector and B is a matrix
-				incrA = (int) UtilFunctions.cellIndexCalculation(m2Index
-						.getRowIndex(), 1000, 0) - 1; // matrixA.l goes from
-														// incr+start_l to
-														// incr+end_l
-				end_l = incrA + m2.rlen;
-			} else
-				throw new RuntimeException(
-						"Unexpected case in matrixMult w/ partialMult");
-		}
-
-		/*System.out.println("m1: [" + m1.rlen + "," + m1.clen + "]   m2: ["
-				+ m2.rlen + "," + m2.clen + "]  incrA: " + incrA + " incrB: "
-				+ incrB + ", end_l " + end_l);*/
-
-		for (int i = 0; i < Math.min(m1.rlen, m1.sparseRows.length); i++) {
-			if (m1.sparseRows[i] == null)
-				continue;
-			int[] cols = m1.sparseRows[i].getIndexContainer();
-			double[] values = m1.sparseRows[i].getValueContainer();
-			for (int j = 0; j < m2.clen; j++) {
-				double aij = 0;
-
-				/*int p = 0;
-				if (partialMult) {
-					// this code is executed when m1 is a vector and m2 is a
-					// matrix
-					while (m1.isVector() && cols[p] < incrA)
-						p++;
-				}*/
-				
-				// when m1 and m2 are matrices : incrA=0 & end_l=m1.clen (#cols
-				// in whole m1)
-				// when m1 is matrix & m2 is vector: incrA=0 &
-				// end_l=m1.sparseRows[i].size()
-				// when m1 is vector & m2 is matrix: incrA=based on
-				// m2Index.rowIndex & end_l=incrA+m2.rlen (#rows in m2's block)
-				for (int p = incrA; p < m1.sparseRows[i].size()
-						&& cols[p] < end_l; p++) {
-					int k = cols[p];
-					double addValue = op.binaryFn.execute(values[p], m2
-							.quickGetValue(k + incrB, j));
-					aij = op.aggOp.increOp.fn.execute(aij, addValue);
-				}
-				result.appendValue(i, j, aij);
-			}
-		}
-	}
-
-	/*
-	 * to perform aggregateBinary when the first matrix is sparse and the second is dense
-	 */
-	private static void aggBinSparseDense(MatrixBlock m1, MatrixBlock m2,
-			MatrixBlock result, AggregateBinaryOperator op) 
-		throws DMLRuntimeException
-	{
-		if(m1.sparseRows==null)
-			return;
-
-		for(int i=0; i<Math.min(m1.rlen, m1.sparseRows.length); i++)
-		{
-			if(m1.sparseRows[i]==null) continue;
-			int[] cols=m1.sparseRows[i].getIndexContainer();
-			double[] values=m1.sparseRows[i].getValueContainer();
-			for(int j=0; j<m2.clen; j++)
-			{
-				double aij=0;
-				for(int p=0; p<m1.sparseRows[i].size(); p++)
-				{
-					int k=cols[p];
-					double addValue=op.binaryFn.execute(values[p], m2.quickGetValue(k, j));
-					aij=op.aggOp.increOp.fn.execute(aij, addValue);
-				}
-				result.appendValue(i, j, aij);
-			}
-			
-		}
-	}
-	
-	/*
-	 * to perform aggregateBinary when both matrices are sparse
-	 */	
-	private static void aggBinSparseSparse(MatrixBlock m1, MatrixBlock m2,
-			MatrixBlock result, AggregateBinaryOperator op) 
-		throws DMLRuntimeException 
-	{
-		if(m1.sparseRows==null || m2.sparseRows==null)
-			return;
-		TreeMap<Integer, Double> cache=null;
-		if(result.isInSparseFormat())
-		{
-			cache=new TreeMap<Integer, Double>();
-		}
-		for(int i=0; i<Math.min(m1.rlen, m1.sparseRows.length); i++)
-		{
-			if(m1.sparseRows[i]==null) continue;
-			int[] cols1=m1.sparseRows[i].getIndexContainer();
-			double[] values1=m1.sparseRows[i].getValueContainer();
-			for(int p=0; p<m1.sparseRows[i].size(); p++)
-			{
-				int k=cols1[p];
-				if(m2.sparseRows[k]==null) continue;
-				int[] cols2=m2.sparseRows[k].getIndexContainer();
-				double[] values2=m2.sparseRows[k].getValueContainer();
-				for(int q=0; q<m2.sparseRows[k].size(); q++)
-				{
-					int j=cols2[q];
-					double addValue=op.binaryFn.execute(values1[p], values2[q]);
-					if(result.isInSparseFormat())
-					{
-						//cache[j]=op.aggOp.increOp.fn.execute(cache[j], addValue);
-						Double old=cache.get(j);
-						if(old==null)
-							old=0.0;
-						cache.put(j, op.aggOp.increOp.fn.execute(old, addValue));
-					}else
-					{
-						double old=result.quickGetValue(i, j);
-						double newvalue=op.aggOp.increOp.fn.execute(old, addValue);
-						result.quickSetValue(i, j, newvalue);
-					}	
-				}
-			}
-			
-			if(result.isInSparseFormat())
-			{
-				/*for(int j=0; j<cache.length; j++)
-				{
-					if(cache[j]!=0)
-					{
-						result.appendValue(i, j, cache[j]);
-						cache[j]=0;
-					}
-				}*/
-				for(Entry<Integer, Double> e: cache.entrySet())
-				{
-					result.appendValue(i, e.getKey(), e.getValue());
-				}
-				cache.clear();
-			}
-		}
-	}
-	
-	private static void aggBinSparseUnsafe(MatrixBlock m1, MatrixBlock m2, MatrixBlock result, 
-			AggregateBinaryOperator op) throws DMLRuntimeException
-	{
-		for(int i=0; i<m1.rlen; i++)
-			for(int j=0; j<m2.clen; j++)
-			{
-				double aggValue=op.aggOp.initialValue;
-				for(int k=0; k<m1.clen; k++)
-				{
-					double aik=m1.quickGetValue(i, k);
-					double bkj=m2.quickGetValue(k, j);
-					double addValue=op.binaryFn.execute(aik, bkj);
-					aggValue=op.aggOp.increOp.fn.execute(aggValue, addValue);
-				}
-				result.appendValue(i, j, aggValue);
-			}
-	}
-		
 	/**
 	 * Invocation from CP instructions. The aggregate is computed on the groups object
 	 * against target and weights. 

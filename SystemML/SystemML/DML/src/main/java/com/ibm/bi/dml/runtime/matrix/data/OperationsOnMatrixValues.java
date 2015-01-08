@@ -273,17 +273,14 @@ public class OperationsOnMatrixValues
 	}
 	
 	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
-			MatrixIndexes indexes_out, MatrixValue value_out, AggregateBinaryOperator op, boolean partialMult)
+			MatrixIndexes indexes_out, MatrixValue value_out, AggregateBinaryOperator op)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		//operate on the value indexes first
-		//tempCell1.setIndexes(indexes1);
-		//tempCell2.setIndexes(indexes2);
-		//CellOperations.performMMCJIndexOnly(tempCell1, tempCell2, tempCell1);
+		//compute output index
 		indexes_out.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		
 		//perform on the value
-		value_out=value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, value_out, op, partialMult);
+		value_out=value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, value_out, op);
 	}
 	
 	//including scalar, reorg and aggregateUnary operations
@@ -315,13 +312,5 @@ public class OperationsOnMatrixValues
 			
 		//perform on the value
 		value_out=value1.aggregateBinaryOperations(value1, value2, value_out, op);
-	}
-	
-	static int numRowsInBlock, numColsInBlock ;
-	public static void setNumRowsInBlock(int i) {
-		numRowsInBlock = i ;
-	}
-	public static void setNumColumnsInBlock(int i) {
-		numColsInBlock = i;
 	}
 }

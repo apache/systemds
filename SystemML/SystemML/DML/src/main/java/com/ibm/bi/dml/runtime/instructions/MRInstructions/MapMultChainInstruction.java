@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -37,7 +37,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class MapMultChainInstruction extends MRInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ChainType _chainType = null;
@@ -278,7 +278,7 @@ public class MapMultChainInstruction extends MRInstruction
 		//matrix-vector matrix mult: tmp1=(X%*%v)
 		MatrixIndexes tmp1Ix = new MatrixIndexes();
 		MatrixBlock tmp1Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp, false);
+		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp);
 		
 		//matrix transpose: tmp2 = t(tmp1)
 		MatrixIndexes tmp2Ix = new MatrixIndexes(1, inIx.getRowIndex());
@@ -288,7 +288,7 @@ public class MapMultChainInstruction extends MRInstruction
 		//vector-matrix matrix mult: tmp3 =(tmp2%*%X)
 		MatrixIndexes tmp3Ix = new MatrixIndexes();
 		MatrixBlock tmp3Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp, false);
+		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp);
 		
 		//matrix transpose: r = t(tmp3) 
 		outIx.setIndexes(tmp3Ix.getColumnIndex(), tmp3Ix.getRowIndex());
@@ -318,7 +318,7 @@ public class MapMultChainInstruction extends MRInstruction
 		//matrix-vector matrix mult: tmp1=(X%*%v)
 		MatrixIndexes tmp1Ix = new MatrixIndexes();
 		MatrixBlock tmp1Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp, false);
+		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp);
 		
 		//vector-vector cell-wise multiply: tmp1=(tmp1*w), in-place  
 		tmp1Val.binaryOperationsInPlace(_bOp, w.getValue());
@@ -331,7 +331,7 @@ public class MapMultChainInstruction extends MRInstruction
 		//vector-matrix matrix mult: tmp3 =(tmp2%*%X)
 		MatrixIndexes tmp3Ix = new MatrixIndexes();
 		MatrixBlock tmp3Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp, false);
+		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp);
 		
 		//matrix transpose: r = t(tmp3) 
 		outIx.setIndexes(tmp3Ix.getColumnIndex(), tmp3Ix.getRowIndex());

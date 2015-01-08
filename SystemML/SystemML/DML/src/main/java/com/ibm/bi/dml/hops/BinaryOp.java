@@ -1708,11 +1708,10 @@ public class BinaryOp extends Hop
 		long m1_rpb = left.get_rows_in_block();
 		long m1_cpb = left.get_cols_in_block();
 		
-		//MR_BINARY_UAGG_CHAIN only applied if result is column vector since MV only supported for column vectors.
-		//TODO generalization to colwise
+		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
 		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
-			&& ((AggUnaryOp) right).getDirection() == Direction.Row	
-		    && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //only if single block
+			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
+		    ||  (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
 		{
 			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
 		}

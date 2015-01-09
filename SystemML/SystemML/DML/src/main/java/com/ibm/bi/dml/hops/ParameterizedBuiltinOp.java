@@ -280,6 +280,9 @@ public class ParameterizedBuiltinOp extends Hop
 	private void constructLopsRemoveEmpty(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
+		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
+		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
+		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
@@ -290,17 +293,17 @@ public class ParameterizedBuiltinOp extends Hop
 			set_lops(pbilop);
 		}
 		//special compile for mr removeEmpty-diag 
-		else if( et == ExecType.MR && getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.DIAG 
-				&& getInput().get(0).getInput().get(0).get_dim2() == 1  //input vector (guarantees diagV2M), implies remove rows
-				&& getInput().get(_paramIndexMap.get("margin")) instanceof LiteralOp && ((LiteralOp)getInput().get(_paramIndexMap.get("margin"))).getStringValue().equals("rows") )
+		else if( et == ExecType.MR && targetHop instanceof ReorgOp && ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
+				&& targetHop.getInput().get(0).get_dim2() == 1  //input vector (guarantees diagV2M), implies remove rows
+				&& marginHop instanceof LiteralOp && ((LiteralOp)marginHop).getStringValue().equals("rows") )
  		{
 			//get input vector (without materializing diag())
-			Hop input = getInput().get(0).getInput().get(0);
+			Hop input = targetHop.getInput().get(0);
 			long brlen = input.get_rows_in_block();
 			long bclen = input.get_cols_in_block();
 			MemoTable memo = new MemoTable();
 		
-			boolean isPPredInput = input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation();
+			boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
 			
 			//step1: compute index vectors
 			Hop ppred0 = input;
@@ -342,6 +345,10 @@ public class ParameterizedBuiltinOp extends Hop
 			table.setOutputEmptyBlocks(_outputEmptyBlocks);
 			Lop ltable = table.constructLops();
 			
+			//Step 4: cleanup hops (allow for garbage collection)
+			HopRewriteUtils.removeChildReference(ppred0, input);
+			HopRewriteUtils.removeChildReference(table, input);
+			
 			set_lops( ltable );
 		}
 		//default mr remove empty
@@ -349,16 +356,16 @@ public class ParameterizedBuiltinOp extends Hop
 		{
 			//TODO additional physical operator if offsets fit in memory
 			
-			if( !(getInput().get(_paramIndexMap.get("margin")) instanceof LiteralOp) )
+			if( !(marginHop instanceof LiteralOp) )
 				throw new HopsException("Parameter 'margin' must be a literal argument.");
 				
-			Hop input = getInput().get(0);
+			Hop input = targetHop;
 			long rlen = input.get_dim1();
 			long clen = input.get_dim2();
 			long brlen = input.get_rows_in_block();
 			long bclen = input.get_cols_in_block();
 			long nnz = input.getNnz();
-			boolean rmRows = ((LiteralOp)getInput().get(_paramIndexMap.get("margin"))).getStringValue().equals("rows");
+			boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 			
 			//construct lops via new partial hop dag and subsequent lops construction 
 			//in order to reuse of operator selection decisions

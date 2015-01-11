@@ -1,12 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.DataPartition;
@@ -21,6 +22,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
+import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.Transform.OperationTypes;
@@ -54,23 +56,28 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class AggBinaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	public static final double MVMULT_MEM_MULTIPLIER = 1.0;
+	public static final double MAPMULT_MEM_MULTIPLIER = 1.0;
+	public static MMultMethod FORCED_MMULT_METHOD = null;
 	
 	private OpOp2 innerOp;
 	private AggOp outerOp;
 
-	private enum MMultMethod { 
-		CPMM,     //cross-product matrix multiplication
-		RMM,      //replication matrix multiplication
-		MAPMULT_L,  //map-side matrix-matrix multiplication using distributed cache, for left input
-		MAPMULT_R,  //map-side matrix-matrix multiplication using distributed cache, for right input
-		MAPMULT_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input
-		TSMM,     //transpose-self matrix multiplication
-		CP        //in-memory matrix multiplication
+	public enum MMultMethod { 
+		CPMM,     //cross-product matrix multiplication (mr)
+		RMM,      //replication matrix multiplication (mr)
+		MAPMULT_L,  //map-side matrix-matrix multiplication using distributed cache (mr)
+		MAPMULT_R,  //map-side matrix-matrix multiplication using distributed cache (mr)
+		MAPMULT_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (mr)
+		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr)
+		TSMM,     //transpose-self matrix multiplication (mr/cp)
+		CP        //in-memory matrix multiplication (cp)
 	};
+	
+	//hints set by previous to operator selection
+	private boolean _hasLeftPMInput = false; //left input is permutation matrix
 	
 	private AggBinaryOp() {
 		//default constructor for clone
@@ -88,6 +95,10 @@ public class AggBinaryOp extends Hop
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
+	}
+	
+	public void setHasLeftPMInput(boolean flag) {
+		_hasLeftPMInput = flag;
 	}
 	
 	/**
@@ -127,7 +138,7 @@ public class AggBinaryOp extends Hop
 				MMultMethod method = optFindMMultMethod ( 
 							input1.get_dim1(), input1.get_dim2(), input1.get_rows_in_block(), input1.get_cols_in_block(),    
 							input2.get_dim1(), input2.get_dim2(), input2.get_rows_in_block(), input2.get_cols_in_block(),
-							mmtsj, chain);
+							mmtsj, chain, _hasLeftPMInput);
 			
 				//dispatch lops construction
 				switch( method ) {
@@ -138,7 +149,7 @@ public class AggBinaryOp extends Hop
 					case MAPMULT_CHAIN:	
 						constructLopsMR_MapMultChain( chain ); break;		
 					
-					case CPMM:			
+					case CPMM:
 						constructLopsMR_CPMM(); break;					
 					
 					case RMM:			
@@ -147,6 +158,9 @@ public class AggBinaryOp extends Hop
 					case TSMM:
 						constructLopsMR_TSMM( mmtsj ); break;
 					
+					case PMM:
+						constructLopsMR_PMM(); break;
+						
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing lops.");
 				}
@@ -609,6 +623,90 @@ public class AggBinaryOp extends Hop
 		set_lops(agg1);
 	} 
 	
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsMR_PMM() 
+		throws HopsException, LopsException
+	{
+		//PMM has two potential modes (a) w/ full permutation matrix input, and 
+		//(b) w/ already condensed input vector of target row positions.
+		
+		Hop pmInput = getInput().get(0);
+		Hop rightInput = getInput().get(1);
+		long brlen = pmInput.get_rows_in_block();
+		long bclen = pmInput.get_cols_in_block();
+		MemoTable memo = new MemoTable();
+		
+		//a) full permutation matrix input (potentially without empty block materialized)
+		Lop lpmInput = pmInput.constructLops();
+		if( pmInput.get_dim2() != 1 ) //not a vector
+		{
+			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
+			
+			//compute condensed permutation matrix vector input			
+			ReorgOp transpose = new ReorgOp( "tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, pmInput );
+			HopRewriteUtils.setOutputBlocksizes(transpose, brlen, bclen);
+			transpose.refreshSizeInformation();
+			transpose.setForcedExecType(ExecType.MR);
+			HopRewriteUtils.copyLineNumbers(this, transpose);	
+			
+			AggUnaryOp agg1 = new AggUnaryOp("tmp2a", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAXINDEX, Direction.Row, transpose);
+			HopRewriteUtils.setOutputBlocksizes(agg1, brlen, bclen);
+			agg1.refreshSizeInformation();
+			agg1.setForcedExecType(ExecType.MR);
+			HopRewriteUtils.copyLineNumbers(this, agg1);
+			
+			AggUnaryOp agg2 = new AggUnaryOp("tmp2b", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, Direction.Row, transpose);
+			HopRewriteUtils.setOutputBlocksizes(agg2, brlen, bclen);
+			agg2.refreshSizeInformation();
+			agg2.setForcedExecType(ExecType.MR);
+			HopRewriteUtils.copyLineNumbers(this, agg2);
+			
+			BinaryOp mult = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, agg1, agg2);
+			HopRewriteUtils.setOutputBlocksizes(mult, brlen, bclen); 
+			mult.refreshSizeInformation();
+			mult.setForcedExecType(ExecType.MR);
+			//mult.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, mult);
+			
+			lpmInput = mult.constructLops();
+			
+			HopRewriteUtils.removeChildReference(pmInput, transpose);
+		}
+		
+		//b) condensed permutation matrix vector input (target rows)
+		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
+		HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+		nrow.setForcedExecType(ExecType.CP);
+		HopRewriteUtils.copyLineNumbers(this, nrow);
+		Lop lnrow = nrow.constructLops();
+		
+		boolean needPart = pmInput.get_dim1() * pmInput.get_dim2() > DistributedCacheInput.PARTITION_SIZE;
+		double mestPM = OptimizerUtils.estimateSize(pmInput.get_dim1(), 1, 1.0);
+		if( needPart ){ //requires partitioning
+			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+			lpmInput.getOutputParameters().setDimensions(pmInput.get_dim1(), 1, get_rows_in_block(), get_cols_in_block(), pmInput.get_dim1());
+			setLineNumbers(lpmInput);	
+		}
+		
+		boolean outputEmptyBlocks = !hasOnlyCPConsumers(); 
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), needPart, outputEmptyBlocks);
+		pmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(pmm);
+		
+		Aggregate aggregate = new Aggregate(pmm, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+		aggregate.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		aggregate.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
+		setLineNumbers(aggregate);
+		
+		set_lops(aggregate);
+		
+		HopRewriteUtils.removeChildReference(pmInput, nrow);		
+	} 
+	
 	
 	
 	/**
@@ -896,26 +994,37 @@ public class AggBinaryOp extends Hop
 	 * This function is called by <code>optFindMMultMethod()</code> to decide the execution strategy, as well as by 
 	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
 	 */
-	public static double footprintInMapper (long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex) 
+	public static double footprintInMapper (long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex, boolean pmm) 
 	{
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
-		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb), 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb), 1.0);
 		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb), 1.0);
 		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols, 1.0); //output per m1 block if m2 in cache
 		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb), 1.0); //output per m2 block if m1 in cache
 	
 		double footprint = 0;
-		if ( cachedInputIndex == 1 ) {
-			// left input (m1) is in cache
-			footprint = m1Size+m2BlockSize+m3m2OutSize;
+		if( pmm )
+		{
+			//permutation matrix multiply 
+			//(one input block -> at most two output blocks)
+			footprint = m1Size + 3*m2BlockSize; //in+2*out
 		}
-		else {
-			// right input (m2) is in cache
-			footprint = m1BlockSize+m2Size+m3m1OutSize;
+		else
+		{
+			//generic matrix multiply
+			if ( cachedInputIndex == 1 ) {
+				// left input (m1) is in cache
+				footprint = m1Size+m2BlockSize+m3m2OutSize;
+			}
+			else {
+				// right input (m2) is in cache
+				footprint = m1BlockSize+m2Size+m3m1OutSize;
+			}	
 		}
+		
 		return footprint;
 	}
 	
@@ -926,8 +1035,14 @@ public class AggBinaryOp extends Hop
 	 */
 	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
 			                                        long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, 
-			                                        MMTSJType mmtsj, ChainType chainType ) 
+			                                        MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
 	{	
+		double memBudget = MAPMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true);		
+		
+		// Step 0: check for forced mmultmethod
+		if( FORCED_MMULT_METHOD !=null )
+			return FORCED_MMULT_METHOD;
+		
 		// Step 1: check TSMM
 		// If transpose self pattern and result is single block:
 		// use specialized TSMM method (always better than generic jobs)
@@ -948,31 +1063,37 @@ public class AggBinaryOp extends Hop
 				&& m2_cols>=0 && m2_cols<=m2_cpb )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
-					&& OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
-						< OptimizerUtils.getRemoteMemBudgetMap(true) )
+					&& OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) < memBudget )
 				{
 					return MMultMethod.MAPMULT_CHAIN;
 				}
 				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
 					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
-					   + OptimizerUtils.estimateSize(m1_cols, m2_cols, 1.0)
-					   < OptimizerUtils.getRemoteMemBudgetMap(true) )
+					   + OptimizerUtils.estimateSize(m1_cols, m2_cols, 1.0) < memBudget )
 				{
 					return MMultMethod.MAPMULT_CHAIN;
 				}
 			}
 		}
 		
-		// Step 3: check MapMult
+		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
+		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
+		double footprintPM = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		if( (footprintPM < memBudget && m1_rows>=0 ) 
+			&& leftPMInput ) 
+		{
+			return MMultMethod.PMM;
+		}
+		
+		// Step 4: check MapMult
 		// If the size of one input is small, choose a method that uses distributed cache
 		// (with awareness of output size because one input block might generate many output blocks)		
 		// memory footprint if left input is put into cache
-		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1);
+		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
 		// memory footprint if right input is put into cache
-		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2);		
+		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		double memBudget = MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true);		
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
 			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
 		{
@@ -984,13 +1105,13 @@ public class AggBinaryOp extends Hop
 				return MMultMethod.MAPMULT_R;
 		}
 		
-		// Step 4: check for unknowns
+		// Step 5: check for unknowns
 		// If the dimensions are unknown at compilation time, simply assume 
 		// the worst-case scenario and produce the most robust plan -- which is CPMM
 		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
 			return MMultMethod.CPMM;
 
-		// Step 5: Decide CPMM vs RMM based on io costs
+		// Step 6: Decide CPMM vs RMM based on io costs
 		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
 		int m1_ncb = (int) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
 		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
@@ -1430,7 +1551,8 @@ public class AggBinaryOp extends Hop
 		
 		//copy specific attributes
 		ret.innerOp = innerOp;
-		ret.outerOp = outerOp;
+		ret.outerOp = outerOp;		
+		ret._hasLeftPMInput = _hasLeftPMInput;
 		
 		return ret;
 	}
@@ -1445,6 +1567,7 @@ public class AggBinaryOp extends Hop
 		return (   innerOp == that2.innerOp
 				&& outerOp == that2.outerOp
 				&& getInput().get(0) == that2.getInput().get(0)
-				&& getInput().get(1) == that2.getInput().get(1));
+				&& getInput().get(1) == that2.getInput().get(1)
+				&& _hasLeftPMInput == that2._hasLeftPMInput);
 	}
 }

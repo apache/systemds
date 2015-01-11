@@ -12,6 +12,8 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.AggBinaryOp;
+import com.ibm.bi.dml.hops.AggBinaryOp.MMultMethod;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -61,25 +63,37 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	@Test
 	public void testMMRowDenseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true);
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true, false);
 	}
 	
 	@Test
 	public void testMMRowSparseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true);
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true, false);
+	}
+	
+	@Test
+	public void testMMRowDenseMR_PMMJ() 
+	{
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true, true);
+	}
+	
+	@Test
+	public void testMMRowSparseMR_PMMJ() 
+	{
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true, true);
 	}
 	
 	@Test
 	public void testMMColDenseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, false);
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, false, false);
 	}
 	
 	@Test
 	public void testMMColSparseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, false);
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, false, false);
 	}
 	
 	
@@ -90,7 +104,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean rowwise)
+	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean rowwise, boolean forcePMMJ)
 	{
 		//setup exec type, rows, cols
 
@@ -98,6 +112,9 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 	
+		if(forcePMMJ)
+			AggBinaryOp.FORCED_MMULT_METHOD = MMultMethod.PMM;
+			
 		try
 		{
 			String TEST_NAME = (rowwise) ? TEST_NAME1 : TEST_NAME2;
@@ -106,7 +123,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                        Integer.toString(rows),
 					                        Integer.toString(cols),
 					                        HOME + INPUT_DIR + "B",
@@ -136,6 +153,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			AggBinaryOp.FORCED_MMULT_METHOD = null;
 		}
 	}
 

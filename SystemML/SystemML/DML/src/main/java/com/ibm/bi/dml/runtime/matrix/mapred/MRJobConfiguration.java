@@ -35,7 +35,6 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
-import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -55,6 +54,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -1073,95 +1073,6 @@ public class MRJobConfiguration
 		return job.getLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, 1);
 	}
 	
-	public static PartitionParams getPartitionParams(JobConf job) {
-		PartitionParams pp = new PartitionParams() ;
-		if(job.getInt("isEL", 0) == 0) {	//cv
-			pp.isEL = false;
-			int ppcvt = job.getInt("cvt", -1) ;
-			switch(ppcvt) {
-				case 0: pp.cvt = PartitionParams.CrossvalType.kfold ; break ;
-				case 1: pp.cvt = PartitionParams.CrossvalType.holdout ; break ;
-				case 2: pp.cvt = PartitionParams.CrossvalType.bootstrap ; break ;
-			}
-			int pppt = job.getInt("pt", -1) ;
-			switch(pppt) {
-				case 0: pp.pt = PartitionParams.PartitionType.row ; break ;
-				case 1: pp.pt = PartitionParams.PartitionType.submatrix ; break ;
-				case 2: pp.pt = PartitionParams.PartitionType.cell ; break ;
-			}
-		}
-		else {	//el
-			pp.isEL = true;
-			int ppet = job.getInt("et", -1) ;
-			switch(ppet) {
-				case 0: pp.et = PartitionParams.EnsembleType.bagging ; break ;
-				case 1: pp.et = PartitionParams.EnsembleType.rsm ; break ;
-				case 2: pp.et = PartitionParams.EnsembleType.rowholdout; break;
-				case 3: pp.et = PartitionParams.EnsembleType.adaboost ; break ;
-			}
-		}
-		pp.isColumn = (job.getInt("isColumn", 0) == 0) ? false : true;
-		pp.toReplicate = (job.getInt("toReplicate", 0) == 0) ? false : true;
-		pp.isSupervised = (job.getInt("isSupervised", 1) == 1) ? true : false;
-		
-		pp.numColGroups = job.getInt("numColGroups", 2) ;
-		pp.numRowGroups = job.getInt("numRowGroups", 2) ;
-		pp.numFolds = job.getInt("numFolds", 4) ;
-		pp.frac = (double) job.getFloat("frac", (float) 0.34) ;
-		pp.idToStratify = job.getInt("idToStratify", -1) ;	
-		pp.numIterations = job.getInt("numIterations", 1) ;
-		pp.sfmapfile = (String)job.get("sfmapfile");
-		
-		return pp ;
-	}
-	
-	public static void setPartitionParams(JobConf job, PartitionParams pp) {
-		job.setInt("numFolds",pp.numFolds) ;
-		job.setFloat("frac", (float) pp.frac) ;
-		job.set("sfmapfile", pp.sfmapfile);
-		if(pp.toReplicate == true)
-			job.setInt("toReplicate", 1);
-		else
-			job.setInt("toReplicate", 0);
-
-		if(pp.isEL == true) {
-			job.setInt("isEL", 1);	//el
-			switch(pp.et) {
-				case bagging: job.setInt("et", 0) ; break ;
-				case rsm: job.setInt("et", 1) ; break ;
-				case rowholdout: job.setInt("et", 2) ; break;
-				case adaboost: job.setInt("et", 3) ; break ;
-			}
-		}
-		else {
-			job.setInt("isEL", 0);	//cv
-			switch(pp.cvt) {
-				case kfold: job.setInt("cvt", 0) ; break ;
-				case holdout: job.setInt("cvt", 1) ; break ;
-				case bootstrap: job.setInt("cvt", 2) ; break ;
-			}
-			switch(pp.pt) {
-				case row: job.setInt("pt", 0) ; break ;
-				case submatrix: job.setInt("pt", 1) ; break ;
-				case cell: job.setInt("pt", 2) ; break ;
-			}
-		}
-		
-		if(pp.isColumn == true)
-			job.setInt("isColumn", 1);
-		else
-			job.setInt("isColumn", 0);
-		if(pp.isSupervised == true)
-			job.setInt("isSupervised", 1);
-		else
-			job.setInt("isSupervised", 0);		
-		
-		job.setInt("idToStratify", pp.idToStratify) ;
-		job.setInt("numIterations", pp.numIterations) ;		
-		job.setInt("numRowGroups", pp.numRowGroups) ;
-		job.setInt("numColGroups", pp.numColGroups) ;
-	}
-	
 	public static void handleRecordReaderInstrucion(JobConf job, String recordReaderInstruction, String[] inputs, InputInfo[] inputInfos)
 	{
 		//TODO
@@ -1602,6 +1513,12 @@ public class MRJobConfiguration
 					MapMultChainInstruction tempIns=(MapMultChainInstruction) ins;
 					setIntermediateMatrixCharactristics(job, tempIns._input1, dims.get(tempIns._input1));	
 					intermediateMatrixIndexes.add(tempIns._input1);
+				}
+				else if(ins instanceof PMMJMRInstruction)
+				{
+					PMMJMRInstruction tempIns=(PMMJMRInstruction) ins;
+					setIntermediateMatrixCharactristics(job, tempIns.input2, dims.get(tempIns.input2));	
+					intermediateMatrixIndexes.add(tempIns.input2);
 				}
 			}
 		}

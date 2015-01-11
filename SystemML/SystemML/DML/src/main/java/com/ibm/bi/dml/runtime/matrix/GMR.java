@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,6 +27,7 @@ import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
+import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -40,6 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -62,7 +64,7 @@ import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 public class GMR
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/**
@@ -323,6 +325,8 @@ public class GMR
 						MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
 					else if( tmp.contains(MapMult.OPCODE) )
 						AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
+					else if( tmp.contains(PMMJ.OPCODE) )
+						PMMJMRInstruction.addDistCacheIndex(tmp, indexList);
 					else if( tmp.contains(AppendM.OPCODE) )
 						AppendMInstruction.addDistCacheIndex(tmp, indexList);		
 					else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
@@ -388,6 +392,8 @@ public class GMR
 							lcache = MapMultChainInstruction.isDistCacheOnlyIndex(tmp, index);
 						else if( tmp.contains(MapMult.OPCODE) )
 							lcache = AggregateBinaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(PMMJ.OPCODE) )
+							lcache = PMMJMRInstruction.isDistCacheOnlyIndex(tmp, index);
 						else if( tmp.contains(AppendM.OPCODE) )
 							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);	
 						else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )

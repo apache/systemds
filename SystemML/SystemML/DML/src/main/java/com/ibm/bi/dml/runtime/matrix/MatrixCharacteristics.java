@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
@@ -254,6 +255,14 @@ public class MatrixCharacteristics
 					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
+		else if( ins instanceof PMMJMRInstruction )
+		{
+			PMMJMRInstruction pmmins = (PMMJMRInstruction) ins;
+			MatrixCharacteristics mc = dims.get(pmmins.input2);
+			dim_out.set( pmmins.getNumRows(),
+					     mc.numColumns,
+					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
+		}
 		else if( ins instanceof RemoveEmptyMRInstruction )
 		{
 			RemoveEmptyMRInstruction realIns=(RemoveEmptyMRInstruction)ins;
@@ -292,7 +301,6 @@ public class MatrixCharacteristics
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
 			dim_out.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
-		
 		else { 
 			/*
 			 * if ins is none of the above cases then we assume that dim_out dimensions are unknown
@@ -318,5 +326,11 @@ public class MatrixCharacteristics
 		}
 		else
 			return false;
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
 	}
 }

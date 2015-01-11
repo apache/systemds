@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
  * MB:
@@ -101,8 +102,30 @@ public class LibMatrixMult
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose);
 
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
-
 	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret1
+	 * @param ret2
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMultPermute( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 )
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//Timing time = new Timing(true);
+		
+		if( m2.sparse )
+			matrixMultPermuteSparse(pm1, m2, ret1, ret2);
+		else 
+			matrixMultPermuteDense(pm1, m2, ret1, ret2);
+		
+		//System.out.println("PMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
+		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+	}	
 	
 	
 	//////////////////////////////////////////
@@ -915,6 +938,104 @@ public class LibMatrixMult
 		ret.examSparsity();	
 	}
 	
+	private static void matrixMultPermuteDense( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//check inputs / outputs
+		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		
+		//allocate first output block (second allocated if needed)
+		ret1.sparse = false;
+		ret1.allocateDenseBlock();
+		
+		double[] a = pm1.denseBlock;
+		double[] b = m2.denseBlock;
+		double[] c = ret1.denseBlock;
+		final int m = pm1.rlen;
+		final int n = m2.clen;
+		final int brlen = ret1.getNumRows();
+		
+		int lastblk = -1;
+		for( int i=0, bix=0; i<m; i++, bix+=n ) 
+		{
+			//compute block index and in-block indexes
+			int pos = UtilFunctions.toInt( a[ i ]); //safe cast
+			if( pos > 0 ) //selected row
+			{
+				int bpos = (pos-1) % brlen;
+				int blk = (pos-1) / brlen;
+				
+				//allocate and switch to second output block
+				if( lastblk!=-1 && lastblk<blk ){ 
+					ret2.sparse = false;
+					ret2.allocateDenseBlock();
+					c = ret2.denseBlock;		
+				}
+		
+				//memcopy entire dense row into target position
+				System.arraycopy(b, bix, c, bpos*n, n);
+				lastblk = blk;
+			}
+		}
+		
+		ret1.recomputeNonZeros();
+		ret1.examSparsity();
+		if( ret2 != null ) { //optional second output
+			ret2.recomputeNonZeros();
+			ret2.examSparsity();
+		}
+	}
+	
+	private static void matrixMultPermuteSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//check inputs / outputs
+		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		
+		//allocate first output block (second allocated if needed)
+		ret1.sparse = true;
+		ret1.adjustSparseRows(ret1.rlen);
+		
+		double[] a = pm1.denseBlock;
+		SparseRow[] b = m2.sparseRows;
+		SparseRow[] c = ret1.sparseRows;
+		final int m = pm1.rlen;
+		final int brlen = ret1.getNumRows();
+		
+		int lastblk = -1;
+		for( int i=0; i<m; i++ ) 
+		{
+			//compute block index and in-block indexes
+			int pos = UtilFunctions.toInt( a[ i ]); //safe cast			
+			if( pos > 0 ) //selected row
+			{
+				int bpos = (pos-1) % brlen;
+				int blk = (pos-1) / brlen;
+				
+				//allocate and switch to second output block
+				if( lastblk!=-1 && lastblk<blk ){ 
+					ret2.sparse = true;
+					ret2.adjustSparseRows(ret2.rlen);
+					c = ret2.sparseRows;		
+				}
+		
+				//memcopy entire sparse row into target position
+				if( b[i] != null )
+					c[bpos] = new SparseRow( b[i] );
+				lastblk = blk;
+			}
+		}
+		
+		ret1.recomputeNonZeros();
+		ret1.examSparsity();
+		if( ret2 != null ) { //optional second output
+			ret2.recomputeNonZeros();
+			ret2.examSparsity();	
+		}
+	}
+	
 	////////////////////////////////////////////
 	// performance-relevant utility functions //
 	////////////////////////////////////////////
@@ -1337,63 +1458,6 @@ public class LibMatrixMult
 		return knnz;
 	}
 	
-	/////////////////////////////////////////////////////
-	// old matrix mult implementation (for comparison) //
-	/////////////////////////////////////////////////////	
-	
-	/*
-	@Deprecated
-	public static void matrixMultDenseDenseOld(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret)
-	{	
-		//check inputs / outputs
-		if( m1.denseBlock==null || m2.denseBlock==null )
-			return;
-		ret.sparse=false;
-		if( ret.denseBlock==null )
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
-		
-		double[] a = m1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
-		int k = m1.clen; 
-		int l, i, j, aIndex, bIndex, cIndex; 
-		double temp;
-		
-		int nnzs=0;
-		for(l = 0; l < k; l++)
-		{
-			aIndex = l;
-			cIndex = 0;
-			for(i = 0; i < m; i++)
-			{
-				// aIndex = i * k + l => a[i, l]
-				temp = a[aIndex];
-				if(temp != 0)
-				{
-					bIndex = l * n;
-					for(j = 0; j < n; j++)
-					{
-						// bIndex = l * n + j => b[l, j]
-						// cIndex = i * n + j => c[i, j]
-						if(c[cIndex]==0)
-							nnzs++;
-						c[cIndex] = c[cIndex] + temp * b[bIndex];
-						if(c[cIndex]==0)
-							nnzs--;
-						cIndex++;
-						bIndex++;
-					}
-				}else
-					cIndex+=n;
-				aIndex += k;
-			}
-		}
-		ret.nonZeros=nnzs;
-	}
-	*/
 	
 	/*
 	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret, int k) 
@@ -1544,33 +1608,4 @@ public class LibMatrixMult
 		
 	}
 	*/
-
-	public static void main(String[] args)
-	{
-		try 
-		{
-			int n = 1000;
-			MatrixBlock m1 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.7, 0, 1, "uniform", 7);
-			MatrixBlock m2 = MatrixBlock.randOperations(n, n, 1000, 1000, 0.00001, 0, 1, "uniform", 3);
-			MatrixBlock out = new MatrixBlock(n, n, false);
-			
-			for( int i=0; i<20; i++ )
-			{
-				
-				long t0 = System.nanoTime();
-				
-				LibMatrixMult.matrixMult(m1, m2, out);
-				//MatrixMultLib.matrixMult(m1, m2, out, 8);
-				
-				long t1 = System.nanoTime();
-	
-				System.out.println("Matrix Mult: "+(((double)(t1-t0))/1000000)+" ms");
-			}
-			
-		} 
-		catch (DMLRuntimeException e) {
-			e.printStackTrace();
-		}
-		
-	}
 }

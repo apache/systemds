@@ -230,14 +230,22 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			cand.add(hop);
 			investigateChilds = false;
 			
-			//keep interesting consumer information 
-			boolean noEmptyBlocks = true; 
+			//keep interesting consumer information, flag hops accordingly 
+			boolean noEmptyBlocks = true;
+			boolean onlyPMM = true;
 			for( Hop p : hop.getParent() ) {
 				//list of operators without need for empty blocks to be extended as needed
 				noEmptyBlocks &= (   p instanceof AggBinaryOp && hop == p.getInput().get(0) 
 				                  || p instanceof UnaryOp && ((UnaryOp)p).get_op()==OpOp1.NROW);
+				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
 			}
 			((ParameterizedBuiltinOp) hop).setOutputEmptyBlocks(!noEmptyBlocks);
+			if( onlyPMM ){
+				//((ParameterizedBuiltinOp) hop).setOutputPermutationMatrix(!noEmptyBlocks);
+				for( Hop p : hop.getParent() )
+					((AggBinaryOp)p).setHasLeftPMInput(true);
+					
+			}
 		}
 		
 		//#2 ctable with unknown dims
@@ -340,8 +348,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
 		
-		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
+		if( !(   (hop instanceof DataOp && !((DataOp)hop).isPersistentReadWrite() )
+			   || hop instanceof LiteralOp) )
+		{
 			probeSet.add(hop);
+		}
 		
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )

@@ -106,27 +106,17 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	{
  		collectFinalMultipleOutputs.collectOutput(indexes, value, i, reporter);
 		resultsNonZeros[i]+=value.getNonZeros();
-		//TODO: remove redundant code
-		//System.out.println("output "+i+", "+indexes+"\n"+value);
-		//LOG.info("~~ output: "+indexes+"\n"+value);
-		if ( resultDimsUnknown[i] == (byte) 1 ) {
+		
+		if ( resultDimsUnknown[i] == (byte) 1 ) 
+		{
 			// compute dimensions for the resulting matrix
 			
 			// find the maximum row index and column index encountered in current output block/cell 
 			long maxrow=0, maxcol=0;
-		/*	try {
-				maxrow = UtilFunctions.cellIndexCalculation( cachedValues.get(resultIndexes[i]).getIndexes().getRowIndex(), 
-						cachedValues.get(resultIndexes[i]).getValue().getNumRows(), cachedValues.get(resultIndexes[i]).getValue().getMaxRow() );
-				
-				maxcol = UtilFunctions.cellIndexCalculation( cachedValues.get(resultIndexes[i]).getIndexes().getColumnIndex(), 
-						cachedValues.get(resultIndexes[i]).getValue().getNumColumns(), cachedValues.get(resultIndexes[i]).getValue().getMaxColumn() );
-			} catch(DMLRuntimeException e) {
-				e.printStackTrace();
-			}*/
+		
 			try {
 				maxrow = value.getMaxRow();
 				maxcol = value.getMaxColumn();
-				//System.out.println("maxrow = " + maxrow + ", maxcol = " + maxcol + ", val = " + value.getValue((int)indexes.getRowIndex(), (int)indexes.getColumnIndex()));
 			} catch (DMLRuntimeException e) {
 				throw new IOException(e);
 			}
@@ -136,14 +126,14 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				
 			if ( maxcol > resultsMaxColDims[i] )
 				resultsMaxColDims[i] = maxcol;
-		}else if(resultDimsUnknown[i] == (byte) 2)
+		}
+		else if(resultDimsUnknown[i] == (byte) 2)
 		{
 			if ( indexes.getRowIndex() > resultsMaxRowDims[i] )
 				resultsMaxRowDims[i] = indexes.getRowIndex();
 				
 			if ( indexes.getColumnIndex() > resultsMaxColDims[i] )
 				resultsMaxColDims[i] = indexes.getColumnIndex();
-			//System.out.println("i = " + i + ", maxrow = " + resultsMaxRowDims[i] + ", maxcol = " + resultsMaxColDims[i] + ", val = " + value.getValue((int)indexes.getRowIndex(), (int)indexes.getColumnIndex()));
 		}
 	}
 
@@ -266,6 +256,15 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			if( dimIn==null )
 				throw new DMLRuntimeException("Dimensions for instruction "+rinst+"  is unset!!!");
 			rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+		}
+		else if(ins instanceof BinaryMRInstructionBase)
+		{
+			BinaryMRInstructionBase rinst = (BinaryMRInstructionBase) ins;
+			MatrixCharacteristics dimIn=dimensions.get(rinst.input1);
+			if( dimIn!=null ) //not set for all
+				rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+			else
+				ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);
 		}
 		else
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);

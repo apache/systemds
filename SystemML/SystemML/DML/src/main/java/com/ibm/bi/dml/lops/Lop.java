@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,9 +26,27 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public abstract class Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	public enum Type {
+		Data, DataGen, 										//CP/MR read/write/datagen 
+		ReBlock, CSVReBlock,								//MR reblock operations
+		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
+		UnaryCP, UNARY, BinaryCP, Binary, Tertiary,         //CP/MR unary/binary/tertiary
+		RangeReIndex, LeftIndex, ZeroOut,                   //CP/MR indexing 
+		Aggregate, PartialAggregate, BinUaggChain,  	    //CP/MR aggregation
+		Grouping, 											//MR grouping
+		Append,                                             //CP/MR append (column append)
+		CombineUnary, CombineBinary, CombineTertiary,       //MR combine (stitch together)
+		CentralMoment, CoVariance, GroupedAgg,
+		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
+		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
+		FunctionCallCP, 									//CP function calls 
+		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary, //MR cumsum
+		SortKeys, PickValues,   
+	};
+
 	/**
 	 * Lop types
 	 */
@@ -36,15 +54,10 @@ public abstract class Lop
 		Scalar, Variable, File
 	};
 
-	public enum Type {
-		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, BinUaggChain, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
-		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
-		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MapMult, MapMultChain, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock, RepMat,
-		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary,
-	};
-
-	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
+	public enum VISIT_STATUS {
+		DONE, VISITING, NOTVISITED
+	}
+	
 
 	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	

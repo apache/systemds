@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -34,6 +34,7 @@ import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
 import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lop;
@@ -44,17 +45,14 @@ import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.OutputParameters;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
-import com.ibm.bi.dml.lops.PartitionLop;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
@@ -79,7 +77,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 public class Dag<N extends Lop> 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(Dag.class.getName());
@@ -850,7 +848,14 @@ public class Dag<N extends Lop>
 			footprint = AggBinaryOp.footprintInMapper(
 					in1dims.getNum_rows(), in1dims.getNum_cols(), in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
 					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
-					dcInputIndex);
+					dcInputIndex, false);
+		}
+		else if ( node instanceof PMMJ ) {
+			int dcInputIndex = node.distributedCacheInputIndex()[0];
+			footprint = AggBinaryOp.footprintInMapper(
+					in1dims.getNum_rows(), 1, in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
+					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
+					dcInputIndex, true);
 		}
 		else if ( node instanceof AppendM ) {
 			footprint = BinaryOp.footprintInMapper(
@@ -885,8 +890,7 @@ public class Dag<N extends Lop>
 			// default behavior
 			return addNode;
 		
-		double memBudget = Math.min(AggBinaryOp.MVMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudgetMap(true);
-		//System.out.println("MapperMemBudget: " + memBudget);
+		double memBudget = Math.min(AggBinaryOp.MAPMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudgetMap(true);
 		if ( footprintInMapper <= memBudget ) 
 			return addNode;
 		else
@@ -1765,7 +1769,7 @@ public class Dag<N extends Lop>
 		int numInputs = node.getInputs().size();
 		boolean allQueued = true;
 		for(int i=0; i < numInputs; i++) {
-			if( !queuedNodes.contains(node.getInputs().get(0)) ) {
+			if( !queuedNodes.contains(node.getInputs().get(i)) ) {
 				allQueued = false;
 				break;
 			}
@@ -2531,13 +2535,6 @@ public class Dag<N extends Lop>
 			if ( jt == JobType.INVALID || jt == JobType.ANY )
 				continue;
 			
-			// TODO: Following hardcoding of JobType.PARTITION must be removed
-			if ( jt == JobType.PARTITION ) {
-				if ( jobNodes.get(jt.getId()).size() > 0 )
-					generatePartitionJob(jobNodes.get(jt.getId()), inst, deleteinst);
-				continue;
-			}
-			
 			int index = jt.getId(); // job id is used as an index into jobNodes
 			Vector<N> currNodes = jobNodes.get(index);
 			
@@ -2686,74 +2683,6 @@ public class Dag<N extends Lop>
 			N n = (N) node.getInputs().get(i);
 			addChildren(n, node_v, exec_n);
 		}
-	}
-
-	private void generatePartitionJob(Vector<N> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst)
-			throws LopsException, DMLRuntimeException {
-		ArrayList<Byte> resultIndices = new ArrayList<Byte>();
-		ArrayList<String> inputs = new ArrayList<String>();
-		ArrayList<String> outputs = new ArrayList<String>();
-		ArrayList<InputInfo> inputInfos = new ArrayList<InputInfo>();
-		ArrayList<OutputInfo> outputInfos = new ArrayList<OutputInfo>();
-		ArrayList<Long> numRows = new ArrayList<Long>();
-		ArrayList<Long> numCols = new ArrayList<Long>();
-		ArrayList<Long> numRowsPerBlock = new ArrayList<Long>();
-		ArrayList<Long> numColsPerBlock = new ArrayList<Long>();
-		ArrayList<String> inputLabels = new ArrayList<String>();
-		ArrayList<String> outputLabels = new ArrayList<String>();
-		LocalVariableMap outputLabelValueMapping = new LocalVariableMap ();
-		ArrayList<Integer> MRJobLineNumbers = null;
-		if(DMLScript.ENABLE_DEBUG_MODE) {
-			MRJobLineNumbers = new ArrayList<Integer>();
-		}
-
-		ArrayList<Lop> inputLops = new ArrayList<Lop>();
-		
-		HashMap<N, Integer> nodeIndexMapping = new HashMap<N, Integer>();
-
-		int numReducers = total_reducers;
-		int replication = 1;
-
-		Vector<N> rootNodes = new Vector<N>();
-		// find all root nodes
-		getOutputNodes(execNodes, rootNodes, false);
-
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("rootNodes.size() = " + rootNodes.size()
-					+ ", execNodes.size() = " + execNodes.size());
-			rootNodes.get(0).printMe();
-		}
-
-		for (int i = 0; i < rootNodes.size(); i++)
-			getInputPathsAndParameters(rootNodes.elementAt(i), execNodes,
-					inputs, inputInfos, numRows, numCols, numRowsPerBlock,
-					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
-
-		Vector<N> partitionNodes = new Vector<N>();
-		getPartitionNodes(execNodes, partitionNodes);
-		PartitionParams pp = ((PartitionLop) partitionNodes.get(0)).getPartitionParams();
-
-		InputInfo[] inputInfo = new InputInfo[inputs.size()];
-		for (int i = 0; i < inputs.size(); i++)
-			inputInfo[i] = inputInfos.get(i);
-
-		MRJobInstruction mr = new MRJobInstruction(JobType.PARTITION);
-
-		// update so folds are only reset for submatrix
-		if (pp.isEL == false && pp.pt.name().equals("submatrix"))
-			pp.numFoldsForSubMatrix(getLongArray(numRows)[0],getLongArray(numCols)[0]);
-
-		outputLabelValueMapping = pp.getOutputLabelValueMapping();
-		String[] outputStrings = pp.getOutputStrings();
-		
-		/*mr.setPartitionInstructions(getStringArray(inputs), inputInfo,
-				outputStrings, numReducers, replication, getLongArray(numRows),
-				getLongArray(numCols), getIntArray(numRowsPerBlock),
-				getIntArray(numColsPerBlock), pp.getResultIndexes(), pp
-						.getResultDimsUnknown(), pp, inputLabels, outputLabels,
-				outputLabelValueMapping);*/
-		inst.add(mr);
 	}
 	
 	/**
@@ -3399,7 +3328,7 @@ public class Dag<N extends Lop>
 					inputLabels, inputLops, MRJobLineNumbers);
 			if ( resultIndex == -1)
 				throw new LopsException("Unexpected error in piggybacking!");
-			resultIndices.add(new Byte((byte) resultIndex));
+			resultIndices.add(Byte.valueOf((byte)resultIndex));
 			
 			// setup output filenames and outputInfos and generate related instructions
 			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR, cellModeOverride);
@@ -4310,14 +4239,6 @@ public class Dag<N extends Lop>
 		}
 	}
 
-	private void getPartitionNodes(Vector<N> execNodes, Vector<N> partitionNodes) {
-		for (int i = 0; i < execNodes.size(); i++) {
-			N node = execNodes.elementAt(i);
-			if (node.getType() == Lop.Type.PartitionLop)
-				partitionNodes.add(node);
-		}
-	}
-
 	/**
 	 * check to see if a is the child of b (i.e., there is a directed path from a to b)
 	 * 
@@ -4375,21 +4296,6 @@ public class Dag<N extends Lop>
 			dagDFS(v.get(i), arr);
 		}
 
-		// Sanity check -- can be removed
-/*		for (int i = 1; i < v.size(); i++) {
-			if (v.get(i).getLevel() < v.get(i - 1).getLevel()
-					|| (v.get(i).getLevel() == v.get(i - 1).getLevel() && v
-							.get(i).getID() <= v.get(i - 1).getID())) {
-				try {
-					throw new DMLRuntimeException(
-							"Unexpected error in topological sort.");
-				} catch (DMLRuntimeException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-*/
 		// print the nodes in sorted order
 		if (LOG.isTraceEnabled()) {
 			for (int i = 0; i < v.size(); i++) {

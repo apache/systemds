@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 public class DataOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private DataOpTypes _dataop;
@@ -265,6 +265,11 @@ public class DataOp extends Hop
 	public boolean isRead()
 	{
 		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD );
+	}
+	
+	public boolean isPersistentReadWrite()
+	{
+		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.PERSISTENTWRITE );
 	}
 
 	@Override
@@ -614,7 +619,7 @@ public class DataOp extends Hop
 		ret._dataop = _dataop;
 		ret._fileName = _fileName;
 		ret._formatType = _formatType;
-		ret._recompileRead = ret._recompileRead;
+		ret._recompileRead = _recompileRead;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
 		

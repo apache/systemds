@@ -398,6 +398,7 @@ public class MatrixBlock extends MatrixValue
 	
 	/**
 	 * NOTE: setNumRows() and setNumColumns() are used only in tertiaryInstruction (for contingency tables)
+	 * and pmm for meta corrections.
 	 * 
 	 * @param _r
 	 */
@@ -906,6 +907,31 @@ public class MatrixBlock extends MatrixValue
 		for( SparseRow arow : sparseRows )
 			if( arow!=null && arow.size()>1 )
 				arow.sort();
+	}
+	
+	/**
+	 * Utility function for computing the min non-zero value. 
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double minNonZero() 
+		throws DMLRuntimeException
+	{
+		//check for empty block and return immediately
+		if( isEmptyBlock() )
+			return -1;
+		
+		//NOTE: usually this method is only applied on dense vectors and hence not really tuned yet.
+		double min = Double.MAX_VALUE;
+		for( int i=0; i<rlen; i++ )
+			for( int j=0; j<clen; j++ ){
+				double val = quickGetValue(i, j);
+				if( val != 0 )
+					min = Math.min(min, val);
+			}
+		
+		return min;
 	}
 	
 	/**
@@ -3187,6 +3213,30 @@ public class MatrixBlock extends MatrixValue
 		LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
 		
 		return out;
+	}
+	
+	/**
+	 * 
+	 * @param m1Val
+	 * @param m2Val
+	 * @param out1Val
+	 * @param out2Val
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public void permutatationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) 	
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//check input types and dimensions
+		MatrixBlock m2 = checkType(m2Val);
+		MatrixBlock ret1 = checkType(out1Val);
+		MatrixBlock ret2 = checkType(out2Val);
+		
+		if(this.rlen!=m2.rlen)
+			throw new RuntimeException("Dimensions do not match for permutation matrix multiplication ("+this.rlen+"!="+m2.rlen+").");
+
+		//compute permutation matrix multiplication
+		LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
 	}
 	
 	/**

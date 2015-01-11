@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,10 +28,9 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.antlr4.Antlr4ParserWrapper;
+import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -58,7 +57,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class Connection 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private DMLConfig _conf = null;
@@ -108,16 +107,8 @@ public class Connection
 		try
 		{
 			//parsing
-			DMLProgram prog = null;
-			if(!DMLScript.USE_JAVACC_PARSER){
-				Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-				prog = antlr4Parser.parse(null, script, args);
-			}
-			else {
-				DMLQLParser parser = new DMLQLParser(script, args);
-				prog = parser.parse();
-			}
-			
+			DMLParserWrapper parser = new DMLParserWrapper();
+			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);

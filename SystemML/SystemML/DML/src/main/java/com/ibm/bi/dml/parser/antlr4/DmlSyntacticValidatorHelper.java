@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,15 +18,15 @@ import com.ibm.bi.dml.parser.antlr4.DmlParser.ParameterizedExpressionContext;
 
 public class DmlSyntacticValidatorHelper {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static void notifyErrorListeners(String message, int line, int charPositionInLine) {
-		Antlr4ParserWrapper.ERROR_LISTENER_INSTANCE.validationError(line, charPositionInLine, message);
+		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(line, charPositionInLine, message);
 	}
 	
 	public static void notifyErrorListeners(String message, Token op) {
-		Antlr4ParserWrapper.ERROR_LISTENER_INSTANCE.validationError(op.getLine(), op.getCharPositionInLine(), message);
+		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
 	
 	public static String getCurrentFileName() {

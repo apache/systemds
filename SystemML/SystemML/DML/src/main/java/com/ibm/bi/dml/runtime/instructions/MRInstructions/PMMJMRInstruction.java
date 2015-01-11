@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.PMMJ.CacheType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -53,6 +54,9 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 		return _rlen;
 	}
 	
+	public boolean getOutputEmptyBlocks() {
+		return _outputEmptyBlocks;
+	}
 	
 	/**
 	 * 
@@ -102,12 +106,17 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 		
 		if( minPos >= 1 ) //at least one row selected
 		{
+			//output sparsity estimate
+			double spmb1 = OptimizerUtils.getSparsity(mb1.getNumRows(), 1, mb1.getNonZeros());
+			long estnnz = (long) (spmb1 * mb2.getNonZeros());
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(blockRowFactor, mb2.getNumColumns(), estnnz);
+			
 			//compute and allocate output blocks
 			IndexedMatrixValue out1 = cachedValues.holdPlace(output, valueClass);
 			IndexedMatrixValue out2 = multipleOuts ? cachedValues.holdPlace(output, valueClass) : null;
-			out1.getValue().reset(blockRowFactor, mb2.getNumColumns());
+			out1.getValue().reset(blockRowFactor, mb2.getNumColumns(), sparse);
 			if( out2 != null )
-				out2.getValue().reset(computeBlockSize(_rlen, blockRowFactor, rowIX2), mb2.getNumColumns());
+				out2.getValue().reset(computeBlockSize(_rlen, blockRowFactor, rowIX2), mb2.getNumColumns(), sparse);
 			
 			//compute core matrix permutation (assumes that out1 has default blocksize, 
 			//hence we do a meta data correction afterwards)

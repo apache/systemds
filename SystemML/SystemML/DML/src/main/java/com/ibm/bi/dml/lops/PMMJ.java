@@ -40,7 +40,7 @@ public class PMMJ extends Lop
 	 * @return 
 	 * @throws LopsException
 	 */	
-	public PMMJ(Lop pminput, Lop rightinput, Lop nrow, DataType dt, ValueType vt, boolean partitioned, boolean emptyBlocks) 
+	public PMMJ(Lop pminput, Lop rightinput, Lop nrow, DataType dt, ValueType vt, boolean partitioned, boolean emptyBlocks, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.PMMJ, dt, vt);		
@@ -55,13 +55,13 @@ public class PMMJ extends Lop
 		_cacheType = partitioned ? CacheType.LEFT_PART : CacheType.LEFT;
 		_outputEmptyBlocks = emptyBlocks;
 		
-		//setup MR parameters 
 		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = false;
+		ExecLocation el = (et == ExecType.MR) ? ExecLocation.Map : ExecLocation.ControlProgram;
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et, el, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -96,6 +96,32 @@ public class PMMJ extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_outputEmptyBlocks);
+		
+		return sb.toString();
+	}
+	
+	@Override
+	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 
+		throws LopsException
+	{	
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append(OPCODE);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(2).prepInputOperand(input_index3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

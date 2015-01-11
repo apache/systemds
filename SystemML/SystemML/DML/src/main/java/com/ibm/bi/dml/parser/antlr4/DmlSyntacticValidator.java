@@ -594,7 +594,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 		
 		String varValue = null;
-		for(Map.Entry<String, String> arg : Antlr4ParserWrapper.argVals.entrySet()) {
+		for(Map.Entry<String, String> arg : DMLParserWrapper.argVals.entrySet()) {
 			if(arg.getKey().trim().compareTo(varName) == 0) {
 				if(varValue != null) {
 					DmlSyntacticValidatorHelper.notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
@@ -654,8 +654,8 @@ public class DmlSyntacticValidator implements DmlListener {
 			namespace = ctx.namespace.getText();
 		}
 		
-		if(Antlr4ParserWrapper.currentPath != null) {
-			filePath = Antlr4ParserWrapper.currentPath + File.separator + filePath;
+		if(DMLParserWrapper.currentPath != null) {
+			filePath = DMLParserWrapper.currentPath + File.separator + filePath;
 		}
 		
 		File importedFile = new File(filePath);
@@ -664,10 +664,9 @@ public class DmlSyntacticValidator implements DmlListener {
 			return;
 		}
 		else {
-			// Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
 			DMLProgram prog = null;
 			try {
-				prog = (new Antlr4ParserWrapper()).doParse(filePath, null);
+				prog = (new DMLParserWrapper()).doParse(filePath, null);
 			} catch (ParseException e) {
 				DmlSyntacticValidatorHelper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 				return;
@@ -1022,7 +1021,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private com.ibm.bi.dml.parser.StatementBlock getStatementBlock(com.ibm.bi.dml.parser.Statement current) {
-		return Antlr4ParserWrapper.getStatementBlock(current);
+		return DMLParserWrapper.getStatementBlock(current);
 	}
 	
 	@Override
@@ -1300,7 +1299,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
 		com.ibm.bi.dml.parser.PathStatement stmt = new PathStatement(ctx.pathValue.getText());
-		Antlr4ParserWrapper.currentPath = ctx.pathValue.getText() + File.separator;
+		DMLParserWrapper.currentPath = ctx.pathValue.getText() + File.separator;
 		ctx.info.stmt = stmt;
 	}
 	

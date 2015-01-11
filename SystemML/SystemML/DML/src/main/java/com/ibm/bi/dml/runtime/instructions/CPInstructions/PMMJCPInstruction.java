@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -22,19 +21,16 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
  * 
  * 
  */
-public class MMTSJCPInstruction extends UnaryCPInstruction
+public class PMMJCPInstruction extends ComputationCPInstruction
 {	
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private MMTSJType _type = null;
-	
-	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String istr)
+	public PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String istr)
 	{
-		super(op, in1, out, istr);
-		cptype = CPINSTRUCTION_TYPE.MMTSJ;
-		_type = type;
+		super(op, in1, in2, in3, out);
+		instString = istr;
 	}
 	
 	/**
@@ -47,20 +43,23 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		InstructionUtils.checkNumFields ( str, 3 );
+		InstructionUtils.checkNumFields ( str, 4 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		in1.split(parts[1]);
-		out.split(parts[2]);
-		MMTSJType titype = MMTSJType.valueOf(parts[3]);
-		 
-		if(!opcode.equalsIgnoreCase("tsmm"))
-			throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJCPInstruction: " + str);
+		in2.split(parts[2]);
+		in3.split(parts[3]);
+		out.split(parts[4]);
+		
+		if(!opcode.equalsIgnoreCase("pmm"))
+			throw new DMLRuntimeException("Unknown opcode while parsing an PMMJCPInstruction: " + str);
 		else
-			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, str);
+			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, str);
 	}
 	
 	@Override
@@ -69,18 +68,16 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 	{
 		//get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-
-		//execute operations 
-		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type );
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
+		int rlen = (int)ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getLongValue();
+		
+		//execute operations
+		MatrixBlock ret = new MatrixBlock(rlen, matBlock2.getNumColumns(), matBlock2.isInSparseFormat());
+		matBlock1.permutatationMatrixMultOperations(matBlock2, ret, null);
 		
 		//set output and release inputs
-		String output_name = output.get_name();
-		ec.setMatrixOutput(output_name, ret);
+		ec.setMatrixOutput(output.get_name(), ret);
 		ec.releaseMatrixInput(input1.get_name());
-	}
-	
-	public MMTSJType getMMTSJType()
-	{
-		return _type;
+		ec.releaseMatrixInput(input2.get_name());
 	}
 }

@@ -45,6 +45,7 @@ public class ParameterizedBuiltinOp extends Hop
 	
 	//removeEmpty hints
 	private boolean _outputEmptyBlocks = true;
+	private boolean _outputPermutationMatrix = false;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -99,6 +100,11 @@ public class ParameterizedBuiltinOp extends Hop
 	public void setOutputEmptyBlocks(boolean flag)
 	{
 		_outputEmptyBlocks = flag;
+	}
+	
+	public void setOutputPermutationMatrix(boolean flag)
+	{
+		_outputPermutationMatrix = flag;
 	}
 	
 	@Override
@@ -293,9 +299,8 @@ public class ParameterizedBuiltinOp extends Hop
 			set_lops(pbilop);
 		}
 		//special compile for mr removeEmpty-diag 
-		else if( et == ExecType.MR && targetHop instanceof ReorgOp && ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
-				&& targetHop.getInput().get(0).get_dim2() == 1  //input vector (guarantees diagV2M), implies remove rows
-				&& marginHop instanceof LiteralOp && ((LiteralOp)marginHop).getStringValue().equals("rows") )
+		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 
+				 && ((LiteralOp)marginHop).getStringValue().equals("rows") )
  		{
 			//get input vector (without materializing diag())
 			Hop input = targetHop.getInput().get(0);
@@ -321,35 +326,52 @@ public class ParameterizedBuiltinOp extends Hop
 			cumsum.computeMemEstimate(memo); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, cumsum);	
 		
-			//max ensures non-zero entries and at least one output row
-			BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
-			HopRewriteUtils.setOutputBlocksizes(max, brlen, bclen); 
-			max.refreshSizeInformation();
-			max.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, max);
-			
-			DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
-			seq.set_name("tmp4");
-			seq.refreshSizeInformation(); 
-			seq.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, seq);	
-			
-			//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
-			//note: weights always the input (even if isPPredInput) because input also includes 0s
-			TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
-			HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
-			table.refreshSizeInformation();
-			table.setForcedExecType(ExecType.MR); //force MR 
-			HopRewriteUtils.copyLineNumbers(this, table);
-			table.setDisjointInputs(true);
-			table.setOutputEmptyBlocks(_outputEmptyBlocks);
-			Lop ltable = table.constructLops();
+			Lop loutput = null;
+			double mest = AggBinaryOp.footprintInMapper(input.get_dim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
+			double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
+			if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
+			{
+				BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
+				HopRewriteUtils.setOutputBlocksizes(sel, brlen, bclen); 
+				sel.refreshSizeInformation();
+				sel.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, sel);
+				
+				loutput = sel.constructLops();
+			}
+			else //GENERAL CASE: GENERAL PERMUTATION MATRIX
+			{
+				//max ensures non-zero entries and at least one output row
+				BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
+				HopRewriteUtils.setOutputBlocksizes(max, brlen, bclen); 
+				max.refreshSizeInformation();
+				max.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, max);
+				
+				DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
+				seq.set_name("tmp4");
+				seq.refreshSizeInformation(); 
+				seq.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, seq);	
+				
+				//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
+				//note: weights always the input (even if isPPredInput) because input also includes 0s
+				TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
+				HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
+				table.refreshSizeInformation();
+				table.setForcedExecType(ExecType.MR); //force MR 
+				HopRewriteUtils.copyLineNumbers(this, table);
+				table.setDisjointInputs(true);
+				table.setOutputEmptyBlocks(_outputEmptyBlocks);
+				loutput = table.constructLops();
+				
+				HopRewriteUtils.removeChildReference(table, input);	
+			}
 			
 			//Step 4: cleanup hops (allow for garbage collection)
 			HopRewriteUtils.removeChildReference(ppred0, input);
-			HopRewriteUtils.removeChildReference(table, input);
 			
-			set_lops( ltable );
+			set_lops( loutput );
 		}
 		//default mr remove empty
 		else if( et == ExecType.MR )
@@ -652,6 +674,7 @@ public class ParameterizedBuiltinOp extends Hop
 		//copy specific attributes
 		ret._op = _op;
 		ret._outputEmptyBlocks = _outputEmptyBlocks;
+		ret._outputPermutationMatrix = _outputPermutationMatrix;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
 		
@@ -667,7 +690,8 @@ public class ParameterizedBuiltinOp extends Hop
 		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;	
 		boolean ret = (_op == that2._op
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null
-					  && _outputEmptyBlocks == that2._outputEmptyBlocks );
+					  && _outputEmptyBlocks == that2._outputEmptyBlocks
+					  && _outputPermutationMatrix == that2._outputPermutationMatrix );
 		if( ret )
 		{
 			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )
@@ -756,4 +780,21 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isTargetDiagInput()
+	{
+		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
+		
+		//input vector (guarantees diagV2M), implies remove rows
+		return (   targetHop instanceof ReorgOp 
+				&& ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
+				&& targetHop.getInput().get(0).get_dim2() == 1 ); 
+	}
+
+	
+	
 }

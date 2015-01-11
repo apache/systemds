@@ -1,16 +1,16 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2015
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-foo = function (Integer in) return (Integer out)
+foo = function (Integer inval) return (Integer out)
 {
    A = matrix( 1, rows=10, cols=10 );
-   parfor (f in 1:in) {
+   parfor (f in 1:inval) {
        A = A + f;
    }
    out = round(sum(A));

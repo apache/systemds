@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2015
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -15,11 +15,11 @@ dummy2 = matrix(1,rows=1,cols=10);
 
 parfor( i in 1:20 )
 {                 
-   A[:10,i]=dummy1*i;
-   A[11:,i]=dummy1*i;
+   A[1:10,i]=dummy1*i;
+   A[11:nrow(A),i]=dummy1*i;
    
-   B[i,:10]=dummy2*i;
-   B[i,11:]=dummy2*i;
+   B[i,1:10]=dummy2*i;
+   B[i,11:ncol(B)]=dummy2*i;
 }
 
 #print(C);

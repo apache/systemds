@@ -2,7 +2,7 @@
 <!--
 IBM Confidential
 OCO Source Materials
-(C) Copyright IBM Corp. 2010, 2014
+(C) Copyright IBM Corp. 2010, 2015
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 -->
 <!-- Ant script to build and test systemml-->
@@ -133,9 +133,9 @@ The source code for this program is not published or otherwise divested of its t
 	
 	<!-- Make sure javacc is called to generate DML parser after init -->
 	<target depends="init" name="parser"> 
-		<echo message="Running JavaCC on DMLQLParser.jj"/>
+		<!--echo message="Running JavaCC on DMLQLParser.jj"/>
 		<javacc target="src/main/java/com/ibm/bi/dml/parser/DMLQLParser.jj"
-		        javacchome="${javacc.home}"/>
+		        javacchome="${javacc.home}"/-->
 		<!-- start: comment this to disable antlr4 -->
 		<echo message="Running Antlr on Dml.g4"/>
 		<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/parser/antlr4/">

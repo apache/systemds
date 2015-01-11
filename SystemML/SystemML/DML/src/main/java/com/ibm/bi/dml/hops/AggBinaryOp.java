@@ -120,13 +120,21 @@ public class AggBinaryOp extends Hop
 			//matrix mult operation selection part 1 (CP vs MR)
 			ExecType et = optFindExecType();
 			MMTSJType mmtsj = checkTransposeSelf();
-			
+		
 			if ( et == ExecType.CP ) 
 			{
-				if( mmtsj == MMTSJType.NONE ) //CP MM
-					constructLopsCP_MM();
-				else //CP TSMM
+				if( mmtsj != MMTSJType.NONE ) { //CP TSMM
 					constructLopsCP_TSMM( mmtsj );
+				}
+				else if( _hasLeftPMInput && getInput().get(0).get_dim2()==1 
+						&& getInput().get(1).get_dim1()!=1 ) //CP PMM
+				{
+					constructLopsCP_PMM();
+				}
+				else { //CP MM
+					constructLopsCP_MM();
+				}
+					
 			}
 			else if ( et == ExecType.MR ) 
 			{
@@ -423,6 +431,35 @@ public class AggBinaryOp extends Hop
 	}
 	
 	/**
+	 * NOTE: exists for consistency since removeEmtpy might be scheduled to MR
+	 * but matrix mult on small output might be scheduled to CP. Hence, we 
+	 * need to handle directly passed selection vectors in CP as well.
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsCP_PMM() 
+		throws HopsException, LopsException
+	{
+		Hop pmInput = getInput().get(0);
+		Hop rightInput = getInput().get(1);
+		
+		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
+		HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+		nrow.setForcedExecType(ExecType.CP);
+		HopRewriteUtils.copyLineNumbers(this, nrow);
+		Lop lnrow = nrow.constructLops();
+		
+		PMMJ pmm = new PMMJ(pmInput.constructLops(), rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), false, false, ExecType.CP);
+		pmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		setLineNumbers(pmm);
+		
+		set_lops(pmm);
+		
+		HopRewriteUtils.removeChildReference(pmInput, nrow);
+	}
+	
+	/**
 	 * 
 	 * @param method
 	 * @throws HopsException
@@ -441,7 +478,7 @@ public class AggBinaryOp extends Hop
 			// i.e., entire matrix multiplication can be performed in the mappers.
 			boolean needAgg = requiresAggregation(method); 
 			boolean needPart = requiresPartitioning(method, false);
-			boolean outputEmptyBlocks = !hasOnlyCPConsumers(); 
+			boolean outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 			
 			//pre partitioning 
 			Lop leftInput = getInput().get(0).constructLops(); 
@@ -523,7 +560,7 @@ public class AggBinaryOp extends Hop
 			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
 			
 			double mestW = OptimizerUtils.estimateSize(hw.get_dim1(), hw.get_dim2(), 1.0);
-			boolean needPart = hw.get_dim1() * hw.get_dim2() > DistributedCacheInput.PARTITION_SIZE;
+			boolean needPart = !hw.dimsKnown() || hw.get_dim1() * hw.get_dim2() > DistributedCacheInput.PARTITION_SIZE;
 			Lop X = hX.constructLops(), v = hv.constructLops(), w = null;
 			if( needPart ){ //requires partitioning
 				w = new DataPartition(hw.constructLops(), DataType.MATRIX, ValueType.DOUBLE, (mestW>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
@@ -638,15 +675,13 @@ public class AggBinaryOp extends Hop
 		Hop rightInput = getInput().get(1);
 		long brlen = pmInput.get_rows_in_block();
 		long bclen = pmInput.get_cols_in_block();
-		MemoTable memo = new MemoTable();
 		
 		//a) full permutation matrix input (potentially without empty block materialized)
 		Lop lpmInput = pmInput.constructLops();
 		if( pmInput.get_dim2() != 1 ) //not a vector
 		{
-			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
-			
 			//compute condensed permutation matrix vector input			
+			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
 			ReorgOp transpose = new ReorgOp( "tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, pmInput );
 			HopRewriteUtils.setOutputBlocksizes(transpose, brlen, bclen);
 			transpose.refreshSizeInformation();
@@ -684,7 +719,7 @@ public class AggBinaryOp extends Hop
 		HopRewriteUtils.copyLineNumbers(this, nrow);
 		Lop lnrow = nrow.constructLops();
 		
-		boolean needPart = pmInput.get_dim1() * pmInput.get_dim2() > DistributedCacheInput.PARTITION_SIZE;
+		boolean needPart = !pmInput.dimsKnown() || pmInput.get_dim1() > DistributedCacheInput.PARTITION_SIZE;
 		double mestPM = OptimizerUtils.estimateSize(pmInput.get_dim1(), 1, 1.0);
 		if( needPart ){ //requires partitioning
 			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
@@ -692,8 +727,8 @@ public class AggBinaryOp extends Hop
 			setLineNumbers(lpmInput);	
 		}
 		
-		boolean outputEmptyBlocks = !hasOnlyCPConsumers(); 
-		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), needPart, outputEmptyBlocks);
+		boolean outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), needPart, outputEmptyBlocks, ExecType.MR);
 		pmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 		setLineNumbers(pmm);
 		
@@ -912,25 +947,6 @@ public class AggBinaryOp extends Hop
 	
 	/**
 	 * 
-	 * @return
-	 * @throws HopsException 
-	 */
-	private boolean hasOnlyCPConsumers() 
-		throws HopsException
-	{
-		boolean ret = true;
-		for( Hop p : getParent() ) {
-			p.optFindExecType(); //ensure exec type evaluated
-			ret &= ( p.getExecType()==ExecType.CP 
-					|| (p instanceof AggBinaryOp && ((AggBinaryOp)p).hasOnlyCPConsumers()))
-					&& !(p instanceof FunctionOp || p instanceof DataOp ); //no function call or transient write
-		}
-			
-		return ret;	
-	}
-	
-	/**
-	 * 
 	 * @param method
 	 * @return
 	 */
@@ -1078,8 +1094,9 @@ public class AggBinaryOp extends Hop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		if( (footprintPM < memBudget && m1_rows>=0 ) 
+		double footprintPM1 = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM2 = footprintInMapper(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
 			&& leftPMInput ) 
 		{
 			return MMultMethod.PMM;
@@ -1223,6 +1240,7 @@ public class AggBinaryOp extends Hop
 		return prop;
 	}
 	
+	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect(Hop hop1, Hop hop2) throws HopsException
 	{
 		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
@@ -1464,6 +1482,7 @@ public class AggBinaryOp extends Hop
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private String getMatrixMultSQLString(String operation, String op1, String op2)
 	{
 		Hop hop1 = this.getInput().get(0);

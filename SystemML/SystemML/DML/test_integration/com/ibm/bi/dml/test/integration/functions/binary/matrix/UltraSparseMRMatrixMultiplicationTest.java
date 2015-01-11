@@ -58,6 +58,29 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 				new String[] { "C" })   ); 
 	}
 
+	@Test
+	public void testMMRowDenseCP() 
+	{
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.CP, true, false);
+	}
+	
+	@Test
+	public void testMMRowSparseCP() 
+	{
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.CP, true, false);
+	}
+	
+	@Test
+	public void testMMColDenseCP() 
+	{
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.CP, false, false);
+	}
+	
+	@Test
+	public void testMMColSparseCP() 
+	{
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.CP, false, false);
+	}
 
 	
 	@Test

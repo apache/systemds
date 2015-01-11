@@ -10,6 +10,8 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -227,21 +229,28 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			&& ((ParameterizedBuiltinOp) hop).getOp()==ParamBuiltinOp.RMEMPTY 
 			&& !noSplitRequired )
 		{
-			cand.add(hop);
+			ParameterizedBuiltinOp pbhop = (ParameterizedBuiltinOp)hop;
+			cand.add(pbhop);
 			investigateChilds = false;
 			
 			//keep interesting consumer information, flag hops accordingly 
 			boolean noEmptyBlocks = true;
 			boolean onlyPMM = true;
+			boolean diagInput = pbhop.isTargetDiagInput();
 			for( Hop p : hop.getParent() ) {
 				//list of operators without need for empty blocks to be extended as needed
 				noEmptyBlocks &= (   p instanceof AggBinaryOp && hop == p.getInput().get(0) 
 				                  || p instanceof UnaryOp && ((UnaryOp)p).get_op()==OpOp1.NROW);
 				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
 			}
-			((ParameterizedBuiltinOp) hop).setOutputEmptyBlocks(!noEmptyBlocks);
-			if( onlyPMM ){
-				//((ParameterizedBuiltinOp) hop).setOutputPermutationMatrix(!noEmptyBlocks);
+			pbhop.setOutputEmptyBlocks(!noEmptyBlocks);
+			
+			if( onlyPMM && diagInput ){
+				//configure rmEmpty to directly output selection vector
+				//(only applied if dynamic recompilation enabled)
+				
+				if( DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP )	
+					pbhop.setOutputPermutationMatrix(true);
 				for( Hop p : hop.getParent() )
 					((AggBinaryOp)p).setHasLeftPMInput(true);
 					

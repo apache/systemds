@@ -69,8 +69,7 @@ public class DMLParseException extends ParseException
 			}
 		}
 		else{
-				e.printStackTrace();
-			
+				e.printStackTrace();		
 		}
 		
 		_exceptionList.add(new DMLParseException(_filename, newMsg));

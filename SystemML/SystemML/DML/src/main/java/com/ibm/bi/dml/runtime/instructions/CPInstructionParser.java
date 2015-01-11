@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MultiReturnBuiltinCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.PMMJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstruction;
@@ -45,11 +46,11 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRU
 public class CPInstructionParser extends InstructionParser 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	static public HashMap<String, CPINSTRUCTION_TYPE> String2CPInstructionType;
-	static public HashMap<String, CPINSTRUCTION_TYPE> String2CPFileInstructionType;
+	public static final HashMap<String, CPINSTRUCTION_TYPE> String2CPInstructionType;
+	public static final HashMap<String, CPINSTRUCTION_TYPE> String2CPFileInstructionType;
 	
 	static {
 		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -186,6 +187,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
+		String2CPInstructionType.put( "pmm"   , CPINSTRUCTION_TYPE.PMMJ);
 		
 		String2CPInstructionType.put( "qr",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
@@ -306,6 +308,9 @@ public class CPInstructionParser extends InstructionParser
 			}
 		case MMTSJ:
 			return (CPInstruction) MMTSJCPInstruction.parseInstruction(str);
+		case PMMJ:
+			return (CPInstruction) PMMJCPInstruction.parseInstruction(str);
+		
 		case Partition:
 			return (CPInstruction) DataPartitionCPInstruction.parseInstruction(str);	
 			

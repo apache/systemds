@@ -23,7 +23,6 @@ import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-//import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -48,11 +47,10 @@ import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.parser.antlr4.Antlr4ParserWrapper;
+import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -100,7 +98,6 @@ public class DMLScript
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
-	public static boolean USE_JAVACC_PARSER = false;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 
 	// flag that indicates whether or not to suppress any prints to stdout
@@ -110,7 +107,6 @@ public class DMLScript
 	public static boolean _activeAM = false;
 	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = 
 			"Usage is " + DMLScript.class.getCanonicalName() + " -f <filename>" 
@@ -572,16 +568,9 @@ public class DMLScript
 			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); 
 		}
 		
-		DMLProgram prog = null;
 		//Step 3: parse dml script
-		if(!USE_JAVACC_PARSER){ 
-			Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-			prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
-		else {
-			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-			prog = parser.parse();
-		}
+		DMLParserWrapper parser = new DMLParserWrapper();
+		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
 		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -697,15 +686,8 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		if(!USE_JAVACC_PARSER){ 
-			Antlr4ParserWrapper antlr4Parser = new Antlr4ParserWrapper();
-			dbprog.prog = antlr4Parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
-		else {
-			DMLQLParser parser = new DMLQLParser(dmlScriptStr, argVals);
-			dbprog.prog = parser.parse();
-		}
-
+		DMLParserWrapper parser = new DMLParserWrapper();
+		dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 
 		//Step 3: construct HOP DAGs (incl LVA and validate)
 		dbprog.dmlt = new DMLTranslator(dbprog.prog);

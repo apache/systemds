@@ -120,6 +120,8 @@ public class LibMatrixMult
 		
 		if( m2.sparse )
 			matrixMultPermuteSparse(pm1, m2, ret1, ret2);
+		else if( ret1.sparse )
+			matrixMultPermuteDenseSparse(pm1, m2, ret1, ret2);
 		else 
 			matrixMultPermuteDense(pm1, m2, ret1, ret2);
 		
@@ -938,6 +940,15 @@ public class LibMatrixMult
 		ret.examSparsity();	
 	}
 	
+	/**
+	 * 
+	 * @param pm1
+	 * @param m2
+	 * @param ret1
+	 * @param ret2
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
 	private static void matrixMultPermuteDense( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
@@ -987,6 +998,75 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * 
+	 * @param pm1
+	 * @param m2
+	 * @param ret1
+	 * @param ret2
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private static void matrixMultPermuteDenseSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//check inputs / outputs
+		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		
+		//allocate first output block (second allocated if needed)
+		ret1.sparse = true;
+		ret1.adjustSparseRows(ret1.rlen);
+		
+		double[] a = pm1.denseBlock;
+		double[] b = m2.denseBlock;
+		SparseRow[] c = ret1.sparseRows;
+		final int m = pm1.rlen;
+		final int n = m2.clen;
+		final int brlen = ret1.getNumRows();
+		
+		int lastblk = -1;
+		for( int i=0, bix=0; i<m; i++, bix+=n ) 
+		{
+			//compute block index and in-block indexes
+			int pos = UtilFunctions.toInt( a[ i ]); //safe cast
+			if( pos > 0 ) //selected row
+			{
+				int bpos = (pos-1) % brlen;
+				int blk = (pos-1) / brlen;
+				
+				//allocate and switch to second output block
+				if( lastblk!=-1 && lastblk<blk ){ 
+					ret2.sparse = true;
+					ret2.adjustSparseRows(ret1.rlen);
+					c = ret2.sparseRows;		
+				}
+		
+				//append entire dense row into sparse target position
+				c[bpos] = new SparseRow( n );
+				for( int j=0; j<n; j++ )
+					c[bpos].append(j, b[bix+j]);
+				lastblk = blk;
+			}
+		}
+		
+		ret1.recomputeNonZeros();
+		ret1.examSparsity();
+		if( ret2 != null ) { //optional second output
+			ret2.recomputeNonZeros();
+			ret2.examSparsity();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param pm1
+	 * @param m2
+	 * @param ret1
+	 * @param ret2
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
 	private static void matrixMultPermuteSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{

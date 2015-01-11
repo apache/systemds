@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,7 +28,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class Data extends Lop  
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {READ,WRITE};
@@ -140,7 +140,6 @@ public class Data extends Lop
 			 *  RAND: because all inputs must be of type random. 
 			 */
 			lps.addCompatibility(JobType.ANY);
-			lps.removeCompatibility(JobType.PARTITION);
 			// reads are not compatible with RAND because RAND must have all inputs that are random
 			if ( operation == OperationTypes.READ )
 				lps.removeCompatibility(JobType.DATAGEN);

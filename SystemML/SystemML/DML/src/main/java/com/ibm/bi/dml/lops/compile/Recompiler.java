@@ -61,9 +61,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
-//import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
-//import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -695,11 +692,7 @@ public class Recompiler
 			}
 			removeUpdatedScalars(vars, fpb.getStatementBlock());
 		}		
-		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
-			    || pb instanceof CVProgramBlock
-				//|| pb instanceof ELProgramBlock
-				//|| pb instanceof ELUseProgramBlock
-				)
+		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 		{
 			//do nothing
 		}
@@ -1068,13 +1061,6 @@ public class Recompiler
 			FunctionProgramBlock tmp = (FunctionProgramBlock)pb;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
-		}
-		else if	( pb instanceof CVProgramBlock
-				//|| pb instanceof ELProgramBlock
-				//|| pb instanceof ELUseProgramBlock
-				)
-		{
-			//do nothing
 		}
 		else 
 		{	

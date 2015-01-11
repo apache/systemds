@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,9 +23,6 @@ import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
-//import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
-//import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -44,7 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 public class DMLProgram 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ArrayList<StatementBlock> _blocks;
@@ -509,90 +506,6 @@ public class DMLProgram
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
-		
-		else if (sb instanceof CVStatementBlock) {
-			// handle CV case
-			CVStatementBlock cvsb = ((CVStatementBlock)sb) ;
-			
-			CVProgramBlock cvpb = null; //new CVProgramBlock( prog, cvsb.getPartitionParams(), ((CVStatement)cvsb.getStatement(0)).getFunctionParameters(), config) ;		
-		
-			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (cvsb.get_lops() != null && cvsb.get_lops().size() > 0){
-				
-				// DAGs for Lops
-				dag = new Dag<Lop>();
-				
-				for (Lop l : cvsb.get_lops()) {
-					l.addToDag(dag);
-				}
-				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, config);
-				for (Instruction i : instruct) {
-					cvpb.addInstruction(i);
-				}
-			}
-
-			retPB = cvpb;
-			
-			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
-		}
-		
-//		else if (sb instanceof ELStatementBlock) {
-//			// handle EL case
-//			ELStatementBlock esb = ((ELStatementBlock)sb) ;
-//			
-//			ELProgramBlock epb = null; // new ELProgramBlock( prog, esb.getPartitionParams(), ((ELStatement)esb.getStatement(0)).getFunctionParameters(), config) ;		
-//		
-//			// check there are actually Lops in to process (loop stmt body will not have any)
-//			if (esb.get_lops() != null && esb.get_lops().size() > 0){
-//				
-//				// DAGs for Lops
-//				dag = new Dag<Lops>();
-//				
-//				for (Lops l : esb.get_lops()) {
-//					l.addToDag(dag);
-//				}
-//				// Instructions for Lobs DAGs
-//				instruct = dag.getJobs(sb, config);
-//				for (Instruction i : instruct) {
-//					epb.addInstruction(i);
-//				}
-//			}
-//
-//			retPB = epb;
-//			
-//			// add location information
-//			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
-//		}
-//		
-//		else if (sb instanceof ELUseStatementBlock) {
-//			// handle EL Use case
-//			ELUseStatementBlock eusb = ((ELUseStatementBlock)sb) ;
-//			
-//			ELUseProgramBlock eupb = null; //new ELUseProgramBlock( prog, eusb.getPartitionParams(), ((ELUseStatement)eusb.getStatement(0)).getFunctionParameters(), config) ;		
-//		
-//			// check there are actually Lops in to process (loop stmt body will not have any)
-//			if (eusb.get_lops() != null && eusb.get_lops().size() > 0){
-//				
-//				// DAGs for Lops
-//				dag = new Dag<Lops>();
-//				
-//				for (Lops l : eusb.get_lops()) {
-//					l.addToDag(dag);
-//				}
-//				// Instructions for Lobs DAGs
-//				instruct = dag.getJobs(sb, config);
-//				for (Instruction i : instruct) {
-//					eupb.addInstruction(i);
-//				}
-//			}
-//
-//			retPB = eupb;
-//			
-//			// add location information
-//			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
-//		}
 		else {
 	
 			// handle general case
@@ -768,11 +681,7 @@ public class DMLProgram
 				if( rContainsRMInstruction(c, varName) )
 					return true;
 		}		
-		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
-			    || pb instanceof CVProgramBlock
-			//	|| pb instanceof ELProgramBlock
-			//	|| pb instanceof ELUseProgramBlock
-			    )
+		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP)
 		{
 			//do nothing
 		}
@@ -834,11 +743,7 @@ public class DMLProgram
 		}
 		else if (pb instanceof IfProgramBlock)
 			((IfProgramBlock)pb).addExitInstruction(inst);
-		else if (   pb instanceof FunctionProgramBlock  //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
-			     || pb instanceof CVProgramBlock
-			     //|| pb instanceof ELProgramBlock
-			     //|| pb instanceof ELUseProgramBlock
-			     )
+		else if (   pb instanceof FunctionProgramBlock )  //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP)
 			; //do nothing
 		else 
 		{

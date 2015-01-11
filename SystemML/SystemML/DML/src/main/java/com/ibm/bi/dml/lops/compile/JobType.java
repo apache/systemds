@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -53,7 +53,7 @@ public enum JobType
 	SORT			(7, "SORT", true, false, true, true),  			// allows only "InstructionsBeforeSort" and nothing else. 
 	CM_COV			(8, "CM_COV", false, false, false, false),  	// allows only instructions in the mapper 
 	GROUPED_AGG		(9, "GROUPED_AGG", false, false, false, false), 
-	PARTITION		(10, "PARTITION", false, false, false, true),	// CV partition: not used currently
+	//PARTITION		(10, "PARTITION", false, false, false, true),	// MB: meta learning removed
 	DATA_PARTITION	(11, "DATAPARTITION", false, false, false, true),
 	CSV_REBLOCK		(12, "CSV_REBLOCK", false, false, false, false),
 	CSV_WRITE		(13, "CSV_WRITE", false, false, false, true);
@@ -140,8 +140,6 @@ public enum JobType
 		case MMRJ: 			return JobType.MMRJ;
 		
 		case MMTSJ: 		return JobType.GMR;
-		
-		case PartitionLop: 	return JobType.PARTITION;
 		
 		case SortKeys: 		return JobType.SORT;
 		

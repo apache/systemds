@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,7 +32,7 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 public class NetezzaConnector 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public NetezzaConnector()
@@ -93,33 +93,32 @@ public class NetezzaConnector
      * @return Returns a result set, if isQuery is true
      * @throws SQLException 
      */
-    public void executeSQL(String sql) throws SQLException
+    public void executeSQL(String sql) 
+    	throws SQLException
     {
     	checkConnected();
+    	
     	Statement st = null;
-    	/*
-    	 * BIRelease: Following code is commented for BigInsights Release. 
-    	 */
-//        try {
+    	try 
+        {
 
             st = conn.createStatement();
             st.execute(sql);
-//        }
-/*        catch(NzSQLException e)
+        }
+    	/*
+    	 * BIRelease: Following code is commented for BigInsights Release.     	    	
+        catch(NzSQLException e)
         {
         	if(e.getErrorCode() == 1012 && e.getMessage().contains("Integer.MAX_VALUE"))
         		System.out.println("WARNING: " + e.getErrorCode() + " " + e.getMessage() + "\r\n" + e.getLocalizedMessage());
         	else throw e;
+        }*/        
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
-        finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
-        }
-*/    }
+   }
     
     /**
      * Calls a procedure without parameters as created by SystemML on the database
@@ -132,34 +131,32 @@ public class NetezzaConnector
     	executeSQL("call " + name + "();");
     }
     
-    public String getScalarString(String query) throws SQLException
+    public String getScalarString(String query) 
+    	throws SQLException
     {
     	checkConnected();
     	Statement st = null;
     	ResultSet rs = null;
     	String res = null;
-        try {
-
+        try 
+        {
             st = conn.createStatement();
-            rs = st.executeQuery(query);
-            
+            rs = st.executeQuery(query);        
             if(rs.next())
             {
             	res = rs.getString(1);
-            }
-            
-        }  finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+            }    
+        }  
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
         return res;
     }
     
-    public double getScalarDouble(String query) throws SQLException
+    public double getScalarDouble(String query) 
+    	throws SQLException
     {
     	checkConnected();
     	Statement st = null;
@@ -179,24 +176,25 @@ public class NetezzaConnector
             else
             	throw new SQLException("ERROR: No result set was returned");
             
-        } finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        } 
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
+        
         return res;
     }
     
-    public boolean getScalarBoolean(String query) throws SQLException
+    public boolean getScalarBoolean(String query) 
+    	throws SQLException
     {
     	checkConnected();
     	Statement st = null;
     	ResultSet rs = null;
     	boolean res = false;
-        try {
+        try
+        {
             st = conn.createStatement();
             rs = st.executeQuery(query);
             
@@ -205,26 +203,26 @@ public class NetezzaConnector
             	res = rs.getBoolean(1);
             }
             else
-            	throw new SQLException("ERROR: No result set was returned");
-            
-        }  finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+            	throw new SQLException("ERROR: No result set was returned");    
+        }  
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
+        
         return res;
     }
     
-    public int getScalarInteger(String query) throws SQLException
+    public int getScalarInteger(String query) 
+    	throws SQLException
     {
     	checkConnected();
     	Statement st = null;
     	ResultSet rs = null;
     	int res = 0;
-        try {
+        try 
+        {
 
             st = conn.createStatement();
             rs = st.executeQuery(query);
@@ -236,14 +234,13 @@ public class NetezzaConnector
             else
             	throw new SQLException("ERROR: No result set was returned");
             
-        } finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        } 
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
+        
         return res;
     }
     
@@ -266,7 +263,8 @@ public class NetezzaConnector
     	ResultSet rs = null;
     	Statement st = null;
 
-        try {
+        try 
+        {
             st = conn.createStatement();
             rs = st.executeQuery(String.format("SELECT * FROM \"%s\"", tableName));
             
@@ -287,15 +285,13 @@ public class NetezzaConnector
         			bw.close();
         	}
 
-        }  finally {
-            try {
-            	if(rs != null)
-            		rs.close();
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        }  
+        finally 
+        {
+           if(rs != null)
+        	   rs.close();
+           if( st!= null)
+        	   st.close();
         }
     }
     
@@ -305,14 +301,16 @@ public class NetezzaConnector
      * @return
      * @throws SQLException
      */
-    public HashMap<CellIndex,Double> tableToHashMap(String tableName) throws SQLException
+    public HashMap<CellIndex,Double> tableToHashMap(String tableName) 
+    	throws SQLException
     {
     	checkConnected();
     	
     	ResultSet rs = null;
     	Statement st = null;
     	HashMap<CellIndex, Double> output = new HashMap<CellIndex, Double>();
-        try {
+        try 
+        {
             st = conn.createStatement();
             rs = st.executeQuery(String.format("SELECT * FROM \"%s\"", tableName));
 
@@ -320,18 +318,19 @@ public class NetezzaConnector
 	    	{
 	    		output.put(new CellIndex(rs.getInt("row"), rs.getInt("col")), rs.getDouble("value"));
 	    	}
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-            	if(rs != null)
-            		rs.close();
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        } 
+        catch (Exception e) 
+        {
+            throw new SQLException(e);
+        } 
+        finally 
+        {
+            if(rs != null)
+            	rs.close();
+            if( st!= null)
+            	st.close();    
         }
+        
         return output;
     }
     
@@ -407,19 +406,18 @@ public class NetezzaConnector
                 query.setLength(0);
             }
             st.executeBatch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-            	if(reader != null)
-            		reader.close();
-                if( st!= null)
-                    st.close();
-                if( conn != null)
-                    conn.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        } 
+        catch (Exception e) {
+            throw new SQLException(e);
+        } 
+        finally 
+        {
+            if(reader != null)
+        		reader.close();
+            if( st!= null)
+                st.close();
+            if( conn != null)
+                conn.close();
         }
     }
     
@@ -460,18 +458,17 @@ public class NetezzaConnector
 	    	}
     	}
     	catch(Exception e) {
-        	e.printStackTrace();
-        } finally {
-        try {
-            if( st!= null)
+        	throw new SQLException(e);
+        } 
+    	finally 
+    	{
+    		if( st!= null)
                 st.close();
-        } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
         }
     }
     
-    public void exportTable(String tableName, String filename) throws SQLException
+    public void exportTable(String tableName, String filename) 
+    	throws SQLException
     {
     	checkConnected();
     	
@@ -479,21 +476,21 @@ public class NetezzaConnector
     	"INSERT INTO \"%s\" SELECT * FROM EXTERNAL '%s' USING ( DELIMITER ' ' Y2BASE 2000 ENCODING 'internal' REMOTESOURCE 'JDBC' ESCAPECHAR '\')";
     	Statement st = null;
 
-        try {
+        try 
+        {
             st = conn.createStatement();
             st.execute("call drop_if_exists('" + tableName + "'); ");
             st.execute("CREATE TABLE \"" + tableName + "\" (row int8, col int8, value double precision) DISTRIBUTE ON (row, col); ");
             String complete = String.format(template, tableName, filename);
             st.execute(complete);
-        } catch (Exception e) {
-        	e.printStackTrace();
-        } finally {
-        try {
-            if( st!= null)
+        } 
+        catch (Exception e) {
+        	throw new SQLException(e);
+        } 
+        finally 
+        {
+        	if( st!= null)
                 st.close();
-        } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
         }
     }
     
@@ -532,19 +529,19 @@ public class NetezzaConnector
             conn.commit();
             conn.setAutoCommit(true);
             
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if( st!= null)
-                    st.close();
-            } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+        } 
+        catch (Exception e) {
+            throw new SQLException(e);
+        } 
+        finally 
+        {
+            if( st!= null)
+            	st.close();
         }
     }
     
-    public void setVariableValue(String name, Object value) throws SQLException
+    public void setVariableValue(String name, Object value) 
+    	throws SQLException
     {
     	checkConnected();
     	
@@ -558,7 +555,7 @@ public class NetezzaConnector
     	}
     	catch(Exception e)
     	{
-    		e.printStackTrace();
+    		throw new SQLException(e);
     	}
     	finally
     	{
@@ -567,7 +564,8 @@ public class NetezzaConnector
     	}
     }
     
-    public <T> T getVariableValue(String varName) throws SQLException
+    public <T> T getVariableValue(String varName) 
+    	throws SQLException
     {
     	checkConnected();
     	
@@ -584,16 +582,14 @@ public class NetezzaConnector
             	output = rs.getObject(1);
             
         } catch (Exception e) {
-        	e.printStackTrace();
-	    } finally {
-	        try {
-	            if( st!= null)
-	                st.close();
-	            if(rs != null)
-	            	rs.close();
-	        	} catch (SQLException e1) {
-	                e1.printStackTrace();
-	            }
+        	throw new SQLException(e);
+	    } 
+        finally 
+        {
+	        if( st!= null)
+	        	st.close();
+	        if(rs != null)
+	        	rs.close();
 	    }
 	    
 	    return (T)output;
@@ -657,16 +653,12 @@ public class NetezzaConnector
 		return conn;
 	}
 
-	public void finalize()
+	public void finalize() 
+		throws Throwable
 	{
-		try
-		{
-			if(connected && conn != null)
-				conn.close();
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
+		if(connected && conn != null)
+			conn.close();
+		
+		super.finalize();
 	}
 }

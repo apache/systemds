@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 public class SQLOverwriteScalar extends SQLCreateTable 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public String getMergedSelectStatement()
@@ -95,15 +95,12 @@ public class SQLOverwriteScalar extends SQLCreateTable
 	
 	public String generateSQLString()
 	{
-		StringBuffer sb = new StringBuffer();
-		String tmp = "tmp_" + this.get_tableName();
-		
+		String tmp = "tmp_" + this.get_tableName();		
 		return getCreateTableString(tmp) + getInsertIntoString(tmp) + getDeleteTableString() + getAlterTableString(tmp);
 	}
 	
 	@Override
 	public Instruction[] getInstructions() {
-		StringBuffer sb = new StringBuffer();
 		String tmp = "tmp_" + this.get_tableName();
 		Instruction[] instr = new Instruction[4];
 		instr[0] = new SQLInstruction(getCreateTableString(tmp));

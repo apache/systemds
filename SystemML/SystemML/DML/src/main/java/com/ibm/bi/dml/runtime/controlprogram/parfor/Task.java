@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class Task 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum TaskType {
@@ -32,7 +32,7 @@ public class Task
 	}
 	
 	public static final int MAX_VARNAME_SIZE  = 256;
-	public static final int MAX_TASK_SIZE     = Integer.MAX_VALUE; 
+	public static final int MAX_TASK_SIZE     = Integer.MAX_VALUE-1; 
 	
 	private TaskType           	  _type;
 	private LinkedList<IntObject> _iterations; //each iteration is specified as an ordered set of index values
@@ -49,7 +49,7 @@ public class Task
 		if( indexVal.getName().length() > MAX_VARNAME_SIZE )
 			throw new RuntimeException("Cannot add iteration, MAX_VARNAME_SIZE exceeded.");
 		
-		if( size() > MAX_TASK_SIZE )
+		if( size() >= MAX_TASK_SIZE )
 			throw new RuntimeException("Cannot add iteration, MAX_TASK_SIZE reached.");
 			
 		_iterations.addLast( indexVal );

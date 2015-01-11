@@ -85,8 +85,9 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	public void copy(MatrixValue that){
 		MatrixCell c2=MatrixCell.class.cast(that);
 		if(c2==null)
-			throw new RuntimeException(that+" is not of type MatrixCell");
-		value=c2.getValue();
+			throw new RuntimeException("Argument is not of type MatrixCell: "+that);
+		
+		value = c2.getValue();
 	}
 
 	@Override

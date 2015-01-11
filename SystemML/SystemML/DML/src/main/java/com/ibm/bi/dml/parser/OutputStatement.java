@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,7 +18,7 @@ import com.ibm.bi.dml.parser.Expression.DataOp;
 public class OutputStatement extends Statement
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private DataIdentifier _id;
@@ -129,10 +129,10 @@ public class OutputStatement extends Statement
 	{
 		DMLParseException runningList = new DMLParseException(value.getFilename());
 		
-		if (_paramsExpr.getVarParam(name) != null)
+		if( _paramsExpr.getVarParam(name) != null )
 			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once"));
 		
-		if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
+		if( !OutputStatement.isValidParamName(name) )
 			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add invalid write statement parameter: " + name));
 		
 		_paramsExpr.addVarParam(name, value);

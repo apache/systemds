@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,7 +22,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 public class LocalParWorker extends ParWorker implements Runnable
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected LocalTaskQueue<Task> _taskQueue   = null;
@@ -70,8 +70,6 @@ public class LocalParWorker extends ParWorker implements Runnable
 			}
 			catch(Exception ex)
 			{
-				//ex.printStackTrace();
-				
 				// abort on taskqueue error
 				LOG.warn("Error reading from task queue: "+ex.getMessage());
 				LOG.warn("Stopping LocalParWorker.");

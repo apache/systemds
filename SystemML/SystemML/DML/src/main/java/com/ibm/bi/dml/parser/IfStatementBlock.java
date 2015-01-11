@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 public class IfStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private Hop _predicateHops;
@@ -259,9 +259,9 @@ public class IfStatementBlock extends StatementBlock
 				
 				if( origVersion != null ) {
 					long origVersionDim1 = (origVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)origVersion).getOrigDim1() : origVersion.getDim1(); 
-					long recVersionDim1	 = (recVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)recVersion).getOrigDim1() : recVersion.getDim1(); 
+					long recVersionDim1	 = recVersion.getDim1(); //always DataIdentifier (see above)
 					long origVersionDim2 = (origVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)origVersion).getOrigDim2() : origVersion.getDim2(); 
-					long recVersionDim2	 = (recVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)recVersion).getOrigDim2() : recVersion.getDim2(); 
+					long recVersionDim2	 = recVersion.getDim2(); //always DataIdentifier (see above) 
 					
 					if( origVersionDim1 == recVersionDim1 ){
 						updatedDim1 = origVersionDim1;

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -15,7 +15,7 @@ package com.ibm.bi.dml.hops.globalopt.enumerate;
 public abstract class RewriteConfig 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum RewriteConfigType {
@@ -112,6 +112,12 @@ public abstract class RewriteConfig
 	}
 	
 	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+	
+	@Override
 	public String toString() 
 	{
 		return "RC["+_type+"="+_value + "]";
@@ -121,11 +127,9 @@ public abstract class RewriteConfig
 	/*
 	TODO
 
-
 	public abstract void applyToHop(Hop hop);
 
 	public abstract boolean isValidForOperator(Hop operator);
-
 
 	*/
 }

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,12 +32,12 @@ import com.ibm.bi.dml.lops.Lop;
 public class MemoStructure 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
 	private Map<Hop, Map<InterestingPropertySet, MemoEntry>> entries = new HashMap<Hop, Map<InterestingPropertySet, MemoEntry>>();
-	private Long currentId = new Long(1);
+	private Long currentId = Long.valueOf(1);
 	private Map<Long, Lop> planDirectory = new HashMap<Long, Lop>();
 	
 	public Map<InterestingPropertySet, MemoEntry> getEntry(Hop root) {
@@ -56,7 +56,7 @@ public class MemoStructure
 	}
 
 	public synchronized Long addPlan(Lop toAdd){
-		Long retVal = new Long(currentId);
+		Long retVal = Long.valueOf(currentId);
 		this.planDirectory.put(currentId++, toAdd);
 		return retVal;
 	}

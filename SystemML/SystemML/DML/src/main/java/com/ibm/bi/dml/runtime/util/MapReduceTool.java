@@ -108,7 +108,7 @@ public class MapReduceTool
 		int i=nodePrefix.lastIndexOf("_", j-1);
 		nodePrefix = nodePrefix.substring(i+1, j);
 		// System.out.println("nodePrefix = " + nodePrefix) ;
-		return (new Integer(nodePrefix)).intValue();
+		return Integer.valueOf(nodePrefix);
 	}
 
 	public static String getGloballyUniqueName(JobConf job) {

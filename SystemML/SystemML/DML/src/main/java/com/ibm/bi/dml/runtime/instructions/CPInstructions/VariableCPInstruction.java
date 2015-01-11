@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -40,7 +40,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class VariableCPInstruction extends CPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/*
@@ -634,14 +634,12 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.get_name());
 			ScalarObject iqsum = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			
-			double[] q25, q75;
-			q25 = q75 = null;
+			double[] q25 = null;
+			double[] q75 = null;
 			try {
 				q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.25, false);
 				q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.75, false);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
 				throw new DMLRuntimeException(e1);
 			}
 			

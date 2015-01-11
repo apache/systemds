@@ -1482,7 +1482,8 @@ public class DMLTranslator
 	}
 
 
-	public void constructHops(StatementBlock sb) throws ParseException, LanguageException {
+	public void constructHops(StatementBlock sb) 
+		throws ParseException, LanguageException {
 
 		if (sb instanceof WhileStatementBlock) {
 			constructHopsForWhileControlBlock((WhileStatementBlock) sb);
@@ -1538,7 +1539,7 @@ public class DMLTranslator
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
 				if (liveOut.containsVariable(target.getName())) {
-					liveOutToTemp.put(target.getName(), new Integer(i));
+					liveOutToTemp.put(target.getName(), Integer.valueOf(i));
 				}
 			}
 			if (current instanceof MultiAssignmentStatement) {
@@ -1629,7 +1630,7 @@ public class DMLTranslator
 					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 					output.add(printHop);
 				} catch ( HopsException e ) {
-					e.printStackTrace();
+					throw new LanguageException(e);
 				}
 			}
 	
@@ -2070,13 +2071,13 @@ public class DMLTranslator
 			try {
 				return processBuiltinFunctionExpression((BuiltinFunctionExpression) source, target, hops);
 			} catch (HopsException e) {
-				e.printStackTrace();
+				throw new ParseException(e.getMessage());
 			}
 		} else if (source.getKind() == Expression.Kind.ParameterizedBuiltinFunctionOp ) {
 			try {
 				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
 			} catch ( HopsException e ) {
-				e.printStackTrace();
+				throw new ParseException(e.getMessage());
 			}
 		} else if (source.getKind() == Expression.Kind.DataOp ) {
 			try {	
@@ -2089,7 +2090,7 @@ public class DMLTranslator
 				//hops.put(target.getName(), ae);
 				return ae;
 			} catch ( Exception e ) {
-				e.printStackTrace();
+				throw new ParseException(e.getMessage());
 			}
 		}
 		return null;
@@ -2153,7 +2154,6 @@ public class DMLTranslator
 					rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
 					rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 				} catch (HopsException e) {
-					e.printStackTrace();
 					LOG.error(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
 					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
 				}
@@ -2175,9 +2175,8 @@ public class DMLTranslator
 				try {
 					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
 				} catch (HopsException e) {
-					e.printStackTrace();
 					LOG.error(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
-					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
+					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString(), e);
 				}
 			}
 		}
@@ -2396,7 +2395,7 @@ public class DMLTranslator
 				currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
 				currUop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			} catch (HopsException e) {
-				e.printStackTrace();
+				throw new ParseException(e.getMessage());
 			}
 			return currUop;
 		} else {

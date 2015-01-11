@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,7 +31,7 @@ import com.ibm.json.java.JSONObject;
 public class DataExpression extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	public static boolean REJECT_READ_UNKNOWN_SIZE = true;
@@ -853,7 +853,7 @@ public class DataExpression extends DataIdentifier
 		        long nnz = -1;
 		        if( ennz != null )
 		        {
-			        nnz = new Long(ennz.toString());
+			        nnz = Long.valueOf(ennz.toString());
 			        getOutput().setNnz(nnz);
 		        }
 		        
@@ -1828,9 +1828,8 @@ public class DataExpression extends DataIdentifier
 		try {
 			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
-			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.", e);
 		}
 		
 		Path pt = new Path(filename);
@@ -1850,9 +1849,8 @@ public class DataExpression extends DataIdentifier
 				isDirBoolean = false;
 		}
 		catch(Exception e){
-			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "error validing whether path " + pt.toString() + " is directory or not");
-        	throw new LanguageException(this.printErrorLocation() + "error validing whether path " + pt.toString() + " is directory or not");			
+        	throw new LanguageException(this.printErrorLocation() + "error validing whether path " + pt.toString() + " is directory or not", e);			
 		}
 		
 		// CASE: filename is a directory -- process as a directory
@@ -1967,7 +1965,6 @@ public class DataExpression extends DataIdentifier
 			}
 			
 		} catch (IOException e){
-			e.printStackTrace();
 			//LOG.error(this.printErrorLocation() + "Error reading MatrixMarket file: " + filename );
 			//throw new LanguageException(this.printErrorLocation() + "Error reading MatrixMarket file: " + filename );
 			throw new LanguageException(e);
@@ -1990,9 +1987,8 @@ public class DataExpression extends DataIdentifier
 		try {
 			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
-			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.", e);
 		}
 		
 		Path pt = new Path(inputFileName);

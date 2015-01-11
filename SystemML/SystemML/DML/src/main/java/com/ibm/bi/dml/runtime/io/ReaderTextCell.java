@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 public class ReaderTextCell extends MatrixReader
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private boolean _isMMFile = false;
@@ -275,13 +275,11 @@ public class ReaderTextCell extends MatrixReader
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
-			
 			//post-mortem error handling and bounds checking
 			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
 			{
 				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
-									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].", ex);
 			}
 			else
 			{

@@ -1222,7 +1222,7 @@ public abstract class Hop
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace(); //just debugging
+			LOG.error("Failed to compute size information.", ex);
 			ret = -1;
 		}
 		
@@ -1271,7 +1271,7 @@ public abstract class Hop
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace(); //just debugging
+			LOG.error("Failed to compute size information.", ex);
 			ret = -1;
 		}
 		
@@ -1293,7 +1293,7 @@ public abstract class Hop
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace(); //just debugging
+			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
 		
@@ -1319,7 +1319,7 @@ public abstract class Hop
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace(); //just debugging
+			LOG.error("Failed to compute bounds information.", ex);
 			ret = Double.MAX_VALUE;
 		}
 		

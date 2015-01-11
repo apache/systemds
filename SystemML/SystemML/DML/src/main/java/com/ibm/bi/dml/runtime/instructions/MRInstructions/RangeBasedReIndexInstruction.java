@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public boolean forLeftIndexing=false;
@@ -34,7 +34,6 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 	//start and end are all inclusive
 	public static class IndexRange
 	{
-		public final static String DELIMITOR="*";
 		public long rowStart=0;
 		public long rowEnd=0;
 		public long colStart=0;
@@ -52,20 +51,6 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 			rowEnd=re;
 			colStart=cs;
 			colEnd=ce;
-		}
-		public String toString()
-		{
-			return rowStart+DELIMITOR+rowEnd+DELIMITOR+colStart+DELIMITOR+colEnd;
-		}
-		public void set(String str)
-		{
-			String[] strs=str.split(DELIMITOR);
-			if(strs.length!=4)
-				throw new RuntimeException("ill formated range " + str);
-			rowStart = UtilFunctions.parseToLong(strs[0]);
-			rowEnd   = UtilFunctions.parseToLong(strs[1]);
-			colStart = UtilFunctions.parseToLong(strs[2]);
-			colEnd   = UtilFunctions.parseToLong(strs[3]);
 		}
 	}
 	

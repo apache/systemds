@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class FunctionCallCPInstruction extends CPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private String _functionName;
@@ -75,8 +75,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
 		String functionName = parts[2];
-		int numInputs = new Integer(parts[3]).intValue();
-		int numOutputs = new Integer(parts[4]).intValue();
+		int numInputs = Integer.valueOf(parts[3]);
+		int numOutputs = Integer.valueOf(parts[4]);
 		ArrayList<String> boundInParamNames = new ArrayList<String>();
 		ArrayList<String> boundOutParamNames = new ArrayList<String>();
 		

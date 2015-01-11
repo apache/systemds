@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,7 +10,6 @@ package com.ibm.bi.dml.lops.compile;
 import java.util.Comparator;
 
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 
 
 /**
@@ -34,7 +33,7 @@ public class LopComparator<N extends Lop>
 		implements Comparator<N> 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -49,16 +48,8 @@ public class LopComparator<N extends Lop>
 			else if (o1.getID() > o2.getID())
 				return 1; // o1 is greater than o2
 			else
-				try {
-					throw new DMLRuntimeException(
-							"Unexpected error: ID's of two lops are same.");
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				throw new RuntimeException("Unexpected error: ID's of two lops are same.");
 		}
-
-		return 0; // should never be reached
 	}
 
 }

@@ -1147,7 +1147,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		for(TypedArgNoAssignContext paramCtx : ctx) {
 			com.ibm.bi.dml.parser.DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
 			String dataType = null;
-			String valueType = paramCtx.paramType.valueType().getText();
+			String valueType = null;
 			
 			if(paramCtx.paramType == null || paramCtx.paramType.dataType() == null 
 					|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) {
@@ -1170,6 +1170,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				return null;
 			}
 			
+			valueType = paramCtx.paramType.valueType().getText();
 			if(valueType.compareTo("int") == 0 || valueType.compareTo("integer") == 0
 				|| valueType.compareTo("Int") == 0 || valueType.compareTo("Integer") == 0) {
 				dataId.setValueType(ValueType.INT);

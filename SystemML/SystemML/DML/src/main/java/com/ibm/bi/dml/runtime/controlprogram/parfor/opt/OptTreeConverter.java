@@ -775,7 +775,7 @@ public class OptTreeConverter
 						{
 							ret.setDim1( mc1.numRows );
 							ret.setDim2( mc1.numColumns );
-							ret.setSparsity( mc1.nonZero /(  ret.getDim1() * ret.getDim2() ) ); //sparsity
+							ret.setSparsity( (double)mc1.nonZero /(  ret.getDim1() * ret.getDim2() ) ); //sparsity
 							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? 
 									            DataFormat.SPARSE : DataFormat.DENSE ); 
 							maxSize = mc1.numRows*mc1.numColumns;

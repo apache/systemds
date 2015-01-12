@@ -215,31 +215,47 @@ public class MapReduceTool
 		}
 	}
 
-	public static String getSubDirs(String dir) throws IOException {
+	/**
+	 * 
+	 * @param dir
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getSubDirs(String dir) 
+		throws IOException 
+	{
 		FileSystem fs = FileSystem.get(_rJob); 
 		FileStatus[] files = fs.listStatus(new Path(dir));
-		String ret = "";
+		StringBuilder sb = new StringBuilder();
 		for (FileStatus file : files) {
-			if (!ret.isEmpty())
-				ret += ",";
-			ret += file.getPath().toString();
+			if ( sb.length()>0 )
+				sb.append(",");
+			sb.append(file.getPath().toString());
 		}
-		return ret;
+		return sb.toString();
 	}
 
-	public static String getSubDirsIgnoreLogs(String dir) throws IOException {
+	/**
+	 * 
+	 * @param dir
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getSubDirsIgnoreLogs(String dir) 
+		throws IOException 
+	{
 		FileSystem fs = FileSystem.get(_rJob);
 		FileStatus[] files = fs.listStatus(new Path(dir));
-		String ret = "";
+		StringBuilder sb = new StringBuilder();
 		for (FileStatus file : files) {
 			String name = file.getPath().toString();
 			if (name.contains("_logs"))
 				continue;
-			if (!ret.isEmpty())
-				ret += ",";
-			ret += name;
+			if( sb.length()>0 )
+				sb.append(",");
+			sb.append(name);
 		}
-		return ret;
+		return sb.toString();
 	}
 	
 	/**
@@ -363,16 +379,21 @@ public class MapReduceTool
 		br.close();
 		return Boolean.parseBoolean(line);
 	}
-	public static String readStringFromHDFSFile(String filename) throws IOException {
+	public static String readStringFromHDFSFile(String filename) 
+		throws IOException 
+	{
 		BufferedReader br = setupInputFile(filename);
 		// handle multi-line strings in the HDFS file
-		String output = "", temp = "";
-		output = br.readLine();
-		while ( (temp = br.readLine()) != null ) {
-			output += "\n" + temp;
+		StringBuilder sb = new StringBuilder();
+		String line = null;
+		while ( (line = br.readLine()) != null ) {
+			sb.append(line);
+			sb.append("\n");
 		}
 		br.close();
-		return output;
+		
+		//return string without last character
+		return sb.substring(0, sb.length()-1);
 	}
 		
 	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {

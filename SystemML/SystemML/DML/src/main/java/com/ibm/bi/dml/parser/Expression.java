@@ -328,7 +328,7 @@ public abstract class Expression
 	public boolean equals(Object that)
 	{
 		//empty check for robustness
-		if( that == null )
+		if( that == null || !(that instanceof Expression) )
 			return false;
 		
 		Expression thatExpr = (Expression) that;

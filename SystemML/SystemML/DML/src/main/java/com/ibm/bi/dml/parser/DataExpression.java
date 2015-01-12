@@ -1948,15 +1948,23 @@ public class DataExpression extends DataIdentifier
 			}
 			else if (exists) {
 				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
-				retVal[0] = in.readLine();
-				// skip all commented lines
-				do {
-					retVal[1] = in.readLine();
-				} while ( retVal[1].charAt(0) == '%' );
-				
-				if ( !retVal[0].startsWith("%%") ) {
-					LOG.error(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
-					throw new LanguageException(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
+				try
+				{
+					retVal[0] = in.readLine();
+					// skip all commented lines
+					do {
+						retVal[1] = in.readLine();
+					} while ( retVal[1].charAt(0) == '%' );
+					
+					if ( !retVal[0].startsWith("%%") ) {
+						LOG.error(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
+						throw new LanguageException(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
+					}
+				}
+				finally
+				{
+					if( in != null )
+						in.close();
 				}
 			}
 			else {

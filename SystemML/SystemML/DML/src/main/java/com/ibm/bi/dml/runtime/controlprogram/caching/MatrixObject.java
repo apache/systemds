@@ -612,7 +612,7 @@ public class MatrixObject extends CacheableData
 		setEmpty();
 	}
 	
-	public void exportData()
+	public synchronized void exportData()
 		throws CacheException
 	{
 		exportData( -1 );
@@ -626,7 +626,7 @@ public class MatrixObject extends CacheableData
 	 * 
 	 * @throws CacheException 
 	 */
-	public void exportData( int replication )
+	public synchronized void exportData( int replication )
 		throws CacheException
 	{
 		exportData(_hdfsFileName, null, replication, null);
@@ -764,27 +764,40 @@ public class MatrixObject extends CacheableData
 		}
 	}
 
-	public boolean moveData(String fName, String outputFormat) throws CacheIOException {
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @return
+	 * @throws CacheIOException
+	 */
+	public synchronized boolean moveData(String fName, String outputFormat) 
+		throws CacheIOException 
+	{	
+		boolean ret = false;
 		
 		try
 		{
-				if ( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty()))
-					exportData(fName, outputFormat);
-				else if ( isEqualOutputFormat(outputFormat) ){
-					MapReduceTool.deleteFileIfExistOnHDFS(fName);
-					MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-					writeMetaData( fName, outputFormat, null );
-					MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
-				}
-				else {
-					return false;
-				}
-				return true;
+			if( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty())) 
+			{
+				exportData(fName, outputFormat);
+				ret = true;
+			}
+			else if( isEqualOutputFormat(outputFormat) )
+			{
+				MapReduceTool.deleteFileIfExistOnHDFS(fName);
+				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
+				writeMetaData( fName, outputFormat, null );
+				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
+				ret = true;
+			}				
 		}
 		catch (Exception e)
 		{
 			throw new CacheIOException ("Move to " + fName + " failed.", e);
 		}
+		
+		return ret;
 	}
 	
 	// *********************************************
@@ -833,7 +846,7 @@ public class MatrixObject extends CacheableData
 		return _partitionSize;
 	}
 	
-	public void setInMemoryPartition(MatrixBlock block)
+	public synchronized void setInMemoryPartition(MatrixBlock block)
 	{
 		_partitionInMemory = block;
 	}
@@ -1009,7 +1022,7 @@ public class MatrixObject extends CacheableData
 	
 
 	@Override
-	public boolean isBlobPresent()
+	protected boolean isBlobPresent()
 	{
 		return (_data != null);
 	}

@@ -1038,6 +1038,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							case DOUBLE:  dataObj = new DoubleObject(var,-1d);    break;
 							case STRING:  dataObj = new StringObject(var,"-1");   break;
 						}
+						break;
 					case MATRIX:
 						//currently we do not create any unscoped matrix object outputs
 						//because metadata (e.g., outputinfo) not known at this place.

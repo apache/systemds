@@ -1129,30 +1129,9 @@ public class MRJobConfiguration
 		return s.toString();
 	}
 	
-	private static String getCSVString(int[] arr) {
-		if ( arr == null || arr.length == 0 )
-			return "";
-		
-		StringBuilder s = new StringBuilder();
-		s.append(arr[0]);
-		for(int i=1; i < arr.length; i++) { 
-			s.append(",");
-			s.append(arr[i]);
-		}
-		
-		return s.toString();
-	}
 	
 	public static void setInputPartitioningInfo(JobConf job, PDataPartitionFormat[] pformats) {
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, MRJobConfiguration.getCSVString(pformats));
-	}
-	
-	private static boolean[] csv2boolean(String s) {
-		String[] parts = s.split(",");
-		boolean[] b = new boolean[parts.length];
-		for(int i=0; i < parts.length; i++)
-			b[i] = Boolean.parseBoolean(parts[i]);
-		return b;
 	}
 
 	private static PDataPartitionFormat[] csv2PFormat(String s) {
@@ -1162,15 +1141,6 @@ public class MRJobConfiguration
 			pformats[i] = PDataPartitionFormat.parsePDataPartitionFormat(parts[i]);
 		}
 		return pformats;
-	}
-
-	private static int[] csv2int(String s) {
-		String[] parts = s.split(",");
-		int[] arr = new int[parts.length];
-		for(int i=0; i < parts.length; i++) {
-			arr[i] = Integer.parseInt(parts[i]);
-		}
-		return arr;
 	}
 
 	public static PDataPartitionFormat[] getInputPartitionFormats(JobConf job) {
@@ -1849,24 +1819,32 @@ public class MRJobConfiguration
 	
 	private static String getIndexesString(HashSet<Byte> indexes)
 	{
-		String ret = "";
 		if(indexes==null || indexes.isEmpty())
-			return ret;
-
-		for(Byte ind: indexes)
-			ret += (ind + Instruction.INSTRUCTION_DELIM);
-		return ret.substring(0, ret.length()-1);//remove the last delim
+			return "";
+		
+		StringBuilder sb = new StringBuilder();
+		for(Byte ind: indexes) {
+			sb.append(ind);
+			sb.append(Instruction.INSTRUCTION_DELIM);
+		}
+		
+		//return string without last character
+		return sb.substring(0, sb.length()-1);
 	}
 	
 	private static String getIndexesString(byte[] indexes)
 	{
-		String ret = "";
 		if(indexes==null || indexes.length==0)
-			return ret;
+			return "";
 		
-		for(byte ind: indexes)
-			ret+=(ind+Instruction.INSTRUCTION_DELIM);
-		return ret.substring(0, ret.length()-1);//remove the last delim
+		StringBuilder sb = new StringBuilder();
+		for(Byte ind: indexes) {
+			sb.append(ind);
+			sb.append(Instruction.INSTRUCTION_DELIM);
+		}
+		
+		//return string without last character
+		return sb.substring(0, sb.length()-1);
 	}
 
 	public static void setMapFunctionInputMatrixIndexes(JobConf job, byte[] realIndexes) 

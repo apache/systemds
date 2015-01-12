@@ -2667,7 +2667,7 @@ public class Dag<N extends Lop>
 				&& node.getExecLocation() != ExecLocation.ControlProgram) {
 			if (!node_v.contains(node)) {
 				node_v.add(node);
-				if (node != null && LOG.isTraceEnabled())
+				if(LOG.isTraceEnabled())
 					LOG.trace("      Added child " + node.toString());
 			}
 

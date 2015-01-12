@@ -137,7 +137,7 @@ public abstract class CacheableData extends Data
 	 * reference points to it;
 	 * <code>false</code> if the blob reference is <code>null</code>.
 	 */
-	public abstract boolean isBlobPresent();
+	protected abstract boolean isBlobPresent();
 	
 	/**
 	 * Low-level cache I/O method that physically evicts the data blob from

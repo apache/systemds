@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import java.lang.ref.WeakReference;
 public class PerfTestMemoryObserver implements Runnable
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final int MEASURE_INTERVAL = 50; //in ms 
@@ -42,7 +42,7 @@ public class PerfTestMemoryObserver implements Runnable
 	 */
 	public void measureStartMem()
 	{
-		forceGC( true );
+		forceGC();
 		_startMem =  Runtime.getRuntime().totalMemory()
 		           - Runtime.getRuntime().freeMemory();
 	}
@@ -72,7 +72,7 @@ public class PerfTestMemoryObserver implements Runnable
 		{
 			while( !_stopped )
 			{
-				forceGC( true );
+				forceGC();
 				long value =   Runtime.getRuntime().totalMemory()
 		                     - Runtime.getRuntime().freeMemory(); 
 				
@@ -93,7 +93,7 @@ public class PerfTestMemoryObserver implements Runnable
 	 */
 	public static double getUsedMemory()
 	{
-		forceGC( true );
+		forceGC();
 		return  ( Runtime.getRuntime().totalMemory()
 		           - Runtime.getRuntime().freeMemory() );
 	}
@@ -102,22 +102,12 @@ public class PerfTestMemoryObserver implements Runnable
 	 * 
 	 * @param force
 	 */
-	private static void forceGC( boolean force )
+	private static void forceGC()
 	{
-		if( force )
-		{
-			//request gc until weak reference is eliminated by gc
-			Object o = new Object();
-			WeakReference<Object> ref = new WeakReference<Object>(o); //collected, everytime gc is actually invoked
-			while((o=ref.get())!= null) 
-				System.gc();
-		}
-		else
-		{
-			System.gc(); System.gc(); System.gc(); System.gc();
-			System.gc(); System.gc(); System.gc(); System.gc();
-			System.gc(); System.gc(); System.gc(); System.gc();
-			System.gc(); System.gc(); System.gc(); System.gc();	
-		}
+		//request gc until weak reference is eliminated by gc
+		Object o = new Object();
+		WeakReference<Object> ref = new WeakReference<Object>(o); //collected, everytime gc is actually invoked
+		while((o=ref.get())!= null) 
+			System.gc(); //called on purpose, no production use.
 	}
 }

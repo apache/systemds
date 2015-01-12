@@ -542,7 +542,8 @@ public class MatrixBlock extends MatrixValue
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
-					if(sparseRows[r]==null) continue;
+					if(sparseRows[r]==null) 
+						continue;
 					double[] container=sparseRows[r].getValueContainer();
 					for(int j=0; j<sparseRows[r].size(); j++)
 						ret.add(container[j]);
@@ -578,7 +579,8 @@ public class MatrixBlock extends MatrixValue
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
-					if(sparseRows[r]==null) continue;
+					if(sparseRows[r]==null) 
+						continue;
 					double[] container=sparseRows[r].getValueContainer();
 					for(int j=0; j<sparseRows[r].size(); j++)
 					{
@@ -1184,12 +1186,14 @@ public class MatrixBlock extends MatrixValue
 		
 		for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 		{
-			if(sparseRows[r]==null) continue;
+			if(sparseRows[r]==null) 
+				continue;
 			int[] cols=sparseRows[r].getIndexContainer();
 			double[] values=sparseRows[r].getValueContainer();
 			for(int i=0; i<sparseRows[r].size(); i++)
 			{
-				if(values[i]==0) continue;
+				if(values[i]==0) 
+					continue;
 				denseBlock[r*clen+cols[i]]=values[i];
 				nonZeros++;
 			}
@@ -1395,7 +1399,8 @@ public class MatrixBlock extends MatrixValue
 		int start=0;
 		for(int r=0; r<Math.min(that.sparseRows.length, rlen); r++, start+=clen)
 		{
-			if(that.sparseRows[r]==null) continue;
+			if(that.sparseRows[r]==null) 
+				continue;
 			double[] values=that.sparseRows[r].getValueContainer();
 			int[] cols=that.sparseRows[r].getIndexContainer();
 			for(int i=0; i<that.sparseRows[r].size(); i++)
@@ -1836,7 +1841,7 @@ public class MatrixBlock extends MatrixValue
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
 			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
-			nonZeros = mbin.readSparseRows(rlen, sparseRows);			
+			nonZeros = mbin.readSparseRows(rlen, sparseRows);		
 		}
 		else //default deserialize
 		{
@@ -2497,7 +2502,8 @@ public class MatrixBlock extends MatrixValue
 			nonZeros=0;
 			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 			{
-				if(sparseRows[r]==null) continue;
+				if(sparseRows[r]==null) 
+					continue;
 				double[] values=sparseRows[r].getValueContainer();
 				int[] cols=sparseRows[r].getIndexContainer();
 				int pos=0;
@@ -2617,7 +2623,8 @@ public class MatrixBlock extends MatrixValue
 			nonZeros=0;
 			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 			{
-				if(sparseRows[r]==null) continue;
+				if(sparseRows[r]==null) 
+					continue;
 				double[] values=sparseRows[r].getValueContainer();
 				int[] cols=sparseRows[r].getIndexContainer();
 				int pos=0;
@@ -3032,7 +3039,8 @@ public class MatrixBlock extends MatrixValue
 				{
 					for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 					{
-						if(sparseRows[r]==null) continue;
+						if(sparseRows[r]==null) 
+							continue;
 						int[] cols=sparseRows[r].getIndexContainer();
 						double[] values=sparseRows[r].getValueContainer();
 						for(int i=0; i<sparseRows[r].size(); i++)
@@ -3162,7 +3170,8 @@ public class MatrixBlock extends MatrixValue
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
-					if(sparseRows[r]==null) continue;
+					if(sparseRows[r]==null) 
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
@@ -3583,25 +3592,24 @@ public class MatrixBlock extends MatrixValue
 	
 	private void sliceHelp(int r, IndexRange range, int colCut, MatrixBlock left, MatrixBlock right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
 	{
-	//	if(left==null || right==null)
-	//		throw new RuntimeException("left = "+left+", and right = "+right);
-		if(sparseRows[r]==null) return;
-		//System.out.println("row "+r+"\t"+sparseRows[r]);
+		if(sparseRows[r]==null) 
+			return;
+		
 		int[] cols=sparseRows[r].getIndexContainer();
 		double[] values=sparseRows[r].getValueContainer();
 		int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
-		//System.out.println("start: "+start);
-		if(start<0) return;
+		if(start<0) 
+			return;
 		int end=sparseRows[r].searchIndexesFirstLTE((int)range.colEnd);
-		//System.out.println("end: "+end);
-		if(end<0 || start>end) return;
-		for(int i=start; i<=end; i++)
-		{
+		if(end<0 || start>end) 
+			return;
+		
+		//actual slice operation
+		for(int i=start; i<=end; i++) {
 			if(cols[i]<colCut)
 				left.appendValue(r+rowOffset, cols[i]+normalBlockColFactor-colCut, values[i]);
 			else
 				right.appendValue(r+rowOffset, cols[i]-colCut, values[i]);
-		//	System.out.println("set "+r+", "+cols[i]+": "+values[i]);
 		}
 	}
 	
@@ -3742,7 +3750,8 @@ public class MatrixBlock extends MatrixValue
 				}
 				for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
 				{
-					if(sparseRows[r]==null) continue;
+					if(sparseRows[r]==null) 
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					
@@ -3751,7 +3760,8 @@ public class MatrixBlock extends MatrixValue
 						int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
 						if(start<0) continue;
 						int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
-						if(end<0 || start>end) continue;
+						if(end<0 || start>end) 
+							continue;
 						
 						for(int i=start; i<end; i++)
 						{
@@ -3815,75 +3825,6 @@ public class MatrixBlock extends MatrixValue
 		return result;
 	}
 	
-	//This function is not really used
-/*	public void zeroOutOperationsInPlace(IndexRange range, boolean complementary)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//do not change the format of the block
-		if(sparse)
-		{
-			if(sparseRows==null) return;
-			
-			if(complementary)//if selection, need to remove unwanted rows
-			{
-				for(int r=0; r<Math.min((int)range.rowStart, sparseRows.length); r++)
-					if(sparseRows[r]!=null)
-					{
-						nonZeros-=sparseRows[r].size();
-						sparseRows[r].reset();
-					}
-				for(int r=Math.min((int)range.rowEnd+1, sparseRows.length-1); r<Math.min(rlen, sparseRows.length); r++)
-					if(sparseRows[r]!=null)
-					{
-						nonZeros-=sparseRows[r].size();
-						sparseRows[r].reset();
-					}
-			}
-			
-			for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
-			{
-				if(sparseRows[r]==null) continue;
-				int oldsize=sparseRows[r].size();
-				if(complementary)//if selection
-					sparseRows[r].deleteIndexComplementaryRange((int)range.colStart, (int)range.rowEnd);
-				else //if zeroout
-					sparseRows[r].deleteIndexRange((int)range.colStart, (int)range.rowEnd);
-				nonZeros-=(oldsize-sparseRows[r].size());
-			}
-			
-		}else
-		{		
-			if(denseBlock==null) return;
-			int start=(int)range.rowStart*clen;
-			
-			if(complementary)//if selection, need to remove unwanted rows
-			{
-				nonZeros=0;
-				Arrays.fill(denseBlock, 0, start, 0);
-				Arrays.fill(denseBlock, ((int)range.rowEnd+1)*clen, rlen*clen, 0);
-				for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
-				{
-					Arrays.fill(denseBlock, start, start+(int) range.colStart, 0);
-					Arrays.fill(denseBlock, start+(int)range.colEnd+1, start+clen, 0);
-					for(int c=(int) range.colStart; c<=range.colEnd; c++)
-						if(denseBlock[start+c]!=0)
-							nonZeros++;		
-					start+=clen;
-				}
-			}else
-			{
-				for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
-				{
-					for(int c=(int) range.colStart; c<=range.colEnd; c++)
-						if(denseBlock[start+c]!=0)
-							nonZeros--;		
-					Arrays.fill(denseBlock, start+(int) range.colStart, start+(int)range.colEnd+1, 0);
-					start+=clen;
-				}
-			}
-		}
-	}*/
-	
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -3903,12 +3844,20 @@ public class MatrixBlock extends MatrixValue
 		{
 			switch(op.aggOp.correctionLocation)
 			{
-			case LASTROW: tempCellIndex.row++; break;
-			case LASTCOLUMN: tempCellIndex.column++; break;
-			case LASTTWOROWS: tempCellIndex.row+=2; break;
-			case LASTTWOCOLUMNS: tempCellIndex.column+=2; break;
-			default:
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
+				case LASTROW: 
+					tempCellIndex.row++; 
+					break;
+				case LASTCOLUMN: 
+					tempCellIndex.column++; 
+					break;
+				case LASTTWOROWS: 
+					tempCellIndex.row+=2; 
+					break;
+				case LASTTWOCOLUMNS: 
+					tempCellIndex.column+=2; 
+					break;
+				default:
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}
 		}
 		if(result==null)
@@ -3949,7 +3898,8 @@ public class MatrixBlock extends MatrixValue
 			{
 				for(r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
-					if(sparseRows[r]==null) continue;
+					if(sparseRows[r]==null) 
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
@@ -4177,11 +4127,10 @@ public class MatrixBlock extends MatrixValue
 		{
 			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 			{
-				if(sparseRows[r]==null) continue;
-				//int[] cols=sparseRows[r].getIndexContainer();
+				if(sparseRows[r]==null) 
+					continue;
 				double[] values=sparseRows[r].getValueContainer();
-				for(int i=0; i<sparseRows[r].size(); i++)
-				{
+				for(int i=0; i<sparseRows[r].size(); i++) {
 					op.fn.execute(cmobj, values[i]);
 					nzcount++;
 				}
@@ -4387,8 +4336,8 @@ public class MatrixBlock extends MatrixValue
 			if(sparse) {
 				if(sparseRows!=null) {
 					for(int r=0; r<Math.min(rlen, sparseRows.length); r++) {
-						if(sparseRows[r]==null) continue;
-						//int[] cols=sparseRows[r].getIndexContainer();
+						if(sparseRows[r]==null) 
+							continue;
 						double[] values=sparseRows[r].getValueContainer();
 						for(int i=0; i<sparseRows[r].size(); i++) {
 							tdw[ind][0] = values[i];
@@ -5516,51 +5465,58 @@ public class MatrixBlock extends MatrixValue
 	@Override
 	public String toString()
 	{
-		String ret="sparse? = "+sparse+"\n" ;
-		ret+="nonzeros = "+nonZeros+"\n";
-		ret+="size: "+rlen+" X "+clen+"\n";
-		boolean toprint=false;
-		if(!toprint)
-			return "sparse? = "+sparse+"\nnonzeros = "+nonZeros+"\nsize: "+rlen+" X "+clen+"\n";
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("sparse? = ");
+		sb.append(sparse);
+		sb.append("\n");
+		
+		sb.append("nonzeros = ");
+		sb.append(nonZeros);
+		sb.append("\n");
+		
+		sb.append("size: ");
+		sb.append(rlen);
+		sb.append(" X ");
+		sb.append(clen);
+		sb.append("\n");
+		
 		if(sparse)
 		{
 			int len=0;
 			if(sparseRows!=null)
-				len=Math.min(rlen, sparseRows.length);
+				len = Math.min(rlen, sparseRows.length);
 			int i=0;
 			for(; i<len; i++)
 			{
-				ret+="row +"+i+": "+sparseRows[i]+"\n";
-				if(sparseRows[i]!=null)
-				{
-					for(int j=0; j<sparseRows[i].size(); j++)
-						if(sparseRows[i].getValueContainer()[j]!=0.0)
-							toprint=true;
-				}
+				sb.append("row +");
+				sb.append(i);
+				sb.append(": ");
+				sb.append(sparseRows[i]);
+				sb.append("\n");
 			}
 			for(; i<rlen; i++)
 			{
-				ret+="row +"+i+": null\n";
+				sb.append("row +");
+				sb.append(i);
+				sb.append(": null\n");
 			}
-		}else
+		}
+		else
 		{
 			if(denseBlock!=null)
 			{
-				int start=0;
-				for(int i=0; i<rlen; i++)
-				{
-					for(int j=0; j<clen; j++)
-					{
-						ret+=this.denseBlock[start+j]+"\t";
-						if(this.denseBlock[start+j]!=0.0)
-							toprint=true;
+				for(int i=0, ix=0; i<rlen; i++, ix+=clen) {
+					for(int j=0; j<clen; j++) {
+						sb.append(this.denseBlock[ix+j]);
+						sb.append("\t");
 					}
-					ret+="\n";
-					start+=clen;
+					sb.append("\n");
 				}
 			}
 		}
-		return ret;
+		
+		return sb.toString();
 	}
 
 

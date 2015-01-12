@@ -2041,28 +2041,22 @@ public class ParForStatementBlock extends ForStatementBlock
 		@Override
 		public boolean equals( Object o2 )
 		{
-			boolean ret = true;
-			LinearFunction f2;
-			
-			if( o2 == null)
-			{
-				ret = false;
-			}
-			else
-			{
-				f2 = (LinearFunction)o2;
-				ret &= ( _a == f2._a );
-				ret &= ( _b.length == f2._b.length );
+			if( o2 == null || !(o2 instanceof LinearFunction)  )
+				return false;
 				
-				if( ret )
+			LinearFunction f2 = (LinearFunction)o2;
+			boolean ret = true;
+			ret &= ( _a == f2._a );
+			ret &= ( _b.length == f2._b.length );
+			
+			if( ret )
+			{
+				for( int i=0; i<_b.length; i++ )
 				{
-					for( int i=0; i<_b.length; i++ )
-					{
-						ret &= (_b[i] == f2._b[i] );
-						ret &= (_vars[i].equals(f2._vars[i]) 
-								||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
-								||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
-					}
+					ret &= (_b[i] == f2._b[i] );
+					ret &= (_vars[i].equals(f2._vars[i]) 
+							||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
+							||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
 				}
 			}
 			

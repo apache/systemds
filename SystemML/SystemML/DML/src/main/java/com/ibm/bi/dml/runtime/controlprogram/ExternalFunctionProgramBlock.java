@@ -792,7 +792,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 			if (returnFunc.getFunctionOutput(i).getType() == FunctionParameterType.Object) {
 				if (!tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Object))) {
-					new PackageRuntimeException(
+					throw new PackageRuntimeException(
 							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 

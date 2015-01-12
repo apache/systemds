@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,12 +10,14 @@ package com.ibm.bi.dml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
+
 
 
 public class IndexedIdentifier extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// stores the expressions containing the ranges for the 
@@ -86,7 +88,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_rowLowerBound instanceof IntIdentifier) 
 				rowLB_1_1 = ((IntIdentifier)_rowLowerBound).getValue();
 			else 
-				rowLB_1_1 = Math.round(((DoubleIdentifier)_rowLowerBound).getValue());
+				rowLB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_rowLowerBound).getValue());
 				
 			if (rowLB_1_1 < 1){
 				LOG.error(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
@@ -124,7 +126,7 @@ public class IndexedIdentifier extends DataIdentifier
 					if (constValue instanceof IntIdentifier) 
 						tempRowLB = ((IntIdentifier)constValue).getValue();
 					else
-						tempRowLB = Math.round(((DoubleIdentifier)constValue).getValue());
+						tempRowLB = UtilFunctions.toLong(((DoubleIdentifier)constValue).getValue());
 							
 					if (tempRowLB < 1){
 						LOG.info(this.printInfoLocation() + "lower-bound row index " + identifierName + " initialized to "  + tempRowLB + " May cause runtime exception (runtime value must be >= 1)");	
@@ -166,7 +168,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_rowLowerBound instanceof IntIdentifier) 
 				rowLB_1 = ((IntIdentifier)_rowLowerBound).getValue();
 			else
-				rowLB_1 = Math.round(((DoubleIdentifier)_rowLowerBound).getValue());
+				rowLB_1 = UtilFunctions.toLong(((DoubleIdentifier)_rowLowerBound).getValue());
 		}
 			
 		
@@ -181,7 +183,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_rowUpperBound instanceof IntIdentifier) 
 				rowUB_1_1 = ((IntIdentifier)_rowUpperBound).getValue();
 			else 
-				rowUB_1_1 = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
+				rowUB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_rowUpperBound).getValue());
 				
 			if (rowUB_1_1 < 1){
 				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
@@ -219,7 +221,7 @@ public class IndexedIdentifier extends DataIdentifier
 					if (constValue instanceof IntIdentifier) 
 						tempRowUB = ((IntIdentifier)constValue).getValue();
 					else
-						tempRowUB = Math.round(((DoubleIdentifier)constValue).getValue());
+						tempRowUB = UtilFunctions.toLong(((DoubleIdentifier)constValue).getValue());
 							
 					if (tempRowUB < 1){
 						LOG.info(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (runtime value must be >= 1)");	
@@ -278,7 +280,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_colLowerBound instanceof IntIdentifier) 
 				colLB_1_1 = ((IntIdentifier)_colLowerBound).getValue();
 			else 
-				colLB_1_1 = Math.round(((DoubleIdentifier)_colLowerBound).getValue());
+				colLB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_colLowerBound).getValue());
 				
 			if (colLB_1_1 < 1){
 				LOG.error(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
@@ -314,7 +316,7 @@ public class IndexedIdentifier extends DataIdentifier
 					if (constValue instanceof IntIdentifier) 
 						tempColLB = ((IntIdentifier)constValue).getValue();
 					else
-						tempColLB = Math.round(((DoubleIdentifier)constValue).getValue());
+						tempColLB = UtilFunctions.toLong(((DoubleIdentifier)constValue).getValue());
 							
 					if (tempColLB < 1){
 						LOG.info(this.printInfoLocation() + "lower-bound column index " + identifierName + " initialized to "  + tempColLB + " May cause runtime exception (runtime value must be >= 1)");	
@@ -355,7 +357,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_colLowerBound instanceof IntIdentifier) 
 				colLB_1 = ((IntIdentifier)_colLowerBound).getValue();
 			else
-				colLB_1 = Math.round(((DoubleIdentifier)_colLowerBound).getValue());
+				colLB_1 = UtilFunctions.toLong(((DoubleIdentifier)_colLowerBound).getValue());
 		}
 			
 		
@@ -370,7 +372,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_colUpperBound instanceof IntIdentifier) 
 				colUB_1_1 = ((IntIdentifier)_colUpperBound).getValue();
 			else 
-				colUB_1_1 = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
+				colUB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_colUpperBound).getValue());
 				
 			if (colUB_1_1 < 1){
 				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
@@ -411,7 +413,7 @@ public class IndexedIdentifier extends DataIdentifier
 					if (constValue instanceof IntIdentifier) 
 						tempColUB = ((IntIdentifier)constValue).getValue();
 					else
-						tempColUB = Math.round(((DoubleIdentifier)constValue).getValue());
+						tempColUB = UtilFunctions.toLong(((DoubleIdentifier)constValue).getValue());
 							
 					if (tempColUB < 1){
 						LOG.info(this.printInfoLocation() + "upper-bound column index " 
@@ -471,7 +473,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_rowUpperBound instanceof IntIdentifier)
 				updatedRowDim = ((IntIdentifier)_rowUpperBound).getValue();
 			else if (_rowUpperBound instanceof DoubleIdentifier)
-				updatedRowDim = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
+				updatedRowDim = UtilFunctions.toLong(((DoubleIdentifier)_rowUpperBound).getValue());
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> rowCount - lower bound + 1
@@ -480,7 +482,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_rowLowerBound instanceof IntIdentifier)
 				updatedRowDim = rowCount - ((IntIdentifier)_rowLowerBound).getValue() + 1;
 			else if (_rowLowerBound instanceof DoubleIdentifier)
-				updatedRowDim = Math.round(rowCount - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+				updatedRowDim = UtilFunctions.toLong(rowCount - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
 		}
 		// CASE: (lower == constant) && (upper == constant) --> upper bound - lower bound + 1
 		else if (isConst_rowLowerBound && isConst_rowUpperBound) {
@@ -488,13 +490,13 @@ public class IndexedIdentifier extends DataIdentifier
 				updatedRowDim = ((IntIdentifier)_rowUpperBound).getValue() - ((IntIdentifier)_rowLowerBound).getValue() + 1;
 			
 			else if (_rowLowerBound instanceof DoubleIdentifier && _rowUpperBound instanceof DoubleIdentifier)
-				updatedRowDim = Math.round( ((DoubleIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+				updatedRowDim = UtilFunctions.toLong( ((DoubleIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
 			
 			else if (_rowLowerBound instanceof IntIdentifier && _rowUpperBound instanceof DoubleIdentifier)
-				updatedRowDim = Math.round( ((DoubleIdentifier)_rowUpperBound).getValue() - ((IntIdentifier)_rowLowerBound).getValue() + 1);
+				updatedRowDim = UtilFunctions.toLong( ((DoubleIdentifier)_rowUpperBound).getValue() - ((IntIdentifier)_rowLowerBound).getValue() + 1);
 			
 			else if (_rowLowerBound instanceof DoubleIdentifier && _rowUpperBound instanceof IntIdentifier)
-				updatedRowDim = Math.round( ((IntIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+				updatedRowDim = UtilFunctions.toLong( ((IntIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
 			
 		}
 		
@@ -521,7 +523,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_colUpperBound instanceof IntIdentifier)
 				updatedColDim = ((IntIdentifier)_colUpperBound).getValue();
 			else if (_colUpperBound instanceof DoubleIdentifier)
-				updatedColDim = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
+				updatedColDim = UtilFunctions.toLong(((DoubleIdentifier)_colUpperBound).getValue());
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> colCount - lower bound + 1
@@ -530,7 +532,7 @@ public class IndexedIdentifier extends DataIdentifier
 			if (_colLowerBound instanceof IntIdentifier)
 				updatedColDim = colCount - ((IntIdentifier)_colLowerBound).getValue() + 1;
 			else if (_colLowerBound instanceof DoubleIdentifier)
-				updatedColDim = Math.round(colCount - ((IntIdentifier)_colLowerBound).getValue() + 1);
+				updatedColDim = UtilFunctions.toLong(colCount - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
 		}
 		
 		// CASE: (lower == constant) && (upper == constant) --> upper bound - lower bound + 1
@@ -539,13 +541,13 @@ public class IndexedIdentifier extends DataIdentifier
 				updatedColDim = ((IntIdentifier)_colUpperBound).getValue() - ((IntIdentifier)_colLowerBound).getValue() + 1;
 			
 			else if (_colLowerBound instanceof DoubleIdentifier && _colUpperBound instanceof DoubleIdentifier)
-				updatedColDim = Math.round( ((DoubleIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
+				updatedColDim = UtilFunctions.toLong( ((DoubleIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
 			
 			else if (_colLowerBound instanceof IntIdentifier && _colUpperBound instanceof DoubleIdentifier)
-				updatedColDim = Math.round( ((DoubleIdentifier)_colUpperBound).getValue() - ((IntIdentifier)_colLowerBound).getValue() + 1);
+				updatedColDim = UtilFunctions.toLong( ((DoubleIdentifier)_colUpperBound).getValue() - ((IntIdentifier)_colLowerBound).getValue() + 1);
 			
 			else if (_colLowerBound instanceof DoubleIdentifier && _colUpperBound instanceof IntIdentifier)
-				updatedColDim = Math.round( ((IntIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
+				updatedColDim = UtilFunctions.toLong( ((IntIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
 			
 		}
 		

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 public class Matrix extends FunctionParameter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final long serialVersionUID = -1058329938431848909L;
@@ -172,19 +172,24 @@ public class Matrix extends FunctionParameter
 				FastStringTokenizer st = new FastStringTokenizer(' ');
 				for (String file : files) 
 				{
-					FSDataInputStream inStrm;
-					inStrm = HDFSFileManager.getInputStreamStatic(file);
-					BufferedReader br = new BufferedReader(new InputStreamReader(
-							inStrm));
-	
-					while ((line = br.readLine()) != null) 
+					FSDataInputStream inStrm = HDFSFileManager.getInputStreamStatic(file);
+					BufferedReader br = new BufferedReader(new InputStreamReader(inStrm));
+					try
 					{
-						st.reset( line ); //reset tokenizer
-						int i = st.nextInt() - 1;
-						int j = st.nextInt() - 1;
-						double val = st.nextDouble();
-	
-						arr[ i ][ j ] = val;
+						while ((line = br.readLine()) != null) 
+						{
+							st.reset( line ); //reset tokenizer
+							int i = st.nextInt() - 1;
+							int j = st.nextInt() - 1;
+							double val = st.nextDouble();
+		
+							arr[ i ][ j ] = val;
+						}
+					}
+					finally
+					{
+						if( br != null )
+							br.close();
 					}
 				}
 			} 

@@ -393,16 +393,16 @@ public class DMLScript
 				if(argPieces.length < 2)
 					throw new LanguageException("for -nvargs option, elements in arg list must be named and have form argName=argValue");
 				String argName = argPieces[0];
-				String argValue = new String();
+				StringBuilder sb = new StringBuilder();
 				for (int jj=1; jj < argPieces.length; jj++){
-					argValue += argPieces[jj]; 
+					sb.append(argPieces[jj]); 
 				}
 				
 				String varNameRegex = "^[a-zA-Z]([a-zA-Z0-9_])*$";
 				if (!argName.matches(varNameRegex))
 					throw new LanguageException("argName " + argName + " must be a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
 					
-				argMap.put("$"+argName,argValue);
+				argMap.put("$"+argName,sb.toString());
 			}
 			else 
 			{

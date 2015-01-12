@@ -47,9 +47,9 @@ public abstract class Hop
 	
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
-	public static boolean BREAKONSCALARS = false;
-	public static boolean SPLITLARGEMATRIXMULT = true;
-	public static long CPThreshold = 2000;
+	public static final boolean BREAKONSCALARS = false;
+	public static final boolean SPLITLARGEMATRIXMULT = true;
+	public static final long CPThreshold = 2000;
 	
 	public enum Kind {
 		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, DataGenOp, GenericFunctionOp, 

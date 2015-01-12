@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,6 +29,9 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
@@ -99,7 +102,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class PerfTestTool 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//public parameters (used for estimation)
@@ -154,6 +157,8 @@ public class PerfTestTool
 	private static HashMap<Integer, Integer[]>     _regInst_IDTestDef = null; 
 	private static HashMap<Integer, Boolean>       _regInst_IDVectors = null;
 	private static HashMap<Integer, IOSchema>      _regInst_IDIOSchema = null;
+	
+	protected static final Log LOG = LogFactory.getLog(PerfTestTool.class.getName());
 	
 	
 	private static Integer[] _defaultConf  = null;
@@ -370,7 +375,7 @@ public class PerfTestTool
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
+			LOG.error("Failed to run performance test.", ex);
 		}
 		
 		return ret;
@@ -1443,16 +1448,24 @@ public class PerfTestTool
 		//read DML template
 		StringBuilder buffer = new StringBuilder();
 		BufferedReader br = new BufferedReader( new FileReader(new File( dmlname )) );
-		String line = "";
-		while( (line=br.readLine()) != null )
+	
+		try
 		{
-			buffer.append(line);
-			buffer.append("\n");
+			String line = null;
+			while( (line=br.readLine()) != null )
+			{
+				buffer.append(line);
+				buffer.append("\n");
+			}
 		}
-		br.close();
-		String template = buffer.toString();
+		finally
+		{
+			if( br != null )
+				br.close();
+		}
 		
 		//replace parameters
+		String template = buffer.toString();
 		template = template.replaceAll("%numModels%", String.valueOf(models));
 		template = template.replaceAll("%numRows%", String.valueOf(rows));
 		template = template.replaceAll("%numCols%", String.valueOf(cols));
@@ -1461,8 +1474,14 @@ public class PerfTestTool
 		// write temp DML file
 		File fout = new File(dmltmpname);
 		FileOutputStream fos = new FileOutputStream(fout);
-		fos.write(template.getBytes());
-		fos.close();
+		try {
+			fos.write(template.getBytes());
+		}
+		finally
+		{
+			if( fos != null )
+				fos.close();
+		}
 		
 		// execute DML script
 		DMLScript.main(new String[] { "-f", dmltmpname });
@@ -1593,46 +1612,53 @@ public class PerfTestTool
 		XMLInputFactory xif = XMLInputFactory.newInstance();
 		XMLStreamReader xsr = xif.createXMLStreamReader( fis );
 		
-		int e = xsr.nextTag(); // profile start
-		
-		while( true ) //read all instructions
+		try
 		{
-			e = xsr.nextTag(); // instruction start
-			if( e == XMLStreamConstants.END_ELEMENT )
-				break; //reached profile end tag
+			int e = xsr.nextTag(); // profile start
 			
-			//parse instruction
-			int ID = Integer.parseInt( xsr.getAttributeValue(null, XML_ID) );
-			//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", Lops.OPERAND_DELIMITOR);
-			HashMap<Integer, CostFunction> tmp = new HashMap<Integer, CostFunction>();
-			_profile.put( ID, tmp );
-			
-			while( true )
+			while( true ) //read all instructions
 			{
-				e = xsr.nextTag(); // cost function start
+				e = xsr.nextTag(); // instruction start
 				if( e == XMLStreamConstants.END_ELEMENT )
-					break; //reached instruction end tag
+					break; //reached profile end tag
 				
-				//parse cost function
-				TestMeasure m = TestMeasure.valueOf( xsr.getAttributeValue(null, XML_MEASURE) );
-				TestVariable lv = TestVariable.valueOf( xsr.getAttributeValue(null, XML_VARIABLE) );
-				InternalTestVariable[] pv = parseTestVariables( xsr.getAttributeValue(null, XML_INTERNAL_VARIABLES) );
-				DataFormat df = DataFormat.valueOf( xsr.getAttributeValue(null, XML_DATAFORMAT) );
-				int tDefID = getTestDefID(m, lv, df, pv);
+				//parse instruction
+				int ID = Integer.parseInt( xsr.getAttributeValue(null, XML_ID) );
+				//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", Lops.OPERAND_DELIMITOR);
+				HashMap<Integer, CostFunction> tmp = new HashMap<Integer, CostFunction>();
+				_profile.put( ID, tmp );
 				
-				xsr.next(); //read characters
-				double[] params = parseParams(xsr.getText());
-				boolean multidim = _regTestDef.get(tDefID).getInternalVariables().length > 1;
-				CostFunction cf = new CostFunction( params, multidim );
-				tmp.put(tDefID, cf);
-			
-				xsr.nextTag(); // cost function end
-				//System.out.println("added cost function");
+				while( true )
+				{
+					e = xsr.nextTag(); // cost function start
+					if( e == XMLStreamConstants.END_ELEMENT )
+						break; //reached instruction end tag
+					
+					//parse cost function
+					TestMeasure m = TestMeasure.valueOf( xsr.getAttributeValue(null, XML_MEASURE) );
+					TestVariable lv = TestVariable.valueOf( xsr.getAttributeValue(null, XML_VARIABLE) );
+					InternalTestVariable[] pv = parseTestVariables( xsr.getAttributeValue(null, XML_INTERNAL_VARIABLES) );
+					DataFormat df = DataFormat.valueOf( xsr.getAttributeValue(null, XML_DATAFORMAT) );
+					int tDefID = getTestDefID(m, lv, df, pv);
+					
+					xsr.next(); //read characters
+					double[] params = parseParams(xsr.getText());
+					boolean multidim = _regTestDef.get(tDefID).getInternalVariables().length > 1;
+					CostFunction cf = new CostFunction( params, multidim );
+					tmp.put(tDefID, cf);
+				
+					xsr.nextTag(); // cost function end
+					//System.out.println("added cost function");
+				}
 			}
 		}
-		
-		xsr.close();
-		fis.close();
+		finally
+		{
+			if( xsr != null )
+				xsr.close();
+			if( fis != null )
+				fis.close();
+		}
 		
 		//mark profile as successfully read
 		_flagReadData = true;
@@ -1661,45 +1687,53 @@ public class PerfTestTool
 		//TODO use an alternative way for intentation
 		//xsw = new IndentingXMLStreamWriter( xsw ); //remove this line if no indenting required
 		
-		//write document content
-		xsw.writeStartDocument();
-		xsw.writeStartElement( XML_PROFILE );
-		xsw.writeAttribute(XML_DATE, String.valueOf(new Date()) );
-		
-		//foreach instruction (boundle of cost functions)
-		for( Entry<Integer,HashMap<Integer,CostFunction>> inst : _profile.entrySet() )
+		try
 		{
-			int instID = inst.getKey();
-			String instName = _regInst_IDNames.get( instID );
-					
-			xsw.writeStartElement( XML_INSTRUCTION ); 
-			xsw.writeAttribute(XML_ID, String.valueOf( instID ));
-			xsw.writeAttribute(XML_NAME, instName.replaceAll(Lop.OPERAND_DELIMITOR, " "));
+			//write document content
+			xsw.writeStartDocument();
+			xsw.writeStartElement( XML_PROFILE );
+			xsw.writeAttribute(XML_DATE, String.valueOf(new Date()) );
 			
-			//foreach testdef cost function
-			for( Entry<Integer,CostFunction> cfun : inst.getValue().entrySet() )
+			//foreach instruction (boundle of cost functions)
+			for( Entry<Integer,HashMap<Integer,CostFunction>> inst : _profile.entrySet() )
 			{
-				int tdefID = cfun.getKey();
-				PerfTestDef def = _regTestDef.get(tdefID);
-				CostFunction cf = cfun.getValue();
+				int instID = inst.getKey();
+				String instName = _regInst_IDNames.get( instID );
+						
+				xsw.writeStartElement( XML_INSTRUCTION ); 
+				xsw.writeAttribute(XML_ID, String.valueOf( instID ));
+				xsw.writeAttribute(XML_NAME, instName.replaceAll(Lop.OPERAND_DELIMITOR, " "));
 				
-				xsw.writeStartElement( XML_COSTFUNCTION );
-				xsw.writeAttribute( XML_ID, String.valueOf( tdefID ));
-				xsw.writeAttribute( XML_MEASURE, def.getMeasure().toString() );
-				xsw.writeAttribute( XML_VARIABLE, def.getVariable().toString() );
-				xsw.writeAttribute( XML_INTERNAL_VARIABLES, serializeTestVariables(def.getInternalVariables()) );
-				xsw.writeAttribute( XML_DATAFORMAT, def.getDataformat().toString() );
-				xsw.writeCharacters(serializeParams( cf.getParams() ));
-				xsw.writeEndElement();// XML_COSTFUNCTION
+				//foreach testdef cost function
+				for( Entry<Integer,CostFunction> cfun : inst.getValue().entrySet() )
+				{
+					int tdefID = cfun.getKey();
+					PerfTestDef def = _regTestDef.get(tdefID);
+					CostFunction cf = cfun.getValue();
+					
+					xsw.writeStartElement( XML_COSTFUNCTION );
+					xsw.writeAttribute( XML_ID, String.valueOf( tdefID ));
+					xsw.writeAttribute( XML_MEASURE, def.getMeasure().toString() );
+					xsw.writeAttribute( XML_VARIABLE, def.getVariable().toString() );
+					xsw.writeAttribute( XML_INTERNAL_VARIABLES, serializeTestVariables(def.getInternalVariables()) );
+					xsw.writeAttribute( XML_DATAFORMAT, def.getDataformat().toString() );
+					xsw.writeCharacters(serializeParams( cf.getParams() ));
+					xsw.writeEndElement();// XML_COSTFUNCTION
+				}
+				
+				xsw.writeEndElement(); //XML_INSTRUCTION
 			}
 			
-			xsw.writeEndElement(); //XML_INSTRUCTION
+			xsw.writeEndElement();//XML_PROFILE
+			xsw.writeEndDocument();
 		}
-		
-		xsw.writeEndElement();//XML_PROFILE
-		xsw.writeEndDocument();
-		xsw.close();
-		fos.close();
+		finally
+		{
+			if( xsw != null )
+				xsw.close();
+			if( fos != null )
+				fos.close();
+		}
 	}
 
 	
@@ -1712,14 +1746,7 @@ public class PerfTestTool
 	public static void main(String[] args)
 	{
 		//execute the local / remote performance test
-		try
-		{	
-			PerfTestTool.runTest();
-		}
-		catch (Exception e) 
-		{
-			e.printStackTrace();
-		} 
+		PerfTestTool.runTest(); 
 	}
 
 

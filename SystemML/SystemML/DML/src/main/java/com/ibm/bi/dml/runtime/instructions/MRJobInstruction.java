@@ -527,75 +527,97 @@ public class MRJobInstruction extends Instruction
 		return false;
 	}
 	
-	
-	public <E>String getString(E [] arr)
-	{
-		String s = "";
-		for(int i = 0; i < arr.length; i++)
-			s = s + "," + arr[i];
-		
-		return s;
-	}
-	
-	
-	
 	public String getString(byte [] arr)
 	{
-		String s = "";
-		for(int i = 0; i < arr.length; i++)
-			s = s + "," + Byte.toString(arr[i]);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < arr.length; i++) {
+			sb.append(","); 
+			sb.append(Byte.toString(arr[i]));
+		}
 		
-		return s;
+		return sb.toString();
 	}
 	
 	public String getString(long [] arr)
 	{
-		String s = "";
-		for(int i = 0; i < arr.length; i++)
-			s = s + "," + Long.toString(arr[i]);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < arr.length; i++) {
+			sb.append(",");
+			sb.append(Long.toString(arr[i]));
+		}
 		
-		return s;
+		return sb.toString();
 	}
 	
 	public String getString(int [] arr)
 	{
-		String s = "";
-		for(int i = 0; i < arr.length; i++)
-			s = s + "," + Integer.toString(arr[i]);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < arr.length; i++) {
+			sb.append(",");
+			sb.append(Integer.toString(arr[i]));
+		}
 		
-		return s;
+		return sb.toString();
 	}
 	
-	public String getString(OutputInfo[] iv_outputs) {
-		String s = "" ;
+	public String getString(OutputInfo[] iv_outputs) 
+	{
+		StringBuilder sb = new StringBuilder();
 		for(int i = 0 ; i < iv_outputs.length; i++) {
-			if(iv_outputs[i] == OutputInfo.BinaryBlockOutputInfo)
-				s = s + ", " + "BinaryBlockOutputInfo" ;
-			else if(iv_outputs[i] == OutputInfo.BinaryCellOutputInfo)
-				s = s + ", " + "BinaryCellOutputInfo" ;
-			else if(iv_outputs[i] == OutputInfo.TextCellOutputInfo)
-				s = s + ", " + "TextCellOutputInfo" ;
+			if(iv_outputs[i] == OutputInfo.BinaryBlockOutputInfo){
+				sb.append(", "); 
+				sb.append("BinaryBlockOutputInfo");
+			}
+			else if(iv_outputs[i] == OutputInfo.BinaryCellOutputInfo){
+				sb.append(", ");
+				sb.append("BinaryCellOutputInfo");
+			}
+			else if(iv_outputs[i] == OutputInfo.TextCellOutputInfo){
+				sb.append(", ");
+				sb.append("TextCellOutputInfo");
+			}
 			else {
-				s = s + ", (" + iv_outputs[i].outputFormatClass + "," + iv_outputs[i].outputKeyClass + "," + iv_outputs[i].outputValueClass + ")";
+				sb.append(", (");
+				sb.append(iv_outputs[i].outputFormatClass);
+				sb.append(",");
+				sb.append(iv_outputs[i].outputKeyClass);
+				sb.append(",");
+				sb.append(iv_outputs[i].outputValueClass);
+				sb.append(")");
 			}
 		}
-		return s;
+		
+		return sb.toString();
 	}
 	
-	public String getString(InputInfo[] iv_inputs) {
-		String s = "" ;
+	public String getString(InputInfo[] iv_inputs) 
+	{
+		StringBuilder sb = new StringBuilder();
 		for(int i = 0 ; i < iv_inputs.length; i++) {
-			if(iv_inputs[i] == InputInfo.BinaryBlockInputInfo)
-				s = s + ", " + "BinaryBlockInputInfo" ;
-			else if(iv_inputs[i] == InputInfo.BinaryCellInputInfo)
-				s = s + ", " + "BinaryCellInputInfo" ;
-			else if(iv_inputs[i] == InputInfo.TextCellInputInfo)
-				s = s + ", " + "TextCellInputInfo" ;
+			if(iv_inputs[i] == InputInfo.BinaryBlockInputInfo){
+				sb.append(", ");
+				sb.append("BinaryBlockInputInfo");
+			}
+			else if(iv_inputs[i] == InputInfo.BinaryCellInputInfo){
+				sb.append(", ");
+				sb.append("BinaryCellInputInfo");
+			}
+			else if(iv_inputs[i] == InputInfo.TextCellInputInfo) {
+				sb.append(", ");
+				sb.append("TextCellInputInfo");
+			}
 			else {
-				s = s + ", (" + iv_inputs[i].inputFormatClass + "," + iv_inputs[i].inputKeyClass + "," + iv_inputs[i].inputValueClass + ")";
+				sb.append(", (");
+				sb.append(iv_inputs[i].inputFormatClass);
+				sb.append(",");
+				sb.append(iv_inputs[i].inputKeyClass);
+				sb.append(",");
+				sb.append(iv_inputs[i].inputValueClass);
+				sb.append(")");
 			}
 		}
-		return s;
+		
+		return sb.toString();
 	}
 	
 	
@@ -631,119 +653,220 @@ public class MRJobInstruction extends Instruction
 			return "";
 		}
 		
-		String instruction = "MR-Job[\n";
-		instruction += "\t\t\t\tjobtype        = " + jobType + " \n";
+		StringBuilder sb = new StringBuilder();
+		sb.append("MR-Job[\n");
+		sb.append("\t\t\t\tjobtype        = " + jobType + " \n");
 		
-		if (!debug)
-			instruction += "\t\t\t\tinput labels   = " + Arrays.toString(inputVars) + " \n";
+		if (!debug) {
+			sb.append("\t\t\t\tinput labels   = ");
+			sb.append(Arrays.toString(inputVars));
+			sb.append(" \n");
+		}
 		
 		if (_recordReaderInstructions.length() > 0) {
 			String [] instArray = _recordReaderInstructions.split(Lop.INSTRUCTION_DELIMITOR);
-			if (!debug)
-				instruction += "\t\t\t\trecReader inst = " + instArray[0] + " \n";
+			if (!debug) {
+				sb.append("\t\t\t\trecReader inst = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\trecReader inst = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\trecReader inst = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
-			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+			
+			for (int i = 1; i < instArray.length ; i++) 
+			{
+				if (!debug){
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}			
 			}
 		}
 		if (_randInstructions.length() > 0) {			
 			String [] instArray = _randInstructions.split(Lop.INSTRUCTION_DELIMITOR);
-			if (!debug)
-				instruction += "\t\t\t\trand inst      = " + instArray[0] + " \n";
+			if (!debug) {
+				sb.append("\t\t\t\trand inst      = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\trand inst      = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\trand inst      = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
+			
 			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				if (!debug){
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}
 			}
 		}
 		if (_mapperInstructions.length() > 0) {
 			String [] instArray = _mapperInstructions.split(Lop.INSTRUCTION_DELIMITOR);
-			if (!debug)
-				instruction += "\t\t\t\tmapper inst    = " + instArray[0] + " \n";
+			if (!debug){
+				sb.append("\t\t\t\tmapper inst    = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\tmapper inst    = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\tmapper inst    = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
-			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+			
+			for (int i = 1; i < instArray.length ; i++) 
+			{
+				if (!debug){
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}
 			}
 		}
 		if (_shuffleInstructions.length() > 0) {
 			String [] instArray = _shuffleInstructions.split(Lop.INSTRUCTION_DELIMITOR);
-			if (!debug)
-				instruction += "\t\t\t\tshuffle inst   = " + instArray[0] + " \n";
+			if (!debug) {
+				sb.append("\t\t\t\tshuffle inst   = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\tshuffle inst   = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\tshuffle inst   = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
+			
 			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				if (!debug) {
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}
 			}
 		}
 		if (_aggInstructions.length() > 0) {			
 			String [] instArray = _aggInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
-				instruction += "\t\t\t\tagg inst       = " + instArray[0] + " \n";
+			{
+				sb.append("\t\t\t\tagg inst       = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\tagg inst       = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\tagg inst       = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
+			
 			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				if (!debug) {
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}
 			}
 		}
 		if (_otherInstructions.length() > 0) {
 			String [] instArray = _otherInstructions.split(Lop.INSTRUCTION_DELIMITOR);
 			if (!debug)
-				instruction += "\t\t\t\tother inst     = " + instArray[0] + " \n";
+			{
+				sb.append("\t\t\t\tother inst     = ");
+				sb.append(instArray[0]);
+				sb.append(" \n");
+			}
 			else {
 				String [] instStr = prepareInstruction(instArray[0]).split(" ");
-				instruction += "\t\t\t\tother inst     = " + instStr[0] + " " + instStr[1] + " \n";
+				sb.append("\t\t\t\tother inst     = ");
+				sb.append(instStr[0]);
+				sb.append(" ");
+				sb.append(instStr[1]);
+				sb.append(" \n");
 			}
+			
 			for (int i = 1; i < instArray.length ; i++) {
-				if (!debug)
-					instruction += "\t\t\t\t                 " + instArray[i] + " \n";
+				if (!debug){
+					sb.append("\t\t\t\t                 ");
+					sb.append(instArray[i]);
+					sb.append(" \n");
+				}
 				else {
 					String [] instStr = prepareInstruction(instArray[i]).split(" ");
-					instruction += "\t\t\t\t                 " + instStr[0] + " " + instStr[1] + " \n";
+					sb.append("\t\t\t\t                 ");
+					sb.append(instStr[0]);
+					sb.append(" ");
+					sb.append(instStr[1]);
+					sb.append(" \n");
 				}
 			}			
 		}
-		if (!debug)
-			instruction += "\t\t\t\toutput labels  = " + Arrays.toString(outputVars)  + " \n";
-		instruction += "\t\t\t        ]";
+		if (!debug){
+			sb.append("\t\t\t\toutput labels  = ");
+			sb.append(Arrays.toString(outputVars));
+			sb.append(" \n");
+		}
+		sb.append("\t\t\t        ]");
 
-		return instruction;
+		return sb.toString();
 	}
 	
 	public void printMe() {

@@ -89,7 +89,7 @@ public class LibMatrixDatagen
 			// generate the number of blocks with at least one non-zero
 			// = a random number between [1,nnz]
 			Random runif = new Random(System.nanoTime());
-			int numNZBlocks = (int) (1 + Math.abs(runif.nextLong())%nnz);
+			int numNZBlocks = 1 + runif.nextInt((int)(nnz-1));
 			
 			// distribute non-zeros across numNZBlocks
 

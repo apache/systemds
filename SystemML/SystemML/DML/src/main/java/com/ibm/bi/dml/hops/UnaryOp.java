@@ -537,6 +537,7 @@ public class UnaryOp extends Hop
 		return sql;
 	}
 	
+	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect(Hop input) throws HopsException
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();

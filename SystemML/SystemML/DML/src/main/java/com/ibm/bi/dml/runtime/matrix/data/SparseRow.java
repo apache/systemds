@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,7 @@ import com.ibm.bi.dml.runtime.util.SortUtils;
 public class SparseRow 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//initial capacity of any created sparse row
@@ -140,12 +140,10 @@ public class SparseRow
 	{
 		if(values.length<this.estimatedNzs)
 		{
-			//System.out.println(">> capacity change from "+values.length+" to "+Math.min(this.estimatedNzs, values.length*2)+" , est: "+estimatedNzs+", max: "+maxNzs);
 			return Math.min(this.estimatedNzs, values.length*2);
 		}
 		else
 		{
-			//System.out.println(">> capacity change from "+values.length+" to "+(int) Math.min(this.maxNzs, Math.floor((double)(values.length)*1.1))+" , est: "+estimatedNzs+", max: "+maxNzs);
 			return (int) Math.min(this.maxNzs, Math.ceil((double)(values.length)*1.1)); //exponential growth
 			//return (int) Math.min(this.maxNzs, values.length+Math.floor((double)(estimatedNzs)*0.1)); //constant growth
 		}
@@ -296,15 +294,6 @@ public class SparseRow
 			return index-1;
 	}
 	
-/*	public int searchIndexesFirstLT(int col)
-	{
-		int index=binarySearch(col);
-		if(index<size && col==indexes[index])
-			return index-1;
-		else
-			return index;
-	}*/
-	
 	public int searchIndexesFirstGT(int col)
 	{
 		int index=binarySearch(col);
@@ -318,14 +307,15 @@ public class SparseRow
 	
 	public void deleteIndexRange(int lowerIndex, int upperIndex)
 	{
-		int start=searchIndexesFirstGTE(lowerIndex);
-		//System.out.println("start: "+start);
-		if(start<0) return;
-		int end=searchIndexesFirstGT(upperIndex);
-		//System.out.println("end: "+end);
-		if(end<0 || start>end) return;
-		for(int i=0; i<size-end; i++)
-		{
+		int start = searchIndexesFirstGTE(lowerIndex);
+		if(start<0) 
+			return;
+		
+		int end = searchIndexesFirstGT(upperIndex);
+		if( end<0 || start>end ) 
+			return;
+		
+		for(int i=0; i<size-end; i++) {
 			indexes[start+i]=indexes[end+i];
 			values[start+i]=values[end+i];
 		}
@@ -348,14 +338,15 @@ public class SparseRow
 	
 	public void deleteIndexComplementaryRange(int lowerIndex, int upperIndex)
 	{
-		int start=searchIndexesFirstGTE(lowerIndex);
-		//System.out.println("start: "+start);
-		if(start<0) return;
-		int end=searchIndexesFirstGT(upperIndex);
-		//System.out.println("end: "+end);
-		if(end<0 || start>end) return;
-		for(int i=0; i<end-start; i++)
-		{
+		int start = searchIndexesFirstGTE(lowerIndex);
+		if( start<0 ) 
+			return;
+		
+		int end = searchIndexesFirstGT(upperIndex);
+		if( end<0 || start>end ) 
+			return;
+		
+		for(int i=0; i<end-start; i++) {
 			indexes[i]=indexes[start+i];
 			values[i]=values[start+i];
 		}
@@ -399,35 +390,13 @@ public class SparseRow
 	@Override
 	public String toString()
 	{
-		String ret="";
-		for(int i=0; i<size; i++)
-			ret+=indexes[i]+": "+values[i]+"\t";
-		return ret;
-	}
-	
-	public static void main(String[] args) throws Exception
-	{
-		SparseRow row=new SparseRow(6, 40);
-		row.append(9, 21);
-		row.append(11, 43);
-		row.append(24, 23);
-		row.append(30, 53);
-		row.append(37, 95);
-		row.append(38,38);
-		
-		int start=row.searchIndexesFirstGTE((int)0);
-		System.out.println("start: "+start);
-		if(start<0) start=row.size();
-		int end=row.searchIndexesFirstGT((int)8);
-		System.out.println("end: "+end);
-		if(end<0) end=row.size();
-	
-		{
-			System.out.println("----------------------");
-			System.out.println("row: "+row);
-			System.out.println("start: "+start);
-			System.out.println("end: "+end);
+		StringBuilder sb = new StringBuilder();
+		for(int i=0; i<size; i++) {
+			sb.append(indexes[i]);
+			sb.append(": ");
+			sb.append(values[i]);
+			sb.append("\t");
 		}
-		
+		return sb.toString();
 	}
 }

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,7 +11,6 @@ package com.ibm.bi.dml.runtime.matrix.sort;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Vector;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,7 +41,7 @@ public class SamplingSortMRInputFormat<K extends WritableComparable, V extends W
 extends SequenceFileInputFormat<K,V> 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String PARTITION_FILENAME = "_partition.lst";
@@ -98,7 +97,7 @@ extends SequenceFileInputFormat<K,V>
 	 * @param numPartitions the desired number of partitions
 	 * @return an array of size numPartitions - 1 that holds the split points
 	 */
-		 Vector<WritableComparable> createPartitions(int numPartitions) {
+		 ArrayList<WritableComparable> createPartitions(int numPartitions) {
 			int numRecords = records.size();
 		//	System.out.println("Making " + numPartitions + " from " + numRecords + 
           //           " records");
@@ -111,7 +110,7 @@ extends SequenceFileInputFormat<K,V>
 			//System.out.println("after sort: "+ toString());
 			float stepSize = numRecords / (float) numPartitions;
 			//System.out.println("Step size is " + stepSize);
-			Vector<WritableComparable> result = new Vector<WritableComparable>(numPartitions-1);
+			ArrayList<WritableComparable> result = new ArrayList<WritableComparable>(numPartitions-1);
 			for(int i=1; i < numPartitions; ++i) {
 				result.add(records.get(Math.round(stepSize * i)));
 			}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,9 +9,9 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Writable;
@@ -35,10 +35,10 @@ public class MMCJMRReducer extends MMCJMRCombinerReducerBase
 implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private class RemainIndexValue
+	private static class RemainIndexValue
 	{
 		public long remainIndex;
 		public MatrixValue value;
@@ -64,7 +64,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 	}
 	
 	//in memory cache to hold the records from one input matrix for the cross product
-	private Vector<RemainIndexValue> cache=new Vector<RemainIndexValue>(100);
+	private ArrayList<RemainIndexValue> cache=new ArrayList<RemainIndexValue>(100);
 	private int cacheSize=0;
 	
 	//to cache output, so that we can do some partial aggregation here

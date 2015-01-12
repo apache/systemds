@@ -125,11 +125,14 @@ public class AssignmentStatement extends Statement
 	}
 	
 	public String toString(){
-		String retVal  = "";
+		StringBuilder sb = new StringBuilder();
 		for (int i=0; i< _targetList.size(); i++){
-			retVal += _targetList.get(i).toString();
+			sb.append(_targetList.get(i).toString());
 		}
-		retVal += " = " + _source.toString() + ";";
-		return retVal;
+		sb.append(" = ");
+		sb.append(_source.toString());
+		sb.append(";");
+		
+		return sb.toString();
 	}
 }

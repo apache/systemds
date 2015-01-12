@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.debug;
 
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -21,15 +22,15 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
+import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 
 public class DMLDebuggerFunctions {
@@ -59,13 +60,16 @@ public class DMLDebuggerFunctions {
 		}
 		int currBreakpoint = 1; //active breakpoint ids
 		int numVisibleBreakpoints = 0;
-		for (Integer lineNumber : breakpoints.keySet()) 
+		for (Entry<Integer, BreakPointInstruction> e : breakpoints.entrySet() ) 
 		{
-			if (breakpoints.get(lineNumber).getBPInstructionStatus() == BPINSTRUCTION_STATUS.ENABLED) {
+			Integer lineNumber = e.getKey();
+			BreakPointInstruction inst = e.getValue();
+			
+			if (inst.getBPInstructionStatus() == BPINSTRUCTION_STATUS.ENABLED) {
 				System.out.format("Breakpoint %2d, at line %4d (%s)\n", currBreakpoint++, lineNumber, "enabled");
 				numVisibleBreakpoints++;
 			}
-			else if (breakpoints.get(lineNumber).getBPInstructionStatus() == BPINSTRUCTION_STATUS.DISABLED) {
+			else if (inst.getBPInstructionStatus() == BPINSTRUCTION_STATUS.DISABLED) {
 				System.out.format("Breakpoint %2d, at line %4d (%s)\n", currBreakpoint++, lineNumber, "disabled");
 				numVisibleBreakpoints++;
 			}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -42,7 +42,7 @@ public class ResultMergeRemoteReducer
 	implements Reducer<Writable, Writable, Writable, Writable>
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ResultMergeReducer _reducer = null;
@@ -99,7 +99,7 @@ public class ResultMergeRemoteReducer
 			throws IOException;
 	}
 	
-	private class ResultMergeReducerTextCell implements ResultMergeReducer
+	private static class ResultMergeReducerTextCell implements ResultMergeReducer
 	{
 		private boolean _requiresCompare;
 		private StringBuilder _sb = null;
@@ -198,7 +198,7 @@ public class ResultMergeRemoteReducer
 		}
 	}
 	
-	private class ResultMergeReducerBinaryCell implements ResultMergeReducer
+	private static class ResultMergeReducerBinaryCell implements ResultMergeReducer
 	{
 		private boolean _requiresCompare;
 		private MatrixCell _objValue;
@@ -269,7 +269,7 @@ public class ResultMergeRemoteReducer
 		}
 	}
 	
-	private class ResultMergeReducerBinaryBlock extends ResultMerge implements ResultMergeReducer
+	private static class ResultMergeReducerBinaryBlock extends ResultMerge implements ResultMergeReducer
 	{
 		private boolean _requiresCompare;
 		private String _stagingDir;

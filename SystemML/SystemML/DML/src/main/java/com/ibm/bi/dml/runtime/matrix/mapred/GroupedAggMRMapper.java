@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,7 +9,7 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
@@ -18,7 +18,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -30,11 +30,11 @@ public class GroupedAggMRMapper extends MapperBase
 	implements Mapper<MatrixIndexes, MatrixValue, TaggedInt, WeightedCell>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	//block instructions that need to be performed in part by mapper
-	protected Vector<Vector<GroupedAggregateInstruction>> groupAgg_instructions=new Vector<Vector<GroupedAggregateInstruction>>();
+	protected ArrayList<ArrayList<GroupedAggregateInstruction>> groupAgg_instructions=new ArrayList<ArrayList<GroupedAggregateInstruction>>();
 	private IntWritable outKeyValue=new IntWritable();
 	private TaggedInt outKey=new TaggedInt(outKeyValue, (byte)0);
 	private WeightedCell outValue=new WeightedCell();
@@ -98,7 +98,7 @@ public class GroupedAggMRMapper extends MapperBase
 			if( grpaggIns == null )
 				throw new RuntimeException("no GroupAggregate Instructions found!");
 			
-			Vector<GroupedAggregateInstruction> vec = new Vector<GroupedAggregateInstruction>();
+			ArrayList<GroupedAggregateInstruction> vec = new ArrayList<GroupedAggregateInstruction>();
 			for(int i=0; i<representativeMatrixes.size(); i++)
 			{
 				byte input=representativeMatrixes.get(i);

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,11 +59,13 @@ public class ParameterBuilder
 			 * empty string
 			 */
 			while ((content = in.readLine()) != null) {
-				for (String variable : variables.keySet()) {
+				for (Entry<String, String> e : variables.entrySet() ) {
+					String variable = e.getKey();
+					String val = e.getValue();
 					Pattern pattern = Pattern.compile(_RS + variable + _RS);
 					Matcher matcher = pattern.matcher(content);
 					while (matcher.find()) {
-						content = content.replaceFirst(matcher.group().replace("$", "\\$"), variables.get(variable));
+						content = content.replaceFirst(matcher.group().replace("$", "\\$"), val);
 					}
 				}
 				Matcher matcher = unresolvedVars.matcher(content);

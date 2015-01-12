@@ -1,37 +1,31 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.lops;
 
-import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
 
 
 /**
- * TODO
- * CumsumSplit
- * CumsumOffset
- * 
  * 
  */
 public class CumsumSplitAggregate extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private Aggregate.OperationTypes operation = OperationTypes.KahanSum;
-	private PartialAggregate.DirectionTypes direction = DirectionTypes.Col;
-	private CorrectionLocationType correction = CorrectionLocationType.LASTROW;
+	//NOTE: implicitly used types
+	//private Aggregate.OperationTypes operation = OperationTypes.KahanSum;
+	//private PartialAggregate.DirectionTypes direction = DirectionTypes.Col;
+	//private CorrectionLocationType correction = CorrectionLocationType.LASTROW;
 	
 	public CumsumSplitAggregate(Lop input, DataType dt, ValueType vt)
 		throws LopsException 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -12,7 +12,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -56,16 +55,16 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -84,7 +83,7 @@ import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
 public class ProgramConverter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramConverter.class.getName());
@@ -413,15 +412,14 @@ public class ProgramConverter
 		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
 			return; //prevent redundant deep copy if already existent
 		
-		if( fpb == null )
-		{
+		if( fpb == null ){
 			throw new DMLRuntimeException("Unable to create a deep copy of the FunctionProgramBlock "+oldName+" because it does not exist.");
 		}
 		
 		//create deep copy
 		FunctionProgramBlock copy = null;
-		Vector<DataIdentifier> tmp1 = new Vector<DataIdentifier>(); 
-		Vector<DataIdentifier> tmp2 = new Vector<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(); 
 		if( fpb.getInputParams()!= null )
 			tmp1.addAll(fpb.getInputParams());
 		if( fpb.getOutputParams()!= null )
@@ -480,8 +478,8 @@ public class ProgramConverter
 	
 		//create deep copy
 		FunctionProgramBlock copy = null;
-		Vector<DataIdentifier> tmp1 = new Vector<DataIdentifier>(); 
-		Vector<DataIdentifier> tmp2 = new Vector<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(); 
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(); 
 		if( fpb.getInputParams()!= null )
 			tmp1.addAll(fpb.getInputParams());
 		if( fpb.getOutputParams()!= null )
@@ -1906,8 +1904,8 @@ public class ProgramConverter
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 
-		Vector<DataIdentifier> tmp1 = new Vector<DataIdentifier>(dat1);
-		Vector<DataIdentifier> tmp2 = new Vector<DataIdentifier>(dat2);
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(dat1);
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(dat2);
 		FunctionProgramBlock fpb = new FunctionProgramBlock(prog, tmp1, tmp2);
 		fpb.setInstructions(inst);
 		fpb.setChildBlocks(pbs);
@@ -1948,8 +1946,8 @@ public class ProgramConverter
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 
-		Vector<DataIdentifier> tmp1 = new Vector<DataIdentifier>(dat1);
-		Vector<DataIdentifier> tmp2 = new Vector<DataIdentifier>(dat2);
+		ArrayList<DataIdentifier> tmp1 = new ArrayList<DataIdentifier>(dat1);
+		ArrayList<DataIdentifier> tmp2 = new ArrayList<DataIdentifier>(dat2);
 		
 		//only CP external functions, because no nested MR jobs for reblocks
 		ExternalFunctionProgramBlockCP efpb = new ExternalFunctionProgramBlockCP(prog, tmp1, tmp2, dat3, basedir);

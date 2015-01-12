@@ -8,8 +8,8 @@
 package com.ibm.bi.dml.sql.sqlcontrolprogram;
 
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLDropTableInstruction;
-import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLInstruction;
+import com.ibm.bi.dml.runtime.instructions.sql.SQLDropTableInstruction;
+import com.ibm.bi.dml.runtime.instructions.sql.SQLInstruction;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 
@@ -29,7 +29,7 @@ public class SQLOverwriteScalar extends SQLCreateTable
 			trimmed = true;
 		}
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if(this.get_withs().size() > 0)
 			sb.append("   WITH ");
 		
@@ -51,7 +51,7 @@ public class SQLOverwriteScalar extends SQLCreateTable
 	
 	private String getCreateTableString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("CREATE TABLE \"");
 		sb.append(tmp);
 		sb.append("\" (");
@@ -63,7 +63,7 @@ public class SQLOverwriteScalar extends SQLCreateTable
 	}
 	private String getInsertIntoString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 	
 		sb.append("INSERT INTO \"");
 		sb.append(tmp);
@@ -76,7 +76,7 @@ public class SQLOverwriteScalar extends SQLCreateTable
 	}
 	private String getDeleteTableString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("call drop_if_exists('");
 		sb.append(get_tableName());
 		sb.append("');\r\n");
@@ -84,7 +84,7 @@ public class SQLOverwriteScalar extends SQLCreateTable
 	}
 	private String getAlterTableString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("ALTER TABLE \"");
 		sb.append(tmp);
 		sb.append("\" RENAME TO \"");

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,20 +18,20 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BuiltinBinaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.ComputationCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.FileCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 
 
 public class InstructionGraph 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static String trimHashes(String s) {

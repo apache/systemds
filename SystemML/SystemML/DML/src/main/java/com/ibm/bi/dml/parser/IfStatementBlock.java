@@ -10,6 +10,7 @@ package com.ibm.bi.dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -49,10 +50,12 @@ public class IfStatementBlock extends StatementBlock
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> ();
 		HashMap<String,ConstIdentifier> constVarsOrigCopy = new HashMap<String,ConstIdentifier> ();
 		
-		for (String varName : constVars.keySet()){
-			constVarsIfCopy.put(varName, constVars.get(varName));
-			constVarsElseCopy.put(varName, constVars.get(varName));
-			constVarsOrigCopy.put(varName, constVars.get(varName));
+		for (Entry<String, ConstIdentifier> e : constVars.entrySet() ){
+			String varName = e.getKey();
+			ConstIdentifier cid = e.getValue(); 
+			constVarsIfCopy.put(varName, cid);
+			constVarsElseCopy.put(varName, cid);
+			constVarsOrigCopy.put(varName, cid);
 		}
 		
 		VariableSet idsIfCopy 	= new VariableSet();
@@ -167,7 +170,7 @@ public class IfStatementBlock extends StatementBlock
 				
 				// String
 				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof StringIdentifier && elseConstVersion instanceof StringIdentifier){
-					if ( ((StringIdentifier)ifConstVersion).getValue() == ((StringIdentifier) elseConstVersion).getValue() )
+					if ( ((StringIdentifier)ifConstVersion).getValue().equals(((StringIdentifier) elseConstVersion).getValue()) )
 						recConstVars.put(updatedVar, ifConstVersion);
 				}
 				

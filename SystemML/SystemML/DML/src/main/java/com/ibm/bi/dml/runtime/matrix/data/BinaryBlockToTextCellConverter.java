@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,7 +20,7 @@ public class BinaryBlockToTextCellConverter implements
 Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private SparseRowsIterator sparseIterator=null;
@@ -129,29 +129,4 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		brow=nr;
 		bcolumn=nc;
 	}
-	
-	public static void main(String[] args) throws Exception {
-		
-		MatrixBlock m1=new MatrixBlock(3, 2, false);
-		m1.setValue(0, 0, 1);
-		//m1.setValue(0, 1, 2);
-		m1.setValue(1, 0, 3);
-		//m1.setValue(1, 1, 4);
-		m1.setValue(2, 0, 5);
-		//m1.setValue(2, 1, 6);
-		System.out.println("matrix m1: ");
-		m1.print();
-		
-		MatrixIndexes ind=new MatrixIndexes(10, 10);
-		
-		BinaryBlockToTextCellConverter conv=new BinaryBlockToTextCellConverter();
-		conv.setBlockSize(3, 2);
-		conv.convert(ind, m1);
-		while(conv.hasNext())
-		{
-			Pair pair=conv.next();
-			System.out.println(pair.getKey()+": "+pair.getValue());
-		}
-	}
-	
 }

@@ -63,8 +63,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -2333,7 +2333,6 @@ public class OptimizerRuleBased extends Optimizer
 				Program prog = parfor.getProgram();
 				DMLProgram dmlprog = parfor.getStatementBlock().getDMLProg();
 				FunctionProgramBlock fpb = prog.getFunctionProgramBlock(fnamespace, fname);	
-				FunctionStatementBlock fsb = dmlprog.getFunctionStatementBlock(fnamespace, fname);
 				FunctionProgramBlock copyfpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<String>());
 				prog.addFunctionProgramBlock(fnamespace, fnameNew, copyfpb);
 				dmlprog.addFunctionStatementBlock(fnamespace, fnameNew, (FunctionStatementBlock)copyfpb.getStatementBlock());

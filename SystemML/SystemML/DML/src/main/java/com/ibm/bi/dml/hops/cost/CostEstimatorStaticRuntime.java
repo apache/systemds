@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,18 +25,18 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MMTSJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
@@ -48,12 +48,12 @@ import com.ibm.bi.dml.yarn.ropt.MRJobResourceInstruction;
 public class CostEstimatorStaticRuntime extends CostEstimator
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//time-conversion
 	private static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; //2GFLOPS
-	private static final long UNKNOWN_TIME = -1;
+	//private static final long UNKNOWN_TIME = -1;
 	
 	//floating point operations
 	private static final double DEFAULT_NFLOP_NOOP = 10; 

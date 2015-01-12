@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -48,7 +48,7 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 public class GlobalGraphCreator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Map<ProgramBlock, List<Hop>> blocksToHops;
@@ -239,8 +239,9 @@ public class GlobalGraphCreator
 		
 		for(String dagKey : inVars.keySet()) {
 			HopsDag dag = inVars.get(dagKey);
-			for(String varName : dag.getDagOutputs().keySet()) {
-				Hop output = dag.getDagOutputs().get(varName);
+			for(Entry<String, Hop> e : dag.getDagOutputs().entrySet()) {
+				String varName = e.getKey();
+				Hop output = e.getValue();
 				SplitOp split = new SplitOp(output, null);
 				dag.getDagOutputs().put(varName, split);
 				splits.put(varName, split);

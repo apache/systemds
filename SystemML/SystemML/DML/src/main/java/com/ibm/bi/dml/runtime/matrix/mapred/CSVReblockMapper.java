@@ -1,15 +1,15 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -24,7 +24,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.BlockRow;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, BlockRow>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long rowOffset=0;
@@ -158,12 +158,14 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		row.data = new MatrixBlock();
 		int maxBclen=0;
 	
-		for(Vector<CSVReblockInstruction> insv: csv_reblock_instructions)
+		for(ArrayList<CSVReblockInstruction> insv: csv_reblock_instructions)
 			for(CSVReblockInstruction in: insv)
 			{	
 				if(maxBclen<in.bclen)
 					maxBclen=in.bclen;
 			}
+		
+		
 		//always dense since common csv usecase
 		row.data.reset(1, maxBclen, false);		
 	

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,7 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
 public class OutputInfo 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public Class<? extends OutputFormat> outputFormatClass;
@@ -40,23 +40,21 @@ public class OutputInfo
 		outputKeyClass=keyCls;
 		outputValueClass=valueCls;
 	}
-	public static OutputInfo TextCellOutputInfo=new OutputInfo(TextOutputFormat.class, 
+	public static final OutputInfo TextCellOutputInfo=new OutputInfo(TextOutputFormat.class, 
 			NullWritable.class, Text.class);
-	public static OutputInfo MatrixMarketOutputInfo  = new OutputInfo (TextOutputFormat.class, 
+	public static final OutputInfo MatrixMarketOutputInfo  = new OutputInfo (TextOutputFormat.class, 
 			NullWritable.class, Text.class);
-	public static OutputInfo BinaryCellOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
+	public static final OutputInfo BinaryCellOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
-//	public static OutputInfo TextBlockOutputInfo=new OutputInfo(TextOutputFormat.class, 
-//			NullWritable.class, Text.class);
-	public static OutputInfo BinaryBlockOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
+	public static final OutputInfo BinaryBlockOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, MatrixBlock.class);
-	public static OutputInfo OutputInfoForSortInput=new OutputInfo(SequenceFileOutputFormat.class, 
+	public static final OutputInfo OutputInfoForSortInput=new OutputInfo(SequenceFileOutputFormat.class, 
 			DoubleWritable.class, IntWritable.class);
-	public static OutputInfo OutputInfoForSortOutput = new OutputInfo(CompactOutputFormat.class,
+	public static final OutputInfo OutputInfoForSortOutput = new OutputInfo(CompactOutputFormat.class,
 			DoubleWritable.class, IntWritable.class);
-	public static OutputInfo WeightedPairOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
+	public static final OutputInfo WeightedPairOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
-	public static OutputInfo CSVOutputInfo=new OutputInfo(UnPaddedOutputFormat.class, 
+	public static final OutputInfo CSVOutputInfo=new OutputInfo(UnPaddedOutputFormat.class, 
 			NullWritable.class, RowBlockForTextOutput.class);
 
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) throws DMLRuntimeException {

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,10 +9,10 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -23,8 +23,8 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.COV;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
+import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -38,7 +38,7 @@ public class CMCOVMRReducer extends ReduceBase
 implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixValue>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private CM_N_COVInstruction[] cmNcovInstructions=null;
@@ -47,7 +47,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
 	private MatrixCell outCell=new MatrixCell();
-	private HashMap<Byte, Vector<Integer>> outputIndexesMapping=new HashMap<Byte, Vector<Integer>>();
+	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
 	protected HashSet<Byte> covTags=new HashSet<Byte>();
 	private CM_COV_Object zeroObj=null;
 	
@@ -110,7 +110,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 					throw new IOException(e);
 				}
 				
-				Vector<Integer> outputIndexes = outputIndexesMapping.get(in.output);
+				ArrayList<Integer> outputIndexes = outputIndexesMapping.get(in.output);
 				for(int i: outputIndexes)
 				{
 					collectOutput_N_Increase_Counter(outIndex, outCell, i, report);

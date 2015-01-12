@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -75,18 +74,36 @@ import com.ibm.bi.dml.parser.antlr4.DmlParser.TypedArgNoAssignContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.UnaryExpressionContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.ValueTypeContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.WhileStatementContext;
+import com.ibm.bi.dml.parser.AssignmentStatement;
+import com.ibm.bi.dml.parser.BinaryExpression;
+import com.ibm.bi.dml.parser.BooleanExpression;
+import com.ibm.bi.dml.parser.BooleanIdentifier;
+import com.ibm.bi.dml.parser.BuiltinFunctionExpression;
+import com.ibm.bi.dml.parser.ConstIdentifier;
 import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.FunctionCallIdentifier;
+import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.ImportStatement;
 import com.ibm.bi.dml.parser.IndexedIdentifier;
 import com.ibm.bi.dml.parser.IntIdentifier;
 import com.ibm.bi.dml.parser.IterablePredicate;
 import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.MultiAssignmentStatement;
+import com.ibm.bi.dml.parser.OutputStatement;
+import com.ibm.bi.dml.parser.ParForStatement;
+import com.ibm.bi.dml.parser.ParameterExpression;
+import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.PathStatement;
+import com.ibm.bi.dml.parser.PrintStatement;
+import com.ibm.bi.dml.parser.RelationalExpression;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.StringIdentifier;
+import com.ibm.bi.dml.parser.WhileStatement;
 
 public class DmlSyntacticValidator implements DmlListener {
 	@SuppressWarnings("unused")
@@ -205,7 +222,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		expr.setEndColumn(ctx.stop.getCharPositionInLine());
 	}
 	
-	private void setFileLineColumn(com.ibm.bi.dml.parser.Statement stmt, ParserRuleContext ctx) {
+	private void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
 		stmt.setFilename(DmlSyntacticErrorListener.currentFileName.peek());
 		stmt.setBeginLine(ctx.start.getLine());
 		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
@@ -218,20 +235,20 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitAddSubExpression(AddSubExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-			((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			Expression.BinaryOp bop = Expression.getBinaryOp(ctx.op.getText());
+			ctx.info.expr = new BinaryExpression(bop);
+			((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
 	@Override
 	public void exitModIntDivExpression(ModIntDivExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-			((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			Expression.BinaryOp bop = Expression.getBinaryOp(ctx.op.getText());
+			ctx.info.expr = new BinaryExpression(bop);
+			((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
@@ -256,15 +273,15 @@ public class DmlSyntacticValidator implements DmlListener {
 				ctx.info.expr = ctx.left.info.expr;
 			}
 			else {
-				com.ibm.bi.dml.parser.Expression right = new com.ibm.bi.dml.parser.IntIdentifier(1, fileName, line, col, line, col);
+				Expression right = new IntIdentifier(1, fileName, line, col, line, col);
 				if(ctx.op.getText().compareTo("-") == 0) {
-					right = new com.ibm.bi.dml.parser.IntIdentifier(-1, fileName, line, col, line, col);
+					right = new IntIdentifier(-1, fileName, line, col, line, col);
 				}
 				
-				com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp("*");
-				ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-				((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-				((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(right);
+				Expression.BinaryOp bop = Expression.getBinaryOp("*");
+				ctx.info.expr = new BinaryExpression(bop);
+				((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+				((BinaryExpression)ctx.info.expr).setRight(right);
 			}
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
@@ -272,27 +289,27 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitMultDivExpression(MultDivExpressionContext ctx) {
-		com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(ctx.op.getText());
-		ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+		Expression.BinaryOp bop = Expression.getBinaryOp(ctx.op.getText());
+		ctx.info.expr = new BinaryExpression(bop);
+		((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+		((BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	@Override
 	public void exitPowerExpression(PowerExpressionContext ctx) {
-		com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(ctx.op.getText());
-		ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+		Expression.BinaryOp bop = Expression.getBinaryOp(ctx.op.getText());
+		ctx.info.expr = new BinaryExpression(bop);
+		((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+		((BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
 	@Override
 	public void exitMatrixMulExpression(MatrixMulExpressionContext ctx) {
-		com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(ctx.op.getText());
-		ctx.info.expr = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-		((com.ibm.bi.dml.parser.BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+		Expression.BinaryOp bop = Expression.getBinaryOp(ctx.op.getText());
+		ctx.info.expr = new BinaryExpression(bop);
+		((BinaryExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+		((BinaryExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 
@@ -301,10 +318,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitRelationalExpression(RelationalExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.RelationalOp rop = com.ibm.bi.dml.parser.Expression.getRelationalOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.RelationalExpression(rop);
-			((com.ibm.bi.dml.parser.RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((com.ibm.bi.dml.parser.RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
+			ctx.info.expr = new RelationalExpression(rop);
+			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
@@ -314,10 +331,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitBooleanAndExpression(BooleanAndExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.BooleanOp bop = com.ibm.bi.dml.parser.Expression.getBooleanOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.BooleanExpression(bop);
-			((com.ibm.bi.dml.parser.BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((com.ibm.bi.dml.parser.BooleanExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			Expression.BooleanOp bop = Expression.getBooleanOp(ctx.op.getText());
+			ctx.info.expr = new BooleanExpression(bop);
+			((BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((BooleanExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
@@ -325,10 +342,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitBooleanOrExpression(BooleanOrExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.BooleanOp bop = com.ibm.bi.dml.parser.Expression.getBooleanOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.BooleanExpression(bop);
-			((com.ibm.bi.dml.parser.BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((com.ibm.bi.dml.parser.BooleanExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			Expression.BooleanOp bop = Expression.getBooleanOp(ctx.op.getText());
+			ctx.info.expr = new BooleanExpression(bop);
+			((BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((BooleanExpression)ctx.info.expr).setRight(ctx.right.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
@@ -336,9 +353,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitBooleanNotExpression(BooleanNotExpressionContext ctx) {
 		if(ctx.left.info.expr != null) {
-			com.ibm.bi.dml.parser.Expression.BooleanOp bop = com.ibm.bi.dml.parser.Expression.getBooleanOp(ctx.op.getText());
-			ctx.info.expr = new com.ibm.bi.dml.parser.BooleanExpression(bop);
-			((com.ibm.bi.dml.parser.BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			Expression.BooleanOp bop = Expression.getBooleanOp(ctx.op.getText());
+			ctx.info.expr = new BooleanExpression(bop);
+			((BooleanExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
@@ -366,7 +383,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //		}
 //		int linePosition = ctx.start.getLine();
 //		int charPosition = ctx.start.getCharPositionInLine();
-//		ctx.info.expr = new com.ibm.bi.dml.parser.BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+//		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 //		setFileLineColumn(ctx.info.expr, ctx);
 //	}
 
@@ -376,7 +393,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			double val = Double.parseDouble(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new com.ibm.bi.dml.parser.DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -391,7 +408,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			long val = Long.parseLong(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new com.ibm.bi.dml.parser.IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -417,7 +434,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new com.ibm.bi.dml.parser.StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -452,10 +469,10 @@ public class DmlSyntacticValidator implements DmlListener {
 		ctx.dataInfo.expr = new IndexedIdentifier(ctx.name.getText(), false, false);
 		setFileLineColumn(ctx.dataInfo.expr, ctx);
 		try {
-			ArrayList< ArrayList<com.ibm.bi.dml.parser.Expression> > exprList = new ArrayList< ArrayList<com.ibm.bi.dml.parser.Expression> >();
+			ArrayList< ArrayList<Expression> > exprList = new ArrayList< ArrayList<Expression> >();
 			
-			ArrayList<com.ibm.bi.dml.parser.Expression> rowIndices = new ArrayList<Expression>();
-			ArrayList<com.ibm.bi.dml.parser.Expression> colIndices = new ArrayList<Expression>();
+			ArrayList<Expression> rowIndices = new ArrayList<Expression>();
+			ArrayList<Expression> colIndices = new ArrayList<Expression>();
 			
 			boolean isRowLower = (ctx.rowLower != null && !ctx.rowLower.isEmpty() && (ctx.rowLower.info.expr != null));
 			boolean isRowUpper = (ctx.rowUpper != null && !ctx.rowUpper.isEmpty() && (ctx.rowUpper.info.expr != null));
@@ -538,18 +555,18 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 	}
 	
-	private com.ibm.bi.dml.parser.ConstIdentifier getConstIdFromString(String varValue, Token start) {
+	private ConstIdentifier getConstIdFromString(String varValue, Token start) {
 		// Both varName and varValue are correct
 				int linePosition = start.getLine();
 				int charPosition = start.getCharPositionInLine();
 				try {
 					long val = Long.parseLong(varValue);
-					return new com.ibm.bi.dml.parser.IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+					return new IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 				}
 				catch(Exception e) {
 					try {
 						double val = Double.parseDouble(varValue);
-						return new com.ibm.bi.dml.parser.DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+						return new DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 					}
 					catch(Exception e1) {
 						try {
@@ -558,7 +575,7 @@ public class DmlSyntacticValidator implements DmlListener {
 								if(varValue.compareTo("TRUE") == 0) {
 									val = true;
 								}
-								return new com.ibm.bi.dml.parser.BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+								return new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 							}
 							else {
 								String val = "";
@@ -575,7 +592,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //									DmlSyntacticValidatorHelper.notifyErrorListeners("something wrong while parsing string ... strange", start);
 //									return null;
 								}
-								return new com.ibm.bi.dml.parser.StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+								return new StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 							}
 						}
 						catch(Exception e3) {
@@ -702,12 +719,12 @@ public class DmlSyntacticValidator implements DmlListener {
 		DataIdentifier target = null; 
 		if(ctx.targetList.get(0).dataInfo.expr instanceof DataIdentifier) {
 			target = (DataIdentifier) ctx.targetList.get(0).dataInfo.expr;
-			com.ibm.bi.dml.parser.Expression source = ctx.source.info.expr;
+			Expression source = ctx.source.info.expr;
 			
 			int line = ctx.start.getLine();
 			int col = ctx.start.getCharPositionInLine();
 			try {
-				ctx.info.stmt = new com.ibm.bi.dml.parser.AssignmentStatement(target, source, line, col, line, col);
+				ctx.info.stmt = new AssignmentStatement(target, source, line, col, line, col);
 				setFileLineColumn(ctx.info.stmt, ctx);
 			} catch (LanguageException e) {
 				// TODO: extract more meaningful info from this exception.
@@ -723,9 +740,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 
 	
-	private void setAssignmentStatement(DataIdentifier target, com.ibm.bi.dml.parser.Expression expression, StatementContext ctx) {
+	private void setAssignmentStatement(DataIdentifier target, Expression expression, StatementContext ctx) {
 		try {
-			ctx.info.stmt = new com.ibm.bi.dml.parser.AssignmentStatement(target, expression, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+			ctx.info.stmt = new AssignmentStatement(target, expression, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
 			setFileLineColumn(ctx.info.stmt, ctx);
 		} catch (LanguageException e) {
 			// TODO: extract more meaningful info from this exception.
@@ -735,18 +752,18 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private void setPrintStatement(FunctionCallAssignmentStatementContext ctx, String functionName) {
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 		if(paramExpression.size() != 1) {
 			DmlSyntacticValidatorHelper.notifyErrorListeners(functionName + "() has only one parameter", ctx.start);
 			return;
 		}
-		com.ibm.bi.dml.parser.Expression expr = paramExpression.get(0).getExpr();
+		Expression expr = paramExpression.get(0).getExpr();
 		if(expr == null) {
 			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
 		}
 		try {
-			ctx.info.stmt = new com.ibm.bi.dml.parser.PrintStatement(functionName, expr);
+			ctx.info.stmt = new PrintStatement(functionName, expr);
 		} catch (LanguageException e) {
 			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
@@ -754,7 +771,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private void setOutputStatement(FunctionCallAssignmentStatementContext ctx) {
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 		if(paramExpression.size() < 2){
 			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect usage of write function (atleast 2 arguments required)", ctx.start);
 			return;
@@ -774,9 +791,9 @@ public class DmlSyntacticValidator implements DmlListener {
 				}
 				
 				DataExpression  dataExpression = new DataExpression(DataOp.WRITE, varParams, fileName, line, col, line, col);
-				ctx.info.stmt = new  com.ibm.bi.dml.parser.OutputStatement((DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE, fileName, line, col, line, col);
+				ctx.info.stmt = new  OutputStatement((DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE, fileName, line, col, line, col);
 				setFileLineColumn(ctx.info.stmt, ctx);
-				((com.ibm.bi.dml.parser.OutputStatement)ctx.info.stmt).setExprParams(dataExpression);
+				((OutputStatement)ctx.info.stmt).setExprParams(dataExpression);
 				return;
 			//}
 		}
@@ -823,12 +840,12 @@ public class DmlSyntacticValidator implements DmlListener {
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
 		
-		com.ibm.bi.dml.parser.FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
+		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
@@ -856,14 +873,14 @@ public class DmlSyntacticValidator implements DmlListener {
 			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
 			try {
-				com.ibm.bi.dml.parser.BuiltinFunctionExpression bife = com.ibm.bi.dml.parser.BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (bife != null){
 					// It is a builtin function
 					setAssignmentStatement(target, bife, ctx);
 					return;
 				}
 				
-				com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression pbife = com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (pbife != null){
 					// It is a parameterized builtin function
 					setAssignmentStatement(target, pbife, ctx);
@@ -871,7 +888,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				}
 				
 				// built-in read, rand ...
-				com.ibm.bi.dml.parser.DataExpression dbife = com.ibm.bi.dml.parser.DataExpression.getDataExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				DataExpression dbife = DataExpression.getDataExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (dbife != null){
 					setAssignmentStatement(target, dbife, ctx);
 					return;
@@ -895,20 +912,20 @@ public class DmlSyntacticValidator implements DmlListener {
 		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
 		
 		try {
-			com.ibm.bi.dml.parser.BuiltinFunctionExpression bife = com.ibm.bi.dml.parser.BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, paramExpression, fileName, line, col, line, col);
+			BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, paramExpression, fileName, line, col, line, col);
 			if (bife != null){
 				// It is a builtin function
 				ctx.info.expr = bife;
 				return;
 			}
 			
-			com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression pbife = com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, paramExpression, fileName, line, col, line, col);
+			ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, paramExpression, fileName, line, col, line, col);
 			if (pbife != null){
 				// It is a parameterized builtin function
 				ctx.info.expr = pbife;
@@ -916,7 +933,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			}
 			
 			// built-in read, rand ...
-			com.ibm.bi.dml.parser.DataExpression dbife = com.ibm.bi.dml.parser.DataExpression.getDataExpression(functionName, paramExpression, fileName, line, col, line, col);
+			DataExpression dbife = DataExpression.getDataExpression(functionName, paramExpression, fileName, line, col, line, col);
 			if (dbife != null){
 				ctx.info.expr = dbife;
 				return;
@@ -928,8 +945,8 @@ public class DmlSyntacticValidator implements DmlListener {
 		DmlSyntacticValidatorHelper.notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
 	}
 	
-	private void setMultiAssignmentStatement(ArrayList<DataIdentifier> target, com.ibm.bi.dml.parser.Expression expression, StatementContext ctx) {
-		ctx.info.stmt = new com.ibm.bi.dml.parser.MultiAssignmentStatement(target, expression);
+	private void setMultiAssignmentStatement(ArrayList<DataIdentifier> target, Expression expression, StatementContext ctx) {
+		ctx.info.stmt = new MultiAssignmentStatement(target, expression);
 		ctx.info.stmt.setAllPositions(DmlSyntacticValidatorHelper.getCurrentFileName(), ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
 		setFileLineColumn(ctx.info.stmt, ctx);
 	}
@@ -958,12 +975,12 @@ public class DmlSyntacticValidator implements DmlListener {
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
 		
-		com.ibm.bi.dml.parser.FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
+		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
@@ -991,14 +1008,14 @@ public class DmlSyntacticValidator implements DmlListener {
 //			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
 			try {
-				com.ibm.bi.dml.parser.BuiltinFunctionExpression bife = com.ibm.bi.dml.parser.BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (bife != null){
 					// It is a builtin function
 					setMultiAssignmentStatement(targetList, bife, ctx);
 					return;
 				}
 				
-				com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression pbife = com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (pbife != null){
 					// It is a parameterized builtin function
 					setMultiAssignmentStatement(targetList, pbife, ctx);
@@ -1006,7 +1023,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				}
 				
 				// built-in read, rand ...
-				com.ibm.bi.dml.parser.DataExpression dbife = com.ibm.bi.dml.parser.DataExpression.getDataExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
+				DataExpression dbife = DataExpression.getDataExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (dbife != null){
 					setMultiAssignmentStatement(targetList, dbife, ctx);
 					return;
@@ -1020,14 +1037,14 @@ public class DmlSyntacticValidator implements DmlListener {
 		setMultiAssignmentStatement(targetList, functCall, ctx);
 	}
 	
-	private com.ibm.bi.dml.parser.StatementBlock getStatementBlock(com.ibm.bi.dml.parser.Statement current) {
+	private StatementBlock getStatementBlock(Statement current) {
 		return DMLParserWrapper.getStatementBlock(current);
 	}
 	
 	@Override
 	public void exitIfStatement(IfStatementContext ctx) {
-		com.ibm.bi.dml.parser.IfStatement ifStmt = new IfStatement();
-		com.ibm.bi.dml.parser.ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
+		IfStatement ifStmt = new IfStatement();
+		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		ifStmt.setConditionalPredicate(predicate);
 		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
 		int line = ctx.start.getLine();
@@ -1054,8 +1071,8 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitWhileStatement(WhileStatementContext ctx) {
-		com.ibm.bi.dml.parser.WhileStatement whileStmt = new com.ibm.bi.dml.parser.WhileStatement();
-		com.ibm.bi.dml.parser.ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
+		WhileStatement whileStmt = new WhileStatement();
+		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		whileStmt.setPredicate(predicate);
 		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
 		int line = ctx.start.getLine();
@@ -1075,18 +1092,18 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitForStatement(ForStatementContext ctx) {
-		com.ibm.bi.dml.parser.ForStatement forStmt = new ForStatement();
+		ForStatement forStmt = new ForStatement();
 		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		com.ibm.bi.dml.parser.DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
+		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = null;
-		com.ibm.bi.dml.parser.Expression incrementExpr = new com.ibm.bi.dml.parser.IntIdentifier(1, fileName, line, col, line, col);
-		if(ctx.iterPred.info.increment != null && ctx.iterPred.info.increment != null) {
+		Expression incrementExpr = new IntIdentifier(1, fileName, line, col, line, col);
+		if(ctx.iterPred.info.increment != null) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		com.ibm.bi.dml.parser.IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, fileName, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, fileName, line, col, line, col);
 		forStmt.setPredicate(predicate);
 		
 		if(ctx.body.size() > 0) {
@@ -1101,12 +1118,12 @@ public class DmlSyntacticValidator implements DmlListener {
 
 	@Override
 	public void exitParForStatement(ParForStatementContext ctx) {
-		com.ibm.bi.dml.parser.ParForStatement parForStmt = new com.ibm.bi.dml.parser.ParForStatement();
+		ParForStatement parForStmt = new ParForStatement();
 		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		com.ibm.bi.dml.parser.DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
+		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = new HashMap<String, String>();
 		if(ctx.parForParams != null && ctx.parForParams.size() > 0) {
 			for(StrictParameterizedExpressionContext parForParamCtx : ctx.parForParams) {
@@ -1114,12 +1131,12 @@ public class DmlSyntacticValidator implements DmlListener {
 			}
 		}
 		
-		com.ibm.bi.dml.parser.Expression incrementExpr = new com.ibm.bi.dml.parser.IntIdentifier(1, fileName, line, col, line, col);
+		Expression incrementExpr = new IntIdentifier(1, fileName, line, col, line, col);
 		
-		if(ctx.iterPred.info.increment != null && ctx.iterPred.info.increment != null) {
+		if( ctx.iterPred.info.increment != null ) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
-		com.ibm.bi.dml.parser.IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, fileName, line, col, line, col);
+		IterablePredicate predicate = new IterablePredicate(iterVar, ctx.iterPred.info.from, ctx.iterPred.info.to, incrementExpr, parForParamValues, fileName, line, col, line, col);
 		parForStmt.setPredicate(predicate);
 		if(ctx.body.size() > 0) {
 			for(StatementContext stmtCtx : ctx.body) {
@@ -1142,10 +1159,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitMl_type(Ml_typeContext ctx) { }
 	
-	private Vector<com.ibm.bi.dml.parser.DataIdentifier> getFunctionParameters(List<TypedArgNoAssignContext> ctx) {
-		Vector<com.ibm.bi.dml.parser.DataIdentifier> retVal = new Vector<DataIdentifier>();
+	private ArrayList<DataIdentifier> getFunctionParameters(List<TypedArgNoAssignContext> ctx) {
+		ArrayList<DataIdentifier> retVal = new ArrayList<DataIdentifier>();
 		for(TypedArgNoAssignContext paramCtx : ctx) {
-			com.ibm.bi.dml.parser.DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
+			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
 			String dataType = null;
 			String valueType = null;
 			
@@ -1199,14 +1216,14 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
-		com.ibm.bi.dml.parser.FunctionStatement functionStmt = new com.ibm.bi.dml.parser.FunctionStatement();
+		FunctionStatement functionStmt = new FunctionStatement();
 		
-		Vector<com.ibm.bi.dml.parser.DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
-		((com.ibm.bi.dml.parser.FunctionStatement) functionStmt).setInputParams(functionInputs);
+		ArrayList<DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
+		functionStmt.setInputParams(functionInputs);
 		
 		// set function outputs
-		Vector<com.ibm.bi.dml.parser.DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
-		((com.ibm.bi.dml.parser.FunctionStatement) functionStmt).setOutputParams(functionOutputs);
+		ArrayList<DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
+		functionStmt.setOutputParams(functionOutputs);
 		
 		// set function name
 		functionStmt.setName(ctx.name.getText());
@@ -1215,12 +1232,12 @@ public class DmlSyntacticValidator implements DmlListener {
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
-			ArrayList<com.ibm.bi.dml.parser.StatementBlock> body = new ArrayList<StatementBlock>();
+			ArrayList<StatementBlock> body = new ArrayList<StatementBlock>();
 			for(StatementContext stmtCtx : ctx.body) {
 				body.add(getStatementBlock(stmtCtx.info.stmt));
 			}
-			((com.ibm.bi.dml.parser.FunctionStatement) functionStmt).setBody(body);
-			((com.ibm.bi.dml.parser.FunctionStatement) functionStmt).mergeStatementBlocks();
+			functionStmt.setBody(body);
+			functionStmt.mergeStatementBlocks();
 		}
 		else {
 			DmlSyntacticValidatorHelper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
@@ -1234,14 +1251,14 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitExternalFunctionDefExpression(ExternalFunctionDefExpressionContext ctx) {
-		com.ibm.bi.dml.parser.ExternalFunctionStatement functionStmt = new com.ibm.bi.dml.parser.ExternalFunctionStatement();
+		ExternalFunctionStatement functionStmt = new ExternalFunctionStatement();
 		
-		Vector<com.ibm.bi.dml.parser.DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
-		((com.ibm.bi.dml.parser.ExternalFunctionStatement) functionStmt).setInputParams(functionInputs);
+		ArrayList<DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
+		functionStmt.setInputParams(functionInputs);
 		
 		// set function outputs
-		Vector<com.ibm.bi.dml.parser.DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
-		((com.ibm.bi.dml.parser.ExternalFunctionStatement) functionStmt).setOutputParams(functionOutputs);
+		ArrayList<DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
+		functionStmt.setOutputParams(functionOutputs);
 		
 		// set function name
 		functionStmt.setName(ctx.name.getText());
@@ -1279,12 +1296,12 @@ public class DmlSyntacticValidator implements DmlListener {
 //		if(ctx.body.size() > 0) {
 //			// handle function body
 //			// Create arraylist of one statement block
-//			ArrayList<com.ibm.bi.dml.parser.StatementBlock> body = new ArrayList<StatementBlock>();
+//			ArrayList<StatementBlock> body = new ArrayList<StatementBlock>();
 //			for(StatementContext stmtCtx : ctx.body) {
 //				body.add(getStatementBlock(stmtCtx.info.stmt));
 //			}
-//			((com.ibm.bi.dml.parser.ExternalFunctionStatement) functionStmt).setBody(body);
-//			((com.ibm.bi.dml.parser.ExternalFunctionStatement) functionStmt).mergeStatementBlocks();
+//			((ExternalFunctionStatement) functionStmt).setBody(body);
+//			((ExternalFunctionStatement) functionStmt).mergeStatementBlocks();
 //		}
 //		else {
 //			DmlSyntacticValidatorHelper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
@@ -1299,7 +1316,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
-		com.ibm.bi.dml.parser.PathStatement stmt = new PathStatement(ctx.pathValue.getText());
+		PathStatement stmt = new PathStatement(ctx.pathValue.getText());
 		DMLParserWrapper.currentPath = ctx.pathValue.getText() + File.separator;
 		ctx.info.stmt = stmt;
 	}
@@ -1324,7 +1341,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		DataIdentifier target = null; 
 		if(ctx.targetList.get(0).dataInfo.expr instanceof DataIdentifier) {
 			target = (DataIdentifier) ctx.targetList.get(0).dataInfo.expr;
-			com.ibm.bi.dml.parser.Expression source = null;
+			Expression source = null;
 			if(ctx.commandLineParam.dataInfo.expr != null) {
 				// Since commandline parameter is set
 				// The check of following is done in fillExpressionInfoCommandLineParameters:
@@ -1339,7 +1356,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			int line = ctx.start.getLine();
 			int col = ctx.start.getCharPositionInLine();
 			try {
-				ctx.info.stmt = new com.ibm.bi.dml.parser.AssignmentStatement(target, source, line, col, line, col);
+				ctx.info.stmt = new AssignmentStatement(target, source, line, col, line, col);
 				setFileLineColumn(ctx.info.stmt, ctx);
 			} catch (LanguageException e) {
 				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid assignment for ifdef function", ctx.targetList.get(0).start);
@@ -1421,7 +1438,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		boolean val = false;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new com.ibm.bi.dml.parser.BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -1431,7 +1448,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		boolean val = true;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new com.ibm.bi.dml.parser.BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	

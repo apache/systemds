@@ -512,8 +512,9 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	public Map<InterestingPropertySet, MemoEntry> createMemoEntry(
 			Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans, Hop root) {
 		Map<InterestingPropertySet, MemoEntry> retVal = new HashMap<InterestingPropertySet, MemoEntry>();
-		for(InterestingPropertySet combi : nodePlans.keySet()) {
-			Set<OptimizedPlan> subPlans = nodePlans.get(combi);
+		for(Entry<InterestingPropertySet, Set<OptimizedPlan>> e : nodePlans.entrySet() ) {
+			InterestingPropertySet combi = e.getKey();
+			Set<OptimizedPlan> subPlans = e.getValue();
 			if(subPlans.size() > 1) 
 				throw new IllegalStateException("At this point, at most one best sub plan per IP combination should exist!");
 			if(subPlans.size() == 1) {
@@ -523,14 +524,14 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				Lop lop = plan.getGeneratedLop();
 				Long lopId = _memo.addPlan(lop);
 				
-				MemoEntry e = new MemoEntry();
-				e.setOptPlan(plan);
-				e.setConfig(config);
-				e.setInterestingProperties(combi);
-				e.setRootHop(root);
-				e.setLopId(lopId);
-				e.setCost(plan.getCumulatedCost());
-				retVal.put(combi, e);
+				MemoEntry me = new MemoEntry();
+				me.setOptPlan(plan);
+				me.setConfig(config);
+				me.setInterestingProperties(combi);
+				me.setRootHop(root);
+				me.setLopId(lopId);
+				me.setCost(plan.getCumulatedCost());
+				retVal.put(combi, me);
 				
 			}
 		}
@@ -915,8 +916,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 		
 		//TODO: this is very inefficient, remove unnecessary loops
-		for(InterestingPropertySet ipc : combined.keySet()) {
-			if(combined.get(ipc).isEmpty()) {
+		for(Entry<InterestingPropertySet, Set<OptimizedPlan>>  e : combined.entrySet() ) 
+		{
+			InterestingPropertySet ipc = e.getKey();
+			if(e.getValue().isEmpty()) {
 				removeSet.add(ipc);
 			}
 			planCounter += combined.get(ipc).size();

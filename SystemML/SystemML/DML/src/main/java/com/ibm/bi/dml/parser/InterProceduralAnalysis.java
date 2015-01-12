@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,12 +36,12 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.udf.lib.DeNaNWrapper;
@@ -88,7 +87,7 @@ import com.ibm.bi.dml.udf.lib.OrderWrapper;
 public class InterProceduralAnalysis 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -292,9 +291,11 @@ public class InterProceduralAnalysis
 	{
 		//debug input
 		if( LOG.isDebugEnabled() )
-			for( String key : fcandCounts.keySet() )
+			for( Entry<String,Integer> e : fcandCounts.entrySet() )
 			{
-				LOG.debug("IPA: FUNC statistic propagation candidate: "+key+", callCount="+fcandCounts.get(key));
+				String key = e.getKey();
+				Integer count = e.getValue();
+				LOG.debug("IPA: FUNC statistic propagation candidate: "+key+", callCount="+count);
 			}
 		
 		//materialize key set
@@ -605,7 +606,7 @@ public class InterProceduralAnalysis
 	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap vars, HashSet<Long> inputSafeNNZ ) 
 		throws HopsException
 	{
-		Vector<DataIdentifier> inputVars = fstmt.getInputParams();
+		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
 		ArrayList<Hop> inputOps = fop.getInput();
 		
 		for( int i=0; i<inputVars.size(); i++ )
@@ -657,7 +658,7 @@ public class InterProceduralAnalysis
 	private void extractFunctionCallReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap tmpVars, LocalVariableMap callVars, boolean overwrite ) 
 		throws HopsException
 	{
-		Vector<DataIdentifier> foutputOps = fstmt.getOutputParams();
+		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
 		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 		
@@ -714,7 +715,7 @@ public class InterProceduralAnalysis
 	private void extractFunctionCallUnknownReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
 		throws HopsException
 	{
-		Vector<DataIdentifier> foutputOps = fstmt.getOutputParams();
+		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
 		String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
 		

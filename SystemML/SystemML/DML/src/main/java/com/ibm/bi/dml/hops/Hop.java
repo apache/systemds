@@ -47,9 +47,9 @@ public abstract class Hop
 	
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
-	public static final boolean BREAKONSCALARS = false;
-	public static final boolean SPLITLARGEMATRIXMULT = true;
 	public static final long CPThreshold = 2000;
+	protected static final boolean BREAKONSCALARS = false;
+	protected static final boolean SPLITLARGEMATRIXMULT = true;
 	
 	public enum Kind {
 		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, DataGenOp, GenericFunctionOp, 
@@ -1125,6 +1125,7 @@ public abstract class Hop
 			return ValueType.INT;
 	}
 	
+	@SuppressWarnings("unused")
 	protected GENERATES determineGeneratesFlag()
 	{
 		//Check whether this is going to be an Insert or With

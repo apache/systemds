@@ -36,12 +36,12 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -336,21 +336,21 @@ public class GMR
 			
 			//construct index and path strings
 			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
-			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
-			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
+			StringBuilder indexString = new StringBuilder(); // input indices to be placed in Distributed Cache (concatenated) 
+			StringBuilder pathString = new StringBuilder();  // input paths to be placed in Distributed Cache (concatenated) 
 			for( byte index : indexList )
 			{
 				if( pathList.size()>0 ) {
-					indexString += Instruction.INSTRUCTION_DELIM;
-					pathString += Instruction.INSTRUCTION_DELIM;
+					indexString.append(Instruction.INSTRUCTION_DELIM);
+					pathString.append(Instruction.INSTRUCTION_DELIM);
 				}
 				pathList.add( inputs[index] );
-				indexString += index;
-				pathString += inputs[index];
+				indexString.append(index);
+				pathString.append(inputs[index]);
 			}
 			
 			//configure mr job with distcache indexes
-			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
+			MRJobConfiguration.setupDistCacheInputs(job, indexString.toString(), pathString.toString(), pathList);
 			
 			//clean in-memory cache (prevent job interference in local mode)
 			if( MRJobConfiguration.isLocalJobTracker(job) )

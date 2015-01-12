@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import javax.xml.stream.XMLInputFactory;
@@ -65,10 +64,10 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -881,12 +880,12 @@ public class PerfTestTool
 		else if ( inst instanceof FunctionCallCPInstruction ) //ExternalFunctionInvocationInstruction
 		{
 			Program prog = pb.getProgram();
-			Vector<DataIdentifier> in = new Vector<DataIdentifier>();
+			ArrayList<DataIdentifier> in = new ArrayList<DataIdentifier>();
 			DataIdentifier dat1 = new DataIdentifier("A");
 			dat1.setDataType(DataType.MATRIX);
 			dat1.setValueType(ValueType.DOUBLE);
 			in.add(dat1);
-			Vector<DataIdentifier> out = new Vector<DataIdentifier>();
+			ArrayList<DataIdentifier> out = new ArrayList<DataIdentifier>();
 			DataIdentifier dat2 = new DataIdentifier("C");
 			dat2.setDataType(DataType.MATRIX);
 			dat2.setValueType(ValueType.DOUBLE);
@@ -1496,9 +1495,10 @@ public class PerfTestTool
 	private static void readRegressionModels( String dname, HashMap<Integer,Long> IDMapping ) 
 		throws IOException
 	{
-		for( Integer count : IDMapping.keySet() )
+		for( Entry<Integer,Long> e : IDMapping.entrySet() )
 		{
-			long ID = IDMapping.get(count);
+			int count = e.getKey();
+			long ID = e.getValue();
 			int instID = IDHandler.extractIntIDFromLong(ID, 1);
 			int tDefID = IDHandler.extractIntIDFromLong(ID, 2);
 			

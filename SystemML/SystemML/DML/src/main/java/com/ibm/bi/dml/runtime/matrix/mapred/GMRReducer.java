@@ -17,8 +17,8 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;

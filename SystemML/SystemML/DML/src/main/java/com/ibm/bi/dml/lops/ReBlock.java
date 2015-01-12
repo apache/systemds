@@ -34,8 +34,8 @@ public class ReBlock extends Lop
 	 * @param op
 	 */
 	
-	Long rows_per_block;
-	Long cols_per_block;
+	private Long _rows_per_block;
+	private Long _cols_per_block;
 
 	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks)
 		throws LopsException 
@@ -44,8 +44,8 @@ public class ReBlock extends Lop
 		this.addInput(input);
 		input.addOutput(this);
 		
-		this.rows_per_block = rows_per_block;
-		this.cols_per_block = cols_per_block;
+		_rows_per_block = rows_per_block;
+		_cols_per_block = cols_per_block;
 		
 		_outputEmptyBlocks = outputEmptyBlocks;
 		
@@ -63,7 +63,7 @@ public class ReBlock extends Lop
 	@Override
 	public String toString() {
 	
-		return "Reblock - rows per block = " + rows_per_block + " cols per block  " + cols_per_block ;
+		return "Reblock - rows per block = " + _rows_per_block + " cols per block  " + _cols_per_block ;
 	}
 
 	@Override
@@ -82,10 +82,10 @@ public class ReBlock extends Lop
 		sb.append ( this.prepOutputOperand(output_index));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rows_per_block );
+		sb.append( _rows_per_block );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( cols_per_block );
+		sb.append( _cols_per_block );
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(_outputEmptyBlocks);
@@ -94,6 +94,7 @@ public class ReBlock extends Lop
 	}
 	
 	// This function is replicated in Dag.java
+	@SuppressWarnings("unused")
 	private Format getChildFormat(Lop node) throws LopsException {
 		
 		if(node.getOutputParameters().getFile_name() != null

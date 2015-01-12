@@ -1,14 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
@@ -16,13 +15,13 @@ import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
 
 
 public class FunctionProgramBlock extends ProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected ArrayList<ProgramBlock> _childBlocks;
@@ -31,7 +30,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	private boolean _recompileOnce = false;
 	
-	public FunctionProgramBlock( Program prog, Vector <DataIdentifier> inputParams, Vector <DataIdentifier> outputParams) throws DMLRuntimeException
+	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) throws DMLRuntimeException
 	{
 		super(prog);
 		_childBlocks = new ArrayList<ProgramBlock>();

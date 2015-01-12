@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,9 +19,9 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
+import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
+import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedInt;
 import com.ibm.bi.dml.runtime.matrix.data.WeightedCell;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
@@ -33,7 +33,7 @@ public class GroupedAggMRCombiner extends ReduceBase
 	implements Reducer<TaggedInt, WeightedCell, TaggedInt, WeightedCell>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//grouped aggregate instructions

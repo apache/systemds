@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,7 @@ public class BinaryCellToTextConverter
 implements Converter<MatrixIndexes, MatrixCell, NullWritable, Text>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Text value=new Text();
@@ -42,16 +42,6 @@ implements Converter<MatrixIndexes, MatrixCell, NullWritable, Text>
 		
 		hasValue=false;
 		return pair;
-	}
-
-	public static void main(String[] args) throws Exception {
-		BinaryCellToTextConverter conv=new BinaryCellToTextConverter();
-		conv.convert(new MatrixIndexes(1, 2), new MatrixCell(10));
-		while(conv.hasNext())
-		{
-			Pair pair=conv.next();
-			System.out.println(pair.getKey()+": "+pair.getValue());
-		}
 	}
 
 	@Override

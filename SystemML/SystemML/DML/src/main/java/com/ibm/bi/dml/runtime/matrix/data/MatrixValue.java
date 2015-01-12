@@ -16,7 +16,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;

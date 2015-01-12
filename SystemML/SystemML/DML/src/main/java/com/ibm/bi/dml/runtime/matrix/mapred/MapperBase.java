@@ -11,7 +11,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,12 +26,12 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -50,7 +49,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	protected static final Log LOG = LogFactory.getLog(MapperBase.class);
 	
 	//the indexes that this particular input matrix file represents
-	protected Vector<Byte> representativeMatrixes=null;
+	protected ArrayList<Byte> representativeMatrixes=null;
 	
 	//the dimension for all the representative matrices 
 	//(they are all the same, since coming from the same files)
@@ -70,19 +69,19 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	protected int[] lastblockclens=null;
 	
 	//rand instructions that need to be performed in mapper
-	protected Vector<DataGenMRInstruction> dataGen_instructions=new Vector<DataGenMRInstruction>();
+	protected ArrayList<DataGenMRInstruction> dataGen_instructions=new ArrayList<DataGenMRInstruction>();
 	
 	//instructions that need to be performed in mapper
-	protected Vector<Vector<MRInstruction>> mapper_instructions=new Vector<Vector<MRInstruction>>();
+	protected ArrayList<ArrayList<MRInstruction>> mapper_instructions=new ArrayList<ArrayList<MRInstruction>>();
 	
 	//block instructions that need to be performed in part by mapper
-	protected Vector<Vector<ReblockInstruction>> reblock_instructions=new Vector<Vector<ReblockInstruction>>();
+	protected ArrayList<ArrayList<ReblockInstruction>> reblock_instructions=new ArrayList<ArrayList<ReblockInstruction>>();
 	
 	//csv block instructions that need to be performed in part by mapper
-	protected Vector<Vector<CSVReblockInstruction>> csv_reblock_instructions=new Vector<Vector<CSVReblockInstruction>>();
+	protected ArrayList<ArrayList<CSVReblockInstruction>> csv_reblock_instructions=new ArrayList<ArrayList<CSVReblockInstruction>>();
 	
 	//the indexes of the matrices that needed to be outputted
-	protected Vector<Vector<Byte>> outputIndexes=new Vector<Vector<Byte>>();
+	protected ArrayList<ArrayList<Byte>> outputIndexes=new ArrayList<ArrayList<Byte>>();
 	
 	//converter to convert the input record into indexes and matrix value (can be a cell or a block)
 	protected Converter inputConverter=null;
@@ -207,7 +206,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		int count = 0;
 		
 		if( ret && mapper_instructions!=null )
-			for( Vector<MRInstruction> vinst : mapper_instructions )
+			for( ArrayList<MRInstruction> vinst : mapper_instructions )
 				for( MRInstruction inst : vinst ){
 					ret &= (inst instanceof AggregateBinaryInstruction && !((AggregateBinaryInstruction)inst).getOutputEmptyBlocks() )
 						  ||(inst instanceof PMMJMRInstruction && !((PMMJMRInstruction)inst).getOutputEmptyBlocks() );
@@ -333,7 +332,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			set.add(representativeMatrixes.get(i));
 			
 			//collect the relavent datagen instructions for this representative matrix
-			Vector<DataGenMRInstruction> dataGensForThisMatrix=new Vector<DataGenMRInstruction>();
+			ArrayList<DataGenMRInstruction> dataGensForThisMatrix=new ArrayList<DataGenMRInstruction>();
 			if(allDataGenIns!=null)
 			{
 				for(DataGenMRInstruction ins:allDataGenIns)
@@ -350,10 +349,10 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			if(dataGensForThisMatrix.isEmpty())
 				dataGen_instructions.add(null);
 			else
-				dataGen_instructions.add(dataGensForThisMatrix.firstElement());
+				dataGen_instructions.add(dataGensForThisMatrix.get(0));
 						
 			//collect the relavent instructions for this representative matrix
-			Vector<MRInstruction> opsForThisMatrix=new Vector<MRInstruction>();
+			ArrayList<MRInstruction> opsForThisMatrix=new ArrayList<MRInstruction>();
 			
 			if(allMapperIns!=null)
 			{
@@ -391,7 +390,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			mapper_instructions.add(opsForThisMatrix);
 			
 			//collect the relavent reblock instructions for this representative matrix
-			Vector<ReblockInstruction> reblocksForThisMatrix=new Vector<ReblockInstruction>();
+			ArrayList<ReblockInstruction> reblocksForThisMatrix=new ArrayList<ReblockInstruction>();
 			if(allReblockIns!=null)
 			{
 				for(ReblockInstruction ins:allReblockIns)
@@ -407,7 +406,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			reblock_instructions.add(reblocksForThisMatrix);
 			
 			//collect the relavent reblock instructions for this representative matrix
-			Vector<CSVReblockInstruction> csvReblocksForThisMatrix=new Vector<CSVReblockInstruction>();
+			ArrayList<CSVReblockInstruction> csvReblocksForThisMatrix=new ArrayList<CSVReblockInstruction>();
 			if(allCSVReblockIns!=null)
 			{
 				for(CSVReblockInstruction ins:allCSVReblockIns)
@@ -423,7 +422,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			csv_reblock_instructions.add(csvReblocksForThisMatrix);
 			
 			//collect the output indexes for this representative matrix
-			Vector<Byte> outsForThisMatrix=new Vector<Byte>();
+			ArrayList<Byte> outsForThisMatrix=new ArrayList<Byte>();
 			for(byte output: outputs)
 			{
 				if(set.contains(output))

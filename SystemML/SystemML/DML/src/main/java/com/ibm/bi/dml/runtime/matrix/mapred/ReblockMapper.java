@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.Vector;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -20,7 +19,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.AdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -85,7 +84,7 @@ public class ReblockMapper extends MapperBase
 			//compute reblock buffer size (according to relevant rblk inst of this task only)
 			//(buffer size divided by max reblocks per input matrix, because those are shared in JVM)
 			int maxlen = 1;
-			for( Vector<ReblockInstruction> rinst : reblock_instructions )
+			for( ArrayList<ReblockInstruction> rinst : reblock_instructions )
 				maxlen = Math.max(maxlen, rinst.size()); //max reblocks per input				
 			buffersize = ReblockBuffer.DEFAULT_BUFFER_SIZE/maxlen;
 		} 

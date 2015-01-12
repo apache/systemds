@@ -71,8 +71,10 @@ public class ParameterizedBuiltinOp extends Hop
 		_op = op;
 
 		int index = 0;
-		for (String s : inputParameters.keySet()) {
-			Hop input = inputParameters.get(s);
+		for( Entry<String,Hop> e : inputParameters.entrySet() ) 
+		{
+			String s = e.getKey();
+			Hop input = e.getValue();
 			getInput().add(input);
 			input.getParent().add(this);
 

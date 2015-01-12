@@ -552,6 +552,7 @@ public class DMLScript
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
+	@SuppressWarnings("unused")
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs )
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				

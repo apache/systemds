@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,9 +24,9 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 /**
  * This class contains the parsed and compiled DML script w/ hops, lops and runtime program.
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction.
 public class DMLDebuggerProgramInfo 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public DMLConfig conf; //DML configuration information

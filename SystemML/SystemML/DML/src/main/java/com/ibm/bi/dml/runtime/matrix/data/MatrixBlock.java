@@ -38,10 +38,10 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
+import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -813,11 +813,6 @@ public class MatrixBlock extends MatrixValue
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
-			/*else { 
-				if (sparseRows[r].capacity()==0) {
-					System.out.println(" ... !null: " + sparseRows[r].size() + ", " + sparseRows[r].capacity() + ", " + sparseRows[r].getValueContainer().length + ", " + sparseRows[r].estimatedNzs + ", " + sparseRows[r].maxNzs);
-				}
-			}*/
 			sparseRows[r].append(c, v);
 			nonZeros++;
 		}
@@ -2104,12 +2099,6 @@ public class MatrixBlock extends MatrixValue
 						out.writeDouble( 0 );	
 			}
 		}
-		/* old version with binary search for each cell
-		out.writeByte( BlockType.DENSE_BLOCK.ordinal() );
-		for(int i=0; i<rlen; i++)
-			for(int j=0; j<clen; j++)
-				out.writeDouble(quickGetValue(i, j));
-		*/
 	}
 	
 	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
@@ -3545,7 +3534,6 @@ public class MatrixBlock extends MatrixValue
 			bottomright=(MatrixBlock) p.next().getValue();
 			bottomright.reset(boundaryRlen, boundaryClen, 
 					estimateSparsityOnSlice((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
-			//System.out.println("bottomright size: "+bottomright.rlen+" X "+bottomright.clen);
 		}
 		
 		if(sparse)
@@ -4166,30 +4154,7 @@ public class MatrixBlock extends MatrixValue
 		{
 			for(int i=0; i < rlen; i++) 
 				op.fn.execute(cmobj, this.quickGetValue(i,0), weights.quickGetValue(i,0));
-
-/*				
-			int zerocount = 0, zerorows=0, nzrows=0;
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					// This matrix has only a single column
-					if(sparseRows[r]==null) {
-						zerocount += weights.getValue(r,0);
-						zerorows++;
-					}
-					//int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					//x = sparseRows[r].size();
-					if ( sparseRows[r].size() == 0 ) 
-						zerorows++;
-					for(int i=0; i<sparseRows[r].size(); i++) {
-						//op.fn.execute(cmobj, values[i], weights.getValue(r,0));
-						nzrows++;
-					}
-				}
-				System.out.println("--> total="+this.getNumRows() + ", nzrows=" + nzrows + ", zerorows="+zerorows+"... zerocount="+zerocount);
-				// account for zeros in the vector
-				//op.fn.execute(cmobj, 0.0, zerocount);
-*/		}
+		}
 		else if(denseBlock!=null) //DENSE
 		{
 			//always vectors (see check above)

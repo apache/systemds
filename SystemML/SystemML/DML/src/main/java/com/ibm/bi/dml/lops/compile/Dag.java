@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,10 +57,10 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -242,7 +241,7 @@ public class Dag<N extends Lop>
 		}
 		
 		// hold all nodes in a vector (needed for ordering)
-		Vector<N> node_v = new Vector<N>();
+		ArrayList<N> node_v = new ArrayList<N>();
 		node_v.addAll(nodes);
 		
 		/*
@@ -270,7 +269,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unused")
-	private void deleteUnwantedTransientReadVariables(Vector<N> nodeV,
+	private void deleteUnwantedTransientReadVariables(ArrayList<N> nodeV,
 			ArrayList<Instruction> inst) throws DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		HashMap<String, N> labelNodeMapping = new HashMap<String, N>();
@@ -314,12 +313,10 @@ public class Dag<N extends Lop>
 		}
 
 		// generate RM instructions
-
-		Iterator<String> it = labelNodeMapping.keySet().iterator();
 		Instruction rm_inst = null;
-		while (it.hasNext()) {
-			String label = it.next();
-			N node = labelNodeMapping.get(label);
+		for( Entry<String, N> e : labelNodeMapping.entrySet() ) {
+			String label = e.getKey();
+			N node = e.getValue();
 
 			if (((Data) node).get_dataType() == DataType.SCALAR) {
 				// if(DEBUG)
@@ -342,7 +339,7 @@ public class Dag<N extends Lop>
 
 	}
 
-	private void deleteUpdatedTransientReadVariables(StatementBlock sb, Vector<N> nodeV,
+	private void deleteUpdatedTransientReadVariables(StatementBlock sb, ArrayList<N> nodeV,
 			ArrayList<Instruction> inst) throws DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
@@ -396,7 +393,7 @@ public class Dag<N extends Lop>
 					}
 				}
 				
-				if ( hasWriteParent == false ) {
+				if ( !hasWriteParent ) {
 					// node has no parent of type WRITE, so this is a CANDIDATE variable 
 					// add it to labelNodeMapping so that it is considered in further processing  
 					labelNodeMapping.put(node.getOutputParameters().getLabel(), node);
@@ -423,11 +420,9 @@ public class Dag<N extends Lop>
 		}
 		
 		// generate RM instructions
-		Iterator<String> it = updatedLabels.iterator();
 		Instruction rm_inst = null;
-		while (it.hasNext()) {
-			String label = it.next();
-
+		for ( String label : updatedLabels ) 
+		{
 			rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
 			if(DMLScript.ENABLE_DEBUG_MODE) {
 				rm_inst.setLineNum(updatedLabelsLineNum.get(label));
@@ -507,24 +502,24 @@ public class Dag<N extends Lop>
 		
 	}
 
-	private ArrayList<Vector<N>> createNodeVectors(int size) {
-		ArrayList<Vector<N>> arr = new ArrayList<Vector<N>>();
+	private ArrayList<ArrayList<N>> createNodeVectors(int size) {
+		ArrayList<ArrayList<N>> arr = new ArrayList<ArrayList<N>>();
 
 		// for each job type, we need to create a vector.
 		// additionally, create another vector for execNodes
 		for (int i = 0; i < size; i++) {
-			arr.add(new Vector<N>());
+			arr.add(new ArrayList<N>());
 		}
 		return arr;
 	}
 
-	private void clearNodeVectors(ArrayList<Vector<N>> arr) {
+	private void clearNodeVectors(ArrayList<ArrayList<N>> arr) {
 		for (int i = 0; i < arr.size(); i++) {
 			arr.get(i).clear();
 		}
 	}
 
-	private boolean isCompatible(Vector<N> nodes, JobType jt, int from,
+	private boolean isCompatible(ArrayList<N> nodes, JobType jt, int from,
 			int to) throws LopsException {
 		
 		int base = jt.getBase();
@@ -546,10 +541,10 @@ public class Dag<N extends Lop>
 	/*
 	 * Add node, and its relevant children to job-specific node vectors.
 	 */
-	private void addNodeByJobType(N node, ArrayList<Vector<N>> arr,
-			Vector<N> execNodes, boolean eliminate) throws LopsException {
+	private void addNodeByJobType(N node, ArrayList<ArrayList<N>> arr,
+			ArrayList<N> execNodes, boolean eliminate) throws LopsException {
 		
-		if (eliminate == false) {
+		if (!eliminate) {
 			// Check if this lop defines a MR job.
 			if ( node.definesMRJob() ) {
 				
@@ -628,7 +623,7 @@ public class Dag<N extends Lop>
 	 * Remove the node from all job-specific node vectors. This method is
 	 * invoked from removeNodesForNextIteration().
 	 */
-	private void removeNodeByJobType(N node, ArrayList<Vector<N>> arr) {
+	private void removeNodeByJobType(N node, ArrayList<ArrayList<N>> arr) {
 		for ( JobType jt : JobType.values())
 			if ( jt.getId() > 0 ) 
 				arr.get(jt.getId()).remove(node);
@@ -643,14 +638,14 @@ public class Dag<N extends Lop>
 	 * @throws LopsException
 	 */
 
-	private void handleSingleOutputJobs(Vector<N> execNodes,
-			ArrayList<Vector<N>> jobNodes, Vector<N> finishedNodes)
+	private void handleSingleOutputJobs(ArrayList<N> execNodes,
+			ArrayList<ArrayList<N>> jobNodes, ArrayList<N> finishedNodes)
 			throws LopsException {
 		/*
 		 * If the input of a MMCJ/MMRJ job (must have executed in a Mapper) is used
 		 * by multiple lops then we should mark it as not-finished.
 		 */
-		Vector<N> nodesWithUnfinishedOutputs = new Vector<N>();
+		ArrayList<N> nodesWithUnfinishedOutputs = new ArrayList<N>();
 		int[] jobIndices = {JobType.MMCJ.getId()};
 		Lop.Type[] lopTypes = { Lop.Type.MMCJ};
 		
@@ -660,7 +655,7 @@ public class Dag<N extends Lop>
 		for ( int jobi=0; jobi < jobIndices.length; jobi++ ) {
 			int jindex = jobIndices[jobi];
 			if (jobNodes.get(jindex).size() > 0) {
-				Vector<N> vec = jobNodes.get(jindex);
+				ArrayList<N> vec = jobNodes.get(jindex);
 
 				// first find all nodes with more than one parent that is not
 				// finished.
@@ -716,7 +711,7 @@ public class Dag<N extends Lop>
 	}
 
 	/** Method to check if a lop can be eliminated from checking **/
-	private boolean canEliminateLop(N node, Vector<N> execNodes) {
+	private boolean canEliminateLop(N node, ArrayList<N> execNodes) {
 		// this function can only eliminate "aligner" lops such a group
 		if (!node.isAligner())
 			return false;
@@ -753,7 +748,7 @@ public class Dag<N extends Lop>
 	 * @param nodes
 	 * @throws LopsException 
 	 */
-	private void generateInstructionsForInputVariables(Vector<N> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
+	private void generateInstructionsForInputVariables(ArrayList<N> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
 		for(N n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
@@ -907,7 +902,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, Vector<N> node_v)
+	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<N> node_v)
 			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException
 
@@ -915,13 +910,13 @@ public class Dag<N extends Lop>
 		LOG.trace("Grouping DAG ============");
 
 		// nodes to be executed in current iteration
-		Vector<N> execNodes = new Vector<N>();
+		ArrayList<N> execNodes = new ArrayList<N>();
 		// nodes that have already been processed
-		Vector<N> finishedNodes = new Vector<N>();
+		ArrayList<N> finishedNodes = new ArrayList<N>();
 		// nodes that are queued for the following iteration
-		Vector<N> queuedNodes = new Vector<N>();
+		ArrayList<N> queuedNodes = new ArrayList<N>();
 
-		ArrayList<Vector<N>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
+		ArrayList<ArrayList<N>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
 		
 
 		// list of instructions
@@ -955,7 +950,7 @@ public class Dag<N extends Lop>
 			gmrMapperFootprint=0;
 
 			for (int i = 0; i < node_v.size(); i++) {
-				N node = node_v.elementAt(i);
+				N node = node_v.get(i);
 
 				// finished nodes don't need to be processed
 
@@ -1338,7 +1333,7 @@ public class Dag<N extends Lop>
 
 				// copy unassigned lops in execnodes to gmrnodes
 				for (int i = 0; i < execNodes.size(); i++) {
-					N node = execNodes.elementAt(i);
+					N node = execNodes.get(i);
 					if (jobType(node, jobNodes) == -1) {
 						if ( isCompatible(node,  JobType.GMR) ) {
 							jobNodes.get(JobType.GMR.getId()).add(node);
@@ -1378,10 +1373,10 @@ public class Dag<N extends Lop>
 
 	}
 
-	private boolean compatibleWithChildrenInExecNodes(Vector<N> execNodes, N node) {
+	private boolean compatibleWithChildrenInExecNodes(ArrayList<N> execNodes, N node) {
 	  for(int i=0; i < execNodes.size(); i++)
 	  {
-	    N tmpNode = execNodes.elementAt(i);
+	    N tmpNode = execNodes.get(i);
 	    // for lops that execute in control program, compatibleJobs property is set to LopProperties.INVALID
 	    // we should not consider such lops in this check
 	    if (isChild(tmpNode, node, IDMap) 
@@ -1472,15 +1467,15 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private void generateControlProgramJobs(Vector<N> execNodes,
+	private void generateControlProgramJobs(ArrayList<N> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException,
 			DMLUnsupportedOperationException, DMLRuntimeException {
 
 		// nodes to be deleted from execnodes
-		Vector<N> markedNodes = new Vector<N>();
+		ArrayList<N> markedNodes = new ArrayList<N>();
 
 		// variable names to be deleted
-		Vector<String> var_deletions = new Vector<String>();
+		ArrayList<String> var_deletions = new ArrayList<String>();
 		HashMap<String, Integer> var_deletionsLineNum = null;
 		if(DMLScript.ENABLE_DEBUG_MODE) {
 			var_deletionsLineNum = new HashMap<String, Integer>();
@@ -1741,7 +1736,7 @@ public class Dag<N extends Lop>
 
 		// delete all marked nodes
 		for (int i = 0; i < markedNodes.size(); i++) {
-			execNodes.remove(markedNodes.elementAt(i));
+			execNodes.remove(markedNodes.get(i));
 		}
 
 	}
@@ -1757,9 +1752,9 @@ public class Dag<N extends Lop>
 	 * @throws LopsException
 	 */
 
-	private void removeNodesForNextIteration(N node, Vector<N> finishedNodes,
-			Vector<N> execNodes, Vector<N> queuedNodes,
-			ArrayList<Vector<N>> jobvec) throws LopsException {
+	private void removeNodesForNextIteration(N node, ArrayList<N> finishedNodes,
+			ArrayList<N> execNodes, ArrayList<N> queuedNodes,
+			ArrayList<ArrayList<N>> jobvec) throws LopsException {
 		
 		// only queued nodes with multiple inputs need to be handled.
 		if (node.getInputs().size() == 1)
@@ -1823,10 +1818,10 @@ public class Dag<N extends Lop>
 		// Evaluate each lop in <code>execNodes</code> for removal.
 		// Add lops to be removed to <code>markedNodes</code>.
 		
-		Vector<N> markedNodes = new Vector<N>();
+		ArrayList<N> markedNodes = new ArrayList<N>();
 		for (int i = 0; i < execNodes.size(); i++) {
 
-			N tmpNode = execNodes.elementAt(i);
+			N tmpNode = execNodes.get(i);
 
 			if (LOG.isTraceEnabled()) {
 				LOG.trace("  Checking for removal (" + tmpNode.getID() + ") " + tmpNode.toString());
@@ -1901,7 +1896,7 @@ public class Dag<N extends Lop>
 						&& node.getExecLocation() == ExecLocation.MapAndReduce
 						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,node)  // don't remove since it already piggybacked with a MapReduce node
 						&& branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)
-						&& tmpNode.definesMRJob() != true) {
+						&& !tmpNode.definesMRJob()) {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("    Removing for next iteration (code 5): ("+ tmpNode.getID() + ") " + tmpNode.toString());
 
@@ -1912,12 +1907,12 @@ public class Dag<N extends Lop>
 		// we also need to delete all parent nodes of marked nodes
 		for (int i = 0; i < execNodes.size(); i++) {
 			LOG.trace("  Checking for removal - ("
-						+ execNodes.elementAt(i).getID() + ") "
-						+ execNodes.elementAt(i).toString());
+						+ execNodes.get(i).getID() + ") "
+						+ execNodes.get(i).toString());
 
-			if (hasChildNode(execNodes.elementAt(i), markedNodes) && !markedNodes.contains(execNodes.elementAt(i))) {
-				markedNodes.add(execNodes.elementAt(i));
-				LOG.trace("    Removing for next iteration (code 6) (" + execNodes.elementAt(i).getID() + ") " + execNodes.elementAt(i).toString());
+			if (hasChildNode(execNodes.get(i), markedNodes) && !markedNodes.contains(execNodes.get(i))) {
+				markedNodes.add(execNodes.get(i));
+				LOG.trace("    Removing for next iteration (code 6) (" + execNodes.get(i).getID() + ") " + execNodes.get(i).toString());
 			}
 		}
 
@@ -1940,9 +1935,9 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unused")
-	private void removeNodesForNextIterationOLD(N node, Vector<N> finishedNodes,
-			Vector<N> execNodes, Vector<N> queuedNodes,
-			ArrayList<Vector<N>> jobvec) throws LopsException {
+	private void removeNodesForNextIterationOLD(N node, ArrayList<N> finishedNodes,
+			ArrayList<N> execNodes, ArrayList<N> queuedNodes,
+			ArrayList<ArrayList<N>> jobvec) throws LopsException {
 		// only queued nodes with two inputs need to be handled.
 
 		// TODO: statiko -- this should be made == 1
@@ -1985,11 +1980,11 @@ public class Dag<N extends Lop>
 			child_queued = true;
 
 		// nodes to be dropped
-		Vector<N> markedNodes = new Vector<N>();
+		ArrayList<N> markedNodes = new ArrayList<N>();
 
 		for (int i = 0; i < execNodes.size(); i++) {
 
-			N tmpNode = execNodes.elementAt(i);
+			N tmpNode = execNodes.get(i);
 
 			if (LOG.isTraceEnabled()) {
 				LOG.trace("Checking for removal (" + tmpNode.getID()
@@ -2062,7 +2057,7 @@ public class Dag<N extends Lop>
 								node)
 						&& isChild(tmpNode, node, IDMap) &&
 						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
-						&& tmpNode.definesMRJob() != true) {
+						&& !tmpNode.definesMRJob()) {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removing for next iteration:: ("
 								+ tmpNode.getID() + ") " + tmpNode.toString());
@@ -2098,29 +2093,29 @@ public class Dag<N extends Lop>
 		for (int i = 0; i < execNodes.size(); i++) {
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Checking for removal - ("
-						+ execNodes.elementAt(i).getID() + ") "
-						+ execNodes.elementAt(i).toString());
+						+ execNodes.get(i).getID() + ") "
+						+ execNodes.get(i).toString());
 
-			if (hasChildNode(execNodes.elementAt(i), markedNodes)) {
-				markedNodes.add(execNodes.elementAt(i));
+			if (hasChildNode(execNodes.get(i), markedNodes)) {
+				markedNodes.add(execNodes.get(i));
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Removing for next iteration - ("
-							+ execNodes.elementAt(i).getID() + ") "
-							+ execNodes.elementAt(i).toString());
+							+ execNodes.get(i).getID() + ") "
+							+ execNodes.get(i).toString());
 			}
 		}
 
 		// delete marked nodes from finishedNodes and execNodes
 		// add to queued nodes
 		for (int i = 0; i < markedNodes.size(); i++) {
-			finishedNodes.remove(markedNodes.elementAt(i));
-			execNodes.remove(markedNodes.elementAt(i));
-			removeNodeByJobType(markedNodes.elementAt(i), jobvec);
-			queuedNodes.add(markedNodes.elementAt(i));
+			finishedNodes.remove(markedNodes.get(i));
+			execNodes.remove(markedNodes.get(i));
+			removeNodeByJobType(markedNodes.get(i), jobvec);
+			queuedNodes.add(markedNodes.get(i));
 		}
 	}
 
-	private boolean branchCanBePiggyBackedReduce(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes) {
+	private boolean branchCanBePiggyBackedReduce(N tmpNode, N node, ArrayList<N> execNodes, ArrayList<N> queuedNodes) {
 		if(node.getExecLocation() != ExecLocation.Reduce)
 			return false;
 	    
@@ -2131,7 +2126,7 @@ public class Dag<N extends Lop>
 		}
 		
 		for(int i=0; i < execNodes.size(); i++) {
-		   N n = execNodes.elementAt(i);
+		   N n = execNodes.get(i);
        
 		   if(n.equals(node))
 			   continue;
@@ -2153,7 +2148,7 @@ public class Dag<N extends Lop>
 	   return true;
 	}
 
-	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, Vector<N> execNodes, Vector<N> queuedNodes, Vector<N> markedNodes) {
+	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, ArrayList<N> execNodes, ArrayList<N> queuedNodes, ArrayList<N> markedNodes) {
 		if(node.getExecLocation() != ExecLocation.Map)
 			return false;
 		
@@ -2217,14 +2212,14 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 	private boolean branchCanBePiggyBackedMapAndReduce(N tmpNode, N node,
-			Vector<N> execNodes, Vector<N> queuedNodes) {
+			ArrayList<N> execNodes, ArrayList<N> queuedNodes) {
 
 		if (node.getExecLocation() != ExecLocation.MapAndReduce)
 			return false;
 		JobType jt = JobType.findJobTypeFromLop(node);
 
 		for (int i = 0; i < execNodes.size(); i++) {
-			N n = execNodes.elementAt(i);
+			N n = execNodes.get(i);
 
 			if (n.equals(node))
 				continue;
@@ -2254,7 +2249,7 @@ public class Dag<N extends Lop>
 	}
 
   private boolean branchHasNoOtherUnExecutedParents(N tmpNode, N node,
-      Vector<N> execNodes, Vector <N> finishedNodes) {
+      ArrayList<N> execNodes, ArrayList<N> finishedNodes) {
 
 	  //if tmpNode has more than one unfinished output, return false 
 	  if(tmpNode.getOutputs().size() > 1)
@@ -2272,7 +2267,7 @@ public class Dag<N extends Lop>
 	  //check to see if any node between node and tmpNode has more than one unfinished output 
 	  for(int i=0; i < execNodes.size(); i++)
 	  {
-	    N n = execNodes.elementAt(i);
+	    N n = execNodes.get(i);
 	    
 	    if(n.equals(node) || n.equals(tmpNode))
 	      continue;
@@ -2303,7 +2298,7 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 
-	private boolean hasMapAndReduceParentNode(N tmpNode, Vector<N> execNodes,
+	private boolean hasMapAndReduceParentNode(N tmpNode, ArrayList<N> execNodes,
 			N node) {
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
@@ -2331,7 +2326,7 @@ public class Dag<N extends Lop>
 	 * @throws LopsException
 	 */
 
-	private int jobType(Lop lops, ArrayList<Vector<N>> jobvec) throws LopsException {
+	private int jobType(Lop lops, ArrayList<ArrayList<N>> jobvec) throws LopsException {
 		for ( JobType jt : JobType.values()) {
 			int i = jt.getId();
 			if (i > 0 && jobvec.get(i) != null && jobvec.get(i).contains(lops)) {
@@ -2353,7 +2348,7 @@ public class Dag<N extends Lop>
 
 	@SuppressWarnings("unchecked")
 	private boolean hasOtherMapAndReduceParentNode(N tmpNode,
-			Vector<N> nodeList, N node) {
+			ArrayList<N> nodeList, N node) {
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
 
@@ -2381,7 +2376,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private boolean hasOtherQueuedParentNode(N tmpNode, Vector<N> queuedNodes, N node) {
+	private boolean hasOtherQueuedParentNode(N tmpNode, ArrayList<N> queuedNodes, N node) {
 		if ( queuedNodes.size() == 0 )
 			return false;
 		
@@ -2406,7 +2401,7 @@ public class Dag<N extends Lop>
 	 * @param jobNodes
 	 * @throws DMLRuntimeException
 	 */
-	void printJobNodes(ArrayList<Vector<N>> jobNodes)
+	void printJobNodes(ArrayList<ArrayList<N>> jobNodes)
 			throws DMLRuntimeException {
 		if (LOG.isTraceEnabled()){
 			for ( JobType jt : JobType.values() ) {
@@ -2416,8 +2411,8 @@ public class Dag<N extends Lop>
 					
 					for (int j = 0; j < jobNodes.get(i).size(); j++) {
 						LOG.trace("    "
-								+ jobNodes.get(i).elementAt(j).getID() + ") "
-								+ jobNodes.get(i).elementAt(j).toString());
+								+ jobNodes.get(i).get(j).getID() + ") "
+								+ jobNodes.get(i).get(j).toString());
 					}
 				}
 			}
@@ -2434,7 +2429,7 @@ public class Dag<N extends Lop>
 	 * @param loc
 	 * @return
 	 */
-	boolean hasANode(Vector<N> nodes, ExecLocation loc) {
+	boolean hasANode(ArrayList<N> nodes, ExecLocation loc) {
 		for (int i = 0; i < nodes.size(); i++) {
 			if (nodes.get(i).getExecLocation() == ExecLocation.RecordReader)
 				return true;
@@ -2442,7 +2437,7 @@ public class Dag<N extends Lop>
 		return false;
 	}
 
-	ArrayList<Vector<N>> splitGMRNodesByRecordReader(Vector<N> gmrnodes) {
+	ArrayList<ArrayList<N>> splitGMRNodesByRecordReader(ArrayList<N> gmrnodes) {
 
 		// obtain the list of record reader nodes
 		ArrayList<N> rrnodes = new ArrayList<N>();
@@ -2455,7 +2450,7 @@ public class Dag<N extends Lop>
 		 * We allocate one extra vector to hold lops that do not depend on any
 		 * recordreader lops
 		 */
-		ArrayList<Vector<N>> splitGMR = createNodeVectors(rrnodes.size() + 1);
+		ArrayList<ArrayList<N>> splitGMR = createNodeVectors(rrnodes.size() + 1);
 
 		// flags to indicate whether a lop has been added to one of the node
 		// vectors
@@ -2484,7 +2479,7 @@ public class Dag<N extends Lop>
 		// add all remaining lops to a separate job
 		int jobindex = rrnodes.size(); // the last node vector
 		for (int i = 0; i < gmrnodes.size(); i++) {
-			if (flags[i] == false) {
+			if (!flags[i]) {
 				splitGMR.get(jobindex).add(gmrnodes.get(i));
 				flags[i] = true;
 			}
@@ -2508,9 +2503,9 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException
 	 */
 
-	public void generateMRJobs(Vector<N> execNodes,
+	public void generateMRJobs(ArrayList<N> execNodes,
 			ArrayList<Instruction> inst,
-			ArrayList<Instruction> deleteinst, ArrayList<Vector<N>> jobNodes)
+			ArrayList<Instruction> deleteinst, ArrayList<ArrayList<N>> jobNodes)
 			throws LopsException, DMLUnsupportedOperationException,
 			DMLRuntimeException
 
@@ -2536,7 +2531,7 @@ public class Dag<N extends Lop>
 				continue;
 			
 			int index = jt.getId(); // job id is used as an index into jobNodes
-			Vector<N> currNodes = jobNodes.get(index);
+			ArrayList<N> currNodes = jobNodes.get(index);
 			
 			// generate MR job
 			if (currNodes != null && currNodes.size() > 0) {
@@ -2546,7 +2541,7 @@ public class Dag<N extends Lop>
 
 				if (jt.allowsRecordReaderInstructions() && hasANode(jobNodes.get(index), ExecLocation.RecordReader)) {
 					// split the nodes by recordReader lops
-					ArrayList<Vector<N>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
+					ArrayList<ArrayList<N>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
 					for (int i = 0; i < rrlist.size(); i++) {
 						generateMapReduceInstructions(rrlist.get(i), inst, deleteinst, rmvarinst, jt);
 					}
@@ -2556,20 +2551,20 @@ public class Dag<N extends Lop>
 					// We should split the nodes so that a separate job is produced for each shuffle instruction.
 					Lop.Type splittingLopType = jt.getShuffleLopType();
 					
-					Vector<N> nodesForASingleJob = new Vector<N>();
+					ArrayList<N> nodesForASingleJob = new ArrayList<N>();
 					for (int i = 0; i < jobNodes.get(index).size(); i++) {
-						if (jobNodes.get(index).elementAt(i).getType() == splittingLopType) {
+						if (jobNodes.get(index).get(i).getType() == splittingLopType) {
 							nodesForASingleJob.clear();
 							
 							// Add the lop that defines the split 
-							nodesForASingleJob.add(jobNodes.get(index).elementAt(i));
+							nodesForASingleJob.add(jobNodes.get(index).get(i));
 							
 							/*
 							 * Add the splitting lop's children. This call is redundant when jt=SORT
 							 * because a sort job ALWAYS has a SINGLE lop in the entire job
 							 * i.e., there are no children to add when jt=SORT. 
 							 */
-							addChildren(jobNodes.get(index).elementAt(i), nodesForASingleJob, jobNodes.get(index));
+							addChildren(jobNodes.get(index).get(i), nodesForASingleJob, jobNodes.get(index));
 							
 							if ( jt.isCompatibleWithParentNodes() ) {
 								/*
@@ -2578,7 +2573,7 @@ public class Dag<N extends Lop>
 								 * may have a Data(Write) lop as its parent, which can be 
 								 * executed along with MMRJ.
 								 */
-								addParents(jobNodes.get(index).elementAt(i), nodesForASingleJob, jobNodes.get(index));
+								addParents(jobNodes.get(index).get(i), nodesForASingleJob, jobNodes.get(index));
 							}
 							
 							generateMapReduceInstructions(nodesForASingleJob, inst, deleteinst, rmvarinst, jt);
@@ -2636,14 +2631,14 @@ public class Dag<N extends Lop>
 	 * @param exec_n
 	 */
 
-	private void addParents(N node, Vector<N> node_v, Vector<N> exec_n) {
+	private void addParents(N node, ArrayList<N> node_v, ArrayList<N> exec_n) {
 		for (int i = 0; i < exec_n.size(); i++) {
-			if (isChild(node, exec_n.elementAt(i), IDMap)) {
-				if (!node_v.contains(exec_n.elementAt(i))) {
+			if (isChild(node, exec_n.get(i), IDMap)) {
+				if (!node_v.contains(exec_n.get(i))) {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Adding parent - "
-								+ exec_n.elementAt(i).toString());
-					node_v.add(exec_n.elementAt(i));
+								+ exec_n.get(i).toString());
+					node_v.add(exec_n.get(i));
 				}
 			}
 
@@ -2660,7 +2655,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private void addChildren(N node, Vector<N> node_v, Vector<N> exec_n) {
+	private void addChildren(N node, ArrayList<N> node_v, ArrayList<N> exec_n) {
 
 		/** add child in exec nodes that is not of type scalar **/
 		if (exec_n.contains(node)
@@ -3179,7 +3174,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	public void generateMapReduceInstructions(Vector<N> execNodes,
+	public void generateMapReduceInstructions(ArrayList<N> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
 			JobType jt) throws LopsException,
 			DMLUnsupportedOperationException, DMLRuntimeException
@@ -3213,7 +3208,7 @@ public class Dag<N extends Lop>
 		boolean cellModeOverride = false;
 		
 		/* Find the nodes that produce an output */
-		Vector<N> rootNodes = new Vector<N>();
+		ArrayList<N> rootNodes = new ArrayList<N>();
 		getOutputNodes(execNodes, rootNodes, !jt.producesIntermediateOutput());
 		if( LOG.isTraceEnabled() )
 			LOG.trace("# of root nodes = " + rootNodes.size());
@@ -3221,10 +3216,10 @@ public class Dag<N extends Lop>
 		
 		/* Remove transient writes that are simple copy of transient reads */
 		if (jt == JobType.GMR) {
-			Vector<N> markedNodes = new Vector<N>();
+			ArrayList<N> markedNodes = new ArrayList<N>();
 			// only keep data nodes that are results of some computation.
 			for (int i = 0; i < rootNodes.size(); i++) {
-				N node = rootNodes.elementAt(i);
+				N node = rootNodes.get(i);
 				if (node.getExecLocation() == ExecLocation.Data
 						&& ((Data) node).isTransient()
 						&& ((Data) node).getOperationType() == OperationTypes.WRITE
@@ -3252,7 +3247,7 @@ public class Dag<N extends Lop>
 		/* Determine all input data files */
 		
 		for (int i = 0; i < rootNodes.size(); i++) {
-			getInputPathsAndParameters(rootNodes.elementAt(i), execNodes,
+			getInputPathsAndParameters(rootNodes.get(i), execNodes,
 					inputs, inputInfos, numRows, numCols, numRowsPerBlock,
 					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
 		}
@@ -3269,7 +3264,7 @@ public class Dag<N extends Lop>
 		// currently, recordreader instructions are allowed only in GMR jobs
 		if (jt == JobType.GMR) {
 			for (int i = 0; i < rootNodes.size(); i++) {
-				getRecordReaderInstructions(rootNodes.elementAt(i), execNodes,
+				getRecordReaderInstructions(rootNodes.get(i), execNodes,
 						inputs, recordReaderInstructions, nodeIndexMapping,
 						start_index, inputLabels, inputLops, MRJobLineNumbers);
 				if ( recordReaderInstructions.size() > 1 )
@@ -3301,7 +3296,7 @@ public class Dag<N extends Lop>
 		/* Get Mapper Instructions */
 	
 		for (int i = 0; i < rootNodes.size(); i++) {
-			getMapperInstructions(rootNodes.elementAt(i), execNodes, inputs,
+			getMapperInstructions(rootNodes.get(i), execNodes, inputs,
 					mapperInstructions, nodeIndexMapping, start_index,
 					inputLabels, inputLops, MRJobLineNumbers);
 		}
@@ -3323,7 +3318,7 @@ public class Dag<N extends Lop>
 
 		for (int i = 0; i < rootNodes.size(); i++) {
 			int resultIndex = getAggAndOtherInstructions(
-					rootNodes.elementAt(i), execNodes, shuffleInstructions, aggInstructionsReducer,
+					rootNodes.get(i), execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
 					inputLabels, inputLops, MRJobLineNumbers);
 			if ( resultIndex == -1)
@@ -3331,7 +3326,7 @@ public class Dag<N extends Lop>
 			resultIndices.add(Byte.valueOf((byte)resultIndex));
 			
 			// setup output filenames and outputInfos and generate related instructions
-			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR, cellModeOverride);
+			NodeOutput out = setupNodeOutputs(rootNodes.get(i), ExecType.MR, cellModeOverride);
 			outputLabels.add(out.getVarName());
 			outputs.add(out.getFileName());
 			outputInfos.add(out.getOutInfo());
@@ -3558,7 +3553,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private int getAggAndOtherInstructions(N node, Vector<N> execNodes,
+	private int getAggAndOtherInstructions(N node, ArrayList<N> execNodes,
 			ArrayList<String> shuffleInstructions,
 			ArrayList<String> aggInstructionsReducer,
 			ArrayList<String> otherInstructionsReducer,
@@ -3808,7 +3803,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private int getRecordReaderInstructions(N node, Vector<N> execNodes,
+	private int getRecordReaderInstructions(N node, ArrayList<N> execNodes,
 			ArrayList<String> inputStrings,
 			ArrayList<String> recordReaderInstructions,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
@@ -3919,7 +3914,7 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private int getMapperInstructions(N node, Vector<N> execNodes,
+	private int getMapperInstructions(N node, ArrayList<N> execNodes,
 			ArrayList<String> inputStrings,
 			ArrayList<String> instructionsInMapper,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
@@ -4064,7 +4059,7 @@ public class Dag<N extends Lop>
 
 	// Method to populate inputs and also populates node index mapping.
 	@SuppressWarnings("unchecked")
-	private void getInputPathsAndParameters(N node, Vector<N> execNodes,
+	private void getInputPathsAndParameters(N node, ArrayList<N> execNodes,
 			ArrayList<String> inputStrings, ArrayList<InputInfo> inputInfos,
 			ArrayList<Long> numRows, ArrayList<Long> numCols,
 			ArrayList<Long> numRowsPerBlock, ArrayList<Long> numColsPerBlock,
@@ -4205,10 +4200,10 @@ public class Dag<N extends Lop>
 	 * @param rootNodes
 	 */
 
-	private void getOutputNodes(Vector<N> execNodes, Vector<N> rootNodes,
+	private void getOutputNodes(ArrayList<N> execNodes, ArrayList<N> rootNodes,
 			boolean include_intermediate) {
 		for (int i = 0; i < execNodes.size(); i++) {
-			N node = execNodes.elementAt(i);
+			N node = execNodes.get(i);
 
 			// terminal node
 			if (node.getOutputs().size() == 0 && !rootNodes.contains(node)) {
@@ -4258,7 +4253,7 @@ public class Dag<N extends Lop>
 	 * 
 	 * @param v
 	 */
-	private void doTopologicalSort_strict_order(Vector<N> v) {
+	private void doTopologicalSort_strict_order(ArrayList<N> v) {
 		//int numNodes = v.size();
 
 		/*
@@ -4349,7 +4344,7 @@ public class Dag<N extends Lop>
 	}
 	
 	@SuppressWarnings("unchecked")
-	private boolean hasChildNode(N node, Vector<N> childNodes, ExecLocation type) {
+	private boolean hasChildNode(N node, ArrayList<N> childNodes, ExecLocation type) {
 		if ( childNodes.size() == 0 ) 
 			return false;
 		
@@ -4363,7 +4358,7 @@ public class Dag<N extends Lop>
 		return false;
 	}
 	@SuppressWarnings("unchecked")
-	private N getChildNode(N node, Vector<N> childNodes, ExecLocation type) {
+	private N getChildNode(N node, ArrayList<N> childNodes, ExecLocation type) {
 		if ( childNodes.size() == 0 )
 			return null;
 		
@@ -4387,7 +4382,7 @@ public class Dag<N extends Lop>
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
-	private N getParentNode(N node, Vector<N> parentNodes, ExecLocation type) {
+	private N getParentNode(N node, ArrayList<N> parentNodes, ExecLocation type) {
 		if ( parentNodes.size() == 0 )
 			return null;
 		for(int i=0; i < parentNodes.size(); i++ ) {
@@ -4402,7 +4397,7 @@ public class Dag<N extends Lop>
 	// Checks if "node" has any descendants in nodesVec with definedMRJob flag
 	// set to true
 	@SuppressWarnings("unchecked")
-	private boolean hasMRJobChildNode(N node, Vector<N> nodesVec) {
+	private boolean hasMRJobChildNode(N node, ArrayList<N> nodesVec) {
 		if ( nodesVec.size() == 0 )
 			return false;
 		
@@ -4417,7 +4412,7 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean checkDataGenAsChildNode(N node, Vector<N> nodesVec) {
+	private boolean checkDataGenAsChildNode(N node, ArrayList<N> nodesVec) {
 		if(nodesVec.size() == 0)
 			return true;
 		
@@ -4432,7 +4427,7 @@ public class Dag<N extends Lop>
 		return onlyDatagen;
 	}
 
-	private int getChildAlignment(N node, Vector<N> execNodes, ExecLocation type) {
+	private int getChildAlignment(N node, ArrayList<N> execNodes, ExecLocation type) {
 
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
@@ -4470,12 +4465,12 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean hasChildNode(N node, Vector<N> nodes) {
+	private boolean hasChildNode(N node, ArrayList<N> nodes) {
 		return hasChildNode(node, nodes, ExecLocation.INVALID);
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean hasParentNode(N node, Vector<N> parentNodes) {
+	private boolean hasParentNode(N node, ArrayList<N> parentNodes) {
 		if ( parentNodes.size() == 0 )
 			return false;
 		

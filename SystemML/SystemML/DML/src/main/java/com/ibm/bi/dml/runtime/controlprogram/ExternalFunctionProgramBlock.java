@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.Vector;
 
 import org.nimble.configuration.NimbleConfig;
 import org.nimble.control.DAGQueue;
@@ -39,13 +38,13 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -69,7 +68,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	protected static IDSequence _idSeq = null;
+	protected static final IDSequence _idSeq = new IDSequence();
 
 	//handle to the nimble dag queue
 	protected static DAGQueue _dagQueue = null;
@@ -87,11 +86,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 	protected long _runID = -1; //ID for block of statements
 	
-	static
-	{
-		_idSeq = new IDSequence();
-	}
-	
 	/**
 	 * Constructor that also provides otherParams that are needed for external
 	 * functions. Remaining parameters will just be passed to constructor for
@@ -101,8 +95,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @throws DMLRuntimeException 
 	 */
 	protected ExternalFunctionProgramBlock(Program prog,
-			Vector<DataIdentifier> inputParams,
-			Vector<DataIdentifier> outputParams,
+			ArrayList<DataIdentifier> inputParams,
+			ArrayList<DataIdentifier> outputParams,
 			String baseDir) throws DMLRuntimeException
 	{
 		super(prog, inputParams, outputParams);		
@@ -112,8 +106,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 	
 	public ExternalFunctionProgramBlock(Program prog,
-			Vector<DataIdentifier> inputParams,
-			Vector<DataIdentifier> outputParams,
+			ArrayList<DataIdentifier> inputParams,
+			ArrayList<DataIdentifier> outputParams,
 			HashMap<String, String> otherParams,
 			String baseDir) throws DMLRuntimeException {
 

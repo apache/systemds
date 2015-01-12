@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -62,7 +62,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class DMLYarnClient 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private static final Log LOG = LogFactory.getLog(DMLYarnClient.class);
@@ -333,14 +333,16 @@ public class DMLYarnClient
 	{
 		//construct jar command
 		String jarname = dir+"/SystemML.jar";
-		String flist = "";
 		File fdir = new File(dir);
 		File[] tmp = fdir.listFiles();
-		for( File ftmp : tmp )
-			flist += ftmp.getName()+" ";;
+		StringBuilder flist = new StringBuilder();
+		for( File ftmp : tmp ) {
+			flist.append(ftmp.getName());
+			flist.append(" ");
+		}
 		
 		//execute jar command
-		String command = "jar cf "+jarname+" "+flist.trim();
+		String command = "jar cf "+jarname+" "+flist.subSequence(0, flist.length()-1);
 		Process child = Runtime.getRuntime().exec(command, null, fdir);		
 		int c = 0;
 		while ((c = child.getInputStream().read()) != -1)

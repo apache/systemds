@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,15 +9,15 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
 
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
@@ -27,7 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 public class MMCJMRCombinerReducerBase extends ReduceBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	//aggregate binary instruction for the mmcj
@@ -90,7 +90,7 @@ public class MMCJMRCombinerReducerBase extends ReduceBase
 		else
 			representTag=aggBinInstruction.input2;
 		
-		Vector<AggregateInstruction> instructions=agg_instructions.get(representTag);
+		ArrayList<AggregateInstruction> instructions=agg_instructions.get(representTag);
 		AggregateInstruction ins;
 		if(instructions==null)
 		{

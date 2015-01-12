@@ -96,8 +96,10 @@ public class DataOp extends Hop
 		_dataop = dop;
 
 		int index = 0;
-		for (String s : inputParameters.keySet()) {
-			Hop input = inputParameters.get(s);
+		for( Entry<String, Hop> e : inputParameters.entrySet() ) 
+		{
+			String s = e.getKey();
+			Hop input = e.getValue();
 			getInput().add(input);
 			input.getParent().add(this);
 
@@ -124,8 +126,10 @@ public class DataOp extends Hop
 		
 		if (inputParameters != null){
 			int index = 1;
-			for (String s : inputParameters.keySet()) {
-				Hop input = inputParameters.get(s);
+			for( Entry<String, Hop> e : inputParameters.entrySet() ) 
+			{
+				String s = e.getKey();
+				Hop input = e.getValue();
 				getInput().add(input);
 				input.getParent().add(this);
 
@@ -422,6 +426,7 @@ public class DataOp extends Hop
 		return this.get_sqllops();
 	}
 	
+	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect(Hop input)
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
@@ -608,6 +613,7 @@ public class DataOp extends Hop
 	
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException 
 	{
 		DataOp ret = new DataOp();	

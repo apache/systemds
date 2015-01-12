@@ -1779,8 +1779,7 @@ public class BinaryOp extends Hop
 				else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
 				{
 					ldim1 = input2.get_dim1();
-					ldim2 = input2.get_dim2();	
-					//lnnz2 = input2.getNnz();
+					ldim2 = input2.get_dim2();
 				}
 				else //MATRIX - MATRIX 
 				{
@@ -1791,7 +1790,6 @@ public class BinaryOp extends Hop
 					ldim2 = (input1.get_dim2()>0) ? input1.get_dim2() 
 							: ((input2.get_dim2()>1)?input2.get_dim2():-1);
 					lnnz1 = input1.getNnz();
-					//lnnz2 = input2.getNnz();
 				}
 				
 				set_dim1( ldim1 );

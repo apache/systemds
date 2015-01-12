@@ -10,7 +10,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 
 /**
  * A task is a logical group of one or multiple iterations (each iteration is assigned to exactly one task).

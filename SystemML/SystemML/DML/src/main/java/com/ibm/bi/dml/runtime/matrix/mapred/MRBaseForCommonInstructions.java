@@ -9,8 +9,8 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -18,21 +18,21 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CumsumSplitInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendGInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumsumSplitInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -143,21 +143,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	protected void processMixedInstructions(MRInstruction[] mixed_instructions) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		if( mixed_instructions != null )
-			for( MRInstruction ins : mixed_instructions )
-				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
-	}
-	
-	/**
-	 * 
-	 * @param mixed_instructions
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
-	 */
-	protected void processMixedInstructions(Vector<MRInstruction> mixed_instructions) 
+	protected void processMixedInstructions(ArrayList<MRInstruction> mixed_instructions) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if( mixed_instructions != null )

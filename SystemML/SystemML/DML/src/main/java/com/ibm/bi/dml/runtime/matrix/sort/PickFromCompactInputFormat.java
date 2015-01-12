@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,10 +9,10 @@
 package com.ibm.bi.dml.runtime.matrix.sort;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -38,16 +38,13 @@ import com.ibm.bi.dml.runtime.matrix.data.Pair;
 public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, MatrixCell>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	static final String VALUE_IS_WEIGHT="value.is.weight";
-	// private boolean inputIsVector=true;
+	public static final String VALUE_IS_WEIGHT="value.is.weight";
 	public static final String INPUT_IS_VECTOR="input.is.vector";
 	public static final String SELECTED_RANGES="selected.ranges";
-	//public static final String SELECTED_RANGES_PREFIX="selected.ranges.in.";
 	public static final String SELECTED_POINTS_PREFIX="selected.points.in.";
-	//public static final String KEY_CLASS="key.class.to.read";
 	public static final String VALUE_CLASS="value.class.to.read";
 	public static final String PARTITION_OF_ZERO="partition.of.zero";
 	public static final String NUMBER_OF_ZERO="number.of.zero";
@@ -86,7 +83,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	}
 	
 	private static void getPointsInEachPartFile(long[] counts, double[] probs, HashMap<Integer, 
-			Vector<Pair<Integer, Integer>>> posMap)
+			ArrayList<Pair<Integer, Integer>>> posMap)
 	{	
 		long[] ranges=new long[counts.length];
 		ranges[0]=counts[0];
@@ -106,10 +103,10 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			long pos=(long)Math.ceil(total*e.prob);
 			while(ranges[currentPart]<pos)
 				currentPart++;
-			Vector<Pair<Integer, Integer>> vec=posMap.get(currentPart);
+			ArrayList<Pair<Integer, Integer>> vec=posMap.get(currentPart);
 			if(vec==null)
 			{
-				vec=new Vector<Pair<Integer, Integer>>();
+				vec=new ArrayList<Pair<Integer, Integer>>();
 				posMap.put(currentPart, vec);
 			}
 			
@@ -123,12 +120,12 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	
 	public static Set<Integer> setPickRecordsInEachPartFile(JobConf job, NumItemsByEachReducerMetaData metadata, double[] probs)
 	{
-		HashMap<Integer, Vector<Pair<Integer, Integer>>> posMap
-		=new HashMap<Integer, Vector<Pair<Integer, Integer>>>();
+		HashMap<Integer, ArrayList<Pair<Integer, Integer>>> posMap
+		=new HashMap<Integer, ArrayList<Pair<Integer, Integer>>>();
 		
 		getPointsInEachPartFile(metadata.getNumItemsArray(), probs, posMap);
 		
-		for(Entry<Integer, Vector<Pair<Integer, Integer>>> e: posMap.entrySet())
+		for(Entry<Integer, ArrayList<Pair<Integer, Integer>>> e: posMap.entrySet())
 		{
 			job.set(SELECTED_POINTS_PREFIX+e.getKey(), getString(e.getValue()));
 			//System.out.println(e.getKey()+": "+getString(e.getValue()));
@@ -179,11 +176,17 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		job.setBoolean(INPUT_IS_VECTOR, false);
 	}
 	
-	private static String getString(Vector<Pair<Integer, Integer>> value) {
-		String str="";
-		for(Pair<Integer, Integer> i: value)
-			str+=i.getKey()+":"+i.getValue()+",";
-		return str.substring(0, str.length()-1);
+	private static String getString(ArrayList<Pair<Integer, Integer>> value) 
+	{
+		StringBuilder sb = new StringBuilder();
+		for(Pair<Integer, Integer> i: value) {
+			sb.append(i.getKey());
+			sb.append(":");
+			sb.append(i.getValue());
+			sb.append(",");
+		}
+		
+		return sb.substring(0, sb.length()-1);
 	}
 
 	public RecordReader<MatrixIndexes, MatrixCell> getRecordReader(InputSplit split

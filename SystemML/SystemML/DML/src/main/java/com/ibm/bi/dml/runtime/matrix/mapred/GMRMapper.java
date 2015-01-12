@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,7 +11,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -34,7 +33,7 @@ public class GMRMapper extends MapperBase
 implements Mapper<Writable, Writable, Writable, Writable>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//whether this is a map only job
@@ -61,7 +60,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	
 	//tempory variables
 	private TaggedMatrixValue taggedValueBuffer=null;
-	private HashMap<Byte, Vector<Integer>> tagMapping;
+	private HashMap<Byte, ArrayList<Integer>> tagMapping;
 	
 	//empty block filter flags
 	private boolean _filterEmptyInputBlocks = false;
@@ -140,7 +139,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	 */
 	protected void processMapFinalOutput(int index,
 			TaggedMatrixValue taggedValueBuffer, CollectMultipleConvertedOutputs collectFinalMultipleOutputs,
-			Reporter reporter, HashMap<Byte, Vector<Integer>> tagMapping) throws IOException
+			Reporter reporter, HashMap<Byte, ArrayList<Integer>> tagMapping) throws IOException
 	{
 		for(byte output: outputIndexes.get(index))
 		{
@@ -204,14 +203,14 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		resultsMaxRowDims=new long[resultIndexes.length];
 		resultsMaxColDims=new long[resultIndexes.length];
 		
-		tagMapping=new HashMap<Byte, Vector<Integer>>();
+		tagMapping=new HashMap<Byte, ArrayList<Integer>>();
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];
-			Vector<Integer> vec=tagMapping.get(output);
+			ArrayList<Integer> vec=tagMapping.get(output);
 			if(vec==null)
 			{
-				vec=new Vector<Integer>();
+				vec=new ArrayList<Integer>();
 				tagMapping.put(output, vec);
 			}
 			vec.add(i);

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,12 +24,12 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class GroupedAggregate extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private HashMap<String, Lop> _inputParams;
-	private final String opcode = "groupedagg";
-	public final static String COMBINEDINPUT = "combinedinput";
+	private static final String opcode = "groupedagg";
+	public static final String COMBINEDINPUT = "combinedinput";
 	
 	/**
 	 * Constructor to perform grouped aggregate.
@@ -52,10 +52,12 @@ public class GroupedAggregate extends Lop
 			inputParameterLops.get(COMBINEDINPUT).addOutput(this);
 			
 			// process remaining parameters
-			for ( String k : inputParameterLops.keySet()) {
+			for ( Entry<String, Lop> e : inputParameterLops.entrySet() ) {
+				String k = e.getKey();
+				Lop lop = e.getValue();
 				if ( !k.equalsIgnoreCase(COMBINEDINPUT) ) {
-					this.addInput(inputParameterLops.get(k));
-					inputParameterLops.get(k).addOutput(this);
+					this.addInput(lop);
+					lop.addOutput(this);
 				}
 			}
 			
@@ -79,10 +81,12 @@ public class GroupedAggregate extends Lop
 			inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
 			
 			// process remaining parameters
-			for ( String k : inputParameterLops.keySet()) {
+			for ( Entry<String, Lop> e : inputParameterLops.entrySet() ) {
+				String k = e.getKey();
+				Lop lop = e.getValue();
 				if ( !k.equalsIgnoreCase(Statement.GAGG_TARGET) && !k.equalsIgnoreCase(Statement.GAGG_GROUPS) ) {
-					this.addInput(inputParameterLops.get(k));
-					inputParameterLops.get(k).addOutput(this);
+					this.addInput(lop);
+					lop.addOutput(this);
 				}
 			}
 			_inputParams = inputParameterLops;

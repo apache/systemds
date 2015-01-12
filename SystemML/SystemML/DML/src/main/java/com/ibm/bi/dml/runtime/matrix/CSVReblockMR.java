@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,8 +13,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -53,10 +51,8 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class CSVReblockMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
-	private static final Log LOG = LogFactory.getLog(CSVReblockMR.class.getName());
 	
 	public static final String NUM_ROWS_IN_MATRIX="num.rows.in.matrix.";
 	public static final String NUM_COLS_IN_MATRIX="num.cols.in.matrix.";
@@ -157,15 +153,23 @@ public class CSVReblockMR
 		public Path counterFile=null;
 		public long[] rlens=null;
 		public long[] clens=null;
+		
 		public String toString()
 		{
-			String str=counterFile.toString()+"\n";
-			for(long rlen: rlens)
-				str+=rlen+", ";
-			str+="\n";
-			for(long clen: clens)
-				str+=clen+", ";
-			return str;
+			StringBuilder sb = new StringBuilder();
+			sb.append(counterFile.toString());
+			sb.append("\n");
+			for(long rlen: rlens) {
+				sb.append(rlen);
+				sb.append(", ");
+			}
+			sb.append("\n");
+			for(long clen: clens) {
+				sb.append(clen);
+				sb.append(", ");
+			}
+			
+			return sb.toString();
 		}
 	}
 	

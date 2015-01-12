@@ -43,7 +43,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 
 public class Explain 
 {
@@ -76,7 +76,7 @@ public class Explain
 	 */
 	public static String explainMemoryBudget()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( "# Memory Budget local/remote = " );
 		sb.append( OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) );
 		sb.append( "MB/" );
@@ -477,16 +477,18 @@ public class Explain
 		
 		//input hop references 
 		if( SHOW_DATA_DEPENDENCIES ){
-			String childs = " (";
+			StringBuilder childs = new StringBuilder();
+			childs.append(" (");
 			boolean childAdded = false;
 			for( Hop input : hop.getInput() )
 				if( !(input instanceof LiteralOp) ){
-					childs += (childAdded?",":"") + input.getHopID();
+					childs.append(childAdded?",":"");
+					childs.append(input.getHopID());
 					childAdded = true;
 				}
-			childs += ")";		
+			childs.append(")");		
 			if( childAdded )
-				sb.append(childs);
+				sb.append(childs.toString());
 		}
 		
 		//matrix characteristics

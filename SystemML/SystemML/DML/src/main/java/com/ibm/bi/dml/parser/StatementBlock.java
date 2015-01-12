@@ -164,7 +164,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement 
-			|| stmt instanceof FunctionStatement || stmt instanceof CVStatement || ( stmt instanceof PrintStatement && ((PrintStatement)stmt).getType() == PRINTTYPE.STOP )/*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || ( stmt instanceof PrintStatement && ((PrintStatement)stmt).getType() == PRINTTYPE.STOP )/*|| stmt instanceof ELStatement*/ )
 		{
 			return false;
 		}
@@ -729,8 +729,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				}
 			}
 				
-			else if(current instanceof CVStatement /*|| current instanceof ELStatement*/ 
-					|| current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
+			else if(current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
 				raiseValidateError("control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error", conditional);
 			}
 				

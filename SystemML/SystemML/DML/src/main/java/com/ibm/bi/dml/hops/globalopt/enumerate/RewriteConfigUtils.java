@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 public class RewriteConfigUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
@@ -33,9 +33,9 @@ public class RewriteConfigUtils
 
 	private static boolean check(RewriteConfig p1, RewriteConfig p2) {
 		if(p1.isType(RewriteConfigType.BLOCK_SIZE) && p2.isType(RewriteConfigType.EXEC_TYPE)) {
-			if(p2.getValue()==ExecType.MR.ordinal() && p1.getValue() == -1l)
+			if(p2.getValue()==ExecType.MR.ordinal() && p1.getValue() == -1L)
 				return false;
-			if(p2.getValue()==ExecType.CP.ordinal() && p1.getValue() != -1l)
+			if(p2.getValue()==ExecType.CP.ordinal() && p1.getValue() != -1L)
 				return false;
 			return true;
 		}

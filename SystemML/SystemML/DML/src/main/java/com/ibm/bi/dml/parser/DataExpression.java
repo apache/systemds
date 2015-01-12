@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -345,8 +345,9 @@ public class DataExpression extends DataIdentifier
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
-		for (String key : _varParams.keySet()){
-			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
+		for( Entry<String, Expression> e : _varParams.entrySet() ){
+			String key = e.getKey();
+			Expression newExpr = e.getValue().rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
 		}	
 		DataExpression retVal = new DataExpression(_opcode, newVarParams,
@@ -528,10 +529,9 @@ public class DataExpression extends DataIdentifier
 			throws LanguageException 
 	{		
 		// validate all input parameters
-		Set<String> varParamKeySet = getVarParams().keySet();
-		for ( String s : varParamKeySet ) {
-			
-			Expression inputParamExpr = getVarParam(s);
+		for ( Entry<String,Expression> e : getVarParams().entrySet() ) {
+			String s = e.getKey();
+			Expression inputParamExpr = e.getValue();
 			
 			if (inputParamExpr instanceof FunctionCallIdentifier) {
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false,LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1718,11 +1718,18 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public String toString() {
-		StringBuffer sb = new StringBuffer(_opcode.toString() + "(");
+		StringBuilder sb = new StringBuilder();
+		sb.append(_opcode.toString());
+		sb.append("(");
 
-		 for (String key : _varParams.keySet()){
-			 sb.append("," + key + "=" + _varParams.get(key));
-		 }
+		for(Entry<String,Expression> e : _varParams.entrySet()) {
+			String key = e.getKey();
+			Expression expr = e.getValue();
+			sb.append(",");
+			sb.append(key);
+			sb.append("=");
+			sb.append(expr);
+		}
 		sb.append(" )");
 		return sb.toString();
 	}
@@ -1730,8 +1737,8 @@ public class DataExpression extends DataIdentifier
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		for (String s : _varParams.keySet()) {
-			result.addVariables ( _varParams.get(s).variablesRead() );
+		for( Expression expr : _varParams.values() ) {
+			result.addVariables ( expr.variablesRead() );
 		}
 		return result;
 	}
@@ -1739,15 +1746,21 @@ public class DataExpression extends DataIdentifier
 	@Override
 	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
-		for (String s : _varParams.keySet()) {
-			result.addVariables ( _varParams.get(s).variablesUpdated() );
+		for( Expression expr : _varParams.values() ) {
+			result.addVariables ( expr.variablesUpdated() );
 		}
 		result.addVariable(((DataIdentifier)this.getOutput()).getName(), (DataIdentifier)this.getOutput());
 		return result;
 	}
-
-	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject) throws LanguageException {
-    	for (Object key : configObject.keySet()){
+	
+	@SuppressWarnings("unchecked")
+	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject) 
+		throws LanguageException 
+	{
+    	for( Object obj : configObject.entrySet() ){
+			Entry<Object,Object> e = (Entry<Object, Object>) obj;
+    		Object key = e.getKey();
+    		Object val = e.getValue();
 			
     		boolean isValidName = false;
     		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
@@ -1762,19 +1775,19 @@ public class DataExpression extends DataIdentifier
 			
 			// if the read method parameter is a constant, then verify value matches MTD metadata file
 			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
-					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString()) ){
 				
 				LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-						"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
+						"Config file value: " + val.toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
 				
 				throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-						"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
+						"Config file value: " + val.toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
 			}
 			else {
 				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 				if (getVarParam(key.toString()) == null){
 					if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
-						StringIdentifier strId = new StringIdentifier(configObject.get(key).toString(),
+						StringIdentifier strId = new StringIdentifier(val.toString(),
 								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());
 						
@@ -1892,8 +1905,12 @@ public class DataExpression extends DataIdentifier
 						LOG.error(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());
 						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());		
 					}
-					for (Object key : childObj.keySet()){
-						retVal.put(key, childObj.get(key));
+					
+			    	for( Object obj : childObj.entrySet() ){
+						Entry<Object,Object> e = (Entry<Object, Object>) obj;
+			    		Object key = e.getKey();
+			    		Object val = e.getValue();
+			    		retVal.put(key, val);
 					}
 				}
 			} // end for 

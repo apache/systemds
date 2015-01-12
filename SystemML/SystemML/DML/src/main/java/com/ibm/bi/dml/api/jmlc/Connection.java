@@ -40,7 +40,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.io.ReaderTextCell;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;

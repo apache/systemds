@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.filecache.DistributedCache;
@@ -42,22 +41,22 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendGInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.PMMJMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RemoveEmptyMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendGInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CSVWriteInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.io.BinaryBlockSerialization;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.AddDummyWeightConverter;
@@ -822,7 +821,7 @@ public class MRJobConfiguration
 	
 	//get the indexes that this matrix file represents, 
 	//since one matrix file can occur multiple times in a statement
-	public static Vector<Byte> getInputMatrixIndexesInMapper(JobConf job) throws IOException
+	public static ArrayList<Byte> getInputMatrixIndexesInMapper(JobConf job) throws IOException
 	{
 		String[] matrices=job.getStrings(INPUT_MATRICIES_DIRS_CONFIG);
 		String str=job.get(MAPFUNC_INPUT_MATRICIES_INDEXES_CONFIG);
@@ -852,7 +851,7 @@ public class MRJobConfiguration
 		//Path p=new Path(thisFileName);
 		
 		Path thisDir=thisFile.getParent().makeQualified(fs);
-		Vector<Byte> representativeMatrixes=new Vector<Byte>();
+		ArrayList<Byte> representativeMatrixes=new ArrayList<Byte>();
 		for(int i=0; i<matrices.length; i++)
 		{
 			Path p = new Path(matrices[i]).makeQualified(fs);
@@ -1192,7 +1191,7 @@ public class MRJobConfiguration
 		}
 		
 		//remove redundant input files
-		Vector<Path> paths=new Vector<Path>();
+		ArrayList<Path> paths=new ArrayList<Path>();
 		for(int i=0; i<inputs.length; i++)
 		{
 			String name=inputs[i];
@@ -1248,7 +1247,7 @@ public class MRJobConfiguration
 		}
 		
 		//remove redundant input files
-		Vector<Path> paths=new Vector<Path>();
+		ArrayList<Path> paths=new ArrayList<Path>();
 		for(int i=0; i<inputs.length; i++)
 		{
 			String name=inputs[i];
@@ -1783,14 +1782,14 @@ public class MRJobConfiguration
 		byte[] resultIndexes=MRJobConfiguration.getResultIndexes(job);
 		Converter[] outputConverters=new Converter[resultIndexes.length];
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
-		HashMap<Byte, Vector<Integer>> tagMapping=new HashMap<Byte, Vector<Integer>>();
+		HashMap<Byte, ArrayList<Integer>> tagMapping=new HashMap<Byte, ArrayList<Integer>>();
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];
-			Vector<Integer> vec=tagMapping.get(output);
+			ArrayList<Integer> vec=tagMapping.get(output);
 			if(vec==null)
 			{
-				vec=new Vector<Integer>();
+				vec=new ArrayList<Integer>();
 				tagMapping.put(output, vec);
 			}
 			vec.add(i);

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,10 +9,10 @@
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,9 +27,9 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -50,7 +50,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class CombineMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 			
 	private static final Log LOG = LogFactory.getLog(CombineMR.class.getName());
@@ -62,7 +62,7 @@ public class CombineMR
 		private MatrixIndexes keyBuff=new MatrixIndexes();
 		private WeightedPair valueBuff=new WeightedPair();
 		private HashMap<Byte, Pair<Integer, Integer>> outputBlockSizes=new HashMap<Byte, Pair<Integer, Integer>>();
-		private HashMap<Byte, Vector<Integer>> outputIndexesMapping=new HashMap<Byte, Vector<Integer>>();
+		private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
 		@Override
 		public void reduce(MatrixIndexes indexes,
 				Iterator<TaggedMatrixValue> values,
@@ -141,22 +141,18 @@ public class CombineMR
 			if(in1==null && in2==null && in3==null)
 				return;
 			int nr=0, nc=0;
-			MatrixIndexes indexes=null;
 			if(in1!=null)
 			{
 				nr=in1.getValue().getNumRows();
 				nc=in1.getValue().getNumColumns();
-				indexes=in1.getIndexes();
 			}else if(in2!=null)
 			{
 				nr=in2.getValue().getNumRows();
 				nc=in2.getValue().getNumColumns();
-				indexes=in2.getIndexes();
 			}else
 			{
 				nr=in3.getValue().getNumRows();
 				nc=in3.getValue().getNumColumns();
-				indexes=in3.getIndexes();
 			}
 			
 			//if one of the inputs is null, then it is a all zero block
@@ -182,7 +178,7 @@ public class CombineMR
 			//process instruction
 			try {
 				
-				Vector<Integer> outputIndexes = outputIndexesMapping.get(ins.output);
+				ArrayList<Integer> outputIndexes = outputIndexesMapping.get(ins.output);
 				for(int r=0; r<nr; r++)
 					for(int c=0; c<nc; c++)
 					{
@@ -245,7 +241,7 @@ public class CombineMR
 				/*in1.getValue().combineOperations(in2.getValue(), collectFinalMultipleOutputs, 
 						reporter, keyBuff, valueBuff, getOutputIndexes(ins.output));*/
 				
-				Vector<Integer> outputIndexes = outputIndexesMapping.get(ins.output);
+				ArrayList<Integer> outputIndexes = outputIndexesMapping.get(ins.output);
 				for(int r=0; r<in1.getValue().getNumRows(); r++)
 					for(int c=0; c<in1.getValue().getNumColumns(); c++)
 					{

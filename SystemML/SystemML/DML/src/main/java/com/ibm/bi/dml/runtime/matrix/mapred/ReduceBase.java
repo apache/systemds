@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,9 +10,9 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -21,9 +21,9 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -35,23 +35,22 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class ReduceBase extends MRBaseForCommonInstructions
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	//aggregate instructions
-	protected HashMap<Byte, Vector<AggregateInstruction>> 
-	agg_instructions=new HashMap<Byte, Vector<AggregateInstruction>>();
+	protected HashMap<Byte, ArrayList<AggregateInstruction>> 
+	agg_instructions=new HashMap<Byte, ArrayList<AggregateInstruction>>();
 	
 	//default aggregate operation
-	protected static final AggregateOperator DEFAULT_AGG_OP
-	=new AggregateOperator(0, Plus.getPlusFnObject());
+	protected static final AggregateOperator DEFAULT_AGG_OP = new AggregateOperator(0, Plus.getPlusFnObject());
 
 	//default aggregate instruction
 	protected AggregateInstruction defaultAggIns=
 		new AggregateInstruction(DEFAULT_AGG_OP, (byte)0, (byte)0, "DEFAULT_AGG_OP");
 	
 	//mixsure of instructions performed in reducer
-	protected MRInstruction[] mixed_instructions= null;
+	protected ArrayList<MRInstruction> mixed_instructions = null;
 	
 	//the final result indexes that needed to be outputted
 	protected byte[] resultIndexes=null;
@@ -112,7 +111,12 @@ public class ReduceBase extends MRBaseForCommonInstructions
 		try {
 			agg_insts = MRJobConfiguration.getAggregateInstructions(job);
 			//parse unary and binary operations
-			mixed_instructions=MRJobConfiguration.getInstructionsInReducer(job);
+			MRInstruction[] tmp = MRJobConfiguration.getInstructionsInReducer(job);
+			if( tmp != null ) {
+				mixed_instructions=new ArrayList<MRInstruction>();
+				Collections.addAll(mixed_instructions, tmp);
+			}
+			
 			
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
@@ -126,10 +130,10 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			for(AggregateInstruction ins: agg_insts)
 			{
 				//associate instruction to its input
-				Vector<AggregateInstruction> vec=agg_instructions.get(ins.input);
+				ArrayList<AggregateInstruction> vec=agg_instructions.get(ins.input);
 				if(vec==null)
 				{
-					vec=new Vector<AggregateInstruction>();
+					vec = new ArrayList<AggregateInstruction>();
 					agg_instructions.put(ins.input, vec);
 				}
 				vec.add(ins);
@@ -144,7 +148,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				vec=agg_instructions.get(partialIns.input);
 				if(vec==null)
 				{
-					vec=new Vector<AggregateInstruction>();
+					vec=new ArrayList<AggregateInstruction>();
 					agg_instructions.put(partialIns.input, vec);
 				}
 				vec.add(partialIns);
@@ -159,18 +163,18 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				resultDimsUnknown, resultsNonZeros, resultsMaxRowDims, resultsMaxColDims);
 	}
 	
-	protected Vector<Integer> getOutputIndexes(byte outputTag)
+	protected ArrayList<Integer> getOutputIndexes(byte outputTag)
 	{
-		Vector<Integer> ret=new Vector<Integer>();
+		ArrayList<Integer> ret = new ArrayList<Integer>();
 		for(int i=0; i<resultIndexes.length; i++)
 			if(resultIndexes[i]==outputTag)
 				ret.add(i);
 		return ret;
 	}
 	
-	protected static Vector<Integer> getOutputIndexes(byte outputTag, byte[] resultIndexes)
+	protected static ArrayList<Integer> getOutputIndexes(byte outputTag, byte[] resultIndexes)
 	{
-		Vector<Integer> ret=new Vector<Integer>();
+		ArrayList<Integer> ret=new ArrayList<Integer>();
 		for(int i=0; i<resultIndexes.length; i++)
 			if(resultIndexes[i]==outputTag)
 				ret.add(i);
@@ -366,7 +370,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			{
 				TaggedMatrixValue value=values.next();
 				byte input=value.getTag();
-				Vector<AggregateInstruction> instructions=agg_instructions.get(input);
+				ArrayList<AggregateInstruction> instructions=agg_instructions.get(input);
 				
 				//if there is no specified aggregate operation on an input, by default apply sum
 				if(instructions==null)

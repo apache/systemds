@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,19 +28,19 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BreakPointInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.ComputationCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.sql.SQLInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.sql.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -52,7 +52,7 @@ import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 public class ProgramBlock 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -40,25 +40,24 @@ import com.ibm.bi.dml.udf.Matrix.ValueType;
 public class SequenceMinerWrapper extends PackageFunction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final long serialVersionUID = -2650101218663060483L;
 
-	Matrix freq_sequences;
-	Matrix seq_support;
-	
+	private Matrix freq_sequences;
+	private Matrix seq_support;
 
-	final long entries_in_memory = 1000000;
-	final long data_block_size = 1000000;
-	final long sequence_block_size = 100000;
-	final int numPhysicalFiles = 10;
-	final long in_memory_scratch_size = 1000000;
-	final long max_projection_size = 10000000;
-	final String NIMBLEoutFile = "SequenceMinerWrapperOutput";
-	public String freq_seq_file = "FreqSeqFile";
-	public String seq_support_file = "FreqSeqSupportFile";
-	int max_patterns = Integer.MAX_VALUE;
+	private static final long entries_in_memory = 1000000;
+	private static final long data_block_size = 1000000;
+	private static final long sequence_block_size = 100000;
+	private static final int numPhysicalFiles = 10;
+	private static final long in_memory_scratch_size = 1000000;
+	private static final long max_projection_size = 10000000;
+	private static final String NIMBLEoutFile = "SequenceMinerWrapperOutput";
+	private static final String freq_seq_file = "FreqSeqFile";
+	private static final String seq_support_file = "FreqSeqSupportFile";
+	private int max_patterns = Integer.MAX_VALUE;
 	
 
 	@Override

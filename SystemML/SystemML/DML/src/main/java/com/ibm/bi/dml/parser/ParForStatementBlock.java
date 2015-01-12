@@ -131,6 +131,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();
 
+		//initialize function cache
+		if( USE_FN_CACHE ) {
+			_fncache = new HashMap<String, LinearFunction>();
+		}
+		
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("com.ibm.bi.dml.parser.ParForStatementBlock")
@@ -142,9 +147,6 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		_ID         = _idSeq.getNextID();
 		_resultVars = new ArrayList<String>();
-		
-		if( USE_FN_CACHE )
-			_fncache = new HashMap<String, LinearFunction>();
 		
 		LOG.trace("PARFOR("+_ID+"): ParForStatementBlock instance created");
 	}
@@ -1471,11 +1473,11 @@ public class ParForStatementBlock extends ForStatementBlock
 					if(out.hasNonIndexVariables())
 					{
 						String id = INTERAL_FN_INDEX_ROW+_idSeqfn.getNextID();
-						out = new LinearFunction(0, 1l, id);
+						out = new LinearFunction(0, 1L, id);
 						
-						_bounds._lower.put(id, 1l);
+						_bounds._lower.put(id, 1L);
 						_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim1()); //row dim
-						_bounds._increment.put(id, 1l);	
+						_bounds._increment.put(id, 1L);	
 					}
 			}
 			else //range indexing
@@ -1484,20 +1486,20 @@ public class ParForStatementBlock extends ForStatementBlock
 				Expression sub1b = idat.getRowUpperBound();
 				
 				String id = INTERAL_FN_INDEX_ROW+_idSeqfn.getNextID();
-				out = new LinearFunction(0, 1l, id);
+				out = new LinearFunction(0, 1L, id);
 				
 				if(   sub1a == null && sub1b == null //: operator
 				   || !(sub1a instanceof IntIdentifier) || !(sub1b instanceof IntIdentifier) ) //for robustness
 				{
-					_bounds._lower.put(id, 1l);
+					_bounds._lower.put(id, 1L);
 					_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim1()); //row dim
-					_bounds._increment.put(id, 1l);					
+					_bounds._increment.put(id, 1L);					
 				}
 				else if( sub1a instanceof IntIdentifier && sub1b instanceof IntIdentifier )
 				{
 					_bounds._lower.put(id, ((IntIdentifier)sub1a).getValue());
 					_bounds._upper.put(id, ((IntIdentifier)sub1b).getValue()); 
-					_bounds._increment.put(id, 1l);
+					_bounds._increment.put(id, 1L);
 				}
 				else
 				{
@@ -1545,10 +1547,10 @@ public class ParForStatementBlock extends ForStatementBlock
 						if(tmpOut!=null && tmpOut.hasNonIndexVariables())
 						{
 							String id = INTERAL_FN_INDEX_COL+_idSeqfn.getNextID();
-							tmpOut = new LinearFunction(0, 1l, id); 
+							tmpOut = new LinearFunction(0, 1L, id); 
 							_bounds._lower.put(id, 1l);
 							_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim2()); //col dim
-							_bounds._increment.put(id, 1l);	
+							_bounds._increment.put(id, 1L);	
 						}
 				}
 				else //range indexing
@@ -1557,20 +1559,20 @@ public class ParForStatementBlock extends ForStatementBlock
 					Expression sub2b = idat.getColUpperBound();
 					
 					String id = INTERAL_FN_INDEX_COL+_idSeqfn.getNextID();
-					tmpOut = new LinearFunction(0, 1l, id);
+					tmpOut = new LinearFunction(0, 1L, id);
 					
 					if(   sub2a == null && sub2b == null  //: operator 
 					   || !(sub2a instanceof IntIdentifier) || !(sub2b instanceof IntIdentifier) ) //for robustness
 					{
-						_bounds._lower.put(id, 1l);
+						_bounds._lower.put(id, 1L);
 						_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim2()); //col dim
-						_bounds._increment.put(id, 1l);					
+						_bounds._increment.put(id, 1L);					
 					}
 					else if( sub2a instanceof IntIdentifier && sub2b instanceof IntIdentifier )
 					{
 						_bounds._lower.put(id, ((IntIdentifier)sub2a).getValue());
 						_bounds._upper.put(id, ((IntIdentifier)sub2b).getValue()); 
-						_bounds._increment.put(id, 1l);
+						_bounds._increment.put(id, 1L);
 					}
 					else
 					{
@@ -1923,7 +1925,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Helper class for representing a single candidate.
 	 *
 	 */
-	private class Candidate 
+	private static class Candidate 
 	{ 
 		String _var;          // variable name
 		//Integer _pos;         // statement position in parfor (can be used for distinguishing anti/data dep)
@@ -1935,7 +1937,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * loop constructs. 
 	 *
 	 */
-	private class Bounds
+	private static class Bounds
 	{
 		HashMap<String, Long> _lower     = new HashMap<String, Long>();
 		HashMap<String, Long> _upper     = new HashMap<String, Long>();

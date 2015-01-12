@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,7 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 public class InputInfo 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public Class<? extends InputFormat> inputFormatClass;
@@ -53,29 +53,27 @@ public class InputInfo
 	{
 		metadata=md;
 	}
-	public static InputInfo TextCellInputInfo=new InputInfo(TextInputFormat.class, 
+	public static final InputInfo TextCellInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
-	public static InputInfo MatrixMarketInputInfo = new InputInfo (TextInputFormat.class, 
+	public static final InputInfo MatrixMarketInputInfo = new InputInfo (TextInputFormat.class, 
 			 LongWritable.class, Text.class);
-	public static InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
+	public static final InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
-	//public static InputInfo TextBlockInputInfo=new InputInfo(TextInputFormat.class, 
-	//		LongWritable.class, Text.class);
-	public static InputInfo BinaryBlockInputInfo=new InputInfo(SequenceFileInputFormat.class, 
+	public static final InputInfo BinaryBlockInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixBlock.class);
 	
 	// Format that denotes the input of a SORT job
-	public static InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 
+	public static final InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 
 			DoubleWritable.class, IntWritable.class);
 	
 	// Format that denotes the output of a SORT job
-	public static InputInfo InputInfoForSortOutput = new InputInfo(PickFromCompactInputFormat.class,
+	public static final InputInfo InputInfoForSortOutput = new InputInfo(PickFromCompactInputFormat.class,
 			DoubleWritable.class, IntWritable.class);
 
-	public static InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 
+	public static final InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
 	
-	public static InputInfo CSVInputInfo=new InputInfo(TextInputFormat.class, 
+	public static final InputInfo CSVInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
 	
 	public static OutputInfo getMatchingOutputInfo(InputInfo ii) throws DMLRuntimeException {

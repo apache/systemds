@@ -1,15 +1,15 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.Reporter;
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 public class GMRCtableBuffer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//buffer size is tradeoff between preaggregation and efficient hash probes
@@ -125,7 +125,7 @@ public class GMRCtableBuffer
 				MatrixCell value=new MatrixCell();
 				for(Entry<Byte, HashMap<MatrixIndexes, Double>> ctable: _buffer.entrySet())
 				{
-					Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
+					ArrayList<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
 					for(Entry<MatrixIndexes, Double> e: ctable.getValue().entrySet())
 					{
 						key = e.getKey();
@@ -148,7 +148,7 @@ public class GMRCtableBuffer
 				//DataConverter.writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
 				for(Entry<Byte, MatrixBlock> ctable: _blockBuffer.entrySet())
 				{
-					Vector<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
+					ArrayList<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
 					MatrixBlock outBlock = ctable.getValue();
 					outBlock.recomputeNonZeros();
 					

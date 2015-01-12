@@ -977,25 +977,6 @@ public class DMLTranslator
 				}
 			}
 
-			if (current instanceof CVStatementBlock) {
-				LOG.debug("\n********************** PARTITION LOPS *******************");
-	//			((CVStatementBlock) current).getPartitionHop().get_lops().printMe();
-
-			}
-
-//			if (current instanceof ELStatementBlock) {
-//				LOG.debug("\n********************** PARTITION LOPS *******************");
-//				((ELStatementBlock) current).getPartitionHop().get_lops().printMe();
-//
-//			}
-//
-//			if (current instanceof ELUseStatementBlock) {
-//				LOG.debug("\n********************** PARTITION LOPS *******************");
-//				((ELUseStatementBlock) current).getPartitionHop().get_lops().printMe();
-//
-//			}
-
-
 			if (lopsDAG != null && lopsDAG.size() > 0) {
 				Iterator<Lop> iter = lopsDAG.iterator();
 				while (iter.hasNext()) {
@@ -1096,24 +1077,6 @@ public class DMLTranslator
 					printHops(sb);
 				}
 			}
-
-			if (current instanceof CVStatementBlock) {
-				LOG.debug("\n********************** CROSSVAL HOPS *******************");
-//				((CVStatementBlock) current).getPartitionHop().printMe();
-
-			}
-
-//			if (current instanceof ELStatementBlock) {
-//				LOG.debug("\n********************** CROSSVAL HOPS *******************");
-//				((ELStatementBlock) current).getPartitionHop().printMe();
-//
-//			}
-//
-//			if (current instanceof ELUseStatementBlock) {
-//				LOG.debug("********************** CROSSVAL HOPS *******************");
-//				((ELUseStatementBlock) current).getPartitionHop().printMe();
-//
-//			}
 
 			if (hopsDAG != null && hopsDAG.size() > 0) {
 				// hopsDAG.iterator().next().printMe();
@@ -1499,21 +1462,6 @@ public class DMLTranslator
 			constructHopsForForControlBlock((ForStatementBlock) sb);
 			return;
 		}
-		
-		if (sb instanceof CVStatementBlock) {
-			((CVStatementBlock) sb).get_hops();
-			return;
-		}
-		
-//		if (sb instanceof ELStatementBlock) {
-//			((ELStatementBlock) sb).get_hops();
-//			return;
-//		}
-//		
-//		if (sb instanceof ELUseStatementBlock) {
-//			((ELUseStatementBlock) sb).get_hops();
-//			return;
-//		}
 		
 		if (sb instanceof FunctionStatementBlock) {
 			constructHopsForFunctionControlBlock((FunctionStatementBlock) sb);

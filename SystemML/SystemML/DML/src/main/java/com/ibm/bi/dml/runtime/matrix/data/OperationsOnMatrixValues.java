@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -29,7 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 public class OperationsOnMatrixValues 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
@@ -64,7 +64,7 @@ public class OperationsOnMatrixValues
 		op.fn.execute(indexes_in, indexes_out);
 		
 		//operation on the cells inside the value
-		value_out=value_in.reorgOperations(op, value_out, startRow, startColumn, length);
+		value_in.reorgOperations(op, value_out, startRow, startColumn, length);
 	}
 
 	public static void performAppend(MatrixValue value_in1, MatrixValue value_in2,
@@ -78,7 +78,7 @@ public class OperationsOnMatrixValues
 			MatrixIndexes indexes_out, MatrixValue value_out, IndexRange range, boolean complementary) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		value_out=value_in.zeroOutOperations(value_out, range, complementary);
+		value_in.zeroOutOperations(value_out, range, complementary);
 		indexes_out.setIndexes(indexes_in);
 	}
 	
@@ -142,7 +142,7 @@ public class OperationsOnMatrixValues
 			MatrixValue value_out, BinaryOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		value_out=value1.binaryOperations(op, value2, value_out);
+		value1.binaryOperations(op, value2, value_out);
 	}
 	
 	/**
@@ -269,7 +269,7 @@ public class OperationsOnMatrixValues
 		op.indexFn.execute(indexes_in, indexes_out);
 		
 		//perform on the value
-		value_out=value_in.aggregateUnaryOperations(op, value_out, brlen, bclen, indexes_in);
+		value_in.aggregateUnaryOperations(op, value_out, brlen, bclen, indexes_in);
 	}
 	
 	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
@@ -280,30 +280,8 @@ public class OperationsOnMatrixValues
 		indexes_out.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		
 		//perform on the value
-		value_out=value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, value_out, op);
+		value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, value_out, op);
 	}
-	
-	//including scalar, reorg and aggregateUnary operations
-/*	public static void performAllUnary(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, Instruction ins) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		if(ins instanceof Scalar.InstructionType)
-		{
-			performScalarIgnoreIndexes(value_in, ((Scalar.InstructionType) ins).constant, 
-					value_out, (Scalar.SupportedOperation)ins.operation);
-			indexes_out.setIndexes(indexes_in);
-		}
-		else if(ins instanceof Reorg.InstructionType)
-			performReorg(indexes_in, value_in, indexes_out, value_out, 
-					(Reorg.SupportedOperation)ins.operation);
-		else if(ins instanceof AggregateUnary.InstructionType)
-			performAggregateUnary(indexes_in, value_in, indexes_out, value_out, 
-					(AggregateUnary.SupportedOperation)ins.operation,
-					numRowsInBlock, numColsInBlock);
-		else
-			throw new DMLUnsupportedOperationException("Operation unsupported");
-	}*/
 
 	public static void performAggregateBinaryIgnoreIndexes(
 			MatrixValue value1, MatrixValue value2,
@@ -311,6 +289,6 @@ public class OperationsOnMatrixValues
 	throws DMLUnsupportedOperationException, DMLRuntimeException {
 			
 		//perform on the value
-		value_out=value1.aggregateBinaryOperations(value1, value2, value_out, op);
+		value1.aggregateBinaryOperations(value1, value2, value_out, op);
 	}
 }

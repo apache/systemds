@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -874,32 +874,41 @@ public class MRJobInstruction extends Instruction
 	}
 
 	private String getOps(String inst) {
-		String s = new String("");
+		StringBuilder sb = new StringBuilder();
 		for ( String i : inst.split(Lop.INSTRUCTION_DELIMITOR)) {
-			s += "," + (i.split(Lop.OPERAND_DELIMITOR))[0];
+			sb.append(",");
+			sb.append((i.split(Lop.OPERAND_DELIMITOR))[0]);
 		}
-		return s;
+		return sb.toString();
 	}
 	
 	@Override
 	public String getGraphString() {
-		String s = new String("");
+		StringBuilder sb = new StringBuilder();
 		
-		s += jobType;
+		sb.append(jobType);
 		if (!_mapperInstructions.equals("")) {
-			s += ",map("+ getOps(_mapperInstructions) + ")";
+			sb.append(",map(");
+			sb.append(getOps(_mapperInstructions));
+			sb.append(")");
 		}
 		if (!_shuffleInstructions.equals("")) {
-			s += ",shuffle("+ getOps(_shuffleInstructions) + ")";
+			sb.append(",shuffle(");
+			sb.append(getOps(_shuffleInstructions));
+			sb.append(")");
 		}
 		if (!_aggInstructions.equals("")) {
-			s += ",agg("+ getOps(_aggInstructions) + ")";
+			sb.append(",agg(");
+			sb.append(getOps(_aggInstructions));
+			sb.append(")");
 		}
 		if (!_otherInstructions.equals("")) {
-			s += ",other("+ getOps(_otherInstructions) + ")";
+			sb.append(",other(");
+			sb.append(getOps(_otherInstructions));
+			sb.append(")");
 		}
-		return s;
 		
+		return sb.toString();
 	}
 
 	@Override
@@ -1168,7 +1177,8 @@ public class MRJobInstruction extends Instruction
 	public void updateInstructionThreadID(String pattern, String replace) 
 		throws DMLRuntimeException
 	{
-		this.dimsUnknownFilePrefix.replaceAll(pattern, replace);
+		if( dimsUnknownFilePrefix!=null )
+			dimsUnknownFilePrefix = dimsUnknownFilePrefix.replaceAll(pattern, replace);
 		
 		if( getJobType() == JobType.DATAGEN )
 		{

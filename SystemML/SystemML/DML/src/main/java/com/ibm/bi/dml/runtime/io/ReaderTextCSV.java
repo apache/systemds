@@ -101,7 +101,6 @@ public class ReaderTextCSV extends MatrixReader
 		
 		if ( dest == null ) {
 			dest = computeCSVSize(files, job, fs, hasHeader, delim, fill, fillValue);
-			rlen = dest.getNumRows();
 			clen = dest.getNumColumns();
 		}
 		

@@ -724,6 +724,7 @@ public class TertiaryOp extends Hop
 		return null;
 	}
 
+	@SuppressWarnings("unused")
 	private ISQLSelect getCTableSelect(String name1, String name2, String name3) {
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		stmt.getColumns().add("alias_a.value as row");
@@ -752,6 +753,7 @@ public class TertiaryOp extends Hop
 		return stmt;
 	}
 
+	@SuppressWarnings("unused")
 	private ISQLSelect getMaxrow2TablesSelect(String name1, String name2) {
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		stmt.getColumns().add("max(alias_a.value) AS mrow");
@@ -766,6 +768,7 @@ public class TertiaryOp extends Hop
 		return stmt;
 	}
 
+	@SuppressWarnings("unused")
 	private ISQLSelect getAttachLastZeroSelect(String res, String max) {
 		SQLUnion union = new SQLUnion();
 		SQLSelectStatement stmt1 = new SQLSelectStatement();

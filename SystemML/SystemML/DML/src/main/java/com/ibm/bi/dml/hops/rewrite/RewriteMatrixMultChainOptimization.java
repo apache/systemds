@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.hops.HopsException;
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
@@ -86,10 +86,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
-	private int[][] mmChainDP(double dimArray[], int size) 
+	private int[][] mmChainDP(double[] dimArray, int size) 
 	{
-		double dpMatrix[][] = new double[size][size]; //min cost table
-		int split[][] = new int[size][size]; //min cost index table
+		double[][] dpMatrix = new double[size][size]; //min cost table
+		int[][] split = new int[size][size]; //min cost index table
 
 		//init minimum costs for chains of length 1
 		for (int i = 0; i < size; i++) {
@@ -354,7 +354,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		else 
 		{
 			// Step-2: construct dims array
-			double dimsArray[] = new double[mmChain.size() + 1];
+			double[] dimsArray = new double[mmChain.size() + 1];
 			boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
 			
 			if( dimsKnown ) {

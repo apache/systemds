@@ -147,7 +147,7 @@ public class DataGenMR
 				
 				//seed generation
 				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.seed);
-				long nnz[] = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.sparsity);
+				long[] nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.sparsity);
 				int nnzIx = 0;
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));

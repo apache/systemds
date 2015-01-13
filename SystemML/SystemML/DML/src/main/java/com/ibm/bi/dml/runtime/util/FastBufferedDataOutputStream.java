@@ -65,7 +65,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
     }
 
     @Override
-    public void write(byte b[], int off, int len) 
+    public void write(byte[] b, int off, int len) 
     	throws IOException 
     {
 		if (len >= _bufflen) {

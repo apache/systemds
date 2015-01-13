@@ -11,7 +11,6 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -55,11 +54,10 @@ public class LocalFileUtils
 	 * 
 	 * @param filePathAndName
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName)
-		throws FileNotFoundException, IOException
+		throws IOException
 	{
 		return readMatrixBlockFromLocal(filePathAndName, new MatrixBlock());
 	}
@@ -68,11 +66,10 @@ public class LocalFileUtils
 	 * 
 	 * @param filePathAndName
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock ret)
-		throws FileNotFoundException, IOException
+		throws IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
 		//BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
@@ -96,11 +93,10 @@ public class LocalFileUtils
 	 * 
 	 * @param filePathAndName
 	 * @param mb
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static void writeMatrixBlockToLocal (String filePathAndName, MatrixBlock mb)
-		throws FileNotFoundException, IOException
+		throws IOException
 	{	
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		//BufferedOutputStream bos = new BufferedOutputStream( fos, BUFFER_SIZE );
@@ -123,11 +119,10 @@ public class LocalFileUtils
 	 * 
 	 * @param filePathAndName
 	 * @param data
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static void writeByteArrayToLocal( String filePathAndName, byte[] data )
-		throws FileNotFoundException, IOException
+		throws IOException
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		
@@ -146,11 +141,10 @@ public class LocalFileUtils
 	 * 
 	 * @param filePathAndName
 	 * @param data
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static void writeByteArrayToLocal( String filePathAndName, byte[][] data )
-		throws FileNotFoundException, IOException
+		throws IOException
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		

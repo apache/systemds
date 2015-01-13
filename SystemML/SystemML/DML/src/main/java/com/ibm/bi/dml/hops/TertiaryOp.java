@@ -864,7 +864,7 @@ public class TertiaryOp extends Hop
 	{
 		long[] ret = null;
 	
-		MatrixCharacteristics mc[] = memo.getAllInputStats(getInput());
+		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 		
 		switch(op) 
 		{

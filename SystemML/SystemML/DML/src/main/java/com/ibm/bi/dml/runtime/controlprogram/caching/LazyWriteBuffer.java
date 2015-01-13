@@ -1,13 +1,12 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -24,7 +23,7 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 public class LazyWriteBuffer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum RPolicy{
@@ -48,11 +47,10 @@ public class LazyWriteBuffer
 	 * 
 	 * @param fname
 	 * @param mb
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static void writeMatrix( String fname, MatrixBlock mb ) 
-		throws FileNotFoundException, IOException
+		throws IOException
 	{	
 		long lSize = mb.getExactSizeOnDisk(); 
 		boolean requiresWrite = (   lSize > _limit  //global buffer limit
@@ -141,11 +139,10 @@ public class LazyWriteBuffer
 	 * 
 	 * @param fname
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrix( String fname ) 
-		throws FileNotFoundException, IOException
+		throws IOException
 	{
 		MatrixBlock mb = null;
 		ByteBuffer ldata = null;

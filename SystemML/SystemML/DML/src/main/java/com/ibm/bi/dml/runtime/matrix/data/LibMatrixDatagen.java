@@ -27,7 +27,7 @@ import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
 public class LibMatrixDatagen 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(LibMatrixDatagen.class.getName());
@@ -80,7 +80,7 @@ public class LibMatrixDatagen
 		}
 		
 		// Compute block-level NNZ
-		long ret[]  = new long[numBlocks];
+		long[] ret  = new long[numBlocks];
 		Arrays.fill(ret, 0);
 		
 		if ( nnz < numBlocks ) {

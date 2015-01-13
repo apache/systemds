@@ -5303,7 +5303,7 @@ public class MatrixBlock extends MatrixValue
 	{
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 		MatrixBlock out = new MatrixBlock();
-		long nnzInBlock[] = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+		long[] nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
 
 		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
 			// for normally distributed values, min and max are specified as an invalid value NaN.

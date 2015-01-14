@@ -9,6 +9,8 @@ package com.ibm.bi.dml.runtime.util;
 
 import java.util.NoSuchElementException;
 
+import com.ibm.bi.dml.runtime.io.jdk8.FloatingDecimal;
+
 /**
  * This string tokenizer is essentially a simplified StringTokenizer. 
  * In addition to the default functionality it allows to reset the tokenizer and it makes
@@ -95,11 +97,15 @@ public class FastStringTokenizer
     
     public double nextDouble()
     {
+    	//return FloatingDecimal.parseDouble(nextToken());
     	return Double.parseDouble( nextToken() );
     }
     
     public double nextDoubleForParallel()
     {
+    	return FloatingDecimal.parseDouble(nextToken());
+    	
+    	/*
     	//return Double.parseDouble( nextToken() );
     	
     	//NOTE: Depending on the platform string-2-double conversions were
@@ -137,5 +143,6 @@ public class FastStringTokenizer
     	}
     	
     	return ret;
+    	*/
     }
 }

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
+import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
@@ -33,7 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class LibMatrixReorg 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final boolean ALLOW_BLOCK_REUSE = false;
@@ -255,7 +255,7 @@ public class LibMatrixReorg
 		if( op.fn.equals(SwapIndex.getSwapIndexFnObject()) )  //transpose
 			return ReorgType.TRANSPOSE;
 		
-		if( op.fn.equals(MaxIndex.getMaxIndexFnObject()) ) //diag
+		if( op.fn.equals(DiagIndex.getDiagIndexFnObject()) ) //diag
 			return ReorgType.DIAG;
 				
 		return ReorgType.INVALID;

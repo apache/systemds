@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
+import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -40,7 +40,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
-		_isDiag = (op.fn==MaxIndex.getMaxIndexFnObject());
+		_isDiag = (op.fn==DiagIndex.getDiagIndexFnObject());
 	}
 	
 	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
@@ -69,7 +69,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
-			return new ReorgInstruction(new ReorgOperator(MaxIndex.getMaxIndexFnObject()), in, out, str);
+			return new ReorgInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, str);
 		} 
 		
 		else {
@@ -89,16 +89,9 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 		if( blkList != null )
 			for(IndexedMatrixValue in : blkList)
 			{
-				if(in==null)
+				if(in == null)
 					continue;
 				int startRow=0, startColumn=0, length=0;
-				
-				//allocate space for the output value
-				IndexedMatrixValue out;
-				if(input==output)
-					out=tempValue;
-				else
-					out=cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
 				if( _isDiag ) //special diag handling (overloaded, size-dependent operation; hence decided during runtime)
@@ -111,6 +104,9 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 					{
 						if( V2M )
 						{
+							//allocate space for the output value
+							IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
+							
 							OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
 									out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
 									startRow, startColumn, length);
@@ -134,6 +130,9 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 						}
 						else //M2V
 						{
+							//allocate space for the output value
+							IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
+							
 							//compute matrix indexes
 							out.getIndexes().setIndexes(in.getIndexes().getRowIndex(), 1);
 							
@@ -144,14 +143,13 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 				}
 				else //general case (e.g., transpose)
 				{
+					//allocate space for the output value
+					IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
+					
 					OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
 							out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
 							startRow, startColumn, length);	
 				}
-				
-				//put the output value in the cache
-				if(out==tempValue)
-					cachedValues.add(output, out);
 			}
 	}
 }

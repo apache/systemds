@@ -32,8 +32,8 @@ import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.CTable;
+import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
@@ -2993,7 +2993,7 @@ public class MatrixBlock extends MatrixValue
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(MaxIndex.getMaxIndexFnObject())))
+		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(DiagIndex.getDiagIndexFnObject())))
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlock result=checkType(ret);
@@ -3002,7 +3002,7 @@ public class MatrixBlock extends MatrixValue
 		boolean sps;
 		if(reducedDim)
 			sps = false;
-		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject()))
+		else if(op.fn.equals(DiagIndex.getDiagIndexFnObject()))
 			sps = true;
 		else
 			sps = this.evalSparseFormatInMemory(true);

@@ -12,7 +12,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
+import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -42,7 +42,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
-			return new ReorgCPInstruction(new ReorgOperator(MaxIndex.getMaxIndexFnObject()), in, out, str);
+			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, str);
 		} 
 		
 		else {

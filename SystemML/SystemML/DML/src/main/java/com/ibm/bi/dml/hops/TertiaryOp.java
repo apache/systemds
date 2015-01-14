@@ -64,11 +64,11 @@ public class TertiaryOp extends Hop
 	
 	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITE = true;
 	
-	private OpOp3 op = null;
+	private OpOp3 _op = null;
 	
 	//ctable specific flags 
 	// flag to indicate the existence of additional inputs representing output dimensions
-	private boolean dimInputsPresent = false;
+	private boolean _dimInputsPresent = false;
 	private boolean _disjointInputs = false;
 	private boolean _outputEmptyBlocks = true;
 	
@@ -80,7 +80,7 @@ public class TertiaryOp extends Hop
 	public TertiaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3) {
 		super(Hop.Kind.TertiaryOp, l, dt, vt);
-		op = o;
+		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
 		getInput().add(2, inp3);
@@ -94,7 +94,7 @@ public class TertiaryOp extends Hop
 	public TertiaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5) {
 		super(Hop.Kind.TertiaryOp, l, dt, vt);
-		op = o;
+		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
 		getInput().add(2, inp3);
@@ -105,11 +105,11 @@ public class TertiaryOp extends Hop
 		inp3.getParent().add(this);
 		inp4.getParent().add(this);
 		inp5.getParent().add(this);
-		dimInputsPresent = true;
+		_dimInputsPresent = true;
 	}
 	
 	public OpOp3 getOp(){
-		return op;
+		return _op;
 	}
 	
 	public void setDisjointInputs(boolean flag){
@@ -128,7 +128,7 @@ public class TertiaryOp extends Hop
 		{
 			try 
 			{
-				switch(op) {
+				switch( _op ) {
 					case CENTRALMOMENT:
 						constructLopsCentralMoment();
 						break;
@@ -147,7 +147,7 @@ public class TertiaryOp extends Hop
 						break;
 						
 					default:
-						throw new HopsException(this.printErrorLocation() + "Unknown TertiaryOp (" + op + ") while constructing Lops \n");
+						throw new HopsException(this.printErrorLocation() + "Unknown TertiaryOp (" + _op + ") while constructing Lops \n");
 
 				}
 			} 
@@ -167,8 +167,8 @@ public class TertiaryOp extends Hop
 	 */
 	private void constructLopsCentralMoment() throws HopsException, LopsException {
 		
-		if ( op != OpOp3.CENTRALMOMENT )
-			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CENTRALMOMENT );
+		if ( _op != OpOp3.CENTRALMOMENT )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.CENTRALMOMENT );
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.MR ) {
@@ -218,8 +218,8 @@ public class TertiaryOp extends Hop
 	 */
 	private void constructLopsCovariance() throws HopsException, LopsException {
 		
-		if ( op != OpOp3.COVARIANCE )
-			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.COVARIANCE );
+		if ( _op != OpOp3.COVARIANCE )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COVARIANCE );
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.MR ) {
@@ -274,8 +274,8 @@ public class TertiaryOp extends Hop
 	 */
 	private void constructLopsQuantile() throws HopsException, LopsException {
 		
-		if ( op != OpOp3.QUANTILE && op != OpOp3.INTERQUANTILE )
-			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
+		if ( _op != OpOp3.QUANTILE && _op != OpOp3.INTERQUANTILE )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
 		
 		ExecType et = optFindExecType();
 		
@@ -300,7 +300,7 @@ public class TertiaryOp extends Hop
 					getInput().get(2).constructLops(),
 					get_dataType(),
 					get_valueType(),
-					(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+					(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 							: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -333,7 +333,7 @@ public class TertiaryOp extends Hop
 					getInput().get(2).constructLops(),
 					get_dataType(),
 					get_valueType(),
-					(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+					(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 							: PickByCount.OperationTypes.RANGEPICK, et, true);
 			sort.getOutputParameters().setDimensions(
 					getInput().get(0).get_dim1(),
@@ -356,8 +356,8 @@ public class TertiaryOp extends Hop
 	 */
 	private void constructLopsCtable() throws HopsException, LopsException {
 		
-		if ( op != OpOp3.CTABLE )
-			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CTABLE );
+		if ( _op != OpOp3.CTABLE )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.CTABLE );
 		
 		/*
 		 * We must handle three different cases: case1 : all three
@@ -567,7 +567,7 @@ public class TertiaryOp extends Hop
 			}
 
 			// output dimensions are not known at compilation time
-			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
+			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? get_rows_in_block() : -1), ( _dimInputsPresent ? get_cols_in_block() : -1), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			Lop lctable = tertiary;
@@ -577,13 +577,13 @@ public class TertiaryOp extends Hop
 				group4 = new Group(
 						tertiary, Group.OperationTypes.Sort, get_dataType(),
 						get_valueType());
-				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
+				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? get_rows_in_block() : -1), ( _dimInputsPresent ? get_cols_in_block() : -1), -1);
 				group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 				Aggregate agg1 = new Aggregate(
 						group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
 						get_valueType(), ExecType.MR);
-				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( dimInputsPresent ? get_rows_in_block() : -1), ( dimInputsPresent ? get_cols_in_block() : -1), -1);
+				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? get_rows_in_block() : -1), ( _dimInputsPresent ? get_cols_in_block() : -1), -1);
 	
 				agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
@@ -593,7 +593,7 @@ public class TertiaryOp extends Hop
 				lctable = agg1;
 			}
 
-			if ( dimsKnown() || dimInputsPresent ) {
+			if ( dimsKnown() || _dimInputsPresent ) {
 				// In this case, output dimensions are known at the time of its execution
 				// No need introduce reblock lop since table() itself outputs in blocked format, whenever the output dimensions are known.
 				set_lops(lctable);
@@ -620,7 +620,7 @@ public class TertiaryOp extends Hop
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "t(" + HopsOpOp3String.get(op) + ")";
+		s += "t(" + HopsOpOp3String.get(_op) + ")";
 		return s;
 	}
 
@@ -628,7 +628,7 @@ public class TertiaryOp extends Hop
 		if (LOG.isDebugEnabled()){
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
-				LOG.debug("  Operation: " + op);
+				LOG.debug("  Operation: " + _op);
 				for (Hop h : getInput()) {
 					h.printMe();
 				}
@@ -639,7 +639,7 @@ public class TertiaryOp extends Hop
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
-		if (this.op == OpOp3.CTABLE) {
+		if ( _op == OpOp3.CTABLE ) {
 			if (this.getInput().size() != 3)
 				throw new HopsException("A tertiary Hop must have three inputs \n");
 
@@ -812,7 +812,7 @@ public class TertiaryOp extends Hop
 	{
 		//only quantile and ctable produce matrices
 		
-		switch(op) 
+		switch( _op ) 
 		{
 			case CTABLE:
 				// since the dimensions of both inputs must be the same, checking for one input is sufficient
@@ -828,7 +828,7 @@ public class TertiaryOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 				
 			default:
-				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
+				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
 	}
 	
@@ -836,7 +836,7 @@ public class TertiaryOp extends Hop
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
 		double ret = 0;
-		if( op == OpOp3.CTABLE ) {
+		if( _op == OpOp3.CTABLE ) {
 			if ( _dim1 >0 && _dim2 > 0 ) {
 				// output dimensions are known, and hence a MatrixBlock is allocated
 				// Allocated block is in sparse format only when #inputRows < #cellsInOutput
@@ -850,7 +850,7 @@ public class TertiaryOp extends Hop
 						  32 * dim1; //values: 2xint,1xObject
 			}
 		}
-		else if ( op == OpOp3.QUANTILE ) {
+		else if ( _op == OpOp3.QUANTILE ) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3;  
@@ -866,7 +866,7 @@ public class TertiaryOp extends Hop
 	
 		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 		
-		switch(op) 
+		switch( _op ) 
 		{
 			case CTABLE:
 				long worstCaseDim = -1;
@@ -908,7 +908,7 @@ public class TertiaryOp extends Hop
 				break;
 			
 			default:
-				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
+				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
 				
 		return ret;
@@ -941,7 +941,7 @@ public class TertiaryOp extends Hop
 			// When execType=CP, it is marked for recompilation only when additional
 			// dimension inputs are provided (and those values are unknown at initial compile time).
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) ) {
-				if ( _etype==ExecType.MR || (_etype == ExecType.CP && dimInputsPresent))
+				if ( _etype==ExecType.MR || (_etype == ExecType.CP && _dimInputsPresent))
 					setRequiresRecompile();
 			}
 		}
@@ -957,7 +957,7 @@ public class TertiaryOp extends Hop
 		}
 		else 
 		{
-			switch(op) 
+			switch( _op ) 
 			{
 				case CTABLE:
 					//in general, do nothing because the output size is data dependent
@@ -1002,7 +1002,7 @@ public class TertiaryOp extends Hop
 					break;	
 					
 				default:
-					throw new RuntimeException("Size information for operation (" + op + ") can not be updated.");
+					throw new RuntimeException("Size information for operation (" + _op + ") can not be updated.");
 			}
 		}	
 	}
@@ -1016,8 +1016,10 @@ public class TertiaryOp extends Hop
 		ret.clone(this, false);
 		
 		//copy specific attributes
-		ret.op = op;
-		ret.dimInputsPresent = dimInputsPresent;
+		ret._op = _op;
+		ret._dimInputsPresent  = _dimInputsPresent;
+		ret._disjointInputs    = _disjointInputs;
+		ret._outputEmptyBlocks = _outputEmptyBlocks;
 		
 		return ret;
 	}
@@ -1028,11 +1030,26 @@ public class TertiaryOp extends Hop
 		if( that._kind!=Kind.TertiaryOp )
 			return false;
 		
-		TertiaryOp that2 = (TertiaryOp)that;	
-		return (   op == that2.op
+		TertiaryOp that2 = (TertiaryOp)that;
+		
+		//compare basic inputs and weights (always existing)
+		boolean ret = (_op == that2._op
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1)
 				&& getInput().get(2) == that2.getInput().get(2));
+		
+		//compare optional dimension parameters
+		ret &= _dimInputsPresent == that2._dimInputsPresent;
+		if( _dimInputsPresent ){
+			ret &= getInput().get(3) == that2.getInput().get(3)
+				&& getInput().get(4) == that2.getInput().get(4);
+		}
+		
+		//compare optimizer hints and parameters
+		ret &= _disjointInputs == that2._disjointInputs
+			&& _outputEmptyBlocks == that2._outputEmptyBlocks;
+		
+		return ret;
 	}
 	
 	/**

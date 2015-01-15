@@ -26,8 +26,9 @@ public class ScalarMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 											   CPOperand in1, 
 											   CPOperand in2, 
 											   CPOperand out, 
+											   String opcode,
 											   String istr){
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, opcode, istr);
 	}
 	
 	@Override
@@ -46,15 +47,12 @@ public class ScalarMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		MatrixBlock matBlock = ec.getMatrixInput(mat.get_name());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType(), scalar.isLiteral());
 
-		ScalarOperator sc_op = (ScalarOperator) optr;
+		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
 		
-		String output_name = output.get_name();
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.scalarOperations(sc_op, new MatrixBlock());
 		
-		matBlock = null;
 		ec.releaseMatrixInput(mat.get_name());
-		ec.setMatrixOutput(output_name, resultBlock);
-		resultBlock = null;
+		ec.setMatrixOutput(output.get_name(), resultBlock);
 	}
 }

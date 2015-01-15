@@ -27,10 +27,9 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String istr)
+	public PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
 	{
-		super(op, in1, in2, in3, out);
-		instString = istr;
+		super(op, in1, in2, in3, out, opcode, istr);
 	}
 	
 	/**
@@ -59,7 +58,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		if(!opcode.equalsIgnoreCase("pmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an PMMJCPInstruction: " + str);
 		else
-			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, str);
+			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, opcode, str);
 	}
 	
 	@Override

@@ -51,8 +51,9 @@ public class RandCPInstruction extends UnaryCPInstruction
 							  double sparsity, 
 							  long seed,
 							  String probabilityDensityFunction,
+							  String opcode,
 							  String istr) {
-		super(op, in, out, istr);
+		super(op, in, out, opcode, istr);
 		
 		this.method = mthd;
 		this.rows = rows;
@@ -69,8 +70,8 @@ public class RandCPInstruction extends UnaryCPInstruction
 
 	public RandCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
 			long rows, long cols, int rpb, int cpb, double seqFrom,
-			double seqTo, double seqIncr, String istr) {
-		super(op, in, out, istr);
+			double seqTo, double seqIncr, String opcode, String istr) {
+		super(op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -117,7 +118,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
 			
-			return new RandCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, str);
+			return new RandCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			// Example Instruction: CP:seq:11:1:1000:1000:1:0:-0.1:scratch_space/_p7932_192.168.1.120//_t0/:mVar1
@@ -139,7 +140,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 	        }
 			
 			CPOperand in = null;
-			return new RandCPInstruction(op, method, in, out, rows, cols, rpb, cpb, from, to, incr, str);
+			return new RandCPInstruction(op, method, in, out, rows, cols, rpb, cpb, from, to, incr, opcode, str);
 		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
@@ -149,7 +150,6 @@ public class RandCPInstruction extends UnaryCPInstruction
 	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException
 	{
-		String output_name = output.get_name();
 		MatrixBlock soresBlock = null;
 		
 		if ( this.method == DataGenMethod.RAND ) {
@@ -167,6 +167,6 @@ public class RandCPInstruction extends UnaryCPInstruction
 			// (int)rows, (int)cols, rowsInBlock, colsInBlock, 
 			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
 		}
-		ec.setMatrixOutput(output_name, soresBlock);
+		ec.setMatrixOutput(output.get_name(), soresBlock);
 	}
 }

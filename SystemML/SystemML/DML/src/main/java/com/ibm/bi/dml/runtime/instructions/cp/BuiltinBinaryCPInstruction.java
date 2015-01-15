@@ -27,11 +27,10 @@ public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction
 	
 	private int arity;
 	
-	public BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int _arity, String istr )
+	public BuiltinBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, int _arity, String opcode, String istr )
 	{
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.BuiltinBinary;
-		instString = istr;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.BuiltinBinary;
 		arity = _arity;
 	}
 
@@ -51,11 +50,11 @@ public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction
 		// Determine appropriate Function Object based on opcode
 			
 		if ( in1.get_dataType() == DataType.SCALAR && in2.get_dataType() == DataType.SCALAR ) {
-			return new ScalarScalarBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, str);
+			return new ScalarScalarBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);
 		} else if (in1.get_dataType() != in2.get_dataType()) {
-			return new MatrixScalarBuiltinCPInstruction(new RightScalarOperator(func, 0), in1, in2, out, str);					
+			return new MatrixScalarBuiltinCPInstruction(new RightScalarOperator(func, 0), in1, in2, out, opcode, str);					
 		} else { // if ( in1.get_dataType() == DataType.MATRIX && in2.get_dataType() == DataType.MATRIX ) {
-			return new MatrixMatrixBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, str);	
+			return new MatrixMatrixBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);	
 		} 
 	}
 }

@@ -37,15 +37,14 @@ public class FileCPInstruction extends CPInstruction
 	String input2;
 	int arity;
 	
-	public FileCPInstruction (Operator op, FileOperationCode _code, String in1, String in2, int _arity, String istr )
+	public FileCPInstruction (Operator op, FileOperationCode _code, String in1, String in2, int _arity, String opcode, String istr )
 	{
-		super(op);
-		cptype = CPINSTRUCTION_TYPE.File;
+		super(op, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.File;
 		code = _code;
 		input1 = in1;
 		input2 = in2;
 		arity = _arity;
-		instString = istr;
 	}
 
 	private static FileOperationCode getFileOperationCode ( String str ) throws DMLUnsupportedOperationException {
@@ -79,10 +78,10 @@ public class FileCPInstruction extends CPInstruction
 		// Determine appropriate Function Object based on opcode
 		
 		if ( opcode.equalsIgnoreCase("rm") ) {
-			return new FileCPInstruction(new SimpleOperator(RemoveFile.getRemoveFileFnObject()), focode, in1, in2, _arity, str);
+			return new FileCPInstruction(new SimpleOperator(RemoveFile.getRemoveFileFnObject()), focode, in1, in2, _arity, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("mv") ) {
-			return new FileCPInstruction(new SimpleOperator(RenameFile.getRenameFileFnObject()), focode, in1, in2, _arity, str);
+			return new FileCPInstruction(new SimpleOperator(RenameFile.getRenameFileFnObject()), focode, in1, in2, _arity, opcode, str);
 		}
 		return null;
 	}

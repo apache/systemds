@@ -33,12 +33,11 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 	private int arity;
 	protected HashMap<String,String> params;
 	
-	public ParameterizedBuiltinCPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String istr )
+	public ParameterizedBuiltinCPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr )
 	{
-		super(op, null, null, out);
-		cptype = CPINSTRUCTION_TYPE.ParameterizedBuiltin;
+		super(op, null, null, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.ParameterizedBuiltin;
 		params = paramsMap;
-		instString = istr;
 	}
 
 	public int getArity() {
@@ -78,7 +77,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				throw new DMLRuntimeException("Probability distribution must to be specified to compute cumulative probability. (e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist") );
 			// Determine appropriate Function Object based on opcode
-			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
+			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
 		else if ( opcode.equalsIgnoreCase("groupedagg")) {
 			// check for mandatory arguments
@@ -91,13 +90,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			}
 			
 			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, str);
+			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
 		}
 		else if(   opcode.equalsIgnoreCase("rmempty") 
 				|| opcode.equalsIgnoreCase("replace") ) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
+			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -110,11 +109,11 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		
-		String opcode = InstructionUtils.getOpCode(instString);
+		String opcode = getOpcode();
 		ScalarObject sores = null;
 		
 		if ( opcode.equalsIgnoreCase("cdf")) {
-			SimpleOperator op = (SimpleOperator) optr;
+			SimpleOperator op = (SimpleOperator) _optr;
 			double result =  op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.get_name(), sores);
@@ -133,7 +132,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			}
 			
 			// compute the result
-			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, optr));
+			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr));
 			
 			ec.setMatrixOutput(output.get_name(), soresBlock);
 			// release locks

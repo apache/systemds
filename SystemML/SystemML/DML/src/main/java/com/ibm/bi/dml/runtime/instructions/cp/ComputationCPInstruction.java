@@ -19,16 +19,16 @@ public abstract class ComputationCPInstruction extends CPInstruction
 	public CPOperand output;
 	public CPOperand input1, input2, input3;
 	
-	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand out ) {
-		super(op);
+	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr ) {
+		super(op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = null;
 		output = out;
 	}
 
-	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out ) {
-		super(op);
+	public ComputationCPInstruction ( Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr ) {
+		super(op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;

@@ -32,19 +32,21 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 										CPOperand in1, 
 										CPOperand in2, 
 										CPOperand out, 
+										String opcode,
 										String istr ){
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.AggregateBinary;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}
 	
 	public AggregateBinaryCPInstruction(Operator op, 
 			CPOperand in1, 
 			CPOperand in2, 
 			CPOperand in3, 
-			CPOperand out, 
+			CPOperand out,
+			String opcode,
 			String istr ){
-		super(op, in1, in2, in3, out, istr);
-		cptype = CPINSTRUCTION_TYPE.AggregateBinary;
+		super(op, in1, in2, in3, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.AggregateBinary;
 	}
 
 	public static AggregateBinaryCPInstruction parseInstruction( String str ) 
@@ -60,7 +62,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 			parseBinaryInstruction(str, in1, in2, out);
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, str);
+			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("cov")) {
 			COVOperator cov = new COVOperator(COV.getCOMFnObject());
@@ -68,12 +70,12 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 			if ( parts.length == 4 ) {
 				// CP.cov.mVar0.mVar1.mVar2
 				parseBinaryInstruction(str, in1, in2, out);
-				return new AggregateBinaryCPInstruction(cov, in1, in2, out, str);
+				return new AggregateBinaryCPInstruction(cov, in1, in2, out, opcode, str);
 			} else if ( parts.length == 5 ) {
 				// CP.cov.mVar0.mVar1.mVar2.mVar3
 				in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseBinaryInstruction(str, in1, in2, in3, out);
-				return new AggregateBinaryCPInstruction(cov, in1, in2, in3, out, str);
+				return new AggregateBinaryCPInstruction(cov, in1, in2, in3, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);
@@ -89,7 +91,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
-		String opcode = InstructionUtils.getOpCode(instString);
+		String opcode = getOpcode();
 		
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
@@ -97,7 +99,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 		
 		if ( opcode.equalsIgnoreCase("ba+*")) {
 			
-			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) optr;
+			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
 			
 			//release inputs/outputs
@@ -107,7 +109,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 			
 		} 
 		else if ( opcode.equalsIgnoreCase("cov") ) {
-			COVOperator cov_op = (COVOperator)optr;
+			COVOperator cov_op = (COVOperator)_optr;
 			CM_COV_Object covobj = new CM_COV_Object();
 			
 			if ( input3 == null ) 
@@ -131,7 +133,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 				ec.releaseMatrixInput(input2.get_name());
 				ec.releaseMatrixInput(input3.get_name());
 			}
-			double val = covobj.getRequiredResult(optr);
+			double val = covobj.getRequiredResult(_optr);
 			DoubleObject ret = new DoubleObject(output_name, val);
 			
 			ec.setScalarOutput(output_name, ret);
@@ -149,6 +151,6 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 	@Deprecated
 	public AggregateBinaryOperator getAggregateOperator()
 	{
-		return (AggregateBinaryOperator) optr;
+		return (AggregateBinaryOperator) _optr;
 	}
 }

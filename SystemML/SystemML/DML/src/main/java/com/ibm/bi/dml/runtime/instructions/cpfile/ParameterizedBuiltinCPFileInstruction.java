@@ -73,9 +73,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String istr) 
+	public ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) 
 	{
-		super(op, paramsMap, out, istr);
+		super(op, paramsMap, out, opcode, istr);
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		ValueFunction func = null;
 		if ( opcode.equalsIgnoreCase("rmempty") ) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinCPFileInstruction(new SimpleOperator(func), paramsMap, out, str);
+			return new ParameterizedBuiltinCPFileInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -112,7 +112,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		String opcode = InstructionUtils.getOpCode(instString);
+		String opcode = getOpcode();
 		
 		if ( opcode.equalsIgnoreCase("rmempty") ) 
 		{

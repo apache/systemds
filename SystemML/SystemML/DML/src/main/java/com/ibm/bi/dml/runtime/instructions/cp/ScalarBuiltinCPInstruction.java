@@ -11,7 +11,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
@@ -22,17 +21,17 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr)
+	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr)
 	{
-		super(op, in, out, 1, instr);
+		super(op, in, out, 1, opcode, instr);
 	}
 	
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{	
-		String opcode = InstructionUtils.getOpCode(instString);
-		SimpleOperator dop = (SimpleOperator) optr;
+		String opcode = getOpcode();
+		SimpleOperator dop = (SimpleOperator) _optr;
 		ScalarObject sores = null;
 		ScalarObject so = null;
 		

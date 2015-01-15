@@ -28,11 +28,10 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 	
 	int arity;
 	
-	public BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String istr )
+	public BuiltinUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode, String istr )
 	{
-		super(op, in, out, istr);
-		cptype = CPINSTRUCTION_TYPE.BuiltinUnary;
-		instString = istr;
+		super(op, in, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.BuiltinUnary;
 		arity = _arity;
 	}
 
@@ -56,7 +55,7 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
-			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str);
+			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 		}
 		else //2+1, general case
 		{
@@ -64,9 +63,9 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 			func = Builtin.getBuiltinFnObject(opcode);
 			
 			if(in.get_dataType() == DataType.SCALAR)
-				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str);
+				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 			else if(in.get_dataType() == DataType.MATRIX)
-				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, str);
+				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, opcode, str);
 		}
 		
 		/*

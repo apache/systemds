@@ -24,9 +24,10 @@ public class MatrixMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 	public MatrixMatrixRelationalCPInstruction(Operator op, 
 											   CPOperand in1, 
 											   CPOperand in2, 
-											   CPOperand out, 
+											   CPOperand out,
+											   String opcode,
 											   String istr){
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
@@ -36,7 +37,7 @@ public class MatrixMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
 		
 		String output_name = output.get_name();
-		BinaryOperator bop = (BinaryOperator) optr;
+		BinaryOperator bop = (BinaryOperator) _optr;
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
 		

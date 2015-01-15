@@ -39,12 +39,11 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 	int arity;
 	protected ArrayList<CPOperand> _outputs;
 	
-	public MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String istr )
+	public MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode, String istr )
 	{
-		super(op, input1, null, outputs.get(0));
-		cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
+		super(op, input1, null, outputs.get(0), opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.MultiReturnBuiltin;
 		_outputs = outputs;
-		instString = istr;
 	}
 
 	public int getArity() {
@@ -86,7 +85,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
 			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 		}
 		else if ( opcode.equalsIgnoreCase("lu") ) {
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -97,7 +96,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
 			outputs.add ( new CPOperand(operandParts[2], ValueType.DOUBLE, DataType.MATRIX) );
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
 		}
 		else if ( opcode.equalsIgnoreCase("eigen") ) {
@@ -108,7 +107,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
 			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
 		}
 		else {
@@ -118,8 +117,10 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		String opcode = InstructionUtils.getOpCode(instString);
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		String opcode = getOpcode();
 		
 		if (opcode.equalsIgnoreCase("qr")) {
 			performQR(ec);

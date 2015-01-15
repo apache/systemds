@@ -21,19 +21,18 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public UnaryCPInstruction(Operator op, CPOperand in, CPOperand out,
-			String instr) {
-		this (op, in, null, null, out, instr);
+			String opcode, String instr) {
+		this (op, in, null, null, out, opcode, instr);
 	}
 
 	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String instr) {
-		this (op, in1, in2, null, out, instr);
+			String opcode, String instr) {
+		this (op, in1, in2, null, out, opcode, instr);
 	}
 
 	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String instr) {
-		super(op, in1, in2, in3, out);
-		instString = instr;
+			String opcode, String instr) {
+		super(op, in1, in2, in3, out, opcode, instr);
 	}
 
 	static String parseUnaryInstruction(String instr, CPOperand in,

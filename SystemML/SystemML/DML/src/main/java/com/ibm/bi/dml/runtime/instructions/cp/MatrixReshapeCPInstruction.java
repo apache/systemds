@@ -32,10 +32,10 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 	private CPOperand _opCols = null;
 	private CPOperand _opByRow = null;
 	
-	public MatrixReshapeCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String istr)
+	public MatrixReshapeCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr)
 	{
-		super(op, in1, out, istr);
-		cptype = CPINSTRUCTION_TYPE.MatrixReshape;
+		super(op, in1, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.MatrixReshape;
 		
 		_opRows = in2;
 		_opCols = in3;
@@ -70,7 +70,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeInstruction: " + str);
 		else
-			return new MatrixReshapeCPInstruction(new Operator(true), in1, in2, in3, in4, out, str);
+			return new MatrixReshapeCPInstruction(new Operator(true), in1, in2, in3, in4, out, opcode, str);
 	}
 	
 	@Override

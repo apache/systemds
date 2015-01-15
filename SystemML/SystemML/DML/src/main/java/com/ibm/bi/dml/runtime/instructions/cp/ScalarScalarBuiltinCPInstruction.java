@@ -11,7 +11,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -26,14 +25,15 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			  								CPOperand in1,
 			  								CPOperand in2,
 			  								CPOperand out,
+			  								String opcode,
 			  								String instr){
-		super(op, in1, in2, out, 2, instr);
+		super(op, in1, in2, out, 2, opcode, instr);
 	}
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		
-		String opcode = InstructionUtils.getOpCode(instString);
+		String opcode = getOpcode();
 		ScalarObject sores = null;
 		
 		ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
@@ -66,7 +66,7 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			/*
 			 * Inputs for all builtins other than PRINT are treated as DOUBLE.
 			 */
-			BinaryOperator dop = (BinaryOperator) optr;
+			BinaryOperator dop = (BinaryOperator) _optr;
 			double rval = dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue());
 			
 			sores = (ScalarObject) new DoubleObject(rval);

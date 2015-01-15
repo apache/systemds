@@ -21,10 +21,10 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String istr )
+	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
 	{
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.RelationalBinary;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.RelationalBinary;
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
@@ -79,13 +79,13 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 											  + "Relational Binary Instruction "
 											  + "involving scalar operands.");
 			}
-			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, str);
+			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, opcode, str);
 		
 		}else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
 			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
-				return new MatrixMatrixRelationalCPInstruction(operator, in1, in2, out, str);
+				return new MatrixMatrixRelationalCPInstruction(operator, in1, in2, out, opcode, str);
 			else
-				return new ScalarMatrixRelationalCPInstruction(operator, in1, in2, out, str);
+				return new ScalarMatrixRelationalCPInstruction(operator, in1, in2, out, opcode, str);
 		}
 		
 		return null;

@@ -41,16 +41,16 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 	 */
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
 	
-	public MatrixIndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr){
-		super(op, in, out, istr);
+	public MatrixIndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+		super(op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
 	}
 	
-	public MatrixIndexingCPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr){
-		super(op, lhsInput, rhsInput, out, istr);
+	public MatrixIndexingCPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+		super(op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
@@ -61,8 +61,9 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException {
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
-		if ( parts[0].equalsIgnoreCase("rangeReIndex") ) {
+		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
 			if ( parts.length == 7 ) {
 				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
 				CPOperand in, rl, ru, cl, cu, out;
@@ -78,13 +79,13 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				cl.split(parts[4]);
 				cu.split(parts[5]);
 				out.split(parts[6]);
-				return new MatrixIndexingCPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, str);
+				return new MatrixIndexingCPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( parts[0].equalsIgnoreCase("leftIndex")) {
+		else if ( opcode.equalsIgnoreCase("leftIndex")) {
 			if ( parts.length == 8 ) {
 				// Example: leftIndex:mVar1:mvar2:Var3:Var4:Var5:Var6:mVar7
 				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
@@ -102,7 +103,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				cl.split(parts[5]);
 				cu.split(parts[6]);
 				out.split(parts[7]);
-				return new MatrixIndexingCPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, str);
+				return new MatrixIndexingCPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -117,7 +118,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
-		String opcode = InstructionUtils.getOpCode( instString );
+		String opcode = getOpcode();
 		
 		//get indexing range
 		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();

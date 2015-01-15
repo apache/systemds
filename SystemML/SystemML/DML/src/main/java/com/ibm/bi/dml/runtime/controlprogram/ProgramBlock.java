@@ -368,6 +368,7 @@ public class ProgramBlock
 			else if (currInst instanceof CPInstruction) 
 			{
 				CPInstruction tmp = (CPInstruction)currInst;
+
 				if( tmp.requiresLabelUpdate() ) //update labels only if required
 				{
 					//update labels if required
@@ -394,10 +395,9 @@ public class ProgramBlock
 					LOG.trace("CP Instruction: " + currInst.toString() + ", duration = " + (t1-t0)/1000000);
 				}
 
-				if( DMLScript.STATISTICS){
+				if( DMLScript.STATISTICS) {
 					long t3 = System.nanoTime();
-					String opcode = Statistics.getCPHeavyHitterCode(tmp);
-					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
+					Statistics.maintainCPHeavyHitters(tmp.getOpcode(), t3-t2);
 				}
 				
 				if( CHECK_MATRIX_SPARSITY )

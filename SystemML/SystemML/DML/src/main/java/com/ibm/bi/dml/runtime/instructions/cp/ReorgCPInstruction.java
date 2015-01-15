@@ -26,9 +26,9 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String istr){
-		super(op, in, out, istr);
-		cptype = CPINSTRUCTION_TYPE.Reorg;
+	public ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+		super(op, in, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.Reorg;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -38,11 +38,11 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 		String opcode = parseUnaryInstruction(str, in, out);
 		
 		if ( opcode.equalsIgnoreCase("r'") ) {
-			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, str);
+			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
-			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, str);
+			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
 		
 		else {
@@ -56,7 +56,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	{
 		//acquire inputs
 		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());		
-		ReorgOperator r_op = (ReorgOperator) optr;
+		ReorgOperator r_op = (ReorgOperator) _optr;
 		
 		//execute operation
 		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));

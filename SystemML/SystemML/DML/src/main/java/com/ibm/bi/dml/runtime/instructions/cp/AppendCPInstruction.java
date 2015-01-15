@@ -37,10 +37,10 @@ public class AppendCPInstruction extends BinaryCPInstruction
 	//type (matrix cbind / scalar string concatenation)
 	private AppendType _type;
 	
-	public AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String istr, AppendType type)
+	public AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr)
 	{
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.Append;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.Append;
 		
 		_offset = in3;
 		_type = type;
@@ -72,7 +72,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
 		else
 			return new AppendCPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, in2, in3, out, str, type);
+										   in1, in2, in3, out, type, opcode, str);
 	}
 	
 	@Override

@@ -24,8 +24,9 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	public MatrixBuiltinCPInstruction(Operator op,
 									  CPOperand in,
 									  CPOperand out,
+									  String opcode,
 									  String instr){
-		super(op, in, out, 1, instr);
+		super(op, in, out, 1, opcode, instr);
 	}
 
 	@Override 
@@ -33,7 +34,7 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
-		UnaryOperator u_op = (UnaryOperator) optr;
+		UnaryOperator u_op = (UnaryOperator) _optr;
 		String output_name = output.get_name();
 		
 		MatrixBlock resultBlock = (MatrixBlock) (matBlock.unaryOperations(u_op, new MatrixBlock()));

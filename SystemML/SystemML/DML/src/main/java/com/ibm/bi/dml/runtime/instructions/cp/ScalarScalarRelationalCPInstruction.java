@@ -23,8 +23,9 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 											   CPOperand in1, 
 											   CPOperand in2,
 											   CPOperand out, 
+											   String opcode,
 											   String istr){
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, opcode, istr);
 	}
 	
 	@Override
@@ -33,7 +34,7 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
-		BinaryOperator dop = (BinaryOperator) optr;
+		BinaryOperator dop = (BinaryOperator) _optr;
 		
 		/*if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
 			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getIntValue() );

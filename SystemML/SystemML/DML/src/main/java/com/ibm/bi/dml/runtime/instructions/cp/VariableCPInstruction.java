@@ -188,36 +188,30 @@ public class VariableCPInstruction extends CPInstruction
 		return false;
 	}
 	
-	public VariableCPInstruction()
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String sopcode, String istr )
 	{
-	
-	}
-	
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String istr )
-	{
-		super();
-		cptype = CPINSTRUCTION_TYPE.Variable;
+		super(sopcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.Variable;
 		opcode = op;
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
 		output = out;
-		instString = istr;
 		
 		formatProperties = null;
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, String sopcode, String istr)
 	{
-		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
+		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
 	}
 	
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, FileFormatProperties formatProperties, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, FileFormatProperties formatProperties, String sopcode, String istr)
 	{
-		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
+		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
 		this.formatProperties = formatProperties;
 	}
@@ -338,10 +332,10 @@ public class VariableCPInstruction extends CPInstruction
 					double fillValue = Double.parseDouble(parts[13]);
 					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue) ;
 				}
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, fmtProperties, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, fmtProperties, opcode, str);
 			}
 			else {
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, opcode, str);
 			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -401,14 +395,14 @@ public class VariableCPInstruction extends CPInstruction
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			out = new CPOperand(parts[3]);
-			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str); 
+			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str); 
 			
 		case Write:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			in3 = new CPOperand(parts[3]);
 			
-			VariableCPInstruction inst = new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str); 
+			VariableCPInstruction inst = new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str); 
 			
 			if ( in3.get_name().equalsIgnoreCase("csv") ) {
 				boolean hasHeader = Boolean.parseBoolean(parts[4]);
@@ -439,7 +433,7 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 				
 		}
-		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str);
+		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str);
 	}
 	
 	@Override

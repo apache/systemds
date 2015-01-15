@@ -25,9 +25,10 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 	public BooleanUnaryCPInstruction(Operator op,
 									 CPOperand in,
 									 CPOperand out,
+									 String opcode,
 									 String instr){
-		super(op, in, out, instr);
-		cptype = CPINSTRUCTION_TYPE.BooleanUnary;
+		super(op, in, out, opcode, instr);
+		_cptype = CPINSTRUCTION_TYPE.BooleanUnary;
 	}
 
 	public static Instruction parseInstruction (String str) throws DMLRuntimeException {
@@ -44,7 +45,7 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
 		
 		// Determine appropriate Function Object based on opcode	
-		return new BooleanUnaryCPInstruction(getSimpleUnaryOperator(opcode), in, out, str);
+		return new BooleanUnaryCPInstruction(getSimpleUnaryOperator(opcode), in, out, opcode, str);
 	}
 	
 	@Override
@@ -54,7 +55,7 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 
-		SimpleOperator dop = (SimpleOperator) optr;
+		SimpleOperator dop = (SimpleOperator) _optr;
 		boolean rval;
 		rval = dop.fn.execute(so.getBooleanValue());
 		

@@ -16,7 +16,6 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -33,8 +32,9 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 											   CPOperand in1, 
 											   CPOperand in2, 
 											   CPOperand out, 
+											   String opcode,
 											   String istr){
-		super(op, in1, in2, out, 2, istr);
+		super(op, in1, in2, out, 2, opcode, istr);
 	}
 	
 	@Override
@@ -43,7 +43,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
         MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
         
-        String opcode = InstructionUtils.getOpCode(instString);
+        String opcode = getOpcode();
         
         if ( opcode.equalsIgnoreCase("solve") ) {
         	executeSolve(ec);
@@ -52,7 +52,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		
         /* Default behavior of this instruction */
 		String output_name = output.get_name();
-		BinaryOperator bop = (BinaryOperator) optr;
+		BinaryOperator bop = (BinaryOperator) _optr;
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
 		

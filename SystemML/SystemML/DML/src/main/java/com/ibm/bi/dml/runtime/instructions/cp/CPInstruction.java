@@ -11,7 +11,6 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
@@ -23,19 +22,39 @@ public abstract class CPInstruction extends Instruction
 	
 	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, PMMJ, MatrixReshape, Partition, StringInit }; 
 	
-	protected CPINSTRUCTION_TYPE cptype;
-	protected Operator optr;
+	protected CPINSTRUCTION_TYPE _cptype;
+	protected Operator _optr;
 	
-	public CPInstruction() {
+	protected String _opcode = null;
+	protected boolean _requiresLabelUpdate = false;
+	
+	public CPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
+		instString = istr;
+		
+		//prepare opcode and update requirement for repeated usage
+		_opcode = opcode;
+		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	public CPInstruction(Operator op) {
-		this();
-		optr = op;
+	
+	public CPInstruction(Operator op, String opcode, String istr) {
+		this(opcode, istr);
+		_optr = op;
 	}
 	
 	public CPINSTRUCTION_TYPE getCPInstructionType() {
-		return cptype;
+		return _cptype;
+	}
+	
+	@Override
+	public boolean requiresLabelUpdate()
+	{
+		return _requiresLabelUpdate;
+	}
+	
+	public String getOpcode()
+	{
+		return _opcode;
 	}
 	
 	@Override
@@ -48,6 +67,13 @@ public abstract class CPInstruction extends Instruction
 		return null;
 	}
 
+	@Override
+	public String getGraphString() {
+		return getOpcode();
+	}
+
+	
+	
 	/**
 	 * This method should be used to execute the instruction. It's abstract to force 
 	 * subclasses to override it. 
@@ -59,8 +85,4 @@ public abstract class CPInstruction extends Instruction
 	public abstract void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException;
 
-	@Override
-	public String getGraphString() {
-		return InstructionUtils.getOpCode(instString);
-	}
 }

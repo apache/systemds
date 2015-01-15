@@ -30,10 +30,10 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 	
 	private MMTSJType _type = null;
 	
-	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String istr)
+	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String opcode, String istr)
 	{
-		super(op, in1, out, istr);
-		cptype = CPINSTRUCTION_TYPE.MMTSJ;
+		super(op, in1, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.MMTSJ;
 		_type = type;
 	}
 	
@@ -60,7 +60,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJCPInstruction: " + str);
 		else
-			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, str);
+			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, opcode, str);
 	}
 	
 	@Override
@@ -74,8 +74,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type );
 		
 		//set output and release inputs
-		String output_name = output.get_name();
-		ec.setMatrixOutput(output_name, ret);
+		ec.setMatrixOutput(output.get_name(), ret);
 		ec.releaseMatrixInput(input1.get_name());
 	}
 	

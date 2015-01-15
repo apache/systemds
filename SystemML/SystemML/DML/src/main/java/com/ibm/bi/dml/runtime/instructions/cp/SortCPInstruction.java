@@ -33,13 +33,13 @@ public class SortCPInstruction extends UnaryCPInstruction
 	 *  
 	 */
 	
-	public SortCPInstruction(Operator op, CPOperand in, CPOperand out, String istr){
-		this(op, in, null, out, istr);
+	public SortCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+		this(op, in, null, out, opcode, istr);
 	}
 	
-	public SortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String istr){
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.Sort;
+	public SortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.Sort;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -49,18 +49,19 @@ public class SortCPInstruction extends UnaryCPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
-		if ( parts[0].equalsIgnoreCase("sort") ) {
+		if ( opcode.equalsIgnoreCase("sort") ) {
 			if ( parts.length == 3 ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new SortCPInstruction(new SimpleOperator(null), in1, out, str);
+				return new SortCPInstruction(new SimpleOperator(null), in1, out, opcode, str);
 			}
 			else if ( parts.length == 4 ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseUnaryInstruction(str, in1, in2, out);
-				return new SortCPInstruction(new SimpleOperator(null), in1, in2, out, str);
+				return new SortCPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -73,24 +74,24 @@ public class SortCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		//acquire inputs matrices
 		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
-		MatrixBlock wtBlock = null, resultBlock = null;
- 		
-		String output_name = output.get_name();
-		
-		if (input2 != null) {
+		MatrixBlock wtBlock = null;
+ 		if (input2 != null) {
 			wtBlock = ec.getMatrixInput(input2.get_name());
 		}
 		
-		resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
+ 		//process core instruction
+		MatrixBlock resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
 		
-		matBlock = wtBlock = null;
+		//release inputs
 		ec.releaseMatrixInput(input1.get_name());
 		if (input2 != null)
 			ec.releaseMatrixInput(input2.get_name());
 		
-		ec.setMatrixOutput(output_name, resultBlock);
+		//set and release output
+		ec.setMatrixOutput(output.get_name(), resultBlock);
 	}
 }

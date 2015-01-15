@@ -38,14 +38,14 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr)
+	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr)
 	{
-		super( op, in, rl, ru, cl, cu, out, istr );
+		super( op, in, rl, ru, cl, cu, out, opcode, istr );
 	}
 	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr)
+	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr)
 	{
-		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, istr);
+		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -53,8 +53,9 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 	{
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
-		if ( parts[0].equalsIgnoreCase("rangeReIndex") ) {
+		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
 			if ( parts.length == 7 ) {
 				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
 				CPOperand in, rl, ru, cl, cu, out;
@@ -70,7 +71,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 				cl.split(parts[4]);
 				cu.split(parts[5]);
 				out.split(parts[6]);
-				return new MatrixIndexingCPFileInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, str);
+				return new MatrixIndexingCPFileInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -90,7 +91,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
-		String opcode = InstructionUtils.getOpCode( instString );
+		String opcode = getOpcode();
 		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
 		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
 		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();

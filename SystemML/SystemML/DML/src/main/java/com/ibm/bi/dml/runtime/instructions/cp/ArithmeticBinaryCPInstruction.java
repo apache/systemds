@@ -25,10 +25,11 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 								   CPOperand in1, 
 								   CPOperand in2, 
 								   CPOperand out, 
+								   String opcode,
 								   String istr )
 	{
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.ArithmeticBinary;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.ArithmeticBinary;
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
@@ -65,13 +66,11 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
 					: getBinaryOperator(opcode);
 		
-		if ( opcode.equalsIgnoreCase("+") && dt1 == DataType.SCALAR && dt2 == DataType.SCALAR) {
-			return new ScalarScalarArithmeticCPInstruction(operator, 
-														   in1, 
-														   in2, 
-														   out, 
-														   str);
-		} else if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
+		if ( opcode.equalsIgnoreCase("+") && dt1 == DataType.SCALAR && dt2 == DataType.SCALAR) 
+		{
+			return new ScalarScalarArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
+		} 
+		else if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
 			if ( (vt1 != ValueType.DOUBLE && vt1 != ValueType.INT)
 					|| (vt2 != ValueType.DOUBLE && vt2 != ValueType.INT)
 					|| (vt3 != ValueType.DOUBLE && vt3 != ValueType.INT) )
@@ -82,7 +81,7 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 				throw new DMLRuntimeException("Unexpected ValueType (" + vt1 + ") in ArithmeticInstruction: " + str);
 			}
 			
-			return new ScalarScalarArithmeticCPInstruction(operator, in1, in2, out, str);
+			return new ScalarScalarArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
 		
 		} else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
 			if(vt1 == ValueType.STRING 
@@ -96,9 +95,9 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 												  + out.get_name());
 				
 			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
-				return new MatrixMatrixArithmeticCPInstruction(operator, in1, in2, out, str);
+				return new MatrixMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);
 			else
-				return new ScalarMatrixArithmeticCPInstruction(operator, in1, in2, out, str);	
+				return new ScalarMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);	
 		}
 		
 		return null;

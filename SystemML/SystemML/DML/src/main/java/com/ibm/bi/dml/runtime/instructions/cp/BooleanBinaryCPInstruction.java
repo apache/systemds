@@ -22,10 +22,10 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public BooleanBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String istr )
+	public BooleanBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
 	{
-		super(op, in1, in2, out, istr);
-		cptype = CPINSTRUCTION_TYPE.BooleanBinary;
+		super(op, in1, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.BooleanBinary;
 	}
 	
 	public static Instruction parseInstruction (String str) throws DMLRuntimeException {
@@ -47,7 +47,7 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 		
 		
 		// Determine appropriate Function Object based on opcode	
-		return new BooleanBinaryCPInstruction(getBinaryOperator(opcode), in1, in2, out, str);
+		return new BooleanBinaryCPInstruction(getBinaryOperator(opcode), in1, in2, out, opcode, str);
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 			so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
-		BinaryOperator dop = (BinaryOperator) optr;
+		BinaryOperator dop = (BinaryOperator) _optr;
 		boolean rval = dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue());
 		sores = (ScalarObject) new BooleanObject(rval);
 		

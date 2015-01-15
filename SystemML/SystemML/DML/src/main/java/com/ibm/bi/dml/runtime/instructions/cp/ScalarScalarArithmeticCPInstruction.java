@@ -26,8 +26,9 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 								   CPOperand in1, 
 								   CPOperand in2,
 								   CPOperand out, 
+								   String opcode,
 								   String istr){
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, opcode, istr);
 	}
 	
 	@Override
@@ -39,7 +40,7 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		
 		
 		// 2) Compute the result value & make an appropriate data object 
-		BinaryOperator dop = (BinaryOperator) optr;
+		BinaryOperator dop = (BinaryOperator) _optr;
 		
 		if ( input1.get_valueType() == ValueType.STRING 
 			 || input2.get_valueType() == ValueType.STRING ) 

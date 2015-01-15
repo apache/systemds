@@ -46,19 +46,16 @@ public class FunctionCallCPInstruction extends CPInstruction
 		return _namespace;
 	}
 	
-	// private LocalVariableMap _inputs = new LocalVariableMap ();
-	
 	// stores both the bound input and output parameters
 	private ArrayList<String> _boundInputParamNames;
 	private ArrayList<String> _boundOutputParamNames;
 	
 	public FunctionCallCPInstruction(String namespace, String functName, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
-		super(null);
+		super(null, functName, istr);
 		
-		cptype = CPINSTRUCTION_TYPE.External;
+		_cptype = CPINSTRUCTION_TYPE.External;
 		_functionName = functName;
 		_namespace = namespace;
-		instString = istr;
 		_boundInputParamNames = boundInParamNames;
 		_boundOutputParamNames = boundOutParamNames;
 		
@@ -228,5 +225,6 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		//set attribute
 		_functionName = fname;
+		_opcode = fname;
 	}
 }

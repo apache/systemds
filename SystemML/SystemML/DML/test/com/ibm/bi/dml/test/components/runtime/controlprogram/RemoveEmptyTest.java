@@ -142,7 +142,7 @@ public class RemoveEmptyTest
 			moOut.setVarName("VarOut");
 			moOut.setMetaData(meta);
 			
-			ParameterizedBuiltinCPFileInstruction pb = new ParameterizedBuiltinCPFileInstruction(null,null,null,null);
+			ParameterizedBuiltinCPFileInstruction pb = new ParameterizedBuiltinCPFileInstruction(null,null,null,null,null);
 			RemoveEmpty rm = new RemoveEmpty(margin, moIn, moOut);
 			moOut = rm.execute();
 					

@@ -25,8 +25,9 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 											   CPOperand in1, 
 											   CPOperand in2, 
 											   CPOperand out, 
+											   String opcode,
 											   String istr){
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, opcode, istr);
 	}
 	
 	@Override
@@ -38,7 +39,7 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
 		
 		// Perform computation using input matrices, and produce the result matrix
-		BinaryOperator bop = (BinaryOperator) optr;
+		BinaryOperator bop = (BinaryOperator) _optr;
 		MatrixBlock soresBlock = (MatrixBlock) (matBlock1.binaryOperations (bop, matBlock2, new MatrixBlock()));
 		
 		// Release the memory occupied by input matrices

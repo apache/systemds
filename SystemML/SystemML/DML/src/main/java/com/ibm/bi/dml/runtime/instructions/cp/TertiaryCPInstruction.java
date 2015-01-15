@@ -38,16 +38,14 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 	
 	public TertiaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
 							 String outputDim1, boolean dim1Literal,String outputDim2, boolean dim2Literal, 
-							 boolean isExpand, String istr )
+							 boolean isExpand, String opcode, String istr )
 	{
-		super(op, in1, in2, in3, out);
+		super(op, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
 		_outDim2 = outputDim2;
 		_dim2Literal = dim2Literal;
 		_isExpand = isExpand;
-		
-		instString = istr;
 	}
 
 	public static TertiaryCPInstruction parseInstruction(String inst) throws DMLRuntimeException{
@@ -75,7 +73,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		CPOperand out = new CPOperand(parts[6]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, inst);
+		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, opcode, inst);
 	}
 	
 /*	static TertiaryOperator getTertiaryOperator(String opcode) throws DMLRuntimeException{
@@ -121,32 +119,32 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 			// F=ctable(A,B,W)
 			matBlock2 = ec.getMatrixInput(input2.get_name());
 			wtBlock = ec.getMatrixInput(input3.get_name());
-			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, wtBlock, ctableMap, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = ec.getMatrixInput(input2.get_name());
 			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, ctableMap, resultBlock);
 			break;
 		case CTABLE_EXPAND_SCALAR_WEIGHT:
 			// F = ctable(seq,A) or F = ctable(seq,B,1)
 			matBlock2 = ec.getMatrixInput(input2.get_name());
 			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
 			// only resultBlock.rlen known, resultBlock.clen set in operation
-			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
 			cst2 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, cst1, cst2, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
 			wtBlock = ec.getMatrixInput(input3.get_name());
 			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, cst1, wtBlock, ctableMap, resultBlock);
 			break;
 		
 		default:

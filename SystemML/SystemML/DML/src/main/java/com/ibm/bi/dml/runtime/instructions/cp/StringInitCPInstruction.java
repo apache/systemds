@@ -32,9 +32,10 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 	private long _clen = -1;
 	private String _data = null;
 		
-	public StringInitCPInstruction( Operator op, CPOperand in, CPOperand out, long rows, long cols, int rpb, int cpb, String data, String inst) 
+	public StringInitCPInstruction( Operator op, CPOperand in, CPOperand out, long rows, long cols, int rpb, int cpb, 
+			                        String data, String opcode, String inst) 
 	{
-		super(op, in, out, inst);
+		super(op, in, out, opcode, inst);
 		_rlen = rows;
 		_clen = cols;
 		_data = data;
@@ -67,7 +68,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 		int cpb = Integer.parseInt(s[4]);
 		String data = s[5];
 		
-		return new StringInitCPInstruction(null, null, out, rows, cols, rpb, cpb, data, str);
+		return new StringInitCPInstruction(null, null, out, rows, cols, rpb, cpb, data, opcode, str);
 	}
 	
 	@Override

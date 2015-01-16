@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.util;
 
+import com.ibm.bi.dml.runtime.io.jdk8.FloatingDecimal;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 
 public class UtilFunctions 
@@ -52,6 +53,19 @@ public class UtilFunctions
 		return (blockIndex-1)*blockSize+1+cellInBlock;
 	}
 	
+	/**
+	 * 
+	 * @param matrixSize
+	 * @param cellIndex
+	 * @param blockSize
+	 * @return
+	 */
+	public static int computeBlockSize( long len, long cellIndex, long blockSize )
+	{
+		long remain = len - (cellIndex-1)*blockSize;
+		return (int)Math.min(blockSize, remain);
+	}
+	
 	//all boundaries are inclusive
 	public static boolean isOverlap(long s1, long f1, long s2, long f2)
 	{
@@ -80,6 +94,11 @@ public class UtilFunctions
 		return upos-lpos+1;
 	}
 
+	public static double parseToDouble(String str)
+	{
+		return FloatingDecimal.parseDouble(str);
+	}
+	
 	public static int parseToInt( String str )
 	{
 		int ret = -1;

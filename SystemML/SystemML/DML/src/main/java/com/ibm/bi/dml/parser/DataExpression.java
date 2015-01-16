@@ -1856,7 +1856,7 @@ public class DataExpression extends DataIdentifier
 	
 		boolean isDirBoolean = false;
 		try {
-			if (exists && fs.getFileStatus(pt).isDir())
+			if (exists && fs.getFileStatus(pt).isDirectory())
 				isDirBoolean = true;
 			else
 				isDirBoolean = false;
@@ -1907,6 +1907,7 @@ public class DataExpression extends DataIdentifier
 					}
 					
 			    	for( Object obj : childObj.entrySet() ){
+						@SuppressWarnings("unchecked")
 						Entry<Object,Object> e = (Entry<Object, Object>) obj;
 			    		Object key = e.getKey();
 			    		Object val = e.getValue();
@@ -1957,7 +1958,7 @@ public class DataExpression extends DataIdentifier
 				exists = true;
 			}
 			
-			boolean getFileStatusIsDir = fs.getFileStatus(pt).isDir();
+			boolean getFileStatusIsDir = fs.getFileStatus(pt).isDirectory();
 			
 			if (exists && getFileStatusIsDir){
 				LOG.error(this.printErrorLocation() + "MatrixMarket files as directories not supported");
@@ -2028,7 +2029,7 @@ public class DataExpression extends DataIdentifier
 	
 		try {
 			// CASE: filename is a directory -- process as a directory
-			if (exists && fs.getFileStatus(pt).isDir()){
+			if (exists && fs.getFileStatus(pt).isDirectory()){
 				
 				// currently, only MM files as files are supported.  So, if file is directory, then infer 
 				// likely not MM file

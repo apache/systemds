@@ -154,7 +154,7 @@ public class MapReduceTool
 		FileSystem fs = FileSystem.get(_rJob);
 		Path pth = new Path(dir);
 		FileStatus fstat = fs.getFileStatus(pth);
-		return fstat.isDir();
+		return fstat.isDirectory();
 	}
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
@@ -166,7 +166,7 @@ public class MapReduceTool
 		Path pth = new Path(dir);
 		FileStatus fstat = fs.getFileStatus(pth);
 
-		if (fstat.isDir()) {
+		if (fstat.isDirectory()) {
 			// it is a directory
 			FileStatus[] stats = fs.listStatus(pth);
 			if (stats != null) {
@@ -447,7 +447,9 @@ public class MapReduceTool
         //System.out.println("Finished writing dimsFile: " + filename);
 	}
 	
-	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) throws IOException {
+	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) 
+		throws IOException 
+	{
 		Path pt=new Path(dir);
         FileSystem fs = FileSystem.get(_rJob);
 		
@@ -456,8 +458,8 @@ public class MapReduceTool
         
         FileStatus fstat = fs.getFileStatus(pt);
 		
-        //System.out.println("----------------");
-		if ( fstat.isDir() ) {
+        if ( fstat.isDirectory() ) 
+        {
 			FileStatus[] files = fs.listStatus(pt);
 			for ( int i=0; i < files.length; i++ ) {
 				Path filePath = files[i].getPath();
@@ -479,10 +481,10 @@ public class MapReduceTool
 				br.close();
 			}
 		}
-		else {
+		else 
+		{
 			throw new IOException(dir + " is expected to be a folder!");
 		}
-        //System.out.println("----------------");
 
 		return stats;
 	}

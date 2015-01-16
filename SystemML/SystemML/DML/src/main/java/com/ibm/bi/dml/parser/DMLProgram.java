@@ -576,6 +576,7 @@ public class DMLProgram
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
+	@SuppressWarnings("unused")
 	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, VariableSet kill, ProgramBlock pb) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	

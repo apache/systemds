@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 public class MultipleOutputCommitter extends FileOutputCommitter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// maintain the map of matrix index to its final output dir
@@ -101,12 +101,12 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 	{
 		context.getProgressible().progress();
 		
-		if( fs.getFileStatus(taskOutput).isDir() ) 
+		if( fs.getFileStatus(taskOutput).isDirectory() ) 
 		{
 			FileStatus[] files = fs.listStatus(taskOutput);
 			if (files != null)
 				for (FileStatus file : files) //for all files
-					if( !file.isDir() ) //skip directories
+					if( !file.isDirectory() ) //skip directories
 						moveFileToDestination(context, fs, file.getPath());
 		}
 	}

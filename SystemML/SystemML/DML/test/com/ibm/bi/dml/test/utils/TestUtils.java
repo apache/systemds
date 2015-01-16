@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -63,7 +63,7 @@ import com.ibm.bi.dml.test.MatrixIndex;
 public class TestUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/** job configuration used for file system access */
@@ -202,7 +202,6 @@ public class TestUtils
 
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
-			//assertTrue(fs.getFileStatus(outDirectory).isDir());
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			long cellCounter = 0;
@@ -365,7 +364,6 @@ public class TestUtils
 
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
-			//assertTrue(fs.getFileStatus(outDirectory).isDir());
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			long cellCounter = 0;
@@ -943,7 +941,6 @@ public class TestUtils
 			}
 			compareIn.close();
 
-			//assertTrue(fs.getFileStatus(outDirectory).isDir());
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			long cellCounter = 0;
@@ -1000,7 +997,7 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			Path expectedFilePath = new Path(expectedFile);
 			Path actualDirPath = new Path(actualDir);
-			assertTrue(actualDir + " is no directory", fs.getFileStatus(actualDirPath).isDir());
+			assertTrue(actualDir + " is no directory", fs.getFileStatus(actualDirPath).isDirectory());
 			FileStatus[] actualFiles = fs.listStatus(actualDirPath);
 			assertEquals("number of files in directory not 1", 1, actualFiles.length);
 
@@ -1087,10 +1084,9 @@ public class TestUtils
 		try {
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
-			//assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
 			assertTrue(outDir + " does not exist", fs.exists(outDirectory));
 			
-			if( fs.getFileStatus(outDirectory).isDir() )
+			if( fs.getFileStatus(outDirectory).isDirectory() )
 			{
 				FileStatus[] outFiles = fs.listStatus(outDirectory);
 				for (FileStatus file : outFiles) {
@@ -1140,7 +1136,6 @@ public class TestUtils
 		try {
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
-			//assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			assertEquals("number of files in directory not 1", 1, outFiles.length);
 			FSDataInputStream outIn = fs.open(outFiles[0].getPath());
@@ -1166,7 +1161,7 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			for (String directory : directories) {
 				Path dir = new Path(directory);
-				if (fs.exists(dir) && fs.getFileStatus(dir).isDir()) {
+				if (fs.exists(dir) && fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, true);
 				}
 			}
@@ -1216,7 +1211,7 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			for (String directory : files) {
 				Path dir = new Path(directory);
-				if (fs.exists(dir) && !fs.getFileStatus(dir).isDir()) {
+				if (fs.exists(dir) && !fs.getFileStatus(dir).isDirectory()) {
 					fs.delete(dir, false);
 				}
 			}

@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.yarn.ropt.MRJobResourceInstruction;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
  * 
@@ -126,6 +127,12 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				        Integer.parseInt(ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REDUCERS)) );
 		double blocksize = ((double)InfrastructureAnalyzer.getHDFSBlockSize())/(1024*1024);
 		
+		//correction max number of mappers/reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() ) {
+			maxPMap = (int)Math.max( maxPMap, YarnClusterAnalyzer.getNumCores() );
+			maxPRed = (int)Math.max( maxPRed, YarnClusterAnalyzer.getNumCores()/2 );
+		}
+				
 		//yarn-specific: take degree of parallelism into account
 		if( jinst instanceof MRJobResourceInstruction ){
 			int maxTasks = (int)((MRJobResourceInstruction)jinst).getMaxMRTasks();

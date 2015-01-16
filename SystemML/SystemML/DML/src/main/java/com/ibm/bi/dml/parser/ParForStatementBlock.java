@@ -32,6 +32,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
  * 
@@ -213,12 +214,20 @@ public class ParForStatementBlock extends ForStatementBlock
 					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
 							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
 					{
-						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelMapTasks()));
+						int maxPMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+						//correction max number of reducers on yarn clusters
+						if( InfrastructureAnalyzer.isYarnEnabled() )
+							maxPMap = (int)Math.max( maxPMap, YarnClusterAnalyzer.getNumCores() );
+						params.put(key, String.valueOf(maxPMap));
 					}
 					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
 							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR_DP.toString()) )
 					{
-						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelReduceTasks()));						
+						int maxPRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+						//correction max number of reducers on yarn clusters
+						if( InfrastructureAnalyzer.isYarnEnabled() )
+							maxPRed = (int)Math.max( maxPRed, YarnClusterAnalyzer.getNumCores()/2 );
+						params.put(key, String.valueOf(maxPRed));	
 					}
 					else //default case
 						params.put(key, _paramDefaults.get(key));

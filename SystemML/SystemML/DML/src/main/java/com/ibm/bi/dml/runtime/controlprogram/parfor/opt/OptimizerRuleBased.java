@@ -313,7 +313,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( InfrastructureAnalyzer.isYarnEnabled() ) {
 			long tmprk = YarnClusterAnalyzer.getNumCores();
 			_rk = (int) Math.max( _rk, tmprk );
-			_rk2 = (int) Math.max( _rk2, tmprk );
+			_rk2 = (int) Math.max( _rk2, tmprk/2 );
 		}
 	}
 	

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,7 +20,6 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -37,24 +36,16 @@ import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 public class DataPartitionerRemoteMR extends DataPartitioner
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long _pfid = -1;
-	//private int  _numMappers = -1;
 	private int  _numReducers = -1;
 	private int  _replication = -1;
-	private int  _max_retry = -1;
+	//private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
 	private boolean _keepIndexes = false;
 	
-	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n) 
-	{
-		this( dpf, n, -1, 
-			  Math.min( ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS),
-						InfrastructureAnalyzer.getRemoteParallelReduceTasks() ),
-		      1, 3, false, false );
-	}
 	
 	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse, boolean keepIndexes) 
 	{
@@ -63,7 +54,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		_pfid = pfid;
 		_numReducers = numReducers;
 		_replication = replication;
-		_max_retry = max_retry;
+		//_max_retry = max_retry;
 		_jvmReuse = jvmReuse;
 		_keepIndexes = keepIndexes;
 	}

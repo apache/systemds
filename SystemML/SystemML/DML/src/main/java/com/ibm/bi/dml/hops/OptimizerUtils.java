@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class OptimizerUtils 
 {
@@ -346,8 +347,13 @@ public class OptimizerUtils
 	public static int getNumReducers( boolean configOnly )
 	{
 		int ret = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
-		if( !configOnly )
+		if( !configOnly ) {
 			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
+			
+			//correction max number of reducers on yarn clusters
+			if( InfrastructureAnalyzer.isYarnEnabled() )
+				ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores()/2 );
+		}
 		
 		return ret;
 	}

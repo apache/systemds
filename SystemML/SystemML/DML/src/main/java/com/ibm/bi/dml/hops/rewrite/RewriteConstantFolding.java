@@ -16,7 +16,7 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -99,7 +99,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private Hop rConstantFoldingExpression( Hop root ) 
 		throws HopsException
 	{
-		if( root.get_visited() == VISIT_STATUS.DONE )
+		if( root.getVisited() == VisitStatus.DONE )
 			return root;
 		
 		//recursively process childs (before replacement to allow bottom-recursion)
@@ -111,7 +111,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		}
 		
 		//fold binary op if both are literals / unary op if literal
-		if(    root.get_dataType() == DataType.SCALAR //scalar ouput
+		if(    root.getDataType() == DataType.SCALAR //scalar ouput
 			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )	
 		{ 
 			LiteralOp literal = null;
@@ -156,7 +156,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		}
 		
 		//mark processed
-		root.set_visited( VISIT_STATUS.DONE );
+		root.setVisited( VisitStatus.DONE );
 		return root;
 	}
 	
@@ -178,7 +178,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	{
 		//Timing time = new Timing( true );
 		
-		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.get_dataType(), bop.get_valueType(), bop, DataOpTypes.TRANSIENTWRITE, TMP_VARNAME);
+		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.getDataType(), bop.getValueType(), bop, DataOpTypes.TRANSIENTWRITE, TMP_VARNAME);
 		
 		//generate runtime instruction
 		Dag<Lop> dag = new Dag<Lop>();
@@ -197,7 +197,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		//get scalar result (check before invocation)
 		ScalarObject so = (ScalarObject) ec.getVariable(TMP_VARNAME);
 		LiteralOp literal = null;
-		switch( bop.get_valueType() ){
+		switch( bop.getValueType() ){
 			case DOUBLE:  literal = new LiteralOp(String.valueOf(so.getDoubleValue()),so.getDoubleValue()); break;
 			case INT:     literal = new LiteralOp(String.valueOf(so.getLongValue()),so.getLongValue()); break;
 			case BOOLEAN: literal = new LiteralOp(String.valueOf(so.getBooleanValue()),so.getBooleanValue()); break;
@@ -211,10 +211,10 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ec.getVariables().removeAll();
 		
 		//set literal properties (scalar)
- 		literal.set_dim1(0);
-		literal.set_dim2(0);
-		literal.set_rows_in_block(-1);
-		literal.set_cols_in_block(-1);
+ 		literal.setDim1(0);
+		literal.setDim2(0);
+		literal.setRowsInBlock(-1);
+		literal.setColsInBlock(-1);
 		
 		//System.out.println("Constant folded in "+time.stop()+"ms.");
 		

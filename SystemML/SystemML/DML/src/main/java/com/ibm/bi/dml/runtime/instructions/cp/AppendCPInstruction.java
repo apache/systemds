@@ -65,7 +65,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		out.split(parts[4]);
 		//String offset_str = parts[4];
 		 
-		AppendType type = (in1.get_dataType()==DataType.MATRIX) ? AppendType.CBIND : AppendType.STRING;
+		AppendType type = (in1.getDataType()==DataType.MATRIX) ? AppendType.CBIND : AppendType.STRING;
 		
 		
 		if(!opcode.equalsIgnoreCase("append"))
@@ -82,30 +82,30 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		if( _type == AppendType.CBIND )
 		{
 			//get inputs
-			MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-			MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
+			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+			MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 			
 			//check input dimensions
 			if(matBlock1.getNumRows() != matBlock2.getNumRows())
 				throw new DMLRuntimeException("Append is not possible for input matrices " 
-											  + input1.get_name() + " and " + input2.get_name()
+											  + input1.getName() + " and " + input2.getName()
 											  + "with unequal number of rows");
 			
 			//execute append operations (append both inputs to initially empty output)
 			MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock());
 			
 			//set output
-			ec.setMatrixOutput(output.get_name(), ret);
+			ec.setMatrixOutput(output.getName(), ret);
 			
 			//release inputs 
-			ec.releaseMatrixInput(input1.get_name());
-			ec.releaseMatrixInput(input2.get_name());
+			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input2.getName());
 		}
 		else //STRING
 		{
 			//get input strings (vars or literals)
-			ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
-			ScalarObject so2 = ec.getScalarInput( input2.get_name(), input2.get_valueType(), input2.isLiteral() );
+			ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
+			ScalarObject so2 = ec.getScalarInput( input2.getName(), input2.getValueType(), input2.isLiteral() );
 			
 			//pre-checks
 			String val1 = so1.getStringValue();
@@ -117,7 +117,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			ScalarObject sores = new StringObject(outString);
 			
 			//set output
-			ec.setScalarOutput(output.get_name(), sores);
+			ec.setScalarOutput(output.getName(), sores);
 		}		
 	}
 }

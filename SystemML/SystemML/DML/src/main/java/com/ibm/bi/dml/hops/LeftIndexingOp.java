@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,7 +26,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 public class LeftIndexingOp  extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String OPSTRING = "lix"; //"LeftIndexing";
@@ -82,7 +82,7 @@ public class LeftIndexingOp  extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{			
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			try {
 				ExecType et = optFindExecType();
 				if(et == ExecType.MR) {
@@ -125,58 +125,58 @@ public class LeftIndexingOp  extends Hop
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							rightInput, top, bottom, 
 							left, right, nrow, ncol,
-							get_dataType(), get_valueType(), et, true);
+							getDataType(), getValueType(), et, true);
 					
-					reindex.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
+					reindex.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+							getRowsInBlock(), getColsInBlock(), getNnz());
 					
 					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					Group group1 = new Group(
 							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-							get_valueType());
-					group1.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
+							getValueType());
+					group1.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+							getRowsInBlock(), getColsInBlock(), getNnz());
 					
 					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					//the left matrix is zeroed out
 					ZeroOut zeroout = new ZeroOut(
 							getInput().get(0).constructLops(), top, bottom,
-							left, right, getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
-							get_dataType(), get_valueType(), et);
+							left, right, getInput().get(0).getDim1(), getInput().get(0).getDim2(),
+							getDataType(), getValueType(), et);
 	
 					zeroout.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-					zeroout.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
+					zeroout.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+							getRowsInBlock(), getColsInBlock(), getNnz());
 					Group group2 = new Group(
 							zeroout, Group.OperationTypes.Sort, DataType.MATRIX,
-							get_valueType());
-					group2.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
+							getValueType());
+					group2.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+							getRowsInBlock(), getColsInBlock(), getNnz());
 					
 					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hop.OpOp2.PLUS),
-							get_dataType(), get_valueType(), et);
+							getDataType(), getValueType(), et);
 					
 					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-					binary.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							get_rows_in_block(), get_cols_in_block(), getNnz());
+					binary.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+							getRowsInBlock(), getColsInBlock(), getNnz());
 	
-					set_lops(binary);
+					setLops(binary);
 				}
 				else {
 					LeftIndex left = new LeftIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-							get_dataType(), get_valueType(), et);
+							getDataType(), getValueType(), et);
 					
-					left.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					left.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 					left.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(left);
+					setLops(left);
 				}
 			} catch (Exception e) {
 				throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops " , e);
@@ -184,7 +184,7 @@ public class LeftIndexingOp  extends Hop
 
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 	
 	/**
@@ -193,7 +193,7 @@ public class LeftIndexingOp  extends Hop
 	 */
 	private boolean isRightHandSideScalar() {
 		Hop rightHandSide = getInput().get(1);
-		return (rightHandSide.get_dataType() == DataType.SCALAR);
+		return (rightHandSide.getDataType() == DataType.SCALAR);
 	}
 	
 	@Override
@@ -204,14 +204,14 @@ public class LeftIndexingOp  extends Hop
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
+		if (getVisited() != VisitStatus.DONE) {
 			super.printMe();
 			for (Hop h : getInput()) {
 				h.printMe();
 			}
 			;
 		}
-		set_visited(VISIT_STATUS.DONE);
+		setVisited(VisitStatus.DONE);
 	}
 
 	public SQLLops constructSQLLOPs() throws HopsException {
@@ -331,8 +331,8 @@ public class LeftIndexingOp  extends Hop
 	public void refreshSizeInformation()
 	{
 		Hop input1 = getInput().get(0);	//original matrix	
-		set_dim1( input1.get_dim1() );
-		set_dim2( input1.get_dim2() );
+		setDim1( input1.getDim1() );
+		setDim2( input1.getDim2() );
 		setNnz(-1); //TODO enhanced propagation
 	}
 	

@@ -112,7 +112,7 @@ public class LibMatrixDatagen
 			for(int i=0; i < numNZBlocks; i++) {
 				bid = -1;
 				do {
-					bid = (int) (Math.abs(runif.nextLong())%numBlocks);
+					bid = runif.nextInt(numBlocks);
 				} while( ret[bid] != 0);
 				
 				double prop = (i==0 ? blockNNZproportions[i]: (blockNNZproportions[i] - blockNNZproportions[i-1]));

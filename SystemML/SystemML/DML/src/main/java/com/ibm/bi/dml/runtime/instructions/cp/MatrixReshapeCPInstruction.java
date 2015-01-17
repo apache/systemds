@@ -78,18 +78,18 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock in = ec.getMatrixInput(input1.get_name());
-		int rows = (int)ec.getScalarInput(_opRows.get_name(), _opRows.get_valueType(), _opRows.isLiteral()).getLongValue(); //save cast
-		int cols = (int)ec.getScalarInput(_opCols.get_name(), _opCols.get_valueType(), _opCols.isLiteral()).getLongValue(); //save cast
-		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.get_name(), ValueType.BOOLEAN, _opByRow.isLiteral());
+		MatrixBlock in = ec.getMatrixInput(input1.getName());
+		int rows = (int)ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue(); //save cast
+		int cols = (int)ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue(); //save cast
+		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 
 		//execute operations 
 		MatrixBlock out = new MatrixBlock();
 		out = LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
 		
 		//set output and release inputs
-		ec.setMatrixOutput(output.get_name(), out);
-		ec.releaseMatrixInput(input1.get_name());
+		ec.setMatrixOutput(output.getName(), out);
+		ec.releaseMatrixInput(input1.getName());
 	}
 	
 }

@@ -24,11 +24,11 @@ public class RandInstruction extends DataGenMRInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public double minValue;
-	public double maxValue;
-	public double sparsity;
-	public String probabilityDensityFunction;
-	public long seed=0;
+	private double minValue;
+	private double maxValue;
+	private double sparsity;
+	private String probabilityDensityFunction;
+	private long seed=0;
 	
 	public RandInstruction ( Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double minValue, double maxValue,
 				double sparsity, long seed, String probabilityDensityFunction, String baseDir, String istr ) {
@@ -42,6 +42,26 @@ public class RandInstruction extends DataGenMRInstruction
 		instString = istr;
 	}
 	
+	public double getMinValue() {
+		return minValue;
+	}
+
+	public double getMaxValue() {
+		return maxValue;
+	}
+
+	public double getSparsity() {
+		return sparsity;
+	}
+
+	public String getProbabilityDensityFunction() {
+		return probabilityDensityFunction;
+	}
+
+	public long getSeed() {
+		return seed;
+	}
+
 	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 12 );
@@ -72,6 +92,5 @@ public class RandInstruction extends DataGenMRInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		// TODO Auto-generated method stub
 		
-	}
-	
+	}	
 }

@@ -36,6 +36,6 @@ public abstract class ComputationCPInstruction extends CPInstruction
 	}
 
 	public String getOutputVariableName() {
-		return output.get_name();
+		return output.getName();
 	}
 }

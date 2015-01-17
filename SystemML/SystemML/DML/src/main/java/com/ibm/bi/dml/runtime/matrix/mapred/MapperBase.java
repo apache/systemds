@@ -337,7 +337,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			{
 				for(DataGenMRInstruction ins:allDataGenIns)
 				{
-					if(set.contains(ins.input))
+					if(set.contains(ins.getInput()))
 					{
 						dataGensForThisMatrix.add(ins);
 						set.add(ins.output);

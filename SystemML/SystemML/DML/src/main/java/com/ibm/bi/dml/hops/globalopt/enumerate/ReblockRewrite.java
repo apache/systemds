@@ -64,7 +64,7 @@ public class ReblockRewrite extends Rewrite
 			}
 			Lop constructedLop = operator.constructLops();
 			apply(operator, constructedLop, plan);
-			plan.setGeneratedLop(operator.get_lops());
+			plan.setGeneratedLop(operator.getLops());
 		} catch (HopsException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (LopsException e) {
@@ -89,8 +89,7 @@ public class ReblockRewrite extends Rewrite
 				|| (((DataOp)operator).get_dataop().equals(DataOpTypes.PERSISTENTWRITE)))
 				){
 			
-			constructedLop = handleTransientWrites(operator, constructedLop,
-					plan);
+			handleTransientWrites(operator, constructedLop, plan);
 			return;
 		}
 		
@@ -103,18 +102,16 @@ public class ReblockRewrite extends Rewrite
 		if(operator instanceof DataOp 
 				&& ((DataOp)operator).get_dataop().equals(DataOpTypes.TRANSIENTREAD)) {
 			
-			constructedLop = handleTransientReads(operator, constructedLop,
-					plan);
+			handleTransientReads(operator, constructedLop, plan);
 			return;
-			
 		}
 		
 		if (value == FormatType.BINARY_BLOCK.ordinal()) {
 			
 			if(this.fromBlockSize != -1L) {
-				operator.set_cols_in_block(this.fromBlockSize);
-				operator.set_rows_in_block(this.fromBlockSize);
-				operator.set_lops(null);
+				operator.setColsInBlock(this.fromBlockSize);
+				operator.setRowsInBlock(this.fromBlockSize);
+				operator.setLops(null);
 				
 				try {
 					constructedLop = operator.constructLops();
@@ -128,8 +125,8 @@ public class ReblockRewrite extends Rewrite
 			
 			
 			OutputParameters outputParameters = constructedLop.getOutputParameters();
-			Long lopBlockSize = outputParameters.get_cols_in_block();
-			long hopBlockSize = operator.get_cols_in_block();
+			Long lopBlockSize = outputParameters.getColsInBlock();
+			long hopBlockSize = operator.getColsInBlock();
 			if(lopBlockSize == hopBlockSize && hopBlockSize == this.toBlockSize) {
 				return;
 			}
@@ -142,8 +139,8 @@ public class ReblockRewrite extends Rewrite
 			if (constructedLop instanceof ReBlock) {
 				ReBlock reblock = (ReBlock) constructedLop;
 				reblock.getOutputParameters().setFormat(Format.BINARY);
-				long rows = reblock.getOutputParameters().getNum_rows();
-				long cols = reblock.getOutputParameters().getNum_cols();
+				long rows = reblock.getOutputParameters().getNumRows();
+				long cols = reblock.getOutputParameters().getNumCols();
 				Long nnz = reblock.getOutputParameters().getNnz();
 				try {
 					reblock.getOutputParameters().setDimensions(rows, cols,
@@ -154,8 +151,8 @@ public class ReblockRewrite extends Rewrite
 			} else if (constructedLop instanceof DataGen) {
 				DataGen dataGen = (DataGen) constructedLop;
 				dataGen.getOutputParameters().setFormat(Format.BINARY);
-				long rows = dataGen.getOutputParameters().getNum_rows();
-				long cols = dataGen.getOutputParameters().getNum_cols();
+				long rows = dataGen.getOutputParameters().getNumRows();
+				long cols = dataGen.getOutputParameters().getNumCols();
 				Long nnz = dataGen.getOutputParameters().getNnz();
 				try {
 					dataGen.getOutputParameters().setDimensions(rows, cols,
@@ -168,17 +165,17 @@ public class ReblockRewrite extends Rewrite
 				ReBlock reblock;
 				try {
 					reblock = new ReBlock(constructedLop, (long)this.toBlockSize,
-							(long)this.toBlockSize, operator.get_dataType(), operator
-									.get_valueType(), true);
+							(long)this.toBlockSize, operator.getDataType(), operator
+									.getValueType(), true);
 					reblock.getOutputParameters().setFormat(Format.BINARY);
 					reblock.getOutputParameters().setDimensions(
-							operator.get_dim1(), operator.get_dim2(),
+							operator.getDim1(), operator.getDim2(),
 							this.toBlockSize, this.toBlockSize,
 							operator.getNnz());
 					reblock.setAllPositions(operator.getBeginLine(), operator
 							.getBeginColumn(), operator.getEndLine(), operator
 							.getEndColumn());
-					operator.set_lops(reblock);
+					operator.setLops(reblock);
 				} catch (LopsException e) {
 					LOG.error(e.getMessage(), e);
 				} catch (HopsException e) {
@@ -208,18 +205,18 @@ public class ReblockRewrite extends Rewrite
 				}
 				if(value==FormatType.TEXT_CELL.ordinal() 
 						&& data.getFormatType().equals(FileFormatTypes.BINARY) 
-						&& data.get_cols_in_block() == -1L
+						&& data.getColsInBlock() == -1L
 				) {
 					return;
 				}
 				
 				if (true) {//(!this.format.isFormatValid(operator)) {
 					Hop input = operator.getInput().get(0);
-					Lop inputLop = input.get_lops();
-					if (inputLop.getOutputParameters().get_cols_in_block() > -1L) {
-						operator.set_cols_in_block(input.get_cols_in_block());
-						operator.set_rows_in_block(input.get_rows_in_block());
-						operator.set_lops(null);
+					Lop inputLop = input.getLops();
+					if (inputLop.getOutputParameters().getColsInBlock() > -1L) {
+						operator.setColsInBlock(input.getColsInBlock());
+						operator.setRowsInBlock(input.getRowsInBlock());
+						operator.setLops(null);
 						try {
 							constructedLop = operator.constructLops();
 						} catch (HopsException e) {
@@ -233,7 +230,7 @@ public class ReblockRewrite extends Rewrite
 				ReBlock reblock;
 				try {
 					reblock = new ReBlock(constructedLop, -1L, -1L, operator
-							.get_dataType(), operator.get_valueType(), true);
+							.getDataType(), operator.getValueType(), true);
 					if (value==FormatType.TEXT_CELL.ordinal()) {
 						reblock.getOutputParameters().setFormat(Format.TEXT);
 					} else {
@@ -241,12 +238,12 @@ public class ReblockRewrite extends Rewrite
 					}
 
 					reblock.getOutputParameters().setDimensions(
-							operator.get_dim1(), operator.get_dim2(), -1, -1,
+							operator.getDim1(), operator.getDim2(), -1, -1,
 							operator.getNnz());
 					reblock.setAllPositions(operator.getBeginLine(), operator
 							.getBeginColumn(), operator.getEndLine(), operator
 							.getEndColumn());
-					operator.set_lops(reblock);
+					operator.setLops(reblock);
 				} catch (LopsException e) {
 					LOG.error(e.getMessage(), e);
 				} catch (HopsException e) {
@@ -258,18 +255,18 @@ public class ReblockRewrite extends Rewrite
 //					List<MemoEntry> inputPlans = plan.getInputPlans();
 //					MemoEntry firstInput = inputPlans.get(0);
 //					Lops inputLop = firstInput.getRootLop();
-//					long inputBlockSize = inputLop.getOutputParameters().get_cols_in_block();
+//					long inputBlockSize = inputLop.getOutputParameters().getColsInBlock();
 //					
 //					if(inputBlockSize == this.fromBlockSize) {
 //						System.out.println("redundant lop access for " + operator);
 //					}
 					
-//					operator.set_cols_in_block(inputBlockSize);
-//					operator.set_rows_in_block(inputBlockSize);
-					operator.set_cols_in_block(this.fromBlockSize);
-					operator.set_rows_in_block(this.fromBlockSize);
+//					operator.setColsInBlock(inputBlockSize);
+//					operator.setRowsInBlock(inputBlockSize);
+					operator.setColsInBlock(this.fromBlockSize);
+					operator.setRowsInBlock(this.fromBlockSize);
 				
-					operator.set_lops(null);
+					operator.setLops(null);
 					
 					try {
 						constructedLop = operator.constructLops();
@@ -289,15 +286,15 @@ public class ReblockRewrite extends Rewrite
 					ReBlock reblock;
 					try {
 						reblock = new ReBlock(constructedLop, -1L, -1L, operator
-								.get_dataType(), operator.get_valueType(), true);
+								.getDataType(), operator.getValueType(), true);
 						reblock.getOutputParameters().setFormat(Format.TEXT);
 						reblock.getOutputParameters().setDimensions(
-								operator.get_dim1(), operator.get_dim2(), -1, -1,
+								operator.getDim1(), operator.getDim2(), -1, -1,
 								operator.getNnz());
 						reblock.setAllPositions(operator.getBeginLine(), operator
 								.getBeginColumn(), operator.getEndLine(), operator
 								.getEndColumn());
-						operator.set_lops(reblock);
+						operator.setLops(reblock);
 					} catch (LopsException e) {
 						LOG.error(e.getMessage(), e);
 					} catch (HopsException e) {
@@ -327,9 +324,9 @@ public class ReblockRewrite extends Rewrite
 		}else {
 			data.setFormatType(FileFormatTypes.BINARY);
 		}
-		data.set_cols_in_block(inputBlockSize.getValue());
-		data.set_rows_in_block(inputBlockSize.getValue());
-		data.set_lops(null);
+		data.setColsInBlock(inputBlockSize.getValue());
+		data.setRowsInBlock(inputBlockSize.getValue());
+		data.setLops(null);
 		try {
 			constructedLop = data.constructLops();
 		} catch (HopsException e) {
@@ -345,17 +342,17 @@ public class ReblockRewrite extends Rewrite
 		ReBlock reblock;
 		try {
 			reblock = new ReBlock(constructedLop, (long)this.toBlockSize,
-					(long)this.toBlockSize, operator.get_dataType(), operator
-							.get_valueType(), true);
+					(long)this.toBlockSize, operator.getDataType(), operator
+							.getValueType(), true);
 			reblock.getOutputParameters().setFormat(Format.BINARY);
 			reblock.getOutputParameters().setDimensions(
-					operator.get_dim1(), operator.get_dim2(),
+					operator.getDim1(), operator.getDim2(),
 					this.toBlockSize, this.toBlockSize,
 					operator.getNnz());
 			reblock.setAllPositions(operator.getBeginLine(), operator
 					.getBeginColumn(), operator.getEndLine(), operator
 					.getEndColumn());
-			operator.set_lops(reblock);
+			operator.setLops(reblock);
 			plan.setGeneratedLop(reblock);
 		} catch (LopsException e) {
 			LOG.error(e.getMessage(), e);
@@ -375,15 +372,15 @@ public class ReblockRewrite extends Rewrite
 	private Lop handleTransientWrites(Hop operator, Lop constructedLop,
 			OptimizedPlan plan) {
 		DataOp data = (DataOp)operator;
-		data.set_cols_in_block(this.toBlockSize);
-		data.set_rows_in_block(this.toBlockSize);
+		data.setColsInBlock(this.toBlockSize);
+		data.setRowsInBlock(this.toBlockSize);
 		if(value==FormatType.TEXT_CELL.ordinal()) {
 			data.setFormatType(FileFormatTypes.TEXT);
 		}else {
 			data.setFormatType(FileFormatTypes.BINARY);
 		}
 		try {
-			data.set_lops(null);
+			data.setLops(null);
 			constructedLop = data.constructLops();
 			plan.setGeneratedLop(constructedLop);
 		} catch (HopsException e) {
@@ -420,7 +417,7 @@ public class ReblockRewrite extends Rewrite
 					RewriteConfig format = inputPlan.getConfig().getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 					Hop inputHop = inputPlan.getRootHop();
 					if (format.getValue()==FormatType.TEXT_CELL.ordinal()) {
-						varsIn.add(inputHop.get_name());
+						varsIn.add(inputHop.getName());
 					}
 				}
 				

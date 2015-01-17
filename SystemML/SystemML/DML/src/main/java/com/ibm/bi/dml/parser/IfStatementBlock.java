@@ -127,13 +127,15 @@ public class IfStatementBlock extends StatementBlock
 		HashMap<String,ConstIdentifier> recConstVars = new HashMap<String,ConstIdentifier>();
 		
 		// STEP 1:  (IF UNION ELSE) MINUS updated vars
-		for (String varName : constVarsIfCopy.keySet()){
+		for (Entry<String,ConstIdentifier> e : constVarsIfCopy.entrySet() ){
+			String varName = e.getKey();
 			if (!this._updated.containsVariable(varName))
-				recConstVars.put(varName,constVarsIfCopy.get(varName));
+				recConstVars.put(varName, e.getValue());
 		}
-		for (String varName : constVarsElseCopy.keySet()){
+		for (Entry<String,ConstIdentifier> e : constVarsElseCopy.entrySet() ){
+			String varName = e.getKey();
 			if (!this._updated.containsVariable(varName))
-				recConstVars.put(varName,constVarsElseCopy.get(varName));
+				recConstVars.put(varName, e.getValue());
 		}
 		
 		

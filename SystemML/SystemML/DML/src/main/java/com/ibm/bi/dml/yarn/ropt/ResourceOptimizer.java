@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -56,7 +56,7 @@ import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 public class ResourceOptimizer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(ResourceOptimizer.class);
@@ -513,19 +513,19 @@ public class ResourceOptimizer
 			collectReadVariables( hi, vars );
 		
 		//investigate hop exec type and known dimensions
-		if(    hop instanceof DataOp && hop.get_dataType()==DataType.MATRIX
+		if(    hop instanceof DataOp && hop.getDataType()==DataType.MATRIX
 			&& (((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTREAD
 			||  ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD) ) 
 		{
-			String varname = hop.get_name();
-			MatrixCharacteristics mc = new MatrixCharacteristics(hop.get_dim1(), hop.get_dim2(), 
-					    (int)hop.get_rows_in_block(), (int)hop.get_cols_in_block(), hop.getNnz());
+			String varname = hop.getName();
+			MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 
+					    (int)hop.getRowsInBlock(), (int)hop.getColsInBlock(), hop.getNnz());
 			MatrixDimensionsMetaData md = new MatrixDimensionsMetaData(mc);
 			MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "/tmp", md);
 			vars.put(varname, mo);
 		}
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
 	/**
@@ -625,7 +625,7 @@ public class ResourceOptimizer
 	 */
 	private static boolean pruneHasOnlyUnknownMR( Hop hop )
 	{
-		if( hop == null || hop.get_visited() == Hop.VISIT_STATUS.DONE )
+		if( hop == null || hop.getVisited() == Hop.VisitStatus.DONE )
 			return true;
 
 		boolean ret = true;
@@ -649,7 +649,7 @@ public class ResourceOptimizer
 			ret &= lret;
 		}
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 		
 		return ret;
 	}

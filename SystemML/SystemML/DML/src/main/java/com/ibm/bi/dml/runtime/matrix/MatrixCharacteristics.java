@@ -34,6 +34,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
@@ -215,8 +216,8 @@ public class MatrixCharacteristics
 		{
 			//output size independent of chain type
 			MapMultChainInstruction realIns=(MapMultChainInstruction)ins;
-			MatrixCharacteristics mc1 = dims.get(realIns._input1);
-			MatrixCharacteristics mc2 = dims.get(realIns._input2);
+			MatrixCharacteristics mc1 = dims.get(realIns.getInput1());
+			MatrixCharacteristics mc2 = dims.get(realIns.getInput2());
 			dim_out.set(mc1.numColumns, mc2.numColumns, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
 		}
 		else if(ins instanceof ReblockInstruction)
@@ -235,7 +236,7 @@ public class MatrixCharacteristics
 				|| ins instanceof SeqInstruction
 				) {
 			DataGenMRInstruction dataIns=(DataGenMRInstruction)ins;
-			dim_out.set(dims.get(dataIns.input));
+			dim_out.set(dims.get(dataIns.getInput()));
 		}
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
@@ -292,8 +293,9 @@ public class MatrixCharacteristics
 		{
 			RangeBasedReIndexInstruction realIns=(RangeBasedReIndexInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);
-			long nrow=realIns.indexRange.rowEnd-realIns.indexRange.rowStart+1;
-			long ncol=realIns.indexRange.colEnd-realIns.indexRange.colStart+1;
+			IndexRange ixrange = realIns.getIndexRange(); 
+			long nrow=ixrange.rowEnd-ixrange.rowStart+1;
+			long ncol=ixrange.colEnd-ixrange.colStart+1;
 			dim_out.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
 		else if (ins instanceof TertiaryInstruction) {

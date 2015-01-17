@@ -35,19 +35,18 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		// Read input matrices
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
+        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		
 		// Perform computation using input matrices, and produce the result matrix
 		BinaryOperator bop = (BinaryOperator) _optr;
 		MatrixBlock soresBlock = (MatrixBlock) (matBlock1.binaryOperations (bop, matBlock2, new MatrixBlock()));
 		
 		// Release the memory occupied by input matrices
-		matBlock1 = matBlock2 = null;
-		ec.releaseMatrixInput(input1.get_name());
-		ec.releaseMatrixInput(input2.get_name());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
 		
 		// Attach result matrix with MatrixObject associated with output_name
-		ec.setMatrixOutput(output.get_name(), soresBlock);
+		ec.setMatrixOutput(output.getName(), soresBlock);
 	}
 }

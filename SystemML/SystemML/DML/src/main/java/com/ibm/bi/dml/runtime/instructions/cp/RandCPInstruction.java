@@ -26,18 +26,21 @@ public class RandCPInstruction extends UnaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public long rows;
-	public long cols;
-	public int rowsInBlock;
-	public int colsInBlock;
-	public double minValue;
-	public double maxValue;
-	public double sparsity;
-	public String pdf;
-	public long seed=0;
-	public double seq_from, seq_to, seq_incr;
-	DataGenMethod method = DataGenMethod.INVALID;
-
+	private DataGenMethod method = DataGenMethod.INVALID;
+	
+	private long rows;
+	private long cols;
+	private int rowsInBlock;
+	private int colsInBlock;
+	private double minValue;
+	private double maxValue;
+	private double sparsity;
+	private String pdf;
+	private long seed=0;
+	private double seq_from;
+	private double seq_to; 
+	private double seq_incr;
+	
 	
 	public RandCPInstruction (Operator op, 
 							  DataGenMethod mthd,
@@ -80,6 +83,62 @@ public class RandCPInstruction extends UnaryCPInstruction
 		this.seq_from = seqFrom;
 		this.seq_to = seqTo;
 		this.seq_incr = seqIncr;
+	}
+
+	public long getRows() {
+		return rows;
+	}
+
+	public void setRows(long rows) {
+		this.rows = rows;
+	}
+
+	public long getCols() {
+		return cols;
+	}
+
+	public void setCols(long cols) {
+		this.cols = cols;
+	}
+
+	public int getRowsInBlock() {
+		return rowsInBlock;
+	}
+
+	public void setRowsInBlock(int rowsInBlock) {
+		this.rowsInBlock = rowsInBlock;
+	}
+
+	public int getColsInBlock() {
+		return colsInBlock;
+	}
+
+	public void setColsInBlock(int colsInBlock) {
+		this.colsInBlock = colsInBlock;
+	}
+
+	public double getMinValue() {
+		return minValue;
+	}
+
+	public void setMinValue(double minValue) {
+		this.minValue = minValue;
+	}
+
+	public double getMaxValue() {
+		return maxValue;
+	}
+
+	public void setMaxValue(double maxValue) {
+		this.maxValue = maxValue;
+	}
+
+	public double getSparsity() {
+		return sparsity;
+	}
+
+	public void setSparsity(double sparsity) {
+		this.sparsity = sparsity;
 	}
 
 	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
@@ -167,6 +226,6 @@ public class RandCPInstruction extends UnaryCPInstruction
 			// (int)rows, (int)cols, rowsInBlock, colsInBlock, 
 			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
 		}
-		ec.setMatrixOutput(output.get_name(), soresBlock);
+		ec.setMatrixOutput(output.getName(), soresBlock);
 	}
 }

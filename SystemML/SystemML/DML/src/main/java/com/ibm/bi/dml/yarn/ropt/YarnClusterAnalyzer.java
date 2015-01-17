@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 public class YarnClusterAnalyzer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
@@ -207,7 +207,7 @@ public class YarnClusterAnalyzer
 		if (nodesMaxPhySorted == null)
 			analyzeYarnCluster(true);
 		
-		if (nodesMaxPhySorted.size() <= 0)
+		if( nodesMaxPhySorted.isEmpty() )
 			return -1;
 		if (nodesMaxPhySorted.size() == 1) {
 			long tmp = nodesMaxPhySorted.get(0) - cpPhy - mrAMPhy;
@@ -645,7 +645,7 @@ public class YarnClusterAnalyzer
 			List<NodeReport> nodesReport = yarnClient.getNodeReports();
 			if (verbose)
 				System.out.println("There are " + nodesReport.size() + " nodes in the cluster");
-			if (nodesReport.size() == 0)
+			if( nodesReport.isEmpty() )
 				throw new YarnException("There are zero available nodes in the yarn cluster");
 			
 			nodesMaxPhySorted = new ArrayList<Long> (nodesReport.size());

@@ -39,12 +39,12 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
 		
 		// Arithmetic operations must be performed on DOUBLE or INT
-		ValueType vt1 = in1.get_valueType();
-		DataType dt1 = in1.get_dataType();
-		ValueType vt2 = in2.get_valueType();
-		DataType dt2 = in2.get_dataType();
-		ValueType vt3 = out.get_valueType();
-		DataType dt3 = out.get_dataType();
+		ValueType vt1 = in1.getValueType();
+		DataType dt1 = in1.getDataType();
+		ValueType vt2 = in2.getValueType();
+		DataType dt2 = in2.getDataType();
+		ValueType vt3 = out.getValueType();
+		DataType dt3 = out.getDataType();
 		
 		//prithvi TODO
 		//make sure these checks belong here
@@ -54,11 +54,11 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 			|| dt2 == DataType.MATRIX) 
 		   && dt3 != DataType.MATRIX)
 			throw new DMLRuntimeException("Element-wise matrix operations between variables "
-										  + in1.get_name()
+										  + in1.getName()
 										  + " and "
-										  + in2.get_name()
+										  + in2.getName()
 										  + " must produce a matrix, which "
-										  + out.get_name()
+										  + out.getName()
 										  + "is not");
 		
 		Operator operator = 
@@ -88,11 +88,11 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 			   || vt2 == ValueType.STRING 
 			   || vt3 == ValueType.STRING)
 				throw new DMLUnsupportedOperationException("We do not support element-wise string operations on matrices "
-												  + in1.get_name()
+												  + in1.getName()
 												  + ", "
-												  + in2.get_name()
+												  + in2.getName()
 												  + " and "
-												  + out.get_name());
+												  + out.getName());
 				
 			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
 				return new MatrixMatrixArithmeticCPInstruction(operator, in1, in2, out, opcode, str);

@@ -99,22 +99,20 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>
 		return 0;
 	}
 
-	public boolean equals(TripleIndexes other)
-	{
-		return (this.first==other.first && this.second==other.second && this.third==other.third);
-	}
-	
+	@Override
 	public boolean equals(Object other)
 	{
-	//	LOG.info("calling equals for MatrixCellIndexes!");
 		if( !(other instanceof TripleIndexes))
 			return false;
-		return equals((TripleIndexes)other);
+		
+		TripleIndexes tother = (TripleIndexes)other;
+		return (this.first==tother.first && this.second==tother.second && this.third==tother.third);
 	}
 	
-	 public int hashCode() {
+	@Override
+	public int hashCode() {
 		 return UtilFunctions.longHashFunc((first<<32)+(second<<16)+third+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
-	 }
+	}
 	
 	public static class Comparator implements RawComparator<TripleIndexes>
 	{

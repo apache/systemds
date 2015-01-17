@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 public class MatrixWriterFactory 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	
@@ -47,16 +47,23 @@ public class MatrixWriterFactory
 	{
 		MatrixWriter writer = null;
 		
-		if( oinfo == OutputInfo.TextCellOutputInfo )
+		if( oinfo == OutputInfo.TextCellOutputInfo ) {
 			writer = new WriterTextCell();
-		else if( oinfo == OutputInfo.MatrixMarketOutputInfo )
+		}
+		else if( oinfo == OutputInfo.MatrixMarketOutputInfo ) {
 			writer = new WriterMatrixMarket();
-		else if( oinfo == OutputInfo.CSVOutputInfo )
+		}
+		else if( oinfo == OutputInfo.CSVOutputInfo ) {
+			if( props!=null && !(props instanceof CSVFileFormatProperties) )
+				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
 			writer = new WriterTextCSV((CSVFileFormatProperties)props);
-		else if( oinfo == OutputInfo.BinaryCellOutputInfo )
+		}
+		else if( oinfo == OutputInfo.BinaryCellOutputInfo ) {
 			writer = new WriterBinaryCell();
-		else if( oinfo == OutputInfo.BinaryBlockOutputInfo )
+		}
+		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
 			writer = new WriterBinaryBlock(replication);
+		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix writer for unknown output info: "
 		                                   + OutputInfo.outputInfoToString(oinfo));

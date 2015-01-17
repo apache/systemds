@@ -331,12 +331,12 @@ public abstract class CostEstimator
 		}	
 		else if( inst instanceof RandCPInstruction ){
 			RandCPInstruction randInst = (RandCPInstruction) inst;
-			String varname = randInst.output.get_name();
-			long rlen = randInst.rows;
-			long clen = randInst.cols;
-			long brlen = randInst.rowsInBlock;
-			long bclen = randInst.colsInBlock;
-			long nnz = (long) (randInst.sparsity * rlen * clen);
+			String varname = randInst.output.getName();
+			long rlen = randInst.getRows();
+			long clen = randInst.getCols();
+			long brlen = randInst.getRowsInBlock();
+			long bclen = randInst.getColsInBlock();
+			long nnz = (long) (randInst.getSparsity() * rlen * clen);
 			VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, true);
 			stats.put(varname, vs);
 			//System.out.println(varname+" "+vs);
@@ -496,22 +496,22 @@ public abstract class CostEstimator
 				RandCPInstruction rinst = (RandCPInstruction) inst;
 				vs[0] = _unknownStats;
 				vs[1] = _unknownStats;
-				vs[2] = stats.get( rinst.output.get_name() );
+				vs[2] = stats.get( rinst.output.getName() );
 				
 				//prepare attributes for cost estimation
 				int type = 2; //full rand
-				if( rinst.minValue == 0.0 && rinst.maxValue == 0.0 )
+				if( rinst.getMinValue() == 0.0 && rinst.getMaxValue() == 0.0 )
 					type = 0;
-				else if( rinst.sparsity == 1.0 && rinst.minValue == rinst.maxValue )
+				else if( rinst.getSparsity() == 1.0 && rinst.getMinValue() == rinst.getMaxValue() )
 					type = 1;
 				attr = new String[]{String.valueOf(type)};
 			}
 			else //general unary
 			{
 				UnaryCPInstruction uinst = (UnaryCPInstruction) inst;
-				vs[0] = stats.get( uinst.input1.get_name() );
+				vs[0] = stats.get( uinst.input1.getName() );
 				vs[1] = _unknownStats;
-				vs[2] = stats.get( uinst.output.get_name() );
+				vs[2] = stats.get( uinst.output.getName() );
 				
 				if( vs[0] == null ) //scalar input, e.g., print
 					vs[0] = _scalarStats;
@@ -535,9 +535,9 @@ public abstract class CostEstimator
 		else if( inst instanceof BinaryCPInstruction )
 		{
 			BinaryCPInstruction binst = (BinaryCPInstruction) inst;
-			vs[0] = stats.get( binst.input1.get_name() );
-			vs[1] = stats.get( binst.input2.get_name() );
-			vs[2] = stats.get( binst.output.get_name() );
+			vs[0] = stats.get( binst.input1.getName() );
+			vs[1] = stats.get( binst.input2.getName() );
+			vs[2] = stats.get( binst.output.getName() );
 			
 			
 			if( vs[0] == null ) //scalar input, 
@@ -579,9 +579,9 @@ public abstract class CostEstimator
 		{
 			//applies to qr, lu, eigen (cost computation on input1)
 			MultiReturnBuiltinCPInstruction minst = (MultiReturnBuiltinCPInstruction) inst;
-			vs[0] = stats.get( minst.input1.get_name() );
-			vs[1] = stats.get( minst.getOutput(0).get_name() );
-			vs[2] = stats.get( minst.getOutput(1).get_name() );
+			vs[0] = stats.get( minst.input1.getName() );
+			vs[1] = stats.get( minst.getOutput(0).getName() );
+			vs[2] = stats.get( minst.getOutput(1).getName() );
 		}
 		else
 		{

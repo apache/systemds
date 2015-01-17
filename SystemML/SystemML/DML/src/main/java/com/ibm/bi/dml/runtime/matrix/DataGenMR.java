@@ -125,10 +125,10 @@ public class DataGenMR
 			MRINSTRUCTION_TYPE mrtype = mrins.getMRInstructionType();
 			DataGenMRInstruction genInst = (DataGenMRInstruction) mrins;
 			
-			rlens[i]  = genInst.rows;
-			clens[i]  = genInst.cols;
-			brlens[i] = genInst.rowsInBlock;
-			bclens[i] = genInst.colsInBlock;
+			rlens[i]  = genInst.getRows();
+			clens[i]  = genInst.getCols();
+			brlens[i] = genInst.getRowsInBlock();
+			bclens[i] = genInst.getColsInBlock();
 			
 			maxbrlen = Math.max(maxbrlen, brlens[i]);
 			maxbclen = Math.max(maxbclen, bclens[i]);
@@ -136,8 +136,8 @@ public class DataGenMR
 			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
 			{
 				RandInstruction randInst = (RandInstruction) mrins;
-				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
-				maxsparsity = Math.max(maxsparsity, randInst.sparsity);
+				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".randinput";//+random.nextInt();
+				maxsparsity = Math.max(maxsparsity, randInst.getSparsity());
 				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 				PrintWriter pw = new PrintWriter(fsOut);
@@ -146,8 +146,8 @@ public class DataGenMR
 				StringBuilder sb = new StringBuilder();
 				
 				//seed generation
-				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.seed);
-				long[] nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.sparsity);
+				Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(randInst.getSeed());
+				long[] nnz = LibMatrixDatagen.computeNNZperBlock(rlens[i], clens[i], brlens[i], bclens[i], randInst.getSparsity());
 				int nnzIx = 0;
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
@@ -177,7 +177,7 @@ public class DataGenMR
 			}
 			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
 				SeqInstruction seqInst = (SeqInstruction) mrins;
-				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".seqinput";
+				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".seqinput";
 				maxsparsity = 1.0; //always dense
 				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));

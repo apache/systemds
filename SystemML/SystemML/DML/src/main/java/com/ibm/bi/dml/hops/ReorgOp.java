@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -40,7 +40,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class ReorgOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ReOrgOp op;
@@ -91,7 +91,7 @@ public class ReorgOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			
 			ExecType et = optFindExecType();
 			
@@ -102,12 +102,12 @@ public class ReorgOp extends Hop
 				{
 					Transform transform1 = new Transform(
 							getInput().get(0).constructLops(), HopsTransf2Lops
-									.get(op), get_dataType(), get_valueType(), et);
-					transform1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
+									.get(op), getDataType(), getValueType(), et);
+					transform1.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
 					transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-					set_lops(transform1);
+					setLops(transform1);
 					break;
 				}
 				case RESHAPE:
@@ -116,9 +116,9 @@ public class ReorgOp extends Hop
 					{
 						Transform transform1 = new Transform(
 								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
-								get_dataType(), get_valueType(), et);
-						transform1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
+								getDataType(), getValueType(), et);
+						transform1.getOutputParameters().setDimensions(getDim1(),
+								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
 						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
@@ -130,27 +130,27 @@ public class ReorgOp extends Hop
 						
 						Group group1 = new Group(
 								transform1, Group.OperationTypes.Sort, DataType.MATRIX,
-								get_valueType());
-						group1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+								getValueType());
+						group1.getOutputParameters().setDimensions(getDim1(),
+								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 						Aggregate agg1 = new Aggregate(
 								group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-								get_valueType(), et);
-						agg1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());		
+								getValueType(), et);
+						agg1.getOutputParameters().setDimensions(getDim1(),
+								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());		
 						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
-						set_lops(agg1);
+						setLops(agg1);
 					}
 					else //CP
 					{
 						Transform transform1 = new Transform(
 								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
-								get_dataType(), get_valueType(), et);
-						transform1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
+								getDataType(), getValueType(), et);
+						transform1.getOutputParameters().setDimensions(getDim1(),
+								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
 						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
@@ -160,18 +160,18 @@ public class ReorgOp extends Hop
 						}
 						transform1.setLevel(); //force order of added lops
 						
-						set_lops(transform1);
+						setLops(transform1);
 					}
 				}
 			}
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
-		if (this.get_sqllops() == null) {
+		if (this.getSqlLops() == null) {
 			if (this.getInput().size() != 1)
 				throw new HopsException(this.printErrorLocation() + "An unary hop must have only one input \n");
 
@@ -180,22 +180,22 @@ public class ReorgOp extends Hop
 
 			Hop input = this.getInput().get(0);
 
-			SQLLops sqllop = new SQLLops(this.get_name(),
+			SQLLops sqllop = new SQLLops(this.getName(),
 										gen,
 										input.constructSQLLOPs(),
-										this.get_valueType(),
-										this.get_dataType());
+										this.getValueType(),
+										this.getDataType());
 
 			String sql = null;
 			if (this.op == ReOrgOp.TRANSPOSE) {
-				sql = String.format(SQLLops.TRANSPOSEOP, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.TRANSPOSEOP, input.getSqlLops().get_tableName());
 			} 
 			//TODO diag (size-aware)
 			/*
 			else if (op == ReOrgOp.DIAG_M2V) {
-				sql = String.format(SQLLops.DIAG_M2VOP, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.DIAG_M2VOP, input.getSqlLops().get_tableName());
 			} else if (op == ReOrgOp.DIAG_V2M) {
-				sql = String.format(SQLLops.DIAG_V2M, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.DIAG_V2M, input.getSqlLops().get_tableName());
 			}
 			*/
 			
@@ -204,9 +204,9 @@ public class ReorgOp extends Hop
 			sqllop.set_properties(getProperties(input));
 			sqllop.set_sql(sql);
 
-			this.set_sqllops(sqllop);
+			this.setSqlLops(sqllop);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	private SQLLopProperties getProperties(Hop input)
@@ -214,7 +214,7 @@ public class ReorgOp extends Hop
 		SQLLopProperties prop = new SQLLopProperties();
 		prop.setJoinType(JOINTYPE.NONE);
 		prop.setAggType(AGGREGATIONTYPE.NONE);
-		prop.setOpString(HopsTransf2String.get(op) + "(" + input.get_sqllops().get_tableName() + ")");
+		prop.setOpString(HopsTransf2String.get(op) + "(" + input.getSqlLops().get_tableName() + ")");
 		return prop;
 	}
 		
@@ -331,8 +331,8 @@ public class ReorgOp extends Hop
 			{
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input
-				set_dim1(input1.get_dim2());
-				set_dim2(input1.get_dim1());
+				setDim1(input1.getDim2());
+				setDim2(input1.getDim1());
 				setNnz(input1.getNnz());
 				break;
 			}	
@@ -340,22 +340,22 @@ public class ReorgOp extends Hop
 			{
 				// NOTE: diag is overloaded according to the number of columns of the input
 				
-				long k = input1.get_dim1(); 
-				set_dim1(k);
+				long k = input1.getDim1(); 
+				setDim1(k);
 				
 				// CASE a) DIAG_V2M
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
-				if( input1.get_dim2()==1 ) {
-					set_dim2(k);
+				if( input1.getDim2()==1 ) {
+					setDim2(k);
 					setNnz( (input1.getNnz()>0) ? input1.getNnz() : k );
 				}
 				
 				// CASE b) DIAG_M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)		
-				if( input1.get_dim2()>1 ){
-					set_dim2(1);	
+				if( input1.getDim2()>1 ){
+					setDim2(1);	
 					setNnz( (input1.getNnz()>0) ? Math.min(k,input1.getNnz()) : k );
 				}
 				
@@ -411,14 +411,14 @@ public class ReorgOp extends Hop
 	public void printMe() throws HopsException 
 	{
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + op);
 				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 	

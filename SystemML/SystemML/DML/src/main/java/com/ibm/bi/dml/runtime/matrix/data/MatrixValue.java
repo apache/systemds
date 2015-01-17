@@ -44,16 +44,14 @@ public abstract class MatrixValue implements WritableComparable
 			column = c;
 		}
 
-		
-		public boolean equals(CellIndex that) {
-			return (this.row == that.row && this.column == that.column);
-		}
-
-		public boolean equals(Object that) {
-			if (that instanceof CellIndex)
-				return equals((CellIndex) that);
-			else
+		@Override
+		public boolean equals(Object that) 
+		{
+			if( !(that instanceof CellIndex) )
 				return false;
+				
+			CellIndex cthat = (CellIndex) that;
+			return (this.row == cthat.row && this.column == cthat.column);
 		}
 
 		public int hashCode() {

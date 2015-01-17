@@ -28,9 +28,14 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public boolean forLeftIndexing=false;
-	public long leftMatrixNRows=0;
-	public long leftMatrixNCols=0;
+	protected boolean forLeftIndexing=false;
+	protected long leftMatrixNRows=0;
+	protected long leftMatrixNCols=0;
+	
+	private IndexRange indexRange=null;
+	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
+	
+	
 	//start and end are all inclusive
 	public static class IndexRange
 	{
@@ -54,9 +59,6 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 		}
 	}
 	
-	public IndexRange indexRange=null;
-	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
-	
 	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.RangeReIndex;
@@ -74,10 +76,13 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 		this.leftMatrixNCols=leftNCols;
 	}
 	
+	public IndexRange getIndexRange() {
+		return indexRange;
+	}
+	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 8 );
-		//System.out.println(str);
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		String opcode = parts[0];
@@ -94,7 +99,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 		byte out = Byte.parseByte(parts[6]);
 		long leftIndexingNrow=Long.parseLong(parts[7]);
 		long leftIndexingNcol=Long.parseLong(parts[8]);
-		//System.out.println("original index range: "+rng);
+		
 		//recalculate the index range for left indexing
 		if(forLeft)
 		{
@@ -116,9 +121,8 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
-	//	System.out.println("~~~ in reindex");
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		
 		if(input==output)
 			throw new DMLRuntimeException("input cannot be the same for output for "+this.instString);
@@ -129,8 +133,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 			{
 				if(in==null)
 					continue;
-			//	System.out.println("input block: "+in);
-			//	System.out.println("index range: "+indexRange+"\n");
+	
 				long cellIndexTopRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, 0);
 				long cellIndexBottomRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, in.getValue().getNumRows()-1);
 				long cellIndexLeftCol=UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), blockColFactor, 0);
@@ -181,9 +184,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 					}
 				
 				//process instruction
-				
 				OperationsOnMatrixValues.performSlice(in.getIndexes(), in.getValue(), outlist, tempRange, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
-			//System.out.println("output: "+outlist);
 			}
 	}
 }

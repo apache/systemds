@@ -46,9 +46,9 @@ public class MapMultChainInstruction extends MRInstruction
 	private ReorgOperator _rOp = null;
 	private BinaryOperator _bOp = null;
 	
-	public byte _input1 = -1;
-	public byte _input2 = -1;
-	public byte _input3 = -1;	
+	private byte _input1 = -1;
+	private byte _input2 = -1;
+	private byte _input3 = -1;	
 	
 	/**
 	 * Two matrix inputs - type XtXv
@@ -106,7 +106,18 @@ public class MapMultChainInstruction extends MRInstruction
 		return _chainType;
 	}
 	
-	
+	public byte getInput1() {
+		return _input1;
+	}
+
+	public byte getInput2() {
+		return _input2;
+	}
+
+	public byte getInput3() {
+		return _input3;
+	}
+
 	/**
 	 * 
 	 * @param str
@@ -292,7 +303,7 @@ public class MapMultChainInstruction extends MRInstruction
 		
 		//matrix transpose: r = t(tmp3) 
 		outIx.setIndexes(tmp3Ix.getColumnIndex(), tmp3Ix.getRowIndex());
-		outVal = tmp3Val.reorgOperations(_rOp, outVal, 0, 0, -1);
+		tmp3Val.reorgOperations(_rOp, outVal, 0, 0, -1);
 	}
 	
 	/**

@@ -361,24 +361,39 @@ public class MapReduceTool
         return br;
 	}
 	
-	public static double readDoubleFromHDFSFile(String filename) throws IOException {
+	public static double readDoubleFromHDFSFile(String filename) 
+		throws IOException 
+	{
 		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
+		if( line == null )
+			throw new IOException("Empty file on hdfs: "+filename);
 		return Double.parseDouble(line);
 	}
-	public static long readIntegerFromHDFSFile(String filename) throws IOException {
+	
+	public static long readIntegerFromHDFSFile(String filename) 
+		throws IOException 
+	{
 		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
+		if( line == null )
+			throw new IOException("Empty file on hdfs: "+filename);
 		return Integer.parseInt(line);
 	}
-	public static boolean readBooleanFromHDFSFile(String filename) throws IOException {
+	
+	public static boolean readBooleanFromHDFSFile(String filename) 
+		throws IOException 
+	{
 		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
+		if( line == null )
+			throw new IOException("Empty file on hdfs: "+filename);
 		return Boolean.parseBoolean(line);
 	}
+	
 	public static String readStringFromHDFSFile(String filename) 
 		throws IOException 
 	{
@@ -742,17 +757,14 @@ public class MapReduceTool
 	    	reader.readNextKeyValuePairs(readKey, readValue);
 			numRead+=readValue.get();
 			cum_weight += readValue.get();
-			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue + ", " + numRead + " " + cum_weight);
 		}
 	    
 	    double ret = readKey.get();
 	    if(average) {
 	    	if(numRead<=offset+1) {
-	    		reader.readNextKeyValuePairs(readKey, readValue);;
-				numRead+=readValue.get();
+	    		reader.readNextKeyValuePairs(readKey, readValue);
 				cum_weight += readValue.get();
-				//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue + ", " + numRead + " " + cum_weight);
-		    	ret = (ret+readKey.get())/2;
+				ret = (ret+readKey.get())/2;
 	    	}
 	    }
 	    currentStream.close();

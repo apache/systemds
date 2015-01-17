@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,25 +28,25 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
 public class HopGraph 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static String getString_dataHop(Hop h) {
 		String s = new String("");
 		// assert h.getKind() == Hops.Kind.DataOp
 		if (((DataOp) h).get_dataop() == Hop.DataOpTypes.PERSISTENTREAD) {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=royalblue2 ]; \n";
 		} else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.TRANSIENTREAD) {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=wheat2 ]; \n";
 		}
 		// Persistent/Transient Writes
 		else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.PERSISTENTWRITE) {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=orangered2 ]; \n";
 		} else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.TRANSIENTWRITE) {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=wheat4 ]; \n";
 		}
 		return s;
@@ -60,7 +60,7 @@ public class HopGraph
 			String sdata = getString_dataHop(h);
 			s += sdata;
 		} else {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=lightcoral ]; \n";
 		}
 
@@ -74,7 +74,7 @@ public class HopGraph
 			String sdata = getString_dataHop(h);
 			s += sdata;
 		} else {
-			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 					+ "\", color=lavender ]; \n";
 		}
 		return s;
@@ -83,7 +83,7 @@ public class HopGraph
 	private static String prepareHopsNodeList(Hop h) {
 		String s = new String("");
 
-		if (h.get_visited() == Hop.VISIT_STATUS.DONE)
+		if (h.getVisited() == Hop.VisitStatus.DONE)
 			return s;
 
 		if (h.getInput().size() == 0) {
@@ -94,7 +94,7 @@ public class HopGraph
 			if (h.getKind() == Hop.Kind.DataOp) {
 				s += getString_dataHop(h);
 			} else {
-				s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
+				s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.getName() + " " + h.getOpString()
 						+ "\", color=white ]; \n";
 			}
 		}
@@ -108,11 +108,11 @@ public class HopGraph
 		}
 
 		/*
-		 * for ( Hops hp : h.getParent() ) { if ( hp.get_visited() ==
-		 * Hops.VISIT_STATUS.NOTVISITED) { String edge = "    node" +
+		 * for ( Hops hp : h.getParent() ) { if ( hp.getVisited() ==
+		 * Hops.VisitStatus.NOTVISITED) { String edge = "    node" +
 		 * h.getHopID() + " -> node" + hp.getHopID() + "; \n"; s += edge; } }
 		 */
-		h.set_visited(Hop.VISIT_STATUS.DONE);
+		h.setVisited(Hop.VisitStatus.DONE);
 
 		return s;
 	}

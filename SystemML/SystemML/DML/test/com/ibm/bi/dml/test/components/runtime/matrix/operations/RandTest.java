@@ -56,18 +56,18 @@ public class RandTest
         	
         	
             //assertEquals(Rand.SupportedOperation.RAND, instType.operation);
-            assertEquals(10, instType.rows);
-            assertEquals(11, instType.cols);
-            assertEquals(2, instType.rowsInBlock);
-            assertEquals(2, instType.colsInBlock);
-            assertEquals(0, instType.input);
+            assertEquals(10, instType.getRows());
+            assertEquals(11, instType.getCols());
+            assertEquals(2, instType.getRowsInBlock());
+            assertEquals(2, instType.getColsInBlock());
+            assertEquals(0, instType.getInput());
             assertEquals(1, instType.output);
-            assertEquals(0.0, instType.minValue, 0);
-            assertEquals(1.0, instType.maxValue, 0);
-            assertEquals(0.5, instType.sparsity, 0);
-            assertEquals(7, instType.seed, 0);
-            assertEquals("uniform", instType.probabilityDensityFunction);
-            assertEquals("scratch_space/_t0/", instType.baseDir);
+            assertEquals(0.0, instType.getMinValue(), 0);
+            assertEquals(1.0, instType.getMaxValue(), 0);
+            assertEquals(0.5, instType.getSparsity(), 0);
+            assertEquals(7, instType.getSeed(), 0);
+            assertEquals("uniform", instType.getProbabilityDensityFunction());
+            assertEquals("scratch_space/_t0/", instType.getBaseDir());
         } catch (Exception e) {
             fail("Instruction parsing failed");
         }

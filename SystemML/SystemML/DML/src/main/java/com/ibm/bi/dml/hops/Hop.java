@@ -56,8 +56,10 @@ public abstract class Hop
 		TertiaryOp, ParameterizedBuiltinOp, Indexing, FunctionOp, CrossBlockOp,
 	};
 
-	public enum VISIT_STATUS {
-		DONE, VISITING, NOTVISITED
+	public enum VisitStatus {
+		DONE, 
+		VISITING, 
+		NOTVISITED
 	}
 
 	// static variable to assign an unique ID to every hop that is created
@@ -68,7 +70,7 @@ public abstract class Hop
 	protected String _name;
 	protected DataType _dataType;
 	protected ValueType _valueType;
-	protected VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
+	protected VisitStatus _visited = VisitStatus.NOTVISITED;
 	protected long _dim1 = -1;
 	protected long _dim2 = -1;
 	protected long _rows_in_block = -1;
@@ -77,9 +79,6 @@ public abstract class Hop
 
 	protected ArrayList<Hop> _parent = new ArrayList<Hop>();
 	protected ArrayList<Hop> _input = new ArrayList<Hop>();
-
-	private Lop _lops = null;
-	private SQLLops _sqllops = null;
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
@@ -96,6 +95,9 @@ public abstract class Hop
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
 	protected boolean _requiresRecompile = false;
+
+	private Lop _lops = null;
+	private SQLLops _sqllops = null;
 	
 	protected Hop(){
 		//default constructor for clone
@@ -103,9 +105,9 @@ public abstract class Hop
 		
 	public Hop(Kind k, String l, DataType dt, ValueType vt) {
 		_kind = k;
-		set_name(l);
-		_dataType = dt;
-		_valueType = vt;
+		setName(l);
+		setDataType(dt);
+		setValueType(vt);
 		ID = getNextHopID();
 	}
 
@@ -337,11 +339,11 @@ public abstract class Hop
 		long[] wstats = null; 
 		
 		//output size estimate
-		switch( get_dataType() )
+		switch( getDataType() )
 		{
 			case SCALAR:
 			{
-				if( get_valueType()== ValueType.DOUBLE) //default case
+				if( getValueType()== ValueType.DOUBLE) //default case
 					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 				else //literalops, dataops
 					_outputMemEstimate = computeOutputMemEstimate(_dim1, _dim2, _nnz);
@@ -459,12 +461,12 @@ public abstract class Hop
 	 * 
 	 */
 	public void refreshMemEstimates( MemoTable memo ) {
-		if (get_visited() == VISIT_STATUS.DONE)
+		if (getVisited() == VisitStatus.DONE)
 			return;
 		for (Hop h : this.getInput())
 			h.refreshMemEstimates( memo );
 		this.computeMemEstimate( memo );
-		this.set_visited(VISIT_STATUS.DONE);
+		this.setVisited(VisitStatus.DONE);
 	}
 
 	/**
@@ -520,19 +522,19 @@ public abstract class Hop
 		h._parent.add(this);
 	}
 
-	public long get_rows_in_block() {
+	public long getRowsInBlock() {
 		return _rows_in_block;
 	}
 
-	public void set_rows_in_block(long rowsInBlock) {
+	public void setRowsInBlock(long rowsInBlock) {
 		_rows_in_block = rowsInBlock;
 	}
 
-	public long get_cols_in_block() {
+	public long getColsInBlock() {
 		return _cols_in_block;
 	}
 
-	public void set_cols_in_block(long colsInBlock) {
+	public void setColsInBlock(long colsInBlock) {
 		_cols_in_block = colsInBlock;
 	}
 
@@ -542,28 +544,6 @@ public abstract class Hop
 	
 	public long getNnz(){
 		return _nnz;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	@Deprecated
-	public double getSparsity() {
-		
-		if( _dataType == DataType.SCALAR )
-			return 1.0;
-		
-		if( dimsKnown(true) )
-		{
-			//prevent overflow via dim1*dim2
-			return ((double)_nnz)/_dim1/_dim2; 
-		}
-		else 
-		{
-			//worst-case estimate
-			return 1.0;
-		}
 	}
 	
 	public Kind getKind() {
@@ -603,14 +583,14 @@ public abstract class Hop
 	}
 	
 	public void resetVisitStatus() {
-		if (this.get_visited() == Hop.VISIT_STATUS.NOTVISITED)
+		if (this.getVisited() == Hop.VisitStatus.NOTVISITED)
 			return;
 		for (Hop h : this.getInput())
 			h.resetVisitStatus();
 		
-		if(this.get_sqllops() != null)
-			this.get_sqllops().set_visited(VISIT_STATUS.NOTVISITED);
-		this.set_visited(Hop.VISIT_STATUS.NOTVISITED);
+		if(this.getSqlLops() != null)
+			this.getSqlLops().setVisited(VisitStatus.NOTVISITED);
+		this.setVisited(Hop.VisitStatus.NOTVISITED);
 	}
 
 	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
@@ -628,7 +608,7 @@ public abstract class Hop
 	
 	private void resetRecompilationFlag( ExecType et ) 
 	{
-		if( get_visited() == VISIT_STATUS.DONE )
+		if( getVisited() == VisitStatus.DONE )
 			return;
 		
 		//process child hops
@@ -639,7 +619,7 @@ public abstract class Hop
 		if( et == null || getExecType() == et || getExecType()==null )
 			_requiresRecompile = false;
 		
-		this.set_visited(VISIT_STATUS.DONE);
+		this.setVisited(VisitStatus.DONE);
 	}
 	
 		
@@ -652,7 +632,7 @@ public abstract class Hop
 	public void checkParentChildPointers( ) 
 		throws HopsException
 	{
-		if( get_visited() == VISIT_STATUS.DONE )
+		if( getVisited() == VisitStatus.DONE )
 			return;
 		
 		for( Hop in : getInput() )
@@ -662,14 +642,14 @@ public abstract class Hop
 			in.checkParentChildPointers();
 		}
 		
-		set_visited(VISIT_STATUS.DONE);
+		setVisited(VisitStatus.DONE);
 	}
 	
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()) {
 			StringBuilder s = new StringBuilder(""); 
 			s.append(_kind + " " + getHopID() + "\n");
-			s.append("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
+			s.append("  Label: " + getName() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
 			s.append("  Parent: ");
 			for (Hop h : getParent()) {
 				s.append(h.hashCode() + "; ");
@@ -686,67 +666,67 @@ public abstract class Hop
 		}
 	}
 
-	public long get_dim1() {
+	public long getDim1() {
 		return _dim1;
 	}
 
-	public void set_dim1(long dim1) {
+	public void setDim1(long dim1) {
 		_dim1 = dim1;
 	}
 
-	public long get_dim2() {
+	public long getDim2() {
 		return _dim2;
 	}
 
-	public Lop get_lops() {
+	public void setDim2(long dim2) {
+		_dim2 = dim2;
+	}
+	
+	public Lop getLops() {
 		return _lops;
 	}
 
-	public void set_lops(Lop lops) {
+	public void setLops(Lop lops) {
 		_lops = lops;
 	}
 	
-	public SQLLops get_sqllops() {
+	public SQLLops getSqlLops() {
 		return _sqllops;
 	}
 
-	public void set_sqllops(SQLLops sqllops) {
+	public void setSqlLops(SQLLops sqllops) {
 		_sqllops = sqllops;
 	}
 
-	public void set_dim2(long dim2) {
-		_dim2 = dim2;
-	}
-
-	public VISIT_STATUS get_visited() {
+	public VisitStatus getVisited() {
 		return _visited;
 	}
 
-	public DataType get_dataType() {
+	public DataType getDataType() {
 		return _dataType;
 	}
 	
-	public void set_dataType( DataType dt ) {
+	public void setDataType( DataType dt ) {
 		_dataType = dt;
 	}
 
-	public void set_visited(VISIT_STATUS visited) {
+	public void setVisited(VisitStatus visited) {
 		_visited = visited;
 	}
 
-	public void set_name(String _name) {
+	public void setName(String _name) {
 		this._name = _name;
 	}
 
-	public String get_name() {
+	public String getName() {
 		return _name;
 	}
 
-	public ValueType get_valueType() {
+	public ValueType getValueType() {
 		return _valueType;
 	}
 	
-	public void set_valueType(ValueType vt) {
+	public void setValueType(ValueType vt) {
 		_valueType = vt;
 	}
 
@@ -809,7 +789,7 @@ public abstract class Hop
 		RowCol, Row, Col
 	};
 
-	static public HashMap<DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes> HopsData2Lops;
+	protected static final HashMap<DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes> HopsData2Lops;
 	static {
 		HopsData2Lops = new HashMap<Hop.DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes>();
 		HopsData2Lops.put(DataOpTypes.PERSISTENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
@@ -818,7 +798,7 @@ public abstract class Hop
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
 	}
 
-	static public HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
+	protected static final HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
 	static {
 		HopsAgg2Lops = new HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes>();
 		HopsAgg2Lops.put(AggOp.SUM, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSum);
@@ -832,7 +812,7 @@ public abstract class Hop
 		HopsAgg2Lops.put(AggOp.MEAN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Mean);
 	}
 
-	static public HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes> HopsTransf2Lops;
+	protected static final HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes> HopsTransf2Lops;
 	static {
 		HopsTransf2Lops = new HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes>();
 		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
@@ -841,7 +821,7 @@ public abstract class Hop
 
 	}
 
-	static public HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
+	protected static final HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
 	static {
 		HopsDirection2Lops = new HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes>();
 		HopsDirection2Lops.put(Direction.RowCol, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.RowCol);
@@ -850,7 +830,7 @@ public abstract class Hop
 
 	}
 
-	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
+	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
 	static {
 		HopsOpOp2LopsB = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes>();
 		HopsOpOp2LopsB.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Binary.OperationTypes.ADD);
@@ -874,7 +854,7 @@ public abstract class Hop
 		HopsOpOp2LopsB.put(OpOp2.LOG, com.ibm.bi.dml.lops.Binary.OperationTypes.NOTSUPPORTED);
 	}
 
-	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes> HopsOpOp2LopsBS;
+	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes> HopsOpOp2LopsBS;
 	static {
 		HopsOpOp2LopsBS = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes>();
 		HopsOpOp2LopsBS.put(OpOp2.PLUS, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.ADD);
@@ -899,7 +879,7 @@ public abstract class Hop
 		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.SEQINCR);
 	}
 
-	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
+	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
 	static {
 		HopsOpOp2LopsU = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes>();
 		HopsOpOp2LopsU.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Unary.OperationTypes.ADD);
@@ -923,7 +903,7 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.POW2CM, com.ibm.bi.dml.lops.Unary.OperationTypes.POW2CM);
 	}
 
-	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
+	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
 	static {
 		HopsOpOp1LopsU = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes>();
 		HopsOpOp1LopsU.put(OpOp1.NOT, com.ibm.bi.dml.lops.Unary.OperationTypes.NOT);
@@ -945,7 +925,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
 
-	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
 	static {
 		HopsOpOp1LopsUS = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes>();
 		HopsOpOp1LopsUS.put(OpOp1.NOT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOT);
@@ -974,7 +954,7 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.STOP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
-	static public HashMap<Hop.OpOp1, String> HopsOpOp12String;
+	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;
 	static {
 		HopsOpOp12String = new HashMap<OpOp1, String>();	
 		HopsOpOp12String.put(OpOp1.ABS, "abs");
@@ -999,7 +979,8 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.ATAN, "atan");
 		HopsOpOp12String.put(OpOp1.STOP, "stop");
 	}
-	static public HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
+	
+	protected static final HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
 		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
@@ -1007,7 +988,7 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
 	}
 
-	static public HashMap<Hop.OpOp2, String> HopsOpOp2String;
+	protected static final HashMap<Hop.OpOp2, String> HopsOpOp2String;
 	static {
 		HopsOpOp2String = new HashMap<Hop.OpOp2, String>();
 		HopsOpOp2String.put(OpOp2.PLUS, "+");
@@ -1040,7 +1021,11 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.APPEND, "APP");
 	}
 	
-	static public HashMap<Hop.OpOp3, String> HopsOpOp3String;
+	public static String getOpOp2String( OpOp2 op ) {
+		return HopsOpOp2String.get(op);
+	}
+	
+	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;
 	static {
 		HopsOpOp3String = new HashMap<Hop.OpOp3, String>();
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
@@ -1050,7 +1035,7 @@ public abstract class Hop
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 	}
 
-	static public HashMap<Hop.Direction, String> HopsDirection2String;
+	protected static final HashMap<Hop.Direction, String> HopsDirection2String;
 	static {
 		HopsDirection2String = new HashMap<Hop.Direction, String>();
 		HopsDirection2String.put(Direction.RowCol, "RC");
@@ -1058,7 +1043,7 @@ public abstract class Hop
 		HopsDirection2String.put(Direction.Row, "R");
 	}
 
-	static public HashMap<Hop.AggOp, String> HopsAgg2String;
+	protected static final HashMap<Hop.AggOp, String> HopsAgg2String;
 	static {
 		HopsAgg2String = new HashMap<Hop.AggOp, String>();
 		HopsAgg2String.put(AggOp.SUM, "+");
@@ -1071,7 +1056,7 @@ public abstract class Hop
 		HopsAgg2String.put(AggOp.MEAN, "mean");
 	}
 
-	static public HashMap<Hop.ReOrgOp, String> HopsTransf2String;
+	protected static final HashMap<Hop.ReOrgOp, String> HopsTransf2String;
 	static {
 		HopsTransf2String = new HashMap<ReOrgOp, String>();
 		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
@@ -1079,7 +1064,7 @@ public abstract class Hop
 		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
 	}
 
-	static public HashMap<DataOpTypes, String> HopsData2String;
+	protected static final HashMap<DataOpTypes, String> HopsData2String;
 	static {
 		HopsData2String = new HashMap<Hop.DataOpTypes, String>();
 		HopsData2String.put(DataOpTypes.PERSISTENTREAD, "PRead");
@@ -1153,7 +1138,7 @@ public abstract class Hop
 			if(hasWriteOutput)
 				gen = GENERATES.DML;
 		}
-		if(BREAKONSCALARS && this.get_dataType() == DataType.SCALAR)
+		if(BREAKONSCALARS && this.getDataType() == DataType.SCALAR)
 			gen = GENERATES.DML;
 		return gen;
 	}
@@ -1192,7 +1177,7 @@ public abstract class Hop
 	{
 		long size = computeSizeInformation(input);
 		if( size > 0 )
-			set_dim1( size );
+			setDim1( size );
 	}
 	
 	
@@ -1203,7 +1188,7 @@ public abstract class Hop
 	{
 		long size = computeSizeInformation(input);
 		if( size > 0 )
-			set_dim2( size );
+			setDim2( size );
 	}
 	
 	/**
@@ -1239,7 +1224,7 @@ public abstract class Hop
 	{
 		long size = computeSizeInformation(input, vars);
 		if( size > 0 )
-			set_dim1( size );
+			setDim1( size );
 	}
 	
 	/**
@@ -1251,7 +1236,7 @@ public abstract class Hop
 	{
 		long size = computeSizeInformation(input, vars);
 		if( size > 0 )
-			set_dim2( size );
+			setDim2( size );
 	}
 	
 	/**
@@ -1357,7 +1342,7 @@ public abstract class Hop
 		}
 		else if ( input instanceof LiteralOp )
 		{
-			ret = UtilFunctions.parseToLong(input.get_name());
+			ret = UtilFunctions.parseToLong(input.getName());
 		}
 		else if ( input instanceof BinaryOp )
 		{
@@ -1385,7 +1370,7 @@ public abstract class Hop
 		
 		if( root instanceof LiteralOp )
 		{
-			long dim = UtilFunctions.parseToLong(root.get_name());
+			long dim = UtilFunctions.parseToLong(root.getName());
 			if( dim != -1 ) //if known
 				ret = dim;
 		}
@@ -1658,8 +1643,8 @@ public abstract class Hop
 	
 	public void prepend(CrossBlockOp input) {
 		this.crossBlockInput = input;
-		this.set_dim1(Math.max(_dim1, input.get_dim1()));
-		this.set_dim2(Math.max(_dim2, input.get_dim2()));
+		this.setDim1(Math.max(_dim1, input.getDim1()));
+		this.setDim2(Math.max(_dim2, input.getDim2()));
 	}
 
 	public void setCrossBlockOutput(CrossBlockOp crossBlockOutput) {

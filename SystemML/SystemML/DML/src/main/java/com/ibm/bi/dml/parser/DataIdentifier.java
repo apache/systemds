@@ -107,11 +107,9 @@ public class DataIdentifier extends Identifier
 		_defaultValue = val;
 	}
 	
-	
+	@Override
 	public String toString() {
-		String retVal = new String();
-		retVal += _name;		
-		return retVal;
+		return _name;
 	}
 
 	@Override
@@ -135,8 +133,13 @@ public class DataIdentifier extends Identifier
 		throw new LanguageException("multipleReturns() must be overridden in the subclass.");
 	}
 	
-	public boolean equals(DataIdentifier target){
-		
+	@Override
+	public boolean equals(Object that) 
+	{
+		if( !(that instanceof DataIdentifier) )
+			return false;
+			
+		DataIdentifier target = (DataIdentifier)that;
 		if (!this.getName().equals(target.getName()))
 			return false;
 		if (!this.getDataType().equals(target.getDataType()))

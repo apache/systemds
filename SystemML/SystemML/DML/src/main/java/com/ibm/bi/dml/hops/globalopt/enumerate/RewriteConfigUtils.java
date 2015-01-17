@@ -7,9 +7,9 @@
 
 package com.ibm.bi.dml.hops.globalopt.enumerate;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.FormatType;
@@ -170,7 +170,7 @@ public class RewriteConfigUtils
 	 */
 	public static Collection<RewriteConfigSet> generateConfigCombinations(Collection<RewriteConfig> rewriteConfigs) 
 	{
-		Collection<RewriteConfigSet> ret = new LinkedList<RewriteConfigSet>();
+		Collection<RewriteConfigSet> ret = new ArrayList<RewriteConfigSet>();
 		
 		//initial set (see for iterative extension)
 		ret.add(new RewriteConfigSet()); 
@@ -178,7 +178,7 @@ public class RewriteConfigUtils
 		//iterative extension (for each config, copy for each config val)
 		for(RewriteConfig cp : rewriteConfigs) 
 		{
-			Collection<RewriteConfigSet> tmp = new LinkedList<RewriteConfigSet>();
+			Collection<RewriteConfigSet> tmp = new ArrayList<RewriteConfigSet>();
 			for(Integer defVal : cp.getDefinedValues())
 			{
 				RewriteConfig instance = RewriteConfigUtils.createInstance(cp.getType());

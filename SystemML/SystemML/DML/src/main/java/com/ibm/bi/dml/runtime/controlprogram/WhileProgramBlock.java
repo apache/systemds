@@ -91,7 +91,7 @@ public class WhileProgramBlock extends ProgramBlock
 		
 		//update result var if non-empty predicate (otherwise,
 		//do not overwrite varname predicate in predicateResultVar)
-		if( _predicate != null && _predicate.size()>0  )
+		if( _predicate != null && !_predicate.isEmpty()  )
 			_predicateResultVar = findPredicateResultVar();
 	}
 	
@@ -110,7 +110,7 @@ public class WhileProgramBlock extends ProgramBlock
 		BooleanObject result = null;
 		try
 		{
-			if( _predicate!=null && _predicate.size()>0 )
+			if( _predicate!=null && !_predicate.isEmpty() )
 			{
 				if( _sb!=null )
 				{

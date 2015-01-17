@@ -161,7 +161,7 @@ public class LoopOp extends CrossBlockOp
 	}
 	
 	public void addLoopInput(Hop input) {
-		this.loopInputs.put(input.get_name(), input);
+		this.loopInputs.put(input.getName(), input);
 	}
 
 	public Map<String, Hop> getLoopOutputs() {
@@ -173,7 +173,7 @@ public class LoopOp extends CrossBlockOp
 	}
 	
 	public void addLoopOutput(Hop output) {
-		this.loopOutputs.put(output.get_name(), output);
+		this.loopOutputs.put(output.getName(), output);
 	}
 	
 	@Override
@@ -194,7 +194,7 @@ public class LoopOp extends CrossBlockOp
 			Hop input = this.loopInputs.get(inputVarName);
 			Hop output = this.loopOutputs.get(inputVarName);
 			if(output != null) {
-				if(input.get_dim1() != output.get_dim1() || input.get_dim2() != output.get_dim2()) {
+				if(input.getDim1() != output.getDim1() || input.getDim2() != output.getDim2()) {
 					retVal = false;
 					break;
 				}

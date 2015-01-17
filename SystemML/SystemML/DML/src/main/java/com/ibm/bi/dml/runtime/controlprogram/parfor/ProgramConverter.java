@@ -819,7 +819,7 @@ public class ProgramConverter
 		ArrayList<String> rVnames   = body.getResultVarNames();
 		ExecutionContext ec         = body.getEc();
 		
-		if( pbs.size()==0 )
+		if( pbs.isEmpty() )
 			return PARFORBODY_BEGIN + PARFORBODY_END;
 		
 		Program prog = pbs.get( 0 ).getProgram();
@@ -1939,9 +1939,8 @@ public class ProgramConverter
 		//basedir
 		String basedir = st.nextToken();
 		
-		//instructions
-		@SuppressWarnings("unused")
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id); //required for removing INST BEGIN, END
+		//instructions (required for removing INST BEGIN, END)
+		parseInstructions(st.nextToken(),id);
 
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);

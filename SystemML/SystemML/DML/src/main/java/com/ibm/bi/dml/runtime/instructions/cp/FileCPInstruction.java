@@ -109,7 +109,7 @@ public class FileCPInstruction extends CPInstruction
 		}
 		
 		// NO RESULT is produced
-		// pb.setVariable(output.get_name(), sores);
+		// pb.setVariable(output.getName(), sores);
 	}
 	
 	

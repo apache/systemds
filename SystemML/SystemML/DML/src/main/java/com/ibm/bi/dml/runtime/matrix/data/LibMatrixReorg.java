@@ -394,7 +394,7 @@ public class LibMatrixReorg
 				for( int i=bi, iix=0; i<bimin; i++, iix++ )
 				{
 					SparseRow arow = a[i];
-					if( arow!=null && arow.size()>0 )
+					if( arow!=null && !arow.isEmpty() )
 					{
 						int alen = arow.size();
 						double[] avals = arow.getValueContainer();
@@ -455,7 +455,7 @@ public class LibMatrixReorg
 				for( int i=bi, iix=0; i<bimin; i++, iix++ )
 				{
 					SparseRow arow = a[i];
-					if( arow!=null && arow.size()>0 )
+					if( arow!=null && !arow.isEmpty() )
 					{
 						int alen = arow.size();
 						double[] avals = arow.getValueContainer();
@@ -649,7 +649,7 @@ public class LibMatrixReorg
 				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
 				{
 					SparseRow arow = aRows[i];
-					if( arow!=null && arow.size()>0 ) {
+					if( arow!=null && !arow.isEmpty() ) {
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();	
@@ -664,7 +664,7 @@ public class LibMatrixReorg
 				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
 				{
 					SparseRow arow = aRows[i];
-					if( arow!=null && arow.size()>0 ){
+					if( arow!=null && !arow.isEmpty() ){
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();	
@@ -690,7 +690,7 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on a but not c; append-only
 				SparseRow arow = aRows[0];
-				if( arow!=null && arow.size()>0 ){
+				if( arow!=null && !arow.isEmpty() ){
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
 					double[] avals = arow.getValueContainer();
@@ -710,7 +710,7 @@ public class LibMatrixReorg
 				for( int i=0; i<rlen; i++ ) 
 				{
 					SparseRow arow = aRows[i];
-					if( arow!=null && arow.size()>0 ){
+					if( arow!=null && !arow.isEmpty() ){
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();	
@@ -848,7 +848,7 @@ public class LibMatrixReorg
 			for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
 			{
 				SparseRow arow = aRows[i];
-				if( arow!=null && arow.size()>0 ){
+				if( arow!=null && !arow.isEmpty() ){
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
 					double[] avals = arow.getValueContainer();	
@@ -866,7 +866,7 @@ public class LibMatrixReorg
 			{
 				//note: cache-friendly on a but not c
 				SparseRow arow = aRows[0];
-				if( arow!=null && arow.size()>0 ){
+				if( arow!=null && !arow.isEmpty() ){
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
 					double[] avals = arow.getValueContainer();	
@@ -884,7 +884,7 @@ public class LibMatrixReorg
 				for( int i=0; i<rlen; i++ ) 
 				{
 					SparseRow arow = aRows[i];
-					if( arow!=null && arow.size()>0 ){
+					if( arow!=null && !arow.isEmpty() ){
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();	
@@ -1026,7 +1026,7 @@ public class LibMatrixReorg
 			int estnnz = (int) (nnz/nBlocks); //force initialcapacity per row to 1, for many blocks
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
 			MatrixBlock block = null;
-			if( ALLOW_BLOCK_REUSE && reuse!=null && reuse.size()>0) {
+			if( ALLOW_BLOCK_REUSE && reuse!=null && !reuse.isEmpty()) {
 				block = (MatrixBlock) reuse.get(count++).getValue();
 				block.reset(lbrlen, lbclen, sparse, estnnz);
 			}
@@ -1120,7 +1120,7 @@ public class LibMatrixReorg
 		for( int i=0; i<rlen; i++ )
 		{
 			SparseRow arow = aRows[i];
-			if( arow!=null && arow.size()>0 ) {
+			if( arow!=null && !arow.isEmpty() ) {
 				long ai = row_offset+i;
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();

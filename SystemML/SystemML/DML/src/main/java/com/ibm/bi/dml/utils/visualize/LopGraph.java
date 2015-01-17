@@ -139,7 +139,7 @@ public class LopGraph
 	private static String prepareLopsNodeList(Lop lop) {
 		String s = new String("");
 
-		if (lop.get_visited() == Lop.VISIT_STATUS.DONE)
+		if (lop.getVisited() == Lop.VisitStatus.DONE)
 			return s;
 
 		switch (lop.getType()) {
@@ -170,7 +170,7 @@ public class LopGraph
 			String edge = "    node" + lop.getID() + " -> node" + lop.getInputs().get(i).getID() + "; \n";
 			s += edge;
 		}
-		lop.set_visited(Lop.VISIT_STATUS.DONE);
+		lop.setVisited(Lop.VisitStatus.DONE);
 		return s;
 	}
 
@@ -199,7 +199,7 @@ public class LopGraph
 			// Handle Predicate
 			Hop predicateHops = ((WhileStatementBlock) current).getPredicateHops();
 			if (predicateHops != null){
-				String predicateString = prepareLopsNodeList(predicateHops.get_lops());
+				String predicateString = prepareLopsNodeList(predicateHops.getLops());
 				graphString += predicateString;
 			}
 			// handle children
@@ -238,7 +238,7 @@ public class LopGraph
 		else if (current instanceof IfStatementBlock) {
 			// Handle Predicate
 			Hop predicateHops = ((IfStatementBlock) current).getPredicateHops();
-			String predicateString = prepareLopsNodeList(predicateHops.get_lops());
+			String predicateString = prepareLopsNodeList(predicateHops.getLops());
 			graphString += predicateString;
 			
 			// handle children
@@ -252,7 +252,7 @@ public class LopGraph
 		}
 		
 		else {
-			ArrayList<Lop> lopsDAG = current.get_lops();
+			ArrayList<Lop> lopsDAG = current.getLops();
 			if (lopsDAG != null && lopsDAG.size() > 0) {
 				Iterator<Lop> iter = lopsDAG.iterator();
 				while (iter.hasNext()) {

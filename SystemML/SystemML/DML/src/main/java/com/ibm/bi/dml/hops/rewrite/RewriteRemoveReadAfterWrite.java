@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,7 +29,7 @@ import com.ibm.bi.dml.parser.DataExpression;
 public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -90,11 +90,11 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 	private void collectPersistentReadWriteOps(Hop hop, HashMap<String,Hop> pWrites, HashMap<String,Hop> pReads) 
 		throws HopsException 
 	{
-		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
+		if( hop.getVisited() == Hop.VisitStatus.DONE )
 			return;
 		
 		//process childs
-		if( hop.getInput().size()>0 )
+		if( !hop.getInput().isEmpty() )
 			for( Hop c : hop.getInput() )
 				collectPersistentReadWriteOps(c, pWrites, pReads);
 		
@@ -112,6 +112,6 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 			}
 		}
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 }

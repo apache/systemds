@@ -318,7 +318,7 @@ public class Dag<N extends Lop>
 			String label = e.getKey();
 			N node = e.getValue();
 
-			if (((Data) node).get_dataType() == DataType.SCALAR) {
+			if (((Data) node).getDataType() == DataType.SCALAR) {
 				// if(DEBUG)
 				// System.out.println("rmvar" + Lops.OPERAND_DELIMITOR + label);
 				// inst.add(new VariableSimpleInstructions("rmvar" +
@@ -380,7 +380,7 @@ public class Dag<N extends Lop>
 			if (node.getExecLocation() == ExecLocation.Data
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.READ
-					&& ((Data) node).get_dataType() == DataType.MATRIX) {
+					&& ((Data) node).getDataType() == DataType.MATRIX) {
 				
 				// "node" is considered as updated ONLY IF the old value is not used any more
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
@@ -408,7 +408,7 @@ public class Dag<N extends Lop>
 			if (node.getExecLocation() == ExecLocation.Data
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.WRITE
-					&& ((Data) node).get_dataType() == DataType.MATRIX
+					&& ((Data) node).getDataType() == DataType.MATRIX
 					&& labelNodeMapping.containsKey(node.getOutputParameters().getLabel()) // check to make sure corresponding (i.e., with the same label/name) transient read is present
 					&& !labelNodeMapping.containsValue(node.getInputs().get(0)) // check to avoid cases where transient read feeds into a transient write 
 				) {
@@ -752,7 +752,7 @@ public class Dag<N extends Lop>
 		for(N n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
-					&& n.get_dataType() == DataType.MATRIX) {
+					&& n.getDataType() == DataType.MATRIX) {
 				
 				if ( !((Data)n).isLiteral() ) {
 					try {
@@ -809,8 +809,8 @@ public class Dag<N extends Lop>
 		if ( in.getExecLocation() == ExecLocation.Data && in.getOutputs().size() == 1
 				&& !((Data)node).isTransient()
 				&& ((Data)in).isTransient()
-				&& ((Data)in).getOutputParameters().isBlocked_representation()
-				&& node.getOutputParameters().isBlocked_representation() ) {
+				&& ((Data)in).getOutputParameters().isBlocked()
+				&& node.getOutputParameters().isBlocked() ) {
 			return false;
 		}
 		
@@ -841,28 +841,28 @@ public class Dag<N extends Lop>
 		if ( node instanceof MapMult ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
 			footprint = AggBinaryOp.footprintInMapper(
-					in1dims.getNum_rows(), in1dims.getNum_cols(), in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
-					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
+					in1dims.getNumRows(), in1dims.getNumCols(), in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
+					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
 					dcInputIndex, false);
 		}
 		else if ( node instanceof PMMJ ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
 			footprint = AggBinaryOp.footprintInMapper(
-					in1dims.getNum_rows(), 1, in1dims.get_rows_in_block(), in1dims.get_cols_in_block(), 
-					in2dims.getNum_rows(), in2dims.getNum_cols(), in2dims.get_rows_in_block(), in2dims.get_cols_in_block(), 
+					in1dims.getNumRows(), 1, in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
+					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
 					dcInputIndex, true);
 		}
 		else if ( node instanceof AppendM ) {
 			footprint = BinaryOp.footprintInMapper(
-					in1dims.getNum_rows(), in1dims.getNum_cols(), 
-					in2dims.getNum_rows(), in2dims.getNum_cols(), 
-					in1dims.get_rows_in_block(), in1dims.get_cols_in_block());
+					in1dims.getNumRows(), in1dims.getNumCols(), 
+					in2dims.getNumRows(), in2dims.getNumCols(), 
+					in1dims.getRowsInBlock(), in1dims.getColsInBlock());
 		}
 		else if ( node instanceof BinaryM ) {
 			footprint = BinaryOp.footprintInMapper(
-					in1dims.getNum_rows(), in1dims.getNum_cols(), 
-					in2dims.getNum_rows(), in2dims.getNum_cols(), 
-					in1dims.get_rows_in_block(), in1dims.get_cols_in_block());
+					in1dims.getNumRows(), in1dims.getNumCols(), 
+					in2dims.getNumRows(), in2dims.getNumCols(), 
+					in1dims.getRowsInBlock(), in1dims.getColsInBlock());
 		}
 		else {
 			// default behavior
@@ -1118,7 +1118,7 @@ public class Dag<N extends Lop>
 					Data dnode = (Data) node;
 					if ( dnode.getOperationType() == OperationTypes.READ ) {
 						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
-						if ( node.get_dataType() == DataType.SCALAR 
+						if ( node.getDataType() == DataType.SCALAR 
 								//TODO: LEO check the following condition is still needed
 								&& node.getOutputParameters().getFile_name() != null ) {
 							// this lop corresponds to reading a scalar from HDFS file
@@ -1491,7 +1491,7 @@ public class Dag<N extends Lop>
 			// TODO: statiko -- check if this condition ever evaluated to TRUE
 			if (node.getExecLocation() == ExecLocation.Data
 					&& ((Data) node).getOperationType() == Data.OperationTypes.READ
-					&& ((Data) node).get_dataType() == DataType.SCALAR 
+					&& ((Data) node).getDataType() == DataType.SCALAR 
 					&& node.getOutputParameters().getFile_name() == null ) {
 				markedNodes.add(node);
 				continue;
@@ -1500,7 +1500,7 @@ public class Dag<N extends Lop>
 			// output scalar instructions and mark nodes for deletion
 			if (node.getExecLocation() == ExecLocation.ControlProgram) {
 
-				if (node.get_dataType() == DataType.SCALAR) {
+				if (node.getDataType() == DataType.SCALAR) {
 					// Output from lops with SCALAR data type must
 					// go into Temporary Variables (Var0, Var1, etc.)
 					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false);
@@ -1665,7 +1665,7 @@ public class Dag<N extends Lop>
 					}
 					else {
 						out = setupNodeOutputs(node, ExecType.CP, false);
-						if ( dnode.get_dataType() == DataType.SCALAR ) {
+						if ( dnode.getDataType() == DataType.SCALAR ) {
 							// processing is same for both transient and persistent scalar writes 
 							writeInst.addAll(out.getLastInstructions());
 							//inst.addAll(out.getLastInstructions());
@@ -1693,7 +1693,7 @@ public class Dag<N extends Lop>
 				}
 				else {
 					// generate a temp label to hold the value that is read from HDFS
-					if ( node.get_dataType() == DataType.SCALAR ) {
+					if ( node.getDataType() == DataType.SCALAR ) {
 						node.getOutputParameters().setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 						String io_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
 								node.getOutputParameters().getFile_name());
@@ -2690,14 +2690,14 @@ public class Dag<N extends Lop>
 	OutputInfo getOutputInfo(N node, boolean cellModeOverride) 
 		throws LopsException 
 	{
-		if ( (node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP) 
+		if ( (node.getDataType() == DataType.SCALAR && node.getExecType() == ExecType.CP) 
 				|| node instanceof FunctionCallCP )
 			return null;
 	
 		OutputInfo oinfo = null;
 		OutputParameters oparams = node.getOutputParameters();
 		
-		if (oparams.isBlocked_representation()) {
+		if (oparams.isBlocked()) {
 			if ( !cellModeOverride )
 				oinfo = OutputInfo.BinaryBlockOutputInfo;
 			else {
@@ -2709,7 +2709,7 @@ public class Dag<N extends Lop>
 				// TODO: ideally, this should be done by having a member variable in Lop 
 				//       which stores the outputInfo.   
 				try {
-					oparams.setDimensions(oparams.getNum_rows(), oparams.getNum_cols(), -1, -1, oparams.getNnz());
+					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz());
 				} catch(HopsException e) {
 					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag ", e);
 				}
@@ -2808,7 +2808,7 @@ public class Dag<N extends Lop>
 		// since outputs are explicitly specified
 		if (node.getExecLocation() != ExecLocation.Data ) 
 		{
-			if (node.get_dataType() == DataType.SCALAR) {
+			if (node.getDataType() == DataType.SCALAR) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 				out.setVarName(oparams.getLabel());
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
@@ -2827,14 +2827,14 @@ public class Dag<N extends Lop>
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
 				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-				int rpb = Integer.parseInt("" + oparams.get_rows_in_block());
-				int cpb = Integer.parseInt("" + oparams.get_cols_in_block());
+				int rpb = Integer.parseInt("" + oparams.getRowsInBlock());
+				int cpb = Integer.parseInt("" + oparams.getColsInBlock());
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 									        oparams.getLabel(),
 											oparams.getFile_name(), 
 											true, 
 											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
-											new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+											new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz())
 										);
 				if(DMLScript.ENABLE_DEBUG_MODE) {
 					createvarInst.setLineNum(node._beginLine);
@@ -2865,7 +2865,7 @@ public class Dag<N extends Lop>
 								getFilePath() + fnOutParams.getLabel(), 
 								true, 
 								OutputInfo.outputInfoToString(getOutputInfo((N)fnOut, false)),
-								new MatrixCharacteristics(fnOutParams.getNum_rows(), fnOutParams.getNum_cols(), fnOutParams.get_rows_in_block().intValue(), fnOutParams.get_cols_in_block().intValue(), fnOutParams.getNnz())
+								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getRowsInBlock(), (int)fnOutParams.getColsInBlock(), fnOutParams.getNnz())
 							);
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							if (node._beginLine != 0)
@@ -2881,7 +2881,7 @@ public class Dag<N extends Lop>
 		// rootNode is of type Data
 		else {
 			
-			if ( node.get_dataType() == DataType.SCALAR ) {
+			if ( node.getDataType() == DataType.SCALAR ) {
 				// generate assignment operations for final and transient writes
 				if ( oparams.getFile_name() == null && !(node instanceof Data && ((Data)node).isPersistentWrite()) ) {
 					String io_inst = prepareAssignVarInstruction(node.getInputs().get(0), node);
@@ -2961,17 +2961,17 @@ public class Dag<N extends Lop>
 						String tempVarName = oparams.getLabel() + "temp";
 						String tempFileName = getFilePath() + "temp" + job_id.getNextID();
 						
-						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
+						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.getDataType(), node.getValueType(), tempFileName, oparams, out.getOutInfo());
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
 						
-						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
-						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+						int rpb = Integer.parseInt(""+oparams.getRowsInBlock());
+						int cpb = Integer.parseInt(""+oparams.getColsInBlock());
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 													tempVarName, 
 													tempFileName, 
 													true, 
 													OutputInfo.outputInfoToString(out.getOutInfo()), 
-													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz())
 												);
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							createvarInst.setLineNum(node._beginLine);
@@ -3025,8 +3025,8 @@ public class Dag<N extends Lop>
 						//String createInst = prepareVariableInstruction("createvar", node);
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
 
-						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
-						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+						int rpb = Integer.parseInt(""+oparams.getRowsInBlock());
+						int cpb = Integer.parseInt(""+oparams.getColsInBlock());
 						Lop fnameLop = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
 						String fnameStr = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral()) ? 
 								           fnameLop.getOutputParameters().getLabel() 
@@ -3071,7 +3071,7 @@ public class Dag<N extends Lop>
 													tempFileName, 
 													false, 
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
-													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz())
 												);
 
 							//NOTE: no instruction patching because final write from cp instruction
@@ -3098,7 +3098,7 @@ public class Dag<N extends Lop>
 									                fnameStr, 
 									                false, 
 									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
-									                new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+									                new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz())
 								                 );
 							// remove the variable
 							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(
@@ -3132,8 +3132,8 @@ public class Dag<N extends Lop>
 						if (inputLop.getExecLocation() == ExecLocation.Data
 								&& inputLop.getOutputs().size() == 1
 								&& ((Data)inputLop).isTransient() 
-								&& ((Data)inputLop).getOutputParameters().isBlocked_representation()
-								&& node.getOutputParameters().isBlocked_representation() ) {
+								&& ((Data)inputLop).getOutputParameters().isBlocked()
+								&& node.getOutputParameters().isBlocked() ) {
 							// transient read feeding into persistent write in blocked representation
 							// simply, move the file
 							currInstr = (CPInstruction) VariableCPInstruction.prepareMoveInstruction(
@@ -3223,7 +3223,7 @@ public class Dag<N extends Lop>
 				if (node.getExecLocation() == ExecLocation.Data
 						&& ((Data) node).isTransient()
 						&& ((Data) node).getOperationType() == OperationTypes.WRITE
-						&& ((Data) node).get_dataType() == DataType.MATRIX) {
+						&& ((Data) node).getDataType() == DataType.MATRIX) {
 					// no computation, just a copy
 					if (node.getInputs().get(0).getExecLocation() == ExecLocation.Data
 							&& ((Data) node.getInputs().get(0)).isTransient()
@@ -3425,11 +3425,13 @@ public class Dag<N extends Lop>
 	 * @return none
 	 */
 	public String getString(byte[] arr) {
-		String s = "";
-		for (int i = 0; i < arr.length; i++)
-			s = s + "," + Byte.toString(arr[i]);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < arr.length; i++) {
+			sb.append(",");
+			sb.append(Byte.toString(arr[i]));
+		}
 
-		return s;
+		return sb.toString();
 	}
 
 	/**
@@ -3439,16 +3441,16 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 	private String getCSVString(ArrayList<String> inputStrings) {
-		String s = "";
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < inputStrings.size(); i++) {
-			if (inputStrings.get(i) != null) {
-				if (s.compareTo("") == 0)
-					s = inputStrings.get(i);
-				else
-					s += Lop.INSTRUCTION_DELIMITOR + inputStrings.get(i);
+			String tmp = inputStrings.get(i);
+			if( tmp != null ) {
+				if( sb.length()>0 )
+					sb.append(Lop.INSTRUCTION_DELIMITOR);
+				sb.append( tmp ); 
 			}
 		}
-		return s;
+		return sb.toString();
 
 	}
 
@@ -3715,7 +3717,7 @@ public class Dag<N extends Lop>
 				if (node instanceof Unary && node.getInputs().size() > 1) {
 					int index = 0;
 					for (int i = 0; i < node.getInputs().size(); i++) {
-						if (node.getInputs().get(i).get_dataType() == DataType.SCALAR) {
+						if (node.getInputs().get(i).getDataType() == DataType.SCALAR) {
 							index = i;
 							break;
 						}
@@ -3978,7 +3980,7 @@ public class Dag<N extends Lop>
 
 				int index = 0;
 				for (int i1 = 0; i1 < node.getInputs().size(); i1++) {
-					if (node.getInputs().get(i1).get_dataType() == DataType.SCALAR) {
+					if (node.getInputs().get(i1).getDataType() == DataType.SCALAR) {
 						index = i1;
 						break;
 					}
@@ -4069,12 +4071,12 @@ public class Dag<N extends Lop>
 		// treat rand as an input.
 		if (node.getType() == Type.DataGen && execNodes.contains(node)
 				&& !nodeIndexMapping.containsKey(node)) {
-			numRows.add(node.getOutputParameters().getNum_rows());
-			numCols.add(node.getOutputParameters().getNum_cols());
+			numRows.add(node.getOutputParameters().getNumRows());
+			numCols.add(node.getOutputParameters().getNumCols());
 			numRowsPerBlock.add(node.getOutputParameters()
-					.get_rows_in_block());
+					.getRowsInBlock());
 			numColsPerBlock.add(node.getOutputParameters()
-					.get_cols_in_block());
+					.getColsInBlock());
 			inputStrings.add(node.getInstructions(inputStrings.size(),
 					inputStrings.size()));
 			if(DMLScript.ENABLE_DEBUG_MODE) {
@@ -4088,18 +4090,18 @@ public class Dag<N extends Lop>
 
 		// && ( !(node.getExecLocation() == ExecLocation.ControlProgram)
 		// || (node.getExecLocation() == ExecLocation.ControlProgram &&
-		// node.get_dataType() != DataType.SCALAR )
+		// node.getDataType() != DataType.SCALAR )
 		// )
 		// get input file names
 		if (!execNodes.contains(node)
 				&& !nodeIndexMapping.containsKey(node)
 				&& !(node.getExecLocation() == ExecLocation.Data)
 				&& (!(node.getExecLocation() == ExecLocation.ControlProgram && node
-						.get_dataType() == DataType.SCALAR))
+						.getDataType() == DataType.SCALAR))
 				|| (!execNodes.contains(node)
 						&& node.getExecLocation() == ExecLocation.Data
 						&& ((Data) node).getOperationType() == Data.OperationTypes.READ
-						&& ((Data) node).get_dataType() == DataType.MATRIX && !nodeIndexMapping
+						&& ((Data) node).getDataType() == DataType.MATRIX && !nodeIndexMapping
 						.containsKey(node))) {
 			if (node.getOutputParameters().getFile_name() != null) {
 				inputStrings.add(node.getOutputParameters().getFile_name());
@@ -4115,16 +4117,16 @@ public class Dag<N extends Lop>
 			inputLabels.add(node.getOutputParameters().getLabel());
 			inputLops.add(node);
 
-			numRows.add(node.getOutputParameters().getNum_rows());
-			numCols.add(node.getOutputParameters().getNum_cols());
+			numRows.add(node.getOutputParameters().getNumRows());
+			numCols.add(node.getOutputParameters().getNumCols());
 			numRowsPerBlock.add(node.getOutputParameters()
-					.get_rows_in_block());
+					.getRowsInBlock());
 			numColsPerBlock.add(node.getOutputParameters()
-					.get_cols_in_block());
+					.getColsInBlock());
 
 			InputInfo nodeInputInfo = null;
 			// Check if file format type is binary or text and update infos
-			if (node.getOutputParameters().isBlocked_representation()) {
+			if (node.getOutputParameters().isBlocked()) {
 				if (node.getOutputParameters().getFormat() == Format.BINARY)
 					nodeInputInfo = InputInfo.BinaryBlockInputInfo;
 				else 
@@ -4222,7 +4224,7 @@ public class Dag<N extends Lop>
 						&& !rootNodes.contains(node)
 						&& !(node.getExecLocation() == ExecLocation.Data
 								&& ((Data) node).getOperationType() == OperationTypes.READ && ((Data) node)
-								.get_dataType() == DataType.MATRIX)) {
+								.getDataType() == DataType.MATRIX)) {
 
 					if (cnt < node.getOutputs().size()) {
 						if (include_intermediate)

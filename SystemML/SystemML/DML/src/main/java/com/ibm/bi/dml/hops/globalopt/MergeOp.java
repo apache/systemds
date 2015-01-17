@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.lops.LopsException;
 public class MergeOp extends CrossBlockOp 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected Hop rightInput;
@@ -34,11 +34,11 @@ public class MergeOp extends CrossBlockOp
 	public MergeOp(Hop leftInput, Hop rightInput, Hop output) {
 		super(leftInput, output);
 		//redundant but more explicit
-		this.leftDim1 = leftInput.get_dim1();
-		this.rightDim2 = leftInput.get_dim2();
+		this.leftDim1 = leftInput.getDim1();
+		this.rightDim2 = leftInput.getDim2();
 		this.rightInput = rightInput;
-		this.rightDim1 = rightInput.get_dim1();
-		this.rightDim2 = rightInput.get_dim2();
+		this.rightDim1 = rightInput.getDim1();
+		this.rightDim2 = rightInput.getDim2();
 	}
 
 	@Override
@@ -90,12 +90,12 @@ public class MergeOp extends CrossBlockOp
 	}
 
 	@Override
-	public long get_dim1() {
+	public long getDim1() {
 		return Math.max(this.leftDim1, this.rightDim1);
 	}
 
 	@Override
-	public long get_dim2() {
+	public long getDim2() {
 		return Math.max(this.leftDim2, this.rightDim2);
 	}
 	
@@ -119,12 +119,12 @@ public class MergeOp extends CrossBlockOp
 	@Override
 	public void propagateBlockSize() {
 		super.propagateBlockSize();
-		long rowsPerBlock = this.get_rows_in_block();
-		long colsPerBlock = this.get_cols_in_block();
+		long rowsPerBlock = this.getRowsInBlock();
+		long colsPerBlock = this.getColsInBlock();
 		Hop rightInput = this.getRightInput();
 		if (rightInput != null) {
-			rightInput.set_cols_in_block(colsPerBlock);
-			rightInput.set_rows_in_block(rowsPerBlock);
+			rightInput.setColsInBlock(colsPerBlock);
+			rightInput.setRowsInBlock(rowsPerBlock);
 		}
 	}
 	
@@ -132,19 +132,19 @@ public class MergeOp extends CrossBlockOp
 	
 	@Override
 	public void refreshSizeInformation() {
-		this.leftDim1 = leftInput.get_dim1();
-		this.leftDim2 = leftInput.get_dim2();
+		this.leftDim1 = leftInput.getDim1();
+		this.leftDim2 = leftInput.getDim2();
 		
-		this.rightDim1 = rightInput.get_dim1();
-		this.rightDim2 = rightInput.get_dim2();
+		this.rightDim1 = rightInput.getDim1();
+		this.rightDim2 = rightInput.getDim2();
 	}
 	
 	public Lop constructLops() throws HopsException, LopsException {
-		if(get_lops() != null) {
-			return get_lops();
+		if(getLops() != null) {
+			return getLops();
 		} else {
 			MergeLop mergeLop = new MergeLop();
-			set_lops(mergeLop);
+			setLops(mergeLop);
 			
 			return mergeLop;
 		}

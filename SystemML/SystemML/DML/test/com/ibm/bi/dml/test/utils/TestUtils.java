@@ -95,8 +95,8 @@ public class TestUtils
 		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
 		expactation: for (int i = 0; i < expecteds.length; i++) {
 			for (int j = 0; j < actuals.length; j++) {
-				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
-					foundIndexes.add(new Integer(j));
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(Integer.valueOf(j))) {
+					foundIndexes.add(Integer.valueOf(j));
 					continue expactation;
 				}
 			}
@@ -120,8 +120,8 @@ public class TestUtils
 		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
 		expactation: for (int i = 0; i < expecteds.length; i++) {
 			for (int j = 0; j < actuals.length; j++) {
-				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
-					foundIndexes.add(new Integer(j));
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(Integer.valueOf(j))) {
+					foundIndexes.add(Integer.valueOf(j));
 					continue expactation;
 				}
 			}
@@ -145,8 +145,8 @@ public class TestUtils
 		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
 		expactation: for (int i = 0; i < expecteds.length; i++) {
 			for (int j = 0; j < actuals.length; j++) {
-				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
-					foundIndexes.add(new Integer(j));
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(Integer.valueOf(j))) {
+					foundIndexes.add(Integer.valueOf(j));
 					continue expactation;
 				}
 			}
@@ -533,7 +533,7 @@ public class TestUtils
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
 				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
-					b = new Boolean(Boolean.parseBoolean(line));
+					b = Boolean.valueOf(Boolean.parseBoolean(line));
 				}
 				outIn.close();
 			}

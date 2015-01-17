@@ -35,11 +35,11 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
 		
 		// TODO: Relational operations need not have value type checking
-		ValueType vt1 = in1.get_valueType();
-		DataType dt1 = in1.get_dataType();
-		ValueType vt2 = in2.get_valueType();
-		DataType dt2 = in2.get_dataType();
-		DataType dt3 = out.get_dataType();
+		ValueType vt1 = in1.getValueType();
+		DataType dt1 = in1.getDataType();
+		ValueType vt2 = in2.getValueType();
+		DataType dt2 = in2.getDataType();
+		DataType dt3 = out.getDataType();
 		
 		//if ( vt3 != ValueType.BOOLEAN )
 		//	throw new DMLRuntimeException("Unexpected ValueType in RelationalCPInstruction: " + str);
@@ -56,11 +56,11 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 			|| dt2 == DataType.MATRIX) 
 		   && dt3 != DataType.MATRIX)
 			throw new DMLRuntimeException("Element-wise matrix operations between variables "
-										  + in1.get_name()
+										  + in1.getName()
 										  + " and "
-										  + in2.get_name()
+										  + in2.getName()
 										  + " must produce a matrix, which "
-										  + out.get_name()
+										  + out.getName()
 										  + " is not");
 		
 		Operator operator = 

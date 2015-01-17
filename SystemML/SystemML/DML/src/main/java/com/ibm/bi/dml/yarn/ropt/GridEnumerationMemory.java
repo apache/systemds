@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 public class GridEnumerationMemory extends GridEnumeration
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final int DEFAULT_NSTEPS = 15;
@@ -154,7 +154,7 @@ public class GridEnumerationMemory extends GridEnumeration
 	 */
 	private void getMemoryEstimates( Hop hop, ArrayList<Long> mem )
 	{
-		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
+		if( hop.getVisited() == Hop.VisitStatus.DONE )
 			return;
 
 		//process childs
@@ -165,7 +165,7 @@ public class GridEnumerationMemory extends GridEnumeration
 		mem.add( (long)( (hop.getMemEstimate()+DEFAULT_MEM_ADD)
 				          /OptimizerUtils.MEM_UTIL_FACTOR) );
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
 }

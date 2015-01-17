@@ -175,7 +175,7 @@ public class VariableCPInstruction extends CPInstruction
 	// Checks if this instructon is a remove instruction for varName
 	public boolean isRemoveVariable(String varName) {
 		if ( opcode == VariableOperationCode.RemoveVariable || opcode == VariableOperationCode.RemoveVariableAndFile) {
-			if ( input1.get_name().equalsIgnoreCase(varName))
+			if ( input1.getName().equalsIgnoreCase(varName))
 				return true;
 		}
 		return false;
@@ -223,7 +223,7 @@ public class VariableCPInstruction extends CPInstruction
 	public String getOutputVariableName(){
 		String ret = null;
 		if( output != null )
-			ret = output.get_name();
+			ret = output.getName();
 		return ret;
 	}
 
@@ -340,8 +340,8 @@ public class VariableCPInstruction extends CPInstruction
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
-			//if ( in1.get_valueType() != in2.get_valueType() ) 
-			//	throw new DMLRuntimeException("Value type mismatch while assigning variables ("+in1.get_valueType()+", "+in2.get_valueType()+").");
+			//if ( in1.getValueType() != in2.getValueType() ) 
+			//	throw new DMLRuntimeException("Value type mismatch while assigning variables ("+in1.getValueType()+", "+in2.getValueType()+").");
 			break;
 			
 		case CopyVariable:
@@ -364,7 +364,7 @@ public class VariableCPInstruction extends CPInstruction
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			// second argument must be a boolean
-			if ( in2.get_valueType() != ValueType.BOOLEAN)
+			if ( in2.getValueType() != ValueType.BOOLEAN)
 				throw new DMLRuntimeException("Unexpected value type for second argument in: " + str);
 			break;
 			
@@ -404,7 +404,7 @@ public class VariableCPInstruction extends CPInstruction
 			
 			VariableCPInstruction inst = new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str); 
 			
-			if ( in3.get_name().equalsIgnoreCase("csv") ) {
+			if ( in3.getName().equalsIgnoreCase("csv") ) {
 				boolean hasHeader = Boolean.parseBoolean(parts[4]);
 				String delim = parts[5];
 				boolean sparse = Boolean.parseBoolean(parts[6]);
@@ -444,37 +444,37 @@ public class VariableCPInstruction extends CPInstruction
 		{ 
 		case CreateVariable:
 			
-			if ( input1.get_dataType() == DataType.MATRIX ) {
+			if ( input1.getDataType() == DataType.MATRIX ) {
 				//create new variable for symbol table and cache
 				//(existing objects gets cleared through rmvar instructions)
-				String fname = input2.get_name();
+				String fname = input2.getName();
 				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(input3.get_name(), input3.get_valueType(), true)).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
+				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(input3.getName(), input3.getValueType(), true)).getBooleanValue();; //!(input1.getName().startsWith("p")); //    
 				if ( overrideFileName ) {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}
 				
-				MatrixObject mobj = new MatrixObject(input1.get_valueType(), fname );
-				mobj.setVarName(input1.get_name());
+				MatrixObject mobj = new MatrixObject(input1.getValueType(), fname );
+				mobj.setVarName(input1.getName());
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
 				mobj.setFileFormatProperties(formatProperties);
 				
-				ec.setVariable(input1.get_name(), mobj);
+				ec.setVariable(input1.getName(), mobj);
 			}
-			else if ( input1.get_dataType() == DataType.SCALAR ){
+			else if ( input1.getDataType() == DataType.SCALAR ){
 				ScalarObject sobj = null;
-				ec.setScalarOutput(input1.get_name(), sobj);
+				ec.setScalarOutput(input1.getName(), sobj);
 			}
 			else {
-				throw new DMLRuntimeException("Unexpected data type: " + input1.get_dataType());
+				throw new DMLRuntimeException("Unexpected data type: " + input1.getDataType());
 			}
 			break;
 		
 		case AssignVariable:
 			// assign value of variable to the other
-			ec.setScalarOutput(input2.get_name(), ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral()));			
+			ec.setScalarOutput(input2.getName(), ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral()));			
 			break;
 			
 		case CopyVariable:
@@ -486,13 +486,13 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case RemoveVariable:
-			processRemoveVariableInstruction(ec, input1.get_name());
+			processRemoveVariableInstruction(ec, input1.getName());
 			break;
 			
 		case RemoveVariableAndFile:
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
-			boolean del = ( (BooleanObject) ec.getScalarInput(input2.get_name(), input2.get_valueType(), true) ).getBooleanValue();
-			MatrixObject m = (MatrixObject) ec.removeVariable(input1.get_name());
+			boolean del = ( (BooleanObject) ec.getScalarInput(input2.getName(), input2.getValueType(), true) ).getBooleanValue();
+			MatrixObject m = (MatrixObject) ec.removeVariable(input1.getName());
 			
 			if ( !del ) {
 				// HDFS file should be retailed after clearData(), 
@@ -502,13 +502,13 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			else {
 				//throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
-				//cleanDataOnHDFS(pb, input1.get_name());
+				//cleanDataOnHDFS(pb, input1.getName());
 				cleanDataOnHDFS( m );
 			}
 			
 			// check if in-memory object can be cleaned up
 			if ( !ec.getVariables().hasReferences(m) ) {
-				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
+				// no other variable in the symbol table points to the same Data object as that of input1.getName()
 				
 				//remove matrix object from cache
 				m.clearData();
@@ -517,33 +517,33 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
-			MatrixBlock mBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock mBlock = ec.getMatrixInput(input1.getName());
 			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 			double value = mBlock.getValue(0,0);
-			ec.releaseMatrixInput(input1.get_name());
-			ec.setScalarOutput(output.get_name(), new DoubleObject(value));
+			ec.releaseMatrixInput(input1.getName());
+			ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			break;
 		case CastAsMatrixVariable:{
-			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 			MatrixBlock out = new MatrixBlock(1,1,false);
 			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
-			ec.setMatrixOutput(output.get_name(), out);
+			ec.setMatrixOutput(output.getName(), out);
 			break;
 		}
 		case CastAsDoubleVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-			ec.setScalarOutput(output.get_name(), new DoubleObject(scalarInput.getDoubleValue()));
+			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+			ec.setScalarOutput(output.getName(), new DoubleObject(scalarInput.getDoubleValue()));
 			break;
 		}
 		case CastAsIntegerVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-			ec.setScalarOutput(output.get_name(), new IntObject(scalarInput.getLongValue()));
+			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+			ec.setScalarOutput(output.getName(), new IntObject(scalarInput.getLongValue()));
 			break;
 		}
 		case CastAsBooleanVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-			ec.setScalarOutput(output.get_name(), new BooleanObject(scalarInput.getBooleanValue()));
+			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+			ec.setScalarOutput(output.getName(), new BooleanObject(scalarInput.getBooleanValue()));
 			break;
 		}
 		
@@ -551,16 +551,16 @@ public class VariableCPInstruction extends CPInstruction
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick a value from "temp3" and assign to Var0
 			
-			MatrixObject mat = (MatrixObject)ec.getVariable(input1.get_name());
+			MatrixObject mat = (MatrixObject)ec.getVariable(input1.getName());
 			String fname = mat.getFileName();
 			MetaData mdata = mat.getMetaData();
-			ScalarObject pickindex = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
+			ScalarObject pickindex = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
 			
 			if ( mdata != null ) {
 				try {
 					double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
 					ScalarObject result = (ScalarObject) new DoubleObject(picked);
-					ec.setVariable(output.get_name(), result);
+					ec.setVariable(output.getName(), result);
 				} catch (Exception e ) {
 					throw new DMLRuntimeException(e);
 				}
@@ -571,32 +571,32 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case InMemValuePick:
-			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 
-			if ( input2.get_dataType() == DataType.SCALAR ) {
-				ScalarObject quantile = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
+			if ( input2.getDataType() == DataType.SCALAR ) {
+				ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
 				double picked = matBlock.pickValue(quantile.getDoubleValue());
-				ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
+				ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
 			} 
 			else {
-				MatrixBlock quantiles = ec.getMatrixInput(input2.get_name());
+				MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
 				MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
 				quantiles = null;
-				ec.releaseMatrixInput(input2.get_name());
-				ec.setMatrixOutput(output.get_name(), resultBlock);
+				ec.releaseMatrixInput(input2.getName());
+				ec.setMatrixOutput(output.getName(), resultBlock);
 			}
 			matBlock = null;
-			ec.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input1.getName());
 			break;
 			
 		case InMemMedian:
-			double picked = ec.getMatrixInput(input1.get_name()).median();
-			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
-			ec.releaseMatrixInput(input1.get_name());
+			double picked = ec.getMatrixInput(input1.getName()).median();
+			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
+			ec.releaseMatrixInput(input1.getName());
 			break;
 		
 		case Median:
-			MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.get_name());
+			MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.getName());
 			String fname1 = mat1.getFileName();
 			MetaData mdata1 = mat1.getMetaData();
 			
@@ -605,7 +605,7 @@ public class VariableCPInstruction extends CPInstruction
 					double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
 					//double picked = MapReduceTool.pickValue(fname1, (NumItemsByEachReducerMetaData) mdata1, 0.5);
 					ScalarObject result = (ScalarObject) new DoubleObject(median);
-					ec.setVariable(output.get_name(), result);
+					ec.setVariable(output.getName(), result);
 				} catch (Exception e ) {
 					throw new DMLRuntimeException(e);
 				}
@@ -616,17 +616,17 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case InMemIQM:
-			MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 			double iqm = matBlock1.interQuartileMean();
 			
 			matBlock1 = null;
-			ec.releaseMatrixInput(input1.get_name());
-			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(iqm));
+			ec.releaseMatrixInput(input1.getName());
+			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(iqm));
 			break;
 		
 		case MRIQM:
-			MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.get_name());
-			ScalarObject iqsum = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
+			MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.getName());
+			ScalarObject iqsum = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
 			
 			double[] q25 = null;
 			double[] q75 = null;
@@ -637,7 +637,7 @@ public class VariableCPInstruction extends CPInstruction
 				throw new DMLRuntimeException(e1);
 			}
 			
-			double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.get_name()));
+			double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.getName()));
 			double q25d = sumwt*0.25;
 			double q75d = sumwt*0.75;
 			
@@ -650,36 +650,36 @@ public class VariableCPInstruction extends CPInstruction
 			
 			double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
 
-			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(mriqm));
+			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(mriqm));
 			break;
 			
 		case Read:
 			ScalarObject res = null;
 			try {
-				switch(input1.get_valueType()) {
+				switch(input1.getValueType()) {
 				case DOUBLE:
-					double d = MapReduceTool.readDoubleFromHDFSFile(input2.get_name());
+					double d = MapReduceTool.readDoubleFromHDFSFile(input2.getName());
 					res = (ScalarObject) new DoubleObject(d);
 					break;
 				case INT:
-					long i = MapReduceTool.readIntegerFromHDFSFile(input2.get_name());
+					long i = MapReduceTool.readIntegerFromHDFSFile(input2.getName());
 					res = (ScalarObject) new IntObject(i);
 					break;
 				case BOOLEAN:
-					boolean b = MapReduceTool.readBooleanFromHDFSFile(input2.get_name());
+					boolean b = MapReduceTool.readBooleanFromHDFSFile(input2.getName());
 					res = (ScalarObject) new BooleanObject(b);
 					break;
 				case STRING:
-					String s = MapReduceTool.readStringFromHDFSFile(input2.get_name());
+					String s = MapReduceTool.readStringFromHDFSFile(input2.getName());
 					res = (ScalarObject) new StringObject(s);
 					break;
 					default:
-						throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") while processing readScalar instruction.");
+						throw new DMLRuntimeException("Invalid value type (" + input1.getValueType() + ") while processing readScalar instruction.");
 				}
 			} catch ( IOException e ) {
 				throw new DMLRuntimeException(e);
 			}
-			ec.setScalarOutput(input1.get_name(), res);
+			ec.setScalarOutput(input1.getName(), res);
 			
 			break;
 			
@@ -688,29 +688,29 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case SetFileName:
-			Data data = ec.getVariable(input1.get_name());
+			Data data = ec.getVariable(input1.getName());
 			if ( data.getDataType() == DataType.MATRIX ) {
-				if ( input3.get_name().equalsIgnoreCase("remote") ) {
-					((MatrixObject)data).setFileName(input2.get_name());
+				if ( input3.getName().equalsIgnoreCase("remote") ) {
+					((MatrixObject)data).setFileName(input2.getName());
 				}
 				else {
-					throw new DMLRuntimeException("Invalid location (" + input3.get_name() + ") in SetFileName instruction: " + instString);
+					throw new DMLRuntimeException("Invalid location (" + input3.getName() + ") in SetFileName instruction: " + instString);
 				}
 			} else{
-				throw new DMLRuntimeException("Invalid data type (" + input1.get_dataType() + ") in SetFileName instruction: " + instString);
+				throw new DMLRuntimeException("Invalid data type (" + input1.getDataType() + ") in SetFileName instruction: " + instString);
 			}
 			break;
 			
 		case SequenceIncrement:
-			ScalarObject fromObj = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-			ScalarObject toObj = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
+			ScalarObject fromObj = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+			ScalarObject toObj = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
 			double ret = Double.NaN;
 			if ( fromObj.getDoubleValue() > toObj.getDoubleValue() )
 				ret = -1.0;
 			else
 				ret = 1.0;
 			ScalarObject incrObj = (ScalarObject) new DoubleObject(ret);
-			ec.setVariable(output.get_name(), incrObj);
+			ec.setVariable(output.getName(), incrObj);
 
 			break;
 			
@@ -730,19 +730,19 @@ public class VariableCPInstruction extends CPInstruction
 	 */
 	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// example instruction: mvvar <srcVar> <destFile> <format>
-		if ( ec.getVariable(input1.get_name()) == null ) 
-			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+		if ( ec.getVariable(input1.getName()) == null ) 
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.getName() + ", while processing instruction " +this.toString());
 		
-		MatrixObject mo = (MatrixObject) ec.getVariable(input1.get_name());
-		if ( input3.get_name().equalsIgnoreCase("binaryblock") ) {
-			boolean success = mo.moveData(input2.get_name(), input3.get_name());
+		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
+		if ( input3.getName().equalsIgnoreCase("binaryblock") ) {
+			boolean success = mo.moveData(input2.getName(), input3.getName());
 			if (!success) {
-				throw new DMLRuntimeException("Failed to move var " + input1.get_name() + " to file " + input2.get_name() + ".");
+				throw new DMLRuntimeException("Failed to move var " + input1.getName() + " to file " + input2.getName() + ".");
 			}
 		}
 		else 
 			throw new DMLRuntimeException("Unexpected formats while copying: from blocks [" 
-						+ mo.getNumRowsPerBlock() + "," + mo.getNumColumnsPerBlock() + "] to " + input3.get_name());
+						+ mo.getNumRowsPerBlock() + "," + mo.getNumColumnsPerBlock() + "] to " + input3.getName());
 	}
 	
 	/**
@@ -754,13 +754,13 @@ public class VariableCPInstruction extends CPInstruction
 	 */
 	private void processCopyInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// get source variable 
-		Data dd = ec.getVariable(input1.get_name());		
+		Data dd = ec.getVariable(input1.getName());		
 			
 		if ( dd == null ) 
-			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.getName() + ", while processing instruction " +this.toString());
 			
 		// remove existing variable bound to target name
-		Data input2_data = ec.removeVariable(input2.get_name());
+		Data input2_data = ec.removeVariable(input2.getName());
 			
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if ( input2_data != null && input2_data instanceof MatrixObject ) 
@@ -776,7 +776,7 @@ public class VariableCPInstruction extends CPInstruction
 			}
 		}
 		// do the actual copy!
-		ec.setVariable(input2.get_name(), dd);
+		ec.setVariable(input2.getName(), dd);
 	}
 	
 	/**
@@ -792,14 +792,14 @@ public class VariableCPInstruction extends CPInstruction
 		throws DMLRuntimeException 
 	{
 		//get filename (literal or variable expression)
-		String fname = ec.getScalarInput(input2.get_name(), ValueType.STRING, input2.isLiteral()).getStringValue();
+		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
 		
-		if ( input1.get_dataType() == DataType.SCALAR ) {
+		if ( input1.getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);
 		}
 		else 
 		{
-			String outFmt = input3.get_name();
+			String outFmt = input3.getName();
 			
 			if (outFmt.equalsIgnoreCase("matrixmarket")) {
 				writeMMFile(ec, fname);
@@ -809,7 +809,7 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			else {
 				// Default behavior
-				MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+				MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
 				mo.exportData(fname, outFmt);
 			}
 		}
@@ -856,7 +856,7 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeCSVFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
 		String outFmt = "csv";
 		
 		if(mo.isDirty()) {
@@ -895,7 +895,7 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeMMFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
 		String outFmt = "matrixmarket";
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
@@ -928,9 +928,9 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+		ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 		try {
-			switch ( input1.get_valueType() ) {
+			switch ( input1.getValueType() ) {
 			case DOUBLE:
 				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), fname);
 				break;
@@ -944,10 +944,10 @@ public class VariableCPInstruction extends CPInstruction
 				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), fname);
 				break;
 			default:
-				throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
+				throw new DMLRuntimeException("Invalid value type (" + input1.getValueType() + ") in writeScalar instruction: " + instString);
 			}
 		  // write out .mtd file
-		  MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.get_valueType());
+		  MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
 		} catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}
@@ -1063,7 +1063,7 @@ public class VariableCPInstruction extends CPInstruction
 			|| opcode == VariableOperationCode.SetFileName )
 		{
 			//replace in-memory instruction
-			input2.set_name(input2.get_name().replaceAll(pattern, replace));
+			input2.set_name(input2.getName().replaceAll(pattern, replace));
 			int pos = 3;
 		
 			String[] parts = instString.split(Lop.OPERAND_DELIMITOR);

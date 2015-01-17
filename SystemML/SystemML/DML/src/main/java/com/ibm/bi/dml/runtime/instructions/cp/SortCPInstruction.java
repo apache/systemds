@@ -77,21 +77,21 @@ public class SortCPInstruction extends UnaryCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//acquire inputs matrices
-		MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 		MatrixBlock wtBlock = null;
  		if (input2 != null) {
-			wtBlock = ec.getMatrixInput(input2.get_name());
+			wtBlock = ec.getMatrixInput(input2.getName());
 		}
 		
  		//process core instruction
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
 		
 		//release inputs
-		ec.releaseMatrixInput(input1.get_name());
+		ec.releaseMatrixInput(input1.getName());
 		if (input2 != null)
-			ec.releaseMatrixInput(input2.get_name());
+			ec.releaseMatrixInput(input2.getName());
 		
 		//set and release output
-		ec.setMatrixOutput(output.get_name(), resultBlock);
+		ec.setMatrixOutput(output.getName(), resultBlock);
 	}
 }

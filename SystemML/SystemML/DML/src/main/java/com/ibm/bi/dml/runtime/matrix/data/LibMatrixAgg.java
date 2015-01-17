@@ -362,7 +362,7 @@ public class LibMatrixAgg
 		for( int i=0, cix=0; i<rlen; i++, cix+=n )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();
@@ -410,7 +410,7 @@ public class LibMatrixAgg
 		for( int i=0; i<rlen; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();
@@ -531,7 +531,7 @@ public class LibMatrixAgg
 		for( int i=0; i<rlen-1; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();
@@ -614,7 +614,7 @@ public class LibMatrixAgg
 		for( int i=0; i<rlen; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();
@@ -1186,7 +1186,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1216,7 +1216,7 @@ public class LibMatrixAgg
 		for( int i=0, cix=0; i<m; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1247,7 +1247,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1276,7 +1276,7 @@ public class LibMatrixAgg
 		for( int i=0, ix=0; i<m; i++, ix+=n )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1302,7 +1302,7 @@ public class LibMatrixAgg
 	{
 		for( int i=0; i<m; i++ ) {
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 ) 
+			if( arow!=null && !arow.isEmpty() ) 
 			{
 				double val = arow.get( i );
 				kplus.execute2(kbuff, val);
@@ -1328,7 +1328,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1361,7 +1361,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1396,7 +1396,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1420,7 +1420,7 @@ public class LibMatrixAgg
 		for( int i=0, cix=0; i<m; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1454,7 +1454,7 @@ public class LibMatrixAgg
 		for( int i=0, cix=0; i<m; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1508,7 +1508,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1546,7 +1546,7 @@ public class LibMatrixAgg
 			
 			kbuff.set(0, 0); //reset buffer
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1586,7 +1586,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ ) 
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1599,7 +1599,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
@@ -1635,7 +1635,7 @@ public class LibMatrixAgg
 		for( int i=0; i<m; i++ )
 		{
 			SparseRow arow = a[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();

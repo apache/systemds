@@ -213,7 +213,6 @@ public class ReaderTextCSV extends MatrixReader
 		String value = null;
 		
 		String escapedDelim = Pattern.quote(delim);
-		MatrixBlock dest = new MatrixBlock();
 		String cellStr = null;
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
@@ -242,7 +241,7 @@ public class ReaderTextCSV extends MatrixReader
 					br.close();
 			}
 		}
-		dest = new MatrixBlock(nrow, ncol, true);
-		return dest;
+		
+		return new MatrixBlock(nrow, ncol, true);
 	}
 }

@@ -547,9 +547,9 @@ public class RunMRJobs
 		for(int i=0; i < stats.length; i++ ) {
 			// check if the input dimensions are smaller than the specified number of blocks
 			if ( stats[i].numRows != -1
-					&& stats[i].numRows <= numBlocks * DMLTranslator.DMLBlockSize
+					&& stats[i].numRows <= (long)numBlocks * DMLTranslator.DMLBlockSize
 					&& stats[i].numColumns != -1
-					&& stats[i].numColumns <= numBlocks * DMLTranslator.DMLBlockSize) {
+					&& stats[i].numColumns <= (long)numBlocks * DMLTranslator.DMLBlockSize) {
 				continue;
 			}
 			else 
@@ -628,13 +628,13 @@ public class RunMRJobs
 				RandInstruction lrand = (RandInstruction)ldgInst; 
 				
 				//MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
-				MatrixBlock mb = MatrixBlock.randOperations((int)lrand.rows, (int)lrand.cols, lrand.rowsInBlock, lrand.colsInBlock, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
+				MatrixBlock mb = MatrixBlock.randOperations((int)lrand.getRows(), (int)lrand.getCols(), lrand.getRowsInBlock(), lrand.getColsInBlock(), lrand.getSparsity(), lrand.getMinValue(), lrand.getMaxValue(), lrand.getProbabilityDensityFunction(), lrand.getSeed());
 				for( int i=0; i<results.length; i++ )
 					if( lrand.output == results[i] )
 					{
 						outputMatrices[i].acquireModify( mb );
 						outputMatrices[i].release();
-						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lrand.rowsInBlock, lrand.colsInBlock, mb.getNonZeros());
+						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lrand.getRowsInBlock(), lrand.getColsInBlock(), mb.getNonZeros());
 					}
 			}
 			else if( ldgInst instanceof SeqInstruction )
@@ -646,7 +646,7 @@ public class RunMRJobs
 					{
 						outputMatrices[i].acquireModify( mb );
 						outputMatrices[i].release();
-						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lseq.rowsInBlock, lseq.colsInBlock, mb.getNonZeros());
+						mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), lseq.getRowsInBlock(), lseq.getColsInBlock(), mb.getNonZeros());
 					}
 			}
 		}

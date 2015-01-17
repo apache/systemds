@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 public class IndexingOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String OPSTRING = "rix"; //"Indexing";
@@ -86,15 +86,15 @@ public class IndexingOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{	
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			
 			Hop input = getInput().get(0);
 			
 			//rewrite remove unnecessary right indexing
 			if( dimsKnown() && input.dimsKnown() 
-				&& get_dim1() == input.get_dim1() && get_dim2() == input.get_dim2() )
+				&& getDim1() == input.getDim1() && getDim2() == input.getDim2() )
 			{
-				set_lops( input.constructLops() );
+				setLops( input.constructLops() );
 			}
 			//actual lop construction, incl operator selection 
 			else
@@ -109,10 +109,10 @@ public class IndexingOp extends Hop
 						RangeBasedReIndex reindex = new RangeBasedReIndex(
 								input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 								getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-								get_dataType(), get_valueType(), et);
+								getDataType(), getValueType(), et);
 		
-						reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-								get_rows_in_block(), get_cols_in_block(), getNnz());
+						reindex.getOutputParameters().setDimensions(getDim1(), getDim2(), 
+								getRowsInBlock(), getColsInBlock(), getNnz());
 						
 						reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
@@ -120,25 +120,25 @@ public class IndexingOp extends Hop
 						{
 							Group group1 = new Group(
 									reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-									get_valueType());
-							group1.getOutputParameters().setDimensions(get_dim1(),
-									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+									getValueType());
+							group1.getOutputParameters().setDimensions(getDim1(),
+									getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 							
 							group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 							Aggregate agg1 = new Aggregate(
 									group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-									get_valueType(), et);
-							agg1.getOutputParameters().setDimensions(get_dim1(),
-									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+									getValueType(), et);
+							agg1.getOutputParameters().setDimensions(getDim1(),
+									getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			
 							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							
-							set_lops(agg1);
+							setLops(agg1);
 						}
 						else //method == IndexingMethod.MR_VRIX
 						{
-							set_lops(reindex);
+							setLops(reindex);
 						}
 					}
 					else {
@@ -146,11 +146,11 @@ public class IndexingOp extends Hop
 						RangeBasedReIndex reindex = new RangeBasedReIndex(
 								input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 								getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-								get_dataType(), get_valueType(), et);
-						reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-								get_rows_in_block(), get_cols_in_block(), getNnz());
+								getDataType(), getValueType(), et);
+						reindex.getOutputParameters().setDimensions(getDim1(), getDim2(),
+								getRowsInBlock(), getColsInBlock(), getNnz());
 						reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						set_lops(reindex);
+						setLops(reindex);
 					}
 				} catch (Exception e) {
 					throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops " , e);
@@ -158,7 +158,7 @@ public class IndexingOp extends Hop
 			}
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 
 	@Override
@@ -169,13 +169,13 @@ public class IndexingOp extends Hop
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
+		if (getVisited() != VisitStatus.DONE) {
 			super.printMe();
 			for (Hop h : getInput()) {
 				h.printMe();
 			}
 		}
-		set_visited(VISIT_STATUS.DONE);
+		setVisited(VisitStatus.DONE);
 	}
 
 	public SQLLops constructSQLLOPs() throws HopsException {
@@ -299,22 +299,22 @@ public class IndexingOp extends Hop
 		boolean allRows = false;
 		if( input2 instanceof LiteralOp )
 		{
-			if ( ((LiteralOp)input2).get_name().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
+			if ( ((LiteralOp)input2).getName().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
 				allRows = true;
 		}	
 		
 		boolean allCols = false;
 		if( input4 instanceof LiteralOp )
 		{
-			if ( ((LiteralOp)input4).get_name().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
+			if ( ((LiteralOp)input4).getName().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
 				allCols = true;
 		}
 		
 		//set dimension information
-		if( _rowLowerEqualsUpper )    set_dim1(1);
-		else if( allRows ) set_dim1(input1.get_dim1());
-		if( _colLowerEqualsUpper )    set_dim2(1);
-		else if( allCols ) set_dim2(input1.get_dim2());
+		if( _rowLowerEqualsUpper )    setDim1(1);
+		else if( allRows ) setDim1(input1.getDim1());
+		if( _colLowerEqualsUpper )    setDim2(1);
+		else if( allCols ) setDim2(input1.getDim2());
 	}
 	
 	@Override

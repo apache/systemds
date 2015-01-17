@@ -30,29 +30,29 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException{
-		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
+		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) _optr;
 		
-		/*if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
+		/*if ( input1.getValueType() == ValueType.INT && input2.getValueType() == ValueType.INT ) {
 			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getIntValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
-		else if ( input1.get_valueType() == ValueType.DOUBLE && input2.get_valueType() == ValueType.DOUBLE ) {
+		else if ( input1.getValueType() == ValueType.DOUBLE && input2.getValueType() == ValueType.DOUBLE ) {
 			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getDoubleValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
-		else if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.DOUBLE ) {
+		else if ( input1.getValueType() == ValueType.INT && input2.getValueType() == ValueType.DOUBLE ) {
 			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getDoubleValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
-		else if ( input1.get_valueType() == ValueType.DOUBLE && input2.get_valueType() == ValueType.INT ) {
+		else if ( input1.getValueType() == ValueType.DOUBLE && input2.getValueType() == ValueType.INT ) {
 			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getIntValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
-		else if ( input1.get_valueType() == ValueType.BOOLEAN && input2.get_valueType() == ValueType.BOOLEAN ) {
+		else if ( input1.getValueType() == ValueType.BOOLEAN && input2.getValueType() == ValueType.BOOLEAN ) {
 			boolean rval = dop.fn.compare ( so1.getBooleanValue(), so2.getBooleanValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
@@ -84,6 +84,6 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		}
 		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
 		
-		ec.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.getName(), sores);
 	}
 }

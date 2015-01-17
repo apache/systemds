@@ -40,8 +40,8 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
+        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
         
         String opcode = getOpcode();
         
@@ -51,23 +51,22 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
         }
 		
         /* Default behavior of this instruction */
-		String output_name = output.get_name();
+		String output_name = output.getName();
 		BinaryOperator bop = (BinaryOperator) _optr;
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
 		
 		ec.setMatrixOutput(output_name, resultBlock);
 		
-		resultBlock = matBlock1 = matBlock2 = null;
-		ec.releaseMatrixInput(input1.get_name());
-		ec.releaseMatrixInput(input2.get_name());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
 	}
 	
 	void executeSolve(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.get_name()));
-		Array2DRowRealMatrix vectorInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input2.get_name()));
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
+		Array2DRowRealMatrix vectorInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input2.getName()));
 		
 		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
 		DecompositionSolver lusolver = ludecompose.getSolver();
@@ -81,10 +80,8 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		
 		MatrixBlock solution = DataConverter.convertToMatrixBlock(solutionMatrix.getData());
 		
-		ec.setMatrixOutput(output.get_name(), solution);
-		ec.releaseMatrixInput(input1.get_name());
-		ec.releaseMatrixInput(input2.get_name());
-		
-		return;
+		ec.setMatrixOutput(output.getName(), solution);
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
 	}
 }

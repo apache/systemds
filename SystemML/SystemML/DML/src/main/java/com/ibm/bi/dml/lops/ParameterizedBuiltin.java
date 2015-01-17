@@ -285,18 +285,18 @@ public class ParameterizedBuiltin extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append(_operation.toString());
 
-		if (getInputs().size() > 0)
+		if( !getInputs().isEmpty() )
 			sb.append("(");
 		for (Lop cur : getInputs()) {
 			sb.append(cur.toString());
 		}
-		if (getInputs().size() > 0)
+		if( !getInputs().isEmpty() )
 			sb.append(") ");
 
-		sb.append(" ; num_rows=" + this.getOutputParameters().getNum_rows());
-		sb.append(" ; num_cols=" + this.getOutputParameters().getNum_cols());
+		sb.append(" ; num_rows=" + this.getOutputParameters().getNumRows());
+		sb.append(" ; num_cols=" + this.getOutputParameters().getNumCols());
 		sb.append(" ; format=" + this.getOutputParameters().getFormat());
-		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked_representation());
+		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
 		return sb.toString();
 	}
 

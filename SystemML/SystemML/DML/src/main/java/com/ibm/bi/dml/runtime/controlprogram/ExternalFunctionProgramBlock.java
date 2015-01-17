@@ -360,7 +360,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			}
 		}
 
-		if( matrices.size() > 0 )
+		if( !matrices.isEmpty() )
 		{
 			c2binst = new ArrayList<Instruction>();
 			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK);
@@ -488,7 +488,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			}
 		}
 		
-		if( matrices.size()>0 )
+		if( !matrices.isEmpty() )
 		{
 			b2cinst = new ArrayList<Instruction>();
 			MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
@@ -587,7 +587,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		}
 		
 		//BEGIN FUNCTION PATCH
-		if( matricesNoReblock.size() > 0 )
+		if( !matricesNoReblock.isEmpty() )
 		{
 			//if( b2cinst==null )
 			//	b2cinst = new ArrayList<Instruction>();

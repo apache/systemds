@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,7 +29,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 public class RewriteBlockSizeAndReblock extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -60,7 +60,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	{
 		// Go to the source(s) of the DAG
 		for (Hop hi : hop.getInput()) {
-			if (hop.get_visited() != Hop.VISIT_STATUS.DONE)
+			if (hop.getVisited() != Hop.VisitStatus.DONE)
 				rule_BlockSizeAndReblock(hi, GLOBAL_BLOCKSIZE);
 		}
 
@@ -69,8 +69,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if (hop instanceof DataOp) 
 		{
 			// if block size does not match
-			if (canReblock && hop.get_dataType() != DataType.SCALAR
-					&& (hop.get_rows_in_block() != GLOBAL_BLOCKSIZE || hop.get_cols_in_block() != GLOBAL_BLOCKSIZE)) {
+			if (canReblock && hop.getDataType() != DataType.SCALAR
+					&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE)) {
 
 				if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
 				
@@ -78,11 +78,11 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 					ReblockOp r = new ReblockOp(hop, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					r.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
 					r.refreshMemEstimates(new MemoTable());
-					r.set_visited(Hop.VISIT_STATUS.DONE);
+					r.setVisited(Hop.VisitStatus.DONE);
 				
 				} else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
 
-					if (hop.get_rows_in_block() == -1 && hop.get_cols_in_block() == -1) {
+					if (hop.getRowsInBlock() == -1 && hop.getColsInBlock() == -1) {
 
 						// if this dataop is for cell ouput, then no reblock is
 						// needed as (A) all jobtypes can produce block2cell and
@@ -96,28 +96,28 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						// this is
 						// the only parent, otherwise new Reblock
 
-						hop.getInput().get(0).set_rows_in_block(hop.get_rows_in_block());
-						hop.getInput().get(0).set_cols_in_block(hop.get_cols_in_block());
+						hop.getInput().get(0).setRowsInBlock(hop.getRowsInBlock());
+						hop.getInput().get(0).setColsInBlock(hop.getColsInBlock());
 
 					} else {
 
 						ReblockOp r = new ReblockOp(hop);
 						r.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
 						r.refreshMemEstimates(new MemoTable());
-						r.set_visited(Hop.VISIT_STATUS.DONE);
+						r.setVisited(Hop.VisitStatus.DONE);
 					}
 
 				} else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| ((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTREAD) {
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
 						// simply copy the values from its input
-						hop.set_rows_in_block(hop.getInput().get(0).get_rows_in_block());
-						hop.set_cols_in_block(hop.getInput().get(0).get_cols_in_block());
+						hop.setRowsInBlock(hop.getInput().get(0).getRowsInBlock());
+						hop.setColsInBlock(hop.getInput().get(0).getColsInBlock());
 					}
 					else {
 						// by default, all transient reads and writes are in blocked format
-						hop.set_rows_in_block(GLOBAL_BLOCKSIZE);
-						hop.set_cols_in_block(GLOBAL_BLOCKSIZE);
+						hop.setRowsInBlock(GLOBAL_BLOCKSIZE);
+						hop.setColsInBlock(GLOBAL_BLOCKSIZE);
 					}
 
 				} else {
@@ -148,31 +148,31 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			 */
 			
 			if ( hop instanceof ReblockOp ) {
-				hop.set_rows_in_block(GLOBAL_BLOCKSIZE);
-				hop.set_cols_in_block(GLOBAL_BLOCKSIZE);
+				hop.setRowsInBlock(GLOBAL_BLOCKSIZE);
+				hop.setColsInBlock(GLOBAL_BLOCKSIZE);
 			}
 			
 			// Constraint C1:
 			//else if ( (this instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)this)._op == ParamBuiltinOp.GROUPEDAGG) ) {
-			//	set_rows_in_block(-1);
-			//	set_cols_in_block(-1);
+			//	setRowsInBlock(-1);
+			//	setColsInBlock(-1);
 			//}
 			
 			// Constraint C2:
-			else if ( hop.get_dataType() == DataType.SCALAR ) {
-				hop.set_rows_in_block(-1);
-				hop.set_cols_in_block(-1);
+			else if ( hop.getDataType() == DataType.SCALAR ) {
+				hop.setRowsInBlock(-1);
+				hop.setColsInBlock(-1);
 			}
 
 			// Constraint C3:
 			else {
 				if ( !canReblock ) {
-					hop.set_rows_in_block(-1);
-					hop.set_cols_in_block(-1);
+					hop.setRowsInBlock(-1);
+					hop.setColsInBlock(-1);
 				}
 				else {
-					hop.set_rows_in_block(GLOBAL_BLOCKSIZE);
-					hop.set_cols_in_block(GLOBAL_BLOCKSIZE);
+					hop.setRowsInBlock(GLOBAL_BLOCKSIZE);
+					hop.setColsInBlock(GLOBAL_BLOCKSIZE);
 					
 					// Functions may return multiple outputs, as defined in array of outputs in FunctionOp.
 					// Reblock properties need to be set for each output.
@@ -180,8 +180,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						FunctionOp fop = (FunctionOp) hop;
 						if ( fop.getOutputs() != null) {
 							for(Hop out : fop.getOutputs()) {
-								out.set_rows_in_block(GLOBAL_BLOCKSIZE);
-								out.set_cols_in_block(GLOBAL_BLOCKSIZE);
+								out.setRowsInBlock(GLOBAL_BLOCKSIZE);
+								out.setColsInBlock(GLOBAL_BLOCKSIZE);
 							}
 						}
 					}
@@ -189,16 +189,16 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				
 				// if any input is not blocked then the output of current Hop should not be blocked
 				for ( Hop h : hop.getInput() ) {
-					if ( h.get_dataType() == DataType.MATRIX && h.get_rows_in_block() == -1 && h.get_cols_in_block() == -1 ) {
-						hop.set_rows_in_block(-1);
-						hop.set_cols_in_block(-1);
+					if ( h.getDataType() == DataType.MATRIX && h.getRowsInBlock() == -1 && h.getColsInBlock() == -1 ) {
+						hop.setRowsInBlock(-1);
+						hop.setColsInBlock(-1);
 						break;
 					}
 				}
 			}
 		}
 
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 
 	}
 }

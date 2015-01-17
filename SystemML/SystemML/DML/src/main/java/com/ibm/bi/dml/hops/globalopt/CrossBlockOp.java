@@ -45,18 +45,18 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 	public CrossBlockOp() {}
 	
 	public CrossBlockOp(Hop leftInput, Hop output) {
-		super(Kind.CrossBlockOp, leftInput.get_name(), leftInput.get_dataType(), leftInput.get_valueType());
+		super(Kind.CrossBlockOp, leftInput.getName(), leftInput.getDataType(), leftInput.getValueType());
 		
 		this.leftInput = leftInput;
-		String name = leftInput.get_name();
+		String name = leftInput.getName();
 		if(leftInput instanceof FunctionOp) {
-			name += output.get_name();
+			name += output.getName();
 		}
-		super.set_name(name);
+		super.setName(name);
 		
 		leftInput.setCrossBlockOutput(this);
-		this._dim1 = leftInput.get_dim1();
-		this._dim2 = leftInput.get_dim2();
+		this._dim1 = leftInput.getDim1();
+		this._dim2 = leftInput.getDim2();
 		
 		this.output = output;
 		if(output != null)
@@ -121,12 +121,13 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 
 	@Override
 	public Lop constructLops() throws HopsException, LopsException {
-		if(get_lops() != null) 
+		if(getLops() != null) 
 		{
-			return get_lops();
-		} else {
+			return getLops();
+		} 
+		else {
 			CrossBlockLop cLop = new CrossBlockLop();
-			set_lops(cLop);
+			setLops(cLop);
 			return cLop;
 		}
 	}
@@ -150,8 +151,8 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 
 	@Override
 	public void refreshSizeInformation() {
-		this._dim1 = this.leftInput.get_dim1();
-		this._dim2 = this.leftInput.get_dim2();
+		this._dim1 = this.leftInput.getDim1();
+		this._dim2 = this.leftInput.getDim2();
 	}
 
 
@@ -173,15 +174,15 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 	/*
 	@Override
 	public void propagateBlockSize() {
-		long rowsPerBlock = this.get_rows_in_block();
-		long colsPerBlock = this.get_cols_in_block();
+		long rowsPerBlock = this.getRowsInBlock();
+		long colsPerBlock = this.getColsInBlock();
 		
-		this.getLeftInput().set_cols_in_block(colsPerBlock);
-		this.getLeftInput().set_rows_in_block(rowsPerBlock);
+		this.getLeftInput().setColsInBlock(colsPerBlock);
+		this.getLeftInput().setRowsInBlock(rowsPerBlock);
 		
 		if(this.output != null) {
-			this.output.set_cols_in_block(colsPerBlock);
-			this.output.set_rows_in_block(rowsPerBlock);
+			this.output.setColsInBlock(colsPerBlock);
+			this.output.setRowsInBlock(rowsPerBlock);
 		}
 	}
 */
@@ -242,10 +243,6 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 		if(rewrite instanceof LocationRewrite) {
 			this.appliedRewrites.put(RewriteConfigType.EXEC_TYPE, rewrite);
 		}
-	}
-	
-	public Rewrite getAppliedRewrite(String name) {
-		return this.appliedRewrites.get(name);
 	}
 
 	@Override

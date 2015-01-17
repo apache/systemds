@@ -525,10 +525,10 @@ public class DMLScript
 			debug = System.getProperty("systemml.logging");
 		
 		if (debug != null){
-			if (debug.toLowerCase().equals("debug")){
+			if (debug.equalsIgnoreCase("debug")){
 				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.DEBUG);
 			}
-			else if (debug.toLowerCase().equals("trace")){
+			else if (debug.equalsIgnoreCase("trace")){
 				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.TRACE);
 			}
 		}
@@ -885,6 +885,14 @@ public class DMLScript
 		{
 			throw new DMLRuntimeException(e);
 		}*/
+		
+		//cleanup netezza connector
+		try { 
+			con.close(); 
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 
 	} // end executeNetezza
 	
@@ -1043,7 +1051,7 @@ public class DMLScript
 	                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
 	                + "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 
-		if (argVals.size() > 0) {
+		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
 			for (int i=1; i<= argVals.size(); i++)
 				LOG.debug("Script argument $" + i + " = " + argVals.get("$" + i) );

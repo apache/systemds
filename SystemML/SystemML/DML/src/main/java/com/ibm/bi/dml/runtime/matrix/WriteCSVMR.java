@@ -9,7 +9,6 @@
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.HashMap;
-import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -107,8 +106,7 @@ public class WriteCSVMR
 			inst.printCompleteMRJobInstruction(stats);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
-		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  "", 
-				"", csvWriteInstructions, resultIndexes);
+		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  "", "", csvWriteInstructions, resultIndexes);
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, 

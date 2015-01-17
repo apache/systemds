@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,7 +32,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 public class FunctionOp extends Hop
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String OPSTRING = "extfunct";
@@ -144,24 +144,24 @@ public class FunctionOp extends Hop
 		else {
 			if ( getFunctionName().equalsIgnoreCase("qr") ) {
 				// upper-triangular and lower-triangular matrices
-				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 0.5);
-				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 0.5);
+				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
+				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
 				//System.out.println("QROut " + (outputH+outputR)/1024/1024);
 				return outputH+outputR; 
 				
 			}
 			else if ( getFunctionName().equalsIgnoreCase("lu") ) {
 				// upper-triangular and lower-triangular matrices
-				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 1.0/getOutputs().get(1).get_dim2());
-				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 0.5);
-				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 0.5);
+				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0/getOutputs().get(1).getDim2());
+				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
+				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
 				//System.out.println("LUOut " + (outputL+outputU+outputP)/1024/1024);
 				return outputL+outputU+outputP; 
 				
 			}
 			else if ( getFunctionName().equalsIgnoreCase("eigen") ) {
-				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 1.0);
-				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), 1, 1.0);
+				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				//System.out.println("EigenOut " + (outputVectors+outputValues)/1024/1024);
 				return outputVectors+outputValues; 
 				
@@ -179,20 +179,20 @@ public class FunctionOp extends Hop
 		else {
 			if ( getFunctionName().equalsIgnoreCase("qr") ) {
 				// matrix of size same as the input
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 1.0); 
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0); 
 				//System.out.println("QRInter " + interOutput/1024/1024);
 				return interOutput;
 			}
 			else if ( getFunctionName().equalsIgnoreCase("lu")) {
 				// 1D vector 
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), 1, 1.0); 
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 				//System.out.println("LUInter " + interOutput/1024/1024);
 				return interOutput;
 			}
 			else if ( getFunctionName().equalsIgnoreCase("eigen")) {
 				// One matrix of size original input and three 1D vectors (used to represent tridiagonal matrix)
-				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 1.0) 
-						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), 1, 1.0); 
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
+						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 				//System.out.println("EigenInter " + interOutput/1024/1024);
 				return interOutput;
 			}
@@ -211,7 +211,7 @@ public class FunctionOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			ExecType et = optFindExecType();
 			
 			if ( et != ExecType.CP ) {
@@ -224,10 +224,10 @@ public class FunctionOp extends Hop
 			
 			//construct function call
 			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops );
-			set_lops( fcall );
+			setLops( fcall );
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 
 	@Override
@@ -318,7 +318,7 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public void setCrossBlockOutput(CrossBlockOp crossBlockOutput) {
-		this.crossBlockOutputs.put(crossBlockOutput.get_name(), crossBlockOutput);
+		this.crossBlockOutputs.put(crossBlockOutput.getName(), crossBlockOutput);
 		
 	}
 	

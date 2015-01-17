@@ -73,7 +73,7 @@ public class TaggedIndex implements WritableComparable<TaggedIndex>
 	
 	public int hashCode()
 	{
-		return new Long(index).hashCode();
+		return Long.valueOf(index).hashCode();
 	}
 	
 	public static class Comparator implements RawComparator<TaggedIndex>

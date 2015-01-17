@@ -25,6 +25,7 @@ import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONObject;
 
 
@@ -867,8 +868,8 @@ public class DataExpression extends DataIdentifier
 				if (getVarParam(READROWPARAM) instanceof ConstIdentifier && getVarParam(READCOLPARAM) instanceof ConstIdentifier)  {
 				
 					// these are strings that are long values
-					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : new Long (getVarParam(READROWPARAM).toString());
-					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : new Long(getVarParam(READCOLPARAM).toString());
+					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
+					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());
 					
 					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && REJECT_READ_UNKNOWN_SIZE )
 					{
@@ -901,8 +902,8 @@ public class DataExpression extends DataIdentifier
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
 				
-					Long rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getVarParam(ROWBLOCKCOUNTPARAM).toString());
-					Long columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long (getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
+					Long rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ? null : Long.valueOf(getVarParam(ROWBLOCKCOUNTPARAM).toString());
+					Long columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : Long.valueOf(getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
 		
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
@@ -1137,7 +1138,7 @@ public class DataExpression extends DataIdentifier
 			}
 			else if (rowsExpr instanceof DoubleIdentifier) {
 				if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
-					rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
+					rowsLong = UtilFunctions.toLong(Math.floor(((DoubleIdentifier)rowsExpr).getValue()));
 				}
 				else {
 					raiseValidateError("In rand statement, can only assign rows a long " +
@@ -1175,7 +1176,7 @@ public class DataExpression extends DataIdentifier
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update row expr with new IntIdentifier (rounded down)
-						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+						long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						rowsExpr = new IntIdentifier(roundedValue, this.getFilename(),
 								this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());
@@ -1216,7 +1217,7 @@ public class DataExpression extends DataIdentifier
 			}
 			else if (colsExpr instanceof DoubleIdentifier) {
 				if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
-					colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+					colsLong = Double.valueOf((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 				}
 				else {
 					raiseValidateError("In rand statement, can only assign rows a long " +
@@ -1254,7 +1255,7 @@ public class DataExpression extends DataIdentifier
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 						}
 						// update col expr with new IntIdentifier (rounded down)
-						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+						long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 						colsExpr = new IntIdentifier(roundedValue, this.getFilename(), 
 								this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());
@@ -1458,7 +1459,7 @@ public class DataExpression extends DataIdentifier
 				}
 				else if (rowsExpr instanceof DoubleIdentifier) {
 					if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
-						rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
+						rowsLong = Double.valueOf((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
 					}
 					else {
 						raiseValidateError("In matrix statement, can only assign rows a long " +
@@ -1496,7 +1497,7 @@ public class DataExpression extends DataIdentifier
 										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString(), conditional);
 							}
 							// update row expr with new IntIdentifier (rounded down)
-							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+							long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 							rowsExpr = new IntIdentifier(roundedValue,  this.getFilename(), 
 									this.getBeginLine(), this.getBeginColumn(), 
 									this.getEndLine(), this.getEndColumn());
@@ -1538,7 +1539,7 @@ public class DataExpression extends DataIdentifier
 				}
 				else if (colsExpr instanceof DoubleIdentifier) {
 					if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
-						colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+						colsLong = Double.valueOf((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 					}
 					else {
 						raiseValidateError("In matrix statement, can only assign rows a long " +
@@ -1578,7 +1579,7 @@ public class DataExpression extends DataIdentifier
 										+ constValue.toString(), conditional);
 							}
 							// update col expr with new IntIdentifier (rounded down)
-							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+							long roundedValue = Double.valueOf(Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
 							colsExpr = new IntIdentifier(roundedValue, this.getFilename(), 
 									this.getBeginLine(), this.getBeginColumn(), 
 									this.getEndLine(), this.getEndColumn());
@@ -2041,15 +2042,14 @@ public class DataExpression extends DataIdentifier
 				//BufferedReader in = new BufferedReader(new FileReader(filename));
 				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
 				
-				String headerLine = new String("");
-			
+				String headerLine = new String("");			
 				if (in.ready())
 					headerLine = in.readLine();
 				in.close();
 			
 				// check that headerline starts with "%%"
 				// will infer malformed 
-				if (headerLine.startsWith("%%"))
+				if( headerLine !=null && headerLine.startsWith("%%") )
 					return true;
 				else
 					return false;

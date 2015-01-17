@@ -66,6 +66,11 @@ public class SparseRow
 		return size;
 	}
 	
+	public boolean isEmpty()
+	{
+		return (size == 0);
+	}
+	
 	public double[] getValueContainer()
 	{
 		return values;

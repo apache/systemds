@@ -39,8 +39,8 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 		// Boolean operations must be performed on BOOLEAN
 		ValueType vt1, vt2;
 		vt1 = vt2 = null;
-		vt1 = in.get_valueType();
-		vt2 = out.get_valueType();
+		vt1 = in.getValueType();
+		vt2 = out.getValueType();
 		if ( vt1 != ValueType.BOOLEAN || vt2 != ValueType.BOOLEAN )
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
 		
@@ -51,7 +51,7 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+		ScalarObject so = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 
@@ -62,6 +62,6 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 		sores = (ScalarObject) new BooleanObject(rval);
 		
 		// 3) Put the result value into ProgramBlock
-		ec.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.getName(), sores);
 	}
 }

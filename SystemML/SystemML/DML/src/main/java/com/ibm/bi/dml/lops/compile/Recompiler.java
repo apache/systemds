@@ -39,7 +39,7 @@ import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.Kind;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
@@ -599,7 +599,7 @@ public class Recompiler
 	
 	public static void rUpdateFunctionNames( Hop hop, long pid )
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		//update function names
@@ -613,7 +613,7 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rUpdateFunctionNames(c, pid);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 	
@@ -1160,17 +1160,17 @@ public class Recompiler
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
 		if(    hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
-			//&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims 
+			//&& hop.getDim1()>0 && hop.getDim2()>0  ) //matrix with known dims 
 		{
-			String varName = hop.get_name();
+			String varName = hop.getName();
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
 			{
 				//extract matrix sizes for size propagation
-				if( hop.get_dataType()==DataType.MATRIX )
+				if( hop.getDataType()==DataType.MATRIX )
 				{
 					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
 					MatrixCharacteristics mc = new MatrixCharacteristics( 
-												hop.get_dim1(), hop.get_dim2(), 
+												hop.getDim1(), hop.getDim2(), 
 												DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
 												hop.getNnz());
 					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
@@ -1178,7 +1178,7 @@ public class Recompiler
 					vars.put(varName, mo);
 				}
 				//extract scalar constants for second constant propagation
-				else if( hop.get_dataType()==DataType.SCALAR )
+				else if( hop.getDataType()==DataType.SCALAR )
 				{
 					//extract literal assignments
 					if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof LiteralOp )
@@ -1191,7 +1191,7 @@ public class Recompiler
 					else if( hop.getInput().size()==1 && hop.getInput().get(0) instanceof DataOp)
 					{
 						DataOp dop = (DataOp) hop.getInput().get(0);
-						String dopvarname = dop.get_name();
+						String dopvarname = dop.getName();
 						if( dop.isRead() && vars.keySet().contains(dopvarname) )
 						{
 							ScalarObject constant = (ScalarObject) vars.get(dopvarname);
@@ -1208,10 +1208,10 @@ public class Recompiler
 					MatrixObject mo = (MatrixObject)dat;
 					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 					if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
-					    < OptimizerUtils.estimateSize(hop.get_dim1(), hop.get_dim2(), 1.0d) )
+					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2(), 1.0d) )
 					{
 						//update statistics if necessary
-						mc.setDimension(hop.get_dim1(), hop.get_dim2());
+						mc.setDimension(hop.getDim1(), hop.getDim2());
 						mc.setNonZeros(hop.getNnz());
 					}
 				}
@@ -1238,7 +1238,7 @@ public class Recompiler
 	private static boolean rRequiresRecompile( Hop hop )
 	{	
 		boolean ret = hop.requiresRecompile();
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return ret;
 		
 		if( hop.getInput() != null )
@@ -1248,7 +1248,7 @@ public class Recompiler
 				if( ret ) break; // early abort
 			}
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 		
 		return ret;
 	}
@@ -1266,26 +1266,26 @@ public class Recompiler
 	 */
 	public static void rClearLops( Hop hop )
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		//clear all relevant lops to allow for recompilation
 		if( hop instanceof LiteralOp )
 		{
 			//for literal ops, we just clear parents because always constant
-			if( hop.get_lops() != null )
-				hop.get_lops().getOutputs().clear();	
+			if( hop.getLops() != null )
+				hop.getLops().getOutputs().clear();	
 		}
 		else //GENERAL CASE
 		{
 			hop.resetExecType(); //remove exec type
-			hop.set_lops(null); //clear lops
+			hop.setLops(null); //clear lops
 			if( hop.getInput() != null )
 				for( Hop c : hop.getInput() )
 					rClearLops(c);
 		}
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 	/**
@@ -1297,7 +1297,7 @@ public class Recompiler
 	public static void rUpdateStatistics( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 
 		if( hop.getInput() != null )
@@ -1310,15 +1310,15 @@ public class Recompiler
 			&& ((DataOp)hop).get_dataop() != DataOpTypes.PERSISTENTREAD )
 		{
 			DataOp d = (DataOp) hop;
-			String varName = d.get_name();
+			String varName = d.getName();
 			if( vars.keySet().contains( varName ) )
 			{
 				Data dat = vars.get(varName);
 				if( dat instanceof MatrixObject )
 				{
 					MatrixObject mo = (MatrixObject) dat;
-					d.set_dim1(mo.getNumRows());
-					d.set_dim2(mo.getNumColumns());
+					d.setDim1(mo.getNumRows());
+					d.setDim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
 				}
 			}
@@ -1361,8 +1361,8 @@ public class Recompiler
 				}
 				
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE && incr!=Double.MAX_VALUE ) {
-					d.set_dim1( 1 + (long)Math.floor((to-from)/incr) );
-					d.set_dim2( 1 );
+					d.setDim1( 1 + (long)Math.floor((to-from)/incr) );
+					d.setDim2( 1 );
 					d.setIncrementValue( incr );
 				}
 			}
@@ -1391,15 +1391,15 @@ public class Recompiler
 			double cl = iop.computeBoundsInformation(input4, vars);
 			double cu = iop.computeBoundsInformation(input5, vars);
 			if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
-				iop.set_dim1( (long)(ru-rl+1) );
+				iop.setDim1( (long)(ru-rl+1) );
 			if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
-				iop.set_dim2( (long)(cu-cl+1) );
+				iop.setDim2( (long)(cu-cl+1) );
 		}
 		
 		//propagate statistics along inner nodes of DAG
 		hop.refreshSizeInformation();
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 
 	/**
@@ -1411,7 +1411,7 @@ public class Recompiler
 	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 
 		if( hop.getInput() != null )
@@ -1421,9 +1421,9 @@ public class Recompiler
 				
 				//scalar read - literal replacement
 				if( c instanceof DataOp && ((DataOp)c).get_dataop() != DataOpTypes.PERSISTENTREAD 
-					&& c.get_dataType()==DataType.SCALAR )
+					&& c.getDataType()==DataType.SCALAR )
 				{
-					Data dat = vars.get(c.get_name());
+					Data dat = vars.get(c.getName());
 					if( dat != null ) //required for selective constant propagation
 					{
 						ScalarObject sdat = (ScalarObject)dat;
@@ -1452,9 +1452,9 @@ public class Recompiler
 				//as.double/as.integer/as.boolean over scalar read - literal replacement
 				else if( c instanceof UnaryOp && (((UnaryOp)c).get_op() == OpOp1.CAST_AS_DOUBLE
 					|| ((UnaryOp)c).get_op() == OpOp1.CAST_AS_INT || ((UnaryOp)c).get_op() == OpOp1.CAST_AS_BOOLEAN )	
-						&& c.getInput().get(0) instanceof DataOp && c.get_dataType()==DataType.SCALAR )
+						&& c.getInput().get(0) instanceof DataOp && c.getDataType()==DataType.SCALAR )
 				{
-					Data dat = vars.get(c.getInput().get(0).get_name());
+					Data dat = vars.get(c.getInput().get(0).getName());
 					if( dat != null ) //required for selective constant propagation
 					{
 						ScalarObject sdat = (ScalarObject)dat;
@@ -1485,7 +1485,7 @@ public class Recompiler
 				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
 					&& c.getInput().get(0) instanceof DataOp )
 				{
-					Data dat = vars.get(c.getInput().get(0).get_name());
+					Data dat = vars.get(c.getInput().get(0).getName());
 					if( dat != null ) //required for selective constant propagation
 					{
 						//cast as scalar (see VariableCPInstruction)
@@ -1511,7 +1511,7 @@ public class Recompiler
 				}
 			}
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 	/**
@@ -1521,7 +1521,7 @@ public class Recompiler
 	 */
 	public static void rSetExecType( Hop hop, ExecType etype )
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		//update function names
@@ -1531,7 +1531,7 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rSetExecType(c, etype);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 
@@ -1688,9 +1688,9 @@ public class Recompiler
 				{
 					//check recompile memory budget
 					RandInstruction lrandInst = (RandInstruction) RandInstruction.parseInstruction(lrandStr);
-					long rows = lrandInst.rows;
-					long cols = lrandInst.cols;
-					double sparsity = lrandInst.sparsity;
+					long rows = lrandInst.getRows();
+					long cols = lrandInst.getCols();
+					double sparsity = lrandInst.getSparsity();
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sparsity);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
@@ -1703,8 +1703,8 @@ public class Recompiler
 					//check recompile memory budget
 					//(don't account for sparsity because always dense)
 					SeqInstruction lrandInst = (SeqInstruction) SeqInstruction.parseInstruction(lrandStr);
-					long rows = lrandInst.rows;
-					long cols = lrandInst.cols;
+					long rows = lrandInst.getRows();
+					long cols = lrandInst.getCols();
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, 1.0d);				
 					if( mem >= OptimizerUtils.getLocalMemBudget() )
 					{
@@ -1745,10 +1745,10 @@ public class Recompiler
 				JSONObject mtd = JSONObject.parse(br);
 				
 				DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
-				dop.set_dataType(dt);
-				dop.set_valueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-				dop.set_dim1((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-				dop.set_dim2((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+				dop.setDataType(dt);
+				dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
+				dop.setDim1((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
+				dop.setDim2((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
 				
 				br.close();
 			}

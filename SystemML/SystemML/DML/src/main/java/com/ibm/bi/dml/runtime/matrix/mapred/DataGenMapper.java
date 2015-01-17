@@ -57,10 +57,10 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				int blockColSize = Integer.parseInt(params[3]);
 				long blockNNZ = Integer.parseInt(params[4]);
 				long seed=Long.parseLong(params[5]);
-				double minValue = randInst.minValue;
-				double maxValue = randInst.maxValue;
-				double sparsity = randInst.sparsity;
-				String pdf = randInst.probabilityDensityFunction;
+				double minValue = randInst.getMinValue();
+				double maxValue = randInst.getMaxValue();
+				double sparsity = randInst.getSparsity();
+				String pdf = randInst.getProbabilityDensityFunction();
 				
 				indexes.setIndexes(blockRowNumber, blockColNumber);
 				

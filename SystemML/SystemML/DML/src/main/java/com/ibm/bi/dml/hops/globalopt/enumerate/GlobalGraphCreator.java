@@ -120,7 +120,7 @@ public class GlobalGraphCreator
 				
 				outVarsIf = handleBlock(sb, inVars);
 			}
-			if(ifBlock.getChildBlocksElseBody() != null && ifBlock.getChildBlocksElseBody().size() > 0) {
+			if(ifBlock.getChildBlocksElseBody() != null && !ifBlock.getChildBlocksElseBody().isEmpty() ) {
 				for(ProgramBlock sb : ifBlock.getChildBlocksElseBody()) {
 					outVarsElse = handleBlock(sb, inVars);
 				}
@@ -210,7 +210,7 @@ public class GlobalGraphCreator
 		loopNode.setLoopType(type);
 		
 		VariableSet liveOut = block.getStatementBlock().liveOut();
-		if(liveOut != null && liveOut.getVariables().size() > 0) {
+		if(liveOut != null && !liveOut.getVariables().isEmpty() ) {
 			for(String varName : liveOut.getVariableNames()) {
 				VariableSet kill = block.getStatementBlock().getKill();
 				if(!kill.containsVariable(varName)) {
@@ -237,11 +237,10 @@ public class GlobalGraphCreator
 
 	private void appendSplitNodes(Map<String, HopsDag> inVars, Map<String, SplitOp> splits) {
 		
-		for(String dagKey : inVars.keySet()) {
-			HopsDag dag = inVars.get(dagKey);
-			for(Entry<String, Hop> e : dag.getDagOutputs().entrySet()) {
-				String varName = e.getKey();
-				Hop output = e.getValue();
+		for( HopsDag dag : inVars.values() ) {
+			for(Entry<String, Hop> e2 : dag.getDagOutputs().entrySet()) {
+				String varName = e2.getKey();
+				Hop output = e2.getValue();
 				SplitOp split = new SplitOp(output, null);
 				dag.getDagOutputs().put(varName, split);
 				splits.put(varName, split);

@@ -34,7 +34,7 @@ public class CostEstimatorRuntime extends CostEstimator
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//internal estimation parameters
-	public static final boolean COMBINE_ESTIMATION_PATHS = false;
+	public static final boolean COMBINE_ESTIMATION_PATHS = true;
 		
 	@Override
 	public double getLeafNodeEstimate( TestMeasure measure, OptNode node ) 

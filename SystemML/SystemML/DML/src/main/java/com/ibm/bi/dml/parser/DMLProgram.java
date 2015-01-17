@@ -262,7 +262,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (wsb.get_lops() != null && wsb.get_lops().size() > 0){
+			if (wsb.getLops() != null && wsb.getLops().size() > 0){
 				LOG.error(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 				throw new LopsException(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 			}
@@ -330,7 +330,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (isb.get_lops() != null && isb.get_lops().size() > 0){
+			if (isb.getLops() != null && isb.getLops().size() > 0){
 				LOG.error(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 				throw new LopsException(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 			}
@@ -408,7 +408,7 @@ public class DMLProgram
 			}
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (fsb.get_lops() != null && fsb.get_lops().size() > 0){
+			if (fsb.getLops() != null && fsb.getLops().size() > 0){
 				LOG.error(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 				throw new LopsException(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 			}
@@ -496,7 +496,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (fsb.get_lops() != null && fsb.get_lops().size() > 0){
+			if (fsb.getLops() != null && fsb.getLops().size() > 0){
 				LOG.error(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 				throw new LopsException(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 			}
@@ -515,9 +515,9 @@ public class DMLProgram
 			dag = new Dag<Lop>();
 
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (sb.get_lops() != null && sb.get_lops().size() > 0){
+			if (sb.getLops() != null && sb.getLops().size() > 0){
 			
-				for (Lop l : sb.get_lops()) {
+				for (Lop l : sb.getLops()) {
 					l.addToDag(dag);
 				}
 				

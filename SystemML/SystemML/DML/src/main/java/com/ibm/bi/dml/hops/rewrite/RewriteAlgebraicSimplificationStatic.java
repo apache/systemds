@@ -106,7 +106,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private void rule_AlgebraicSimplification(Hop hop, boolean descendFirst) 
 		throws HopsException 
 	{
-		if(hop.get_visited() == Hop.VISIT_STATUS.DONE)
+		if(hop.getVisited() == Hop.VisitStatus.DONE)
 			return;
 		
 		//recursively process children
@@ -139,7 +139,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				rule_AlgebraicSimplification(hi, descendFirst);
 		}
 
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
 	
@@ -150,7 +150,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private Hop removeUnnecessaryVectorizeOperation(Hop hi)
 	{
 		//applies to all binary matrix operations, if one input is unnecessarily vectorized 
-		if(    hi instanceof BinaryOp && hi.get_dataType()==DataType.MATRIX 
+		if(    hi instanceof BinaryOp && hi.getDataType()==DataType.MATRIX 
 			&& ((BinaryOp)hi).supportsMatrixScalarOperations()               )
 		{
 			BinaryOp bop = (BinaryOp)hi;
@@ -161,7 +161,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//potentially a vector but the result is of the size of left
 			
 			//check and remove right vectorized scalar
-			if( left.get_dataType() == DataType.MATRIX && right instanceof DataGenOp )
+			if( left.getDataType() == DataType.MATRIX && right instanceof DataGenOp )
 			{
 				DataGenOp dright = (DataGenOp) right;
 				if( dright.getDataGenMethod()==DataGenMethod.RAND && dright.hasConstantValue() )
@@ -170,7 +170,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(bop, dright);
 					HopRewriteUtils.addChildReference(bop, drightIn, 1);
 					//cleanup if only consumer of intermediate
-					if( dright.getParent().size()<1 ) 
+					if( dright.getParent().isEmpty() ) 
 						HopRewriteUtils.removeAllChildReferences( dright );
 					
 					LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
@@ -178,18 +178,18 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 			//TODO move to dynamic rewrites (since size dependent to account for mv binary cell operations)
 			//check and remove left vectorized scalar
-			else if( right.get_dataType() == DataType.MATRIX && left instanceof DataGenOp )
+			else if( right.getDataType() == DataType.MATRIX && left instanceof DataGenOp )
 			{
 				DataGenOp dleft = (DataGenOp) left;
 				if( dleft.getDataGenMethod()==DataGenMethod.RAND && dleft.hasConstantValue()
-					&& (left.get_dim2()==1 || right.get_dim2()>1) 
-					&& (left.get_dim1()==1 || right.get_dim1()>1))
+					&& (left.getDim2()==1 || right.getDim2()>1) 
+					&& (left.getDim1()==1 || right.getDim1()>1))
 				{
 					Hop dleftIn = dleft.getInput().get(dleft.getParamIndex(DataExpression.RAND_MIN));
 					HopRewriteUtils.removeChildReference(bop, dleft);
 					HopRewriteUtils.addChildReference(bop, dleftIn, 0);
 					//cleanup if only consumer of intermediate
-					if( dleft.getParent().size()<1 ) 
+					if( dleft.getParent().isEmpty() ) 
 						HopRewriteUtils.removeAllChildReferences( dleft );
 					
 					LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
@@ -228,7 +228,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			//X/1 or X*1 -> X 
-			if(    left.get_dataType()==DataType.MATRIX 
+			if(    left.getDataType()==DataType.MATRIX 
 				&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==1.0 )
 			{
 				if( bop.getOp()==OpOp2.DIV || bop.getOp()==OpOp2.MULT )
@@ -241,7 +241,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//X-0 -> X 
-			else if(    left.get_dataType()==DataType.MATRIX 
+			else if(    left.getDataType()==DataType.MATRIX 
 					&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==0.0 )
 			{
 				if( bop.getOp()==OpOp2.MINUS )
@@ -254,7 +254,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//1*X -> X
-			else if(   right.get_dataType()==DataType.MATRIX 
+			else if(   right.getDataType()==DataType.MATRIX 
 					&& left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
@@ -269,7 +269,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//-1*X -> -X
 			//note: this rewrite is necessary since the new antlr parser always converts 
 			//-X to -1*X due to mechanical reasons
-			else if(   right.get_dataType()==DataType.MATRIX 
+			else if(   right.getDataType()==DataType.MATRIX 
 					&& left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==-1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
@@ -283,7 +283,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//X*-1 -> -X (see comment above)
-			else if(   left.get_dataType()==DataType.MATRIX 
+			else if(   left.getDataType()==DataType.MATRIX 
 					&& right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==-1.0 )
 			{
 				if( bop.getOp()==OpOp2.MULT )
@@ -338,7 +338,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
-					else if( bop.getOp()==OpOp2.PLUS )		
+					else //if( bop.getOp()==OpOp2.PLUS )		
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
 						
 					HopRewriteUtils.removeChildReference(parent, bop);
@@ -366,7 +366,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
-					else if( bop.getOp()==OpOp2.PLUS )		
+					else //if( bop.getOp()==OpOp2.PLUS )		
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
 						
 					HopRewriteUtils.removeChildReference(parent, bop);
@@ -449,7 +449,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			BinaryOp bop = (BinaryOp)hi;
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
-			if( left == right && left.get_dataType()==DataType.MATRIX )
+			if( left == right && left.getDataType()==DataType.MATRIX )
 			{
 				//note: we simplify this to unary operations first (less mem and better MR plan),
 				//however, we later compile specific LOPS for X*2 and X^2
@@ -501,7 +501,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//(X+Y*X) -> (1+Y)*X,    (Y*X+X) -> (Y+1)*X
 			//(X-Y*X) -> (1-Y)*X,    (Y*X-X) -> (Y-1)*X
 			boolean applied = false;
-			if( left.get_dataType()==DataType.MATRIX && right.get_dataType()==DataType.MATRIX 
+			if( left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX 
 				&& HopRewriteUtils.isValidOp(bop.getOp(), LOOKUP_VALID_DISTRIBUTIVE_BINARY) )
 			{
 				Hop X = null; Hop Y = null;
@@ -509,9 +509,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					Hop leftC1 = left.getInput().get(0);
 					Hop leftC2 = left.getInput().get(1);
-					//System.out.println("aOp2:"+((BinaryOp)left).getOp()+": "+leftC1.get_name()+" "+leftC2.get_name());
+					//System.out.println("aOp2:"+((BinaryOp)left).getOp()+": "+leftC1.getName()+" "+leftC2.getName());
 						
-					if( leftC1.get_dataType()==DataType.MATRIX && leftC2.get_dataType()==DataType.MATRIX &&
+					if( leftC1.getDataType()==DataType.MATRIX && leftC2.getDataType()==DataType.MATRIX &&
 						(right == leftC1 || right == leftC2) && leftC1 !=leftC2 ){ //any mult order
 						X = right;
 						Y = ( right == leftC1 ) ? leftC2 : leftC1;
@@ -519,9 +519,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					if( X != null ){ //rewrite 'binary +/-' 
 						HopRewriteUtils.removeChildReference(parent, hi);
 						LiteralOp literal = new LiteralOp("1",1);
-						BinaryOp plus = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), bop.getOp(), Y, literal);
+						BinaryOp plus = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), bop.getOp(), Y, literal);
 						HopRewriteUtils.refreshOutputParameters(plus, right);						
-						BinaryOp mult = new BinaryOp(left.get_name(), left.get_dataType(), left.get_valueType(), OpOp2.MULT, plus, X);
+						BinaryOp mult = new BinaryOp(left.getName(), left.getDataType(), left.getValueType(), OpOp2.MULT, plus, X);
 						HopRewriteUtils.refreshOutputParameters(mult, left);
 						
 						HopRewriteUtils.addChildReference(parent, mult, pos);							
@@ -536,7 +536,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					Hop rightC1 = right.getInput().get(0);
 					Hop rightC2 = right.getInput().get(1);
-					if( rightC1.get_dataType()==DataType.MATRIX && rightC2.get_dataType()==DataType.MATRIX &&
+					if( rightC1.getDataType()==DataType.MATRIX && rightC2.getDataType()==DataType.MATRIX &&
 						(left == rightC1 || left == rightC2) && rightC1 !=rightC2 ){ //any mult order
 						X = left;
 						Y = ( left == rightC1 ) ? rightC2 : rightC1;
@@ -544,9 +544,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					if( X != null ){ //rewrite '+/- binary'
 						HopRewriteUtils.removeChildReference(parent, hi);
 						LiteralOp literal = new LiteralOp("1",1);
-						BinaryOp plus = new BinaryOp(left.get_name(), left.get_dataType(), left.get_valueType(), bop.getOp(), literal, Y);
+						BinaryOp plus = new BinaryOp(left.getName(), left.getDataType(), left.getValueType(), bop.getOp(), literal, Y);
 						HopRewriteUtils.refreshOutputParameters(plus, left);						
-						BinaryOp mult = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), OpOp2.MULT, plus, X);
+						BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, plus, X);
 						HopRewriteUtils.refreshOutputParameters(mult, right);
 						
 						HopRewriteUtils.addChildReference(parent, mult, pos);	
@@ -583,7 +583,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop right = bop.getInput().get(1);
 			OpOp2 op = bop.getOp();
 			
-			if( left.get_dataType()==DataType.MATRIX && right.get_dataType()==DataType.MATRIX &&
+			if( left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX &&
 				HopRewriteUtils.isValidOp(op, LOOKUP_VALID_ASSOCIATIVE_BINARY) )
 			{
 				boolean applied = false;
@@ -595,7 +595,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop right2 = bop2.getInput().get(1);
 					OpOp2 op2 = bop2.getOp();
 					
-					if( op==op2 && right2.get_dataType()==DataType.MATRIX 
+					if( op==op2 && right2.getDataType()==DataType.MATRIX 
 						&& (right2 instanceof AggBinaryOp) )
 					{
 						//(X*(Y*op()) -> (X*Y)*op()
@@ -622,10 +622,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop right2 = bop2.getInput().get(1);
 					OpOp2 op2 = bop2.getOp();
 					
-					if( op==op2 && left2.get_dataType()==DataType.MATRIX 
+					if( op==op2 && left2.getDataType()==DataType.MATRIX 
 						&& (left2 instanceof AggBinaryOp) 
-						&& (right2.get_dim2() > 1 || right.get_dim2() == 1)   //X not vector, or Y vector
-						&& (right2.get_dim1() > 1 || right.get_dim1() == 1) ) //X not vector, or Y vector
+						&& (right2.getDim2() > 1 || right.getDim2() == 1)   //X not vector, or Y vector
+						&& (right2.getDim1() > 1 || right.getDim1() == 1) ) //X not vector, or Y vector
 					{
 						//((op()*X)*Y) -> op()*(X*Y)
 						HopRewriteUtils.removeChildReference(parent, bop);
@@ -664,7 +664,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
 			
-			if( bop.getOp() == OpOp2.MULT && left.get_dataType()==DataType.MATRIX && right.get_dataType()==DataType.MATRIX )
+			if( bop.getOp() == OpOp2.MULT && left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX )
 			{
 				//by definition, either left or right or none applies. 
 				//note: if there are multiple consumers on the intermediate,
@@ -677,7 +677,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop left1 = bleft.getInput().get(0);
 					Hop left2 = bleft.getInput().get(1);		
 				
-					if( left1.get_dataType() == DataType.SCALAR &&
+					if( left1.getDataType() == DataType.SCALAR &&
 						left2 == right &&
 						bleft.getOp() == OpOp2.MINUS  ) 
 					{
@@ -685,7 +685,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.removeChildReference(bop, left);
 						HopRewriteUtils.addChildReference(bop, left1);
 						//cleanup if only consumer of intermediate
-						if( left.getParent().size()<1 ) {
+						if( left.getParent().isEmpty() ) {
 							HopRewriteUtils.removeChildReference(left, left1);
 							HopRewriteUtils.removeChildReference(left, left2);
 						}
@@ -699,7 +699,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop right1 = bright.getInput().get(0);
 					Hop right2 = bright.getInput().get(1);		
 				
-					if( right1.get_dataType() == DataType.SCALAR &&
+					if( right1.getDataType() == DataType.SCALAR &&
 						right2 == left &&
 						bright.getOp() == OpOp2.MINUS )
 					{
@@ -707,7 +707,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.removeChildReference(bop, right);
 						HopRewriteUtils.addChildReference(bop, right1);
 						//cleanup if only consumer of intermediate
-						if( right.getParent().size()<1 ) {
+						if( right.getParent().isEmpty() ) {
 							HopRewriteUtils.removeChildReference(right, right1);
 							HopRewriteUtils.removeChildReference(right, right2);
 						}
@@ -734,7 +734,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum	
 			{
 				Hop hi2 = au.getInput().get(0);
-				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.get_dim2()==1 ) //diagM2V
+				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
 				{
 					Hop hi3 = hi2.getInput().get(0);
 					
@@ -746,7 +746,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					au.setOp( AggOp.TRACE );
 					
 					//cleanup if only consumer of intermediate
-					if( hi2.getParent().size()<1 ) 
+					if( hi2.getParent().isEmpty() ) 
 						HopRewriteUtils.removeAllChildReferences( hi2 );
 					
 					LOG.debug("Applied simplifySumDiagToTrace");
@@ -784,23 +784,23 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//removeChildReference(hi2, right);
 				
 				//create new operators (incl refresh size inside for transpose)
-				ReorgOp trans = new ReorgOp(right.get_name(), right.get_dataType(), right.get_valueType(), ReOrgOp.TRANSPOSE, right);
-				trans.set_rows_in_block(right.get_rows_in_block());
-				trans.set_cols_in_block(right.get_cols_in_block());
-				BinaryOp mult = new BinaryOp(right.get_name(), right.get_dataType(), right.get_valueType(), OpOp2.MULT, left, trans);
-				mult.set_rows_in_block(right.get_rows_in_block());
-				mult.set_cols_in_block(right.get_cols_in_block());
+				ReorgOp trans = new ReorgOp(right.getName(), right.getDataType(), right.getValueType(), ReOrgOp.TRANSPOSE, right);
+				trans.setRowsInBlock(right.getRowsInBlock());
+				trans.setColsInBlock(right.getColsInBlock());
+				BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, left, trans);
+				mult.setRowsInBlock(right.getRowsInBlock());
+				mult.setColsInBlock(right.getColsInBlock());
 				mult.refreshSizeInformation();
-				AggUnaryOp sum = new AggUnaryOp(right.get_name(), DataType.SCALAR, right.get_valueType(), AggOp.SUM, Direction.RowCol, mult);
+				AggUnaryOp sum = new AggUnaryOp(right.getName(), DataType.SCALAR, right.getValueType(), AggOp.SUM, Direction.RowCol, mult);
 				sum.refreshSizeInformation();
 				
 				//rehang new subdag under parent node
 				HopRewriteUtils.addChildReference(parent, sum, pos);
 				
 				//cleanup if only consumer of intermediate
-				if( hi.getParent().size()<1 ) 
+				if( hi.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi );
-				if( hi2.getParent().size()<1 ) 
+				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				hi = sum;
@@ -832,9 +832,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = hi3;
 				
 				//cleanup if only consumer of intermediate
-				if( hi.getParent().size()<1 ) 
+				if( hi.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi );
-				if( hi2.getParent().size()<1 ) 
+				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				LOG.debug("Applied removeUnecessaryTranspose");
@@ -855,12 +855,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private Hop removeUnecessaryMinus(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
-		if( hi.get_dataType() == DataType.MATRIX && hi instanceof BinaryOp 
+		if( hi.getDataType() == DataType.MATRIX && hi instanceof BinaryOp 
 			&& ((BinaryOp)hi).getOp()==OpOp2.MINUS  						//first minus
 			&& hi.getInput().get(0) instanceof LiteralOp && ((LiteralOp)hi.getInput().get(0)).getDoubleValue()==0 )
 		{
 			Hop hi2 = hi.getInput().get(1);
-			if( hi2.get_dataType() == DataType.MATRIX && hi2 instanceof BinaryOp 
+			if( hi2.getDataType() == DataType.MATRIX && hi2 instanceof BinaryOp 
 				&& ((BinaryOp)hi2).getOp()==OpOp2.MINUS  						//second minus
 				&& hi2.getInput().get(0) instanceof LiteralOp && ((LiteralOp)hi2.getInput().get(0)).getDoubleValue()==0 )
 				
@@ -872,9 +872,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = hi3;
 				
 				//cleanup if only consumer of intermediate
-				if( hi.getParent().size()<1 ) 
+				if( hi.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi );
-				if( hi2.getParent().size()<1 ) 
+				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				LOG.debug("Applied removeUnecessaryMinus");

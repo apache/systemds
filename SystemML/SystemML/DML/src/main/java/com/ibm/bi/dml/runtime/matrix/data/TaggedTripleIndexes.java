@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long third=-1;
@@ -90,23 +90,21 @@ public class TaggedTripleIndexes extends TaggedFirstSecondIndexes
 		return 0;
 	}
 
-	public boolean equals(TaggedTripleIndexes other)
-	{
-		return (this.first==other.first && this.tag==other.tag 
-				&& this.second==other.second && this.third==other.third);
-	}
-	
+	@Override
 	public boolean equals(Object other)
 	{
-	//	LOG.info("calling equals for MatrixCellIndexes!");
 		if( !(other instanceof TaggedTripleIndexes))
 			return false;
-		return equals((TaggedTripleIndexes)other);
+		
+		TaggedTripleIndexes tother = (TaggedTripleIndexes)other;
+		return (this.first==tother.first && this.tag==tother.tag 
+				&& this.second==tother.second && this.third==tother.third);
 	}
 	
-	 public int hashCode() {
+	@Override
+	public int hashCode() {
 		 return UtilFunctions.longHashFunc((first<<32)+(second<<16)+third+tag+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
-	 }
+	}
 	
 	public static class Comparator implements RawComparator<TaggedTripleIndexes>
 	{

@@ -76,14 +76,14 @@ public class UnaryOp extends Hop
 	
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + _op);
 				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
@@ -100,23 +100,23 @@ public class UnaryOp extends Hop
 		throws HopsException, LopsException 
 	{		
 		//reuse existing lop
-		if( get_lops() != null )
-			return get_lops();
+		if( getLops() != null )
+			return getLops();
 		
 		try 
 		{
 			Hop input = getInput().get(0);
 			
-			if (get_dataType() == DataType.SCALAR || _op == OpOp1.CAST_AS_MATRIX) 
+			if (getDataType() == DataType.SCALAR || _op == OpOp1.CAST_AS_MATRIX) 
 			{
 				if (_op == Hop.OpOp1.IQM)  //special handling IQM
 				{
 					Lop iqmLop = constructLopsIQM();
-					set_lops(iqmLop);
+					setLops(iqmLop);
 				} 
 				else if(_op == Hop.OpOp1.MEDIAN) {
 					Lop medianLop = constructLopsMedian();
-					set_lops(medianLop);
+					setLops(medianLop);
 				}
 				else //general case SCALAR/CAST (always in CP)
 				{
@@ -124,11 +124,11 @@ public class UnaryOp extends Hop
 					if( optype == null )
 						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
 					
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, get_dataType(), get_valueType());
-					unary1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-							             get_rows_in_block(), get_cols_in_block(), getNnz());
+					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
+					unary1.getOutputParameters().setDimensions(getDim1(), getDim2(), 
+							             getRowsInBlock(), getColsInBlock(), getNnz());
 					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
+					setLops(unary1);
 				}
 			} 
 			else //general case MATRIX
@@ -139,16 +139,16 @@ public class UnaryOp extends Hop
 				{
 					//TODO additional physical operation if offsets fit in memory
 					Lop cumsumLop = constructLopsMRCumsum();
-					set_lops(cumsumLop);
+					setLops(cumsumLop);
 				}
 				else //default unary 
 				{
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
-							                 get_dataType(), get_valueType(), et);
-					unary1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							                 getDataType(), getValueType(), et);
+					unary1.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
+					setLops(unary1);
 				}
 			}
 		} 
@@ -157,7 +157,7 @@ public class UnaryOp extends Hop
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 	
 
@@ -166,21 +166,21 @@ public class UnaryOp extends Hop
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(
 					getInput().get(0).constructLops(),
-					get_dataType(), get_valueType());
+					getDataType(), getValueType());
 
 			SortKeys sort = SortKeys.constructSortByValueLop(
 					combine, SortKeys.OperationTypes.WithNoWeights,
 					DataType.MATRIX, ValueType.DOUBLE, et);
 
-			combine.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			combine.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 
 			// Sort dimensions are same as the first input
 			sort.getOutputParameters().setDimensions(
-					getInput().get(0).get_dim1(),
-					getInput().get(0).get_dim2(),
-					getInput().get(0).get_rows_in_block(),
-					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getDim1(),
+					getInput().get(0).getDim2(),
+					getInput().get(0).getRowsInBlock(),
+					getInput().get(0).getColsInBlock(), 
 					getInput().get(0).getNnz());
 
 			// If only a single quantile is computed, then "pick" operation executes in CP.
@@ -189,12 +189,12 @@ public class UnaryOp extends Hop
 			PickByCount pick = new PickByCount(
 					sort,
 					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					get_dataType(),
-					get_valueType(),
+					getDataType(),
+					getValueType(),
 					PickByCount.OperationTypes.MEDIAN, et_pick, false);
 
-			pick.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			pick.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
@@ -206,24 +206,24 @@ public class UnaryOp extends Hop
 								SortKeys.OperationTypes.WithNoWeights, 
 								DataType.MATRIX, ValueType.DOUBLE, et );
 			sort.getOutputParameters().setDimensions(
-					getInput().get(0).get_dim1(),
-					getInput().get(0).get_dim2(),
-					getInput().get(0).get_rows_in_block(),
-					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getDim1(),
+					getInput().get(0).getDim2(),
+					getInput().get(0).getRowsInBlock(),
+					getInput().get(0).getColsInBlock(), 
 					getInput().get(0).getNnz());
 			PickByCount pick = new PickByCount(
 					sort,
 					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					get_dataType(),
-					get_valueType(),
+					getDataType(),
+					getValueType(),
 					PickByCount.OperationTypes.MEDIAN, et, true);
 
-			pick.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			pick.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			set_lops(pick);
+			setLops(pick);
 			return pick;
 		}
 	}
@@ -233,12 +233,12 @@ public class UnaryOp extends Hop
 		Hop input = getInput().get(0);
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
-							                       DataType.MATRIX, get_valueType());
+							                       DataType.MATRIX, getValueType());
 			combine.getOutputParameters().setDimensions(
-					input.get_dim1(),
-					input.get_dim2(), 
-					input.get_rows_in_block(),
-					input.get_cols_in_block(),
+					input.getDim1(),
+					input.getDim2(), 
+					input.getRowsInBlock(),
+					input.getColsInBlock(),
 					input.getNnz());
 
 			SortKeys sort = SortKeys.constructSortByValueLop(combine,
@@ -247,10 +247,10 @@ public class UnaryOp extends Hop
 
 			// Sort dimensions are same as the first input
 			sort.getOutputParameters().setDimensions(
-					input.get_dim1(),
-					input.get_dim2(),
-					input.get_rows_in_block(),
-					input.get_cols_in_block(),
+					input.getDim1(),
+					input.getDim2(),
+					input.getRowsInBlock(),
+					input.getColsInBlock(),
 					input.getNnz());
 
 			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
@@ -258,48 +258,48 @@ public class UnaryOp extends Hop
 			lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
             			
 			PickByCount pick = new PickByCount(
-					sort, lit, DataType.MATRIX, get_valueType(),
+					sort, lit, DataType.MATRIX, getValueType(),
 					PickByCount.OperationTypes.RANGEPICK);
 
 			pick.getOutputParameters().setDimensions(-1, -1,  
-					get_rows_in_block(), get_cols_in_block(), -1);
+					getRowsInBlock(), getColsInBlock(), -1);
 			
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			PartialAggregate pagg = new PartialAggregate(
 					pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
 					HopsDirection2Lops.get(Hop.Direction.RowCol),
-					DataType.MATRIX, get_valueType());
+					DataType.MATRIX, getValueType());
 			
 			pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			// Set the dimensions of PartialAggregate LOP based on the
 			// direction in which aggregation is performed
-			pagg.setDimensionsBasedOnDirection(get_dim1(),
-						get_dim2(), get_rows_in_block(),
-						get_cols_in_block());
+			pagg.setDimensionsBasedOnDirection(getDim1(),
+						getDim2(), getRowsInBlock(),
+						getColsInBlock());
 
 			Group group1 = new Group(
 					pagg, Group.OperationTypes.Sort, DataType.MATRIX,
-					get_valueType());
-			group1.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(),
-					get_cols_in_block(), getNnz());
+					getValueType());
+			group1.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(),
+					getColsInBlock(), getNnz());
 			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			Aggregate agg1 = new Aggregate(
 					group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
-					DataType.MATRIX, get_valueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(),
-					get_cols_in_block(), getNnz());
+					DataType.MATRIX, getValueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(),
+					getColsInBlock(), getNnz());
 			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
 			
 			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			UnaryCP unary1 = new UnaryCP(
 					agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-					get_dataType(), get_valueType());
+					getDataType(), getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
@@ -315,17 +315,17 @@ public class UnaryOp extends Hop
 					SortKeys.OperationTypes.WithNoWeights, 
 					DataType.MATRIX, ValueType.DOUBLE, et );
 			sort.getOutputParameters().setDimensions(
-					input.get_dim1(),
-					input.get_dim2(),
-					input.get_rows_in_block(),
-					input.get_cols_in_block(),
+					input.getDim1(),
+					input.getDim2(),
+					input.getRowsInBlock(),
+					input.getColsInBlock(),
 					input.getNnz());
 			PickByCount pick = new PickByCount(sort, null,
-					get_dataType(),get_valueType(),
+					getDataType(),getValueType(),
 					PickByCount.OperationTypes.IQM, et, true);
 
-			pick.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			pick.getOutputParameters().setDimensions(getDim1(),
+					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
@@ -349,10 +349,10 @@ public class UnaryOp extends Hop
 		throws HopsException, LopsException 
 	{
 		Hop input = getInput().get(0);
-		long rlen = input.get_dim1();
-		long clen = input.get_dim2();
-		long brlen = input.get_rows_in_block();
-		long bclen = input.get_cols_in_block();
+		long rlen = input.getDim1();
+		long clen = input.getDim2();
+		long brlen = input.getRowsInBlock();
+		long bclen = input.getColsInBlock();
 		boolean unknownSize = !dimsKnown();
 		
 		Lop X = input.constructLops();
@@ -361,14 +361,14 @@ public class UnaryOp extends Hop
 		int level = 0;
 		
 		//recursive preaggregation until aggregates fit into CP memory budget
-		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNum_rows(), clen, 1.0) + OptimizerUtils.estimateSize(1, clen, 1.0)) 
+		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen, 1.0) + OptimizerUtils.estimateSize(1, clen, 1.0)) 
 				 > OptimizerUtils.getLocalMemBudget()
-			   && TEMP.getOutputParameters().getNum_rows()>1) || unknownSize )
+			   && TEMP.getOutputParameters().getNumRows()>1) || unknownSize )
 		{
 			DATA.add(TEMP);
 	
 			//preaggregation per block
-			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNum_rows()/brlen);
+			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
 			Lop preagg = new CumsumPartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE);
 			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			setLineNumbers(preagg);
@@ -377,7 +377,7 @@ public class UnaryOp extends Hop
 			group.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			setLineNumbers(group);
 			
-			Aggregate agg = new Aggregate(group, HopsAgg2Lops.get(AggOp.SUM), get_dataType(), get_valueType(), ExecType.MR);
+			Aggregate agg = new Aggregate(group, HopsAgg2Lops.get(AggOp.SUM), getDataType(), getValueType(), ExecType.MR);
 			agg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			agg.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 			setLineNumbers(agg);
@@ -387,9 +387,9 @@ public class UnaryOp extends Hop
 		}
 		
 		//in-memory cum sum (of partial aggregates)
-		if( TEMP.getOutputParameters().getNum_rows()!=1 ){
+		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
-			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNum_rows(), clen, brlen, bclen, -1);
+			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
 		}
@@ -421,9 +421,9 @@ public class UnaryOp extends Hop
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 		
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
-			if(this.getInput().size() < 1)
+			if( getInput().isEmpty() )
 				throw new HopsException(this.printErrorLocation() + "Unary hop needs one input \n");
 			
 			//Check whether this is going to be an Insert or With
@@ -431,28 +431,28 @@ public class UnaryOp extends Hop
 			
 			if( this._op == OpOp1.PRINT )
 				gen = GENERATES.PRINT;
-			else if(this.get_dataType() == DataType.SCALAR && gen != GENERATES.DML_PERSISTENT 
+			else if(this.getDataType() == DataType.SCALAR && gen != GENERATES.DML_PERSISTENT 
 					&& gen != GENERATES.DML_TRANSIENT)
 				gen = GENERATES.DML;
 			
 			Hop input = this.getInput().get(0);
 			
-			SQLLops sqllop = new SQLLops(this.get_name(),
+			SQLLops sqllop = new SQLLops(this.getName(),
 										gen,
 										input.constructSQLLOPs(),
-										this.get_valueType(),
-										this.get_dataType());
+										this.getValueType(),
+										this.getDataType());
 
 			//TODO Uncomment this to make scalar placeholders
-			if(this.get_dataType() == DataType.SCALAR && gen == GENERATES.DML)
+			if(this.getDataType() == DataType.SCALAR && gen == GENERATES.DML)
 				sqllop.set_tableName("##" + sqllop.get_tableName() + "##");
 			
 			String sql = this.getSQLSelectCode(input);
 			sqllop.set_sql(sql);
 			sqllop.set_properties(getProperties(input));
-			this.set_sqllops(sqllop);
+			this.setSqlLops(sqllop);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	private SQLLopProperties getProperties(Hop input)
@@ -461,7 +461,7 @@ public class UnaryOp extends Hop
 		prop.setJoinType(JOINTYPE.NONE);
 		prop.setAggType(AGGREGATIONTYPE.NONE);
 		
-		prop.setOpString(Hop.HopsOpOp12String.get(this._op) + "(" + input.get_sqllops().get_tableName() + ")");
+		prop.setOpString(Hop.HopsOpOp12String.get(this._op) + "(" + input.getSqlLops().get_tableName() + ")");
 		
 		return prop;
 	}
@@ -472,34 +472,34 @@ public class UnaryOp extends Hop
 	{
 		String sql = null;
 
-		if(input.get_sqllops().get_dataType() == DataType.MATRIX)
+		if(input.getSqlLops().getDataType() == DataType.MATRIX)
 		{
 			if(this._op == OpOp1.CAST_AS_SCALAR)
 			{
-				//sqllop.set_dataType(DataType.SCALAR);
-				sql = String.format(SQLLops.CASTASSCALAROP, input.get_sqllops().get_tableName());
+				//sqllop.setDataType(DataType.SCALAR);
+				sql = String.format(SQLLops.CASTASSCALAROP, input.getSqlLops().get_tableName());
 			}
 			if(Hop.isFunction(this._op))
 			{
 				String op = Hop.HopsOpOp12String.get(this._op);
 				if(this._op == OpOp1.LOG)
 					op = "ln";
-				sql = String.format(SQLLops.UNARYFUNCOP, op, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.UNARYFUNCOP, op, input.getSqlLops().get_tableName());
 			}
 			//Not is in SLQ not "!" but "NOT"
 			else if(this._op == OpOp1.NOT)
 			{
-				sql = String.format(SQLLops.UNARYNOT, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.UNARYNOT, input.getSqlLops().get_tableName());
 			}
 		}
 		
-		else if(input.get_sqllops().get_dataType() == DataType.SCALAR)
+		else if(input.getSqlLops().getDataType() == DataType.SCALAR)
 		{
 			String table = "";
 			String opr = null;
-			String s = input.get_sqllops().get_tableName();
+			String s = input.getSqlLops().get_tableName();
 			
-			if(input.get_sqllops().get_flag() == GENERATES.SQL)
+			if(input.getSqlLops().get_flag() == GENERATES.SQL)
 			{
 				String squoted = SQLLops.addQuotes(s);
 				table = " FROM " + squoted;
@@ -508,10 +508,10 @@ public class UnaryOp extends Hop
 			if( this._op == OpOp1.PRINT )
 			{
 				//sqllop.set_flag(GENERATES.PRINT);
-				String tname = input.get_sqllops().get_tableName();
+				String tname = input.getSqlLops().get_tableName();
 				
-				if(input.get_sqllops().get_dataType() == DataType.MATRIX
-						|| input.get_sqllops().get_flag() == GENERATES.SQL)
+				if(input.getSqlLops().getDataType() == DataType.MATRIX
+						|| input.getSqlLops().get_flag() == GENERATES.SQL)
 				{
 					tname = SQLLops.addQuotes(tname);
 				
@@ -542,12 +542,12 @@ public class UnaryOp extends Hop
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		
-		if(input.get_sqllops().get_dataType() == DataType.MATRIX)
+		if(input.getSqlLops().getDataType() == DataType.MATRIX)
 		{
 			if(this._op == OpOp1.CAST_AS_SCALAR)
 			{
 				stmt.getColumns().add("max(value) AS sval");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
+				stmt.setTable(new SQLTableReference(input.getSqlLops().get_tableName()));
 			}
 			if(Hop.isFunction(this._op))
 			{
@@ -556,7 +556,7 @@ public class UnaryOp extends Hop
 				stmt.getColumns().add("row");
 				stmt.getColumns().add("col");
 				stmt.getColumns().add(op + "(value) AS value");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
+				stmt.setTable(new SQLTableReference(input.getSqlLops().get_tableName()));
 			}
 			//Not is in SLQ not "!" but "NOT"
 			else if(this._op == OpOp1.NOT)
@@ -566,22 +566,22 @@ public class UnaryOp extends Hop
 				stmt.getColumns().add("row");
 				stmt.getColumns().add("col");
 				stmt.getColumns().add("1 AS value");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
+				stmt.setTable(new SQLTableReference(input.getSqlLops().get_tableName()));
 				stmt.getWheres().add(new SQLCondition("value == 0"));
 			}
 		}
 		
-		else if(input.get_sqllops().get_dataType() == DataType.SCALAR)
+		else if(input.getSqlLops().getDataType() == DataType.SCALAR)
 		{
 			String opr = null;
 
 			if( this._op == OpOp1.PRINT )
 			{
 				//sqllop.set_flag(GENERATES.PRINT);
-				String tname = input.get_sqllops().get_tableName();
+				String tname = input.getSqlLops().get_tableName();
 				
-				if(input.get_sqllops().get_dataType() == DataType.MATRIX
-						|| input.get_sqllops().get_flag() == GENERATES.SQL)
+				if(input.getSqlLops().getDataType() == DataType.MATRIX
+						|| input.getSqlLops().get_flag() == GENERATES.SQL)
 				{
 					tname = SQLLops.addQuotes(tname);
 				
@@ -602,8 +602,8 @@ public class UnaryOp extends Hop
 					opr = "NOT sval";
 				
 				stmt.getColumns().add(opr + " AS sval");
-				if(input.get_sqllops().get_flag() == GENERATES.SQL)
-					stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.get_sqllops().get_tableName())));
+				if(input.getSqlLops().get_flag() == GENERATES.SQL)
+					stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.getSqlLops().get_tableName())));
 			}
 		}
 		else
@@ -704,23 +704,23 @@ public class UnaryOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if ( get_dataType() == DataType.SCALAR ) 
+		if ( getDataType() == DataType.SCALAR ) 
 		{
 			//do nothing always known
 		}
-		else if( _op == OpOp1.CAST_AS_MATRIX && getInput().get(0).get_dataType()==DataType.SCALAR )
+		else if( _op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR )
 		{
 			//prevent propagating 0 from scalar (which would be interpreted as unknown)
-			set_dim1( 1 );
-			set_dim2( 1 );
+			setDim1( 1 );
+			setDim2( 1 );
 		}
 		else //general case
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
 			Hop input = getInput().get(0);
-			set_dim1( input.get_dim1() );
-			set_dim2( input.get_dim2() );
+			setDim1( input.getDim1() );
+			setDim2( input.getDim2() );
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN  
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving

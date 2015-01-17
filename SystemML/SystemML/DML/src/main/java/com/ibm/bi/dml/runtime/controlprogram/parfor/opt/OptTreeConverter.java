@@ -8,15 +8,17 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -97,7 +99,7 @@ public class OptTreeConverter
 		{
 			case ABSTRACT_PLAN:
 				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
-				HashSet<String> memo = new HashSet<String>();
+				Set<String> memo = new HashSet<String>();
 				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, memo);	
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
 				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
@@ -135,7 +137,7 @@ public class OptTreeConverter
 		return tree;
 	}
 	
-	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<String> memo, ExecutionContext ec ) 
+	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, Set<String> memo, ExecutionContext ec ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		OptTree tree = null;
@@ -344,12 +346,12 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, HashSet<String> memo ) 
+	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, Set<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
 		OptNode node = null;
 		
-		if( pb instanceof IfProgramBlock )
+		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock )
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatementBlock isb = (IfStatementBlock) sb;
@@ -392,7 +394,7 @@ public class OptTreeConverter
 				}
 			}				
 		}
-		else if( pb instanceof WhileProgramBlock )
+		else if( pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock )
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatementBlock wsb = (WhileStatementBlock)sb;
@@ -416,7 +418,7 @@ public class OptTreeConverter
 				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}			
 		}
-		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
+		else if( pb instanceof ForProgramBlock && sb instanceof ForStatementBlock && !(pb instanceof ParForProgramBlock) )
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock)sb;
@@ -446,7 +448,7 @@ public class OptTreeConverter
 				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}	
 		}
-		else if( pb instanceof ParForProgramBlock )
+		else if( pb instanceof ParForProgramBlock && sb instanceof ParForStatementBlock )
 		{
 			ParForProgramBlock fpb = (ParForProgramBlock) pb;		
 			ParForStatementBlock fsb = (ParForStatementBlock)sb;
@@ -492,7 +494,7 @@ public class OptTreeConverter
 			}
 			
 			//parameters, add required parameters
-			HashMap<String,String> lparams = fpb.getParForParams();
+			Map<String,String> lparams = fpb.getParForParams();
 			node.addParam(ParamType.DATA_PARTITIONER, lparams.get(ParForStatementBlock.DATA_PARTITIONER));
 			node.addParam(ParamType.TASK_PARTITIONER, lparams.get(ParForStatementBlock.TASK_PARTITIONER));
 			node.addParam(ParamType.RESULT_MERGE, lparams.get(ParForStatementBlock.RESULT_MERGE));
@@ -531,7 +533,7 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, HashSet<String> memo ) 
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, Set<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
@@ -554,13 +556,13 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException  
 	 * @throws HopsException 
 	 */
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, HashSet<String> memo) 
+	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, Set<String> memo) 
 		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hop> in = hop.getInput();
 	
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return ret;
 		
 		//general case
@@ -621,7 +623,7 @@ public class OptTreeConverter
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
 					ret.addAll(rCreateAbstractOptNodes(hin, vars, memo));
 
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 		
 		return ret;
 	}
@@ -752,9 +754,9 @@ public class OptTreeConverter
 			if( inst instanceof RandCPInstruction )
 			{
 				RandCPInstruction linst = (RandCPInstruction) inst;
-				DataFormat df = (   MatrixBlock.evalSparseFormatInMemory(linst.rows, linst.cols, (long)(linst.sparsity*linst.rows*linst.cols)) ? 
+				DataFormat df = (   MatrixBlock.evalSparseFormatInMemory(linst.getRows(), linst.getCols(), (long)(linst.getSparsity()*linst.getRows()*linst.getCols())) ? 
 						            DataFormat.SPARSE : DataFormat.DENSE ); 
-				ret = new OptNodeStatistics(linst.rows, linst.cols, -1, -1, linst.sparsity, df);
+				ret = new OptNodeStatistics(linst.getRows(), linst.getCols(), -1, -1, linst.getSparsity(), df);
 			}
 			else if ( inst instanceof FunctionCallCPInstruction )
 			{
@@ -775,7 +777,7 @@ public class OptTreeConverter
 						{
 							ret.setDim1( mc1.numRows );
 							ret.setDim2( mc1.numColumns );
-							ret.setSparsity( (double)mc1.nonZero /(  ret.getDim1() * ret.getDim2() ) ); //sparsity
+							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
 							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? 
 									            DataFormat.SPARSE : DataFormat.DENSE ); 
 							maxSize = mc1.numRows*mc1.numColumns;
@@ -793,8 +795,8 @@ public class OptTreeConverter
 				
 				if( linst.input1 != null && linst.input2 != null ) //binary
 				{
-					Data dat1 = vars.get( linst.input1.get_name() );
-					Data dat2 = vars.get( linst.input2.get_name() );
+					Data dat1 = vars.get( linst.input1.getName() );
+					Data dat2 = vars.get( linst.input2.getName() );
 					
 					if( dat1 != null )
 					{
@@ -802,7 +804,7 @@ public class OptTreeConverter
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );
-						ret.setSparsity( mc1.nonZero /( ret.getDim1() * ret.getDim2() ) ); //sparsity
+						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
 						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero)? DataFormat.SPARSE : DataFormat.DENSE); 
 					}
 					if( dat2 != null )
@@ -816,7 +818,7 @@ public class OptTreeConverter
 				}
 				else //unary
 				{
-					Data dat1 = vars.get( linst.input1.get_name() );
+					Data dat1 = vars.get( linst.input1.getName() );
 					
 					if( dat1 != null )
 					{
@@ -824,7 +826,7 @@ public class OptTreeConverter
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );
-						ret.setSparsity( mc1.nonZero /( ret.getDim1() * ret.getDim2() ) ); //sparsity
+						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
 						ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
 					}					
 				}

@@ -54,24 +54,16 @@ public abstract class Lop
 		Scalar, Variable, File
 	};
 
-	public enum VISIT_STATUS {
+	public enum VisitStatus {
 		DONE, VISITING, NOTVISITED
 	}
 	
 
 	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
-	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
-	
-	// Boolean array to hold the list of nodes(lops) in the DAG that are reachable from this lop.
-	private boolean[] reachable = null;
-	private DataType _dataType;
-	private ValueType _valueType;
-
 	public static final String FILE_SEPARATOR = "/";
 	public static final String PROCESS_PREFIX = "_p";
 	
-	//TODO MB: change delimiters to specific chars or check literals in script; otherwise potential conflicts on instruction serialization
 	public static final String INSTRUCTION_DELIMITOR = "\u2021"; // "\u002c"; //",";
 	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
@@ -83,86 +75,25 @@ public abstract class Lop
 	public static final String MATRIX_VAR_NAME_PREFIX = "_mVar";
 	public static final String SCALAR_VAR_NAME_PREFIX = "_Var";
 	
-	/**
-	 * get visit status of node
-	 * 
-	 * @return
-	 */
+	// Boolean array to hold the list of nodes(lops) in the DAG that are reachable from this lop.
+	private boolean[] reachable = null;
+	private DataType _dataType;
+	private ValueType _valueType;
 
-	public VISIT_STATUS get_visited() {
-		return _visited;
-	}
+	private VisitStatus _visited = VisitStatus.NOTVISITED;
+
+	protected Lop.Type type;
 	
-	public boolean[] get_reachable() {
-		return reachable;
-	}
-
-	public boolean[] create_reachable(int size) {
-		reachable = new boolean[size];
-		return reachable;
-	}
-
-	/**
-	 * set visit status of node
-	 * 
-	 * @param visited
-	 */
-	public void set_visited(VISIT_STATUS visited) {
-		_visited = visited;
-	}
-
-	/**
-	 * get data type of the output that is produced by this lop
-	 * 
-	 * @return
-	 */
-
-	public DataType get_dataType() {
-		return _dataType;
-	}
-
-	/**
-	 * set data type of the output that is produced by this lop
-	 * 
-	 * @param dt
-	 */
-	public void set_dataType(DataType dt) {
-		_dataType = dt;
-	}
-
-	/**
-	 * get value type of the output that is produced by this lop
-	 * 
-	 * @return
-	 */
-
-	public ValueType get_valueType() {
-		return _valueType;
-	}
-
-	/**
-	 * set value type of the output that is produced by this lop
-	 * 
-	 * @param vt
-	 */
-	public void set_valueType(ValueType vt) {
-		_valueType = vt;
-	}
-
-	Lop.Type type;
-
 	/**
 	 * transient indicator
 	 */
-
-	boolean hasTransientParameters = false;
+	protected boolean hasTransientParameters = false;
 
 	/**
 	 * handle to all inputs and outputs.
 	 */
-
-	ArrayList<Lop> inputs;
-	ArrayList<Lop> outputs;
+	protected ArrayList<Lop> inputs;
+	protected ArrayList<Lop> outputs;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -171,16 +102,17 @@ public abstract class Lop
 	 * at the end of program blocks. 
 	 * 
 	 */
-	int consumerCount;
+	protected int consumerCount;
 
 	/**
 	 * handle to output parameters, dimensions, blocking, etc.
 	 */
 
-	OutputParameters outParams = null;
+	protected OutputParameters outParams = null;
 
-	LopProperties lps = null;
+	protected LopProperties lps = null;
 	
+
 	/**
 	 * Constructor to be invoked by base class.
 	 * 
@@ -196,6 +128,74 @@ public abstract class Lop
 		outParams = new OutputParameters();
 		lps = new LopProperties();
 	}
+	
+	/**
+	 * get visit status of node
+	 * 
+	 * @return
+	 */
+
+	public VisitStatus getVisited() {
+		return _visited;
+	}
+
+	/**
+	 * set visit status of node
+	 * 
+	 * @param visited
+	 */
+	public void setVisited(VisitStatus visited) {
+		_visited = visited;
+	}
+
+	
+	public boolean[] get_reachable() {
+		return reachable;
+	}
+
+	public boolean[] create_reachable(int size) {
+		reachable = new boolean[size];
+		return reachable;
+	}
+
+	/**
+	 * get data type of the output that is produced by this lop
+	 * 
+	 * @return
+	 */
+
+	public DataType getDataType() {
+		return _dataType;
+	}
+
+	/**
+	 * set data type of the output that is produced by this lop
+	 * 
+	 * @param dt
+	 */
+	public void setDataType(DataType dt) {
+		_dataType = dt;
+	}
+
+	/**
+	 * get value type of the output that is produced by this lop
+	 * 
+	 * @return
+	 */
+
+	public ValueType getValueType() {
+		return _valueType;
+	}
+
+	/**
+	 * set value type of the output that is produced by this lop
+	 * 
+	 * @param vt
+	 */
+	public void setValueType(ValueType vt) {
+		_valueType = vt;
+	}
+
 
 	/**
 	 * Method to get Lop type.
@@ -266,12 +266,12 @@ public abstract class Lop
 	public abstract String toString();
 
 	public void resetVisitStatus() {
-		if (this.get_visited() == Lop.VISIT_STATUS.NOTVISITED)
+		if (this.getVisited() == Lop.VisitStatus.NOTVISITED)
 			return;
 		for (int i = 0; i < this.getInputs().size(); i++) {
 			this.getInputs().get(i).resetVisitStatus();
 		}
-		this.set_visited(Lop.VISIT_STATUS.NOTVISITED);
+		this.setVisited(Lop.VisitStatus.NOTVISITED);
 	}
 
 	/**
@@ -281,7 +281,7 @@ public abstract class Lop
 	public final void printMe() {
 		if (LOG.isDebugEnabled()){
 			StringBuilder s = new StringBuilder("");
-			if (this.get_visited() != VISIT_STATUS.DONE) {
+			if (this.getVisited() != VisitStatus.DONE) {
 				s.append(getType() + ": " + getID() + "\n" ); // hashCode());
 				s.append("Inputs: ");
 				for (int i = 0; i < this.getInputs().size(); i++) {
@@ -298,11 +298,11 @@ public abstract class Lop
 				s.append(this.toString());
 				s.append("Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
 				s.append("FORMAT:" + this.getOutputParameters().getFormat() + ", rows="
-						+ this.getOutputParameters().getNum_rows() + ", cols=" + this.getOutputParameters().getNum_cols()
-						+ ", Blocked?: " + this.getOutputParameters().isBlocked_representation() + ", rowsInBlock=" + 
-						this.getOutputParameters().get_rows_in_block() + ", colsInBlock=" + 
-						this.getOutputParameters().get_cols_in_block() + "\n");
-				this.set_visited(VISIT_STATUS.DONE);
+						+ this.getOutputParameters().getNumRows() + ", cols=" + this.getOutputParameters().getNumCols()
+						+ ", Blocked?: " + this.getOutputParameters().isBlocked() + ", rowsInBlock=" + 
+						this.getOutputParameters().getRowsInBlock() + ", colsInBlock=" + 
+						this.getOutputParameters().getColsInBlock() + "\n");
+				this.setVisited(VisitStatus.DONE);
 				s.append("\n");
 
 				for (int i = 0; i < this.getInputs().size(); i++) {
@@ -580,9 +580,9 @@ public abstract class Lop
 		StringBuilder sb = new StringBuilder("");
 		sb.append(label);
 		sb.append(Lop.DATATYPE_PREFIX);
-		sb.append(get_dataType());
+		sb.append(getDataType());
 		sb.append(Lop.VALUETYPE_PREFIX);
-		sb.append(get_valueType());
+		sb.append(getValueType());
 		return sb.toString();
 	}
 	
@@ -643,9 +643,9 @@ public abstract class Lop
 		}
 		
 		sb.append(Lop.DATATYPE_PREFIX);
-		sb.append(get_dataType());
+		sb.append(getDataType());
 		sb.append(Lop.VALUETYPE_PREFIX);
-		sb.append(get_valueType());
+		sb.append(getValueType());
 		sb.append(Lop.LITERAL_PREFIX);
 		sb.append(isLiteral);
 		
@@ -663,9 +663,9 @@ public abstract class Lop
 		StringBuilder sb = new StringBuilder("");
 		sb.append(label);
 		sb.append(Lop.DATATYPE_PREFIX);
-		sb.append(get_dataType());
+		sb.append(getDataType());
 		sb.append(Lop.VALUETYPE_PREFIX);
-		sb.append(get_valueType());
+		sb.append(getValueType());
 		sb.append(Lop.LITERAL_PREFIX);
 		sb.append(isLiteral);
 		
@@ -677,7 +677,7 @@ public abstract class Lop
 	}
 
 	public String prepInputOperand(String label) {
-		DataType dt = get_dataType();
+		DataType dt = getDataType();
 		if ( dt == DataType.MATRIX ) {
 			return prepOperand(label);
 		}

@@ -116,7 +116,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			SimpleOperator op = (SimpleOperator) _optr;
 			double result =  op.fn.execute(params);
 			sores = new DoubleObject(result);
-			ec.setScalarOutput(output.get_name(), sores);
+			ec.setScalarOutput(output.getName(), sores);
 		} 
 		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
 			// acquire locks
@@ -134,7 +134,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			// compute the result
 			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr));
 			
-			ec.setMatrixOutput(output.get_name(), soresBlock);
+			ec.setMatrixOutput(output.getName(), soresBlock);
 			// release locks
 			target = groups = weights = null;
 			ec.releaseMatrixInput(params.get(Statement.GAGG_TARGET));
@@ -158,7 +158,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
 			
 			//release locks
-			ec.setMatrixOutput(output.get_name(), soresBlock);
+			ec.setMatrixOutput(output.getName(), soresBlock);
 			ec.releaseMatrixInput(params.get("target"));
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) {
@@ -171,7 +171,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			MatrixBlock ret = (MatrixBlock) target.replaceOperations(new MatrixBlock(), pattern, replacement);
 			
 			//release locks
-			ec.setMatrixOutput(output.get_name(), ret);
+			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
 		else {

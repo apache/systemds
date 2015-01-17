@@ -36,7 +36,7 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		CPOperand mat, scalar;
-		if ( input1.get_dataType() == DataType.MATRIX ) {
+		if ( input1.getDataType() == DataType.MATRIX ) {
 			mat = input1;
 			scalar = input2;
 		}
@@ -45,8 +45,8 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			mat = input2;
 		}
 		
-		MatrixBlock matBlock = ec.getMatrixInput(mat.get_name());
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType(), scalar.isLiteral());
+		MatrixBlock matBlock = ec.getMatrixInput(mat.getName());
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		ScalarOperator sc_op = (ScalarOperator)	_optr;
 		sc_op.setConstant(constant.getDoubleValue());
@@ -54,9 +54,9 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.scalarOperations(sc_op, new MatrixBlock());
 		
 		matBlock = null;
-		ec.releaseMatrixInput(mat.get_name());
+		ec.releaseMatrixInput(mat.getName());
 		
-		ec.setMatrixOutput(output.get_name(), resultBlock);
+		ec.setMatrixOutput(output.getName(), resultBlock);
 		resultBlock = null;
 	}
 }

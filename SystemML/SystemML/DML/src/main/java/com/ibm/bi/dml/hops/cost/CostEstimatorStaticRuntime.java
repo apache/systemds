@@ -365,10 +365,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			else if( mrinst instanceof MapMultChainInstruction)
 			{
 				MapMultChainInstruction minst = (MapMultChainInstruction) mrinst;
-				vs[0] = stats[ minst._input1 ];
-				vs[1] = stats[ minst._input2 ];
-				if( minst._input3>=0 )
-					vs[2] = stats[ minst._input3 ];
+				vs[0] = stats[ minst.getInput1() ];
+				vs[1] = stats[ minst.getInput2() ];
+				if( minst.getInput3()>=0 )
+					vs[2] = stats[ minst.getInput3() ];
 				
 				if( vs[0] == null ) //scalar input, 
 					vs[0] = _scalarStats;
@@ -981,7 +981,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}
 					else if(onlyLeft) { //righttranspose
 						if( !leftSparse ) //dense
-							return d1m * d1n * d1m /2;
+							return (double)d1m * d1n * d1m /2;
 						else //sparse
 							return   d1m * d1n * d1s //reorg sparse
 							       + d1m * d1n * d1s * d1n * d1s /2; //core tsmm

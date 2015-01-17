@@ -1480,8 +1480,8 @@ public class MRJobConfiguration
 				else if(ins instanceof MapMultChainInstruction)
 				{
 					MapMultChainInstruction tempIns=(MapMultChainInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns._input1, dims.get(tempIns._input1));	
-					intermediateMatrixIndexes.add(tempIns._input1);
+					setIntermediateMatrixCharactristics(job, tempIns.getInput1(), dims.get(tempIns.getInput2()));	
+					intermediateMatrixIndexes.add(tempIns.getInput1());
 				}
 				else if(ins instanceof PMMJMRInstruction)
 				{

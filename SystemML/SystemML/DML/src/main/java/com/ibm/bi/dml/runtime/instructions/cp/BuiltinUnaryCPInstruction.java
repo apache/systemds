@@ -62,9 +62,9 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 			opcode = parseUnaryInstruction(str, in, out);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
-			if(in.get_dataType() == DataType.SCALAR)
+			if(in.getDataType() == DataType.SCALAR)
 				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
-			else if(in.get_dataType() == DataType.MATRIX)
+			else if(in.getDataType() == DataType.MATRIX)
 				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, opcode, str);
 		}
 		
@@ -81,10 +81,10 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 		/*
 		ValueType vt1, vt2, vt3;
 		vt1 = vt2 = vt3 = null;
-		vt1 = in1.get_valueType();
+		vt1 = in1.getValueType();
 		if ( in2 != null )
-			vt2 = in2.get_valueType();
-		vt3 = out.get_valueType();
+			vt2 = in2.getValueType();
+		vt3 = out.getValueType();
 		if ( vt1 != ValueType.BOOLEAN || vt3 != ValueType.BOOLEAN 
 				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");

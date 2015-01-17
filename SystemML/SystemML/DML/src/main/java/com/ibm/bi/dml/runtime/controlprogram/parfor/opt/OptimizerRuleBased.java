@@ -402,7 +402,7 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			String inMatrix = h.getInput().get(0).get_name();
+			String inMatrix = h.getInput().get(0).getName();
 			if( cand.containsKey(inMatrix) ) //Required Condition: partitioning applicable
 			{
 				PDataPartitionFormat dpf = cand.get(inMatrix);
@@ -415,10 +415,11 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					//NOTE: subsequent rewrites will still use the MR mem estimate
 					//(guarded by subsequent operations that have at least the memory req of one partition)
-					if( mnew < _lm ) //apply rewrite if partitions fit into memory
-						n.setExecType(ExecType.CP);
-					else
-						n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
+					//if( mnew < _lm ) //apply rewrite if partitions fit into memory
+					//	n.setExecType(ExecType.CP);
+					//else
+					//	n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
+					n.setExecType(ExecType.CP);
 					n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
 					h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
 					ret = true;
@@ -595,7 +596,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//determine if applicable
 		boolean apply =    M < _rm         //ops fit in remote memory budget
-			            && cand.size() > 0 //at least one MR
+			            && !cand.isEmpty() //at least one MR
 		                && isResultPartitionableAll(cand,pfpb.getResultVariables(),vars, pfpb.getIterablePredicateVars()[0]); // check candidates
 			
 		//recompile LIX
@@ -668,7 +669,7 @@ public class OptimizerRuleBased extends Optimizer
 			base = h.getInput().get(0);
 			
 			//check result variable
-			if( !resultVars.contains(base.get_name()) )
+			if( !resultVars.contains(base.getName()) )
 				ret = false;
 		}
 
@@ -679,9 +680,9 @@ public class OptimizerRuleBased extends Optimizer
 			Hop inpRowU = h.getInput().get(3);
 			Hop inpColL = h.getInput().get(4);
 			Hop inpColU = h.getInput().get(5);
-			if( (inpRowL.get_name().equals(iterVarname) && inpRowU.get_name().equals(iterVarname)) )
+			if( (inpRowL.getName().equals(iterVarname) && inpRowU.getName().equals(iterVarname)) )
 				dpf = 1; //rowwise
-			if( (inpColL.get_name().equals(iterVarname) && inpColU.get_name().equals(iterVarname)) )
+			if( (inpColL.getName().equals(iterVarname) && inpColU.getName().equals(iterVarname)) )
 				dpf = (dpf==0) ? 2 : 3; //colwise or cellwise
 			
 			if( dpf == 0 )
@@ -689,7 +690,7 @@ public class OptimizerRuleBased extends Optimizer
 			else
 			{
 				//check memory budget
-				MatrixObject mo = (MatrixObject)vars.get(base.get_name());
+				MatrixObject mo = (MatrixObject)vars.get(base.getName());
 				if( mo.getNnz() != 0 ) //0 or -1 valid because result var known during opt
 					ret = false;
 				
@@ -697,15 +698,15 @@ public class OptimizerRuleBased extends Optimizer
 				int taskN = -1;
 				switch(dpf) { //check tasksize = 1
 					case 1:
-						memTask1 = base.get_dim2()*8;
+						memTask1 = base.getDim2()*8;
 						taskN = (int) (_rm / memTask1); 
 						break;
 					case 2:
-						memTask1 = base.get_dim1()*Math.min(SparseRow.initialCapacity, base.get_dim2())*8;
-						taskN = (int) (_rm / (base.get_dim1()*8));
+						memTask1 = base.getDim1()*Math.min(SparseRow.initialCapacity, base.getDim2())*8;
+						taskN = (int) (_rm / (base.getDim1()*8));
 						break;
 					case 3:
-						memTask1 = Math.min(SparseRow.initialCapacity, base.get_dim2())*8;
+						memTask1 = Math.min(SparseRow.initialCapacity, base.getDim2())*8;
 						taskN = (int) (_rm / memTask1);
 						break;	
 				}
@@ -718,7 +719,7 @@ public class OptimizerRuleBased extends Optimizer
 		}
 				
 		//if(ret)
-		//	System.out.println("isResultPartitioning: "+base.get_name()+" - "+ret);
+		//	System.out.println("isResultPartitioning: "+base.getName()+" - "+ret);
 		
 		return ret;
 	}
@@ -1043,17 +1044,17 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			String inMatrix = h.getInput().get(0).get_name();
+			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
 			switch( dpf )
 			{
 				case ROW_WISE: //input 1 and 2 eq
 					if( h.getInput().get(1) instanceof DataOp )
-						indexAccess = h.getInput().get(1).get_name();
+						indexAccess = h.getInput().get(1).getName();
 					break;
 				case COLUMN_WISE: //input 3 and 4 eq
 					if( h.getInput().get(3) instanceof DataOp )
-						indexAccess = h.getInput().get(3).get_name();
+						indexAccess = h.getInput().get(3).getName();
 					break;
 			}
 			
@@ -1534,17 +1535,17 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			String inMatrix = h.getInput().get(0).get_name();
+			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
 			switch( dpf )
 			{
 				case ROW_WISE: //input 1 and 2 eq
 					if( h.getInput().get(1) instanceof DataOp )
-						indexAccess = h.getInput().get(1).get_name();
+						indexAccess = h.getInput().get(1).getName();
 					break;
 				case COLUMN_WISE: //input 3 and 4 eq
 					if( h.getInput().get(3) instanceof DataOp )
-						indexAccess = h.getInput().get(3).get_name();
+						indexAccess = h.getInput().get(3).getName();
 					break;
 			}
 			
@@ -1615,7 +1616,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			
-			String inMatrix = h.getInput().get(0).get_name();
+			String inMatrix = h.getInput().get(0).getName();
 			if( inMatrix.equals(varName) )
 			{
 				//check that all parents are transpose-safe operations
@@ -1707,10 +1708,10 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.OPSTRING).equals(LeftIndexingOp.OPSTRING) )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( retVars.contains( h.getInput().get(0).get_name() ) )
+			if( retVars.contains( h.getInput().get(0).getName() ) )
 			{
 				ret &= (h.getParent().size()==1 
-						&& h.getParent().get(0).get_name().equals(h.getInput().get(0).get_name()));
+						&& h.getParent().get(0).getName().equals(h.getInput().get(0).getName()));
 			}
 		}
 		
@@ -1810,7 +1811,7 @@ public class OptimizerRuleBased extends Optimizer
 				if( h.getInput() != null )
 					for( Hop cn : h.getInput() )
 						if( cn instanceof DataOp && ((DataOp)cn).isRead()  //read data
-							&& !inplaceResultVars.contains(cn.get_name())) //except in-place result vars
+							&& !inplaceResultVars.contains(cn.getName())) //except in-place result vars
 						{
 							sum += cn.getMemEstimate();	
 						}
@@ -1883,20 +1884,20 @@ public class OptimizerRuleBased extends Optimizer
 				//note: we replaxed the contraint of non-partitioned inputs for additional 
 				//latecy hiding and scan sharing of partitions which are read multiple times
 				
-				if(    ch instanceof DataOp && ch.get_dataType() == DataType.MATRIX
-					&& inputVars.contains(ch.get_name()) )
-					//&& !partitionedVars.contains(ch.get_name()))
+				if(    ch instanceof DataOp && ch.getDataType() == DataType.MATRIX
+					&& inputVars.contains(ch.getName()) )
+					//&& !partitionedVars.contains(ch.getName()))
 				{
 					ret = true;
-					sharedVars.add(ch.get_name());
+					sharedVars.add(ch.getName());
 				}
 				else if(    ch instanceof ReorgOp && ((ReorgOp)ch).getOp()==ReOrgOp.TRANSPOSE 
-					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).get_dataType() == DataType.MATRIX
-					&& inputVars.contains(ch.getInput().get(0).get_name()) )
-					//&& !partitionedVars.contains(ch.getInput().get(0).get_name()))
+					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
+					&& inputVars.contains(ch.getInput().get(0).getName()) )
+					//&& !partitionedVars.contains(ch.getInput().get(0).getName()))
 				{
 					ret = true;
-					sharedVars.add(ch.getInput().get(0).get_name());
+					sharedVars.add(ch.getInput().get(0).getName());
 				}
 			}
 		}
@@ -2025,14 +2026,14 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
-				String varName = hop.getInput().get(0).get_name();
+				String varName = hop.getInput().get(0).getName();
 				if( resultVars.contains(varName) )
 				{
 					ret = true;
 					if( checkSize && vars.keySet().contains(varName) )
 					{
 						//dims of result vars must be known at this point in time
-						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
+						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
 						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getRemoteMemBudgetMap(false));
@@ -2142,11 +2143,11 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
-				String varName = hop.getInput().get(0).get_name();
+				String varName = hop.getInput().get(0).getName();
 				if( resultVars.contains(varName) && vars.keySet().contains(varName) )
 				{
 					//dims of result vars must be known at this point in time
-					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
+					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
 					long rows = mo.getNumRows();
 					long cols = mo.getNumColumns();
 					double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
@@ -2252,7 +2253,7 @@ public class OptimizerRuleBased extends Optimizer
 		HashSet<ParForProgramBlock> recPBs = new HashSet<ParForProgramBlock>();
 		rFindRecursiveParFor( n, recPBs, false );
 
-		if( recPBs.size() > 0 )
+		if( !recPBs.isEmpty() )
 		{
 			//unfold if necessary
 			try 

@@ -138,11 +138,11 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 
 	private void performLU(ExecutionContext ec) throws DMLRuntimeException {
 		// Prepare input to commons math function
-		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.get_name());
+		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.getName());
 		if ( mobjInput.getNumRows() != mobjInput.getNumColumns() ) {
 			throw new DMLRuntimeException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + mobjInput.getNumRows() + ", cols="+ mobjInput.getNumColumns() +")");
 		}
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.get_name()));
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
 		
 		// Perform LUP decomposition
 		LUDecomposition ludecompose = new LUDecomposition(matrixInput);
@@ -155,15 +155,15 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		MatrixBlock mbL = DataConverter.convertToMatrixBlock(L.getData());
 		MatrixBlock mbU = DataConverter.convertToMatrixBlock(U.getData());
 		
-		ec.setMatrixOutput(_outputs.get(0).get_name(), mbP);
-		ec.setMatrixOutput(_outputs.get(1).get_name(), mbL);
-		ec.setMatrixOutput(_outputs.get(2).get_name(), mbU);
-		//ec.releaseMatrixInput(input1.get_name());
+		ec.setMatrixOutput(_outputs.get(0).getName(), mbP);
+		ec.setMatrixOutput(_outputs.get(1).getName(), mbL);
+		ec.setMatrixOutput(_outputs.get(2).getName(), mbU);
+		//ec.releaseMatrixInput(input1.getName());
 	}
 	
 	private void performQR(ExecutionContext ec) throws DMLRuntimeException {
 		// Prepare input to commons math function
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.get_name()));
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
 		
 		// Perform QR decomposition
 		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
@@ -174,8 +174,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		MatrixBlock mbH = DataConverter.convertToMatrixBlock(H.getData());
 		MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
 		
-		ec.setMatrixOutput(_outputs.get(0).get_name(), mbH);
-		ec.setMatrixOutput(_outputs.get(1).get_name(), mbR);
+		ec.setMatrixOutput(_outputs.get(0).getName(), mbH);
+		ec.setMatrixOutput(_outputs.get(1).getName(), mbR);
 	}
 	
 	/**
@@ -186,11 +186,11 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 	 * @throws DMLRuntimeException
 	 */
 	private void performEigen(ExecutionContext ec) throws DMLRuntimeException {
-		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.get_name());
+		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.getName());
 		if ( mobjInput.getNumRows() != mobjInput.getNumColumns() ) {
 			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + mobjInput.getNumRows() + ", cols="+ mobjInput.getNumColumns() +")");
 		}
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.get_name()));
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
 		
 		EigenDecomposition eigendecompose = new EigenDecomposition(matrixInput, 0.0);
 		RealMatrix eVectorsMatrix = eigendecompose.getV();
@@ -222,8 +222,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
 		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
 		
-		ec.setMatrixOutput(_outputs.get(0).get_name(), mbValues);
-		ec.setMatrixOutput(_outputs.get(1).get_name(), mbVectors);
+		ec.setMatrixOutput(_outputs.get(0).getName(), mbValues);
+		ec.setMatrixOutput(_outputs.get(1).getName(), mbVectors);
 	}
 
 }

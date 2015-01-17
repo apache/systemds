@@ -109,7 +109,7 @@ public class OutlierWrapper extends PackageFunction
 			outlierTask.setNumInputDatasets(1);
 			outlierTask.addInputDataset(outlierDataset, 0);
 			this.getDAGQueue().pushTask(outlierTask);
-			outlierTask = (OutlierTask) this.getDAGQueue().waitOnTask(outlierTask);
+			this.getDAGQueue().waitOnTask(outlierTask);
 			
 			DataInputStream inStream = 
 					this.getDAGQueue().getRuntimeDriver().getFileManager().getInputStream

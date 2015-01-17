@@ -288,8 +288,6 @@ public class NetezzaConnector
         }  
         finally 
         {
-           if(rs != null)
-        	   rs.close();
            if( st!= null)
         	   st.close();
         }
@@ -325,8 +323,6 @@ public class NetezzaConnector
         } 
         finally 
         {
-            if(rs != null)
-            	rs.close();
             if( st!= null)
             	st.close();    
         }
@@ -349,71 +345,78 @@ public class NetezzaConnector
     	if( !LocalFileUtils.validateExternalFilename(fileName, false) )
 			throw new IOException("Invalid (non-trustworthy) external filename.");
     	
-    	BufferedReader reader = null;
     	Statement st = null;
 
-        try {
+        try 
+        {
             st = conn.createStatement();
             st.execute("call drop_if_exists('" + tableName + "'); ");
             st.execute("CREATE TABLE \"" + tableName + "\" (row int8, col int8, value int8); ");
             
-            File file = new File(fileName);
-            reader = new BufferedReader(new FileReader(file));
-            
-            String line = reader.readLine();
-            if(firstIsMetaData)
+            BufferedReader reader = null;
+        	try
             {
-            	reader.readLine();
-            	line = reader.readLine();
-            }
-            StringBuffer query = new StringBuffer();
-            while(line != null)
-            {
-        		String cellStr = line.trim();							
-        		StringTokenizer strt = new StringTokenizer(cellStr, " ");
-        		if( strt.countTokens() == 3 )
-        		{
-		        	query.append("INSERT INTO ");
-		        	query.append("\"" + tableName + "\"");
-		        	query.append(" VALUES (");
-		        	query.append(strt.nextToken());
-		        	query.append(", ");
-		        	query.append(strt.nextToken());
-		        	query.append(", ");
-		        	query.append(strt.nextToken());
-		        	query.append("); ");
-		        	//System.out.println(split[0] + "," + split[1] + ": " + split[2]);
-        		}
-            	
-	            /*String[] split = line.split(" ");
-	            if(split.length == 3)
+        		File file = new File(fileName);
+                reader = new BufferedReader(new FileReader(file));
+	            
+	            String line = reader.readLine();
+	            if(firstIsMetaData)
 	            {
-		        	query.append("INSERT INTO ");
-		        	query.append("\"" + tableName + "\"");
-		        	query.append(" VALUES (");
-		        	query.append(split[0]);
-		        	query.append(", ");
-		        	query.append(split[1]);
-		        	query.append(", ");
-		        	query.append(split[2]);
-		        	query.append("); ");
-		        	System.out.println(split[0] + "," + split[1] + ": " + split[2]);
-	            }*/
-	            line = reader.readLine();
-            	String sql = query.toString();
-            	st.addBatch(sql);
-                //Reset StringBuffer
-                query.setLength(0);
+	            	reader.readLine();
+	            	line = reader.readLine();
+	            }
+	            StringBuffer query = new StringBuffer();
+	            while(line != null)
+	            {
+	        		String cellStr = line.trim();							
+	        		StringTokenizer strt = new StringTokenizer(cellStr, " ");
+	        		if( strt.countTokens() == 3 )
+	        		{
+			        	query.append("INSERT INTO ");
+			        	query.append("\"" + tableName + "\"");
+			        	query.append(" VALUES (");
+			        	query.append(strt.nextToken());
+			        	query.append(", ");
+			        	query.append(strt.nextToken());
+			        	query.append(", ");
+			        	query.append(strt.nextToken());
+			        	query.append("); ");
+			        	//System.out.println(split[0] + "," + split[1] + ": " + split[2]);
+	        		}
+	            	
+		            /*String[] split = line.split(" ");
+		            if(split.length == 3)
+		            {
+			        	query.append("INSERT INTO ");
+			        	query.append("\"" + tableName + "\"");
+			        	query.append(" VALUES (");
+			        	query.append(split[0]);
+			        	query.append(", ");
+			        	query.append(split[1]);
+			        	query.append(", ");
+			        	query.append(split[2]);
+			        	query.append("); ");
+			        	System.out.println(split[0] + "," + split[1] + ": " + split[2]);
+		            }*/
+		            line = reader.readLine();
+	            	String sql = query.toString();
+	            	st.addBatch(sql);
+	                //Reset StringBuffer
+	                query.setLength(0);
+	            }
+	            st.executeBatch();
             }
-            st.executeBatch();
+            finally
+            {
+            	if(reader != null)
+            		reader.close();	
+            }
         } 
         catch (Exception e) {
             throw new SQLException(e);
         } 
         finally 
         {
-            if(reader != null)
-        		reader.close();
             if( st!= null)
                 st.close();
             if( conn != null)
@@ -653,12 +656,8 @@ public class NetezzaConnector
 		return conn;
 	}
 
-	public void finalize() 
-		throws Throwable
-	{
+	public void close() throws SQLException {
 		if(connected && conn != null)
-			conn.close();
-		
-		super.finalize();
+			conn.close();		
 	}
 }

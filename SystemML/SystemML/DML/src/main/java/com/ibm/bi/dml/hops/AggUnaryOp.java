@@ -83,19 +83,19 @@ public class AggUnaryOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{	
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			try {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.CP ) 
 				{
 					PartialAggregate agg1 = new PartialAggregate(getInput().get(0).constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), get_dataType(),get_valueType(), et);
-					agg1.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et);
+					agg1.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 					setLineNumbers(agg1);
-					set_lops(agg1);
+					setLops(agg1);
 					
-					if (get_dataType() == DataType.SCALAR) {
-						agg1.getOutputParameters().setDimensions(1, 1, get_rows_in_block(), get_cols_in_block(), getNnz());
+					if (getDataType() == DataType.SCALAR) {
+						agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
 					}
 				}
 				else //ExecType.MR
@@ -104,8 +104,8 @@ public class AggUnaryOp extends Hop
 					
 					//unary aggregate
 					PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, get_valueType());
-					transform1.setDimensionsBasedOnDirection(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block());
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType());
+					transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock());
 					setLineNumbers(transform1);
 					
 					Lop aggregate = null;
@@ -113,12 +113,12 @@ public class AggUnaryOp extends Hop
 					Aggregate agg1 = null;
 					if( requiresAggregation(input, _direction) )
 					{
-						group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, get_valueType());
-						group1.getOutputParameters().setDimensions(get_dim1(), get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
+						group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
+						group1.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
 						setLineNumbers(group1);
 						
-						agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, get_valueType(), et);
-						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, getValueType(), et);
+						agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 						agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
 						setLineNumbers(agg1);
 						
@@ -130,28 +130,28 @@ public class AggUnaryOp extends Hop
 						aggregate = transform1;
 					}
 					
-					set_lops(aggregate);
+					setLops(aggregate);
 	
-					if (get_dataType() == DataType.SCALAR) {
+					if (getDataType() == DataType.SCALAR) {
 	
 						// Set the dimensions of PartialAggregate LOP based on the
 						// direction in which aggregation is performed
-						transform1.setDimensionsBasedOnDirection(input.get_dim1(), input.get_dim2(),
-								get_rows_in_block(), get_cols_in_block());
+						transform1.setDimensionsBasedOnDirection(input.getDim1(), input.getDim2(),
+								getRowsInBlock(), getColsInBlock());
 						
 						if( group1 != null && agg1 != null ) { //if aggregation required
-							group1.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), 
-									get_rows_in_block(), get_cols_in_block(), getNnz());
+							group1.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), 
+									getRowsInBlock(), getColsInBlock(), getNnz());
 							agg1.getOutputParameters().setDimensions(1, 1, 
-									get_rows_in_block(), get_cols_in_block(), getNnz());
+									getRowsInBlock(), getColsInBlock(), getNnz());
 						}
 						
 						UnaryCP unary1 = new UnaryCP(
 								aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-								get_dataType(), get_valueType());
+								getDataType(), getValueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 						setLineNumbers(unary1);
-						set_lops(unary1);
+						setLops(unary1);
 					}
 				}
 			} catch (Exception e) {
@@ -160,7 +160,7 @@ public class AggUnaryOp extends Hop
 
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 
 	
@@ -175,7 +175,7 @@ public class AggUnaryOp extends Hop
 
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + _op);
 				LOG.debug("  Direction: " + _direction);
@@ -183,14 +183,14 @@ public class AggUnaryOp extends Hop
 					h.printMe();
 				}
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 		
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
 			if(this.getInput().size() != 1)
 				throw new HopsException(this.printErrorLocation() + "The aggregate unary hop must have one input");
@@ -199,30 +199,30 @@ public class AggUnaryOp extends Hop
 			GENERATES gen = determineGeneratesFlag();
 			
 			Hop input = this.getInput().get(0);
-			SQLLops lop = new SQLLops(this.get_name(),
+			SQLLops lop = new SQLLops(this.getName(),
 									gen,
 									input.constructSQLLOPs(),
-									this.get_valueType(),
-									this.get_dataType());
+									this.getValueType(),
+									this.getDataType());
 			
 			//TODO Uncomment this to make scalar placeholders
-			if(this.get_dataType() == DataType.SCALAR && gen == GENERATES.DML)
+			if(this.getDataType() == DataType.SCALAR && gen == GENERATES.DML)
 				lop.set_tableName("##" + lop.get_tableName() + "##");
 			
 			lop.set_sql(getSQLSelectCode(input));
 			lop.set_properties(getProperties(input));
-			this.set_sqllops(lop);
+			this.setSqlLops(lop);
 			return lop;
 		}
 		else
-			return this.get_sqllops();
+			return this.getSqlLops();
 	}
 	
 	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect(Hop input)
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
-		stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.get_sqllops().get_tableName()), ""));
+		stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.getSqlLops().get_tableName()), ""));
 		
 		if((this._op == AggOp.SUM && _direction == Direction.RowCol) || this._op == AggOp.TRACE)
 		{
@@ -266,7 +266,7 @@ public class AggUnaryOp extends Hop
 		
 		prop.setAggType(agg);
 		prop.setJoinType(join);
-		prop.setOpString(Hop.HopsAgg2String.get(_op) + " " + input.get_sqllops().get_tableName());
+		prop.setOpString(Hop.HopsAgg2String.get(_op) + " " + input.getSqlLops().get_tableName());
 		
 		return prop;
 	}
@@ -280,20 +280,20 @@ public class AggUnaryOp extends Hop
 		}
 		else if(this._op == AggOp.TRACE)
 		{
-			sql = String.format(SQLLops.UNARYTRACE, input.get_sqllops().get_tableName());
+			sql = String.format(SQLLops.UNARYTRACE, input.getSqlLops().get_tableName());
 		}
 		else if(this._op == AggOp.SUM)
 		{
 			if(this._direction == Direction.RowCol)
-				sql = String.format(SQLLops.UNARYSUM, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.UNARYSUM, input.getSqlLops().get_tableName());
 			else if(this._direction == Direction.Row)
-				sql = String.format(SQLLops.UNARYROWSUM, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.UNARYROWSUM, input.getSqlLops().get_tableName());
 			else
-				sql = String.format(SQLLops.UNARYCOLSUM, input.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.UNARYCOLSUM, input.getSqlLops().get_tableName());
 		}
 		else
 		{
-			sql = String.format(SQLLops.UNARYMAXMIN, Hop.HopsAgg2String.get(this._op),input.get_sqllops().get_tableName());
+			sql = String.format(SQLLops.UNARYMAXMIN, Hop.HopsAgg2String.get(this._op),input.getSqlLops().get_tableName());
 		}
 		return sql;
 	}
@@ -407,8 +407,8 @@ public class AggUnaryOp extends Hop
 			return false; //customization not allowed
 		
 		boolean noAggRequired = 
-				  ( input.get_dim1()>1 && input.get_dim1()<=input.get_rows_in_block() && dir==Direction.Col ) //e.g., colSums(X) with nrow(X)<=1000
-				||( input.get_dim2()>1 && input.get_dim2()<=input.get_cols_in_block() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
+				  ( input.getDim1()>1 && input.getDim1()<=input.getRowsInBlock() && dir==Direction.Col ) //e.g., colSums(X) with nrow(X)<=1000
+				||( input.getDim2()>1 && input.getDim2()<=input.getColsInBlock() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
 	
 		return !noAggRequired;
 	}
@@ -416,18 +416,18 @@ public class AggUnaryOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if (get_dataType() != DataType.SCALAR)
+		if (getDataType() != DataType.SCALAR)
 		{
 			Hop input = getInput().get(0);
 			if ( _direction == Direction.Col ) //colwise computations
 			{
-				set_dim1(1);
-				set_dim2(input.get_dim2());
+				setDim1(1);
+				setDim2(input.getDim2());
 			}
 			else if ( _direction == Direction.Row )
 			{
-				set_dim1(input.get_dim1());
-				set_dim2(1);	
+				setDim1(input.getDim1());
+				setDim2(1);	
 			}
 		}
 	}

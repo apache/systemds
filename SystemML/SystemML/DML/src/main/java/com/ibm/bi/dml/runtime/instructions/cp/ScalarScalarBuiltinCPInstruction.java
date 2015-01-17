@@ -36,17 +36,17 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		String opcode = getOpcode();
 		ScalarObject sores = null;
 		
-		ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
-		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
+		ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
+		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
 		
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String buffer = "";
-			if (input2.get_valueType() != ValueType.STRING)
+			if (input2.getValueType() != ValueType.STRING)
 				throw new DMLRuntimeException("wrong value type in print");
 			buffer = so2.getStringValue() + " ";
 			
 			if ( !DMLScript.suppressPrint2Stdout()) {
-				switch (input1.get_valueType()) {
+				switch (input1.getValueType()) {
 				case INT:
 					System.out.println(buffer + so1.getLongValue());
 					break;
@@ -73,6 +73,6 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		ec.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.getName(), sores);
 	}
 }

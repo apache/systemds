@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -30,7 +30,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 public class SQLLopGraph 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String getSQLLopGraphString(DMLProgram dmlp, String title, int x, int y, String basePath) throws HopsException, LanguageException
@@ -61,7 +61,7 @@ public class SQLLopGraph
 		
 		if (current instanceof WhileStatementBlock) {
 			// Handle Predicate
-			SQLLops predicateSQLLop = ((WhileStatementBlock) current).getPredicateHops().get_sqllops();
+			SQLLops predicateSQLLop = ((WhileStatementBlock) current).getPredicateHops().getSqlLops();
 			String predicateString = prepareSQLLopNodeList(predicateSQLLop);
 			graphString += predicateString;
 			
@@ -76,11 +76,11 @@ public class SQLLopGraph
 			// Handle Predicate
 			ForStatementBlock fsb = (ForStatementBlock) current;
 			if (fsb.getFromHops() != null)
-				graphString += prepareSQLLopNodeList(fsb.getFromHops().get_sqllops());
+				graphString += prepareSQLLopNodeList(fsb.getFromHops().getSqlLops());
 			if (fsb.getToHops() != null)
-				graphString += prepareSQLLopNodeList(fsb.getToHops().get_sqllops());
+				graphString += prepareSQLLopNodeList(fsb.getToHops().getSqlLops());
 			if (fsb.getIncrementHops() != null)
-				graphString += prepareSQLLopNodeList(fsb.getIncrementHops().get_sqllops());
+				graphString += prepareSQLLopNodeList(fsb.getIncrementHops().getSqlLops());
 			
 			// handle children
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
@@ -92,7 +92,7 @@ public class SQLLopGraph
 		
 		else if (current instanceof IfStatementBlock) {
 			// Handle Predicate
-			SQLLops predicateSQLLop = ((IfStatementBlock) current).getPredicateHops().get_sqllops();
+			SQLLops predicateSQLLop = ((IfStatementBlock) current).getPredicateHops().getSqlLops();
 			String predicateString = prepareSQLLopNodeList(predicateSQLLop);
 			graphString += predicateString;
 			
@@ -112,7 +112,7 @@ public class SQLLopGraph
 			if (hopsDAG !=  null && hopsDAG.size() > 0) {
 				Iterator<Hop> iter = hopsDAG.iterator();
 				while (iter.hasNext()) {
-					SQLLops h = iter.next().get_sqllops();
+					SQLLops h = iter.next().getSqlLops();
 
 					String nodeList = new String("");
 					nodeList = prepareSQLLopNodeList(h);
@@ -128,7 +128,7 @@ public class SQLLopGraph
 	{
 		String s = new String("");
 
-		if (lop.get_visited() == Hop.VISIT_STATUS.DONE)
+		if (lop.getVisited() == Hop.VisitStatus.DONE)
 			return s;
 		
 		String color = "white";
@@ -150,7 +150,7 @@ public class SQLLopGraph
 			s += edge;
 		}
 		
-		lop.set_visited(VISIT_STATUS.DONE);
+		lop.setVisited(VisitStatus.DONE);
 		return s;
 	}
 }

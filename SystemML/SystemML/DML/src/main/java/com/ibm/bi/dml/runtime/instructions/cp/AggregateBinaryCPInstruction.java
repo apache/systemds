@@ -93,9 +93,9 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 	{	
 		String opcode = getOpcode();
 		
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
-		String output_name = output.get_name(); 
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		String output_name = output.getName(); 
 		
 		if ( opcode.equalsIgnoreCase("ba+*")) {
 			
@@ -103,8 +103,8 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
 			
 			//release inputs/outputs
-			ec.releaseMatrixInput(input1.get_name());
-			ec.releaseMatrixInput(input2.get_name());
+			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input2.getName());
 			ec.setMatrixOutput(output_name, soresBlock);
 			
 		} 
@@ -117,21 +117,20 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 				// Unweighted: cov.mvar0.mvar1.out
 				covobj = matBlock1.covOperations(cov_op, matBlock2);
 				
-				matBlock1 = matBlock2 = null;
-				ec.releaseMatrixInput(input1.get_name());
-				ec.releaseMatrixInput(input2.get_name());
+				ec.releaseMatrixInput(input1.getName());
+				ec.releaseMatrixInput(input2.getName());
 			}
 			else 
 			{
 				// Weighted: cov.mvar0.mvar1.weights.out
-		        MatrixBlock wtBlock = ec.getMatrixInput(input3.get_name());
+		        MatrixBlock wtBlock = ec.getMatrixInput(input3.getName());
 				
 				covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
 				
 				matBlock1 = matBlock2 = wtBlock = null;
-				ec.releaseMatrixInput(input1.get_name());
-				ec.releaseMatrixInput(input2.get_name());
-				ec.releaseMatrixInput(input3.get_name());
+				ec.releaseMatrixInput(input1.getName());
+				ec.releaseMatrixInput(input2.getName());
+				ec.releaseMatrixInput(input3.getName());
 			}
 			double val = covobj.getRequiredResult(_optr);
 			DoubleObject ret = new DoubleObject(output_name, val);

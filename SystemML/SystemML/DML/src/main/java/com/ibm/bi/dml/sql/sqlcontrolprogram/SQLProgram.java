@@ -40,7 +40,7 @@ public class SQLProgram implements SQLBlockContainer
 		return _cleanups;
 	}
 
-	public String get_name() {
+	public String getName() {
 		return _name;
 	}
 
@@ -60,7 +60,7 @@ public class SQLProgram implements SQLBlockContainer
 	public String generateSQLString()
 	{
 		StringBuffer sb = new StringBuffer();
-		sb.append(String.format(PROCDECLARATION, this.get_name()));
+		sb.append(String.format(PROCDECLARATION, this.getName()));
 		sb.append("BEGIN_PROC\r\n");
 		
 		if(this._variableDeclarations.size() > 0)

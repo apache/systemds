@@ -100,7 +100,7 @@ public class DataGenOp extends Hop
 			index++;
 		}
 		if ( mthd == DataGenMethod.RAND )
-			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).get_name());
+			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).getName());
 		
 		//generate base dir
 		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
@@ -124,7 +124,7 @@ public class DataGenOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException
 	{
-		if(get_lops() == null)
+		if(getLops() == null)
 		{
 			ExecType et = optFindExecType();
 			
@@ -139,52 +139,52 @@ public class DataGenOp extends Hop
 			}
 			
 			DataGen rnd = new DataGen(_method, _id, inputLops,_baseDir,
-					get_dataType(), get_valueType(), et);
+					getDataType(), getValueType(), et);
 			
 			rnd.getOutputParameters().setDimensions(
-					get_dim1(), get_dim2(),
+					getDim1(), getDim2(),
 					//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
-					(get_rows_in_block()>0)?get_rows_in_block():DMLTranslator.DMLBlockSize, 
-					(get_cols_in_block()>0)?get_cols_in_block():DMLTranslator.DMLBlockSize,  
+					(getRowsInBlock()>0)?getRowsInBlock():DMLTranslator.DMLBlockSize, 
+					(getColsInBlock()>0)?getColsInBlock():DMLTranslator.DMLBlockSize,  
 					getNnz());
 			
 			rnd.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			set_lops(rnd);
+			setLops(rnd);
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 	
 	@Override
 	public void printMe() throws HopsException
 	{	
 		if (LOG.isDebugEnabled()){
-			if(get_visited() != VISIT_STATUS.DONE)
+			if(getVisited() != VisitStatus.DONE)
 			{
 				super.printMe();
 			}
 
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
 			
 			SQLLops sqllop = new SQLLops("Random" + _id.getName(), GENERATES.PROC,
-					this.get_valueType(),
-					this.get_dataType());
+					this.getValueType(),
+					this.getDataType());
 
 			//TODO extend for seed
-			sqllop.set_sql("CALL gensparsematrix('" + sqllop.get_tableName() + "', " + this.get_dim1() + ", "
-					+ this.get_dim2() + ");");
+			sqllop.set_sql("CALL gensparsematrix('" + sqllop.get_tableName() + "', " + this.getDim1() + ", "
+					+ this.getDim2() + ");");
 			
 			sqllop.set_properties(getProperties());
-			this.set_sqllops(sqllop);
+			this.setSqlLops(sqllop);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	private SQLLopProperties getProperties()
@@ -321,8 +321,8 @@ public class DataGenOp extends Hop
 			}
 			
 			if ( fromKnown && toKnown && incrKnown ) {
-				set_dim1(1 + (long)Math.floor(((double)(to-from))/incr));
-				set_dim2(1);
+				setDim1(1 + (long)Math.floor(((double)(to-from))/incr));
+				setDim2(1);
 				_incr = incr;
 			}
 		}
@@ -470,7 +470,7 @@ public class DataGenOp extends Hop
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));
-				if( seed.get_name().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) && min != max )
+				if( seed.getName().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) && min != max )
 					ret = false;
 			}
 		}

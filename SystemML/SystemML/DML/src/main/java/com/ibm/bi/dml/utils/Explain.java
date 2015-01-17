@@ -9,12 +9,12 @@ package com.ibm.bi.dml.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -180,8 +180,8 @@ public class Explain
 		sb.append(" )\n");
 		
 		//explain functions (if exists)
-		HashMap<String, FunctionProgramBlock> funcMap = rtprog.getFunctionProgramBlocks();
-		if( funcMap != null && funcMap.size()>0 )
+		Map<String, FunctionProgramBlock> funcMap = rtprog.getFunctionProgramBlocks();
+		if( funcMap != null && !funcMap.isEmpty() )
 		{
 			sb.append("--FUNCTIONS\n");
 			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
@@ -392,7 +392,7 @@ public class Explain
 			IfStatement ifs = (IfStatement) sb.getStatement(0);
 			for (StatementBlock current : ifs.getIfBody())
 				builder.append(explainStatementBlock(current, level+1));
-			if (ifs.getElseBody().size() > 0) {
+			if( !ifs.getElseBody().isEmpty() ) {
 				builder.append(offset);
 				builder.append("ELSE\n");
 			}
@@ -431,7 +431,7 @@ public class Explain
 			builder.append(offset);
 			builder.append("GENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+") [recompile=" + sb.requiresRecompilation() + "]\n");
 			ArrayList<Hop> hopsDAG = sb.get_hops();
-			if (hopsDAG != null && hopsDAG.size() > 0) {
+			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
 				Hop.resetVisitStatus(hopsDAG);
 				for (Hop hop : hopsDAG)
 					builder.append(explainHop(hop, level+1));
@@ -453,7 +453,7 @@ public class Explain
 	private static String explainHop(Hop hop, int level) 
 		throws DMLRuntimeException 
 	{
-		if(   hop.get_visited() == VISIT_STATUS.DONE 
+		if(   hop.getVisited() == VisitStatus.DONE 
 		   || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
 		{
 			return "";
@@ -492,10 +492,10 @@ public class Explain
 		}
 		
 		//matrix characteristics
-		sb.append(" [" + hop.get_dim1() + "," 
-		               + hop.get_dim2() + "," 
-				       + hop.get_rows_in_block() + "," 
-		               + hop.get_cols_in_block() + "," 
+		sb.append(" [" + hop.getDim1() + "," 
+		               + hop.getDim2() + "," 
+				       + hop.getRowsInBlock() + "," 
+		               + hop.getColsInBlock() + "," 
 				       + hop.getNnz() + "]");
 		
 		//memory estimates
@@ -510,7 +510,7 @@ public class Explain
 		
 		sb.append('\n');
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 		
 		return sb.toString();
 	}
@@ -553,7 +553,7 @@ public class Explain
 			sb.append(explainInstructions(ipb.getPredicate(), level+1));
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() ) 
 				sb.append( explainProgramBlock( pbc, level+1) );
-			if( ipb.getChildBlocksElseBody().size()>0 )
+			if( !ipb.getChildBlocksElseBody().isEmpty() )
 			{	
 				sb.append(offset);
 				sb.append("ELSE\n");

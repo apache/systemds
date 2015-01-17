@@ -84,10 +84,13 @@ public class WriterTextCSV extends MatrixWriter
 		final int blockSizeJ = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 		
 		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
+		if( rows > rlen || cols > clen ) {
 			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
 					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+		}
+		//file format property check
+		if( formatProperties!=null &&  !(formatProperties instanceof CSVFileFormatProperties) ) {
+			throw new IOException("Wrong type of file format properties for CSV writer.");
 		}
 		
 		try
@@ -129,7 +132,7 @@ public class WriterTextCSV extends MatrixWriter
 					//write row chunk-wise to prevent OOM on large number of columns
 					int prev_jix = -1;
 					if(    sparseRows!=null && i<sparseRows.length 
-						&& sparseRows[i]!=null && sparseRows[i].size()>0 )
+						&& sparseRows[i]!=null && !sparseRows[i].isEmpty() )
 					{
 						SparseRow arow = sparseRows[i];
 						int alen = arow.size();
@@ -407,7 +410,7 @@ public class WriterTextCSV extends MatrixWriter
 			hdfs.rename(srcFilePath, destFilePath); // move the data 
 		
 		} else if (hdfs.isFile(srcFilePath)) {
-			// create destition file
+			// create destination file
 			OutputStream out = hdfs.create(destFilePath, true);
 			
 			// write header

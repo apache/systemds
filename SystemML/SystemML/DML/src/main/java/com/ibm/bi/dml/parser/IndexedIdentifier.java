@@ -652,10 +652,9 @@ public class IndexedIdentifier extends DataIdentifier
 	public void setColLowerBound(Expression passed){ this._colLowerBound = passed; }
 	public void setColUpperBound(Expression passed){ this._colUpperBound = passed; }
 	
-		
+	@Override	
 	public String toString() {
-		String retVal = new String();
-		retVal += this.getName();
+		String retVal = getName();
 		if (_rowLowerBound != null || _rowUpperBound != null || _colLowerBound != null || _colUpperBound != null){
 				retVal += "[";
 				

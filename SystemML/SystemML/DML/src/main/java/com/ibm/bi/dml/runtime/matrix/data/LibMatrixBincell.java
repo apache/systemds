@@ -235,7 +235,7 @@ public class LibMatrixBincell
 					{
 						for( int i=0, ix=0; i<m; i++, ix+=n ) {
 							SparseRow arow = m1.sparseRows[i];
-							if( arow != null && arow.size() > 0 )
+							if( arow != null && !arow.isEmpty() )
 							{
 								alen = arow.size();
 								aix = arow.getIndexContainer();
@@ -261,7 +261,7 @@ public class LibMatrixBincell
 					{
 						for( int i=0, ix=0; i<m; i++, ix+=n ) {
 							SparseRow arow = m2.sparseRows[i];
-							if( arow != null && arow.size() > 0 )
+							if( arow != null && !arow.isEmpty() )
 							{
 								alen = arow.size();
 								aix = arow.getIndexContainer();
@@ -421,14 +421,14 @@ public class LibMatrixBincell
 				double v2 = m2.quickGetValue(i, 0);
 				SparseRow arow = (a==null) ? null : a[i];
 				
-				if( (skipEmpty && (arow==null || arow.size()==0 || v2 == 0 ))
-					|| ((arow==null || arow.size()==0) && v2 == 0) )
+				if( (skipEmpty && (arow==null || arow.isEmpty() || v2 == 0 ))
+					|| ((arow==null || arow.isEmpty()) && v2 == 0) )
 				{
 					continue; //skip empty rows
 				}
 					
 				int lastIx = -1;
-				if( arow != null && arow.size()>0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -460,11 +460,11 @@ public class LibMatrixBincell
 			{
 				SparseRow arow = (a==null) ? null : a[i];
 				
-				if( skipEmpty && (arow==null || arow.size()==0) )
+				if( skipEmpty && (arow==null || arow.isEmpty()) )
 					continue; //skip empty rows
 					
 				int lastIx = -1;
-				if( arow != null && arow.size()>0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -677,7 +677,7 @@ public class LibMatrixBincell
 				for(int r=0; r<rlen; r++)
 				{
 					SparseRow brow = m2.sparseRows[r];
-					if( brow!=null && brow.size()>0 )
+					if( brow!=null && !brow.isEmpty() )
 					{
 						m1ret.sparseRows[r] = new SparseRow( brow.size(), clen );
 						appendRightForSparseBinary(op, brow.getValueContainer(), brow.getIndexContainer(), brow.size(), 0, r, m1ret);
@@ -689,7 +689,7 @@ public class LibMatrixBincell
 				if( !(op.fn instanceof Plus || op.fn instanceof Minus || op.fn instanceof Or) ){
 					for(int r=0; r<rlen; r++){
 						SparseRow arow = m1ret.sparseRows[r];
-						if( arow!=null && arow.size()>0 )
+						if( arow!=null && !arow.isEmpty() )
 						{
 							int alen = arow.size();
 							double[] avals = arow.getValueContainer();

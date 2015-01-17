@@ -49,16 +49,14 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 				if( condition )
 				{
 					//pull-out simple if body
-					int len = istmt.getIfBody().size();
-					if( len >= 1 )
+					if( !istmt.getIfBody().isEmpty() )
 						ret.addAll( istmt.getIfBody() ); //pull if-branch
 					//otherwise: add nothing (remove if-else)
 				}
 				else
 				{
 					//pull-out simple else body
-					int len = istmt.getElseBody().size();
-					if( len >= 1 )
+					if( !istmt.getElseBody().isEmpty() )
 						ret.addAll( istmt.getElseBody() ); //pull else-branch
 					//otherwise: add nothing (remove if-else)
 				}

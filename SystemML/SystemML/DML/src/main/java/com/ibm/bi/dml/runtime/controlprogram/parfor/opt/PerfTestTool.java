@@ -834,7 +834,7 @@ public class PerfTestTool
 		double datasize = -1;
 		double dim1 = -1, dim2 = -1;
 		double sparsity = -1;
-		double sortio = -1;
+		//double sortio = -1;
 		
 		System.out.println( "VAR VALUE "+varValue );
 	
@@ -852,7 +852,7 @@ public class PerfTestTool
 			case SORT_IO_MEM: //FIXME
 				datasize = DEFAULT_DATASIZE * DATASIZE_MR_SCALE;
 				sparsity = DEFAULT_SPARSITY;
-				sortio = varValue;
+				//sortio = varValue;
 				break;	
 		}
 		
@@ -873,9 +873,9 @@ public class PerfTestTool
 		if( inst instanceof RandCPInstruction )
 		{
 			RandCPInstruction rand = (RandCPInstruction) inst;
-			rand.rows = (long)dim1;
-			rand.cols = (long)dim2;
-			rand.sparsity = sparsity;
+			rand.setRows((long)dim1);
+			rand.setCols((long)dim2);
+			rand.setSparsity(sparsity);
 		}
 		else if ( inst instanceof FunctionCallCPInstruction ) //ExternalFunctionInvocationInstruction
 		{
@@ -1072,7 +1072,7 @@ public class PerfTestTool
 		double increment = (max-min)/(num-1);
 		
 		for( int i=0; i<num; i++ )
-			data.add( new Double(min+i*increment) );
+			data.add( Double.valueOf(min+i*increment) );
 		
 		return data;
 	}
@@ -1651,11 +1651,10 @@ public class PerfTestTool
 					//System.out.println("added cost function");
 				}
 			}
+			xsr.close();
 		}
 		finally
 		{
-			if( xsr != null )
-				xsr.close();
 			if( fis != null )
 				fis.close();
 		}
@@ -1726,11 +1725,10 @@ public class PerfTestTool
 			
 			xsw.writeEndElement();//XML_PROFILE
 			xsw.writeEndDocument();
+			xsw.close();
 		}
 		finally
 		{
-			if( xsw != null )
-				xsw.close();
 			if( fos != null )
 				fos.close();
 		}

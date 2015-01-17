@@ -132,7 +132,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		return _hops;
 	}
 
-	public ArrayList<Lop> get_lops() {
+	public ArrayList<Lop> getLops() {
 		return _lops;
 	}
 
@@ -140,7 +140,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		_hops = hops;
 	}
 
-	public void set_lops(ArrayList<Lop> lops) {
+	public void setLops(ArrayList<Lop> lops) {
 		_lops = lops;
 	}
 

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -26,12 +27,10 @@ import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
-//import com.ibm.bi.dml.packagesupport.EigenWrapper;
-//import com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -126,10 +125,10 @@ public class InterProceduralAnalysis
 		throws HopsException, ParseException, LanguageException
 	{
 		//step 1: get candidates for statistics propagation into functions (if required)
-		HashMap<String, Integer> fcandCounts = new HashMap<String, Integer>();
-		HashMap<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
-		HashMap<String, HashSet<Long>> fcandSafeNNZ = new HashMap<String, HashSet<Long>>(); 
-		HashSet<String> allFCandKeys = new HashSet<String>();
+		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
+		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
+		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
+		Set<String> allFCandKeys = new HashSet<String>();
 		if( dmlp.getFunctionStatementBlocks().size() > 0 )
 		{
 			for ( StatementBlock sb : dmlp.getStatementBlocks() ) //get candidates (over entire program)
@@ -171,7 +170,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void getFunctionCandidatesForStatisticPropagation( StatementBlock sb, HashMap<String, Integer> fcandCounts, HashMap<String, FunctionOp> fcandHops ) 
+	private void getFunctionCandidatesForStatisticPropagation( StatementBlock sb, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
 		throws HopsException, ParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
@@ -221,10 +220,10 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void getFunctionCandidatesForStatisticPropagation(DMLProgram prog, Hop hop, HashMap<String, Integer> fcandCounts, HashMap<String, FunctionOp> fcandHops ) 
+	private void getFunctionCandidatesForStatisticPropagation(DMLProgram prog, Hop hop, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
 		throws HopsException, ParseException
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		if( hop instanceof FunctionOp && !((FunctionOp)hop).getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
@@ -248,8 +247,8 @@ public class InterProceduralAnalysis
 						//check matrix and scalar sizes (if known dims, nnz known/unknown, 
 						// safeness of nnz propagation, determined later per input)
 						consistent &= (h1.dimsKnown() && h2.dimsKnown()
-								   &&  h1.get_dim1()==h2.get_dim1() 
-								   &&  h1.get_dim2()==h2.get_dim2()
+								   &&  h1.getDim1()==h2.getDim1() 
+								   &&  h1.getDim2()==h2.getDim2()
 								   &&  h1.getNnz()==h2.getNnz() );
 						//check literal values (equi value)
 						if( h1 instanceof LiteralOp ){
@@ -280,14 +279,14 @@ public class InterProceduralAnalysis
 		for( Hop c : hop.getInput() )
 			getFunctionCandidatesForStatisticPropagation(prog, c, fcandCounts, fcandHops);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 	/**
 	 * 
 	 * @param fcand
 	 */
-	private void pruneFunctionCandidatesForStatisticPropagation(HashMap<String, Integer> fcandCounts, HashMap<String, FunctionOp> fcandHops)
+	private void pruneFunctionCandidatesForStatisticPropagation(Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops)
 	{
 		//debug input
 		if( LOG.isDebugEnabled() )
@@ -299,9 +298,7 @@ public class InterProceduralAnalysis
 			}
 		
 		//materialize key set
-		HashSet<String> tmp = new HashSet<String>();
-		for( String key : fcandCounts.keySet() )
-			tmp.add(key);
+		Set<String> tmp = new HashSet<String>(fcandCounts.keySet());
 		
 		//check and prune candidate list
 		for( String key : tmp )
@@ -330,7 +327,7 @@ public class InterProceduralAnalysis
 	 * @param fcandHops
 	 * @param fcandSafeNNZ
 	 */
-	private void determineFunctionCandidatesNNZPropagation(HashMap<String, FunctionOp> fcandHops, HashMap<String, HashSet<Long>> fcandSafeNNZ)
+	private void determineFunctionCandidatesNNZPropagation(Map<String, FunctionOp> fcandHops, Map<String, Set<Long>> fcandSafeNNZ)
 	{
 		//for all function candidates
 		for( Entry<String, FunctionOp> e : fcandHops.entrySet() )
@@ -364,7 +361,7 @@ public class InterProceduralAnalysis
 	 * @throws ParseException
 	 * @throws CloneNotSupportedException 
 	 */
-	private void propagateStatisticsAcrossBlock( StatementBlock sb, Set<String> fcand, LocalVariableMap callVars, HashMap<String, HashSet<Long>> fcandSafeNNZ, HashSet<String> fnStack ) 
+	private void propagateStatisticsAcrossBlock( StatementBlock sb, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
@@ -519,7 +516,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Set<String> fcand, LocalVariableMap callVars, HashMap<String, HashSet<Long>> fcandSafeNNZ, HashSet<String> fnStack ) 
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 			throws HopsException, ParseException
 	{
 		for( Hop root : roots )
@@ -535,10 +532,10 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Set<String> fcand, LocalVariableMap callVars, HashMap<String, HashSet<Long>> fcandSafeNNZ, HashSet<String> fnStack ) 
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		for( Hop c : hop.getInput() )
@@ -592,7 +589,7 @@ public class InterProceduralAnalysis
 			}
 		}
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 	
 	
@@ -603,7 +600,7 @@ public class InterProceduralAnalysis
 	 * @param vars
 	 * @throws HopsException 
 	 */
-	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap vars, HashSet<Long> inputSafeNNZ ) 
+	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap vars, Set<Long> inputSafeNNZ ) 
 		throws HopsException
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
@@ -615,25 +612,25 @@ public class InterProceduralAnalysis
 			DataIdentifier dat = inputVars.get(i);
 			Hop input = inputOps.get(i);
 			
-			if( input.get_dataType()==DataType.MATRIX )
+			if( input.getDataType()==DataType.MATRIX )
 			{
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
 				MatrixCharacteristics mc = new MatrixCharacteristics( 
-											input.get_dim1(), input.get_dim2(), 
+											input.getDim1(), input.getDim2(), 
 											DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
 											inputSafeNNZ.contains(input.getHopID())?input.getNnz():-1 );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	
 			}
-			else if( input.get_dataType()==DataType.SCALAR 
+			else if( input.getDataType()==DataType.SCALAR 
 					&& input instanceof LiteralOp           )
 			{
 				//propagate literal scalars into functions
 				LiteralOp lit = (LiteralOp)input;
 				ScalarObject scalar = null;
-				switch(input.get_valueType())
+				switch(input.getValueType())
 				{
 					case DOUBLE:	scalar = new DoubleObject(lit.getDoubleValue()); break;
 					case INT:		scalar = new IntObject((int) lit.getLongValue()); break;
@@ -757,21 +754,21 @@ public class InterProceduralAnalysis
 		{			
 			Hop input = fop.getInput().get(0);
 			long lnnz = className.equals(OrderWrapper.class.getName()) ? input.getNnz() : -1;
-			MatrixObject moOut = createOutputMatrix(input.get_dim1(), input.get_dim2(),lnnz);
+			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
 		else if( className.equals("com.ibm.bi.dml.udf.lib.EigenWrapper") ) 
 		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(0);
-			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
-			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));			
+			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.getDim1(), 1, -1));
+			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.getDim1(), input.getDim1(),-1));			
 		}
 		else if( className.equals("com.ibm.bi.dml.udf.lib.LinearSolverWrapperCP") ) 
 		//else if( className.equals(LinearSolverWrapperCP.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(1);
-			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
+			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.getDim1(), 1, -1));
 		}
 		else if(   className.equals(DynamicReadMatrixCP.class.getName())
 				|| className.equals(DynamicReadMatrixRcCP.class.getName()) ) 

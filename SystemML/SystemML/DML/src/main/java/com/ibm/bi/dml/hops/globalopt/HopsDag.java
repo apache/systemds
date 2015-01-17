@@ -60,15 +60,15 @@ public class HopsDag implements HopsVisitor
 			DataOp dataOp = (DataOp)hops;
 			DataOpTypes dataType = dataOp.get_dataop();
 			if(dataType == DataOpTypes.TRANSIENTREAD || dataType == DataOpTypes.PERSISTENTREAD) {
-				this.dagInputs.put(dataOp.get_name(), dataOp);
+				this.dagInputs.put(dataOp.getName(), dataOp);
 			}
 			
 			if(dataType == DataOpTypes.TRANSIENTWRITE || dataType == DataOpTypes.PERSISTENTWRITE) {
-				this.dagOutputs.put(dataOp.get_name(), dataOp);
+				this.dagOutputs.put(dataOp.getName(), dataOp);
 			}
 		}
 		if(hops instanceof DataGenOp) {
-			this.dagInputs.put(hops.get_name(), hops);
+			this.dagInputs.put(hops.getName(), hops);
 		}
 		
 		if(hops instanceof FunctionOp)

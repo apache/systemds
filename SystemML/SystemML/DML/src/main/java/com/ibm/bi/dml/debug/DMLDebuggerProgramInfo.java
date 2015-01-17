@@ -79,7 +79,7 @@ public class DMLDebuggerProgramInfo
 		{
 			//Functions: For each function program block (if any), get instructions corresponding to each line number
 			HashMap<String,FunctionProgramBlock> funcMap = this.rtprog.getFunctionProgramBlocks();
-			if (funcMap != null && funcMap.size() > 0) {
+			if (funcMap != null && !funcMap.isEmpty() ) {
 				for (Entry<String, FunctionProgramBlock> e : funcMap.entrySet()) 
 				{
 					location = e.getKey();
@@ -130,7 +130,7 @@ public class DMLDebuggerProgramInfo
 			this.accesBreakpointInstruction(ipb.getPredicate(), lineNumber, op, status);
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() )
 				accessProgramBlockBreakpoint(pbc, lineNumber, op, status);
-			if( ipb.getChildBlocksElseBody().size()>0 )
+			if( !ipb.getChildBlocksElseBody().isEmpty() )
 			{	
 				for( ProgramBlock pbc : ipb.getChildBlocksElseBody() ) 
 					accessProgramBlockBreakpoint(pbc, lineNumber, op, status);
@@ -238,7 +238,7 @@ public class DMLDebuggerProgramInfo
 		{
 			//Functions: For each function program block (if any), get instructions corresponding to each line number
 			HashMap<String,FunctionProgramBlock> funcMap = this.rtprog.getFunctionProgramBlocks();
-			if (funcMap != null && funcMap.size() > 0)
+			if (funcMap != null && !funcMap.isEmpty() )
 			{
 				for (Entry<String, FunctionProgramBlock> e : funcMap.entrySet())
 				{					
@@ -286,7 +286,7 @@ public class DMLDebuggerProgramInfo
 			this.setInstMap(ipb.getPredicate());
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() )
 				setProgramBlockInstMap(pbc);
-			if( ipb.getChildBlocksElseBody().size()>0 )
+			if( !ipb.getChildBlocksElseBody().isEmpty() )
 			{	
 				for( ProgramBlock pbc : ipb.getChildBlocksElseBody() ) 
 					setProgramBlockInstMap(pbc);

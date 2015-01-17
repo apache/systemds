@@ -92,11 +92,11 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		String opcode = getOpcode();
-		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), colUpper.get_valueType(), colUpper.isLiteral()).getLongValue();
-		MatrixObject mo = (MatrixObject) ec.getVariable(input1.get_name());
+		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
+		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 
 		{
@@ -106,7 +106,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
-				MatrixObject out = (MatrixObject)ec.getVariable(output.get_name());
+				MatrixObject out = (MatrixObject)ec.getVariable(output.getName());
 				
 				//create output matrix object				
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
@@ -129,13 +129,13 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 				mobj.setMetaData(metaNew);	 
 				
 				//put output object into symbol table
-				ec.setVariable(output.get_name(), mobj);
+				ec.setVariable(output.getName(), mobj);
 			}
 			else
 			{
 				//will return an empty matrix partition 
 				MatrixBlock resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
-				ec.setMatrixOutput(output.get_name(), resultBlock);
+				ec.setMatrixOutput(output.getName(), resultBlock);
 			}
 		}
 		else

@@ -9,11 +9,11 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Set;
 
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -53,13 +53,13 @@ public class OptTreePlanChecker
 	 * @throws HopsException
 	 * @throws DMLRuntimeException
 	 */
-	public static void checkProgramCorrectness( ProgramBlock pb, StatementBlock sb, HashSet<String> fnStack ) 
+	public static void checkProgramCorrectness( ProgramBlock pb, StatementBlock sb, Set<String> fnStack ) 
 		throws HopsException, DMLRuntimeException
 	{
 		Program prog = pb.getProgram();
 		DMLProgram dprog = sb.getDMLProg();
 		
-		if (pb instanceof FunctionProgramBlock )
+		if (pb instanceof FunctionProgramBlock && sb instanceof FunctionStatementBlock )
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
@@ -72,7 +72,7 @@ public class OptTreePlanChecker
 			}
 			//checkLinksProgramStatementBlock(fpb, fsb);
 		}
-		else if (pb instanceof WhileProgramBlock)
+		else if (pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock)
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
@@ -86,7 +86,7 @@ public class OptTreePlanChecker
 			}
 			checkLinksProgramStatementBlock(wpb, wsb);
 		}	
-		else if (pb instanceof IfProgramBlock)
+		else if (pb instanceof IfProgramBlock && sb instanceof IfStatementBlock)
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatementBlock isb = (IfStatementBlock) sb;
@@ -104,7 +104,7 @@ public class OptTreePlanChecker
 			}
 			checkLinksProgramStatementBlock(ipb, isb);
 		}
-		else if (pb instanceof ForProgramBlock) //incl parfor
+		else if (pb instanceof ForProgramBlock && sb instanceof ForStatementBlock) //incl parfor
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock) sb;
@@ -137,7 +137,7 @@ public class OptTreePlanChecker
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, ArrayList<Hop> roots, ArrayList<Instruction> inst, HashSet<String> fnStack ) 
+	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, ArrayList<Hop> roots, ArrayList<Instruction> inst, Set<String> fnStack ) 
 		throws DMLRuntimeException, HopsException
 	{
 		if( roots != null )
@@ -155,7 +155,7 @@ public class OptTreePlanChecker
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, HashSet<String> fnStack ) 
+	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) 
 		throws DMLRuntimeException, HopsException
 	{
 		//set of checks to perform
@@ -185,7 +185,7 @@ public class OptTreePlanChecker
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	private static void checkFunctionNames( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, HashSet<String> fnStack ) 
+	private static void checkFunctionNames( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) 
 		throws DMLRuntimeException, HopsException
 	{
 		//reset visit status of dag
@@ -230,7 +230,7 @@ public class OptTreePlanChecker
 	 */
 	private static void getAllFunctionOps( Hop hop, HashMap<String, FunctionOp> memo )
 	{
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
 		//process functionop
@@ -245,6 +245,6 @@ public class OptTreePlanChecker
 		for( Hop in : hop.getInput() )
 			getAllFunctionOps(in, memo);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 	}
 }

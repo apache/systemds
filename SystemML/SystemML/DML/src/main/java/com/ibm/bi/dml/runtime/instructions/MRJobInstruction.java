@@ -1184,14 +1184,14 @@ public class MRJobInstruction extends Instruction
 		{
 			//update string representation (because parsing might fail due to pending instruction patching)
 			String rndinst = getIv_randInstructions().trim();
-			String rndinst2 = "";
+			StringBuilder rndinst2 = new StringBuilder();
 			if( rndinst!=null && rndinst.length()>0 )
 			{
 				String[] instSet = rndinst.split( Lop.INSTRUCTION_DELIMITOR );
 				for( String dginst : instSet )
 				{
 					if( rndinst2.length()>0 )
-						rndinst2 += Lop.INSTRUCTION_DELIMITOR;
+						rndinst2.append(Lop.INSTRUCTION_DELIMITOR);
 					
 					//handle single instruction
 					String[] parts = dginst.split(Lop.OPERAND_DELIMITOR);					
@@ -1213,13 +1213,13 @@ public class MRJobInstruction extends Instruction
 							else
 								sb.append(parts[i]);
 						}
-						rndinst2 += sb.toString();
+						rndinst2.append( sb.toString() );
 					}
 					else
-						rndinst2 += dginst;		
+						rndinst2.append( dginst );		
 				}
 				
-				setRandInstructions(rndinst2);
+				setRandInstructions(rndinst2.toString());
 			}		
 		}
 	}
@@ -1410,7 +1410,7 @@ public class MRJobInstruction extends Instruction
 	private String replaceInstructionStringWithTransMap( String inst, HashMap<Byte,Byte> transMap )
 	{
 		//prevent unnecessary parsing and reconstruction
-		if( inst == null || inst.length()==0 || transMap.size()==0 )
+		if( inst == null || inst.isEmpty() || transMap.isEmpty() )
 			return inst;
 		
 		String[] pinst = inst.split(Lop.INSTRUCTION_DELIMITOR);

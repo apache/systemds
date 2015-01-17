@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,7 +26,7 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class DataGen extends Lop
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String RAND_OPCODE = "rand"; //rand
@@ -72,12 +72,12 @@ public class DataGen extends Lop
 	public void init(DataIdentifier id, String baseDir, ExecType et)
 	{
 		this.getOutputParameters().setFormat(Format.BINARY);
-		this.getOutputParameters().blocked_representation = true;
-		this.getOutputParameters().num_rows = id.getDim1();
-		this.getOutputParameters().num_cols = id.getDim2();
-		this.getOutputParameters()._nnz = -1;
-		this.getOutputParameters().num_rows_in_block = id.getRowsInBlock();
-		this.getOutputParameters().num_cols_in_block = id.getColumnsInBlock();
+		this.getOutputParameters().setBlocked(true);
+		this.getOutputParameters().setNumRows(id.getDim1());
+		this.getOutputParameters().setNumCols(id.getDim2());
+		this.getOutputParameters().setNnz(-1);
+		this.getOutputParameters().setRowsInBlock(id.getRowsInBlock());
+		this.getOutputParameters().setColsInBlock(id.getColumnsInBlock());
 		
 		this.baseDir = baseDir;
 		
@@ -144,9 +144,9 @@ public class DataGen extends Lop
 			String colsString = iLop.prepScalarLabel();
 			
 			String rowsInBlockString = String.valueOf(this
-					.getOutputParameters().num_rows_in_block);
+					.getOutputParameters().getRowsInBlock());
 			String colsInBlockString = String.valueOf(this
-					.getOutputParameters().num_cols_in_block);
+					.getOutputParameters().getColsInBlock());
 
 			iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
 			String minString = iLop.getOutputParameters().getLabel();
@@ -242,9 +242,9 @@ public class DataGen extends Lop
 		String colsString = iLop.prepScalarLabel();
 		
 		String rowsInBlockString = String.valueOf(this
-				.getOutputParameters().num_rows_in_block);
+				.getOutputParameters().getRowsInBlock());
 		String colsInBlockString = String.valueOf(this
-				.getOutputParameters().num_cols_in_block);
+				.getOutputParameters().getColsInBlock());
 
 		iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
 		String minString = iLop.getOutputParameters().getLabel();
@@ -302,10 +302,10 @@ public class DataGen extends Lop
 		iLop = _inputParams.get(Statement.SEQ_INCR.toString()); 
 		String incrString = iLop.prepScalarLabel();
 		
-		String rowsString = String.valueOf(this.getOutputParameters().getNum_rows());
-		String colsString = String.valueOf(this.getOutputParameters().getNum_cols());
-		String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
-		String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);
+		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());
+		String colsString = String.valueOf(this.getOutputParameters().getNumCols());
+		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
+		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
 		
 		sb.append( DataGen.SEQ_OPCODE );
 		sb.append( OPERAND_DELIMITOR );
@@ -368,8 +368,8 @@ public class DataGen extends Lop
 			iLop = _inputParams.get(DataExpression.RAND_COLS.toString()); 
 			String colsString = iLop.prepScalarInputOperand(getExecType());
 			
-			String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
-			String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);
+			String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
+			String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
 			
 			iLop = _inputParams.get(DataExpression.RAND_MIN.toString()); 
 			String minString = iLop.getOutputParameters().getLabel();
@@ -469,10 +469,10 @@ public class DataGen extends Lop
 				&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
 			incrString = Lop.VARIABLE_NAME_PLACEHOLDER + incrString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
-		String rowsString = String.valueOf(this.getOutputParameters().getNum_rows());
-		String colsString = String.valueOf(this.getOutputParameters().getNum_cols());
-		String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
-		String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);
+		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());
+		String colsString = String.valueOf(this.getOutputParameters().getNumCols());
+		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
+		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
 		
 		sb.append( DataGen.SEQ_OPCODE );
 		sb.append( OPERAND_DELIMITOR );
@@ -504,13 +504,13 @@ public class DataGen extends Lop
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(method.toString());
-		sb.append(" ; num_rows=" + this.getOutputParameters().getNum_rows());
-		sb.append(" ; num_cols=" + this.getOutputParameters().getNum_cols());
+		sb.append(" ; num_rows=" + this.getOutputParameters().getNumRows());
+		sb.append(" ; num_cols=" + this.getOutputParameters().getNumCols());
 		sb.append(" ; nnz=" + this.getOutputParameters().getNnz());
-		sb.append(" ; num_rows_per_block=" + this.getOutputParameters().get_rows_in_block());
-		sb.append(" ; num_cols_per_block=" + this.getOutputParameters().get_cols_in_block());
+		sb.append(" ; num_rows_per_block=" + this.getOutputParameters().getRowsInBlock());
+		sb.append(" ; num_cols_per_block=" + this.getOutputParameters().getColsInBlock());
 		sb.append(" ; format=" + this.getOutputParameters().getFormat());
-		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked_representation());
+		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
 		sb.append(" ; dir=" + this.baseDir);
 		return sb.toString();
 	}

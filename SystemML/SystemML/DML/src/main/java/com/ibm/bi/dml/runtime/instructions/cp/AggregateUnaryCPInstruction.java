@@ -219,10 +219,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			int cmOrder;
 			try {
 				if ( in3 == null ) {
-					cmOrder = Integer.parseInt(in2.get_name());
+					cmOrder = Integer.parseInt(in2.getName());
 				}
 				else {
-					cmOrder = Integer.parseInt(in3.get_name());
+					cmOrder = Integer.parseInt(in3.getName());
 				}
 			} catch(NumberFormatException e) {
 				cmOrder = -1; // unknown at compilation time
@@ -240,13 +240,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		String output_name = output.get_name();
+		String output_name = output.getName();
 		String opcode = getOpcode();
 		
 		if( opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")  )
 		{
 			//get meta data information
-			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.get_name());
+			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
 			long rval = -1;
 			if(opcode.equalsIgnoreCase("nrow"))
 				rval = mc.get_rows();
@@ -257,7 +257,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			
 			//create and set output scalar
 			ScalarObject ret = null;
-			switch( output.get_valueType() ) {
+			switch( output.getValueType() ) {
 				case INT:	  ret = new IntObject(output_name, rval); break;
 				case DOUBLE:  ret = new DoubleObject(output_name, rval); break;
 				case STRING:  ret = new StringObject(output_name, String.valueOf(rval)); break;
@@ -274,10 +274,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			 * order and update the CMOperator, if needed.
 			 */
 			
-			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 	
 			CPOperand scalarInput = (input3==null ? input2 : input3);
-			ScalarObject order = ec.getScalarInput(scalarInput.get_name(), scalarInput.get_valueType(), scalarInput.isLiteral()); 
+			ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
 			
 			CMOperator cm_op = ((CMOperator)_optr); 
 			if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {
@@ -289,13 +289,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				cmobj = matBlock.cmOperations(cm_op);
 			}
 			else {
-				MatrixBlock wtBlock = ec.getMatrixInput(input2.get_name());
+				MatrixBlock wtBlock = ec.getMatrixInput(input2.getName());
 				cmobj = matBlock.cmOperations(cm_op, wtBlock);
-				ec.releaseMatrixInput(input2.get_name());
+				ec.releaseMatrixInput(input2.getName());
 			}
 			
 			matBlock = null;
-			ec.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input1.getName());
 			
 			double val = cmobj.getRequiredResult(_optr);
 			DoubleObject ret = new DoubleObject(output_name, val);
@@ -306,14 +306,14 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		else 
 		{
 			/* Default behavior for AggregateUnary Instruction */
-			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());		
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());		
 			AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
 			
 			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
 			
-			ec.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input1.getName());
 			
-			if(output.get_dataType() == DataType.SCALAR){
+			if(output.getDataType() == DataType.SCALAR){
 				DoubleObject ret = new DoubleObject(output_name, resultBlock.getValue(0, 0));
 				ec.setScalarOutput(output_name, ret);
 			} else{

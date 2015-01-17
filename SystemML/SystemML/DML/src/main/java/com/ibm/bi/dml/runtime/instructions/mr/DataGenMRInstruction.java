@@ -16,13 +16,13 @@ public abstract class DataGenMRInstruction extends MRInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public byte input;
-	public long rows;
-	public long cols;
-	public int rowsInBlock;
-	public int colsInBlock;
-	public String baseDir;
-	private DataGenMethod method;
+	protected DataGenMethod method;
+	protected byte input;
+	protected long rows;
+	protected long cols;
+	protected int rowsInBlock;
+	protected int colsInBlock;
+	protected String baseDir;
 	
 	public DataGenMRInstruction(Operator op, DataGenMethod mthd, byte in, byte out, long r, long c, int rpb, int cpb, String dir)
 	{
@@ -40,6 +40,30 @@ public abstract class DataGenMRInstruction extends MRInstruction
 		return method;
 	}
 	
+	public byte getInput() {
+		return input;
+	}
+
+	public long getRows() {
+		return rows;
+	}
+
+	public long getCols() {
+		return cols;
+	}
+
+	public int getRowsInBlock() {
+		return rowsInBlock;
+	}
+
+	public int getColsInBlock() {
+		return colsInBlock;
+	}
+
+	public String getBaseDir() {
+		return baseDir;
+	}
+
 	@Override
 	public byte[] getInputIndexes() {
 		return new byte[]{input};
@@ -49,5 +73,4 @@ public abstract class DataGenMRInstruction extends MRInstruction
 	public byte[] getAllIndexes() {
 		return new byte[]{input, output};
 	}
-
 }

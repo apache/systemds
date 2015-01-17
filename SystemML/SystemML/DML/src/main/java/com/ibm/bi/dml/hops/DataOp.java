@@ -61,11 +61,11 @@ public class DataOp extends Hop
 		_dataop = dop;
 		
 		_fileName = fname;
-		set_dim1(dim1);
-		set_dim2(dim2);
+		setDim1(dim1);
+		setDim2(dim2);
 		setNnz(nnz);
-		set_rows_in_block(rowsPerBlock);
-		set_cols_in_block(colsPerBlock);
+		setRowsInBlock(rowsPerBlock);
+		setColsInBlock(colsPerBlock);
 		
 		if (dop == DataOpTypes.TRANSIENTREAD)
 			setFormatType(FileFormatTypes.BINARY);
@@ -154,11 +154,11 @@ public class DataOp extends Hop
 	}
 	
 	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
-		set_dim1(dim1);
-		set_dim2(dim2);
+		setDim1(dim1);
+		setDim2(dim2);
 		setNnz(nnz);
-		set_rows_in_block(rowsPerBlock);
-		set_cols_in_block(colsPerBlock);
+		setRowsInBlock(rowsPerBlock);
+		setColsInBlock(colsPerBlock);
 	}
 
 	public void setFileName(String fn) {
@@ -178,7 +178,7 @@ public class DataOp extends Hop
 	public Lop constructLops()
 			throws HopsException, LopsException 
 	{	
-		if (get_lops() == null) {
+		if (getLops() == null) {
 			Lop l = null;
 
 			ExecType et = optFindExecType();
@@ -218,13 +218,13 @@ public class DataOp extends Hop
 			switch(_dataop) {
 			case TRANSIENTREAD:
 			case PERSISTENTREAD:
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), isTransient, getFormatType());
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
 				break;
 				
 			case PERSISTENTWRITE:
 			case TRANSIENTWRITE:
 			case FUNCTIONOUTPUT:
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), isTransient, getFormatType());
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
 				
 				// TODO: should we set the exec type for transient write ?
 				if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
@@ -234,27 +234,27 @@ public class DataOp extends Hop
 			}
 			
 			/*if (_dataop == DataOpTypes.PERSISTENTREAD) {
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), false);
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), false);
 			} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), true);
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), true);
 			} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), false);
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), false);
 				((Data) l).setExecType(et);
 			} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), true);
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), true);
 			}*/
 			
 			((Data) l).setFileFormatType(this.getFormatType());
 
-			l.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-					get_rows_in_block(), get_cols_in_block(), getNnz());
+			l.getOutputParameters().setDimensions(getDim1(), getDim2(),
+					getRowsInBlock(), getColsInBlock(), getNnz());
 			
 			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
-			set_lops(l);
+			setLops(l);
 		}
 	
-		return get_lops();
+		return getLops();
 
 	}
 
@@ -280,13 +280,13 @@ public class DataOp extends Hop
 	public String getOpString() {
 		String s = new String("");
 		s += HopsData2String.get(_dataop);
-		s += " "+get_name();
+		s += " "+getName();
 		return s;
 	}
 
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug("  DataOp: " + _dataop);
 				if (_fileName != null) {
@@ -297,7 +297,7 @@ public class DataOp extends Hop
 					h.printMe();
 				}
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
@@ -326,23 +326,23 @@ public class DataOp extends Hop
 	
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
 			SQLLops sqllop;
 			
 			Hop input = null;
-			if(this.getInput().size() > 0)
+			if( !getInput().isEmpty() )
 				input = this.getInput().get(0);
 			
 			//Should not have any inputs
 			if(this._dataop == DataOpTypes.PERSISTENTREAD)
 			{
-				sqllop = new SQLLops(this.get_name(),
+				sqllop = new SQLLops(this.getName(),
 									GENERATES.SQL,
-									this.get_valueType(),
-									this.get_dataType());
+									this.getValueType(),
+									this.getDataType());
 				
-				if(this.get_dataType() == DataType.SCALAR)
+				if(this.getDataType() == DataType.SCALAR)
 					sqllop.set_sql(String.format(SQLLops.SELECTSCALAR, SQLLops.addQuotes(this.getFileName())));
 				else
 				{
@@ -355,14 +355,14 @@ public class DataOp extends Hop
 			else if(this._dataop == DataOpTypes.TRANSIENTREAD)
 			{
 				//Here we do not have a file name, so the name is taken
-				sqllop = new SQLLops(this.get_name(),
+				sqllop = new SQLLops(this.getName(),
 									GENERATES.NONE,
-									this.get_valueType(),
-									this.get_dataType());
+									this.getValueType(),
+									this.getDataType());
 				
-				String name = this.get_name();
+				String name = this.getName();
 				
-				if(this.get_dataType() == DataType.MATRIX)
+				if(this.getDataType() == DataType.MATRIX)
 					name += "_transmatrix";
 				else 
 					name = "##" + name + "_transscalar##";//TODO: put ## here for placeholders
@@ -370,20 +370,20 @@ public class DataOp extends Hop
 				sqllop.set_tableName(name);
 				sqllop.set_sql(name);
 			}
-			else if(this._dataop == DataOpTypes.PERSISTENTWRITE && this.get_dataType() == DataType.SCALAR)
+			else if(this._dataop == DataOpTypes.PERSISTENTWRITE && this.getDataType() == DataType.SCALAR)
 			{
 				sqllop = new SQLLops(this.getFileName(),
 						GENERATES.DML_PERSISTENT,
 						input.constructSQLLOPs(),
-						this.get_valueType(),
-						this.get_dataType());
+						this.getValueType(),
+						this.getDataType());
 				sqllop.set_tableName(this.getFileName());
-				//sqllop.set_dataType(DataType.MATRIX);
+				//sqllop.setDataType(DataType.MATRIX);
 				
-				if(input.get_sqllops().get_flag() == GENERATES.NONE)
-					sqllop.set_sql("SELECT " + input.get_sqllops().get_tableName());
+				if(input.getSqlLops().get_flag() == GENERATES.NONE)
+					sqllop.set_sql("SELECT " + input.getSqlLops().get_tableName());
 				else
-					sqllop.set_sql(input.get_sqllops().get_sql());
+					sqllop.set_sql(input.getSqlLops().get_sql());
 			}
 			else
 			{
@@ -393,37 +393,37 @@ public class DataOp extends Hop
 				String name = this.getFileName();
 				
 				//With scalars or transient writes there is no filename
-				if(this.get_dataType() == DataType.SCALAR)
-					name = "##" + this.get_name() + "_transscalar##";
+				if(this.getDataType() == DataType.SCALAR)
+					name = "##" + this.getName() + "_transscalar##";
 				else if(this._dataop == DataOpTypes.TRANSIENTWRITE)
-					name = this.get_name() + "_transmatrix";
+					name = this.getName() + "_transmatrix";
 				
 				sqllop = new SQLLops(name,
 				(this._dataop == DataOpTypes.TRANSIENTWRITE) ? GENERATES.DML_TRANSIENT : GENERATES.DML_PERSISTENT,
 									input.constructSQLLOPs(),
-									this.get_valueType(),
-									this.get_dataType());
+									this.getValueType(),
+									this.getDataType());
 				sqllop.set_tableName(name);
 				
-				if(input.get_sqllops().get_dataType() == DataType.MATRIX)
-					sqllop.set_sql(String.format(SQLLops.SELECTSTAR, input.get_sqllops().get_tableName()));
+				if(input.getSqlLops().getDataType() == DataType.MATRIX)
+					sqllop.set_sql(String.format(SQLLops.SELECTSTAR, input.getSqlLops().get_tableName()));
 				//Scalar with SQL
-				else if(input.get_sqllops().get_flag() == GENERATES.SQL)
-					sqllop.set_sql(String.format(SQLLops.SIMPLESCALARSELECTFROM, "sval", SQLLops.addQuotes(input.get_sqllops().get_tableName() )));
+				else if(input.getSqlLops().get_flag() == GENERATES.SQL)
+					sqllop.set_sql(String.format(SQLLops.SIMPLESCALARSELECTFROM, "sval", SQLLops.addQuotes(input.getSqlLops().get_tableName() )));
 				//Other scalars such as variable names and literals
 				else
-					sqllop.set_sql(input.get_sqllops().get_tableName());
+					sqllop.set_sql(input.getSqlLops().get_tableName());
 			}
 			String i = _fileName;
 			if(input != null && _fileName != null)
-				i = (input.get_sqllops() != null) ? input.get_sqllops().get_tableName() + "->" + i : "->" + i;
-				//i = input.get_sqllops().get_tableName() + "->" + i;
+				i = (input.getSqlLops() != null) ? input.getSqlLops().get_tableName() + "->" + i : "->" + i;
+				//i = input.getSqlLops().get_tableName() + "->" + i;
 			else
 				i = "";
 			sqllop.set_properties(getProperties(i));
-			this.set_sqllops(sqllop);
+			this.setSqlLops(sqllop);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	@SuppressWarnings("unused")
@@ -431,7 +431,7 @@ public class DataOp extends Hop
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		
-		if(this.get_dataType() == DataType.MATRIX)
+		if(this.getDataType() == DataType.MATRIX)
 		{
 			if(this._dataop == DataOpTypes.PERSISTENTREAD)
 			{
@@ -445,10 +445,10 @@ public class DataOp extends Hop
 			else if(this._dataop == DataOpTypes.PERSISTENTWRITE || this._dataop == DataOpTypes.TRANSIENTWRITE)
 			{
 				stmt.getColumns().add("*");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
+				stmt.setTable(new SQLTableReference(input.getSqlLops().get_tableName()));
 			}
 		}
-		else if(this.get_dataType() == DataType.SCALAR)
+		else if(this.getDataType() == DataType.SCALAR)
 		{
 			if(this._dataop == DataOpTypes.TRANSIENTREAD)
 			{
@@ -457,7 +457,7 @@ public class DataOp extends Hop
 			else if(this._dataop == DataOpTypes.PERSISTENTREAD || this._dataop == DataOpTypes.PERSISTENTWRITE || this._dataop == DataOpTypes.TRANSIENTWRITE)
 			{
 				stmt.getColumns().add("*");
-				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
+				stmt.setTable(new SQLTableReference(input.getSqlLops().get_tableName()));
 			}
 		}
 		return stmt;
@@ -474,9 +474,9 @@ public class DataOp extends Hop
 	{		
 		double ret = 0;
 		
-		if ( get_dataType() == DataType.SCALAR ) 
+		if ( getDataType() == DataType.SCALAR ) 
 		{
-			switch(this.get_valueType()) 
+			switch(this.getValueType()) 
 			{
 				case INT:
 					ret = OptimizerUtils.INT_SIZE; break;
@@ -545,7 +545,7 @@ public class DataOp extends Hop
 			checkAndSetForcedPlatform();
 
 			//additional check for write only
-			if( get_dataType()==DataType.SCALAR )
+			if( getDataType()==DataType.SCALAR )
 				_etypeForced = ExecType.CP;
 			
 			if( _etypeForced != null ) 			
@@ -590,8 +590,8 @@ public class DataOp extends Hop
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
 		{
 			Hop input1 = getInput().get(0);
-			set_dim1(input1.get_dim1());
-			set_dim2(input1.get_dim2());
+			setDim1(input1.getDim1());
+			setDim2(input1.getDim2());
 			setNnz(input1.getNnz());
 		}
 		else //READ

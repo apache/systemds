@@ -82,9 +82,9 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 */	
 
 	private Tertiary.OperationTypes findCtableOperation() {
-		DataType dt1 = input1.get_dataType();
-		DataType dt2 = input2.get_dataType();
-		DataType dt3 = input3.get_dataType();
+		DataType dt1 = input1.getDataType();
+		DataType dt2 = input2.getDataType();
+		DataType dt3 = input3.getDataType();
 		return Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
 	}
 	
@@ -92,7 +92,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
@@ -117,33 +117,33 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		switch(ctableOp) {
 		case CTABLE_TRANSFORM:
 			// F=ctable(A,B,W)
-			matBlock2 = ec.getMatrixInput(input2.get_name());
-			wtBlock = ec.getMatrixInput(input3.get_name());
+			matBlock2 = ec.getMatrixInput(input2.getName());
+			wtBlock = ec.getMatrixInput(input3.getName());
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
-			matBlock2 = ec.getMatrixInput(input2.get_name());
-			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
+			matBlock2 = ec.getMatrixInput(input2.getName());
+			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, ctableMap, resultBlock);
 			break;
 		case CTABLE_EXPAND_SCALAR_WEIGHT:
 			// F = ctable(seq,A) or F = ctable(seq,B,1)
-			matBlock2 = ec.getMatrixInput(input2.get_name());
-			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
+			matBlock2 = ec.getMatrixInput(input2.getName());
+			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			// only resultBlock.rlen known, resultBlock.clen set in operation
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
-			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
-			cst2 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
+			cst2 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, cst1, cst2, ctableMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
-			wtBlock = ec.getMatrixInput(input3.get_name());
-			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
+			wtBlock = ec.getMatrixInput(input3.getName());
+			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, cst1, wtBlock, ctableMap, resultBlock);
 			break;
 		
@@ -151,22 +151,19 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 			throw new DMLRuntimeException("Encountered an invalid ctable operation ("+ctableOp+") while executing instruction: " + this.toString());
 		}
 		
-		matBlock1 = matBlock2 = wtBlock = null;
-		
-		if(input1.get_dataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input1.get_name());
-		if(input2.get_dataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input2.get_name());
-		if(input3.get_dataType() == DataType.MATRIX)
-			ec.releaseMatrixInput(input3.get_name());
+		if(input1.getDataType() == DataType.MATRIX)
+			ec.releaseMatrixInput(input1.getName());
+		if(input2.getDataType() == DataType.MATRIX)
+			ec.releaseMatrixInput(input2.getName());
+		if(input3.getDataType() == DataType.MATRIX)
+			ec.releaseMatrixInput(input3.getName());
 		
 		if ( resultBlock == null )
 			resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
 		else
 			resultBlock.examSparsity();
 		
-		ec.setMatrixOutput(output.get_name(), resultBlock);
+		ec.setMatrixOutput(output.getName(), resultBlock);
 		ctableMap.clear();
-		resultBlock = null;
 	}	
 }

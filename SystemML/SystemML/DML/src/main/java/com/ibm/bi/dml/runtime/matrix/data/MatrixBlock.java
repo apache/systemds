@@ -859,7 +859,7 @@ public class MatrixBlock extends MatrixValue
 			for( int i=0; i<that.rlen; i++ )
 			{
 				SparseRow brow = that.sparseRows[i];
-				if( brow!=null && brow.size()>0 )
+				if( brow!=null && !brow.isEmpty() )
 				{
 					int aix = rowoffset+i;
 					int len = brow.size();
@@ -1232,20 +1232,20 @@ public class MatrixBlock extends MatrixValue
 				if( cl==0 && cu==clen-1 ) //specific case: all cols
 				{
 					for(int i=rl; i<rlimit; i++)
-						if(sparseRows[i]!=null && sparseRows[i].size()>0)
+						if(sparseRows[i]!=null && !sparseRows[i].isEmpty())
 							nnz+=sparseRows[i].size();	
 				}
 				else if( cl==cu ) //specific case: one column
 				{
 					for(int i=rl; i<rlimit; i++)
-						if(sparseRows[i]!=null && sparseRows[i].size()>0)
+						if(sparseRows[i]!=null && !sparseRows[i].isEmpty())
 							nnz += (sparseRows[i].get(cl)!=0) ? 1 : 0;
 				}
 				else //general case
 				{
 					int astart,aend;
 					for(int i=rl; i<rlimit; i++)
-						if(sparseRows[i]!=null && sparseRows[i].size()>0)
+						if(sparseRows[i]!=null && !sparseRows[i].isEmpty())
 						{
 							SparseRow arow = sparseRows[i];
 							astart = arow.searchIndexesFirstGTE(cl);
@@ -1491,13 +1491,13 @@ public class MatrixBlock extends MatrixValue
 		for( int i=0; i<src.rlen; i++ )
 		{
 			SparseRow arow = src.sparseRows[i];
-			if( arow != null && arow.size()>0 )
+			if( arow != null && !arow.isEmpty() )
 			{
 				alen = arow.size();
 				aix = arow.getIndexContainer();
 				avals = arow.getValueContainer();		
 				
-				if( sparseRows[rl+i] == null || sparseRows[rl+i].size()==0  )
+				if( sparseRows[rl+i] == null || sparseRows[rl+i].isEmpty()  )
 				{
 					sparseRows[rl+i] = new SparseRow(estimatedNNzsPerRow, clen); 
 					SparseRow brow = sparseRows[rl+i];
@@ -1566,7 +1566,7 @@ public class MatrixBlock extends MatrixValue
 		for( int i=0, ix=rl*clen; i<src.rlen; i++, ix+=clen )
 		{	
 			SparseRow arow = src.sparseRows[i];
-			if( arow != null && arow.size()>0 )
+			if( arow != null && !arow.isEmpty() )
 			{
 				alen = arow.size();
 				aix = arow.getIndexContainer();
@@ -1599,7 +1599,7 @@ public class MatrixBlock extends MatrixValue
 		for( int i=0, ix=0; i<src.rlen; i++, ix+=src.clen )
 		{
 			int rix = rl + i;
-			if( sparseRows[rix]==null || sparseRows[rix].size()==0 )
+			if( sparseRows[rix]==null || sparseRows[rix].isEmpty() )
 			{
 				for( int j=0; j<src.clen; j++ )
 					if( (val = src.denseBlock[ix+j]) != 0 )
@@ -1677,7 +1677,7 @@ public class MatrixBlock extends MatrixValue
 			if( updateNNZ )
 			{
 				for( int i=rl; i<=ru; i++ )
-					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 					{
 						int lnnz = sparseRows[i].size();
 						sparseRows[i].deleteIndex(cl);
@@ -1687,7 +1687,7 @@ public class MatrixBlock extends MatrixValue
 			else
 			{
 				for( int i=rl; i<=ru; i++ )
-					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 						sparseRows[i].deleteIndex(cl);
 			}
 		}
@@ -1696,7 +1696,7 @@ public class MatrixBlock extends MatrixValue
 			if( updateNNZ )
 			{
 				for( int i=rl; i<=ru; i++ )
-					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 					{
 						int lnnz = sparseRows[i].size();
 						sparseRows[i].deleteIndexRange(cl, cu);
@@ -1706,7 +1706,7 @@ public class MatrixBlock extends MatrixValue
 			else
 			{
 				for( int i=rl; i<=ru; i++ )
-					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 						sparseRows[i].deleteIndexRange(cl, cu);
 			}
 		}
@@ -1803,6 +1803,7 @@ public class MatrixBlock extends MatrixValue
 			DataInputBuffer din = (DataInputBuffer)in;
 			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
 			nonZeros = mbin.readDoubleArray(limit, denseBlock);			
+			((FastBufferedDataInputStream)mbin).close();
 		}
 		else //default deserialize
 		{
@@ -1837,6 +1838,7 @@ public class MatrixBlock extends MatrixValue
 			DataInputBuffer din = (DataInputBuffer)in;
 			MatrixBlockDataInput mbin = new FastBufferedDataInputStream(din);
 			nonZeros = mbin.readSparseRows(rlen, sparseRows);		
+			((FastBufferedDataInputStream)mbin).close();
 		}
 		else //default deserialize
 		{
@@ -2045,7 +2047,7 @@ public class MatrixBlock extends MatrixValue
 		out.writeInt(nonZeros);
 
 		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
-			if(sparseRows[r]!=null && sparseRows[r].size()>0 )
+			if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
 			{
 				int alen = sparseRows[r].size();
 				int[] aix = sparseRows[r].getIndexContainer();
@@ -2078,7 +2080,7 @@ public class MatrixBlock extends MatrixValue
 		{
 			for( int i=0; i<rlen; i++ )
 			{
-				if( i<sparseRows.length && sparseRows[i]!=null && sparseRows[i].size()>0 )
+				if( i<sparseRows.length && sparseRows[i]!=null && !sparseRows[i].isEmpty() )
 				{
 					SparseRow arow = sparseRows[i];
 					int alen = arow.size();
@@ -2795,7 +2797,7 @@ public class MatrixBlock extends MatrixValue
 					for( int r=0; r<Math.min(rlen, bRows.length); r++ )
 					{
 						SparseRow brow = bRows[r];
-						if( brow != null && brow.size() > 0 ) 
+						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
@@ -3419,7 +3421,7 @@ public class MatrixBlock extends MatrixValue
 			dest.allocateDenseBlock();
 			double val;
 			for( int i=rl, ix=0; i<=ru; i++, ix++ )
-				if( sparseRows[i] != null && sparseRows[i].size()>0 )
+				if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 					if( (val = sparseRows[i].get(cl)) != 0 )
 					{
 						dest.denseBlock[ix] = val;
@@ -3429,7 +3431,7 @@ public class MatrixBlock extends MatrixValue
 		else //general case (sparse and dense)
 		{
 			for(int i=rl; i <= ru; i++) 
-				if(sparseRows[i] != null && sparseRows[i].size()>0) 
+				if(sparseRows[i] != null && !sparseRows[i].isEmpty()) 
 				{
 					SparseRow arow = sparseRows[i];
 					int alen = arow.size();
@@ -4523,7 +4525,7 @@ public class MatrixBlock extends MatrixValue
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ )
 			sum_wt += quickGetValue(i, 1);
-		if ( (int)sum_wt != sum_wt ) {
+		if ( Math.floor(sum_wt) != sum_wt ) {
 			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
 		}
 		return sum_wt;
@@ -4809,7 +4811,7 @@ public class MatrixBlock extends MatrixValue
 		if( sparse ) 
 		{
 			for ( int i=0; i < sparseRows.length; i++ ) {
-				if ( sparseRows[i] != null &&  sparseRows[i].size() > 0 )
+				if ( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 				{
 					flags[i] = false;
 					rlen2++;
@@ -4946,7 +4948,7 @@ public class MatrixBlock extends MatrixValue
 				for( int i=0; i<rlen; i++ )
 				{
 					SparseRow arow = a[ i ];
-					if( arow!=null && arow.size()>0 )
+					if( arow!=null && !arow.isEmpty() )
 					{
 						SparseRow crow = new SparseRow(arow.size());
 						int alen = arow.size();
@@ -4979,7 +4981,7 @@ public class MatrixBlock extends MatrixValue
 					for( int i=0, cix=0; i<rlen; i++, cix+=clen )
 					{
 						SparseRow arow = a[ i ];
-						if( arow!=null && arow.size()>0 )
+						if( arow!=null && !arow.isEmpty() )
 						{
 							int alen = arow.size();
 							int[] aix = arow.getIndexContainer();

@@ -32,14 +32,14 @@ public class ReblockOp extends Hop
 	// Constructor that adds a Reblock Hop *AFTER* a hop (e.g. Read Hop) to
 	// produce a block size
 	public ReblockOp(Hop inp, int rows_per_block, int cols_per_block) {
-		super(Kind.Reblock, inp.get_name(), inp.get_dataType(), inp
-				.get_valueType());
+		super(Kind.Reblock, inp.getName(), inp.getDataType(), inp
+				.getValueType());
 
-		set_dim1(inp.get_dim1());
-		set_dim2(inp.get_dim2());
+		setDim1(inp.getDim1());
+		setDim2(inp.getDim2());
 		
-		set_rows_in_block(rows_per_block);
-		set_cols_in_block(cols_per_block);
+		setRowsInBlock(rows_per_block);
+		setColsInBlock(cols_per_block);
 
 		setNnz(inp.getNnz());
 		
@@ -64,14 +64,14 @@ public class ReblockOp extends Hop
 	// size(e.g. Write Hop)
 
 	public ReblockOp(Hop par) {
-		super(Kind.Reblock, par.get_name(), par.get_dataType(), par
-				.get_valueType());
+		super(Kind.Reblock, par.getName(), par.getDataType(), par
+				.getValueType());
 
-		set_dim1(par.get_dim1());
-		set_dim2(par.get_dim2());
+		setDim1(par.getDim1());
+		setDim2(par.getDim2());
 		
-		set_rows_in_block(par.get_rows_in_block());
-		set_cols_in_block(par.get_cols_in_block());
+		setRowsInBlock(par.getRowsInBlock());
+		setColsInBlock(par.getColsInBlock());
 		
 		setNnz(par.getNnz());
 
@@ -95,7 +95,7 @@ public class ReblockOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{
-		if (get_lops() == null) {
+		if (getLops() == null) {
 
 			try {
 				ExecType et = optFindExecType();
@@ -109,24 +109,24 @@ public class ReblockOp extends Hop
 						// NOTE: only persistent reads can have CSV format
 						CSVReBlock rcsv = new CSVReBlock(
 								getInput().get(0).constructLops(),
-								get_rows_in_block(), get_cols_in_block(), get_dataType(), get_valueType());
-							rcsv.getOutputParameters().setDimensions(get_dim1(),
-									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+								getRowsInBlock(), getColsInBlock(), getDataType(), getValueType());
+							rcsv.getOutputParameters().setDimensions(getDim1(),
+									getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 				
 							rcsv.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							
-							set_lops(rcsv);
+							setLops(rcsv);
 					}
 					else {
 						ReBlock reblock = new ReBlock(
-							getInput().get(0).constructLops(), get_rows_in_block(), get_cols_in_block(), 
-							get_dataType(), get_valueType(), true);
-						reblock.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							getInput().get(0).constructLops(), getRowsInBlock(), getColsInBlock(), 
+							getDataType(), getValueType(), true);
+						reblock.getOutputParameters().setDimensions(getDim1(),
+								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			
 						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
-						set_lops(reblock);
+						setLops(reblock);
 					}
 				}
 				else 
@@ -136,17 +136,17 @@ public class ReblockOp extends Hop
 			}
 		}
 		
-		return get_lops();
+		return getLops();
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
+		if (getVisited() != VisitStatus.DONE) {
 			super.printMe();
 			for (Hop h : getInput()) {
 				h.printMe();
 			}
 		}
-		set_visited(VISIT_STATUS.DONE);
+		setVisited(VisitStatus.DONE);
 	}
 	
 	@Override
@@ -169,8 +169,8 @@ public class ReblockOp extends Hop
 		if(lop.get_flag() != GENERATES.NONE)
 			lop.set_flag(flag);
 		
-		this.set_sqllops(lop);
-		return this.get_sqllops();
+		this.setSqlLops(lop);
+		return this.getSqlLops();
 	}
 	
 	@Override
@@ -223,8 +223,8 @@ public class ReblockOp extends Hop
 	public void refreshSizeInformation()
 	{
 		Hop input1 = getInput().get(0);
-		set_dim1( input1.get_dim1() );
-		set_dim2( input1.get_dim2() );
+		setDim1( input1.getDim1() );
+		setDim2( input1.getDim2() );
 		setNnz( input1.getNnz() );
 	}
 

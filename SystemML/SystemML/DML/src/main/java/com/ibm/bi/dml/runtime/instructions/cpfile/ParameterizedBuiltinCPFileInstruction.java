@@ -118,7 +118,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		{
 			// get inputs
 			MatrixObject src = (MatrixObject)ec.getVariable( params.get("target") );
-			MatrixObject out = (MatrixObject)ec.getVariable( output.get_name() );
+			MatrixObject out = (MatrixObject)ec.getVariable( output.getName() );
 			String margin = params.get("margin");
 			
 			// export input matrix (if necessary)
@@ -129,7 +129,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			out = rm.execute();
 		
 			//put output
-			ec.setVariable(output.get_name(), out);
+			ec.setVariable(output.getName(), out);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
@@ -323,7 +323,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						}
 					}
 					
-					if( buffer.size() > 0 )
+					if( !buffer.isEmpty() )
 					{
 						appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 						buffer.clear();
@@ -380,7 +380,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						}
 					}
 					
-					if( buffer.size() > 0 )
+					if( !buffer.isEmpty() )
 					{
 						appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 						buffer.clear();
@@ -848,7 +848,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
-						int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
+						int maxCol = (int)(((long)blockCol*bclen + bclen < clen) ? bclen : clen - (long)blockCol*bclen);
 						
 						int blockRowOut = 0;
 						int currentSize = -1;
@@ -913,7 +913,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
-						int maxRow = (int)((blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen);
+						int maxRow = (int)(((long)blockRow*brlen + brlen < rlen) ? brlen : rlen - (long)blockRow*brlen);
 						
 						int blockColOut = 0;
 						int currentSize = -1;

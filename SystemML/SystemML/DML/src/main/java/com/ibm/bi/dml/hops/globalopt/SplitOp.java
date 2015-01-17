@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.lops.LopsException;
 public class SplitOp extends CrossBlockOp 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Hop secondOutput;
@@ -39,7 +39,7 @@ public class SplitOp extends CrossBlockOp
 			this.secondOutput = output;
 			return;
 		}
-		throw new RuntimeException("This SplitNode: " + get_name() + " already has two outputs assigned!"); 
+		throw new RuntimeException("This SplitNode: " + getName() + " already has two outputs assigned!"); 
 	}
 
 	public Hop getSecondOutput() {
@@ -56,8 +56,8 @@ public class SplitOp extends CrossBlockOp
 	
 	@Override
 	public void refreshSizeInformation() {
-		this._dim1 = leftInput.get_dim1();
-		this._dim2 = leftInput.get_dim2();
+		this._dim1 = leftInput.getDim1();
+		this._dim2 = leftInput.getDim2();
 	}
 
 	@Override
@@ -109,12 +109,12 @@ public class SplitOp extends CrossBlockOp
 	
 	@Override
 	public Lop constructLops() throws HopsException, LopsException {
-		if(get_lops() != null) {
-			return get_lops();
+		if(getLops() != null) {
+			return getLops();
 		}
 		else {
 			SplitLop lop = new SplitLop();
-			set_lops(lop);
+			setLops(lop);
 			return lop;
 		}
 	}

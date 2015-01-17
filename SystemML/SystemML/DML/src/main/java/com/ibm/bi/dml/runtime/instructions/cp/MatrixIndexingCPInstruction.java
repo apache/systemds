@@ -121,13 +121,13 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 		String opcode = getOpcode();
 		
 		//get indexing range
-		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), colUpper.get_valueType(), colUpper.isLiteral()).getLongValue();
+		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
 		
 		//get original matrix
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )
@@ -138,36 +138,36 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
 			else //via slicing the in-memory matrix
 			{
-				MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());	
-				ec.releaseMatrixInput(input1.get_name());
+				ec.releaseMatrixInput(input1.getName());
 			}	
 			
-			ec.setMatrixOutput(output.get_name(), resultBlock);
+			ec.setMatrixOutput(output.getName(), resultBlock);
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
 			boolean inplace = mo.isUpdateInPlaceEnabled();
-			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			MatrixBlock resultBlock = null;
 			
-			if(input2.get_dataType() == DataType.MATRIX) //MATRIX<-MATRIX
+			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
-				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.get_name());
+				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock(), inplace);
-				ec.releaseMatrixInput(input2.get_name());
+				ec.releaseMatrixInput(input2.getName());
 			}
 			else //MATRIX<-SCALAR 
 			{
 				if(!(rl==ru && cl==cu))
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
-				ScalarObject scalar = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral());
+				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock(), inplace);
 			}
 			
-			ec.releaseMatrixInput(input1.get_name());
-			ec.setMatrixOutput(output.get_name(), resultBlock, inplace);
+			ec.releaseMatrixInput(input1.getName());
+			ec.setMatrixOutput(output.getName(), resultBlock, inplace);
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");		

@@ -222,7 +222,7 @@ public class ReaderTextCell extends MatrixReader
 		// Read the header lines, if reading from a matrixMarket file
 		if ( matrixMarket ) {
 			value = br.readLine(); // header line
-			if ( !value.startsWith("%%") ) {
+			if ( value==null || !value.startsWith("%%") ) {
 				throw new IOException("Error while reading file in MatrixMarket format. Expecting a header line, but encountered, \"" + value +"\".");
 			}
 			

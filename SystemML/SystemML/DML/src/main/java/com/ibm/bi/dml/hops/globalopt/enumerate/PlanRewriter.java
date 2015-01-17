@@ -56,8 +56,8 @@ public abstract class PlanRewriter
 		switch( rc.getType() )
 		{
 			case BLOCK_SIZE:
-				hop.set_cols_in_block(rc.getValue());
-				hop.set_rows_in_block(rc.getValue());
+				hop.setColsInBlock(rc.getValue());
+				hop.setRowsInBlock(rc.getValue());
 				break;
 			case EXEC_TYPE:
 				ExecType eType = ExecType.MR;
@@ -97,7 +97,7 @@ public abstract class PlanRewriter
 		switch( type )
 		{
 			case BLOCK_SIZE:
-				ret = new RewriteConfigBlocksize((int)hop.get_rows_in_block());
+				ret = new RewriteConfigBlocksize((int)hop.getRowsInBlock());
 				break;
 			case EXEC_TYPE:
 				ExecType extractedExecType = ExecType.INVALID; //unknown
@@ -112,7 +112,7 @@ public abstract class PlanRewriter
 					FormatType extractedFormat = FormatType.BINARY_BLOCK;
 					if(format == Format.TEXT) {
 						extractedFormat = FormatType.TEXT_CELL;
-					} else if(hop.get_cols_in_block() == -1L) {
+					} else if(hop.getColsInBlock() == -1L) {
 						extractedFormat = FormatType.BINARY_CELL;
 					}
 					ret = new RewriteConfigFormat(extractedFormat.ordinal());
@@ -179,14 +179,14 @@ public abstract class PlanRewriter
 					DataOp data = (DataOp)hop;
 					if((data.get_dataop() == DataOpTypes.PERSISTENTREAD || data.get_dataop() == DataOpTypes.PERSISTENTWRITE)
 							&& rc.getValue()==ExecType.CP.ordinal() 
-							&& !data.get_dataType().equals(DataType.SCALAR)) {
+							&& !data.getDataType().equals(DataType.SCALAR)) {
 						//System.out.println("data op in CP: " + data + ", " + data.get_dataop());
 						return false;
 					}
 					
 					//read matrices always from HDFS
 					if((data.get_dataop() == DataOpTypes.TRANSIENTREAD || data.get_dataop() == DataOpTypes.TRANSIENTWRITE) 
-							&& data.get_dataType() == DataType.MATRIX 
+							&& data.getDataType() == DataType.MATRIX 
 							&& rc.getValue()==ExecType.CP.ordinal()) {
 						return false;
 					}

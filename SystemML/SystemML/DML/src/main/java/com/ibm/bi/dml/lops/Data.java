@@ -200,8 +200,8 @@ public class Data extends Lop
 		
 		return "File_Name: " + this.getOutputParameters().getFile_name() + " " + 
 		"Label: " + this.getOutputParameters().getLabel() + " " + "Operation: = " + operation + " " + 
-		"Format: " + this.outParams.getFormat() +  " Datatype: " + get_dataType() + " Valuetype: " + get_valueType() + " num_rows = " + this.getOutputParameters().getNum_rows() + " num_cols = " + 
-		this.getOutputParameters().getNum_cols();
+		"Format: " + this.outParams.getFormat() +  " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + this.getOutputParameters().getNumRows() + " num_cols = " + 
+		this.getOutputParameters().getNumCols();
 	}
 
 	/**
@@ -255,7 +255,7 @@ public class Data extends Lop
 	
 	public long getLongValue() throws LopsException {
 		if(literal_var) {
-			ValueType vt = get_valueType();
+			ValueType vt = getValueType();
 			switch(vt) {
 			case INT:
 				return Long.parseLong(getOutputParameters().getLabel());
@@ -371,7 +371,7 @@ public class Data extends Lop
 		throws LopsException 
 	{	
 		if ( getOutputParameters().getFile_name() == null && operation == OperationTypes.READ ) 
-			throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
+			throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + getDataType());
 			
 		StringBuilder sb = new StringBuilder();
 		sb.append( "CP" );
@@ -401,7 +401,7 @@ public class Data extends Lop
 		if ( operation == OperationTypes.WRITE ) {
 			sb.append( OPERAND_DELIMITOR );
 			String fmt = "";
-			if ( get_dataType() == DataType.MATRIX ) {
+			if ( getDataType() == DataType.MATRIX ) {
 				if ( oparams.getFormat() == Format.MM )
 					fmt = "matrixmarket";
 				else if (oparams.getFormat() == Format.TEXT)
@@ -409,7 +409,7 @@ public class Data extends Lop
 				else if (oparams.getFormat() == Format.CSV)
 					fmt = "csv";
 				else if ( oparams.getFormat() == Format.BINARY ){
-					if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
+					if ( oparams.getRowsInBlock() > 0 || oparams.getColsInBlock() > 0 )
 						fmt = "binaryblock"; 
 					else
 						fmt = "binarycell" ;
@@ -467,7 +467,7 @@ public class Data extends Lop
 	}
 	
 	public String getInstructions(String outputFileName) throws LopsException {
-		if ( get_dataType() == DataType.MATRIX ) {
+		if ( getDataType() == DataType.MATRIX ) {
 			
 			if ( isTransient() )
 				throw new LopsException("getInstructions() should not be called for transient nodes.");
@@ -482,7 +482,7 @@ public class Data extends Lop
 			else if ( oparams.getFormat() == Format.CSV )
 				fmt = "csv";
 			else {
-				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
+				if ( oparams.getRowsInBlock() > 0 || oparams.getColsInBlock() > 0 )
 					fmt = "binaryblock";
 				else 
 					fmt = "binarycell";
@@ -501,13 +501,13 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR ); // only persistent reads come here!
 			sb.append( fmt );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.getNum_rows() );
+			sb.append( oparams.getNumRows() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.getNum_cols() );
+			sb.append( oparams.getNumCols() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.get_rows_in_block() );
+			sb.append( oparams.getRowsInBlock() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.get_cols_in_block() );
+			sb.append( oparams.getColsInBlock() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNnz() );
 			
@@ -520,7 +520,7 @@ public class Data extends Lop
 			return sb.toString();
 		}
 		else {
-			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unexpected data type " + get_dataType());
+			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unexpected data type " + getDataType());
 		}
 	}
 	

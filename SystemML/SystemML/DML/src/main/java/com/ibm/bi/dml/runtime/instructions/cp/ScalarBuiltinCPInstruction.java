@@ -36,7 +36,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		ScalarObject so = null;
 		
 		//get the scalar input 
-		so = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
+		so = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
 			
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
@@ -61,7 +61,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			sores = (ScalarObject) new DoubleObject(rval);
 		}
 		
-		ec.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.getName(), sores);
 	}
 
 }

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure
 public class MemoTable 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
@@ -52,7 +52,7 @@ public class MemoTable
 		//add the respective entry
 		if( keepOnlyMin )
 		{
-			if( entries.size()>0 )
+			if( !entries.isEmpty() )
 			{
 				MemoTableEntry old = entries.iterator().next(); 
 				if( e.getEstLTime()<old.getEstLTime() )
@@ -75,7 +75,7 @@ public class MemoTable
 	public boolean hasCandidates()
 	{
 		for( Collection<MemoTableEntry> entries : _memo.values() )
-			if( entries != null && entries.size()>0 )
+			if( entries != null && !entries.isEmpty() )
 				return true;
 		return false;	
 	}
@@ -89,7 +89,7 @@ public class MemoTable
 		Collection<MemoTableEntry> C = new LinkedList<MemoTableEntry>();
 		
 		for( Collection<MemoTableEntry> entries : _memo.values() )
-			if( entries != null && entries.size()>0 )
+			if( entries != null && !entries.isEmpty() )
 				C.addAll(entries);
 		
 		return C;	

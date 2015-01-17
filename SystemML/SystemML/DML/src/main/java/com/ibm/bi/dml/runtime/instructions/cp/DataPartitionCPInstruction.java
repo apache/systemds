@@ -78,11 +78,11 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//get input
-		MatrixObject moIn = (MatrixObject) ec.getVariable(input1.get_name());
+		MatrixObject moIn = (MatrixObject) ec.getVariable(input1.getName());
 		MatrixBlock mb = moIn.acquireRead();
 		
 		//execute operations 
-		MatrixObject moOut = (MatrixObject) ec.getVariable(output.get_name());		
+		MatrixObject moOut = (MatrixObject) ec.getVariable(output.getName());		
 		String fname = moOut.getFileName();
 		moOut.setPartitioned(_pformat, -1); //modify meta data output
 		try
@@ -104,6 +104,6 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		}
 		
 		//release input
-		ec.releaseMatrixInput(input1.get_name());		
+		ec.releaseMatrixInput(input1.getName());		
 	}
 }

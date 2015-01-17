@@ -16,7 +16,7 @@ import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -97,7 +97,7 @@ public class ProgramRecompiler
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if( pb instanceof IfProgramBlock )
+		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock )
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatementBlock isb = (IfStatementBlock) sb;
@@ -125,7 +125,7 @@ public class ProgramRecompiler
 				}
 			}				
 		}
-		else if( pb instanceof WhileProgramBlock )
+		else if( pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock )
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
@@ -142,7 +142,7 @@ public class ProgramRecompiler
 				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec, force);
 			}			
 		}
-		else if( pb instanceof ForProgramBlock ) //for or parfor
+		else if( pb instanceof ForProgramBlock && sb instanceof ForStatementBlock ) //for or parfor
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock)sb;
@@ -400,14 +400,14 @@ public class ProgramRecompiler
 	{
 		boolean ret = false;
 		
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
 		
 		if( hop instanceof IndexingOp )
 		{
-			String inMatrix = hop.getInput().get(0).get_name();
+			String inMatrix = hop.getInput().get(0).getName();
 			if( inMatrix.equals(var) )
 			{
 				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
@@ -427,7 +427,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndSetCPIndexingHOP(hin,var);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 		
 		return ret;
 	}
@@ -436,14 +436,14 @@ public class ProgramRecompiler
 	{
 		boolean ret = false;
 		
-		if( hop.get_visited() == VISIT_STATUS.DONE )
+		if( hop.getVisited() == VisitStatus.DONE )
 			return ret;
 		
 		ArrayList<Hop> in = hop.getInput();
 		
 		if( hop instanceof IndexingOp )
 		{
-			String inMatrix = hop.getInput().get(0).get_name();
+			String inMatrix = hop.getInput().get(0).getName();
 			if( inMatrix.equals(var) )
 			{
 				hop.setForcedExecType(null);
@@ -457,7 +457,7 @@ public class ProgramRecompiler
 			for( Hop hin : in )
 				ret |= rFindAndReleaseIndexingHOP(hin,var);
 		
-		hop.set_visited(VISIT_STATUS.DONE);
+		hop.setVisited(VisitStatus.DONE);
 		
 		return ret;
 	}
@@ -525,7 +525,7 @@ public class ProgramRecompiler
 			//get changed node and set type appropriately
 			Hop hop = (Hop) map.getMappedHop(n.getID());
 			hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-			hop.set_lops(null); //to enable fresh construction
+			hop.setLops(null); //to enable fresh construction
 		
 			//get all hops of statement and construct new instructions
 			Dag<Lop> dag = new Dag<Lop>();
@@ -580,7 +580,7 @@ public class ProgramRecompiler
 				//get changed node and set type appropriately
 				Hop hop = (Hop) map.getMappedHop(n.getID());
 				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
-				hop.set_lops(null); //to enable fresh construction
+				hop.setLops(null); //to enable fresh construction
 			
 				//get all hops of statement and construct new lops
 				Dag<Lop> dag = new Dag<Lop>();

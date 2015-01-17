@@ -236,7 +236,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		for( int i=0; i<lrlen; i++ )
 		{
 			SparseRow arow = rows[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int alen2 = alen*12;

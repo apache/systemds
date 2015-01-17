@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 public class PrintUtil 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final String TAB_CONSTANT = "   ";
@@ -49,7 +49,7 @@ public class PrintUtil
 		OutputParameters outputParams = lops.getOutputParameters();
 		
 		if(outputParams != null) {
-			builder.append(outputParams.get_rows_in_block() + " x " + outputParams.get_cols_in_block());
+			builder.append(outputParams.getRowsInBlock() + " x " + outputParams.getColsInBlock());
 		}
 		return builder.toString();
 	}
@@ -62,7 +62,7 @@ public class PrintUtil
 				for(Lop l : inputs) {
 					if(l instanceof Data) {
 						Data data = (Data)l;
-						if(!data.get_dataType().equals(DataType.MATRIX))
+						if(!data.getDataType().equals(DataType.MATRIX))
 						{	
 							continue;
 						}
@@ -73,7 +73,7 @@ public class PrintUtil
 			}
 			
 			OutputParameters outputParams = lops.getOutputParameters();
-			builder.append(lops.getID() + " " + lops.getClass().getSimpleName() + " " + outputParams.getFormat() + " " + outputParams.get_rows_in_block() + " x " + outputParams.get_cols_in_block());
+			builder.append(lops.getID() + " " + lops.getClass().getSimpleName() + " " + outputParams.getFormat() + " " + outputParams.getRowsInBlock() + " x " + outputParams.getColsInBlock());
 		}
 		return builder.toString();
 	}
@@ -94,7 +94,7 @@ public class PrintUtil
 				builder.append(TAB_CONSTANT);
 			}
 			if(operator != null) {
-				builder.append("" + operator.get_name() + " ");
+				builder.append("" + operator.getName() + " ");
 			}
 			builder.append("lop: " + PrintUtil.generateLopDagString(generatedLop) + "\n");
 		}else {
@@ -103,7 +103,7 @@ public class PrintUtil
 				for(int i = 0; i < lvl; i++) {
 					builder.append(TAB_CONSTANT);
 				}
-				builder.append("hop: " + operator.getClass().getSimpleName() + ", " + operator.get_name() + "\n");
+				builder.append("hop: " + operator.getClass().getSimpleName() + ", " + operator.getName() + "\n");
 			}
 		}
 		
@@ -125,7 +125,7 @@ public class PrintUtil
 		builder.append("cumulated cost: " +  plan.getCumulatedCost() + "\n");
 		
 		List<MemoEntry> inputPlans = plan.getInputPlans();
-		if(inputPlans != null && inputPlans.size() > 0) {
+		if(inputPlans != null && !inputPlans.isEmpty() ) {
 			for(int i = 0; i < lvl; i++) {
 				builder.append("\n  ");
 			}
@@ -151,9 +151,9 @@ public class PrintUtil
 	public static String printLopParameters(Hop hop) {
 		StringBuilder builder = new StringBuilder();
 		
-		builder.append(hop.get_name() );
+		builder.append(hop.getName() );
 		
-		Lop lop = hop.get_lops();
+		Lop lop = hop.getLops();
 		if(lop == null) {
 			builder.append("NULL Lop");
 		} else {

@@ -78,7 +78,7 @@ public class MemoStructure
 			Hop root = e.getKey();
 			Map<InterestingPropertySet, MemoEntry> value = e.getValue();
 			
-			buffer.append("root hop: " + root.get_name() + ", ID: " + root.getHopID() + ", class: " + root.getClass().getSimpleName());
+			buffer.append("root hop: " + root.getName() + ", ID: " + root.getHopID() + ", class: " + root.getClass().getSimpleName());
 			buffer.append("\n");
 			buffer.append("number of interesting property combinations: " + value.size() +"\n");
 			buffer.append("-------------------------\n");

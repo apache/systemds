@@ -105,21 +105,20 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		return 0;
 	}
 
-	public boolean equals(TaggedFirstSecondIndexes other)
-	{
-		return (this.first==other.first && this.tag==other.tag && this.second==other.second);
-	}
-	
+	@Override
 	public boolean equals(Object other)
 	{
 		if( !(other instanceof TaggedFirstSecondIndexes))
 			return false;
-		return equals((TaggedFirstSecondIndexes)other);
+		
+		TaggedFirstSecondIndexes tother = (TaggedFirstSecondIndexes)other;
+		return (this.first==tother.first && this.tag==tother.tag && this.second==tother.second);
 	}
 	
-	 public int hashCode() {
+	@Override
+	public int hashCode() {
 		 return UtilFunctions.longHashFunc((first<<32)+second+tag+MatrixIndexes.ADD_PRIME1)%MatrixIndexes.DIVIDE_PRIME;
-	 }
+	}
 	
 	/** A Comparator optimized for TaggedFirstSecondIndexes. */ 
 	public static class Comparator implements RawComparator<TaggedFirstSecondIndexes>

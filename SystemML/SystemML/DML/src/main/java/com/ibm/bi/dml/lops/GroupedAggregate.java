@@ -186,19 +186,19 @@ public class GroupedAggregate extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input1 );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( getInputs().get(0).getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).getValueType() );
 		sb.append( input2 );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( getInputs().get(1).getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( getInputs().get(1).getValueType() );
 		sb.append( output );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
+		sb.append( getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( getValueType() );
 		
 		return sb.toString();
 	}*/

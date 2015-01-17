@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -240,8 +241,8 @@ public class Connection
 	 */
 	private void cleanupRuntimeProgram( Program prog, String[] outputs)
 	{
-		HashMap<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
-		if( funcMap != null && funcMap.size()>0 )
+		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
+		if( funcMap != null && !funcMap.isEmpty() )
 		{
 			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
 			{

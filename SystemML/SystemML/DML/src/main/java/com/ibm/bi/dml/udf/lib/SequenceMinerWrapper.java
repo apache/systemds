@@ -124,7 +124,7 @@ public class SequenceMinerWrapper extends PackageFunction
 			seqMiner.setNumInputDatasets(1);
 			seqMiner.addInputDataset(seqMiningDataset, 0);
 			this.getDAGQueue().pushTask(seqMiner);
-			seqMiner = (SequenceMinerTask) this.getDAGQueue().waitOnTask(seqMiner); 
+			this.getDAGQueue().waitOnTask(seqMiner); 
 			
 			//write out output matrices
 			

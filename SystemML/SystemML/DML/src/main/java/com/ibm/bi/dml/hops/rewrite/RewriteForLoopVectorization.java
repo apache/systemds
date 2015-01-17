@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -39,7 +39,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private static final OpOp2[] MAP_SCALAR_AGGREGATE_SOURCE_OPS = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT, OpOp2.MIN, OpOp2.MAX};
@@ -114,45 +114,45 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		if( csb.get_hops()!=null && csb.get_hops().size()==1 ){
 			Hop root = csb.get_hops().get(0);
 			
-			if( root.get_dataType()==DataType.SCALAR && root.getInput().get(0) instanceof BinaryOp ) {
+			if( root.getDataType()==DataType.SCALAR && root.getInput().get(0) instanceof BinaryOp ) {
 				BinaryOp bop = (BinaryOp) root.getInput().get(0);
 				Hop left = bop.getInput().get(0);
 				Hop right = bop.getInput().get(1);
 				
 				//check for left scalar plus
 				if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS) 
-					&& left instanceof DataOp && left.get_dataType() == DataType.SCALAR
-					&& root.get_name().equals(left.get_name()) 
+					&& left instanceof DataOp && left.getDataType() == DataType.SCALAR
+					&& root.getName().equals(left.getName()) 
 					&& right instanceof UnaryOp && ((UnaryOp) right).get_op() == OpOp1.CAST_AS_SCALAR
 					&& right.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)right.getInput().get(0);
 					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
-						&& ix.getInput().get(1).get_name().equals(itervar) ){
+						&& ix.getInput().get(1).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = true;
 					}
 					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
-						&& ix.getInput().get(3).get_name().equals(itervar) ){
+						&& ix.getInput().get(3).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = false;
 					}
 				}
 				//check for right scalar plus
 				else if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS)  
-					&& right instanceof DataOp && right.get_dataType() == DataType.SCALAR
-					&& root.get_name().equals(right.get_name()) 
+					&& right instanceof DataOp && right.getDataType() == DataType.SCALAR
+					&& root.getName().equals(right.getName()) 
 					&& left instanceof UnaryOp && ((UnaryOp) left).get_op() == OpOp1.CAST_AS_SCALAR
 					&& left.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)left.getInput().get(0);
 					if( ix.getRowLowerEqualsUpper() && ix.getInput().get(1) instanceof DataOp
-						&& ix.getInput().get(1).get_name().equals(itervar) ){
+						&& ix.getInput().get(1).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = true;
 					}
 					else if( ix.getColLowerEqualsUpper() && ix.getInput().get(3) instanceof DataOp
-						&& ix.getInput().get(3).get_name().equals(itervar) ){
+						&& ix.getInput().get(3).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = false;
 					}
@@ -170,7 +170,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			int aggOpPos = HopRewriteUtils.getValidOpPos(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS);
 			AggOp aggOp = MAP_SCALAR_AGGREGATE_TARGET_OPS[aggOpPos];
 			//replace cast with sum
-			AggUnaryOp newSum = new AggUnaryOp(cast.get_name(), DataType.SCALAR, ValueType.DOUBLE, aggOp, Direction.RowCol, ix);
+			AggUnaryOp newSum = new AggUnaryOp(cast.getName(), DataType.SCALAR, ValueType.DOUBLE, aggOp, Direction.RowCol, ix);
 			HopRewriteUtils.removeChildReference(cast, ix);
 			HopRewriteUtils.removeChildReference(bop, cast);
 			HopRewriteUtils.addChildReference(bop, newSum, leftScalar?1:0 );
@@ -221,7 +221,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		{
 			Hop root = csb.get_hops().get(0);
 			
-			if( root.get_dataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
+			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
 			{
 				LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 				Hop lixlhs = lix.getInput().get(0);
@@ -238,18 +238,18 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					
 					//check for rowwise
 					if(    lix.getRowLowerEqualsUpper() && rix0.getRowLowerEqualsUpper() && rix1.getRowLowerEqualsUpper() 
-						&& lix.getInput().get(2).get_name().equals(itervar)
-						&& rix0.getInput().get(1).get_name().equals(itervar)
-						&& rix1.getInput().get(1).get_name().equals(itervar))
+						&& lix.getInput().get(2).getName().equals(itervar)
+						&& rix0.getInput().get(1).getName().equals(itervar)
+						&& rix1.getInput().get(1).getName().equals(itervar))
 					{
 						apply = true;
 						rowIx = true;
 					}
 					//check for colwise
 					if(    lix.getColLowerEqualsUpper() && rix0.getColLowerEqualsUpper() && rix1.getColLowerEqualsUpper() 
-						&& lix.getInput().get(4).get_name().equals(itervar)
-						&& rix0.getInput().get(3).get_name().equals(itervar)
-						&& rix1.getInput().get(3).get_name().equals(itervar))
+						&& lix.getInput().get(4).getName().equals(itervar)
+						&& rix0.getInput().get(3).getName().equals(itervar)
+						&& rix1.getInput().get(3).getName().equals(itervar))
 					{
 						apply = true;
 						rowIx = false;
@@ -325,7 +325,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		{
 			Hop root = csb.get_hops().get(0);
 			
-			if( root.get_dataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
+			if( root.getDataType()==DataType.MATRIX && root.getInput().get(0) instanceof LeftIndexingOp )
 			{
 				LeftIndexingOp lix = (LeftIndexingOp) root.getInput().get(0);
 				Hop lixlhs = lix.getInput().get(0);
@@ -338,16 +338,16 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					IndexingOp rix = (IndexingOp) lixrhs.getInput().get(0);
 					//check for rowwise
 					if(    lix.getRowLowerEqualsUpper() && rix.getRowLowerEqualsUpper() 
-						&& lix.getInput().get(2).get_name().equals(itervar)
-						&& rix.getInput().get(1).get_name().equals(itervar) )
+						&& lix.getInput().get(2).getName().equals(itervar)
+						&& rix.getInput().get(1).getName().equals(itervar) )
 					{
 						apply = true;
 						rowIx = true;
 					}
 					//check for colwise
 					if(    lix.getColLowerEqualsUpper() && rix.getColLowerEqualsUpper() 
-						&& lix.getInput().get(4).get_name().equals(itervar)
-						&& rix.getInput().get(3).get_name().equals(itervar) )
+						&& lix.getInput().get(4).getName().equals(itervar)
+						&& rix.getInput().get(3).getName().equals(itervar) )
 					{
 						apply = true;
 						rowIx = false;

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,7 +18,7 @@ import java.util.LinkedList;
 public class PageCache 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final int CLEANUP_THRESHOLD = 128;
@@ -67,7 +67,7 @@ public class PageCache
 	{
 		LinkedList<SoftReference<byte[]>> list = _pool.get( size );
 		if( list!=null ) {
-			while( list.size()>0 ){
+			while( !list.isEmpty() ){
 				SoftReference<byte[]> ref = list.removeFirst();
 				byte[] tmp = ref.get();
 				if( tmp!=null )
@@ -76,40 +76,4 @@ public class PageCache
 		}
 		return null;
 	}
-	
-	/*
-	// NOTE: Below is an alternative implementation that was however slightly slower.
-	 
-	private static HashMap<Integer, SoftReference<LinkedList<byte[]>>> _pool;
-	
-	static{
-		_pool = new HashMap<Integer, SoftReference<LinkedList<byte[]>>>();
-	}
-
-	public static void putPage( byte[] data )
-	{
-		SoftReference<LinkedList<byte[]>> list = _pool.get( data.length );
-		LinkedList<byte[]> llist = null;
-		if( list!=null  )
-			llist = list.get();
-		if( llist==null ){
-			llist = new LinkedList<byte[]>();
-			list = new SoftReference<LinkedList<byte[]>>(llist);
-			_pool.put(data.length, list);
-		}
-		llist.addLast(data);	
-	}
-	
-	public static byte[] getPage( int size )
-	{
-		SoftReference<LinkedList<byte[]>> list = _pool.get( size );
-		if( list!=null ) {
-			LinkedList<byte[]> llist = list.get();
-			if( llist!=null && llist.size()>0 )
-				return llist.removeFirst();
-		}
-		return null;
-	}
-	
-	*/
 }

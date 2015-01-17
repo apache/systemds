@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 public class SQLLops 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// static variable to assign an unique ID to every SQLLop that is created
@@ -62,8 +62,8 @@ public class SQLLops
 		_outputs = new ArrayList<SQLLops>();
 		this._flag = flag;
 		
-		this.set_dataType(dt);
-		this.set_valueType(vt);
+		this.setDataType(dt);
+		this.setValueType(vt);
 		this.id = ++UniqueSQLLopID;
 		this.set_tableName(name + "_" + id);
 	}
@@ -296,7 +296,7 @@ public class SQLLops
 	
 	public static String OpOp2ToString(OpOp2 op)
 	{
-		String opr = Hop.HopsOpOp2String.get(op);
+		String opr = Hop.getOpOp2String(op);
 		
 		//Some exceptions:
 		if(op == OpOp2.NOTEQUAL)
@@ -319,7 +319,7 @@ public class SQLLops
 	private ArrayList<SQLLops> _inputs;
 	private ArrayList<SQLLops> _outputs;
 	
-	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
+	private VisitStatus _visited = VisitStatus.NOTVISITED;
 	private GENERATES _flag;
 	private String _sql;
 	private String _tableName;
@@ -340,19 +340,19 @@ public class SQLLops
 		_properties = properties;
 	}
 
-	public DataType get_dataType() {
+	public DataType getDataType() {
 		return _dataType;
 	}
 
-	public void set_dataType(DataType dataType) {
+	public void setDataType(DataType dataType) {
 		_dataType = dataType;
 	}
 
-	public ValueType get_valueType() {
+	public ValueType getValueType() {
 		return _valueType;
 	}
 
-	public void set_valueType(ValueType valueType) {
+	public void setValueType(ValueType valueType) {
 		_valueType = valueType;
 	}
 
@@ -378,20 +378,20 @@ public class SQLLops
 		return _tableName;
 	}
 	
-	public void set_visited(VISIT_STATUS visited) {
+	public void setVisited(VisitStatus visited) {
 		_visited = visited;
 	}
 	
-	public VISIT_STATUS get_visited() {
+	public VisitStatus getVisited() {
 		return _visited;
 	}
 	
 	public void resetVisitStatus() {
-		if (this.get_visited() == Hop.VISIT_STATUS.NOTVISITED)
+		if (this.getVisited() == Hop.VisitStatus.NOTVISITED)
 			return;
 		for(SQLLops l : this.getInputs())
 			l.resetVisitStatus();
-		this.set_visited(Hop.VISIT_STATUS.NOTVISITED);
+		this.setVisited(Hop.VisitStatus.NOTVISITED);
 	}
 	
 	/**

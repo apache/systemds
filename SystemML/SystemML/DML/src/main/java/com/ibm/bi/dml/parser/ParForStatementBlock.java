@@ -9,10 +9,10 @@ package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -410,7 +410,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	public PDataPartitionFormat determineDataPartitionFormat(String var) 
 	{
 		PDataPartitionFormat dpf = null;
-		Collection<PDataPartitionFormat> dpfc = new LinkedList<PDataPartitionFormat>();
+		List<PDataPartitionFormat> dpfc = new LinkedList<PDataPartitionFormat>();
 		
 		try 
 		{
@@ -500,7 +500,7 @@ public class ParForStatementBlock extends ForStatementBlock
 							//add writes to non-local variables to candidate set
 							if( _vsParent.containsVariable(write) )
 							{
-								Collection<DataIdentifier> dats = getDataIdentifiers( s, true );
+								List<DataIdentifier> dats = getDataIdentifiers( s, true );
 								for( DataIdentifier dat : dats )
 								{
 									Candidate c = new Candidate();
@@ -524,7 +524,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param C
 	 * @throws LanguageException 
 	 */
-	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, Collection<PDataPartitionFormat> C) 
+	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PDataPartitionFormat> C) 
 		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
@@ -534,9 +534,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				{
 					ForStatement fs = (ForStatement) s;
 					//predicate
-					Collection<DataIdentifier> datsFromRead = rGetDataIdentifiers(fs.getIterablePredicate().getFromExpr());
-					Collection<DataIdentifier> datsToRead = rGetDataIdentifiers(fs.getIterablePredicate().getToExpr());
-					Collection<DataIdentifier> datsIncrementRead = rGetDataIdentifiers(fs.getIterablePredicate().getIncrementExpr());
+					List<DataIdentifier> datsFromRead = rGetDataIdentifiers(fs.getIterablePredicate().getFromExpr());
+					List<DataIdentifier> datsToRead = rGetDataIdentifiers(fs.getIterablePredicate().getToExpr());
+					List<DataIdentifier> datsIncrementRead = rGetDataIdentifiers(fs.getIterablePredicate().getIncrementExpr());
 					rDeterminePartitioningCandidates(var, datsFromRead, C);
 					rDeterminePartitioningCandidates(var, datsToRead, C);
 					rDeterminePartitioningCandidates(var, datsIncrementRead, C);
@@ -547,7 +547,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				{
 					WhileStatement ws = (WhileStatement) s;
 					//predicate
-					Collection<DataIdentifier> datsRead = rGetDataIdentifiers(ws.getConditionalPredicate().getPredicate());
+					List<DataIdentifier> datsRead = rGetDataIdentifiers(ws.getConditionalPredicate().getPredicate());
 					rDeterminePartitioningCandidates(var, datsRead, C);
 					//while body
 					rDeterminePartitioningCandidates(var,((WhileStatement)s).getBody(), C);
@@ -556,7 +556,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				{
 					IfStatement is = (IfStatement) s;
 					//predicate
-					Collection<DataIdentifier> datsRead = rGetDataIdentifiers(is.getConditionalPredicate().getPredicate());
+					List<DataIdentifier> datsRead = rGetDataIdentifiers(is.getConditionalPredicate().getPredicate());
 					rDeterminePartitioningCandidates(var, datsRead, C);
 					//if and else branch
 					rDeterminePartitioningCandidates(var,((IfStatement)s).getIfBody(), C);
@@ -568,7 +568,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 				else
 				{
-					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
+					List<DataIdentifier> datsRead = getDataIdentifiers(s, false);
 					rDeterminePartitioningCandidates(var, datsRead, C);
 				}
 			}
@@ -580,7 +580,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param datsRead
 	 * @param C
 	 */
-	private void rDeterminePartitioningCandidates(String var, Collection<DataIdentifier> datsRead, Collection<PDataPartitionFormat> C)
+	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PDataPartitionFormat> C)
 	{
 		if( datsRead != null )
 			for(DataIdentifier read : datsRead)
@@ -731,7 +731,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				else
 				{
 					//CHECK output dependencies
-					Collection<DataIdentifier> datsUpdated = getDataIdentifiers(s, true);
+					List<DataIdentifier> datsUpdated = getDataIdentifiers(s, true);
 					
 					if( datsUpdated != null )
 						for(DataIdentifier write : datsUpdated)	
@@ -767,7 +767,7 @@ public class ParForStatementBlock extends ForStatementBlock
 							}
 						}
 					
-					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
+					List<DataIdentifier> datsRead = getDataIdentifiers(s, false);
 					
 					//check data and anti dependencies
 					if( datsRead != null )
@@ -830,9 +830,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param target 
 	 * @return
 	 */
-	private Collection<DataIdentifier> getDataIdentifiers(Statement s, boolean target) 
+	private List<DataIdentifier> getDataIdentifiers(Statement s, boolean target) 
 	{
-		Collection<DataIdentifier> ret = null;
+		List<DataIdentifier> ret = null;
 		
 		if( s instanceof AssignmentStatement )
 		{
@@ -908,9 +908,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		return true;
 	}
 	
-	private Collection<DataIdentifier> rGetDataIdentifiers(Expression e)
+	private List<DataIdentifier> rGetDataIdentifiers(Expression e)
 	{
-		Collection<DataIdentifier> ret = new ArrayList<DataIdentifier>();
+		List<DataIdentifier> ret = new ArrayList<DataIdentifier>();
 		
 		if( e instanceof DataIdentifier && 
 			!(e instanceof FunctionCallIdentifier || e instanceof BuiltinFunctionExpression || e instanceof ParameterizedBuiltinFunctionExpression) )

@@ -63,11 +63,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	private void rule_OptimizeMMChains(Hop hop) 
 		throws HopsException 
 	{
-		if(hop.get_visited() == Hop.VISIT_STATUS.DONE)
+		if(hop.getVisited() == Hop.VisitStatus.DONE)
 				return;
 		
 		if (hop.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
-				&& hop.get_visited() != Hop.VISIT_STATUS.DONE) {
+				&& hop.getVisited() != Hop.VisitStatus.DONE) {
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			optimizeMMChain(hop);
@@ -76,7 +76,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		for (Hop hi : hop.getInput())
 			rule_OptimizeMMChains(hi);
 
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 
 	/**
@@ -166,10 +166,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		mmChainRelinkHops(h.getInput().get(1), split[i][j] + 1, j, mmChain, mmOperators, opIndex, split);
 
 		// Propagate properties of input hops to current hop h
-		h.set_dim1(input1.get_dim1());
-		h.set_rows_in_block(input1.get_rows_in_block());
-		h.set_dim2(input2.get_dim2());
-		h.set_cols_in_block(input2.get_cols_in_block());
+		h.setDim1(input1.getDim1());
+		h.setRowsInBlock(input1.getRowsInBlock());
+		h.setDim2(input2.getDim2());
+		h.setColsInBlock(input2.getColsInBlock());
 
 	}
 
@@ -216,7 +216,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		// Build the array containing dimensions from all matrices in the chain		
 		// check the dimensions in the matrix chain to insure all dimensions are known
 		for (int i=0; i< chain.size(); i++){
-			if (chain.get(i).get_dim1() <= 0 || chain.get(i).get_dim2() <= 0)
+			if (chain.get(i).getDim1() <= 0 || chain.get(i).getDim2() <= 0)
 				dimsKnown = false;
 		}
 		
@@ -224,18 +224,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			for (int i = 0; i < chain.size(); i++) 
 			{
 				if (i == 0) {
-					dimsArray[i] = chain.get(i).get_dim1();
+					dimsArray[i] = chain.get(i).getDim1();
 					if (dimsArray[i] <= 0) {
 						throw new HopsException(hop.printErrorLocation() + 
 								"Hops::optimizeMMChain() : Invalid Matrix Dimension: "+ dimsArray[i]);
 					}
 				} else {
-					if (chain.get(i - 1).get_dim2() != chain.get(i).get_dim1()) {
+					if (chain.get(i - 1).getDim2() != chain.get(i).getDim1()) {
 						throw new HopsException(hop.printErrorLocation() +
 								"Hops::optimizeMMChain() : Matrix Dimension Mismatch");
 					}
 				}
-				dimsArray[i + 1] = chain.get(i).get_dim2();
+				dimsArray[i + 1] = chain.get(i).getDim2();
 				if (dimsArray[i + 1] <= 0) {
 					throw new HopsException(hop.printErrorLocation() + 
 							"Hops::optimizeMMChain() : Invalid Matrix Dimension: " + dimsArray[i + 1]);
@@ -271,7 +271,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	private void optimizeMMChain( Hop hop ) throws HopsException 
 	{
 		LOG.trace("MM Chain Optimization for HOP: (" + " " + hop.getKind() + ", " + hop.getHopID() + ", "
-					+ hop.get_name() + ")");
+					+ hop.getName() + ")");
 		
 		ArrayList<Hop> mmChain = new ArrayList<Hop>();
 		ArrayList<Hop> mmOperators = new ArrayList<Hop>();
@@ -306,7 +306,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 */
 
 			if (h.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
-					&& h.get_visited() != Hop.VISIT_STATUS.DONE) {
+					&& h.getVisited() != Hop.VisitStatus.DONE) {
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
 				if (h.getParent().size() > 1 || inputCount( (Hop) ((h.getParent().toArray())[0]), h) > 1 ) {
@@ -317,7 +317,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 					expandable = true;
 			}
 
-			h.set_visited(Hop.VISIT_STATUS.DONE);
+			h.setVisited(Hop.VisitStatus.DONE);
 
 			if ( !expandable ) {
 				i = i + 1;
@@ -339,9 +339,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			LOG.trace("Identified MM Chain: ");
 			//System.out.print("MMChain_" + getHopID() + " (" + mmChain.size() + "): ");
 			for (Hop h : mmChain) {
-				LOG.trace("Hop " + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
-						+ h.get_dim1() + "x" + h.get_dim2());
-				//System.out.print("[" + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " " + h.get_dim1() + "x" + h.get_dim2() + "]  ");
+				LOG.trace("Hop " + h.getName() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
+						+ h.getDim1() + "x" + h.getDim2());
+				//System.out.print("[" + h.getName() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " " + h.getDim1() + "x" + h.getDim2() + "]  ");
 			}
 			//System.out.println("");
 			LOG.trace("--End of MM Chain--");
@@ -365,8 +365,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				
 				// Invoke Dynamic Programming
 				int size = mmChain.size();
-				int[][] split = new int[size][size];
-				split = mmChainDP(dimsArray, mmChain.size());
+				int[][] split = mmChainDP(dimsArray, mmChain.size());
 				
 				 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
 				mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);

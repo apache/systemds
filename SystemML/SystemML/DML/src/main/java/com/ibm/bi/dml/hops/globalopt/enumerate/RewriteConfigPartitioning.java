@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,7 +17,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 public class RewriteConfigPartitioning extends RewriteConfig
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//valid instance configurations
@@ -104,14 +104,14 @@ public class RewriteConfigPartitioning extends RewriteConfig
 					DataOp data = (DataOp)operator;
 					if((data.get_dataop() == DataOpTypes.PERSISTENTREAD || data.get_dataop() == DataOpTypes.PERSISTENTWRITE)
 							&& this.getValue().equals(LocationParam.CP) 
-							&& !data.get_dataType().equals(DataType.SCALAR)) {
+							&& !data.getDataType().equals(DataType.SCALAR)) {
 						System.out.println("data op in CP: " + data + ", " + data.get_dataop());
 						return false;
 					}
 					
 					//read matrices always from HDFS
 					if((data.get_dataop() == DataOpTypes.TRANSIENTREAD || data.get_dataop() == DataOpTypes.TRANSIENTWRITE) 
-							&& data.get_dataType() == DataType.MATRIX 
+							&& data.getDataType() == DataType.MATRIX 
 							&& this.getValue().equals(LocationParam.CP)) {
 						return false;
 					}

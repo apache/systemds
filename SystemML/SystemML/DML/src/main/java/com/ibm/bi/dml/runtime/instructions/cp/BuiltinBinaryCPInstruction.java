@@ -49,11 +49,11 @@ public abstract class BuiltinBinaryCPInstruction extends BinaryCPInstruction
 		
 		// Determine appropriate Function Object based on opcode
 			
-		if ( in1.get_dataType() == DataType.SCALAR && in2.get_dataType() == DataType.SCALAR ) {
+		if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR ) {
 			return new ScalarScalarBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);
-		} else if (in1.get_dataType() != in2.get_dataType()) {
+		} else if (in1.getDataType() != in2.getDataType()) {
 			return new MatrixScalarBuiltinCPInstruction(new RightScalarOperator(func, 0), in1, in2, out, opcode, str);					
-		} else { // if ( in1.get_dataType() == DataType.MATRIX && in2.get_dataType() == DataType.MATRIX ) {
+		} else { // if ( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX ) {
 			return new MatrixMatrixBuiltinCPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);	
 		} 
 	}

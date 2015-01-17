@@ -48,10 +48,10 @@ public class HopsMetaData
 	public HopsMetaData(Hop operator) {
 		if(operator != null) {
 			this.operator = operator;
-			this.rowsInBlock = operator.get_rows_in_block();
-			this.colsInBlock = operator.get_cols_in_block();
-			this.rows = operator.get_dim1();
-			this.cols = operator.get_dim2();
+			this.rowsInBlock = operator.getRowsInBlock();
+			this.colsInBlock = operator.getColsInBlock();
+			this.rows = operator.getDim1();
+			this.cols = operator.getDim2();
 			this.nnz = operator.getNnz();
 		}
 	}
@@ -106,7 +106,7 @@ public class HopsMetaData
 		
 		buffer.append("Hops: " + this.operator.getClass().getSimpleName());
 		buffer.append(", ");
-		buffer.append("var: " + this.operator.get_name());
+		buffer.append("var: " + this.operator.getName());
 		buffer.append(", ");
 		buffer.append("ID: " + this.operator.getHopID());
 		buffer.append(", ");

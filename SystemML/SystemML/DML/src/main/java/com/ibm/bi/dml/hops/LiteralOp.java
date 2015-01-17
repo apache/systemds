@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class LiteralOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private double value_double = Double.NaN;
@@ -63,12 +63,12 @@ public class LiteralOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException  
 	{	
-		if (get_lops() == null) {
+		if (getLops() == null) {
 
 			try {
 			Lop l = null;
 
-			switch (get_valueType()) {
+			switch (getValueType()) {
 			case DOUBLE:
 				l = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(value_double));
 				break;
@@ -89,20 +89,20 @@ public class LiteralOp extends Hop
 
 			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			set_lops(l);
+			setLops(l);
 			} catch(LopsException e) {
 				throw new HopsException(e);
 			}
 		}
 	
-		return get_lops();
+		return getLops();
 	}
 
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
-				switch (get_valueType()) {
+				switch (getValueType()) {
 				case DOUBLE:
 					LOG.debug("  Value: " + value_double);
 					break;
@@ -125,14 +125,14 @@ public class LiteralOp extends Hop
 				}
 
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
 	@Override
 	public String getOpString() {
 		String val = "";
-		switch (get_valueType()) {
+		switch (getValueType()) {
 		case DOUBLE:
 			val = Double.toString(value_double);
 			break;
@@ -156,7 +156,7 @@ public class LiteralOp extends Hop
 		prop.setAggType(AGGREGATIONTYPE.NONE);
 		
 		String val = null;
-		switch (get_valueType()) {
+		switch (getValueType()) {
 		case DOUBLE:
 			val = Double.toString(value_double);
 			break;
@@ -181,34 +181,34 @@ public class LiteralOp extends Hop
 		/*
 		 * Does not generate SQL, instead the actual value is passed in the table name and can be inserted directly
 		 */
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
-			SQLLops sqllop = new SQLLops(this.get_name(),
+			SQLLops sqllop = new SQLLops(this.getName(),
 										GENERATES.NONE,
-										this.get_valueType(),
-										this.get_dataType());
+										this.getValueType(),
+										this.getDataType());
 
 			//Retrieve string for value
-			if(this.get_valueType() == ValueType.DOUBLE)
+			if(this.getValueType() == ValueType.DOUBLE)
 				sqllop.set_tableName(String.format(Double.toString(this.value_double)));
-			else if(this.get_valueType() == ValueType.INT)
+			else if(this.getValueType() == ValueType.INT)
 				sqllop.set_tableName(String.format(Long.toString(this.value_long)));
-			else if(this.get_valueType() == ValueType.STRING)
+			else if(this.getValueType() == ValueType.STRING)
 				sqllop.set_tableName("'" + this.value_string + "'");
-			else if(this.get_valueType() == ValueType.BOOLEAN)
+			else if(this.getValueType() == ValueType.BOOLEAN)
 				sqllop.set_tableName(Boolean.toString(this.value_boolean));
 			
 			sqllop.set_properties(getProperties());
-			this.set_sqllops(sqllop);
+			this.setSqlLops(sqllop);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		double ret = 0;
-		switch(this.get_valueType()) 
+		switch(this.getValueType()) 
 		{
 			case INT:
 				ret = OptimizerUtils.INT_SIZE; break;
@@ -257,39 +257,39 @@ public class LiteralOp extends Hop
 	}
 	
 	public long getLongValue() throws HopsException {
-		if ( get_valueType() == ValueType.INT ) {
+		if ( getValueType() == ValueType.INT ) {
 			return value_long;
 		}
-		else if ( get_valueType() == ValueType.DOUBLE ) 
+		else if ( getValueType() == ValueType.DOUBLE ) 
 			return UtilFunctions.toLong(value_double);
 		else
-			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Long.");
+			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Long.");
 	}
 	
 	public double getDoubleValue() throws HopsException {
-		if ( get_valueType() == ValueType.INT ) {
+		if ( getValueType() == ValueType.INT ) {
 			return value_long;
 		}
-		else if ( get_valueType() == ValueType.DOUBLE ) 
+		else if ( getValueType() == ValueType.DOUBLE ) 
 			return value_double;
 		else
-			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Double.");
+			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
 	}
 	
 	public boolean getBooleanValue() throws HopsException {
-		if ( get_valueType() == ValueType.BOOLEAN ) {
+		if ( getValueType() == ValueType.BOOLEAN ) {
 			return value_boolean;
 		}
 		else
-			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Boolean.");
+			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Boolean.");
 	}
 	
 	public String getStringValue() throws HopsException {
-		if ( get_valueType() == ValueType.STRING ) {
+		if ( getValueType() == ValueType.STRING ) {
 			return value_string;
 		}
 		else
-			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into String.");
+			throw new HopsException("Can not coerce an object of type " + getValueType() + " into String.");
 	}
 	
 	@Override

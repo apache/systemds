@@ -65,13 +65,13 @@ public class HopRewriteUtils
 	public static boolean getBooleanValue( LiteralOp op )
 		throws HopsException
 	{
-		switch( op.get_valueType() )
+		switch( op.getValueType() )
 		{
 			case DOUBLE:  return op.getDoubleValue() != 0; 
 			case INT:	  return op.getLongValue()   != 0;
 			case BOOLEAN: return op.getBooleanValue();
 			
-			default: throw new HopsException("Invalid boolean value: "+op.get_valueType());
+			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 		}
 	}
 
@@ -84,13 +84,13 @@ public class HopRewriteUtils
 	public static double getDoubleValue( LiteralOp op )
 		throws HopsException
 	{
-		switch( op.get_valueType() )
+		switch( op.getValueType() )
 		{
 			case DOUBLE:  return op.getDoubleValue(); 
 			case INT:	  return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			
-			default: throw new HopsException("Invalid double value: "+op.get_valueType());
+			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
 	}
 	
@@ -103,13 +103,13 @@ public class HopRewriteUtils
 	public static long getIntValue( LiteralOp op )
 		throws HopsException
 	{
-		switch( op.get_valueType() )
+		switch( op.getValueType() )
 		{
 			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
 			case INT:	  return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			
-			default: throw new HopsException("Invalid int value: "+op.get_valueType());
+			default: throw new HopsException("Invalid int value: "+op.getValueType());
 		}
 	}
 	
@@ -122,7 +122,7 @@ public class HopRewriteUtils
 	{
 		try
 		{
-			switch( op.get_valueType() )
+			switch( op.getValueType() )
 			{
 				case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
 				case INT:	  return op.getLongValue();
@@ -148,7 +148,7 @@ public class HopRewriteUtils
 		
 		try
 		{
-			switch( op.get_valueType() )
+			switch( op.getValueType() )
 			{
 				case DOUBLE:  ret = new DoubleObject(op.getDoubleValue()); break;
 				case INT:	  ret = new IntObject((int)op.getLongValue()); break;
@@ -228,9 +228,9 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (input.get_dim1()>0) ? new LiteralOp(String.valueOf(input.get_dim1()),input.get_dim1()) : 
+		Hop rows = (input.getDim1()>0) ? new LiteralOp(String.valueOf(input.getDim1()),input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
-		Hop cols = (input.get_dim2()>0) ? new LiteralOp(String.valueOf(input.get_dim2()),input.get_dim2()) :
+		Hop cols = (input.getDim2()>0) ? new LiteralOp(String.valueOf(input.getDim2()),input.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
 		Hop val = new LiteralOp(String.valueOf(value), value);
 		
@@ -245,8 +245,8 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.set_rows_in_block(input.get_rows_in_block());
-		datagen.set_cols_in_block(input.get_cols_in_block());
+		datagen.setRowsInBlock(input.getRowsInBlock());
+		datagen.setColsInBlock(input.getColsInBlock());
 		
 		if( value==0 )
 			datagen.setNnz(0);
@@ -299,8 +299,8 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params2);
-		datagen.set_rows_in_block(inputGen.get_rows_in_block());
-		datagen.set_cols_in_block(inputGen.get_cols_in_block());
+		datagen.setRowsInBlock(inputGen.getRowsInBlock());
+		datagen.setColsInBlock(inputGen.getColsInBlock());
 		
 		if( smin==0 && smax==0 )
 			datagen.setNnz(0);
@@ -311,9 +311,9 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (rowInput.get_dim1()>0) ? new LiteralOp(String.valueOf(rowInput.get_dim1()),rowInput.get_dim1()) : 
+		Hop rows = (rowInput.getDim1()>0) ? new LiteralOp(String.valueOf(rowInput.getDim1()),rowInput.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
-		Hop cols = (colInput.get_dim2()>0) ? new LiteralOp(String.valueOf(colInput.get_dim2()),colInput.get_dim2()) :
+		Hop cols = (colInput.getDim2()>0) ? new LiteralOp(String.valueOf(colInput.getDim2()),colInput.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(String.valueOf(value), value);
 		
@@ -328,8 +328,8 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.set_rows_in_block(rowInput.get_rows_in_block());
-		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		datagen.setRowsInBlock(rowInput.getRowsInBlock());
+		datagen.setColsInBlock(colInput.getColsInBlock());
 		
 		if( value==0 )
 			datagen.setNnz(0);
@@ -340,8 +340,8 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, boolean tRowInput, Hop colInput, boolean tColInput, double value ) 
 		throws HopsException
 	{		
-		long nrow = tRowInput ? rowInput.get_dim2() : rowInput.get_dim1();
-		long ncol = tColInput ? colInput.get_dim1() : rowInput.get_dim2();
+		long nrow = tRowInput ? rowInput.getDim2() : rowInput.getDim1();
+		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
 		Hop rows = (nrow>0) ? new LiteralOp(String.valueOf(nrow), nrow) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
@@ -360,8 +360,8 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.set_rows_in_block(rowInput.get_rows_in_block());
-		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		datagen.setRowsInBlock(rowInput.getRowsInBlock());
+		datagen.setColsInBlock(colInput.getColsInBlock());
 		
 		if( value==0 )
 			datagen.setNnz(0);
@@ -385,8 +385,8 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.set_rows_in_block(rowInput.get_rows_in_block());
-		datagen.set_cols_in_block(colInput.get_cols_in_block());
+		datagen.setRowsInBlock(rowInput.getRowsInBlock());
+		datagen.setColsInBlock(colInput.getColsInBlock());
 		
 		if( value==0 )
 			datagen.setNnz(0);
@@ -399,11 +399,11 @@ public class HopRewriteUtils
 	{
 		Hop ret = null;
 		if( row ){
-			ret = (hop.get_dim1()>0) ? new LiteralOp(String.valueOf(hop.get_dim1()),hop.get_dim1()) : 
+			ret = (hop.getDim1()>0) ? new LiteralOp(String.valueOf(hop.getDim1()),hop.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
 		}
 		else{
-			ret = (hop.get_dim2()>0) ? new LiteralOp(String.valueOf(hop.get_dim2()),hop.get_dim2()) :
+			ret = (hop.getDim2()>0) ? new LiteralOp(String.valueOf(hop.getDim2()),hop.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
 		}
 		
@@ -413,7 +413,7 @@ public class HopRewriteUtils
 	public static DataGenOp createSeqDataGenOp( Hop input ) 
 		throws HopsException
 	{		
-		Hop to = (input.get_dim1()>0) ? new LiteralOp(String.valueOf(input.get_dim1()),input.get_dim1()) : 
+		Hop to = (input.getDim1()>0) ? new LiteralOp(String.valueOf(input.getDim1()),input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
@@ -423,33 +423,33 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(DataGenMethod.SEQ, new DataIdentifier("tmp"), params);
-		datagen.set_rows_in_block(input.get_rows_in_block());
-		datagen.set_cols_in_block(input.get_cols_in_block());
+		datagen.setRowsInBlock(input.getRowsInBlock());
+		datagen.setColsInBlock(input.getColsInBlock());
 		
 		return datagen;
 	}
 	
 	public static void setOutputBlocksizes( Hop hop, long brlen, long bclen )
 	{
-		hop.set_rows_in_block( brlen );
-		hop.set_cols_in_block( bclen );
+		hop.setRowsInBlock( brlen );
+		hop.setColsInBlock( bclen );
 	}
 	
 	public static void setOutputParameters( Hop hop, long rlen, long clen, long brlen, long bclen, long nnz )
 	{
-		hop.set_dim1( rlen );
-		hop.set_dim2( clen );
-		hop.set_rows_in_block( brlen );
-		hop.set_cols_in_block( bclen );
+		hop.setDim1( rlen );
+		hop.setDim2( clen );
+		hop.setRowsInBlock( brlen );
+		hop.setColsInBlock( bclen );
 		hop.setNnz( nnz );
 	}
 	
 	public static void refreshOutputParameters( Hop hnew, Hop hold )
 	{
-		hnew.set_dim1( hold.get_dim1() );
-		hnew.set_dim2( hold.get_dim2() );
-		hnew.set_rows_in_block(hold.get_rows_in_block());
-		hnew.set_cols_in_block(hold.get_cols_in_block());
+		hnew.setDim1( hold.getDim1() );
+		hnew.setDim2( hold.getDim2() );
+		hnew.setRowsInBlock(hold.getRowsInBlock());
+		hnew.setColsInBlock(hold.getColsInBlock());
 		hnew.refreshSizeInformation();
 	}
 	
@@ -463,7 +463,7 @@ public class HopRewriteUtils
 	
 	public static boolean isDimsKnown( Hop hop )
 	{
-		return ( hop.get_dim1()>0 && hop.get_dim2()>0 );
+		return ( hop.getDim1()>0 && hop.getDim2()>0 );
 	}
 	
 	public static boolean isEmpty( Hop hop )
@@ -473,16 +473,16 @@ public class HopRewriteUtils
 	
 	public static boolean isEqualSize( Hop hop1, Hop hop2 )
 	{
-		return (   hop1.get_dim1() == hop2.get_dim1()
-				&& hop1.get_dim2() == hop2.get_dim2());
+		return (   hop1.getDim1() == hop2.getDim1()
+				&& hop1.getDim2() == hop2.getDim2());
 	}
 	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
 		throws HopsException
 	{
 		//check for string (no defined double value)
-		if(    hop1.get_valueType()==ValueType.STRING 
-			|| hop2.get_valueType()==ValueType.STRING )
+		if(    hop1.getValueType()==ValueType.STRING 
+			|| hop2.getValueType()==ValueType.STRING )
 		{
 			return false;
 		}
@@ -502,8 +502,8 @@ public class HopRewriteUtils
 			BinaryOp bop = (BinaryOp) hop;
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
-			boolean mv = (left.get_dim1()>1 && right.get_dim1()==1)
-					|| (left.get_dim2()>1 && right.get_dim2()==1);
+			boolean mv = (left.getDim1()>1 && right.getDim1()==1)
+					|| (left.getDim2()>1 && right.getDim2()==1);
 			ret = isDimsKnown(bop) && !mv;
 		}
 		

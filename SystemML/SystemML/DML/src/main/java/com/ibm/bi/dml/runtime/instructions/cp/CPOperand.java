@@ -49,15 +49,15 @@ public class CPOperand
 		_isLiteral = literal;
 	}
 	
-	public String get_name() {
+	public String getName() {
 		return _name;
 	}
 	
-	public ValueType get_valueType() {
+	public ValueType getValueType() {
 		return _valueType;
 	}
 	
-	public DataType get_dataType() {
+	public DataType getDataType() {
 		return _dataType;
 	}
 	
@@ -69,11 +69,11 @@ public class CPOperand
 		_name = name;
 	}
 	
-	public void set_valueType(ValueType vt) {
+	public void setValueType(ValueType vt) {
 		_valueType = vt;
 	}
 	
-	public void set_dataType(DataType dt) {
+	public void setDataType(DataType dt) {
 		_dataType = dt;
 	}
 	
@@ -108,8 +108,8 @@ public class CPOperand
 	}
 	
 	public void copy(CPOperand o){
-		_name = o.get_name();
-		_valueType = o.get_valueType();
-		_dataType = o.get_dataType();
+		_name = o.getName();
+		_valueType = o.getValueType();
+		_dataType = o.getDataType();
 	}
 }

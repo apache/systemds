@@ -66,17 +66,17 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
-		int rlen = (int)ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getLongValue();
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		int rlen = (int)ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getLongValue();
 		
 		//execute operations
 		MatrixBlock ret = new MatrixBlock(rlen, matBlock2.getNumColumns(), matBlock2.isInSparseFormat());
 		matBlock1.permutatationMatrixMultOperations(matBlock2, ret, null);
 		
 		//set output and release inputs
-		ec.setMatrixOutput(output.get_name(), ret);
-		ec.releaseMatrixInput(input1.get_name());
-		ec.releaseMatrixInput(input2.get_name());
+		ec.setMatrixOutput(output.getName(), ret);
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
 	}
 }

@@ -113,7 +113,7 @@ public class ParameterizedBuiltinOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{		
-		if (get_lops() == null) {
+		if (getLops() == null) {
 
 			// construct lops for all input parameters
 			HashMap<String, Lop> inputlops = new HashMap<String, Lop>();
@@ -129,16 +129,16 @@ public class ParameterizedBuiltinOp extends Hop
 				// set the lop for the function call
 				
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-						HopsParameterizedBuiltinLops.get(_op), get_dataType(),
-						get_valueType());
+						HopsParameterizedBuiltinLops.get(_op), getDataType(),
+						getValueType());
 				
 				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				
-				set_lops(pbilop);
+				setLops(pbilop);
 
 				// set the dimesnions for the lop for the output
-				get_lops().getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+				getLops().getOutputParameters().setDimensions(getDim1(),
+						getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			} 
 			else if (_op == ParamBuiltinOp.GROUPEDAGG) 
 			{
@@ -159,20 +159,20 @@ public class ParameterizedBuiltinOp extends Hop
 				
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
 						et, inputlops,
-						HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
 				
 				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				
-				set_lops(pbilop);
+				setLops(pbilop);
 
 				// set the dimensions for the lop for the output
-				get_lops().getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+				getLops().getOutputParameters().setDimensions(getDim1(),
+						getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			} 
 
 		}
 
-		return get_lops();
+		return getLops();
 	}
 	
 	private void constructLopsGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) 
@@ -190,7 +190,7 @@ public class ParameterizedBuiltinOp extends Hop
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
 						getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
-						DataType.MATRIX, get_valueType(), 
+						DataType.MATRIX, getValueType(), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
 
 				// add the combine lop to parameter list, with a new name "combinedinput"
@@ -205,7 +205,7 @@ public class ParameterizedBuiltinOp extends Hop
 				Lop append = BinaryOp.constructAppendLop(
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
-						DataType.MATRIX, get_valueType(), 
+						DataType.MATRIX, getValueType(), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
 				
 				// add the combine lop to parameter list, with a new name
@@ -223,8 +223,8 @@ public class ParameterizedBuiltinOp extends Hop
 				long ngroups = ((Data)numGroups).getLongValue();
 				
 				Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
-				long inDim1 = input.getOutputParameters().getNum_rows();
-				long inDim2 = input.getOutputParameters().getNum_cols();
+				long inDim1 = input.getOutputParameters().getNumRows();
+				long inDim2 = input.getOutputParameters().getNumCols();
 				if(inDim1 > 0 && inDim2 > 0 ) {
 					if ( inDim1 > inDim2 )
 						colwise = 1;
@@ -244,33 +244,33 @@ public class ParameterizedBuiltinOp extends Hop
 			}
 			
 			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-					get_dataType(), get_valueType());
+					getDataType(), getValueType());
 			// output dimensions are unknown at compilation time
-			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, get_rows_in_block(), get_cols_in_block(), -1);
+			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			//set_lops(grp_agg);
+			//setLops(grp_agg);
 			
 			ReBlock reblock = null;
 			try {
 				reblock = new ReBlock(
-						grp_agg, get_rows_in_block(),
-						get_cols_in_block(), get_dataType(),
-						get_valueType(), true);
+						grp_agg, getRowsInBlock(),
+						getColsInBlock(), getDataType(),
+						getValueType(), true);
 			} catch (Exception e) {
 				throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
 			}
 			reblock.getOutputParameters().setDimensions(-1, -1, 
-					get_rows_in_block(), get_cols_in_block(), -1);
+					getRowsInBlock(), getColsInBlock(), -1);
 			
 			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			set_lops(reblock);
+			setLops(reblock);
 		}
 		else //CP 
 		{
 			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-					get_dataType(), get_valueType(), et);
+					getDataType(), getValueType(), et);
 			// output dimensions are unknown at compilation time
 			grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -281,7 +281,7 @@ public class ParameterizedBuiltinOp extends Hop
 				grp_agg.getOutputParameters().setDimensions(-1, 1, 1000, 1000, -1);
 			}
 			//grouped agg, w/o reblock in CP
-			set_lops(grp_agg);
+			setLops(grp_agg);
 		}
 	}
 
@@ -294,11 +294,11 @@ public class ParameterizedBuiltinOp extends Hop
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
 			
-			pbilop.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(pbilop);
-			set_lops(pbilop);
+			setLops(pbilop);
 		}
 		//special compile for mr removeEmpty-diag 
 		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 
@@ -306,8 +306,8 @@ public class ParameterizedBuiltinOp extends Hop
  		{
 			//get input vector (without materializing diag())
 			Hop input = targetHop.getInput().get(0);
-			long brlen = input.get_rows_in_block();
-			long bclen = input.get_cols_in_block();
+			long brlen = input.getRowsInBlock();
+			long bclen = input.getColsInBlock();
 			MemoTable memo = new MemoTable();
 		
 			boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
@@ -329,7 +329,7 @@ public class ParameterizedBuiltinOp extends Hop
 			HopRewriteUtils.copyLineNumbers(this, cumsum);	
 		
 			Lop loutput = null;
-			double mest = AggBinaryOp.footprintInMapper(input.get_dim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
+			double mest = AggBinaryOp.footprintInMapper(input.getDim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
 			double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
 			if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
 			{
@@ -351,7 +351,7 @@ public class ParameterizedBuiltinOp extends Hop
 				HopRewriteUtils.copyLineNumbers(this, max);
 				
 				DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
-				seq.set_name("tmp4");
+				seq.setName("tmp4");
 				seq.refreshSizeInformation(); 
 				seq.computeMemEstimate(memo); //select exec type
 				HopRewriteUtils.copyLineNumbers(this, seq);	
@@ -373,7 +373,7 @@ public class ParameterizedBuiltinOp extends Hop
 			//Step 4: cleanup hops (allow for garbage collection)
 			HopRewriteUtils.removeChildReference(ppred0, input);
 			
-			set_lops( loutput );
+			setLops( loutput );
 		}
 		//default mr remove empty
 		else if( et == ExecType.MR )
@@ -384,10 +384,10 @@ public class ParameterizedBuiltinOp extends Hop
 				throw new HopsException("Parameter 'margin' must be a literal argument.");
 				
 			Hop input = targetHop;
-			long rlen = input.get_dim1();
-			long clen = input.get_dim2();
-			long brlen = input.get_rows_in_block();
-			long bclen = input.get_cols_in_block();
+			long rlen = input.getDim1();
+			long clen = input.getDim2();
+			long brlen = input.getRowsInBlock();
+			long bclen = input.getColsInBlock();
 			long nnz = input.getNnz();
 			boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 			
@@ -462,11 +462,11 @@ public class ParameterizedBuiltinOp extends Hop
 				setLineNumbers(loffset);
 			}
 			
-			Group group1 = new Group(linput, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
 			setLineNumbers(group1);
 			group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
 		
-			Group group2 = new Group( loffset, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
 			setLineNumbers(group2);
 			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
 		
@@ -477,34 +477,34 @@ public class ParameterizedBuiltinOp extends Hop
 			inMap.put("margin", inputlops.get("margin"));
 			
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inMap,
-					HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());			
-			pbilop.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());			
+			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(pbilop);
 		
-			Group group3 = new Group( pbilop, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+			Group group3 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
 			setLineNumbers(group3);
 			group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
 			
-			Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, get_valueType(), ExecType.MR);
-			finalagg.getOutputParameters().setDimensions(get_dim1(),get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
+			finalagg.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(finalagg);
 			
 			//Step 4: cleanup hops (allow for garbage collection)
 			HopRewriteUtils.removeChildReference(ppred0, input);
 			
-			set_lops(finalagg);
+			setLops(finalagg);
 		}
 	}
 	
 	@Override
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug(" " + _op);
 			}
 
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
@@ -638,7 +638,7 @@ public class ParameterizedBuiltinOp extends Hop
 			
 			case GROUPEDAGG:  
 				//output dimension dim1 is completely data dependent 
-				set_dim2( 1 );
+				setDim2( 1 );
 				break;
 			
 			case RMEMPTY: 
@@ -646,17 +646,17 @@ public class ParameterizedBuiltinOp extends Hop
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				String margin = getInput().get(_paramIndexMap.get("margin")).toString();
 				if( margin.equals("rows") )
-					set_dim2( target.get_dim2() );
+					setDim2( target.getDim2() );
 				else if (margin.equals("cols"))
-					set_dim1( target.get_dim1() );
+					setDim1( target.getDim1() );
 				setNnz( target.getNnz() );
 				break;
 			
 			case REPLACE: 
 				//dimensions are exactly known from input, sparsity might increase/decrease if pattern/replacement 0 
 				Hop target2 = getInput().get(_paramIndexMap.get("target"));
-				set_dim1( target2.get_dim1() );
-				set_dim2( target2.get_dim2() );
+				setDim1( target2.getDim1() );
+				setDim2( target2.getDim2() );
 				if( isNonZeroReplaceArguments() )
 					setNnz( target2.getNnz() );
 				
@@ -794,7 +794,7 @@ public class ParameterizedBuiltinOp extends Hop
 		//input vector (guarantees diagV2M), implies remove rows
 		return (   targetHop instanceof ReorgOp 
 				&& ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
-				&& targetHop.getInput().get(0).get_dim2() == 1 ); 
+				&& targetHop.getInput().get(0).getDim2() == 1 ); 
 	}
 
 	

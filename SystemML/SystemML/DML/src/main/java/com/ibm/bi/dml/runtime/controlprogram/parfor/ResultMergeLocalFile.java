@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -61,7 +61,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class ResultMergeLocalFile extends ResultMerge
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
@@ -109,7 +109,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				}
 			}
 
-			if( inMO.size() > 0 )
+			if( !inMO.isEmpty() )
 			{
 				//ensure that outputfile (for comparison) resides on disk
 				_output.exportData();
@@ -620,7 +620,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				}
 				
 				//final flush
-				if( buffer.size() > 0 )
+				if( !buffer.isEmpty() )
 				{
 					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
 					buffer.clear();
@@ -677,7 +677,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				}
 				
 				//final flush
-				if( buffer.size() > 0 )
+				if( !buffer.isEmpty() )
 				{
 					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
 					buffer.clear();

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.hops.LiteralOp;
 public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private boolean _mergeLeafs = true;
@@ -94,21 +94,21 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		throws HopsException 
 	{
 		int ret = 0;
-		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
+		if( hop.getVisited() == Hop.VisitStatus.DONE )
 			return ret;
 
-		if( hop.getInput().size()==0 ) //LEAF NODE
+		if( hop.getInput().isEmpty() ) //LEAF NODE
 		{
 			if( hop instanceof LiteralOp )
 			{
-				String key = hop.get_valueType()+"_"+hop.get_name();
+				String key = hop.getValueType()+"_"+hop.getName();
 				if( !literalops.containsKey(key) )
 					literalops.put(key, hop);
 			}
 			else if( hop instanceof DataOp && ((DataOp)hop).isRead())
 			{
-				if(!dataops.containsKey(hop.get_name()) )
-					dataops.put(hop.get_name(), hop);
+				if(!dataops.containsKey(hop.getName()) )
+					dataops.put(hop.getName(), hop);
 			} 
 		}
 		else //INNER NODE
@@ -117,12 +117,12 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			for( int i=0; i<hop.getInput().size(); i++ )
 			{
 				Hop hi = hop.getInput().get(i);
-				String litKey = hi.get_valueType()+"_"+hi.get_name();
-				if( hi instanceof DataOp && ((DataOp)hi).isRead() && dataops.containsKey(hi.get_name()) )
+				String litKey = hi.getValueType()+"_"+hi.getName();
+				if( hi instanceof DataOp && ((DataOp)hi).isRead() && dataops.containsKey(hi.getName()) )
 				{
 					
 					//replace child node ref
-					Hop tmp = dataops.get(hi.get_name());
+					Hop tmp = dataops.get(hi.getName());
 					if( tmp != hi ) { //if required
 						tmp.getParent().add(hop);
 						hop.getInput().set(i, tmp);
@@ -146,7 +146,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			}	
 		}
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 		return ret;
 	}
 
@@ -161,7 +161,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		throws HopsException 
 	{
 		int ret = 0;
-		if( hop.get_visited() == Hop.VISIT_STATUS.DONE )
+		if( hop.getVisited() == Hop.VisitStatus.DONE )
 			return ret;
 
 		//step 1: merge childs recursively first
@@ -213,7 +213,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 				}
 		}
 		
-		hop.set_visited(Hop.VISIT_STATUS.DONE);
+		hop.setVisited(Hop.VisitStatus.DONE);
 
 		return ret;
 	}

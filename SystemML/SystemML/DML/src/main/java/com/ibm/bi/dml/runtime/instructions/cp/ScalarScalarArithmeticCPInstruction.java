@@ -34,16 +34,16 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException{
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
-		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
+		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
 		
 		// 2) Compute the result value & make an appropriate data object 
 		BinaryOperator dop = (BinaryOperator) _optr;
 		
-		if ( input1.get_valueType() == ValueType.STRING 
-			 || input2.get_valueType() == ValueType.STRING ) 
+		if ( input1.getValueType() == ValueType.STRING 
+			 || input2.getValueType() == ValueType.STRING ) 
 		{
 			//pre-check (for robustness regarding too long strings)
 			String val1 = so1.getStringValue();
@@ -77,6 +77,6 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		ec.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.getName(), sores);
 	}
 }

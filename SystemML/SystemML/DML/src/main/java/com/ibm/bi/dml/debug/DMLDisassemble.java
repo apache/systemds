@@ -89,7 +89,7 @@ public class DMLDisassemble
 		{
 			//Functions: For each function program block (if any), get instructions corresponding to each line number
 			HashMap<String,FunctionProgramBlock> funcMap = this._prog.getFunctionProgramBlocks();
-			if (funcMap != null && funcMap.size() > 0)
+			if (funcMap != null && !funcMap.isEmpty() )
 			{
 				for (Entry<String, FunctionProgramBlock> e : funcMap.entrySet())
 				{
@@ -138,7 +138,7 @@ public class DMLDisassemble
 			this.setInstMap(ipb.getPredicate());
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() )
 				setProgramBlockInstMap(pbc);
-			if( ipb.getChildBlocksElseBody().size()>0 )
+			if( !ipb.getChildBlocksElseBody().isEmpty() )
 			{	
 				for( ProgramBlock pbc : ipb.getChildBlocksElseBody() ) 
 					setProgramBlockInstMap(pbc);

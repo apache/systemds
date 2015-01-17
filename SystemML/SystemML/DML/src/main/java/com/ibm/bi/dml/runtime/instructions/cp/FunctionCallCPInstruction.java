@@ -121,11 +121,11 @@ public class FunctionCallCPInstruction extends CPInstruction
 			if (i > this._boundInputParamNames.size() || (ec.getVariable(this._boundInputParamNames.get(i)) == null)){
 				
 				if (valType == ValueType.BOOLEAN){
-					boolean defaultVal = (i > this._boundInputParamNames.size()) ? new Boolean(fpb.getInputParams().get(i).getDefaultValue()).booleanValue() : new Boolean(this._boundInputParamNames.get(i)).booleanValue();
+					boolean defaultVal = (i > this._boundInputParamNames.size()) ? Boolean.valueOf(fpb.getInputParams().get(i).getDefaultValue()).booleanValue() : Boolean.valueOf(this._boundInputParamNames.get(i)).booleanValue();
 					currFormalParamValue = new BooleanObject(defaultVal);
 				}
 				else if (valType == ValueType.DOUBLE){
-					double defaultVal = (i > this._boundInputParamNames.size()) ? new Double(fpb.getInputParams().get(i).getDefaultValue()).doubleValue() : new Double(this._boundInputParamNames.get(i)).doubleValue();
+					double defaultVal = (i > this._boundInputParamNames.size()) ? Double.valueOf(fpb.getInputParams().get(i).getDefaultValue()).doubleValue() : Double.valueOf(this._boundInputParamNames.get(i)).doubleValue();
 					currFormalParamValue = new DoubleObject(defaultVal);
 				}
 				else if (valType == ValueType.INT){ //via safe case for robustness
@@ -191,7 +191,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 
 	//
 	//public String getOutputVariableName() {
-	//	return null; //output.get_name();
+	//	return null; //output.getName();
 	//}
 
 	@Override

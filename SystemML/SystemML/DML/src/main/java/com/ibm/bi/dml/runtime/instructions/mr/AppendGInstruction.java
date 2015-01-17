@@ -118,7 +118,7 @@ public class AppendGInstruction extends AppendInstruction
 					MatrixIndexes ix1 = data1.getIndexes();
 					MatrixBlock tmpvalNew = (MatrixBlock)data1.getValue(); //always block
 					int cix1 = (int)(_offset/bclen + in2.getIndexes().getColumnIndex());
-					int cols1 = Math.min(bclen, (int)(_clen-(cix1-1)*bclen));
+					int cols1 = Math.min(bclen, (int)(_clen-(long)(cix1-1)*bclen));
 					ix1.setIndexes( tmpix.getRowIndex(), cix1);
 					tmpvalNew.reset( tmpval.getNumRows(), cols1 );
 					tmpvalNew.copy(0, tmpval.getNumRows()-1, (int)((_offset+1)%bclen)-1, cols1-1, 

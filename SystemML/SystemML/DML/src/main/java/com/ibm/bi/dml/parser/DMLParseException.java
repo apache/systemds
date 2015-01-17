@@ -68,9 +68,6 @@ public class DMLParseException extends ParseException
 				newMsg =  "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- " + "Parsing error with unspecified token";
 			}
 		}
-		else{
-				e.printStackTrace();		
-		}
 		
 		_exceptionList.add(new DMLParseException(_filename, newMsg));
 	}

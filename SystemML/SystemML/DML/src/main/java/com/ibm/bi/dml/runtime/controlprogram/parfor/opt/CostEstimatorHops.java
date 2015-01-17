@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 public class CostEstimatorHops extends CostEstimator
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static long DEFAULT_MEM_MR = -1;
@@ -66,7 +66,7 @@ public class CostEstimatorHops extends CostEstimator
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() )
 			{
 				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
-					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
+					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_MR;
 			}
 			else if ( h.getExecType()==null)
@@ -84,12 +84,12 @@ public class CostEstimatorHops extends CostEstimator
 		
 		if( value <= 0 ) //no mem estimate
 		{
-			LOG.warn("Cannot get memory estimate for hop (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
+			LOG.warn("Cannot get memory estimate for hop (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		}
 		
 		
-		LOG.trace("Memory estimate "+h.get_name()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		LOG.trace("Memory estimate "+h.getName()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
 		
 		return value;
 	}
@@ -112,7 +112,7 @@ public class CostEstimatorHops extends CostEstimator
 		if( value <= 0 ) //no mem estimate
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		
-		LOG.trace("Memory estimate (forced exec type) "+h.get_name()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		LOG.trace("Memory estimate (forced exec type) "+h.getName()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
 		
 		return value;
 	}

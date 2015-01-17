@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class Unary extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
@@ -55,7 +55,7 @@ public class Unary extends Lop
 	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 
-		if (input1.get_dataType() == DataType.MATRIX)
+		if (input1.getDataType() == DataType.MATRIX)
 			valInput = input2;
 		else
 			valInput = input1;
@@ -287,7 +287,7 @@ public class Unary extends Lop
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(0).get_dataType() == DataType.SCALAR ) {
+		if ( getInputs().get(0).getDataType() == DataType.SCALAR ) {
 			sb.append( getInputs().get(0).prepScalarInputOperand(getExecType()));
 		}
 		else {
@@ -295,7 +295,7 @@ public class Unary extends Lop
 		}
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) {
+		if ( getInputs().get(1).getDataType() == DataType.SCALAR ) {
 			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 		}
 		else {
@@ -319,7 +319,7 @@ public class Unary extends Lop
 			
 			int scalarIndex = -1, matrixIndex = -1;
 			String matrixLabel= null;
-			if( linput1.get_dataType() == DataType.MATRIX ) {
+			if( linput1.getDataType() == DataType.MATRIX ) {
 				// inputIndex1 is matrix, and inputIndex2 is scalar
 				scalarIndex = 1;
 				matrixLabel = String.valueOf(inputIndex1);
@@ -352,9 +352,9 @@ public class Unary extends Lop
 			{
 				//TODO discuss w/ Shirish: we should consolidate the other operations (see ScalarInstruction.parseInstruction / BinaryCPInstruction.getScalarOperator)
 				//append both operands
-				sb.append( (linput1.get_dataType()==DataType.MATRIX? linput1.prepInputOperand(String.valueOf(inputIndex1)) : linput1.prepScalarInputOperand(getExecType())) );
+				sb.append( (linput1.getDataType()==DataType.MATRIX? linput1.prepInputOperand(String.valueOf(inputIndex1)) : linput1.prepScalarInputOperand(getExecType())) );
 				sb.append( OPERAND_DELIMITOR );
-				sb.append( (linput2.get_dataType()==DataType.MATRIX? linput2.prepInputOperand(String.valueOf(inputIndex2)) : linput2.prepScalarInputOperand(getExecType())) );
+				sb.append( (linput2.getDataType()==DataType.MATRIX? linput2.prepInputOperand(String.valueOf(inputIndex2)) : linput2.prepScalarInputOperand(getExecType())) );
 				sb.append( OPERAND_DELIMITOR );	
 			}
 			else

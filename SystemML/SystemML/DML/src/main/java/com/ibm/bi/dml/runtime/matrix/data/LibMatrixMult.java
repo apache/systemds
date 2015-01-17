@@ -290,7 +290,7 @@ public class LibMatrixMult
 					if( val != 0 )
 					{
 						SparseRow brow = m2.sparseRows[ k ];
-						if( brow != null && brow.size() > 0 ) 
+						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
@@ -309,7 +309,7 @@ public class LibMatrixMult
 					if( val!=0 )
 					{
 						SparseRow brow = m2.sparseRows[ k ];
-						if( brow != null && brow.size() > 0 ) 
+						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
@@ -353,7 +353,7 @@ public class LibMatrixMult
 			if( m==1 && n==1 ) //DOT PRODUCT
 			{
 				SparseRow arow = m1.sparseRows[0];
-				if( arow != null && arow.size() > 0 )
+				if( arow != null && !arow.isEmpty() )
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -367,7 +367,7 @@ public class LibMatrixMult
 				for( int i=0; i<Math.min(m, m1.sparseRows.length); i++ )
 				{
 					SparseRow arow = m1.sparseRows[i];
-					if( arow != null && arow.size() > 0 ) 
+					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
@@ -385,7 +385,7 @@ public class LibMatrixMult
 				for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 				{
 					SparseRow arow = m1.sparseRows[i];
-					if( arow != null && arow.size() > 0 ) 
+					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
@@ -424,7 +424,7 @@ public class LibMatrixMult
 			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
-				if( arow != null && arow.size() > 0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -472,7 +472,7 @@ public class LibMatrixMult
 			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
-				if( arow != null && arow.size() > 0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -482,7 +482,7 @@ public class LibMatrixMult
 					{
 						double val = avals[k];
 						SparseRow brow = m2.sparseRows[ aix[k] ];
-						if( brow != null && brow.size() > 0 ) 
+						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
@@ -499,7 +499,7 @@ public class LibMatrixMult
 			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
-				if( arow != null && arow.size() > 0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
@@ -509,7 +509,7 @@ public class LibMatrixMult
 					{
 						double val = avals[k];
 						SparseRow brow = m2.sparseRows[ aix[k] ];
-						if( brow != null && brow.size() > 0 ) 
+						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
@@ -559,7 +559,7 @@ public class LibMatrixMult
 			for( int i=0; i<m; i++ )
 			{
 				SparseRow arow = m1.sparseRows[ i ];
-				if( arow != null && arow.size() > 0 ) 
+				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aixs = arow.getIndexContainer();
@@ -603,7 +603,7 @@ public class LibMatrixMult
 			for(int k = 0; k < cd; k++ ) 
 			{			
 				SparseRow brow = m2.sparseRows[ k ];
-				if( brow != null && brow.size() > 0 ) 
+				if( brow != null && !brow.isEmpty() ) 
 				{
 					int blen = brow.size();
 					int[] bixs = brow.getIndexContainer();
@@ -828,7 +828,7 @@ public class LibMatrixMult
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
 				for( SparseRow arow : m1.sparseRows )
-					if( arow != null && arow.size() > 0 ) 
+					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
@@ -849,7 +849,7 @@ public class LibMatrixMult
 			else
 			{
 				for( SparseRow arow : m1.sparseRows )
-					if( arow != null && arow.size() > 0 ) 
+					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
@@ -870,7 +870,7 @@ public class LibMatrixMult
 			if( m==1 ) //VECTOR 
 			{
 				SparseRow arow = m1.sparseRows[0];
-				if( arow !=null && arow.size()>0 )
+				if( arow !=null && !arow.isEmpty() )
 				{
 					int alen = arow.size();
 					double[] avals = arow.getValueContainer();	
@@ -895,7 +895,7 @@ public class LibMatrixMult
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
 					for( SparseRow arow : tmpBlock.sparseRows )
-						if( arow != null && arow.size() > 0 ) 
+						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
 							int[] aix = arow.getIndexContainer();
@@ -915,7 +915,7 @@ public class LibMatrixMult
 				else
 				{
 					for( SparseRow arow : tmpBlock.sparseRows )
-						if( arow != null && arow.size() > 0 ) 
+						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
 							int[] aix = arow.getIndexContainer();

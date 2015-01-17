@@ -47,8 +47,8 @@ public class RefreshMetaDataVisitor implements HopsVisitor
 		if(hops instanceof LiteralOp)
 			return Flag.GO_ON;
 		
-		long dim1Before = hops.get_dim1();
-		long dim2Before = hops.get_dim2();
+		long dim1Before = hops.getDim1();
+		long dim2Before = hops.getDim2();
 		long nnzBefore = hops.getNnz();
 		long dim1LeftBefore = -1L;
 		long dim2LeftBefore = -1L;
@@ -58,33 +58,33 @@ public class RefreshMetaDataVisitor implements HopsVisitor
 		//save values and set meta data
 		if(hops instanceof DataOp && (((DataOp)hops).get_dataop() == DataOpTypes.TRANSIENTREAD)) {
 			Hop crossBlockInput = hops.getCrossBlockInput();
-			dim1LeftBefore = crossBlockInput.get_dim1();
-			dim2LeftBefore = crossBlockInput.get_dim2();
+			dim1LeftBefore = crossBlockInput.getDim1();
+			dim2LeftBefore = crossBlockInput.getDim2();
 			HopsMetaData hopsMetaData = this.metaDataDirectory.get(crossBlockInput);
 			if(hopsMetaData != null) {
-				crossBlockInput.set_dim1(hopsMetaData.getRows());
-				crossBlockInput.set_dim2(hopsMetaData.getCols());
+				crossBlockInput.setDim1(hopsMetaData.getRows());
+				crossBlockInput.setDim2(hopsMetaData.getCols());
 			}
 		}else 
 		if(hops.getInput() != null ){
-			if(hops.getInput().size() > 0) {
+			if(!hops.getInput().isEmpty() ) {
 				Hop leftInput = hops.getInput().get(0);
-				dim1LeftBefore = leftInput.get_dim1();
-				dim2LeftBefore = leftInput.get_dim2();
+				dim1LeftBefore = leftInput.getDim1();
+				dim2LeftBefore = leftInput.getDim2();
 				HopsMetaData hopsMetaData = this.metaDataDirectory.get(leftInput);
 				if(hopsMetaData != null) {
-					leftInput.set_dim1(hopsMetaData.getRows());
-					leftInput.set_dim2(hopsMetaData.getCols());
+					leftInput.setDim1(hopsMetaData.getRows());
+					leftInput.setDim2(hopsMetaData.getCols());
 				}
 			}
 			if(hops.getInput().size() > 1) {
 				Hop rightInput = hops.getInput().get(1);
-				dim1RightBefore = rightInput.get_dim1();
-				dim2RightBefore = rightInput.get_dim2();
+				dim1RightBefore = rightInput.getDim1();
+				dim2RightBefore = rightInput.getDim2();
 				HopsMetaData hopsMetaData = this.metaDataDirectory.get(rightInput);
 				if(hopsMetaData != null) {
-					rightInput.set_dim1(hopsMetaData.getRows());
-					rightInput.set_dim2(hopsMetaData.getCols());
+					rightInput.setDim1(hopsMetaData.getRows());
+					rightInput.setDim2(hopsMetaData.getCols());
 				}
 			}
 		}
@@ -92,30 +92,30 @@ public class RefreshMetaDataVisitor implements HopsVisitor
 		if(hops instanceof MergeOp) {
 			MergeOp merge = (MergeOp)hops;
 			Hop leftInput = merge.getLeftInput();
-			dim1LeftBefore = leftInput.get_dim1();
-			dim2LeftBefore = leftInput.get_dim2();
+			dim1LeftBefore = leftInput.getDim1();
+			dim2LeftBefore = leftInput.getDim2();
 			HopsMetaData hopsMetaData = this.metaDataDirectory.get(leftInput);
 			if(hopsMetaData != null) {
-				leftInput.set_dim1(hopsMetaData.getRows());
-				leftInput.set_dim2(hopsMetaData.getCols());
+				leftInput.setDim1(hopsMetaData.getRows());
+				leftInput.setDim2(hopsMetaData.getCols());
 			}
 			Hop rightInput = merge.getRightInput();
-			dim1RightBefore = rightInput.get_dim1();
-			dim2RightBefore = rightInput.get_dim2();
+			dim1RightBefore = rightInput.getDim1();
+			dim2RightBefore = rightInput.getDim2();
 			HopsMetaData hopsMetaDataR = this.metaDataDirectory.get(rightInput);
 			if(hopsMetaDataR != null) {
-				rightInput.set_dim1(hopsMetaDataR.getRows());
-				rightInput.set_dim2(hopsMetaDataR.getCols());
+				rightInput.setDim1(hopsMetaDataR.getRows());
+				rightInput.setDim2(hopsMetaDataR.getCols());
 			}
 		}else if(hops instanceof CrossBlockOp) {
 			CrossBlockOp merge = (CrossBlockOp)hops;
 			Hop leftInput = merge.getLeftInput();
-			dim1LeftBefore = leftInput.get_dim1();
-			dim2LeftBefore = leftInput.get_dim2();
+			dim1LeftBefore = leftInput.getDim1();
+			dim2LeftBefore = leftInput.getDim2();
 			HopsMetaData hopsMetaData = this.metaDataDirectory.get(leftInput);
 			if(hopsMetaData != null) {
-				leftInput.set_dim1(hopsMetaData.getRows());
-				leftInput.set_dim2(hopsMetaData.getCols());
+				leftInput.setDim1(hopsMetaData.getRows());
+				leftInput.setDim2(hopsMetaData.getCols());
 			}
 		}
 		
@@ -126,48 +126,48 @@ public class RefreshMetaDataVisitor implements HopsVisitor
 		{
 			meta = new HopsMetaData(hops);
 		} 
-		meta.setRows(hops.get_dim1());
-		meta.setCols(hops.get_dim2());
+		meta.setRows(hops.getDim1());
+		meta.setCols(hops.getDim2());
 		meta.setNnz(hops.getNnz());
-		meta.setColsInBlock(hops.get_cols_in_block());
-		meta.setRowsInBlock(hops.get_rows_in_block());
+		meta.setColsInBlock(hops.getColsInBlock());
+		meta.setRowsInBlock(hops.getRowsInBlock());
 		
 		//reset values
 		if(hops instanceof DataOp && (((DataOp)hops).get_dataop() == DataOpTypes.TRANSIENTREAD)) {
 			Hop crossBlockInput = hops.getCrossBlockInput();
-			crossBlockInput.set_dim1(dim1LeftBefore);
-			crossBlockInput.set_dim2(dim2LeftBefore);
+			crossBlockInput.setDim1(dim1LeftBefore);
+			crossBlockInput.setDim2(dim2LeftBefore);
 		}else 
 		if(hops.getInput() != null ){
-			if(hops.getInput().size() > 0) {
+			if(!hops.getInput().isEmpty()) {
 				Hop leftInput = hops.getInput().get(0);
-				leftInput.set_dim1(dim1LeftBefore);
-				leftInput.set_dim2(dim2LeftBefore);
+				leftInput.setDim1(dim1LeftBefore);
+				leftInput.setDim2(dim2LeftBefore);
 			}
 			if(hops.getInput().size() > 1) {
 				Hop rightInput = hops.getInput().get(1);
-				rightInput.set_dim1(dim1RightBefore);
-				rightInput.set_dim2(dim2RightBefore);
+				rightInput.setDim1(dim1RightBefore);
+				rightInput.setDim2(dim2RightBefore);
 			}
 		}
 		//unfortunately, this needs to be handled separately
 		if(hops instanceof MergeOp) {
 			MergeOp merge = (MergeOp)hops;
 			Hop leftInput = merge.getLeftInput();
-			leftInput.set_dim1(dim1LeftBefore);
-			leftInput.set_dim2(dim2LeftBefore);
+			leftInput.setDim1(dim1LeftBefore);
+			leftInput.setDim2(dim2LeftBefore);
 			Hop rightInput = merge.getRightInput();
-			rightInput.set_dim1(dim1RightBefore );
-			rightInput.set_dim2(dim2RightBefore );
+			rightInput.setDim1(dim1RightBefore );
+			rightInput.setDim2(dim2RightBefore );
 		}else if(hops instanceof CrossBlockOp) {
 			CrossBlockOp merge = (CrossBlockOp)hops;
 			Hop leftInput = merge.getLeftInput();
-			leftInput.set_dim1(dim1LeftBefore);
-			leftInput.set_dim2(dim2LeftBefore);
+			leftInput.setDim1(dim1LeftBefore);
+			leftInput.setDim2(dim2LeftBefore);
 		}
 		
-		hops.set_dim1(dim1Before);
-		hops.set_dim2(dim2Before);
+		hops.setDim1(dim1Before);
+		hops.setDim2(dim2Before);
 		hops.setNnz(nnzBefore);
 		
 		this.metaDataDirectory.put(hops, meta);

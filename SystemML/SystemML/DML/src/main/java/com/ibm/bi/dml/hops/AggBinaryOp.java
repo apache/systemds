@@ -111,8 +111,8 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException 
 	{
 		//return already created lops
-		if( get_lops() != null )
-			return get_lops();
+		if( getLops() != null )
+			return getLops();
 	
 		//construct matrix mult lops (currently only supported aggbinary)
 		if ( isMatrixMultiply() ) 
@@ -126,8 +126,8 @@ public class AggBinaryOp extends Hop
 				if( mmtsj != MMTSJType.NONE ) { //CP TSMM
 					constructLopsCP_TSMM( mmtsj );
 				}
-				else if( _hasLeftPMInput && getInput().get(0).get_dim2()==1 
-						&& getInput().get(1).get_dim1()!=1 ) //CP PMM
+				else if( _hasLeftPMInput && getInput().get(0).getDim2()==1 
+						&& getInput().get(1).getDim1()!=1 ) //CP PMM
 				{
 					constructLopsCP_PMM();
 				}
@@ -144,8 +144,8 @@ public class AggBinaryOp extends Hop
 				//matrix mult operation selection part 2 (MR type)
 				ChainType chain = checkMapMultChain();
 				MMultMethod method = optFindMMultMethod ( 
-							input1.get_dim1(), input1.get_dim2(), input1.get_rows_in_block(), input1.get_cols_in_block(),    
-							input2.get_dim1(), input2.get_dim2(), input2.get_rows_in_block(), input2.get_cols_in_block(),
+							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
+							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(),
 							mmtsj, chain, _hasLeftPMInput);
 			
 				//dispatch lops construction
@@ -177,7 +177,7 @@ public class AggBinaryOp extends Hop
 		else
 			throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
 		
-		return get_lops();
+		return getLops();
 	}
 
 	@Override
@@ -189,7 +189,7 @@ public class AggBinaryOp extends Hop
 
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
+			if (getVisited() != VisitStatus.DONE) {
 				super.printMe();
 				LOG.debug("  InnerOperation: " + innerOp);
 				LOG.debug("  OuterOperation: " + outerOp);
@@ -198,7 +198,7 @@ public class AggBinaryOp extends Hop
 				}
 				;
 			}
-			set_visited(VISIT_STATUS.DONE);
+			setVisited(VisitStatus.DONE);
 		}
 	}
 
@@ -220,9 +220,9 @@ public class AggBinaryOp extends Hop
 				Hops input2 = getInput().get(1);
 				if( input1.dimsKnown() && input2.dimsKnown() )
 				{
-					double sp1 = (input1.getNnz()>0) ? OptimizerUtils.getSparsity(input1.get_dim1(), input1.get_dim2(), input1.getNnz()) : 1.0;
-					double sp2 = (input2.getNnz()>0) ? OptimizerUtils.getSparsity(input2.get_dim1(), input2.get_dim2(), input2.getNnz()) : 1.0;
-					sparsity = OptimizerUtils.getMatMultSparsity(sp1, sp2, input1.get_dim1(), input1.get_dim2(), input2.get_dim2(), true);	
+					double sp1 = (input1.getNnz()>0) ? OptimizerUtils.getSparsity(input1.getDim1(), input1.getDim2(), input1.getNnz()) : 1.0;
+					double sp2 = (input2.getNnz()>0) ? OptimizerUtils.getSparsity(input2.getDim1(), input2.getDim2(), input2.getNnz()) : 1.0;
+					sparsity = OptimizerUtils.getMatMultSparsity(sp1, sp2, input1.getDim1(), input1.getDim2(), input2.getDim2(), true);	
 				}
 			}
 			else //sparsity known (e.g., inferred from worst case estimates)
@@ -272,8 +272,8 @@ public class AggBinaryOp extends Hop
 	
 	private boolean isOuterProduct() {
 		if ( getInput().get(0).isVector() && getInput().get(1).isVector() ) {
-			if ( getInput().get(0).get_dim1() == 1 && getInput().get(0).get_dim1() > 1
-					&& getInput().get(1).get_dim1() > 1 && getInput().get(1).get_dim2() == 1 )
+			if ( getInput().get(0).getDim1() == 1 && getInput().get(0).getDim1() > 1
+					&& getInput().get(1).getDim1() > 1 && getInput().get(1).getDim2() == 1 )
 				return true;
 			else
 				return false;
@@ -406,11 +406,11 @@ public class AggBinaryOp extends Hop
 			matmultCP = constructCPLopWithLeftTransposeRewrite();
 		else
 			matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
+									 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType());
 		
-		matmultCP.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );
-		set_lops(matmultCP);
+		setLops(matmultCP);
 	}
 	
 	/**
@@ -423,11 +423,11 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException
 	{
 		Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
-				                 get_dataType(), get_valueType(), ExecType.CP, mmtsj);
+				                 getDataType(), getValueType(), ExecType.CP, mmtsj);
 	
-		matmultCP.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );
-		set_lops(matmultCP);
+		setLops(matmultCP);
 	}
 	
 	/**
@@ -450,11 +450,11 @@ public class AggBinaryOp extends Hop
 		HopRewriteUtils.copyLineNumbers(this, nrow);
 		Lop lnrow = nrow.constructLops();
 		
-		PMMJ pmm = new PMMJ(pmInput.constructLops(), rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), false, false, ExecType.CP);
-		pmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		PMMJ pmm = new PMMJ(pmInput.constructLops(), rightInput.constructLops(), lnrow, getDataType(), getValueType(), false, false, ExecType.CP);
+		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(pmm);
 		
-		set_lops(pmm);
+		setLops(pmm);
 		
 		HopRewriteUtils.removeChildReference(pmInput, nrow);
 	}
@@ -470,7 +470,7 @@ public class AggBinaryOp extends Hop
 	{
 		if( method == MMultMethod.MAPMULT_R && isLeftTransposeRewriteApplicable(false, true) )
 		{
-			set_lops( constructMapMultMRLopWithLeftTransposeRewrite() );
+			setLops( constructMapMultMRLopWithLeftTransposeRewrite() );
 		}
 		else //GENERAL CASE
 		{	
@@ -487,45 +487,45 @@ public class AggBinaryOp extends Hop
 				if( (method==MMultMethod.MAPMULT_L) ) //left in distributed cache
 				{
 					Hop input = getInput().get(0);
-					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), input.get_dim2(), OptimizerUtils.getSparsity(input.get_dim1(), input.get_dim2(), input.getNnz())) 
+					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.getDim1(), input.getDim2(), OptimizerUtils.getSparsity(input.getDim1(), input.getDim2(), input.getNnz())) 
 					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
 					leftInput = new DataPartition(input.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
-					leftInput.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), get_rows_in_block(), get_cols_in_block(), input.getNnz());
+					leftInput.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), getRowsInBlock(), getColsInBlock(), input.getNnz());
 					setLineNumbers(leftInput);
 				}
 				else //right side in distributed cache
 				{
 					Hop input = getInput().get(1);
-					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), input.get_dim2(), OptimizerUtils.getSparsity(input.get_dim1(), input.get_dim2(), input.getNnz())) 
+					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.getDim1(), input.getDim2(), OptimizerUtils.getSparsity(input.getDim1(), input.getDim2(), input.getNnz())) 
 					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
 					rightInput = new DataPartition(input.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-					rightInput.getOutputParameters().setDimensions(input.get_dim1(), input.get_dim2(), get_rows_in_block(), get_cols_in_block(), input.getNnz());
+					rightInput.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), getRowsInBlock(), getColsInBlock(), input.getNnz());
 					setLineNumbers(rightInput);
 				}
 			}					
 			
 			//core matrix mult
-			MapMult mapmult = new MapMult( leftInput, rightInput, get_dataType(), get_valueType(), 
+			MapMult mapmult = new MapMult( leftInput, rightInput, getDataType(), getValueType(), 
 					                (method==MMultMethod.MAPMULT_R), needPart, outputEmptyBlocks);
-			mapmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 			
 			//post aggregation
 			if (needAgg) {
-				Group grp = new Group(mapmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-				Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+				Group grp = new Group(mapmult, Group.OperationTypes.Sort, getDataType(), getValueType());
+				Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
 				
-				grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-				agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+				grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 				setLineNumbers(agg1);
 				
 				// aggregation uses kahanSum but the inputs do not have correction values
 				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
 				
-				set_lops(agg1);
+				setLops(agg1);
 			}
 			else {
-				set_lops(mapmult);
+				setLops(mapmult);
 			}
 		}	
 	} 
@@ -548,43 +548,43 @@ public class AggBinaryOp extends Hop
 			Hop hv = getInput().get(1).getInput().get(1);
 			
 			//core matrix mult
-			mapmult = new MapMultChain( hX.constructLops(), hv.constructLops(), get_dataType(), get_valueType());
-			mapmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			mapmult = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType());
+			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
-		else if( chainType == ChainType.XtwXv )
+		else //if( chainType == ChainType.XtwXv )
 		{
 			//v never needs partitioning because always single block
 			Hop hX = getInput().get(0).getInput().get(0);
 			Hop hw = getInput().get(1).getInput().get(0);
 			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
 			
-			double mestW = OptimizerUtils.estimateSize(hw.get_dim1(), hw.get_dim2(), 1.0);
-			boolean needPart = !hw.dimsKnown() || hw.get_dim1() * hw.get_dim2() > DistributedCacheInput.PARTITION_SIZE;
+			double mestW = OptimizerUtils.estimateSize(hw.getDim1(), hw.getDim2(), 1.0);
+			boolean needPart = !hw.dimsKnown() || hw.getDim1() * hw.getDim2() > DistributedCacheInput.PARTITION_SIZE;
 			Lop X = hX.constructLops(), v = hv.constructLops(), w = null;
 			if( needPart ){ //requires partitioning
 				w = new DataPartition(hw.constructLops(), DataType.MATRIX, ValueType.DOUBLE, (mestW>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				w.getOutputParameters().setDimensions(hw.get_dim1(), hw.get_dim2(), get_rows_in_block(), get_cols_in_block(), hw.getNnz());
+				w.getOutputParameters().setDimensions(hw.getDim1(), hw.getDim2(), getRowsInBlock(), getColsInBlock(), hw.getNnz());
 				setLineNumbers(w);	
 			}
 			else
 				w = hw.constructLops();
 			
 			//core matrix mult
-			mapmult = new MapMultChain( X, v, w, get_dataType(), get_valueType());
-			mapmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			mapmult = new MapMultChain( X, v, w, getDataType(), getValueType());
+			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
 		
 		//post aggregation
-		Group grp = new Group(mapmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-		grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Group grp = new Group(mapmult, Group.OperationTypes.Sort, getDataType(), getValueType());
+		grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
 		setLineNumbers(agg1);
 		 
-		set_lops(agg1);
+		setLops(agg1);
 	} 
 	
 	/**
@@ -597,27 +597,27 @@ public class AggBinaryOp extends Hop
 	{
 		if( isLeftTransposeRewriteApplicable(false, false) )
 		{
-			set_lops( constructMMCJMRLopWithLeftTransposeRewrite() );
+			setLops( constructMMCJMRLopWithLeftTransposeRewrite() );
 		} 
 		else //general case
 		{
 			MMCJ mmcj = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-					             get_dataType(), get_valueType());
-			mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					             getDataType(), getValueType());
+			mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mmcj);
 			
-			Group grp = new Group(mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-			grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
+			grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(grp);
 			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(agg1);
 			
 			// aggregation uses kahanSum but the inputs do not have correction values
 			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
 			
-			set_lops(agg1);
+			setLops(agg1);
 		}
 	} 
 	
@@ -630,11 +630,11 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException
 	{
 		MMRJ rmm = new MMRJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				            get_dataType(), get_valueType());
-		rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
+				            getDataType(), getValueType());
+		rmm.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(rmm);
 		
-		set_lops(rmm);
+		setLops(rmm);
 	} 
 	
 	/**
@@ -648,16 +648,16 @@ public class AggBinaryOp extends Hop
 	{
 		Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
 		
-		MMTSJ tsmm = new MMTSJ(input.constructLops(), get_dataType(), get_valueType(), ExecType.MR, mmtsj);
-		tsmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.MR, mmtsj);
+		tsmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(tsmm);
 		
-		Aggregate agg1 = new Aggregate(tsmm, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Aggregate agg1 = new Aggregate(tsmm, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 		setLineNumbers(agg1);
 		
-		set_lops(agg1);
+		setLops(agg1);
 	} 
 	
 	/**
@@ -673,12 +673,12 @@ public class AggBinaryOp extends Hop
 		
 		Hop pmInput = getInput().get(0);
 		Hop rightInput = getInput().get(1);
-		long brlen = pmInput.get_rows_in_block();
-		long bclen = pmInput.get_cols_in_block();
+		long brlen = pmInput.getRowsInBlock();
+		long bclen = pmInput.getColsInBlock();
 		
 		//a) full permutation matrix input (potentially without empty block materialized)
 		Lop lpmInput = pmInput.constructLops();
-		if( pmInput.get_dim2() != 1 ) //not a vector
+		if( pmInput.getDim2() != 1 ) //not a vector
 		{
 			//compute condensed permutation matrix vector input			
 			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
@@ -719,25 +719,25 @@ public class AggBinaryOp extends Hop
 		HopRewriteUtils.copyLineNumbers(this, nrow);
 		Lop lnrow = nrow.constructLops();
 		
-		boolean needPart = !pmInput.dimsKnown() || pmInput.get_dim1() > DistributedCacheInput.PARTITION_SIZE;
-		double mestPM = OptimizerUtils.estimateSize(pmInput.get_dim1(), 1, 1.0);
+		boolean needPart = !pmInput.dimsKnown() || pmInput.getDim1() > DistributedCacheInput.PARTITION_SIZE;
+		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1, 1.0);
 		if( needPart ){ //requires partitioning
 			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-			lpmInput.getOutputParameters().setDimensions(pmInput.get_dim1(), 1, get_rows_in_block(), get_cols_in_block(), pmInput.get_dim1());
+			lpmInput.getOutputParameters().setDimensions(pmInput.getDim1(), 1, getRowsInBlock(), getColsInBlock(), pmInput.getDim1());
 			setLineNumbers(lpmInput);	
 		}
 		
 		boolean outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, get_dataType(), get_valueType(), needPart, outputEmptyBlocks, ExecType.MR);
-		pmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), needPart, outputEmptyBlocks, ExecType.MR);
+		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(pmm);
 		
-		Aggregate aggregate = new Aggregate(pmm, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-		aggregate.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Aggregate aggregate = new Aggregate(pmm, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+		aggregate.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		aggregate.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 		setLineNumbers(aggregate);
 		
-		set_lops(aggregate);
+		setLops(aggregate);
 		
 		HopRewriteUtils.removeChildReference(pmInput, nrow);		
 	} 
@@ -765,9 +765,9 @@ public class AggBinaryOp extends Hop
 		{
 			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
 			{
-				long m = h1.get_dim1();
-				long cd = h1.get_dim2();
-				long n = h2.get_dim2();
+				long m = h1.getDim1();
+				long cd = h1.getDim2();
+				long n = h2.getDim2();
 				
 				//check for known dimensions (necessary condition for subsequent checks)
 				ret = (m>0 && cd>0 && n>0); 
@@ -794,9 +794,9 @@ public class AggBinaryOp extends Hop
 		{
 			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
 			{
-				long m = h1.get_dim1();
-				long cd = h1.get_dim2();
-				long n = h2.get_dim2();
+				long m = h1.getDim1();
+				long cd = h1.getDim2();
+				long n = h2.getDim2();
 				
 				
 				//note: output size constraint for mapmult already checked by optfindmmultmethod
@@ -826,17 +826,17 @@ public class AggBinaryOp extends Hop
 		Hop Y = getInput().get(1);
 		
 		//right vector transpose
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix mult
-		Lop mult = new BinaryCP(tY, X.constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());	
-		mult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Lop mult = new BinaryCP(tY, X.constructLops(), BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType());	
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
 		
 		//result transpose (dimensions set outside)
-		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
 		
 		return out;
 	}
@@ -854,42 +854,42 @@ public class AggBinaryOp extends Hop
 		Hop Y = getInput().get(1);
 		
 		//right vector transpose CP
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix mult
 		
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
-		boolean needAgg = ( X.get_dim1() <= 0 || X.get_dim1() > X.get_rows_in_block() ); 
+		boolean needAgg = ( X.getDim1() <= 0 || X.getDim1() > X.getRowsInBlock() ); 
 		boolean needPart = requiresPartitioning(MMultMethod.MAPMULT_R, true); //R disregarding transpose rewrite
 		
 		//pre partitioning
 		Lop dcinput = null;
 		if( needPart ) {
-			ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(Y.get_dim2(), Y.get_dim1(), OptimizerUtils.getSparsity(Y.get_dim2(), Y.get_dim1(), Y.getNnz())) 
+			ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(Y.getDim2(), Y.getDim1(), OptimizerUtils.getSparsity(Y.getDim2(), Y.getDim1(), Y.getNnz())) 
 					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
 			dcinput = new DataPartition(tY, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
-			dcinput.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+			dcinput.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
 			setLineNumbers(dcinput);
 		}
 		else
 			dcinput = tY;
 		
-		MapMult mapmult = new MapMult(dcinput, X.constructLops(), get_dataType(), get_valueType(), false, needPart, false);
-		mapmult.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		MapMult mapmult = new MapMult(dcinput, X.constructLops(), getDataType(), getValueType(), false, needPart, false);
+		mapmult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mapmult);
 		
 		//post aggregation 
 		Lop mult = null;
 		if( needAgg ) {
-			Group grp = new Group(mapmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-			grp.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			Group grp = new Group(mapmult, Group.OperationTypes.Sort, getDataType(), getValueType());
+			grp.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(grp);
 			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(Y.get_dim2(), X.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(agg1);
 			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
 			mult = agg1;
@@ -898,8 +898,8 @@ public class AggBinaryOp extends Hop
 			mult = mapmult;
 		
 		//result transpose CP 
-		Lop out = new Transform(mult, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-		out.getOutputParameters().setDimensions(X.get_dim2(), Y.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		
 		return out;
 	}
@@ -917,21 +917,21 @@ public class AggBinaryOp extends Hop
 		Hop Y = getInput().get(1);
 		
 		//right vector transpose CP
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.get_dim2(), Y.get_dim1(), get_rows_in_block(), get_cols_in_block(), Y.getNnz());
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix multiply
-		MMCJ mmcj = new MMCJ(tY, X.constructLops(), get_dataType(), get_valueType());
-		mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType());
+		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mmcj);
 		
-		Group grp = new Group(mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-		grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
+		grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(grp);
 		
-		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(agg1);
 		
 		// aggregation uses kahanSum but the inputs do not have correction values
@@ -939,8 +939,8 @@ public class AggBinaryOp extends Hop
 
 		
 		//result transpose CP 
-		Lop out = new Transform(agg1, OperationTypes.Transpose, get_dataType(), get_valueType(), ExecType.CP);
-		out.getOutputParameters().setDimensions(X.get_dim2(), Y.get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+		Lop out = new Transform(agg1, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		
 		return out;
 	}
@@ -956,15 +956,15 @@ public class AggBinaryOp extends Hop
 		boolean ret = true;
 		
 		//right side cached (no agg if left has just one column block)
-		if(  method == MMultMethod.MAPMULT_R && getInput().get(0).get_dim2() > 0 //known num columns
-	         && getInput().get(0).get_dim2() <= getInput().get(0).get_cols_in_block() ) 
+		if(  method == MMultMethod.MAPMULT_R && getInput().get(0).getDim2() > 0 //known num columns
+	         && getInput().get(0).getDim2() <= getInput().get(0).getColsInBlock() ) 
         {
             ret = false;
         }
         
 		//left side cached (no agg if right has just one row block)
-        if(  method == MMultMethod.MAPMULT_L && getInput().get(1).get_dim1() > 0 //known num rows
-             && getInput().get(1).get_dim1() <= getInput().get(1).get_rows_in_block() ) 
+        if(  method == MMultMethod.MAPMULT_L && getInput().get(1).getDim1() > 0 //known num rows
+             && getInput().get(1).getDim1() <= getInput().get(1).getRowsInBlock() ) 
         {
        	    ret = false;
         }
@@ -985,7 +985,7 @@ public class AggBinaryOp extends Hop
 		
 		//right side cached 
 		if(  method == MMultMethod.MAPMULT_R && input2.dimsKnown() ) { //known input size 
-            ret = (input2.get_dim1()*input2.get_dim2() > DistributedCacheInput.PARTITION_SIZE);
+            ret = (input2.getDim1()*input2.getDim2() > DistributedCacheInput.PARTITION_SIZE);
             
             //conservative: do not apply partitioning if this forces t(X) into separate job
             //if( !rewrite && input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE )
@@ -994,7 +994,7 @@ public class AggBinaryOp extends Hop
         
 		//left side cached (no agg if right has just one row block)
 		if(  method == MMultMethod.MAPMULT_L && input1.dimsKnown() ) { //known input size 
-            ret = (input1.get_dim1()*input1.get_dim2() > DistributedCacheInput.PARTITION_SIZE);
+            ret = (input1.getDim1()*input1.getDim2() > DistributedCacheInput.PARTITION_SIZE);
             
             //conservative: do not apply partitioning if this forces t(X) into separate job
             //if( !rewrite && input2 instanceof ReorgOp && ((ReorgOp)input2).getOp()==ReOrgOp.TRANSPOSE )
@@ -1174,7 +1174,7 @@ public class AggBinaryOp extends Hop
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 	
-		if(this.get_sqllops() == null)
+		if(this.getSqlLops() == null)
 		{
 			if(this.getInput().size() != 2)
 				throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, The binary aggregation hop must have two inputs");
@@ -1190,26 +1190,26 @@ public class AggBinaryOp extends Hop
 			{
 				SQLLops sqllop = getMatrixMultSQLLOP(gen);
 				sqllop.set_properties(getProperties(hop1, hop2));
-				this.set_sqllops(sqllop);
+				this.setSqlLops(sqllop);
 			}
 			else
 			{
-				SQLLops sqllop = new SQLLops(this.get_name(),
+				SQLLops sqllop = new SQLLops(this.getName(),
 										gen,
 										hop1.constructSQLLOPs(),
 										hop2.constructSQLLOPs(),
-										this.get_valueType(), this.get_dataType());
+										this.getValueType(), this.getDataType());
 	
 				String sql = getSQLSelectCode(hop1, hop2);
 			
 				sqllop.set_sql(sql);
 				sqllop.set_properties(getProperties(hop1, hop2));
 			
-				this.set_sqllops(sqllop);
+				this.setSqlLops(sqllop);
 			}
-			this.set_visited(VISIT_STATUS.DONE);
+			this.setVisited(VisitStatus.DONE);
 		}
-		return this.get_sqllops();
+		return this.getSqlLops();
 	}
 	
 	private SQLLopProperties getProperties(Hop hop1, Hop hop2)
@@ -1234,16 +1234,16 @@ public class AggBinaryOp extends Hop
 		prop.setAggType(agg);
 		prop.setJoinType(join);
 		prop.setOpString(Hop.HopsAgg2String.get(outerOp) + "(" 
-				+ hop1.get_sqllops().get_tableName() + " "
+				+ hop1.getSqlLops().get_tableName() + " "
 				+ Hop.HopsOpOp2String.get(innerOp) + " "
-				+ hop1.get_sqllops().get_tableName() + ")");
+				+ hop1.getSqlLops().get_tableName() + ")");
 		return prop;
 	}
 	
 	@SuppressWarnings("unused")
 	private SQLSelectStatement getSQLSelect(Hop hop1, Hop hop2) throws HopsException
 	{
-		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
+		if(!(hop1.getSqlLops().getDataType() == DataType.MATRIX && hop2.getSqlLops().getDataType() == DataType.MATRIX))
 			throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, Aggregates only work for two matrices");
 		
 		boolean isvalid = Hop.isSupported(this.innerOp);
@@ -1264,8 +1264,8 @@ public class AggBinaryOp extends Hop
 		
 		SQLJoin join = new SQLJoin();
 		join.setJoinType(t);
-		join.setTable1(new SQLTableReference(SQLLops.addQuotes(hop1.get_sqllops().get_tableName()), SQLLops.ALIAS_A));
-		join.setTable2(new SQLTableReference(SQLLops.addQuotes(hop2.get_sqllops().get_tableName()), SQLLops.ALIAS_B));
+		join.setTable1(new SQLTableReference(SQLLops.addQuotes(hop1.getSqlLops().get_tableName()), SQLLops.ALIAS_A));
+		join.setTable2(new SQLTableReference(SQLLops.addQuotes(hop2.getSqlLops().get_tableName()), SQLLops.ALIAS_B));
 
 		stmt.setTable(join);
 		
@@ -1310,7 +1310,7 @@ public class AggBinaryOp extends Hop
 	
 	private String getSQLSelectCode(Hop hop1, Hop hop2) throws HopsException
 	{
-		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
+		if(!(hop1.getSqlLops().getDataType() == DataType.MATRIX && hop2.getSqlLops().getDataType() == DataType.MATRIX))
 			throw new HopsException(this.printErrorLocation() + "in AggBinary Hop, error in getSQLSelectCode() -- Aggregates only work for two matrices");
 		
 		//min, max, log, quantile, interquantile and iqm cannot be done that way
@@ -1343,25 +1343,25 @@ public class AggBinaryOp extends Hop
 				// Which is EXP(SUM(LN(v)))
 				
 				sql = String.format(SQLLops.BINARYPROD,
-						inner, hop1.get_sqllops().get_tableName(), hop2.get_sqllops().get_tableName());
+						inner, hop1.getSqlLops().get_tableName(), hop2.getSqlLops().get_tableName());
 			}
 			//Special case for trace because it needs a special SELECT
 			else if(this.outerOp == AggOp.TRACE)
 			{
-				sql = String.format(SQLLops.AGGTRACEOP, inner, hop1.get_sqllops().get_tableName(), join, hop2.get_sqllops().get_tableName());
+				sql = String.format(SQLLops.AGGTRACEOP, inner, hop1.getSqlLops().get_tableName(), join, hop2.getSqlLops().get_tableName());
 			}
 			//Should be handled before
 			else if(this.outerOp == AggOp.SUM)
 			{
-				//sql = String.format(SQLLops.AGGSUMOP, inner, hop1.get_sqllops().get_tableName(), join, hop2.get_sqllops().get_tableName());
-				//sql = getMatrixMultSQLString(inner, hop1.get_sqllops().get_tableName(), hop2.get_sqllops().get_tableName());
+				//sql = String.format(SQLLops.AGGSUMOP, inner, hop1.getSqlLops().get_tableName(), join, hop2.getSqlLops().get_tableName());
+				//sql = getMatrixMultSQLString(inner, hop1.getSqlLops().get_tableName(), hop2.getSqlLops().get_tableName());
 			}
 			//Here the outerOp is just appended, it can only be min or max
 			else
 			{
 				String outer = Hop.HopsAgg2String.get(this.outerOp);
 				sql = String.format(SQLLops.AGGBINOP, outer, inner, 
-					hop1.get_sqllops().get_tableName(), join, hop2.get_sqllops().get_tableName());
+					hop1.getSqlLops().get_tableName(), join, hop2.getSqlLops().get_tableName());
 			}
 			return sql;
 		}
@@ -1403,11 +1403,11 @@ public class AggBinaryOp extends Hop
 		Hop hop1 = this.getInput().get(0);
 		Hop hop2 = this.getInput().get(1);
 		
-		boolean m_large = hop1.get_dim1() > SQLLops.HMATRIXSPLIT;
-		boolean k_large = hop1.get_dim2() > SQLLops.VMATRIXSPLIT;
-		boolean n_large = hop2.get_dim2() > SQLLops.HMATRIXSPLIT;
+		boolean m_large = hop1.getDim1() > SQLLops.HMATRIXSPLIT;
+		boolean k_large = hop1.getDim2() > SQLLops.VMATRIXSPLIT;
+		boolean n_large = hop2.getDim2() > SQLLops.HMATRIXSPLIT;
 		
-		String name = this.get_name() + "_" + this.getHopID();
+		String name = this.getName() + "_" + this.getHopID();
 		
 		String inner_opr = SQLLops.OpOp2ToString(innerOp);
 		String operation = String.format(SQLLops.BINARYOP_PART, inner_opr);
@@ -1431,22 +1431,22 @@ public class AggBinaryOp extends Hop
 			//Split first matrix horizontally
 
 			long total = 0;
-			for(long s = SQLLops.HMATRIXSPLIT; s <= hop1.get_dim1(); s += SQLLops.HMATRIXSPLIT)
+			for(long s = SQLLops.HMATRIXSPLIT; s <= hop1.getDim1(); s += SQLLops.HMATRIXSPLIT)
 			{
 				String where = SQLLops.ALIAS_A + ".row BETWEEN " + (s - SQLLops.HMATRIXSPLIT + 1) + " AND " + s;
 				sb.append(String.format(SQLLops.SPLITAGGSUMOP, operation, i1, SQLLops.JOIN, i2, where));
 				
 				total = s;
-				if(total < hop1.get_dim1())
+				if(total < hop1.getDim1())
 					sb.append(" \r\nUNION ALL \r\n");
 			}
-			if(total < hop1.get_dim1())
+			if(total < hop1.getDim1())
 			{
-				String where = SQLLops.ALIAS_A + ".row BETWEEN " + (total + 1) + " AND " + hop1.get_dim1();
+				String where = SQLLops.ALIAS_A + ".row BETWEEN " + (total + 1) + " AND " + hop1.getDim1();
 				sb.append(String.format(SQLLops.SPLITAGGSUMOP, operation, i1, SQLLops.JOIN, i2, where));
 			}
 			String sql = sb.toString();
-			SQLLops lop = new SQLLops(name, flag, hop1.get_sqllops(), hop2.get_sqllops(), ValueType.DOUBLE, DataType.MATRIX);
+			SQLLops lop = new SQLLops(name, flag, hop1.getSqlLops(), hop2.getSqlLops(), ValueType.DOUBLE, DataType.MATRIX);
 			lop.set_sql(sql);
 			return lop;
 		}
@@ -1459,8 +1459,8 @@ public class AggBinaryOp extends Hop
 			if(input2.get_flag() == GENERATES.SQL)
 				input2.set_flag(GENERATES.DML);
 			*/
-			SQLLops h1 = getPart1SQLLop(operation, i1, i2, hop1.get_dim2() / 2, input1, input2);
-			SQLLops h2 = getPart2SQLLop(operation, i1, i2, hop1.get_dim2() / 2, input1, input2);
+			SQLLops h1 = getPart1SQLLop(operation, i1, i2, hop1.getDim2() / 2, input1, input2);
+			SQLLops h2 = getPart2SQLLop(operation, i1, i2, hop1.getDim2() / 2, input1, input2);
 			
 			String p1 = SQLLops.addQuotes(h1.get_tableName());
 			String p2 = SQLLops.addQuotes(h2.get_tableName());
@@ -1476,7 +1476,7 @@ public class AggBinaryOp extends Hop
 		else
 		{
 			String sql = String.format(SQLLops.AGGSUMOP, operation, i1, SQLLops.JOIN, i2);
-			SQLLops lop = new SQLLops(name, flag, hop1.get_sqllops(), hop2.get_sqllops(), ValueType.DOUBLE, DataType.MATRIX);
+			SQLLops lop = new SQLLops(name, flag, hop1.getSqlLops(), hop2.getSqlLops(), ValueType.DOUBLE, DataType.MATRIX);
 			lop.set_sql(sql);
 			return lop;
 		}
@@ -1488,9 +1488,9 @@ public class AggBinaryOp extends Hop
 		Hop hop1 = this.getInput().get(0);
 		Hop hop2 = this.getInput().get(1);
 		
-		boolean m_large = hop1.get_dim1() > SQLLops.HMATRIXSPLIT;
-		boolean k_large = hop1.get_dim2() > SQLLops.VMATRIXSPLIT;
-		boolean n_large = hop2.get_dim2() > SQLLops.HMATRIXSPLIT;
+		boolean m_large = hop1.getDim1() > SQLLops.HMATRIXSPLIT;
+		boolean k_large = hop1.getDim2() > SQLLops.VMATRIXSPLIT;
+		boolean n_large = hop2.getDim2() > SQLLops.HMATRIXSPLIT;
 		
 		if(!SPLITLARGEMATRIXMULT || (!m_large && !k_large && !n_large))
 			return String.format(SQLLops.AGGSUMOP, operation, op1, SQLLops.JOIN, op2);
@@ -1501,18 +1501,18 @@ public class AggBinaryOp extends Hop
 			if(m_large)
 			{
 				long total = 0;
-				for(long s = SQLLops.HMATRIXSPLIT; s <= hop1.get_dim1(); s += SQLLops.HMATRIXSPLIT)
+				for(long s = SQLLops.HMATRIXSPLIT; s <= hop1.getDim1(); s += SQLLops.HMATRIXSPLIT)
 				{
 					String where = SQLLops.ALIAS_A + ".row BETWEEN " + (s - SQLLops.HMATRIXSPLIT + 1) + " AND " + s;
 					sb.append(String.format(SQLLops.SPLITAGGSUMOP, operation, op1, SQLLops.JOIN, op2, where));
 					
 					total = s;
-					if(total < hop1.get_dim1())
+					if(total < hop1.getDim1())
 						sb.append(" \r\nUNION ALL \r\n");
 				}
-				if(total < hop1.get_dim1())
+				if(total < hop1.getDim1())
 				{
-					String where = SQLLops.ALIAS_A + ".row BETWEEN " + (total + 1) + " AND " + hop1.get_dim1();
+					String where = SQLLops.ALIAS_A + ".row BETWEEN " + (total + 1) + " AND " + hop1.getDim1();
 					sb.append(String.format(SQLLops.SPLITAGGSUMOP, operation, op1, SQLLops.JOIN, op2, where));
 				}
 				return sb.toString();
@@ -1520,7 +1520,7 @@ public class AggBinaryOp extends Hop
 			//Split first matrix vertically and second matrix horizontally
 			else if(k_large)
 			{
-				long middle = hop1.get_dim2() / 2;
+				long middle = hop1.getDim2() / 2;
 				
 				String where1 = SQLLops.ALIAS_A + ".col <= " + middle
 				+ " AND " + SQLLops.ALIAS_B + ".row <= " + middle;
@@ -1555,8 +1555,8 @@ public class AggBinaryOp extends Hop
 		
 		if( isMatrixMultiply() )
 		{
-			set_dim1(input1.get_dim1());
-			set_dim2(input2.get_dim2());
+			setDim1(input1.getDim1());
+			setDim2(input2.getDim2());
 		}
 	}
 	

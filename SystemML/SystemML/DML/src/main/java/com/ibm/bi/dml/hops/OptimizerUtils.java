@@ -684,7 +684,7 @@ public class OptimizerUtils
 			else if( root instanceof BinaryOp )
 				ret = rEvalSimpleBinaryDoubleExpression(root, valMemo, vars);
 			else if( root instanceof DataOp ) {
-				String name = root.get_name();
+				String name = root.getName();
 				Data dat = vars.get(name);
 				if( dat!=null && dat instanceof ScalarObject )
 					ret = ((ScalarObject)dat).getDoubleValue();
@@ -716,9 +716,9 @@ public class OptimizerUtils
 		Hop input = uroot.getInput().get(0);
 		
 		if(uroot.get_op() == Hop.OpOp1.NROW)
-			ret = (input.get_dim1()>0) ? input.get_dim1() : Double.MAX_VALUE;
+			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
 		else if( uroot.get_op() == Hop.OpOp1.NCOL )
-			ret = (input.get_dim2()>0) ? input.get_dim2() : Double.MAX_VALUE;
+			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo);
@@ -760,9 +760,9 @@ public class OptimizerUtils
 		Hop input = uroot.getInput().get(0);
 		
 		if(uroot.get_op() == Hop.OpOp1.NROW)
-			ret = (input.get_dim1()>0) ? input.get_dim1() : Double.MAX_VALUE;
+			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
 		else if( uroot.get_op() == Hop.OpOp1.NCOL )
-			ret = (input.get_dim2()>0) ? input.get_dim2() : Double.MAX_VALUE;
+			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo, vars);

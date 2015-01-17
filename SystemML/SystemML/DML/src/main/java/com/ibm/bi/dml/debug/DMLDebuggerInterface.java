@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,7 +26,7 @@ import org.apache.commons.cli.ParseException;
  */
 public class DMLDebuggerInterface {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//SystemML debugger functionality options
@@ -277,8 +277,9 @@ public class DMLDebuggerInterface {
 			try {
 				//read command line argument(s)
 				// To add up,down feature, use jline: http://jline.sourceforge.net/downloads.html
-				args = br.readLine().split(" ");
-				if(args != null && args.length > 0) {
+				String line = br.readLine();
+				if(line != null && !line.isEmpty() ) {
+					args = line.split(" ");
 					if(args[0].startsWith("-")) {
 						// So as to avoid parsing '-i' command
 						writelnToStandardError("Error reading command line arguments. Try \"help\".");

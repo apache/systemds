@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.lops.OutputParameters;
 public class BlockSizeRewrite extends Rewrite 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(BlockSizeRewrite.class);
@@ -42,9 +42,9 @@ public class BlockSizeRewrite extends Rewrite
 			return;
 		}
 		
-		operator.set_cols_in_block((long)this.toBlockSize);
-		operator.set_rows_in_block((long)this.toBlockSize);
-		operator.set_lops(null);
+		operator.setColsInBlock((long)this.toBlockSize);
+		operator.setRowsInBlock((long)this.toBlockSize);
+		operator.setLops(null);
 		Lop constructedLop;
 		
 		try {
@@ -55,8 +55,8 @@ public class BlockSizeRewrite extends Rewrite
 			
 			OutputParameters outputParameters = constructedLop.getOutputParameters();
 			Long nnz = outputParameters.getNnz();
-			Long numCols = outputParameters.getNum_cols();
-			Long numRows = outputParameters.getNum_rows();
+			Long numCols = outputParameters.getNumCols();
+			Long numRows = outputParameters.getNumRows();
 			outputParameters.setDimensions(numRows, numCols, this.toBlockSize, this.toBlockSize, nnz);
 			
 		} catch (HopsException e) {

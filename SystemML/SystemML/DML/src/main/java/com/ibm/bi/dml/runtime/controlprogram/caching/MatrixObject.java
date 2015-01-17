@@ -206,7 +206,7 @@ public class MatrixObject extends CacheableData
 		return _hdfsFileName;
 	}
 
-	public void setFileName( String file )
+	public synchronized void setFileName( String file )
 	{
 		if (!_hdfsFileName.equals (file))
 		{

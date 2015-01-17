@@ -76,7 +76,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException
 	{
 		//setup output matrix
-		String outName = output.get_name();
+		String outName = output.getName();
 		MatrixBlock outBlk = new MatrixBlock((int)_rlen, (int)_clen, false);
 		
 		//init tokenizer 

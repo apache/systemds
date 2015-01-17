@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,8 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lop;
@@ -28,7 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 public class OptNode 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum NodeType{
@@ -258,7 +258,7 @@ public class OptNode
 	 */
 	public boolean isLeaf()
 	{
-		return ( _childs == null || _childs.size()==0 );
+		return ( _childs == null || _childs.isEmpty() );
 	}
 	
 	/**
@@ -442,7 +442,7 @@ public class OptNode
 		if(    _ntype == NodeType.PARFOR 
 		    && _etype == ExecType.CP    )
 		{
-			maxc = (long)Math.floor(maxc / _k);
+			maxc = (long)Math.floor((long)maxc / _k);
 		}
 		
 		return maxc;
@@ -532,7 +532,7 @@ public class OptNode
 	 * @param stack 
 	 * 
 	 */
-	public void checkAndCleanupRecursiveFunc(HashSet<String> stack) 
+	public void checkAndCleanupRecursiveFunc(Set<String> stack) 
 	{
 		//recursive invocation
 		if( !isLeaf() )

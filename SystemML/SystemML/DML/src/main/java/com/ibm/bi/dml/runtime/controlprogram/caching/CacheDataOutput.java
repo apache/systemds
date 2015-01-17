@@ -157,7 +157,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		for( int i=0; i<lrlen; i++ )
 		{
 			SparseRow arow = rows[i];
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				int[] aix = arow.getIndexContainer();

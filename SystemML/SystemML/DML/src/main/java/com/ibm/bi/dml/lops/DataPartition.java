@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 public class DataPartition extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final String OPCODE = "partition"; 
@@ -64,15 +64,15 @@ public class DataPartition extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( getInputs().get(0).getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).getValueType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( output_index );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
+		sb.append( getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( getValueType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _pformat.toString() );
 		
@@ -91,15 +91,15 @@ public class DataPartition extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( getInputs().get(0).getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).getValueType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( output_index );
 		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
+		sb.append( getDataType() );
 		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( getValueType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _pformat.toString() );
 		

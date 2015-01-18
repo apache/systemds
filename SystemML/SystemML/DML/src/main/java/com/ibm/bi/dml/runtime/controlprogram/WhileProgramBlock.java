@@ -155,9 +155,7 @@ public class WhileProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.", ex);
 		}
 		
-		if ( result == null )
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.");
-		
+		//(guaranteed to be non-null, see executePredicate/getScalarInput)
 		return result;
 	}
 	

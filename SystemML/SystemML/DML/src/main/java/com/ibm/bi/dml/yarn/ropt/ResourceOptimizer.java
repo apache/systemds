@@ -678,6 +678,8 @@ public class ResourceOptimizer
 				ge = new GridEnumerationMemory(prog, min, max); break;
 			case HYBRID_MEM_EXP_GRID:
 				ge = new GridEnumerationHybrid(prog, min, max); break;
+			default:
+				throw new DMLRuntimeException("Unsupported grid enumeration type: "+type);
 		}
 		
 		//generate points 

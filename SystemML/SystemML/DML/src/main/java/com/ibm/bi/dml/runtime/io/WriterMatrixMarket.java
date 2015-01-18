@@ -138,8 +138,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		}
 		finally
 		{
-			if( br != null )
-				br.close();
+			IOUtilFunctions.closeSilently(br);
 		}
 	}
 	
@@ -185,21 +184,22 @@ public class WriterMatrixMarket extends MatrixWriter
 	               try {
 	                 IOUtils.copyBytes (in, out, conf, false);
 	               }  finally {
-	                 in.close();
+	                  IOUtilFunctions.closeSilently(in);
 	               }
 	             }
 	           }
 	         } finally {
-	            out.close();
+	        	 IOUtilFunctions.closeSilently(out);
 	         }
 	      } else if (hdfs.isFile(src))  {
 	        InputStream in = null;
 	        try {
    	          in = hdfs.open (src);
 	          IOUtils.copyBytes (in, out, conf, true);
-	        } finally {
-	          in.close();
-	          out.close();
+	        } 
+	        finally {
+	        	IOUtilFunctions.closeSilently(in);
+	        	IOUtilFunctions.closeSilently(out);
 	        }
 	      } else {
 	        throw new IOException(src.toString() + ": No such file or directory");

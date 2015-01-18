@@ -313,25 +313,23 @@ public class GMR
 	 */
 	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) 
 	{
-		if(    instructionsInMapper != null && !instructionsInMapper.isEmpty() 
+		if(    instructionsInMapper != null && !instructionsInMapper.trim().isEmpty() 
 			&& InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) 
 		{
 			//get all indexes of distributed cache inputs
 			ArrayList<Byte> indexList = new ArrayList<Byte>();
-			if(instructionsInMapper!=null && !instructionsInMapper.trim().isEmpty()) {
-				String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
-				for( String tmp : inst ){
-					if( tmp.contains(MapMultChain.OPCODE) )
-						MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
-					else if( tmp.contains(MapMult.OPCODE) )
-						AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
-					else if( tmp.contains(PMMJ.OPCODE) )
-						PMMJMRInstruction.addDistCacheIndex(tmp, indexList);
-					else if( tmp.contains(AppendM.OPCODE) )
-						AppendMInstruction.addDistCacheIndex(tmp, indexList);		
-					else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
-						BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
-				}
+			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
+			for( String tmp : inst ){
+				if( tmp.contains(MapMultChain.OPCODE) )
+					MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
+				else if( tmp.contains(MapMult.OPCODE) )
+					AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
+				else if( tmp.contains(PMMJ.OPCODE) )
+					PMMJMRInstruction.addDistCacheIndex(tmp, indexList);
+				else if( tmp.contains(AppendM.OPCODE) )
+					AppendMInstruction.addDistCacheIndex(tmp, indexList);		
+				else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
+					BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
 			}
 			
 			//construct index and path strings

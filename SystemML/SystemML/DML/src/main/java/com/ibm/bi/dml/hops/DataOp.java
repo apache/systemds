@@ -179,7 +179,7 @@ public class DataOp extends Hop
 			throws HopsException, LopsException 
 	{	
 		if (getLops() == null) {
-			Lop l = null;
+			Data l = null;
 
 			ExecType et = optFindExecType();
 			
@@ -192,63 +192,54 @@ public class DataOp extends Hop
 
 			// Set the transient flag
 			boolean isTransient = false;
-			switch(_dataop) {
-			case PERSISTENTREAD:
-			case PERSISTENTWRITE:
-				isTransient = false;
-				break;
-				
-			case TRANSIENTREAD:
-			case TRANSIENTWRITE:
-				isTransient = true;
-				break;
-				
-			case FUNCTIONOUTPUT:
-				/* TODO: currently, function outputs are treated as transient.
-				 * This needs to be revisited whenever function calls are fully integrated into Hop DAGs.
-				 */
-				isTransient = true;
-				break;
-				
-			default:
-				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
+			switch(_dataop) 
+			{
+				case PERSISTENTREAD:
+				case PERSISTENTWRITE:
+					isTransient = false;
+					break;
+					
+				case TRANSIENTREAD:
+				case TRANSIENTWRITE:
+					isTransient = true;
+					break;
+					
+				case FUNCTIONOUTPUT:
+					/* TODO: currently, function outputs are treated as transient.
+					 * This needs to be revisited whenever function calls are fully integrated into Hop DAGs.
+					 */
+					isTransient = true;
+					break;
+					
+				default:
+					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
 			
 			// Cretae the lop
-			switch(_dataop) {
-			case TRANSIENTREAD:
-			case PERSISTENTREAD:
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
-				break;
-				
-			case PERSISTENTWRITE:
-			case TRANSIENTWRITE:
-			case FUNCTIONOUTPUT:
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
-				
-				// TODO: should we set the exec type for transient write ?
-				if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
-					((Data)l ).setExecType(et);
-				break;
-				
+			switch(_dataop) 
+			{
+				case TRANSIENTREAD:
+				case PERSISTENTREAD:
+					l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
+					break;
+					
+				case PERSISTENTWRITE:
+				case TRANSIENTWRITE:
+				case FUNCTIONOUTPUT:
+					l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
+					
+					// TODO: should we set the exec type for transient write ?
+					if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
+						l.setExecType(et);
+					break;
+			
+				default:
+					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
 			
-			/*if (_dataop == DataOpTypes.PERSISTENTREAD) {
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), false);
-			} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), true);
-			} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), false);
-				((Data) l).setExecType(et);
-			} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
-				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), true);
-			}*/
-			
-			((Data) l).setFileFormatType(this.getFormatType());
-
-			l.getOutputParameters().setDimensions(getDim1(), getDim2(),
-					getRowsInBlock(), getColsInBlock(), getNnz());
-			
+			//set remaining meta data
+			l.setFileFormatType(this.getFormatType());
+			l.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
 			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			setLops(l);

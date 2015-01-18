@@ -315,9 +315,6 @@ public class MatrixObject extends CacheableData
 					if ( ii == null )
 						str.append("null");
 					else {
-						if ( InputInfo.inputInfoToString(ii) == null ) {
-							LOG.error("Unexpected input format: "+ii);
-						}
 						str.append(", ");
 						str.append(InputInfo.inputInfoToString(ii));
 					}

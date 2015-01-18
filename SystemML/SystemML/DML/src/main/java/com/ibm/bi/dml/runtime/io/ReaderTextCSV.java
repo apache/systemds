@@ -184,8 +184,7 @@ public class ReaderTextCSV extends MatrixReader
 			}
 			finally
 			{
-				if( br != null )
-					br.close();
+				IOUtilFunctions.closeSilently(br);
 			}
 		}
 		
@@ -237,8 +236,7 @@ public class ReaderTextCSV extends MatrixReader
 			}
 			finally
 			{
-				if( br != null )
-					br.close();
+				IOUtilFunctions.closeSilently(br);
 			}
 		}
 		

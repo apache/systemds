@@ -288,8 +288,7 @@ public class ReaderTextCell extends MatrixReader
 		}
 		finally
 		{
-			if( br != null )
-				br.close();
+			IOUtilFunctions.closeSilently(br);
 		}
 	}
 }

@@ -1741,16 +1741,22 @@ public class Recompiler
 			FileSystem fs = FileSystem.get(job);
 			Path path = new Path(mtdname);
 			if( fs.exists(path) ){
-				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-				JSONObject mtd = JSONObject.parse(br);
-				
-				DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
-				dop.setDataType(dt);
-				dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-				dop.setDim1((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-				dop.setDim2((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
-				
-				br.close();
+				BufferedReader br = null;
+				try
+				{
+					br = new BufferedReader(new InputStreamReader(fs.open(path)));
+					JSONObject mtd = JSONObject.parse(br);
+					
+					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+					dop.setDataType(dt);
+					dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
+					dop.setDim1((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
+					dop.setDim2((dt==DataType.MATRIX)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+				}
+				finally {
+					if( br != null )
+						br.close();
+				}
 			}
 		}
 		catch(Exception ex)

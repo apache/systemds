@@ -202,6 +202,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 			case INT:     literal = new LiteralOp(String.valueOf(so.getLongValue()),so.getLongValue()); break;
 			case BOOLEAN: literal = new LiteralOp(String.valueOf(so.getBooleanValue()),so.getBooleanValue()); break;
 			case STRING:  literal = new LiteralOp(String.valueOf(so.getStringValue()),so.getStringValue()); break;	
+			default:
+				throw new HopsException("Unsupported literal value type: "+bop.getValueType());
 		}
 		
 		//cleanup

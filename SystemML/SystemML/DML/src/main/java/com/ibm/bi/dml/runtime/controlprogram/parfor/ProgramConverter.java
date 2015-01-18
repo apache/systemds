@@ -405,16 +405,13 @@ public class ProgramConverter
 	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
 		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
 		String fnameNew = (plain)? oldName :(oldName+CP_CHILD_THREAD+pid); 
 		String fnameNewKey = DMLProgram.constructFunctionKey(namespace,fnameNew);
 
 		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
 			return; //prevent redundant deep copy if already existent
-		
-		if( fpb == null ){
-			throw new DMLRuntimeException("Unable to create a deep copy of the FunctionProgramBlock "+oldName+" because it does not exist.");
-		}
 		
 		//create deep copy
 		FunctionProgramBlock copy = null;

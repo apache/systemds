@@ -222,8 +222,7 @@ public class WriterTextCSV extends MatrixWriter
 		}
 		finally
 		{
-			if( br != null )
-				br.close();
+			IOUtilFunctions.closeSilently(br);
 		}
 	}
 
@@ -290,12 +289,13 @@ public class WriterTextCSV extends MatrixWriter
 						IOUtils.copyBytes(in, out, conf, false);
 						if(i<numPartFiles-1)
 							out.write('\n');
-					} finally {
-						in.close();
+					} 
+					finally {
+						IOUtilFunctions.closeSilently(in);
 					}
 				}
 			} finally {
-				out.close();
+				IOUtilFunctions.closeSilently(out);
 			}
 		} else if (hdfs.isFile(srcFilePath)) {
 			InputStream in = null;
@@ -303,8 +303,8 @@ public class WriterTextCSV extends MatrixWriter
 				in = hdfs.open(srcFilePath);
 				IOUtils.copyBytes(in, out, conf, true);
 			} finally {
-				in.close();
-				out.close();
+				IOUtilFunctions.closeSilently(in);
+				IOUtilFunctions.closeSilently(out);
 			}
 		} else {
 			throw new IOException(srcFilePath.toString()
@@ -395,8 +395,8 @@ public class WriterTextCSV extends MatrixWriter
 				in = hdfs.open(firstpart);
 				IOUtils.copyBytes(in, out, conf, true);
 			} finally {
-				in.close();
-				out.close();
+				IOUtilFunctions.closeSilently(in);
+				IOUtilFunctions.closeSilently(out);
 			}
 			
 			// rename tmp to firstpart
@@ -422,9 +422,10 @@ public class WriterTextCSV extends MatrixWriter
 			try {
 				in = hdfs.open(srcFilePath);
 				IOUtils.copyBytes(in, out, conf, true);
-			} finally {
-				in.close();
-				out.close();
+			} 
+			finally {
+				IOUtilFunctions.closeSilently(in);
+				IOUtilFunctions.closeSilently(out);
 			}
 		} else {
 			throw new IOException(srcFilePath.toString()

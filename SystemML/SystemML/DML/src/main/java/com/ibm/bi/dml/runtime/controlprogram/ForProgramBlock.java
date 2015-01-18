@@ -265,18 +265,11 @@ public class ForProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating '" + predNameStr + "' predicate", ex);
 		}
 		
-		//final check of resulting int object
-		if ( tmp == null )
-		{
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the FOR predicate.");
-		}
-		else
-		{
-			if( tmp instanceof IntObject )
-				ret = (IntObject)tmp;
-			else //downcast to int if necessary
-				ret = new IntObject(tmp.getName(),tmp.getLongValue()); 
-		}
+		//final check of resulting int object (guaranteed to be non-null, see executePredicate)
+		if( tmp instanceof IntObject )
+			ret = (IntObject)tmp;
+		else //downcast to int if necessary
+			ret = new IntObject(tmp.getName(),tmp.getLongValue()); 
 		
 		return ret;
 	}

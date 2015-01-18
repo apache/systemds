@@ -245,9 +245,7 @@ public class IfProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.", ex);
 		}
 		
-		if ( result == null )
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.");
-		
+		//(guaranteed to be non-null, see executePredicate/getScalarInput)
 		return result;
 	}
 	

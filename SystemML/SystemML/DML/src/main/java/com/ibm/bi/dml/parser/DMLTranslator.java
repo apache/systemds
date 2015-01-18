@@ -2688,9 +2688,8 @@ public class DMLTranslator
 				currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
 					Direction.RowCol, expr);
 			}
-			else if ( expr2 != null ) {
+			else {
 				// example: x = mean(Y,W);
-				
 				// stable weighted mean is implemented by using centralMoment with order = 0
 				Hop orderHop = new LiteralOp(Integer.toString(0), 0);
 				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
@@ -2703,7 +2702,8 @@ public class DMLTranslator
 			if( expr2 == null ) {
 				currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 						AggOp.MIN, Direction.RowCol, expr);
-			} else {
+			} 
+			else {
 				currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MIN,
 						expr, expr2);
 			}
@@ -3017,7 +3017,7 @@ public class DMLTranslator
 			break;
 			
 		default:
-			break;
+			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
 		
 		setIdentifierParams(currBuiltinOp, source.getOutput());

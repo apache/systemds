@@ -417,153 +417,157 @@ public class TertiaryOp extends Hop
 
 			Tertiary tertiary = null;
 			// create "group" lops for MATRIX inputs
-			switch (tertiaryOp) {
-			case CTABLE_TRANSFORM:
-				// F = ctable(A,B,W)
-				group2 = new Group(
-						inputLops[1],
-						Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group2.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
-				group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				group3 = new Group(
-						inputLops[2],
-						Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group3.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
-				group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				if ( inputLops.length == 3 )
-					tertiary = new Tertiary(
-							new Lop[] {group1, group2, group3},
-							tertiaryOp,
-							getDataType(), getValueType(), et);	
-				else 
-					// output dimensions are given
-					tertiary = new Tertiary(
-							new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
-							tertiaryOp,
-							getDataType(), getValueType(), et);	
-				break;
-
-			case CTABLE_TRANSFORM_SCALAR_WEIGHT:
-				// F = ctable(A,B) or F = ctable(A,B,1)
-				group2 = new Group(
-						inputLops[1],
-						Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group2.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
-				group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				if ( inputLops.length == 3)
-					tertiary = new Tertiary(
-							new Lop[] {group1,group2,inputLops[2]},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
-				else
-					tertiary = new Tertiary(
-							new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
+			switch (tertiaryOp) 
+			{
+				case CTABLE_TRANSFORM:
+					// F = ctable(A,B,W)
+					group2 = new Group(
+							inputLops[1],
+							Group.OperationTypes.Sort, getDataType(),
+							getValueType());
+					group2.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(),
+							getColsInBlock(), getNnz());
+					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-				break;
-		
-			case CTABLE_EXPAND_SCALAR_WEIGHT:
-				// F=ctable(seq(1,N),A) or F = ctable(seq,A,1)
-				int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0
-				
-				Group group = new Group(
-						getInput().get(left).constructLops(),
-						Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
-				//TODO remove group, whenever we push it into the map task
-				
-				if (inputLops.length == 3)
-					tertiary = new Tertiary(
-							new Lop[] {					
-									group, //matrix
-									getInput().get(2).constructLops(), //weight
-									new LiteralOp(String.valueOf(left),left).constructLops() //left
-							},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
-				else
-					tertiary = new Tertiary(
-							new Lop[] {					
-									group,//getInput().get(1).constructLops(), //matrix
-									getInput().get(2).constructLops(), //weight
-									new LiteralOp(String.valueOf(left),left).constructLops(), //left
-									inputLops[3],
-									inputLops[4]
-							},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
-				
-				break;
-				
-			case CTABLE_TRANSFORM_HISTOGRAM:
-				// F=ctable(A,1) or F = ctable(A,1,1)
-				if ( inputLops.length == 3 )
-					tertiary = new Tertiary(
-							new Lop[] {
-									group1, 
-									getInput().get(1).constructLops(),
-									getInput().get(2).constructLops()
-							},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
-				else
-					tertiary = new Tertiary(
-							new Lop[] {
-									group1, 
-									getInput().get(1).constructLops(),
-									getInput().get(2).constructLops(),
-									inputLops[3],
-									inputLops[4]
-							},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
+					group3 = new Group(
+							inputLops[2],
+							Group.OperationTypes.Sort, getDataType(),
+							getValueType());
+					group3.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(),
+							getColsInBlock(), getNnz());
+					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-				break;
-			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
-				// F=ctable(A,1,W)
-				group3 = new Group(
-						getInput().get(2).constructLops(),
-						Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group3.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
-				group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				if ( inputLops.length == 3)
-					tertiary = new Tertiary(
-							new Lop[] {
-									group1,
-									getInput().get(1).constructLops(),
-									group3},
-							tertiaryOp,
-							getDataType(), getValueType(), et);
-				else
-					tertiary = new Tertiary(
-							new Lop[] {
-									group1,
-									getInput().get(1).constructLops(),
-									group3, inputLops[3], inputLops[4] },
-							tertiaryOp,
-							getDataType(), getValueType(), et);
+					if ( inputLops.length == 3 )
+						tertiary = new Tertiary(
+								new Lop[] {group1, group2, group3},
+								tertiaryOp,
+								getDataType(), getValueType(), et);	
+					else 
+						// output dimensions are given
+						tertiary = new Tertiary(
+								new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
+								tertiaryOp,
+								getDataType(), getValueType(), et);	
+					break;
+	
+				case CTABLE_TRANSFORM_SCALAR_WEIGHT:
+					// F = ctable(A,B) or F = ctable(A,B,1)
+					group2 = new Group(
+							inputLops[1],
+							Group.OperationTypes.Sort, getDataType(),
+							getValueType());
+					group2.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(),
+							getColsInBlock(), getNnz());
+					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-				break;
+					if ( inputLops.length == 3)
+						tertiary = new Tertiary(
+								new Lop[] {group1,group2,inputLops[2]},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+					else
+						tertiary = new Tertiary(
+								new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+						
+					break;
+			
+				case CTABLE_EXPAND_SCALAR_WEIGHT:
+					// F=ctable(seq(1,N),A) or F = ctable(seq,A,1)
+					int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0
+					
+					Group group = new Group(
+							getInput().get(left).constructLops(),
+							Group.OperationTypes.Sort, getDataType(),
+							getValueType());
+					group.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(),
+							getColsInBlock(), getNnz());
+					//TODO remove group, whenever we push it into the map task
+					
+					if (inputLops.length == 3)
+						tertiary = new Tertiary(
+								new Lop[] {					
+										group, //matrix
+										getInput().get(2).constructLops(), //weight
+										new LiteralOp(String.valueOf(left),left).constructLops() //left
+								},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+					else
+						tertiary = new Tertiary(
+								new Lop[] {					
+										group,//getInput().get(1).constructLops(), //matrix
+										getInput().get(2).constructLops(), //weight
+										new LiteralOp(String.valueOf(left),left).constructLops(), //left
+										inputLops[3],
+										inputLops[4]
+								},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+					
+					break;
+					
+				case CTABLE_TRANSFORM_HISTOGRAM:
+					// F=ctable(A,1) or F = ctable(A,1,1)
+					if ( inputLops.length == 3 )
+						tertiary = new Tertiary(
+								new Lop[] {
+										group1, 
+										getInput().get(1).constructLops(),
+										getInput().get(2).constructLops()
+								},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+					else
+						tertiary = new Tertiary(
+								new Lop[] {
+										group1, 
+										getInput().get(1).constructLops(),
+										getInput().get(2).constructLops(),
+										inputLops[3],
+										inputLops[4]
+								},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+						
+					break;
+				case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
+					// F=ctable(A,1,W)
+					group3 = new Group(
+							getInput().get(2).constructLops(),
+							Group.OperationTypes.Sort, getDataType(),
+							getValueType());
+					group3.getOutputParameters().setDimensions(getDim1(),
+							getDim2(), getRowsInBlock(),
+							getColsInBlock(), getNnz());
+					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
+					if ( inputLops.length == 3)
+						tertiary = new Tertiary(
+								new Lop[] {
+										group1,
+										getInput().get(1).constructLops(),
+										group3},
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+					else
+						tertiary = new Tertiary(
+								new Lop[] {
+										group1,
+										getInput().get(1).constructLops(),
+										group3, inputLops[3], inputLops[4] },
+								tertiaryOp,
+								getDataType(), getValueType(), et);
+						
+					break;
+				
+				default:
+					throw new HopsException("Invalid tertiary operator type: "+_op);
 			}
 
 			// output dimensions are not known at compilation time

@@ -818,17 +818,18 @@ public class OptTreeConverter
 				}
 				else //unary
 				{
-					Data dat1 = vars.get( linst.input1.getName() );
-					
-					if( dat1 != null )
+					if( linst.input1 != null ) 
 					{
-						MatrixObject mdat1 = (MatrixObject) dat1;
-						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
-						ret.setDim1( mc1.numRows );
-						ret.setDim2( mc1.numColumns );
-						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
-						ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
-					}					
+						Data dat1 = vars.get( linst.input1.getName() );
+						if( dat1 != null ) {
+							MatrixObject mdat1 = (MatrixObject) dat1;
+							MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
+							ret.setDim1( mc1.numRows );
+							ret.setDim2( mc1.numColumns );
+							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
+							ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
+						}
+					}
 				}
 			}
 		}

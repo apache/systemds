@@ -31,17 +31,6 @@ public class CM_COV_Object extends Data
 	public KahanObject mean_v;
 	public KahanObject c2;
 	
-/*	public double mean;
-	public double mean_correction;
-	public double m2;
-	public double m3;
-	public double m4;
-	
-	//for cov
-	public double mean_v;
-	public double mean_v_correction;
-	public double c2;*/
-	
 	public String toString()
 	{
 		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", mean2: "+mean_v+", c2: "+c2;
@@ -57,10 +46,6 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
-		/*
-		w=mean=m2=m3=m4=mean_v=c2=0;
-		mean_correction=0;
-		mean_v_correction=0;*/
 	}
 	
 	public void reset()
@@ -92,6 +77,18 @@ public class CM_COV_Object extends Data
 			return KahanObject.compare(c2, that.c2);
 	}
 	
+	@Override
+	public boolean equals(Object o)
+	{
+		if( (o instanceof CM_COV_Object) )
+			return false;
+		
+		CM_COV_Object that = (CM_COV_Object)o;
+		return (w==that.w && mean.equals(that.mean) && m2.equals(that.m2))
+				&& m3.equals(that.m3) && m4.equals(that.m4) 
+				&& mean_v.equals(that.mean_v) && c2.equals(that.c2);
+	}
+	
 	public void set(CM_COV_Object that)
 	{
 		this.w=that.w;
@@ -101,8 +98,6 @@ public class CM_COV_Object extends Data
 		this.m4.set(that.m4);
 		this.mean_v.set(that.mean_v);
 		this.c2.set(that.c2);
-		//this.mean_correction=that.mean_correction;
-		//this.mean_v_correction=that.mean_v_correction;
 	}
 	
 	public boolean isCMAllZeros()
@@ -137,7 +132,8 @@ public class CM_COV_Object extends Data
 			default:
 				throw new DMLRuntimeException("Invalid aggreagte in CM_CV_Object: " + agg);
 			}
-		}else
+		}
+		else
 		{
 			//avoid division by 0
 			if(w==1.0)
@@ -189,7 +185,6 @@ public class CM_COV_Object extends Data
 	
 	@Override
 	public String getDebugName() {
-		// TODO Auto-generated method stub
-		return null;
+		return "CM_COV_"+hashCode();
 	}
 }

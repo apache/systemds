@@ -82,7 +82,7 @@ public class FunctionStatement extends Statement
 	}
 	
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(_name + " = ");
 		
 		sb.append("function ( ");

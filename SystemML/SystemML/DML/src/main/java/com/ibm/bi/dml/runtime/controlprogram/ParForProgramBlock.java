@@ -932,7 +932,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
 			ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
-			ArrayList<String> vars = (sb!=null) ? sb.getReadOnlyParentVars() : null;
+			if( sb == null )
+				throw new DMLRuntimeException("ParFor statement block required for reasoning about data partitioning.");
+			
+			ArrayList<String> vars = sb.getReadOnlyParentVars();
 			for( String var : vars )
 			{
 				Data dat = ec.getVariable(var);

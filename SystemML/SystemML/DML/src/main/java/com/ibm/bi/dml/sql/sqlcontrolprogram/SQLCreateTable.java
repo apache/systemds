@@ -33,7 +33,7 @@ public class SQLCreateTable extends SQLCreateBase
 	
 	private String getCreateTableString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append("CREATE TABLE \"");
 		sb.append(this.get_tableName());
@@ -54,7 +54,7 @@ public class SQLCreateTable extends SQLCreateBase
 	
 	private String getInsertIntoString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		sb.append("INSERT INTO \"");
 		sb.append(this.get_tableName());

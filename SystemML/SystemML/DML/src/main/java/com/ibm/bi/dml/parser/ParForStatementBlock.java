@@ -312,9 +312,12 @@ public class ParForStatementBlock extends ForStatementBlock
 
 				if (LOG.isTraceEnabled())
 				{
-					if( dep[0] ) LOG.trace("PARFOR: output dependency detected for var '"+c._var+"'.");
-					if( dep[1] ) LOG.trace("PARFOR: data dependency detected for var '"+c._var+"'.");
-					if( dep[2] ) LOG.trace("PARFOR: anti dependency detected for var '"+c._var+"'.");
+					if( dep[0] ) 
+						LOG.trace("PARFOR: output dependency detected for var '"+c._var+"'.");
+					if( dep[1] ) 
+						LOG.trace("PARFOR: data dependency detected for var '"+c._var+"'.");
+					if( dep[2] ) 
+						LOG.trace("PARFOR: anti dependency detected for var '"+c._var+"'.");
 				}
 				
 				if( dep[0] || dep[1] || dep[2] )
@@ -1127,7 +1130,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 					
 				//early return if already found
-				if( ret ) break;
+				if( ret ) 
+					break;
 			}
 		}
 		
@@ -1267,25 +1271,33 @@ public class ParForStatementBlock extends ForStatementBlock
 				//max bound
 				if( f1._b.length>i )
 				{	
-					if( f1._b[i]>0 ) lmax += f1._b[i]*upper;
-					else             lmax += f1._b[i]*lower;								
+					if( f1._b[i]>0 ) 
+						lmax += f1._b[i]*upper;
+					else             
+						lmax += f1._b[i]*lower;								
 				}
 				if( f2._b.length>i )
 				{
-					if( f2._b[i]>0 ) lmax -= f2._b[i]*lower; 
-					else             lmax -= f2._b[i]*upper; 
+					if( f2._b[i]>0 ) 
+						lmax -= f2._b[i]*lower; 
+					else             
+						lmax -= f2._b[i]*upper; 
 				}
 				
 				//min bound (unequal indexes)
 				if( f1._b.length>i )
 				{
-					if( f1._b[i]>0 ) lmin += f1._b[i]*lower;
-					else             lmin += f1._b[i]*upper;				
+					if( f1._b[i]>0 ) 
+						lmin += f1._b[i]*lower;
+					else             
+						lmin += f1._b[i]*upper;				
 				}
 				if( f2._b.length>i )
 				{
-					if( f2._b[i]>0 ) lmin -= f2._b[i]*upper; 
-					else             lmin -= f2._b[i]*lower;
+					if( f2._b[i]>0 ) 
+						lmin -= f2._b[i]*upper; 
+					else             
+						lmin -= f2._b[i]*lower;
 				}
 			}			
 
@@ -1458,7 +1470,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( USE_FN_CACHE )
 		{
 			out = _fncache.get( getFunctionID(idat) );
-			if( out != null ) return out; 
+			if( out != null ) 
+				return out; 
 		}
 		
 		Expression sub1 = idat.getRowLowerBound();
@@ -1762,7 +1775,8 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( f1._vars[i]==null )
 			{
 				f1.removeVar(i);
-				i--; continue;
+				i--; 
+				continue;
 			}	
 		}
 	}

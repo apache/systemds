@@ -136,7 +136,7 @@ public class DMLProgram
 	}
 	
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		// for each namespace, display all functions
 		for (String namespaceKey : this.getNamespaces().keySet()){
@@ -449,7 +449,7 @@ public class DMLProgram
 				} catch (Exception e){
 					LOG.error(fsb.printBlockErrorLocation() + "could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 				}				
-				StringBuffer buff = new StringBuffer();
+				StringBuilder buff = new StringBuilder();
 				buff.append(scratchSpaceLoc);
 				buff.append(Lop.FILE_SEPARATOR);
 				buff.append(Lop.PROCESS_PREFIX);
@@ -636,7 +636,7 @@ public class DMLProgram
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("rmvar");

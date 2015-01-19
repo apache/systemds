@@ -33,17 +33,10 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
-		CPOperand mat, scalar;
-		if ( input1.getDataType() == DataType.MATRIX ) {
-			mat = input1;
-			scalar = input2;
-		}
-		else {
-			scalar = input1;
-			mat = input2;
-		}
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
+		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
+		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
 		MatrixBlock matBlock = ec.getMatrixInput(mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
@@ -53,10 +46,7 @@ public class MatrixScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.scalarOperations(sc_op, new MatrixBlock());
 		
-		matBlock = null;
 		ec.releaseMatrixInput(mat.getName());
-		
 		ec.setMatrixOutput(output.getName(), resultBlock);
-		resultBlock = null;
 	}
 }

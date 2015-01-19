@@ -303,10 +303,16 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public int compareTo(Object o) {
-		if(o instanceof MatrixCell)
-			return Double.compare(this.value, ((MatrixCell) o).value);
-		else
-			throw new RuntimeException("MatrixCell cannot compare with "+o.getClass());
+		if(!(o instanceof MatrixCell))
+			return -1;	
+		return Double.compare(this.value, ((MatrixCell) o).value);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof MatrixCell))
+			return false;	
+		return (value==((MatrixCell) o).value);
 	}
 
 	@Override
@@ -329,29 +335,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		throw new DMLRuntimeException("setMaxRow() can not be executed on cells");
 	}
 
-/*	public void combineOperations(MatrixValue thatValue, CollectMultipleConvertedOutputs multipleOutputs, 
-			Reporter reporter, DoubleWritable keyBuff, IntWritable valueBuff, Vector<Integer> outputIndexes)
-	throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
-	{
-		MatrixCell c2=checkType(thatValue);
-		keyBuff.set(this.value);
-		valueBuff.set((int)c2.getValue());
-		for(int i: outputIndexes)
-			multipleOutputs.collectOutput(keyBuff, valueBuff, i, reporter);
-	}*/
-
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue correction, MatrixValue newWithCorrection)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
-		/*
-		MatrixCell cor=checkType(correction);
-		MatrixCell newWithCor=checkType(newWithCorrection);
-		KahanObject buffer=new KahanObject(value, cor.value);
-		buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.value);
-		value=buffer._sum;
-		cor.value=buffer._correction;*/
 	}
 
 	@Override

@@ -93,11 +93,19 @@ public class DMLTranslator
 		
 		//each script sets its own block size, opt level etc
 		DMLConfig conf = ConfigurationManager.getConfig();
-		DMLBlockSize = conf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE );	
+		DMLTranslator.setDMLBlockSize( conf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ) );	
 		OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
 		Recompiler.reinitRecompiler(); //reinit rewriter according to opt level flags
 	}
 
+	/**
+	 * 
+	 * @param blocksize
+	 */
+	public static void setDMLBlockSize(int blocksize) {
+		DMLBlockSize = blocksize;
+	}
+	
 	/**
 	 * Validate parse tree
 	 * 
@@ -590,7 +598,7 @@ public class DMLTranslator
 	 */
 	private String getPredicate(SQLLops lop)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 			
 		//We need to count the subqueries in order to find positions of commas
 		int sqls = 0;
@@ -623,7 +631,7 @@ public class DMLTranslator
 	 * @param sb
 	 * @param addComma
 	 */
-	private void getSQLStatement(SQLLops lop, StringBuffer sb, boolean addComma)
+	private void getSQLStatement(SQLLops lop, StringBuilder sb, boolean addComma)
 	{
 		for(int i = 0; i < lop.getInputs().size(); i++)
 		{
@@ -1786,9 +1794,13 @@ public class DMLTranslator
 		if (passedSB instanceof WhileStatementBlock){
 			WhileStatement ws = (WhileStatement) ((WhileStatementBlock)passedSB).getStatement(0);
 			cp = ws.getConditionalPredicate();
-		} else if (passedSB instanceof IfStatementBlock){
+		} 
+		else if (passedSB instanceof IfStatementBlock) {
 			IfStatement ws = (IfStatement) ((IfStatementBlock)passedSB).getStatement(0);
 			cp = ws.getConditionalPredicate();
+		}
+		else {
+			throw new ParseException("ConditionalPredicate expected only for while or if statements.");
 		}
 		
 		VariableSet varsRead = cp.variablesRead();
@@ -2253,6 +2265,9 @@ public class DMLTranslator
 			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.POW) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.POW, left, right);
+		}
+		else {
+			throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
 		}
 		setIdentifierParams(currBop, source.getOutput());
 		currBop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());

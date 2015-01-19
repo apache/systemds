@@ -27,15 +27,20 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
+import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.ImportStatement;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatement;
+import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.DmlprogramContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.FunctionStatementContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.StatementContext;
@@ -84,22 +89,22 @@ public class DMLParserWrapper {
 	 * @param current a statement
 	 * @return corresponding statement block
 	 */
-	public static com.ibm.bi.dml.parser.StatementBlock getStatementBlock(com.ibm.bi.dml.parser.Statement current) {
-		com.ibm.bi.dml.parser.StatementBlock blk = null;
+	public static StatementBlock getStatementBlock(Statement current) {
+		StatementBlock blk = null;
 		if(current instanceof ParForStatement) {
-			blk = new com.ibm.bi.dml.parser.ParForStatementBlock();
+			blk = new ParForStatementBlock();
 			blk.addStatement(current);
 		}
 		else if(current instanceof ForStatement) {
-			blk = new com.ibm.bi.dml.parser.ForStatementBlock();
+			blk = new ForStatementBlock();
 			blk.addStatement(current);
 		}
 		else if(current instanceof IfStatement) {
-			blk = new com.ibm.bi.dml.parser.IfStatementBlock();
+			blk = new IfStatementBlock();
 			blk.addStatement(current);
 		}
 		else if(current instanceof WhileStatement) {
-			blk = new com.ibm.bi.dml.parser.WhileStatementBlock();
+			blk = new WhileStatementBlock();
 			blk.addStatement(current);
 		}
 		else {
@@ -113,7 +118,7 @@ public class DMLParserWrapper {
 	/**
 	 * This is needed because unit test is invoked in single jvm.
 	 */
-	private void cleanUpState() {
+	private static void cleanUpState() {
 		ERROR_LISTENER_INSTANCE = new CustomDmlErrorListener();
 		currentPath = null;
 		argVals = null;
@@ -140,7 +145,7 @@ public class DMLParserWrapper {
 		DMLParserWrapper parser = new DMLParserWrapper();
 		DMLParserWrapper.argVals = argVals;
 		prog = parser.doParse(fileName, dmlScript);
-		parser.cleanUpState();
+		DMLParserWrapper.cleanUpState(); //cleanup static state
 		
 		if(prog == null) {
 			throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");

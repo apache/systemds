@@ -339,7 +339,7 @@ public class StatementBlock extends LiveVariableAnalysis
 	}
 	
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("statements\n");
 		for (Statement s : _statements){
 			sb.append(s);
@@ -556,7 +556,7 @@ public class StatementBlock extends LiveVariableAnalysis
 						if (! (key.equals(DataExpression.IO_FILENAME) || key.equals(DataExpression.FORMAT_TYPE))) 
 							paramsOkay = false;
 					}
-					if (paramsOkay == false){
+					if( !paramsOkay ) {
 						raiseValidateError("Invalid parameters in write statement: " + os.toString(), conditional);
 					}
 				}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 public class SQLContainerProgramBlock implements SQLBlockContainer
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public SQLContainerProgramBlock()
@@ -32,7 +32,7 @@ public class SQLContainerProgramBlock implements SQLBlockContainer
 
 	public String generateSQLString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(ISQLBlock b : this.get_blocks())
 		{
 			sb.append("------------------- Block start -------------------\r\n");

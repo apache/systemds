@@ -182,30 +182,27 @@ public class ProgramConverter
 			Program prog = pb.getProgram();
 			ProgramBlock tmpPB = null;
 			
-			if( pb instanceof WhileProgramBlock || pb instanceof ForProgramBlock || pb instanceof ParForProgramBlock || pb instanceof IfProgramBlock )
+			if( pb instanceof WhileProgramBlock ) 
 			{
-				if( pb instanceof WhileProgramBlock ) 
-				{
-					tmpPB = createDeepCopyWhileProgramBlock((WhileProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
-				}
-				else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
-				{
-					tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy );
-				}
-				else if ( pb instanceof ParForProgramBlock )
-				{
-					ParForProgramBlock pfpb = (ParForProgramBlock) pb;
-					if( ParForProgramBlock.ALLOW_NESTED_PARALLELISM )
-						tmpPB = createDeepCopyParForProgramBlock(pfpb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
-					else 
-						tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
-				}				
-				else if ( pb instanceof IfProgramBlock )
-				{
-					tmpPB = createDeepCopyIfProgramBlock((IfProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
-				}
+				tmpPB = createDeepCopyWhileProgramBlock((WhileProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
+			}
+			else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
+			{
+				tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy );
+			}
+			else if( pb instanceof ParForProgramBlock )
+			{
+				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
+				if( ParForProgramBlock.ALLOW_NESTED_PARALLELISM )
+					tmpPB = createDeepCopyParForProgramBlock(pfpb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
+				else 
+					tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
+			}				
+			else if( pb instanceof IfProgramBlock )
+			{
+				tmpPB = createDeepCopyIfProgramBlock((IfProgramBlock) pb, pid, IDPrefix, prog, fnStack, plain, forceDeepCopy);
 			}	
-			else
+			else //last-level program block
 			{
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
 				

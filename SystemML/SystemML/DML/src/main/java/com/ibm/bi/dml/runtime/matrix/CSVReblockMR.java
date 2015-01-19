@@ -59,6 +59,10 @@ public class CSVReblockMR
 	public static final String ROWID_FILE_NAME="rowid.file.name";
 	public static final String SMALLEST_FILE_NAME_PER_INPUT="smallest.file.name.per.input";
 	
+	private CSVReblockMR() {
+		//prevent instantiation via private constructor
+	}
+	
 	public static final PathFilter hiddenFileFilter = new PathFilter(){
 	      public boolean accept(Path p){
 	        String name = p.getName(); 
@@ -111,7 +115,6 @@ public class CSVReblockMR
 			return filename+", "+fileOffset+", "+count;
 		}
 
-		
 		public int compareTo(OffsetCount that) {
 			int ret=this.filename.compareTo(that.filename);
 			if(ret!=0)
@@ -123,10 +126,20 @@ public class CSVReblockMR
 			else return 0;
 		}
 		
-		public int compareTo(Object that) {
-			return compareTo((OffsetCount)that);
+		@Override
+		public int compareTo(Object o) {
+			if( !(o instanceof OffsetCount) )
+				return -1;
+			return compareTo((OffsetCount)o);
 		}
 		
+		@Override
+		public boolean equals(Object o) {
+			if( !(o instanceof OffsetCount) )
+				return false;
+			OffsetCount that = (OffsetCount)o;
+			return (filename.equals(that.filename) && fileOffset==that.fileOffset);
+		}
 	}
 	
 	public static class BlockRow implements Writable

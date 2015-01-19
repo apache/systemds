@@ -75,11 +75,19 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			prob=p;
 			index=i;
 		}
+		
 		@Override
 		public int compareTo(SortElement other) {
 			return Double.compare(this.prob, other.prob);
 		}
 		
+		@Override
+		public boolean equals(Object o) {
+			if( !(o instanceof SortElement) )
+				return false;
+			SortElement that = (SortElement)o;
+			return (prob == that.prob);
+		}
 	}
 	
 	private static void getPointsInEachPartFile(long[] counts, double[] probs, HashMap<Integer, 

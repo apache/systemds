@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 public class WeightedPair extends WeightedCell 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private double other=0;
@@ -69,19 +69,28 @@ public class WeightedPair extends WeightedCell
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		if(o instanceof WeightedPair)
-		{
-			WeightedPair that=(WeightedPair)o;
-			if(this.value!=that.value)
-				Double.compare(this.value, that.value);
-			else if(this.other!=that.other)
-				Double.compare(this.other, that.other);
-			else if(this.weight!=that.weight)
-				Double.compare(this.weight, that.weight);
-			else return 0;
-		}
-		return -1;
+	public int compareTo(Object o) 
+	{
+		if( !(o instanceof WeightedPair) )
+			return -1;
+	
+		WeightedPair that = (WeightedPair)o;
+		if(this.value!=that.value)
+			return Double.compare(this.value, that.value);
+		else if(this.other!=that.other)
+			return Double.compare(this.other, that.other);
+		else if(this.weight!=that.weight)
+			return Double.compare(this.weight, that.weight);
+		else return 0;
 	}
 	
+	@Override 
+	public boolean equals(Object o)
+	{	
+		if( !(o instanceof WeightedPair) )
+			return false;
+		
+		WeightedPair that = (WeightedPair)o;
+		return (value==that.value && other==that.other && weight == that.weight);
+	}
 }

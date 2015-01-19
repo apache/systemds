@@ -55,7 +55,7 @@ public class SQLWhileProgramBlock implements SQLBlockContainer
 	
 	public String generateSQLString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("WHILE ( ");
 		sb.append(get_predicate());
 		sb.append(" ) LOOP\r\n");

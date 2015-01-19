@@ -63,6 +63,10 @@ public class Connection
 	
 	private DMLConfig _conf = null;
 	
+	/**
+	 * Connection constructor, starting point for any other JMLC API calls.
+	 * 
+	 */
 	public Connection()
 	{
 		//setup basic parameters for embedded execution

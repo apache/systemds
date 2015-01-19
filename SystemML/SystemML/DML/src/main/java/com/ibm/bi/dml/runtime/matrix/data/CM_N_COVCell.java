@@ -247,13 +247,23 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		if(o instanceof CM_N_COVCell)
-		{
-			CM_N_COVCell that=(CM_N_COVCell)o;
-			return cm.compareTo(that.cm);
-		}
-		return -1;
+	public int compareTo(Object o) 
+	{
+		if(!(o instanceof CM_N_COVCell))
+			return -1;
+		
+		CM_N_COVCell that=(CM_N_COVCell)o;
+		return cm.compareTo(that.cm);
+	}
+	
+	@Override 
+	public boolean equals(Object o)
+	{
+		if(!(o instanceof CM_N_COVCell))
+			return false;
+		
+		CM_N_COVCell that=(CM_N_COVCell)o;
+		return (cm==that.cm);
 	}
 	
 	public CM_COV_Object getCM_N_COVObject()

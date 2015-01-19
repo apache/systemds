@@ -1084,7 +1084,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				config.parseSystemDocuments(dmlCfg.getConfig_file_name());
 				
 				//ensure unique working directory for nimble output
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
 				sb.append( Lop.FILE_SEPARATOR );
 				sb.append( Lop.PROCESS_PREFIX );

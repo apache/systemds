@@ -365,7 +365,7 @@ public class NetezzaConnector
 	            	reader.readLine();
 	            	line = reader.readLine();
 	            }
-	            StringBuffer query = new StringBuffer();
+	            StringBuilder query = new StringBuilder();
 	            while(line != null)
 	            {
 	        		String cellStr = line.trim();							

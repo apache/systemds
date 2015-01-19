@@ -176,7 +176,7 @@ public class OutputStatement extends Statement
 	}
 	
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
 		 sb.append( _id.toString() + ", " +  _paramsExpr.getVarParam(DataExpression.IO_FILENAME).toString());
 		 for (String key : _paramsExpr.getVarParams().keySet()){

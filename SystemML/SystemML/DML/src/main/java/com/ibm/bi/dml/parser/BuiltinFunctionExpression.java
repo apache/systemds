@@ -931,7 +931,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer(_opcode.toString() + "(" + _args[0].toString());
+		StringBuilder sb = new StringBuilder(_opcode.toString() + "(" + _args[0].toString());
 		for(int i=1; i < _args.length; i++) {
 			sb.append(",");
 			sb.append(_args[i].toString());

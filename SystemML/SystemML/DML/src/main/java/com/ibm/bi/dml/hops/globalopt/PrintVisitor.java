@@ -23,7 +23,6 @@ public class PrintVisitor implements HopsVisitor
 		this.varName = string;
 	}
 
-	//TODO: replace string concatenation by StringBuilder oder StringBuffer
 	@Override
 	public Flag preVisit(Hop hops) {
 		

@@ -42,17 +42,18 @@ public class WriteCSVMR
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-
 	private static final Log LOG = LogFactory.getLog(WriteCSVMR.class.getName());
+	
+	private WriteCSVMR() {
+		//prevent instantiation via private constructor
+	}
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String csvWriteInstructions, int numReducers, int replication, 
 			byte[] resultIndexes, String[] outputs) 
 	throws Exception
 	{
-		//assert(inputs.length==outputs.length);
-		JobConf job;
-		job = new JobConf(WriteCSVMR.class);
+		JobConf job = new JobConf(WriteCSVMR.class);
 		job.setJobName("WriteCSV-MR");
 		
 		byte[] realIndexes=new byte[inputs.length];

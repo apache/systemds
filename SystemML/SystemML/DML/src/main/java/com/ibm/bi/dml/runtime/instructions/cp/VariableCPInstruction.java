@@ -1036,7 +1036,7 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);

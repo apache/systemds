@@ -4298,7 +4298,7 @@ public class Dag<N extends Lop>
 			for (int i = 0; i < v.size(); i++) {
 				// System.out.print(sortedNodes.get(i).getID() + "("
 				// + levelmap.get(sortedNodes.get(i).getID()) + "), ");
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				sb.append(v.get(i).getID());
 				sb.append("(");
 				sb.append(v.get(i).getLevel());

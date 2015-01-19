@@ -191,9 +191,6 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract void unaryOperationsInPlace(UnaryOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException;
 
-	/*public abstract void combineOperations(MatrixValue thatValue, CollectMultipleConvertedOutputs multipleOutputs, 
-			Reporter reporter, DoubleWritable keyBuff, IntWritable valueBuff, Vector<Integer> outputIndexes) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException, IOException;*/
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
 			MatrixValue newWithCorrection)	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	

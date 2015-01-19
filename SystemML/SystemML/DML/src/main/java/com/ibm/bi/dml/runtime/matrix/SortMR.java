@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.Partitioner;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -51,7 +50,6 @@ import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
-import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -67,6 +65,12 @@ public class SortMR
   public static final String INSTRUCTION = "instruction.before.sort";
   static final String VALUE_IS_WEIGHT="value.is.weight";
   private static final Log LOG = LogFactory.getLog(SortMR.class.getName());
+  
+  	private SortMR() {
+		//prevent instantiation via private constructor
+	}
+  
+  
   /**
    * A partitioner that splits text keys into roughly equal partitions
    * in a global sorted order.
@@ -106,8 +110,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		} 
 		
 		reader.close();
-	//	System.out.println("read Paritions: "+parts);
-	//	System.out.println("num reducers: "+job.getNumReduceTasks());
 		return parts;
     }
 
@@ -128,8 +130,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     }
 
     public int getPartition(K key, V value, int numPartitions) {
-    //	System.out.println("num paritions in getPartition: "+numPartitions);
-  //  	System.out.println(key+" is in parititon: "+findPartition(key));
       return findPartition(key)%numPartitions;
     }
 
@@ -218,8 +218,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		{
 			V value=values.next();
 			out.collect(key, value);
-		//	LOG.info("** sort result: "+key+": "+value);
-			// System.out.println("sort "+count+": "+key+": "+value);
 			if(valueIsWeight)
 				sum+=((IntWritable)value).get();
 			else
@@ -235,12 +233,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 			int replication, String output, OutputInfo outputInfo, boolean valueIsWeight) 
 	  throws Exception 
 	  {
-		//  if(!inputInfo.inputKeyClass.equals(outputInfo.outputKeyClass) 
-		//		  || !inputInfo.inputValueClass.equals(outputInfo.outputValueClass))
-		//	  throw new Exception("input key value pair ("+inputInfo.inputKeyClass+", "
-		//			  +inputInfo.inputValueClass+") does not match output key value pair ("+outputInfo.outputKeyClass+", "
-		//			  +outputInfo.outputValueClass+")!");
-		
 	    JobConf job = new JobConf(SortMR.class);
 	    Path inputDir = new Path(input);
 	    inputDir = inputDir.makeQualified(inputDir.getFileSystem(job));
@@ -256,8 +248,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
 	    //detect whether this is running in local mode or not, since if local mode, the number of reducers are hard set to 1 no matter what
-	//    System.out.println(job.get("fs.default.name"));
-	//    System.out.println(job.get("mapred.job.tracker"));
 	    if(job.get("mapred.job.tracker").indexOf("local")>=0)
 	    	job.setNumReduceTasks(1);
 	    else
@@ -284,7 +274,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	  //  System.out.println("num reducers: "+job.getNumReduceTasks());
 	    job.setBoolean(VALUE_IS_WEIGHT, valueIsWeight);
 	    
-		MatrixCharacteristics s[] = new MatrixCharacteristics[1];
+		MatrixCharacteristics[] s = new MatrixCharacteristics[1];
 		s[0] = new MatrixCharacteristics(rlen, clen, brlen, bclen);
 		
 	    // By default, the job executes in "cluster" mode.
@@ -306,8 +296,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    RunningJob runjob=JobClient.runJob(job);
 		Group group=runjob.getCounters().getGroup(NUM_VALUES_PREFIX);
 		numReducers=job.getNumReduceTasks();
-	//	System.out.println("num reducers: "+job.getNumReduceTasks());
-		
+
 		long[] counts=new long[numReducers];
 		long total=0;
 		for(int i=0; i<numReducers; i++)
@@ -375,88 +364,4 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
   }
   */
   
-  /**
-   * @param args
-   */
-  
-  public static void testWithoutWeights(String[] args)throws Exception 
-  {
-	  if(args.length<4)
-	  {
-		  System.err.println("<input> <output> <numReducers> <selectVector>");
-		  return;
-	  }
-    
-    InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
-    OutputInfo outputInfo=OutputInfo.OutputInfoForSortOutput;
-    
-    MRJobInstruction sort_dummy = new MRJobInstruction(JobType.SORT);
-    JobReturn ret=runJob(sort_dummy, args[0], InputInfo.BinaryBlockInputInfo, 100, 1, 10, 1, "combineunary:::0:DOUBLE:::1:DOUBLE", 
-    		Integer.parseInt(args[2]), 1, args[1], outputInfo, false);
-   // System.out.println(MapReduceTool.pickValue(args[1], (NumItemsByEachReducerMetaData) ret.otherMetadata[0], 0.5));
-    inputinfo.inputFormatClass=PickFromCompactInputFormat.class;
-    inputinfo.inputKeyClass=DoubleWritable.class;
-    inputinfo.inputValueClass=IntWritable.class;
-    inputinfo.metadata=ret.getMetaData(0);
-    
-    String rrins="valuepick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE";
-    
-    MatrixCharacteristics matchar = ((MatrixDimensionsMetaData)ret.getMetaData(0)).getMatrixCharacteristics();
-    MRJobInstruction dummy = new MRJobInstruction(JobType.GMR);
-    GMR.runJob(dummy, new String[]{args[1], args[3]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
-    		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
-    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, false, 
-    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
-    
-    rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
-    GMR.runJob(dummy, new String[]{args[1]}, new InputInfo[]{inputinfo}, 
-    		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
-    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, false,
-    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
-  }
-  
-  public static void testWithWeights(String[] args)throws Exception 
-  {
-	  if(args.length<5)
-	  {
-		  System.err.println("<input> <inputweight> <output> <numReducers> <selectVector>");
-		  return;
-	  }
-	  
-    OutputInfo outputInfo=OutputInfo.OutputInfoForSortInput;
-    
-    MRJobInstruction dummy = new MRJobInstruction(JobType.COMBINE);
-    CombineMR.runJob(dummy, new String[]{args[0], args[1]}, new InputInfo[]{InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo}, 
-    		new long[]{100, 100}, new long[]{1, 1}, new int[]{10, 10}, new int[]{1, 1}, 
-    		"combinebinary:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE", Integer.parseInt(args[3]), 1, new byte[]{2}, 
-    		new String[]{"temp"}, new OutputInfo[]{outputInfo});
-    
-    InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
-    outputInfo=OutputInfo.OutputInfoForSortOutput;
-    MRJobInstruction sort_dummy = new MRJobInstruction(JobType.SORT);
-    JobReturn ret=runJob(sort_dummy, "temp", inputinfo, 100, 1, 10, 1, null, Integer.parseInt(args[3]), 1, args[2], outputInfo, true);
-
-   // System.out.println(MapReduceTool.pickValue(args[2], (NumItemsByEachReducerMetaData) ret.otherMetadata[0], 0.5));
-    inputinfo.inputFormatClass=PickFromCompactInputFormat.class;
-    inputinfo.inputKeyClass=DoubleWritable.class;
-    inputinfo.inputValueClass=IntWritable.class;
-    inputinfo.metadata=ret.getMetaData(0);
-    
-    String rrins="valuepick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE";
-    
-    MatrixCharacteristics matchar = ((MatrixDimensionsMetaData)ret.getMetaData(0)).getMatrixCharacteristics();
-    dummy = new MRJobInstruction(JobType.GMR);
-
-    GMR.runJob(dummy, new String[]{args[2], args[4]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
-    		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
-    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, false,
-    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
-    
-    rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
-    GMR.runJob(dummy, new String[]{args[2]}, new InputInfo[]{inputinfo}, 
-    		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
-    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, false,
-    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
-  }
-
 }

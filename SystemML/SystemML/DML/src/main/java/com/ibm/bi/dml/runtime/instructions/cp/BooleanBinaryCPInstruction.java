@@ -35,32 +35,27 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
 		
 		// Boolean operations must be performed on BOOLEAN
-		ValueType vt1, vt2, vt3;
-		vt1 = vt2 = vt3 = null;
-		vt1 = in1.getValueType();
-		if ( in2 != null )
-			vt2 = in2.getValueType();
-		vt3 = out.getValueType();
+		ValueType vt1 = in1.getValueType();
+		ValueType vt2 = in2.getValueType();
+		ValueType vt3 = out.getValueType();
 		if ( vt1 != ValueType.BOOLEAN || vt3 != ValueType.BOOLEAN 
 				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
-		
 		
 		// Determine appropriate Function Object based on opcode	
 		return new BooleanBinaryCPInstruction(getBinaryOperator(opcode), in1, in2, out, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-		ScalarObject so2 = null;
-		if ( input2 != null ) 
-			so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
-		ScalarObject sores = null;
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
+		ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
+		ScalarObject so2 = ec.getScalarInput( input2.getName(), input2.getValueType(), input2.isLiteral() );
 		
 		BinaryOperator dop = (BinaryOperator) _optr;
 		boolean rval = dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue());
-		sores = (ScalarObject) new BooleanObject(rval);
+		ScalarObject sores = (ScalarObject) new BooleanObject(rval);
 		
 		ec.setScalarOutput(output.getName(), sores);
 	}

@@ -54,6 +54,11 @@ public class CombineMR
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 			
 	private static final Log LOG = LogFactory.getLog(CombineMR.class.getName());
+	
+	private CombineMR() {
+		//prevent instantiation via private constructor
+	}
+	
 	public static class InnerReducer extends ReduceBase
 	implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, WeightedPair>
 	{

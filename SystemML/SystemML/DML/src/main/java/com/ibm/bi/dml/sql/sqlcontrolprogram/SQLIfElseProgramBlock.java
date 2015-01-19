@@ -65,7 +65,7 @@ public class SQLIfElseProgramBlock implements ISQLBlock
 
 	@Override
 	public String generateSQLString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("IF ( ");
 		sb.append(get_predicate());
 		sb.append(" ) THEN\r\n");

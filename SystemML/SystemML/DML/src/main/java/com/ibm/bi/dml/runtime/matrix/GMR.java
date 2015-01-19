@@ -66,6 +66,12 @@ public class GMR
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	private static final Log LOG = LogFactory.getLog(GMR.class.getName());
+		
+	private GMR() {
+		//prevent instantiation via private constructor
+	}
 	
 	/**
 	 * inBlockRepresentation: indicate whether to use block representation or cell representation
@@ -85,7 +91,6 @@ public class GMR
 	 * outputs: the names for the output directories, one for each result index
 	 * outputInfos: output format information for the output matrices
 	 */
-	private static final Log LOG = LogFactory.getLog(GMR.class.getName());
 	
 	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 

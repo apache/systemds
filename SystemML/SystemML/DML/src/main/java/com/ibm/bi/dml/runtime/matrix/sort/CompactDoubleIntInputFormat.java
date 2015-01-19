@@ -138,7 +138,11 @@ public class CompactDoubleIntInputFormat extends FileInputFormat<MatrixIndexes, 
 	    	currentStream = fs.open(path);
 	    	int partIndex=getIndexInTheArray(path.getName());
 	    	String arrStr=job.get(SELECTED_POINTS_PREFIX+partIndex);
-	    	if(arrStr==null || arrStr.isEmpty()) noRecordsNeeded=true;
+	    	if(arrStr==null || arrStr.isEmpty()) {
+	    		noRecordsNeeded=true;
+	    		return;
+	    	}
+	    	
 	    	String[] strs=arrStr.split(",");
 	    	pos=new int[strs.length];
 	    	indexes=new int[strs.length];

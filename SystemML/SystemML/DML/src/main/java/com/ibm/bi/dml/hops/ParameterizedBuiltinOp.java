@@ -727,8 +727,9 @@ public class ParameterizedBuiltinOp extends Hop
 				ret = (fnHop instanceof LiteralOp && Statement.GAGG_FN_SUM.equals(((LiteralOp)fnHop).getStringValue()) );
 			}
 		}
-		catch(Exception ex){
+		catch(Exception ex) {
 			//silent false
+			LOG.warn("Check for transpose-safeness failed, continue assuming false.", ex);
 		}
 		
 		return ret;	
@@ -753,6 +754,7 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 		catch(Exception ex){
 			//silent false
+			LOG.warn("Check for count function failed, continue assuming false.", ex);
 		}
 		
 		return ret;

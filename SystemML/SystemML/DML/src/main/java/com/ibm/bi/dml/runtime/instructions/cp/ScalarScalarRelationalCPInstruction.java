@@ -29,35 +29,15 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException{
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException
+	{
 		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
 		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) _optr;
 		
-		/*if ( input1.getValueType() == ValueType.INT && input2.getValueType() == ValueType.INT ) {
-			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getIntValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( input1.getValueType() == ValueType.DOUBLE && input2.getValueType() == ValueType.DOUBLE ) {
-			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getDoubleValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( input1.getValueType() == ValueType.INT && input2.getValueType() == ValueType.DOUBLE ) {
-			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getDoubleValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( input1.getValueType() == ValueType.DOUBLE && input2.getValueType() == ValueType.INT ) {
-			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getIntValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else if ( input1.getValueType() == ValueType.BOOLEAN && input2.getValueType() == ValueType.BOOLEAN ) {
-			boolean rval = dop.fn.compare ( so1.getBooleanValue(), so2.getBooleanValue() );
-			sores = (ScalarObject) new BooleanObject(rval); 
-		}
-		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
-		*/
 		if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
 			boolean rval = dop.fn.compare ( so1.getLongValue(), so2.getLongValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 

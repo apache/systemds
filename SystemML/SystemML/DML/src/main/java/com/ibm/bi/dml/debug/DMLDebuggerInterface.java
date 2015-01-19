@@ -24,13 +24,14 @@ import org.apache.commons.cli.ParseException;
 /**
  * Class implements a command line interface (CLI) for the DML language debugger 
  */
-public class DMLDebuggerInterface {
+public class DMLDebuggerInterface 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//SystemML debugger functionality options
-	private static Options options; 
+	private Options options; 
 	
 	/**
 	 * Constructor for a DML debugger CLI 

@@ -123,9 +123,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		
 		//load the offset mapping
 		byte matrixIndex=representativeMatrixes.get(0);
-		try {
-			
-			//Path[] paths=DistributedCache.getLocalCacheFiles(job);
+		try 
+		{
 			FileSystem fs = FileSystem.get(job);
 			Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
 			String filename=thisPath.toString();
@@ -137,20 +136,16 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 			OffsetCount value=new OffsetCount();
 			Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
-			try {
-				while (reader.next(key, value)) {
-					if(key.get()==matrixIndex && filename.equals(value.filename))
-						offsetMap.put(value.fileOffset, value.count);
-				}
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			} 
-			
+			while (reader.next(key, value)) {
+				if(key.get()==matrixIndex && filename.equals(value.filename))
+					offsetMap.put(value.fileOffset, value.count);
+			}
 			reader.close();
-			
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		
 		CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
 		delim = Pattern.quote(ins.delim);
 		ignoreFirstLine=ins.hasHeader;

@@ -140,8 +140,6 @@ public class MRJobConfiguration
 	private static final String PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG="partitioning.output.keep.indexes";
 	
 	//result merge info
-	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
-	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_COLUMN_CONFIG="partitioning.input.block.num.column";
 	private static final String RESULTMERGE_INPUT_INFO_CONFIG="resultmerge.input.inputinfo";
 	private static final String RESULTMERGE_COMPARE_FILENAME_CONFIG="resultmerge.compare.filename";
 	private static final String RESULTMERGE_STAGING_DIR_CONFIG="resultmerge.staging.dir";
@@ -228,10 +226,7 @@ public class MRJobConfiguration
 	
 	public static final int getMiscMemRequired(JobConf job)
 	{
-		int ret=job.getInt("io.file.buffer.size", 4096);
-	//	ret+=job.getInt("io.sort.mb", 0)*1048576;
-	//	ret+=job.getInt("fs.inmemory.size.mb", 0)*1048576;
-		return ret;
+		return job.getInt("io.file.buffer.size", 4096);
 	}
 	
 	public static final int getJVMMaxMemSize(JobConf job)
@@ -296,26 +291,7 @@ public class MRJobConfiguration
 		else
 			return MatrixCell.class;
 	}
-/*	
-	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
-			int brlen, int bclen)
-	{
-		if(targetToBlock)
-			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.BLOCK);
-		else
-			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL);
-	}
-	
-	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
-			int brlen, int bclen, boolean targetToWeightedCell)
-	{
-		assert(!targetToBlock || !targetToWeightedCell);
-		if(targetToWeightedCell)
-			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.WEIGHTEDCELL);
-		else
-			return getConverterClass(inputinfo, targetToBlock, brlen, bclen);
-	}
-*/	
+
 	public static enum ConvertTarget{CELL, BLOCK, WEIGHTEDCELL, CSVWRITE}
 	
 	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, int brlen, int bclen, ConvertTarget target)
@@ -380,41 +356,6 @@ public class MRJobConfiguration
 	
 		return converterClass;
 	}
-	/*
-	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
-			int brlen, int bclen, boolean targetToWeightedCell)
-	{
-		assert(!targetToBlock || !targetToWeightedCell);
-		Class<? extends Converter> converterClass;
-		if(inputinfo.inputValueClass.equals(MatrixCell.class))
-		{
-			if(targetToBlock)
-				throw new RuntimeException("cannot convert binary cell to binary block representation implicitly");
-			else if(targetToWeightedCell)
-				converterClass=AddDummyWeightConverter.class;
-			else
-				converterClass=IdenticalConverter.class;
-		}else if(inputinfo.inputValueClass.equals(MatrixBlock.class))
-		{
-			if(targetToBlock)
-				converterClass=IdenticalConverter.class;
-			else if(targetToWeightedCell)
-				converterClass=AddDummyWeightConverter.class;
-			else
-				converterClass=BinaryBlockToBinaryCellConverter.class;
-		}else if(inputinfo.inputValueClass.equals(Text.class))
-		{
-			if(targetToBlock && (brlen>1 || bclen>1))
-				throw new RuntimeException("cannot convert text cell to binary block representation implicitly");
-			else if(targetToWeightedCell)
-				converterClass=AddDummyWeightConverter.class;
-			else
-				converterClass=TextToBinaryCellConverter.class;
-		}else
-			converterClass=IdenticalConverter.class;
-		
-		return converterClass;
-	}*/
 	
 	/**
 	 * Unique working dirs required for thread-safe submission of parallel jobs;
@@ -485,19 +426,10 @@ public class MRJobConfiguration
 		             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR;
 		job.set( "mapreduce.jobtracker.staging.root.dir", dir );
 	}
-	
-/*	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
-			int brlen, int bclen)
-	{
-		setInputInfo(job, input, inputinfo, targetToBlock, brlen, bclen, false);
-	}*/
-	
-	//public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
-	//		int brlen, int bclen, boolean targetToWeightedCell)
+
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, 
 			int brlen, int bclen, ConvertTarget target)
 	{
-		//Class<? extends Converter> converterClass=getConverterClass(inputinfo, targetToBlock, brlen, bclen, targetToWeightedCell);
 		Class<? extends Converter> converterClass=getConverterClass(inputinfo, brlen, bclen, target);
 		job.setClass(INPUT_CONVERTER_CLASS_PREFIX_CONFIG+input, converterClass, Converter.class);
 		job.setClass(INPUT_KEY_CLASS_PREFIX_CONFIG+input, inputinfo.inputKeyClass, Writable.class);
@@ -857,11 +789,6 @@ public class MRJobConfiguration
 			Path p = new Path(matrices[i]).makeQualified(fs);
 			if(thisFile.toUri().compareTo(p.toUri())==0 || thisDir.toUri().compareTo(p.toUri())==0)
 				representativeMatrixes.add(indexes[i]);
-			/*if(thisDirName.endsWith(matrices[i]) || thisFileName.endsWith(matrices[i]))
-			{
-				representativeMatrixes.add(indexes[i]);
-				//LOG.info("add to representative: "+indexes[i]);
-			}*/
 		}
 		return representativeMatrixes;
 	}
@@ -1017,7 +944,6 @@ public class MRJobConfiguration
 	{
 		job.setLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+matrixIndex, rlen);
 		job.setLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, clen);
-		//System.out.println("matrix "+matrixIndex+" with dimension: "+rlen+", "+clen);
 	}
 	
 	public static void setMatrixDimension(JobConf job, byte matrixIndex, long rlen, long clen, long nnz)
@@ -1025,7 +951,6 @@ public class MRJobConfiguration
 		job.setLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+matrixIndex, rlen);
 		job.setLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, clen);
 		job.setLong(INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG+matrixIndex, nnz);
-		//System.out.println("matrix "+matrixIndex+" with dimension: "+rlen+", "+clen);
 	}
 	
 	public static String[] getInputPaths(JobConf job)
@@ -1054,7 +979,6 @@ public class MRJobConfiguration
 	{
 		job.setInt(INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+matrixIndex, brlen);
 		job.setInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+matrixIndex, bclen);
-		//System.out.println("matrix "+matrixIndex+" with block size: "+brlen+", "+bclen);
 	}
 	
 	public static int getNumRowsPerBlock(JobConf job, byte matrixIndex)
@@ -1074,7 +998,7 @@ public class MRJobConfiguration
 	
 	public static void handleRecordReaderInstrucion(JobConf job, String recordReaderInstruction, String[] inputs, InputInfo[] inputInfos)
 	{
-		//TODO
+		//do nothing, not used currently
 	}
 	
 	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
@@ -1145,22 +1069,6 @@ public class MRJobConfiguration
 	public static PDataPartitionFormat[] getInputPartitionFormats(JobConf job) {
 		return MRJobConfiguration.csv2PFormat(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
 	}
-	
-/*	
-	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-			boolean inBlockRepresentation, int[] brlens, int[] bclens)
-	throws Exception
-	{
-		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, inBlockRepresentation, brlens, bclens, true);
-	}
-	
-	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-			boolean inBlockRepresentation, int[] brlens, int[] bclens, boolean setConverter)
-	throws Exception
-	{
-		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, inBlockRepresentation, brlens, bclens, setConverter, false);
-	}
-*/
 	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			int[] brlens, int[] bclens, boolean setConverter, ConvertTarget target) 
@@ -1307,8 +1215,6 @@ public class MRJobConfiguration
 		FileOutputFormat.setOutputPath(job, tempOutputPath);
 		MapReduceTool.deleteFileIfExistOnHDFS(tempOutputPath, job);
 		
-	/*	FileOutputFormat.setCompressOutput(job, true);
-		SequenceFileOutputFormat.setOutputCompressionType(job, SequenceFile.CompressionType.BLOCK); */
 	}
 	
 	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
@@ -1368,11 +1274,6 @@ public class MRJobConfiguration
 			n=(int) Math.min(n, numReducerGroups);
 		job.setNumReduceTasks(n); 
 	}
-	
-/*	public static long getNumBlocks(MatrixCharacteristics dim)
-	{
-		return (long) (Math.ceil((double)dim.numRows/(double)dim.numRowsPerBlock)*Math.ceil((double)dim.numColumns/(double)dim.numColumnsPerBlock));
-	}*/
 	
 	public static class MatrixChar_N_ReducerGroups
 	{
@@ -1439,17 +1340,6 @@ public class MRJobConfiguration
 							dims.get(tempIns.input));
 					intermediateMatrixIndexes.add(tempIns.input);
 				}
-				/*if(ins instanceof MatrixReshapeMRInstruction)
-				{
-					MatrixReshapeMRInstruction tempIns=(MatrixReshapeMRInstruction) ins;
-					MatrixCharacteristics mcIn = dims.get(tempIns.input);
-					setIntermediateMatrixCharactristics(job, tempIns.input, mcIn);
-					intermediateMatrixIndexes.add(tempIns.input);
-					
-					//TODO
-					setIntermediateMatrixCharactristics(job, tempIns.output, new MatrixCharacteristics(tempIns.getNumRows(),tempIns.getNumColunms(),mcIn.get_rows_per_block(), mcIn.get_cols_per_block(), mcIn.getNonZeros()));
-					intermediateMatrixIndexes.add(tempIns.output);
-				}*/
 				else if(ins instanceof AppendMInstruction)
 				{
 					AppendMInstruction tempIns=(AppendMInstruction) ins;
@@ -1633,9 +1523,6 @@ public class MRJobConfiguration
 	public static void setMatrixCharactristicsForOutput(JobConf job,
 			byte tag, MatrixCharacteristics dim)
 	{
-		//if (dim == null){
-		//	System.out.println("setMatrixCharactristicsForOutput:dim is NULL");
-		//}
 		job.setLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
 		job.setLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
 		job.setInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
@@ -1734,10 +1621,8 @@ public class MRJobConfiguration
 		dataGenIns = MRInstructionParser.parseDataGenInstructions(randInstructions);
 		getIndexes(dataGenIns, indexesInMapper);
 		
-	//	System.out.println("indexes used in the mapper: "+indexesInMapper);
 		Instruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
 		getIndexes(insMapper, indexesInMapper);
-	//	System.out.println("indexes used in the mapper: "+indexesInMapper);
 		
 		ReblockInstruction[] reblockIns = null;
 		reblockIns = MRInstructionParser.parseReblockInstructions(reblockInstructions);
@@ -1746,39 +1631,21 @@ public class MRJobConfiguration
 		Instruction[] insReducer = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
 		HashSet<Byte> indexesInReducer=new HashSet<Byte>();
 		getIndexes(insReducer, indexesInReducer);
-	//	System.out.println("indexes used in the reducer: "+indexesInReducer);
 		
 		insReducer = InstructionParser.parseMixedInstructions(otherInstructionsInReducer);
 		getIndexes(insReducer, indexesInReducer);
-	//	System.out.println("indexes used in the reducer: "+indexesInReducer);
 	
 		for(byte ind: resultIndexes)
 			indexesInReducer.add(ind);
-	//	System.out.println("indexes used in the reducer: "+indexesInReducer);
 		
 		indexesInMapper.retainAll(indexesInReducer);
-	//	System.out.println("indexes needed to be output: "+indexesInMapper);
 		
 		job.set(OUTPUT_INDEXES_IN_MAPPER_CONFIG, getIndexesString(indexesInMapper));
 		return indexesInMapper;
 	}
 	
 	public static CollectMultipleConvertedOutputs getMultipleConvertedOutputs(JobConf job)
-	{	
-	/*	byte[] resultIndexes=MRJobConfiguration.getResultIndexes(job);
-		HashMap<Byte, Converter> outputConverters=new HashMap<Byte, Converter>(resultIndexes.length);
-		HashMap<Byte, MatrixCharacteristics> stats=new HashMap<Byte, MatrixCharacteristics>();
-		for(byte output: resultIndexes)
-		{
-			Converter conv=getOuputConverter(job, output);
-			outputConverters.put(output, conv);
-			stats.put(output, MRJobConfiguration.getMatrixCharactristicsForOutput(job, output));
-		}
-		
-		MultipleOutputs multipleOutputs=new MultipleOutputs(job);
-		
-		return new CollectMultipleConvertedOutputs(outputConverters, stats, multipleOutputs);*/
-	
+	{		
 		byte[] resultIndexes=MRJobConfiguration.getResultIndexes(job);
 		Converter[] outputConverters=new Converter[resultIndexes.length];
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
@@ -1913,4 +1780,3 @@ public class MRJobConfiguration
 		job.set("io.serializations", frameworkClassBB+","+frameworkList);
 	}
 }
-

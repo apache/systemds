@@ -116,7 +116,8 @@ public class DataExpression extends DataIdentifier
 		//	 (assign built-in function op if function is built-in)
 		Expression.DataOp dop = null;
 		DataExpression dataExpr = null;
-		if (functionName.equals("read") || functionName.equals("readMM") || functionName.equals("read.csv")){
+		if (functionName.equals("read") || functionName.equals("readMM") || functionName.equals("read.csv"))
+		{
 			dop = Expression.DataOp.READ;
 			dataExpr = new DataExpression(dop, new HashMap<String,Expression>(), filename, blp, bcp, elp, ecp);
 			
@@ -761,7 +762,7 @@ public class DataExpression extends DataIdentifier
 				
 				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
 				//		as ONLY valid parameters
-				if (inferredFormatType == false){
+				if( !inferredFormatType ){
 					for (String key : _varParams.keySet()){
 						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
 								|| key.equals(DELIM_HAS_HEADER_ROW) || key.equals(DELIM_DELIMITER) 

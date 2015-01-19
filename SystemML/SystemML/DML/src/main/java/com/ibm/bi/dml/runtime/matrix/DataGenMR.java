@@ -63,7 +63,13 @@ public class DataGenMR
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
+	
+	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
+	
+	private DataGenMR() {
+		//prevent instantiation via private constructor
+	}
+	
 	/**
 	 * <p>Starts a Rand MapReduce job which will produce one or more random objects.</p>
 	 * 
@@ -84,7 +90,6 @@ public class DataGenMR
 	 * @return matrix characteristics for each random object
 	 * @throws Exception if an error occurred in the MapReduce phase
 	 */
-	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] dataGenInstructions, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
@@ -92,8 +97,7 @@ public class DataGenMR
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
-		JobConf job;
-		job = new JobConf(DataGenMR.class);
+		JobConf job = new JobConf(DataGenMR.class);
 		job.setJobName("DataGen-MR");
 		
 		//whether use block representation or cell representation

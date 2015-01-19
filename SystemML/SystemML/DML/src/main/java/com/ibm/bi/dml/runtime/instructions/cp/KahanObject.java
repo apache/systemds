@@ -34,11 +34,20 @@ public class KahanObject extends Data
 	{
 		return "("+_sum+", "+_correction+")";
 	}
+	
 	public static int compare(KahanObject k1, KahanObject k2) {
 		if(k1._sum!=k2._sum)
 			return Double.compare(k1._sum, k2._sum);
 		else 
 			return Double.compare(k1._correction, k2._correction);
+	}
+	
+	@Override
+	public boolean equals( Object o ) {
+		if( !(o instanceof KahanObject) )
+			return false;
+		KahanObject that = (KahanObject) o;
+		return (_sum==that._sum && _correction==that._correction);
 	}
 	
 	public void read(DataInput in) throws IOException

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,13 +13,12 @@ import java.util.HashMap;
 public class RelationalExpression extends Expression
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private Expression _left;
 	private Expression _right;
 	private RelationalOp _opcode;
-	
 	
 	public RelationalExpression(RelationalOp bop) {
 		_kind = Kind.RelationalOp;
@@ -93,13 +92,12 @@ public class RelationalExpression extends Expression
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException
-	{
-		
+	{	
+		//check for functions calls in expression
 		if (_left instanceof FunctionCallIdentifier){
 			raiseValidateError("user-defined function calls not supported in relational expressions", 
 		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
-		}
-		
+		}		
 		if (_right instanceof FunctionCallIdentifier){
 			raiseValidateError("user-defined function calls not supported in relational expressions", 
 		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
@@ -109,20 +107,19 @@ public class RelationalExpression extends Expression
 		if ((_left != null && _left instanceof BooleanIdentifier) || (_right != null && _right instanceof BooleanIdentifier)){
 			if ((_left instanceof IntIdentifier || _left instanceof DoubleIdentifier) || _right instanceof IntIdentifier || _right instanceof DoubleIdentifier){
 				if (_left instanceof BooleanIdentifier){
-					if (((BooleanIdentifier) _left).getValue() == true)
+					if (((BooleanIdentifier) _left).getValue())
 						this.setLeft(new IntIdentifier(1, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
 					else
 						this.setLeft(new IntIdentifier(0, _left.getFilename(), _left.getBeginLine(), _left.getBeginColumn(), _left.getEndLine(), _left.getEndColumn()));
 				}
 				else if (_right instanceof BooleanIdentifier){
-					if (((BooleanIdentifier) _right).getValue() == true)
+					if (((BooleanIdentifier) _right).getValue())
 						this.setRight(new IntIdentifier(1, _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
 					else
 						this.setRight(new IntIdentifier(0,  _right.getFilename(), _right.getBeginLine(), _right.getBeginColumn(), _right.getEndLine(),_right.getEndColumn()));
 				}
 			}
 		}
-		
 		
 		//recursive validate
 		_left.validateExpression(ids, constVars, conditional);

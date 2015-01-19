@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 public class WeightedCell extends MatrixCell
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected double weight=0;
@@ -66,17 +66,27 @@ public class WeightedCell extends MatrixCell
 	}
 	
 	@Override
-	public int compareTo(Object o) {
-		if(o instanceof WeightedCell)
-		{
-			WeightedCell that=(WeightedCell)o;
-			if(this.value!=that.value)
-				Double.compare(this.value, that.value);
-			else if(this.weight!=that.weight)
-				Double.compare(this.weight, that.weight);
-			else return 0;
-		}
-		return -1;
+	public int compareTo(Object o) 
+	{
+		if( !(o instanceof WeightedCell) )
+			return -1;
+			
+		WeightedCell that=(WeightedCell)o;
+		if(this.value!=that.value)
+			return Double.compare(this.value, that.value);
+		else if(this.weight!=that.weight)
+			return Double.compare(this.weight, that.weight);
+		else return 0;
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if( !(o instanceof WeightedCell) )
+			return false;
+		
+		WeightedCell that=(WeightedCell)o;
+		return (value==that.value && weight==that.weight);
 	}
 	
 	public void setWeight(double w)

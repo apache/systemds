@@ -19,7 +19,7 @@ public class SQLPrint extends SQLCreateTable
 	
 	@Override
 	public String generateSQLString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(this.get_tableName());
 		sb.append(" := ");
 		sb.append("( ");

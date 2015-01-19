@@ -63,6 +63,10 @@ public class MMCJMR
 
 	private static final boolean AUTOMATIC_CONFIG_NUM_REDUCERS = true;
 	private static final Log LOG = LogFactory.getLog(MMCJMR.class);
+
+	private MMCJMR() {
+		//prevent instantiation via private constructor
+	}
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
@@ -70,8 +74,7 @@ public class MMCJMR
 			int replication, String output, OutputInfo outputinfo) 
 	throws Exception
 	{
-		JobConf job;
-		job = new JobConf(MMCJMR.class);
+		JobConf job = new JobConf(MMCJMR.class);
 		
 		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
 		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);

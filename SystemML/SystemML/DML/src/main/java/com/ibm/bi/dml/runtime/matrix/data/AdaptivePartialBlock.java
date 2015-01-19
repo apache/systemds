@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import org.apache.hadoop.io.WritableComparable;
 public class AdaptivePartialBlock implements WritableComparable<AdaptivePartialBlock>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private boolean _blocked = false; 
@@ -116,6 +116,15 @@ public class AdaptivePartialBlock implements WritableComparable<AdaptivePartialB
 			return _block.compareTo(that._block);
 		else 
 			return _cell.compareTo(that._cell);
+	}
+	
+	@Override 
+	public boolean equals(Object o) {
+		if( !(o instanceof AdaptivePartialBlock) )
+			return false;
+		
+		AdaptivePartialBlock that = (AdaptivePartialBlock)o;
+		return _blocked==that._blocked && (_blocked ? _block.equals(that._block) : _cell.equals(that._cell));
 	}
 
 	@Override

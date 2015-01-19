@@ -968,7 +968,7 @@ public class DMLScript
 		
 		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
 				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
-				        + "fs.default.name = " + fsURI.getScheme() + ", " + MRConfigurationNames.DFS_PERMISSIONS+" = " + perm );
+				        + "fs.default.name = " + ((fsURI!=null)?fsURI.getScheme():"null") + ", " + MRConfigurationNames.DFS_PERMISSIONS+" = " + perm );
 
 		//print warning if permission issues possible
 		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )

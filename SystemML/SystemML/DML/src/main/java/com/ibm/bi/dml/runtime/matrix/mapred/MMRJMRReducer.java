@@ -39,7 +39,6 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	private MatrixValue resultblock=null;
 	private MatrixIndexes aggIndexes=new MatrixIndexes();
 	private TripleIndexes prevIndexes=new TripleIndexes(-1, -1, -1);
-	private boolean firsttime=true;
 	//aggregate binary instruction for the mmrj
 	protected AggregateBinaryInstruction[] aggBinInstructions=null;
 //	private MatrixIndexes indexBuf=new MatrixIndexes();

@@ -74,8 +74,8 @@ public class SummaryEntry
 		builder.append("[");
 		for (int i = 0; i < this.planCount.size(); i++) {
 			Long l = this.planCount.get(i);
-			String action = this.action.get(i);
-			String appendString = "after " + action + ": " + l;
+			String tmpaction = this.action.get(i);
+			String appendString = "after " + tmpaction + ": " + l;
 			builder.append(appendString);
 			if (i < (this.planCount.size() - 1)) {
 				 builder.append(", ");

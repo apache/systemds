@@ -40,8 +40,8 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 		super.setupJob(context);
 		// get output file directories and create directories
 		JobConf conf = context.getJobConf();
-		String[] outputs = MRJobConfiguration.getOutputs(conf);
-		for (String dir : outputs) {
+		String[] loutputs = MRJobConfiguration.getOutputs(conf);
+		for (String dir : loutputs) {
 			Path path = new Path(dir);
 			FileSystem fs = path.getFileSystem(conf);
 			if( !fs.mkdirs(path) )

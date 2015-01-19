@@ -40,7 +40,7 @@ public class SQLOverwriteTable extends SQLCreateTable
 			this.get_withs().remove(wt);
 			trimmed = true;
 		}
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		if(this.get_withs().size() > 0)
 			sb.append("   WITH ");
@@ -63,7 +63,7 @@ public class SQLOverwriteTable extends SQLCreateTable
 	
 	private String getCreateTableString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		/*if(isTemp)
 			sb.append("CREATE TEMP TABLE \"");
 		else*/
@@ -86,7 +86,7 @@ public class SQLOverwriteTable extends SQLCreateTable
 	
 	private String getInsertIntoString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("INSERT INTO \"");
 		sb.append(tmp);
 		sb.append("\"\r\n(\r\n");
@@ -100,7 +100,7 @@ public class SQLOverwriteTable extends SQLCreateTable
 	
 	private String getDropTableString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("call drop_if_exists('");
 		sb.append(get_tableName());
 		sb.append("');\r\n");
@@ -110,7 +110,7 @@ public class SQLOverwriteTable extends SQLCreateTable
 	
 	private String getAlterableString(String tmp)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append("ALTER TABLE \"");
 		sb.append(tmp);

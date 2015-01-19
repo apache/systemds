@@ -37,10 +37,8 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 		String opcode = parseUnaryInstruction(str, in, out);
 		
 		// Boolean operations must be performed on BOOLEAN
-		ValueType vt1, vt2;
-		vt1 = vt2 = null;
-		vt1 = in.getValueType();
-		vt2 = out.getValueType();
+		ValueType vt1 = in.getValueType();
+		ValueType vt2 = out.getValueType();
 		if ( vt1 != ValueType.BOOLEAN || vt2 != ValueType.BOOLEAN )
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
 		
@@ -49,17 +47,17 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
 		// 1) Obtain data objects associated with inputs 
 		ScalarObject so = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 
 		SimpleOperator dop = (SimpleOperator) _optr;
-		boolean rval;
-		rval = dop.fn.execute(so.getBooleanValue());
+		boolean rval = dop.fn.execute(so.getBooleanValue());
 		
-		sores = (ScalarObject) new BooleanObject(rval);
+		ScalarObject sores = (ScalarObject) new BooleanObject(rval);
 		
 		// 3) Put the result value into ProgramBlock
 		ec.setScalarOutput(output.getName(), sores);

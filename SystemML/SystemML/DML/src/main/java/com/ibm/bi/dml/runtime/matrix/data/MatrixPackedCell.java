@@ -151,6 +151,23 @@ public class MatrixPackedCell extends MatrixCell
 	}
 	
 	@Override
+	public boolean equals(Object other) {
+		
+		if(!(other instanceof MatrixPackedCell))
+			throw new RuntimeException("cannot compare MatrixPackedCell with "+other.getClass());
+		
+		MatrixPackedCell that=(MatrixPackedCell) other;
+		boolean ret = (value==that.value && extra_size==that.extra_size);
+		if( ret ) {
+			for(int i=0; i<extra_size; i++)
+				if(extras[i]!=that.extras[i])
+					return false;
+		}
+		
+		return ret;
+	}
+	
+	@Override
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();

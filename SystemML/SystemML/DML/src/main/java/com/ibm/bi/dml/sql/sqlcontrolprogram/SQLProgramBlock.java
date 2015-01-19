@@ -66,7 +66,7 @@ public class SQLProgramBlock implements ISQLBlock
 	@Override
 	public String generateSQLString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(SQLCreateBase ct : get_creates())
 		{
 			sb.append(ct.generateSQLString());

@@ -59,7 +59,7 @@ public class SQLProgram implements SQLBlockContainer
 	@Override
 	public String generateSQLString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(String.format(PROCDECLARATION, this.getName()));
 		sb.append("BEGIN_PROC\r\n");
 		

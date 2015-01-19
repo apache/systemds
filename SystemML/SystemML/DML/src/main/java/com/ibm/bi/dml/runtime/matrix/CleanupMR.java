@@ -45,6 +45,10 @@ public class CleanupMR
 	
 	private static final Log LOG = LogFactory.getLog(CleanupMR.class.getName());
 	
+	private CleanupMR() {
+		//prevent instantiation via private constructor
+	}
+	
 	public static boolean runJob( DMLConfig conf ) 
 		throws Exception
 	{

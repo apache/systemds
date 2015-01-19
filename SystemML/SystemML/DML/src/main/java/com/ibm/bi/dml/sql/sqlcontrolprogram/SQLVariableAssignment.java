@@ -42,7 +42,7 @@ public class SQLVariableAssignment extends SQLCreateTable
 
 	public String getMergedSelectStatement()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if(this.get_withs().size() > 0)
 			sb.append(" WITH ");
 		for(int i= 0; i < this.get_withs().size(); i++)
@@ -61,7 +61,7 @@ public class SQLVariableAssignment extends SQLCreateTable
 	@Override
 	public String generateSQLString() {
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		//this.get_tableName() + " := " + this.get_selectStatement() + ";\r\n"
 		sb.append(this.get_tableName());
 		sb.append(" := ( ");

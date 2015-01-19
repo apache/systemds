@@ -127,20 +127,20 @@ public class LopProperties
 	 *   level(v) = max( levels(v.inputs) ) + 1
 	 */
 	public void setLevel(ArrayList<Lop>  inputs) {
-		int level = -1;
+		int tmplevel = -1;
 		if ( inputs == null || inputs.isEmpty() )
-			level = 0;
+			tmplevel = 0;
 		else {
 			// find the max level among all inputs
 			for(Lop in : inputs) {
-				if(level < in.getLevel() ) {
-					level = in.getLevel();
+				if(tmplevel < in.getLevel() ) {
+					tmplevel = in.getLevel();
 				}
 			}
 			// this.level should be one more than the max
-			level = level+1;
+			tmplevel = tmplevel+1;
 		}
-		setLevel(level);
+		setLevel(tmplevel);
 	}
 
 	public void setProperties ( ArrayList<Lop> inputs, ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {

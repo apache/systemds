@@ -100,10 +100,10 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>
 				return null;
 			else
 			{
-				IJV cell = sparseIterator.next();
-				i = cell.i + startIndexes.getRowIndex();
-				j = cell.j + startIndexes.getColumnIndex();
-				v = cell.v;
+				IJV tmpcell = sparseIterator.next();
+				i = tmpcell.i + startIndexes.getRowIndex();
+				j = tmpcell.j + startIndexes.getColumnIndex();
+				v = tmpcell.v;
 			}
 				
 		}else

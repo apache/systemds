@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -56,10 +56,15 @@ import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 public class MMRJMR 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 			
 	private static final Log LOG = LogFactory.getLog(MMRJMR.class.getName());
+	
+	private MMRJMR() {
+		//prevent instantiation via private constructor
+	}
+	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrctions, String otherInstructionsInReducer, 
@@ -67,9 +72,7 @@ public class MMRJMR
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
-		JobConf job;
-		job = new JobConf(MMRJMR.class);
-		
+		JobConf job = new JobConf(MMRJMR.class);
 		job.setJobName("MMRJ-MR");
 		
 		if(numReducers<=0)

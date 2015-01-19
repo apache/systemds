@@ -5423,12 +5423,15 @@ public class MatrixBlock extends MatrixValue
 	}
 	
 	@Override
-	public int compareTo(Object arg0) 
-	{
-		// don't compare blocks
-		return 0;
+	public int compareTo(Object arg0) {
+		throw new RuntimeException("CompareTo should never be called for matrix blocks.");
 	}
 
+	@Override
+	public boolean equals(Object arg0) {
+		throw new RuntimeException("Equals should never be called for matrix blocks.");
+	}
+	
 	@Override
 	public String toString()
 	{

@@ -32,22 +32,24 @@ public class FileCPInstruction extends CPInstruction
 		RemoveFile, MoveFile
 	};
 
-	private FileOperationCode code;
-	String input1;
-	String input2;
-	int arity;
+	private FileOperationCode _code;
+	private String _input1;
+	private String _input2;
+	//private int _arity;
 	
-	public FileCPInstruction (Operator op, FileOperationCode _code, String in1, String in2, int _arity, String opcode, String istr )
+	public FileCPInstruction (Operator op, FileOperationCode code, String in1, String in2, int arity, String opcode, String istr )
 	{
 		super(op, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.File;
-		code = _code;
-		input1 = in1;
-		input2 = in2;
-		arity = _arity;
+		_code = code;
+		_input1 = in1;
+		_input2 = in2;
+		//_arity = arity;
 	}
 
-	private static FileOperationCode getFileOperationCode ( String str ) throws DMLUnsupportedOperationException {
+	private static FileOperationCode getFileOperationCode ( String str ) 
+		throws DMLUnsupportedOperationException 
+	{
 		if ( str.equalsIgnoreCase("rm"))
 			return FileOperationCode.RemoveFile;
 		else if ( str.equalsIgnoreCase("mv") ) 
@@ -56,7 +58,9 @@ public class FileCPInstruction extends CPInstruction
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		String opcode = InstructionUtils.getOpCode(str);
 		
 		int _arity = 2;
@@ -87,23 +91,26 @@ public class FileCPInstruction extends CPInstruction
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		
-		try {
-		switch(code) {
-		case RemoveFile:
-			MapReduceTool.deleteFileIfExistOnHDFS(input1);
-			MapReduceTool.deleteFileIfExistOnHDFS(input1+".mtd");
-			break;
-		case MoveFile:
-			MapReduceTool.renameFileOnHDFS(input1, input2);
-			MapReduceTool.renameFileOnHDFS(input1+".mtd", input2+".mtd");
-			break;
-			
-		default:
-			throw new DMLRuntimeException("Unexpected opcode: " + code);
-		}
-		}
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{	
+		try 
+		{
+			switch(_code) 
+			{
+				case RemoveFile:
+					MapReduceTool.deleteFileIfExistOnHDFS(_input1);
+					MapReduceTool.deleteFileIfExistOnHDFS(_input1+".mtd");
+					break;
+				case MoveFile:
+					MapReduceTool.renameFileOnHDFS(_input1, _input2);
+					MapReduceTool.renameFileOnHDFS(_input1+".mtd", _input2+".mtd");
+					break;
+					
+				default:
+					throw new DMLRuntimeException("Unexpected opcode: " + _code);
+			}
+		} 
 		catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}

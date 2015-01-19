@@ -113,6 +113,7 @@ public class ReaderTextCSV extends MatrixReader
 		double cellValue = 0;
 		
 		String escapedDelim = Pattern.quote(delim);
+		Pattern compiledDelim = Pattern.compile(escapedDelim);
 		String cellStr = null;
 		
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
@@ -131,7 +132,7 @@ public class ReaderTextCSV extends MatrixReader
 						col = 0;
 						cellStr = value.toString().trim();
 						emptyValuesFound = false;
-						for(String part : cellStr.split(escapedDelim, -1)) {
+						for(String part : compiledDelim.split(cellStr, -1)) {
 							part = part.trim();
 							if ( part.isEmpty() ) {
 								emptyValuesFound = true;
@@ -159,7 +160,7 @@ public class ReaderTextCSV extends MatrixReader
 					{
 						cellStr = value.toString().trim();
 						col = 0;
-						for(String part : cellStr.split(escapedDelim, -1)) {
+						for(String part : compiledDelim.split(cellStr, -1)) {
 							part = part.trim();
 							if ( part.isEmpty() ) {
 								if ( !fill ) {
@@ -212,6 +213,7 @@ public class ReaderTextCSV extends MatrixReader
 		String value = null;
 		
 		String escapedDelim = Pattern.quote(delim);
+		Pattern compiledDelim = Pattern.compile(escapedDelim);
 		String cellStr = null;
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
@@ -225,7 +227,7 @@ public class ReaderTextCSV extends MatrixReader
 						br.readLine(); //ignore header
 					if( (value = br.readLine()) != null ) {
 						cellStr = value.toString().trim();
-						ncol = cellStr.split(escapedDelim,-1).length;
+						ncol = compiledDelim.split(cellStr,-1).length;
 						nrow = 1;
 					}
 				}

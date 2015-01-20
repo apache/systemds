@@ -82,7 +82,9 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			Hop hi = hop.getInput().get(i);
 			
 			//apply indexing vectorization rewrites
-			vectorizeRightIndexing( hi ); //e.g., multiple rightindexing X[i,1], X[i,3] -> X[i,];
+			//MB: disabled right indexing rewrite because (1) piggybacked in MR anyway, (2) usually
+			//not too much overhead, and (3) makes literal replacement more difficult
+			//vectorizeRightIndexing( hi ); //e.g., multiple rightindexing X[i,1], X[i,3] -> X[i,];
 			vectorizeLeftIndexing( hi );  //e.g., multiple left indexing X[i,1], X[i,3] -> X[i,]; 
 			
 			//process childs recursively after rewrites 

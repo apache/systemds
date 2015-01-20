@@ -1504,6 +1504,42 @@ public class Recompiler
 						HopRewriteUtils.addChildReference(hop, literal, i);	
 					}
 				}
+				//as.scalar/right indexing w/ literals/vars and matrix less than 10^6 cells
+				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
+						&& c.getInput().get(0) instanceof IndexingOp )
+				{
+					IndexingOp rix = (IndexingOp)c.getInput().get(0);
+					Hop data = rix.getInput().get(0);
+					Hop rl = rix.getInput().get(1);
+					Hop ru = rix.getInput().get(2);
+					Hop cl = rix.getInput().get(3);
+					Hop cu = rix.getInput().get(4);
+					if( rix.dimsKnown() && rix.getDim1()==1 && rix.getDim2()==1
+						&& data instanceof DataOp && vars.keySet().contains(data.getName())
+						&& ((rl instanceof DataOp && vars.keySet().contains(rl.getName())) || rl instanceof LiteralOp) 
+						&& ((ru instanceof DataOp && vars.keySet().contains(ru.getName())) || ru instanceof LiteralOp)
+						&& ((cl instanceof DataOp && vars.keySet().contains(cl.getName())) || cl instanceof LiteralOp)
+						&& ((cu instanceof DataOp && vars.keySet().contains(cu.getName())) || cu instanceof LiteralOp)
+						&& data.dimsKnown() && data.getDim1()*data.getDim2()<1000000 ) //8MB
+					{
+						long rlvalue = getIntValueDataLiteral(rl, vars);
+						long clvalue = getIntValueDataLiteral(cl, vars);
+	
+						MatrixObject mo = (MatrixObject)vars.get(data.getName());
+						MatrixBlock mBlock = mo.acquireRead();
+						double value = mBlock.getValue((int)rlvalue-1,(int)clvalue-1);
+						mo.release();
+						
+						
+						//literal substitution (always double)
+						Hop literal = new LiteralOp(String.valueOf(value), value);
+						
+						//replace on demand 
+						HopRewriteUtils.removeChildReference(hop, c);
+						HopRewriteUtils.addChildReference(hop, literal, i);	
+					
+					}
+				}
 				//recursively process childs
 				else 
 				{
@@ -1512,6 +1548,38 @@ public class Recompiler
 			}
 		
 		hop.setVisited(VisitStatus.DONE);
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param vars
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static long getIntValueDataLiteral(Hop hop, LocalVariableMap vars) 
+		throws DMLRuntimeException
+	{
+		long value = -1;
+		
+		try 
+		{
+			if( hop instanceof LiteralOp )
+			{
+				value = HopRewriteUtils.getIntValue((LiteralOp)hop);
+			}
+			else
+			{
+				ScalarObject sdat = (ScalarObject) vars.get(hop.getName());
+				value = sdat.getLongValue();
+			}
+		}
+		catch(HopsException ex)
+		{
+			throw new DMLRuntimeException("Failed to get int value for literal replacement", ex);
+		}
+		
+		return value;
 	}
 	
 	/**

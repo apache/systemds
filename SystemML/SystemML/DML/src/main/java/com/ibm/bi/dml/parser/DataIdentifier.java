@@ -140,17 +140,17 @@ public class DataIdentifier extends Identifier
 			return false;
 			
 		DataIdentifier target = (DataIdentifier)that;
-		if (!this.getName().equals(target.getName()))
+		if(getName()!=null && !getName().equals(target.getName()))
 			return false;
-		if (!this.getDataType().equals(target.getDataType()))
+		if(getDataType()!=null && !getDataType().equals(target.getDataType()))
 			return false;
-		if (!this.getValueType().equals(target.getValueType()))
+		if(getValueType() != null && !getValueType().equals(target.getValueType()))
 			return false;
-		if (this.getFormatType() != null && !this.getFormatType().equals(target.getFormatType()))
+		if(getFormatType()!= null && !this.getFormatType().equals(target.getFormatType()))
 			return false;
-		if (!(this.getDim1() == target.getDim1()))
+		if(!(this.getDim1() == target.getDim1()))
 			return false;
-		if (!(this.getDim2() == target.getDim2()))
+		if(!(this.getDim2() == target.getDim2()))
 			return false;
 		
 		return true;

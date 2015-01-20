@@ -600,9 +600,9 @@ public class StatementBlock extends LiveVariableAnalysis
 						}
 						IntIdentifier intid = null;
 						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){
-							intid = new IntIdentifier((int)currVal.getDim1(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+							intid = new IntIdentifier(currVal.getDim1(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						} else {
-							intid = new IntIdentifier((int)currVal.getDim2(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
+							intid = new IntIdentifier(currVal.getDim2(), bife.getFilename(), bife.getBeginLine(), bife.getBeginColumn(), bife.getEndLine(), bife.getEndColumn());
 						}
 						
 						// handle case when nrow / ncol called on variable with size unknown (dims == -1) 

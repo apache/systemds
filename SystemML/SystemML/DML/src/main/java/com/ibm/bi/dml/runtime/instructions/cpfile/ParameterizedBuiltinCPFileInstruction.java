@@ -367,8 +367,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				{
 					while(reader.next(key, value))
 					{
-						long row = (int)key.getRowIndex();
-						long col = (int)key.getColumnIndex();
+						long row = key.getRowIndex();
+						long col = key.getColumnIndex();
 						double lvalue = value.getValue();
 						
 						buffer.add(new Cell(row,col,lvalue));

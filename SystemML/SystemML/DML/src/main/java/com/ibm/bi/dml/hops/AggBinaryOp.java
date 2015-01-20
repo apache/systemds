@@ -1129,9 +1129,9 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.CPMM;
 
 		// Step 6: Decide CPMM vs RMM based on io costs
-		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
-		int m1_ncb = (int) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
-		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
+		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
+		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
+		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
 
 		// TODO: we must factor in the "sparsity"
 		double m1_size = m1_rows * m1_cols;

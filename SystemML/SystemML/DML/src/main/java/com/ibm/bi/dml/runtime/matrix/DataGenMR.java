@@ -218,14 +218,13 @@ public class DataGenMR
 					clens[i] = 1;
 				
 				double temp = from;
-				int bid_i, bid_j;
 				double block_from, block_to;
 				for(long r = 0; r < rlens[i]; r += brlens[i]) {
 					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
 					
 					// block (bid_i,bid_j) generates a sequence from the interval [block_from, block_to] (inclusive of both end points of the interval) 
-					bid_i = (int) ((r / brlens[i]) + 1);
-					bid_j = 1;
+					long bid_i = ((r / brlens[i]) + 1);
+					long bid_j = 1;
 					block_from = temp;
 					block_to   = temp+(curBlockRowSize-1)*incr;
 					temp = block_to + incr; // next block starts from here

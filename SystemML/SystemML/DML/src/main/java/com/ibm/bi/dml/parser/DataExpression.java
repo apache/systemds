@@ -280,12 +280,12 @@ public class DataExpression extends DataIdentifier
 		}
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
-			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue(), 
+			paramValue = new IntIdentifier((long)((DoubleIdentifier)paramValue).getValue(), 
 					this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 					this.getBeginLine(), this.getBeginColumn());
 		}
 		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
-			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue(),
+			paramValue = new IntIdentifier((long)((DoubleIdentifier)paramValue).getValue(),
 					this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 					this.getBeginLine(), this.getBeginColumn());
 		}
@@ -320,12 +320,12 @@ public class DataExpression extends DataIdentifier
 		}
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
-			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue(),
+			paramValue = new IntIdentifier((long)((DoubleIdentifier)paramValue).getValue(),
 					this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 					this.getBeginLine(), this.getBeginColumn());
 		}
 		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
-			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue(),
+			paramValue = new IntIdentifier((long)((DoubleIdentifier)paramValue).getValue(),
 					this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 					this.getBeginLine(), this.getBeginColumn());
 		}

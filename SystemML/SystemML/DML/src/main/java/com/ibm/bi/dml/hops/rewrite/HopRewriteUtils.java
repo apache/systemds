@@ -151,7 +151,7 @@ public class HopRewriteUtils
 			switch( op.getValueType() )
 			{
 				case DOUBLE:  ret = new DoubleObject(op.getDoubleValue()); break;
-				case INT:	  ret = new IntObject((int)op.getLongValue()); break;
+				case INT:	  ret = new IntObject(op.getLongValue()); break;
 				case BOOLEAN: ret = new BooleanObject(op.getBooleanValue()); break;
 				case STRING:  ret = new StringObject(op.getStringValue()); break;
 			}

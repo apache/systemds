@@ -633,7 +633,7 @@ public class InterProceduralAnalysis
 				switch(input.getValueType())
 				{
 					case DOUBLE:	scalar = new DoubleObject(lit.getDoubleValue()); break;
-					case INT:		scalar = new IntObject((int) lit.getLongValue()); break;
+					case INT:		scalar = new IntObject(lit.getLongValue()); break;
 					case BOOLEAN: 	scalar = new BooleanObject(lit.getBooleanValue()); break;
 					case STRING:	scalar = new StringObject(lit.getStringValue()); break;
 				}

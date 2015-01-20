@@ -1485,7 +1485,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					idat.getRowLowerBound() == idat.getRowUpperBound()         ) 
 			{
 				if( sub1 instanceof IntIdentifier )
-					out = new LinearFunction((int)((IntIdentifier)sub1).getValue(), 0, null);
+					out = new LinearFunction(((IntIdentifier)sub1).getValue(), 0, null);
 				else if( sub1 instanceof DataIdentifier )
 					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name);
 				else
@@ -1665,7 +1665,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					idat.getRowLowerBound() == idat.getRowUpperBound()         ) 
 			{
 				if( sub1 instanceof IntIdentifier )
-					out = new LinearFunction((int)((IntIdentifier)sub1).getValue(), 0, null);
+					out = new LinearFunction(((IntIdentifier)sub1).getValue(), 0, null);
 				else if( sub1 instanceof DataIdentifier )
 					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
 				else
@@ -1705,7 +1705,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					idat.getColLowerBound() == idat.getColUpperBound()         ) 
 			{
 				if( sub1 instanceof IntIdentifier )
-					out = new LinearFunction((int)((IntIdentifier)sub1).getValue(), 0, null);
+					out = new LinearFunction(((IntIdentifier)sub1).getValue(), 0, null);
 				else if( sub1 instanceof DataIdentifier )
 					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
 				else
@@ -1932,9 +1932,9 @@ public class ParForStatementBlock extends ForStatementBlock
 			
 			//atomic case
 			if( l instanceof IntIdentifier )
-				ret = new LinearFunction(0, (int)((IntIdentifier) l).getValue(),((DataIdentifier)r)._name);	
+				ret = new LinearFunction(0, ((IntIdentifier) l).getValue(),((DataIdentifier)r)._name);	
 			else if(r instanceof IntIdentifier)
-				ret = new LinearFunction(0, (int)((IntIdentifier) r).getValue(),((DataIdentifier)l)._name);
+				ret = new LinearFunction(0, ((IntIdentifier) r).getValue(),((DataIdentifier)l)._name);
 			else
 				return null; //let dependency analysis fail
 		}

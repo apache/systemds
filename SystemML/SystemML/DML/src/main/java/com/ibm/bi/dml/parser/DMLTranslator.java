@@ -2658,8 +2658,7 @@ public class DMLTranslator
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NROW, expr);
 			}
 			else {
-				int numRowsIntValue = (int) nRows;
-				currBuiltinOp = new LiteralOp(Integer.toString(numRowsIntValue), numRowsIntValue);
+				currBuiltinOp = new LiteralOp(Long.toString(nRows), nRows);
 			}
 			break;
 
@@ -2672,8 +2671,7 @@ public class DMLTranslator
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NCOL, expr);
 			}
 			else {
-				int numColsIntValue = (int) nCols;
-				currBuiltinOp = new LiteralOp(Integer.toString(numColsIntValue), numColsIntValue);
+				currBuiltinOp = new LiteralOp(Long.toString(nCols), nCols);
 			}
 			break;
 		case LENGTH:
@@ -2687,8 +2685,8 @@ public class DMLTranslator
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.LENGTH, expr);
 			}
 			else {
-				int len = (int) (nCols2 * nRows2);
-				currBuiltinOp = new LiteralOp(Integer.toString(len), len);
+				long lval = (nCols2 * nRows2);
+				currBuiltinOp = new LiteralOp(Long.toString(lval), lval);
 			}
 			break;
 

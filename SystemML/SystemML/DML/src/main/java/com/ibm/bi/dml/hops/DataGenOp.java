@@ -228,7 +228,7 @@ public class DataGenOp extends Hop
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
 		if ( _method == DataGenMethod.RAND && dimsKnown() ) {
-			int numBlocks = (int) (Math.ceil((double)dim1/DMLTranslator.DMLBlockSize) * Math.ceil((double)dim2/DMLTranslator.DMLBlockSize));
+			long numBlocks = (long) (Math.ceil((double)dim1/DMLTranslator.DMLBlockSize) * Math.ceil((double)dim2/DMLTranslator.DMLBlockSize));
 			return 32 + numBlocks*8.0; // 32 bytes of overhead for an array of long & numBlocks long values.
 		}
 		else 

@@ -210,7 +210,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
 			long in2_cols = dcInput.getNumCols();
-			int  in2_colBlocks = (int) Math.ceil(((double)in2_cols)/dcInput.getNumColsPerBlock());
+			long  in2_colBlocks = (long)Math.ceil(((double)in2_cols)/dcInput.getNumColsPerBlock());
 			
 			for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
 			{	
@@ -238,7 +238,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
 			
 			long in1_rows = dcInput.getNumRows();
-			int  in1_rowsBlocks = (int) Math.ceil(((double)in1_rows)/dcInput.getNumRowsPerBlock());
+			long  in1_rowsBlocks = (long) Math.ceil(((double)in1_rows)/dcInput.getNumRowsPerBlock());
 			
 			for(int bidx=1; bidx <= in1_rowsBlocks; bidx++) {
 				

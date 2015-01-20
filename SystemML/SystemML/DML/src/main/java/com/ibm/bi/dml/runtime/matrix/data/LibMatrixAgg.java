@@ -1607,18 +1607,6 @@ public class LibMatrixAgg
 				meanAgg( avals, c, aix, alen, n, kbuff, kmean );
 			}
 		}
-		
-		//OLD VERSION: correction remaining tuples (not sparse-safe)
-		/*for( int i=0; i<n; i++ ) //for all colmeans
-		{
-			int count = (int) c[n+i];
-			kbuff.set(c[i], c[2*n+i]); //reset buffer
-			mean(0, m-count, count, kbuff, kplus);
-			
-			c[i]     = kbuff._sum;
-			c[i+n]   = m;
-			c[i+2*n] = kbuff._correction;	
-		}*/
 	}
 	
 	/**

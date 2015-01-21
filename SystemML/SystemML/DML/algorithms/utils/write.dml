@@ -12,11 +12,16 @@
 # Parameters:
 #    I       : (input)  filename of input
 #    O       : (output) filename of output
-#    ofmt    : format of O: "csv", "binary" 
+#    ofmt    : format of O: "csv", "binary"
+#    sep     : default ","; CSV separator in output
+#    header  : default "FALSE"; CSV header: TRUE | FALSE
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/write.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx" ofmt="binary"
+#   hadoop jar SystemML.jar -f algorithms/utils/write.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx" ofmt="binary" sep="|" header=TRUE
 #
 
+sep = ifdef($sep, ",")
+header = ifdef($header, FALSE )
+
 M = read($I)
-write(M, $O, format=$ofmt)
+write(M, $O, format=$ofmt, sep=sep, header=header)

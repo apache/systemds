@@ -211,6 +211,11 @@ public class RandCPInstruction extends UnaryCPInstruction
 	{
 		MatrixBlock soresBlock = null;
 		
+		//check valid for integer dimensions (we cannot even represent empty blocks with larger dimensions)
+		if( rows >= Integer.MAX_VALUE || cols >= Integer.MAX_VALUE )
+			throw new DMLRuntimeException("RandCPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
+		
+		//process specific datagen operator
 		if ( this.method == DataGenMethod.RAND ) {
 			//generate pseudo-random seed (because not specified) 
 			long lSeed = seed; //seed per invocation
@@ -218,14 +223,18 @@ public class RandCPInstruction extends UnaryCPInstruction
 				lSeed = DataGenOp.generateRandomSeed();
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandCPInstruction with seed = "+lSeed+".");
+				LOG.trace("Process RandCPInstruction rand with seed = "+lSeed+".");
 			
 			soresBlock = MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed);
 		}
 		else if ( this.method == DataGenMethod.SEQ ) {
-			// (int)rows, (int)cols, rowsInBlock, colsInBlock, 
+			if( LOG.isTraceEnabled() )
+				LOG.trace("Process RandCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
+			
 			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
 		}
+		
+		//release created output
 		ec.setMatrixOutput(output.getName(), soresBlock);
 	}
 }

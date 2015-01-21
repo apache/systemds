@@ -104,7 +104,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
 						if( blockColFactor<=1 ) //blocksize should be 1000 or similar
 							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
-						long numRep = (int)Math.ceil((double)_lenM / blockColFactor) - 1; 
+						long numRep = (long)Math.ceil((double)_lenM / blockColFactor) - 1; 
 						
 						//replicate block (number of replicates is potentially unbounded, however,
 						//because the vector is not modified we can passed the original data and
@@ -133,7 +133,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
 						if( blockRowFactor<=1 ) //blocksize should be 1000 or similar
 							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
-						long numRep = (int)Math.ceil((double)_lenM / blockRowFactor) - 1; 
+						long numRep = (long)Math.ceil((double)_lenM / blockRowFactor) - 1; 
 						
 						//replicate block (number of replicates is potentially unbounded, however,
 						//because the vector is not modified we can passed the original data and

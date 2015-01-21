@@ -268,6 +268,10 @@ public class DataGenOp extends Hop
 			else
 				_etype = ExecType.MR;
 		
+			//check for dimensions larger than integer (e.g., for empty block rand)
+			if( _etype == ExecType.CP && (_dim1>=Integer.MAX_VALUE || _dim2>=Integer.MAX_VALUE) )
+				_etype = ExecType.MR; //robustness because matrix block in CP has int dims
+			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
 				setRequiresRecompile();

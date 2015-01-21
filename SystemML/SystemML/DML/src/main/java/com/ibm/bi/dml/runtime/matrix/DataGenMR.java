@@ -387,35 +387,8 @@ public class DataGenMR
 			stats = MapReduceTool.processDimsFiles(dir, stats);
 			MapReduceTool.deleteFileIfExistOnHDFS(dir);
 			
-/*			Group rowgroup, colgroup;
-			for(int i=0; i<resultIndexes.length; i++)
-			{
-				// number of non-zeros
-				stats[i].nonZero=group.getCounter(Integer.toString(i));
-			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-				
-				// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-				if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-					if ( resultDimsUnknown[i] != (byte) 1 )
-						throw new DMLRuntimeException("Unexpected error after executing Rand Job");
-				
-					rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);
-					colgroup = runjob.getCounters().getGroup("max_coldim_"+i);
-					int maxrow, maxcol;
-					maxrow = maxcol = 0;
-					for ( int rid=0; rid < numReducers; rid++ ) {
-						if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-							maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-						if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-							maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-					}
-					//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-					stats[i].numRows = maxrow;
-					stats[i].numColumns = maxcol;
-				}
-			}
-*/			
-		}finally
+		}
+		finally
 		{
 			for(String input: inputs)
 				MapReduceTool.deleteFileIfExistOnHDFS(new Path(input), job);

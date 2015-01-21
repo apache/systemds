@@ -41,6 +41,10 @@ public class LibMatrixBincell
 		INVALID,
 	}
 	
+	private LibMatrixBincell() {
+		//prevent instantiation via private constructor
+	}
+	
 	///////////////////////////////////
 	// public matrix bincell interface
 	///////////////////////////////////

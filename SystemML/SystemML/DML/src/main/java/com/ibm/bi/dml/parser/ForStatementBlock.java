@@ -89,7 +89,7 @@ public class ForStatementBlock extends StatementBlock
 			constVars = sb.getConstOut();
 		}
 		
-		if (body.size() > 0){
+		if (!body.isEmpty()){
 			_constVarsIn.putAll(body.get(0).getConstIn());
 			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 		}
@@ -166,7 +166,7 @@ public class ForStatementBlock extends StatementBlock
 				ids = sb.validate(dmlProg, ids, constVars, true);
 				constVars = sb.getConstOut();
 			}
-			if (body.size() > 0){
+			if (!body.isEmpty()){
 				_constVarsIn.putAll(body.get(0).getConstIn());
 				_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 			}
@@ -198,9 +198,8 @@ public class ForStatementBlock extends StatementBlock
 		current.addVariables(_updated);
 		
 		
-		for (int  i = 0; i < fstmt.getBody().size(); i++){
-			
-			StatementBlock sb = fstmt.getBody().get(i);
+		for( StatementBlock sb : fstmt.getBody())
+		{
 			current = sb.initializeforwardLV(current);	
 			
 			// for each generated variable in this block, check variable not killed
@@ -260,7 +259,7 @@ public class ForStatementBlock extends StatementBlock
 
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
-		if (_hops != null && _hops.size() > 0){
+		if (_hops != null && !_hops.isEmpty()){
 			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 		}

@@ -172,7 +172,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
 				|| ins instanceof RangeBasedReIndexInstruction || ins instanceof CumsumSplitInstruction)
@@ -185,7 +185,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				((CumsumAggregateInstruction)ins).setMatrixCharacteristics(dim);
 			if( ins instanceof CumsumSplitInstruction )
 				((CumsumSplitInstruction)ins).setMatrixCharacteristics(dim);
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if( ins instanceof ReorgInstruction )
 		{
@@ -196,7 +196,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			rinst.setInputMatrixCharacteristics(dim);
 			rinst.setOutputEmptyBlocks(!(this instanceof MMCJMRMapper)); //MMCJMRMapper does not output empty blocks, no need to generate
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if( ins instanceof MatrixReshapeMRInstruction )
 		{
@@ -208,7 +208,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			if(dimIn==null || dimOut==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			mrins.setMatrixCharacteristics(dimIn, dimOut);
-			mrins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+			mrins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.getRowsPerBlock(), dimIn.getColsPerBlock());
 		}
 		else if(ins instanceof AppendMInstruction)
 		{
@@ -216,7 +216,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if(ins instanceof BinaryMInstruction || ins instanceof RemoveEmptyMRInstruction )
 		{
@@ -224,7 +224,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
-			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if(ins instanceof AppendGInstruction)
 		{
@@ -233,7 +233,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			MatrixCharacteristics dimIn=dimensions.get(input);
 			if( dimIn==null )
 				throw new DMLRuntimeException("Dimensions for instruction "+arinst+"  is unset!!!");
-			arinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+			arinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.getRowsPerBlock(), dimIn.getColsPerBlock());
 		}
 		else if(ins instanceof UnaryMRInstructionBase)
 		{
@@ -241,14 +241,14 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			MatrixCharacteristics dimIn=dimensions.get(rinst.input);
 			if( dimIn==null )
 				throw new DMLRuntimeException("Dimensions for instruction "+rinst+"  is unset!!!");
-			rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+			rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.getRowsPerBlock(), dimIn.getColsPerBlock());
 		}
 		else if(ins instanceof BinaryMRInstructionBase)
 		{
 			BinaryMRInstructionBase rinst = (BinaryMRInstructionBase) ins;
 			MatrixCharacteristics dimIn=dimensions.get(rinst.input1);
 			if( dimIn!=null ) //not set for all
-				rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+				rinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.getRowsPerBlock(), dimIn.getColsPerBlock());
 			else
 				ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);
 		}

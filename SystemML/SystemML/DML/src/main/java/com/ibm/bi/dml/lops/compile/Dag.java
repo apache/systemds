@@ -654,7 +654,7 @@ public class Dag<N extends Lop>
 		
 		for ( int jobi=0; jobi < jobIndices.length; jobi++ ) {
 			int jindex = jobIndices[jobi];
-			if (jobNodes.get(jindex).size() > 0) {
+			if (!jobNodes.get(jindex).isEmpty()) {
 				ArrayList<N> vec = jobNodes.get(jindex);
 
 				// first find all nodes with more than one parent that is not
@@ -1310,9 +1310,9 @@ public class Dag<N extends Lop>
 			}
 
 			// no work to do
-			if (execNodes.size() == 0) {
+			if ( execNodes.isEmpty() ) {
 			  
-			  if(queuedNodes.size() != 0)
+			  if( !queuedNodes.isEmpty() )
 			  {
 			      //System.err.println("Queued nodes should be 0");
 			      throw new LopsException("Queued nodes should not be 0 at this point \n");
@@ -1352,7 +1352,7 @@ public class Dag<N extends Lop>
 				}
 
 				// next generate MR instructions
-				if (execNodes.size() > 0)
+				if (!execNodes.isEmpty())
 					generateMRJobs(execNodes, inst, deleteInst,
 							jobNodes);
 
@@ -1564,7 +1564,7 @@ public class Dag<N extends Lop>
 					inst_string = node.getInstructions(inputs, outputs);
 				}
 				else {
-					if ( node.getInputs().size() == 0 ) {
+					if ( node.getInputs().isEmpty() ) {
 						// currently, such a case exists only for Rand lop
 						inst_string = node.getInstructions(node.getOutputParameters().getLabel());
 					}
@@ -1637,9 +1637,9 @@ public class Dag<N extends Lop>
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
 							currInstr.setLineNum(node._beginLine);
-						else if (node.getOutputs().size() > 0)
+						else if ( !node.getOutputs().isEmpty() )
 							currInstr.setLineNum(node.getOutputs().get(0)._beginLine);
-						else if (node.getInputs().size() > 0)
+						else if ( !node.getInputs().isEmpty() )
 							currInstr.setLineNum(node.getInputs().get(0)._beginLine);
 					}
 					inst.add(currInstr);
@@ -2374,10 +2374,8 @@ public class Dag<N extends Lop>
 	 * @param node
 	 * @return
 	 */
-
-	@SuppressWarnings("unchecked")
 	private boolean hasOtherQueuedParentNode(N tmpNode, ArrayList<N> queuedNodes, N node) {
-		if ( queuedNodes.size() == 0 )
+		if ( queuedNodes.isEmpty() )
 			return false;
 		
 		boolean[] nodeMarked = node.get_reachable();
@@ -2406,7 +2404,7 @@ public class Dag<N extends Lop>
 		if (LOG.isTraceEnabled()){
 			for ( JobType jt : JobType.values() ) {
 				int i = jt.getId();
-				if (i > 0 && jobNodes.get(i) != null && jobNodes.get(i).size() > 0) {
+				if (i > 0 && jobNodes.get(i) != null && !jobNodes.get(i).isEmpty() ) {
 					LOG.trace(jt.getName() + " Job Nodes:");
 					
 					for (int j = 0; j < jobNodes.get(i).size(); j++) {
@@ -2534,7 +2532,7 @@ public class Dag<N extends Lop>
 			ArrayList<N> currNodes = jobNodes.get(index);
 			
 			// generate MR job
-			if (currNodes != null && currNodes.size() > 0) {
+			if (currNodes != null && !currNodes.isEmpty() ) {
 
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Generating " + jt.getName() + " job");
@@ -2889,7 +2887,7 @@ public class Dag<N extends Lop>
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
 							currInstr.setLineNum(node._beginLine);
-						else if (node.getInputs().size() > 0)
+						else if ( !node.getInputs().isEmpty() )
 							currInstr.setLineNum(node.getInputs().get(0).getBeginLine());
 					}
 					out.addLastInstruction(currInstr);
@@ -2902,7 +2900,7 @@ public class Dag<N extends Lop>
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
 							currInstr.setLineNum(node._beginLine);
-						else if (node.getInputs().size() > 0)
+						else if ( !node.getInputs().isEmpty() )
 							currInstr.setLineNum(node.getInputs().get(0).getBeginLine());
 					}
 					out.addLastInstruction(currInstr);
@@ -3149,7 +3147,7 @@ public class Dag<N extends Lop>
 						}
 
 						if(DMLScript.ENABLE_DEBUG_MODE) {
-							if (node.getInputs().size() > 0 && node.getInputs().get(0)._beginLine != 0)
+							if ( !node.getInputs().isEmpty() && node.getInputs().get(0)._beginLine != 0)
 								currInstr.setLineNum(node.getInputs().get(0)._beginLine);
 							else
 								currInstr.setLineNum(node._beginLine);
@@ -3237,7 +3235,7 @@ public class Dag<N extends Lop>
 			// delete marked nodes
 			rootNodes.removeAll(markedNodes);
 			markedNodes.clear();
-			if (rootNodes.size() == 0)
+			if ( rootNodes.isEmpty() )
 				return;
 		}
 		
@@ -3289,7 +3287,7 @@ public class Dag<N extends Lop>
 					cellModeOverride = true;
 		}
 		
-		if ( recordReaderInstructions.size() > 0 || jt == JobType.GROUPED_AGG )
+		if ( !recordReaderInstructions.isEmpty() || jt == JobType.GROUPED_AGG )
 			cellModeOverride = true;
 		
 		
@@ -3364,7 +3362,7 @@ public class Dag<N extends Lop>
 		MRJobInstruction mr = new MRJobInstruction(jt);
 		
 		// check if this is a map-only job. If not, set the number of reducers
-		if ( shuffleInstructions.size() > 0 || aggInstructionsReducer.size() > 0 || otherInstructionsReducer.size() > 0 )
+		if ( !shuffleInstructions.isEmpty() || !aggInstructionsReducer.isEmpty() || !otherInstructionsReducer.isEmpty() )
 			numReducers = total_reducers;
 		
 		// set inputs, outputs, and other other properties for the job 
@@ -4208,7 +4206,7 @@ public class Dag<N extends Lop>
 			N node = execNodes.get(i);
 
 			// terminal node
-			if (node.getOutputs().size() == 0 && !rootNodes.contains(node)) {
+			if (node.getOutputs().isEmpty() && !rootNodes.contains(node)) {
 				rootNodes.add(node);
 			} else {
 				// check for nodes with at least one child outside execnodes
@@ -4345,9 +4343,8 @@ public class Dag<N extends Lop>
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, ArrayList<N> childNodes, ExecLocation type) {
-		if ( childNodes.size() == 0 ) 
+		if ( childNodes.isEmpty() ) 
 			return false;
 		
 		int index = IDMap.get(node.getID());
@@ -4359,9 +4356,9 @@ public class Dag<N extends Lop>
 		}
 		return false;
 	}
-	@SuppressWarnings("unchecked")
+	
 	private N getChildNode(N node, ArrayList<N> childNodes, ExecLocation type) {
-		if ( childNodes.size() == 0 )
+		if ( childNodes.isEmpty() )
 			return null;
 		
 		int index = IDMap.get(node.getID());
@@ -4383,9 +4380,8 @@ public class Dag<N extends Lop>
 	 * Returns null if no such "n" exists
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	private N getParentNode(N node, ArrayList<N> parentNodes, ExecLocation type) {
-		if ( parentNodes.size() == 0 )
+		if ( parentNodes.isEmpty() )
 			return null;
 		for(int i=0; i < parentNodes.size(); i++ ) {
 			N pn = parentNodes.get(i);
@@ -4398,9 +4394,8 @@ public class Dag<N extends Lop>
 
 	// Checks if "node" has any descendants in nodesVec with definedMRJob flag
 	// set to true
-	@SuppressWarnings("unchecked")
 	private boolean hasMRJobChildNode(N node, ArrayList<N> nodesVec) {
-		if ( nodesVec.size() == 0 )
+		if ( nodesVec.isEmpty() )
 			return false;
 		
 		int index = IDMap.get(node.getID());
@@ -4413,9 +4408,8 @@ public class Dag<N extends Lop>
 		return false;
 	}
 
-	@SuppressWarnings("unchecked")
 	private boolean checkDataGenAsChildNode(N node, ArrayList<N> nodesVec) {
-		if(nodesVec.size() == 0)
+		if( nodesVec.isEmpty() )
 			return true;
 		
 		int index = IDMap.get(node.getID());
@@ -4466,14 +4460,12 @@ public class Dag<N extends Lop>
 
 	}
 
-	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, ArrayList<N> nodes) {
 		return hasChildNode(node, nodes, ExecLocation.INVALID);
 	}
 
-	@SuppressWarnings("unchecked")
 	private boolean hasParentNode(N node, ArrayList<N> parentNodes) {
-		if ( parentNodes.size() == 0 )
+		if ( parentNodes.isEmpty() )
 			return false;
 		
 		for( int i=0; i < parentNodes.size(); i++ ) {

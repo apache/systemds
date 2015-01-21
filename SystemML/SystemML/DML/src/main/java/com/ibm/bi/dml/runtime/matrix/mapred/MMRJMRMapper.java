@@ -117,13 +117,13 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
 		{
 			MatrixCharacteristics mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input2);
-			long matrixNumColumn=mc.numColumns;
-			int blockNumColumn=mc.numColumnsPerBlock;
+			long matrixNumColumn=mc.getCols();
+			int blockNumColumn=mc.getColsPerBlock();
 			numRepeats.put(aggBinInstruction.input1, (long)Math.ceil((double)matrixNumColumn/(double)blockNumColumn));
 			
 			mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input1);
-			long matrixNumRow=mc.numRows;
-			int blockNumRow=mc.numRowsPerBlock;
+			long matrixNumRow=mc.getRows();
+			int blockNumRow=mc.getRowsPerBlock();
 			numRepeats.put(aggBinInstruction.input2, (long)Math.ceil((double)matrixNumRow/(double)blockNumRow));
 			aggBinInput1s.add(aggBinInstruction.input1);
 			aggBinInput2s.add(aggBinInstruction.input2);

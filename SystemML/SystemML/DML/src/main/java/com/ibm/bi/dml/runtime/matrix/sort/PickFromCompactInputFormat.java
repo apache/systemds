@@ -88,6 +88,11 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			SortElement that = (SortElement)o;
 			return (prob == that.prob);
 		}
+		
+		@Override
+		public int hashCode() {
+			throw new RuntimeException("hashCode() should never be called on instances of this class.");
+		}
 	}
 	
 	private static void getPointsInEachPartFile(long[] counts, double[] probs, HashMap<Integer, 

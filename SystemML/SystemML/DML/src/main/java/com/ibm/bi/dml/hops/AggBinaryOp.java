@@ -255,11 +255,11 @@ public class AggBinaryOp extends Hop
 		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 		if( mc[0].rowsKnown() && mc[1].colsKnown() ) {
 			ret = new long[3];
-			ret[0] = mc[0].get_rows();
-			ret[1] = mc[1].get_cols();
-			double sp1 = (mc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[0].get_rows(), mc[0].get_cols(), mc[0].getNonZeros()) : 1.0; 
-			double sp2 = (mc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[1].get_rows(), mc[1].get_cols(), mc[1].getNonZeros()) : 1.0; 			
-			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], mc[0].get_cols(), ret[1], true));
+			ret[0] = mc[0].getRows();
+			ret[1] = mc[1].getCols();
+			double sp1 = (mc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getCols(), mc[0].getNonZeros()) : 1.0; 
+			double sp2 = (mc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[1].getRows(), mc[1].getCols(), mc[1].getNonZeros()) : 1.0; 			
+			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], mc[0].getCols(), ret[1], true));
 		}
 		
 		return ret;

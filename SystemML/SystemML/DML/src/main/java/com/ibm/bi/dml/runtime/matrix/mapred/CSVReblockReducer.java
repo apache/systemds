@@ -77,10 +77,10 @@ public class CSVReblockReducer extends ReduceBase implements Reducer<TaggedFirst
 				if(block==null)
 				{
 					block=cachedValues.holdPlace(tag, valueClass);
-					int brlen=dimensions.get(tag).numRowsPerBlock;
-					int bclen=dimensions.get(tag).numColumnsPerBlock;
-					int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getFirstIndex()-1)*brlen);
-					int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getSecondIndex()-1)*bclen);
+					int brlen=dimensions.get(tag).getRowsPerBlock();
+					int bclen=dimensions.get(tag).getColsPerBlock();
+					int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).getRows()-(indexes.getFirstIndex()-1)*brlen);
+					int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).getCols()-(indexes.getSecondIndex()-1)*bclen);
 					block.getValue().reset(realBrlen, realBclen, false);
 					block.getIndexes().setIndexes(indexes.getFirstIndex(), indexes.getSecondIndex());
 				}

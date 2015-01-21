@@ -141,7 +141,7 @@ public class DataExpression extends DataIdentifier
 			
 			if ( (pexpr != null) &&  (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName().equalsIgnoreCase(DataExpression.IO_FILENAME)))){
 				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "first parameter to read statement must be filename");
-			} else {
+			} else if( pexpr != null ){
 				dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
 			}
 			

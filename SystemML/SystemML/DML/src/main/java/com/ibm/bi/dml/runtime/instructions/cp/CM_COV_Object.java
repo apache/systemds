@@ -80,13 +80,18 @@ public class CM_COV_Object extends Data
 	@Override
 	public boolean equals(Object o)
 	{
-		if( (o instanceof CM_COV_Object) )
+		if( o == null || !(o instanceof CM_COV_Object) )
 			return false;
 		
 		CM_COV_Object that = (CM_COV_Object)o;
 		return (w==that.w && mean.equals(that.mean) && m2.equals(that.m2))
 				&& m3.equals(that.m3) && m4.equals(that.m4) 
 				&& mean_v.equals(that.mean_v) && c2.equals(that.c2);
+	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
 	}
 	
 	public void set(CM_COV_Object that)

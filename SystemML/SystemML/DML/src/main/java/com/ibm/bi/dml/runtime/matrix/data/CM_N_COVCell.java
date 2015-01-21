@@ -266,6 +266,11 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 		return (cm==that.cm);
 	}
 	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
+	
 	public CM_COV_Object getCM_N_COVObject()
 	{
 		return cm;

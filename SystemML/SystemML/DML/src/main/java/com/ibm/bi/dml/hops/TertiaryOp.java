@@ -881,8 +881,8 @@ public class TertiaryOp extends Hop
 					// #categories in each attribute = #rows (e.g., an ID column, say EmployeeID).
 					// both inputs are one-dimensional matrices with exact same dimensions, m = size of longer dimension
 					worstCaseDim = (mc[0].dimsKnown())
-					          ? (mc[0].get_rows() > 1 ? mc[0].get_rows() : mc[0].get_cols() )
-							  : (mc[1].get_rows() > 1 ? mc[1].get_rows() : mc[1].get_cols() );
+					          ? (mc[0].getRows() > 1 ? mc[0].getRows() : mc[0].getCols() )
+							  : (mc[1].getRows() > 1 ? mc[1].getRows() : mc[1].getCols() );
 					//note: for ctable histogram dim2 known but automatically replaces m         
 					//ret = new long[]{m, m, m};
 				}
@@ -908,7 +908,7 @@ public class TertiaryOp extends Hop
 			
 			case QUANTILE:
 				if( mc[2].dimsKnown() )
-					return new long[]{mc[2].get_rows(), 1, mc[2].get_rows()};
+					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 				break;
 			
 			default:

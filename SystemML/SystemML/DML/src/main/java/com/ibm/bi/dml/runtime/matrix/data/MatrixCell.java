@@ -314,6 +314,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 			return false;	
 		return (value==((MatrixCell) o).value);
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 
 	@Override
 	public int getMaxColumn() throws DMLRuntimeException {

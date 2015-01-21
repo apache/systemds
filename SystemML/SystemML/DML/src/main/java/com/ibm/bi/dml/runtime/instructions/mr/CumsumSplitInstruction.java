@@ -41,7 +41,7 @@ public class CumsumSplitInstruction extends UnaryInstruction
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn )
 	{
 		_mcIn = mcIn;
-		_lastRowBlockIndex = (long)Math.ceil((double)_mcIn.get_rows()/_mcIn.get_rows_per_block());
+		_lastRowBlockIndex = (long)Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
 	}
 	
 	public static Instruction parseInstruction ( String str ) 

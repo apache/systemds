@@ -58,7 +58,7 @@ public class ReduceAll extends IndexFunction
 	
 	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
 	{
-		out.set(1, 1, in.numRowsPerBlock, in.numColumnsPerBlock);
+		out.set(1, 1, in.getRowsPerBlock(), in.getColsPerBlock());
 		return true;
 	}
 }

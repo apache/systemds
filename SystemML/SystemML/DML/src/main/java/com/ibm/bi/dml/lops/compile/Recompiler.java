@@ -749,14 +749,14 @@ public class Recompiler
 				MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				
-				if( mcOld.get_rows() != mc.get_rows() 
-					|| mcOld.get_cols() != mc.get_cols()
+				if( mcOld.getRows() != mc.getRows() 
+					|| mcOld.getCols() != mc.getCols()
 					|| mcOld.getNonZeros() != mc.getNonZeros() )
 				{
-					long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+					long ldim1 =mc.getRows(), ldim2=mc.getCols(), lnnz=mc.getNonZeros();
 					//handle dimension change in body
-					if(    mcOld.get_rows() != mc.get_rows() 
-						|| mcOld.get_cols() != mc.get_cols() )
+					if(    mcOld.getRows() != mc.getRows() 
+						|| mcOld.getCols() != mc.getCols() )
 					{
 						ldim1=-1;
 						ldim2=-1; //unknown
@@ -821,15 +821,15 @@ public class Recompiler
 					MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
 					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 					
-					if( mcOld.get_rows() != mc.get_rows() 
-							|| mcOld.get_cols() != mc.get_cols()
+					if( mcOld.getRows() != mc.getRows() 
+							|| mcOld.getCols() != mc.getCols()
 							|| mcOld.getNonZeros() != mc.getNonZeros() )
 					{
-						long ldim1 =mc.get_rows(), ldim2=mc.get_cols(), lnnz=mc.getNonZeros();
+						long ldim1 =mc.getRows(), ldim2=mc.getCols(), lnnz=mc.getNonZeros();
 						
 						//handle dimension change
-						if(    mcOld.get_rows() != mc.get_rows() 
-							|| mcOld.get_cols() != mc.get_cols() )
+						if(    mcOld.getRows() != mc.getRows() 
+							|| mcOld.getCols() != mc.getCols() )
 						{
 							ldim1=-1; ldim2=-1; //unknown
 						}
@@ -1207,7 +1207,7 @@ public class Recompiler
 				{
 					MatrixObject mo = (MatrixObject)dat;
 					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-					if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
+					if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
 					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2(), 1.0d) )
 					{
 						//update statistics if necessary

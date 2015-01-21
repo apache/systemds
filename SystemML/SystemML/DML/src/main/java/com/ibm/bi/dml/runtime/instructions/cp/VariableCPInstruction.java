@@ -870,7 +870,7 @@ public class VariableCPInstruction extends CPInstruction
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
 					WriterTextCSV writer = (WriterTextCSV) MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo, -1, formatProperties);
-					writer.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
+					writer.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.getRows(), mc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(fname, outFmt, formatProperties);
@@ -908,7 +908,7 @@ public class VariableCPInstruction extends CPInstruction
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
 					WriterMatrixMarket writer = (WriterMatrixMarket) MatrixWriterFactory.createMatrixWriter(OutputInfo.MatrixMarketOutputInfo);
-					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}
@@ -1040,13 +1040,13 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.get_rows());
+		sb.append(mc.getRows());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.get_cols());
+		sb.append(mc.getCols());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.get_rows_per_block());
+		sb.append(mc.getRowsPerBlock());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.get_cols_per_block());
+		sb.append(mc.getColsPerBlock());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
 		

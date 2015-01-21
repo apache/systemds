@@ -96,8 +96,8 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 				//process instruction
 				if( _isDiag ) //special diag handling (overloaded, size-dependent operation; hence decided during runtime)
 				{
-					boolean V2M = (_mcIn.get_rows()==1 || _mcIn.get_cols()==1);
-					long rlen = Math.max(_mcIn.get_rows(), _mcIn.get_cols()); //input can be row/column vector
+					boolean V2M = (_mcIn.getRows()==1 || _mcIn.getCols()==1);
+					long rlen = Math.max(_mcIn.getRows(), _mcIn.getCols()); //input can be row/column vector
 					
 					//Note: for M2V we directly skip non-diagonal blocks block
 					if( V2M || in.getIndexes().getRowIndex()==in.getIndexes().getColumnIndex() )
@@ -116,7 +116,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 							if(_outputEmptyBlocks && valueClass.equals(MatrixBlock.class) )
 							{
 								long diagIndex=out.getIndexes().getRowIndex();//row index is equal to the col index
-								long brlen = Math.max(_mcIn.get_rows_per_block(),_mcIn.get_cols_per_block());
+								long brlen = Math.max(_mcIn.getRowsPerBlock(),_mcIn.getColsPerBlock());
 								long numRowBlocks = (rlen/brlen)+((rlen%brlen!=0)? 1 : 0);
 								for(long rc=1; rc<=numRowBlocks; rc++)
 								{

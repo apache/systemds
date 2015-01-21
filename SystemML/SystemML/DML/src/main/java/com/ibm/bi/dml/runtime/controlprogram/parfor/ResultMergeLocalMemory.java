@@ -256,8 +256,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
-		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.get_rows(),mcOld.get_cols(),
-				                                             mcOld.get_rows_per_block(),mcOld.get_cols_per_block());
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
+				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 		mc.setNonZeros(data.getNonZeros());
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );

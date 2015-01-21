@@ -123,7 +123,8 @@ public class RelationalExpression extends Expression
 		
 		//recursive validate
 		_left.validateExpression(ids, constVars, conditional);
-		_right.validateExpression(ids, constVars, conditional);
+		if( _right !=null )
+			_right.validateExpression(ids, constVars, conditional);
 		
 		//constant propagation (precondition for more complex constant folding rewrite)
 		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )

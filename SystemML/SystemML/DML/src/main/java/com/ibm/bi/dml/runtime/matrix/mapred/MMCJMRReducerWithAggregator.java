@@ -168,17 +168,17 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		{		
 			//instantiate cached input
 			if( tagForLeft==0 ){ //left cached
-				cache = new MMCJMRInputCache(job, inBufferSize, dim1.numRows, dim1.numColumns, 
-				          dim1.numRowsPerBlock, dim1.numColumnsPerBlock, true, valueClass );
+				cache = new MMCJMRInputCache(job, inBufferSize, dim1.getRows(), dim1.getCols(), 
+				          dim1.getRowsPerBlock(), dim1.getColsPerBlock(), true, valueClass );
 			}
 			else { //right cached
-				cache = new MMCJMRInputCache(job, inBufferSize, dim2.numRows, dim2.numColumns, 
-				          dim2.numRowsPerBlock, dim2.numColumnsPerBlock, false, valueClass );
+				cache = new MMCJMRInputCache(job, inBufferSize, dim2.getRows(), dim2.getCols(), 
+				          dim2.getRowsPerBlock(), dim2.getColsPerBlock(), false, valueClass );
 			}
 		
 			//instantiate cached output
-			aggregator=new PartialAggregator(job, outBufferSize, dim1.numRows, dim2.numColumns, 
-					dim1.numRowsPerBlock, dim2.numColumnsPerBlock, (tagForLeft!=0), 
+			aggregator=new PartialAggregator(job, outBufferSize, dim1.getRows(), dim2.getCols(), 
+					dim1.getRowsPerBlock(), dim2.getColsPerBlock(), (tagForLeft!=0), 
 					(AggregateBinaryOperator) aggBinInstruction.getOperator(), valueClass);
 		} 
 		catch (Exception e) {
@@ -204,10 +204,10 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		if( outputDummyRecords ) //required for rejecting empty blocks in mappers
 		{
 			HashMap<MatrixIndexes,Integer> bufferMap = aggregator.getBufferMap();
-			long rlen = dim1.numRows;
-			long clen = dim2.numColumns;
-			int brlen = dim1.numRowsPerBlock;
-			int bclen = dim2.numColumnsPerBlock;
+			long rlen = dim1.getRows();
+			long clen = dim2.getCols();
+			int brlen = dim1.getRowsPerBlock();
+			int bclen = dim2.getColsPerBlock();
 			MatrixIndexes tmpIx = new MatrixIndexes();
 			MatrixBlock tmpVal = new MatrixBlock();
 			for(long i=0, r=1; i<rlen; i+=brlen, r++)

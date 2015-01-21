@@ -87,7 +87,7 @@ public class CumsumAggregateInstruction extends AggregateUnaryInstruction
 			((MatrixBlock)out.getValue()).dropLastRowsOrColums(((AggregateUnaryOperator)optr).aggOp.correctionLocation);
 			
 			//cumsum expand partial aggregates
-			long rlenOut = (long)Math.ceil((double)_mcIn.get_rows()/blockRowFactor);
+			long rlenOut = (long)Math.ceil((double)_mcIn.getRows()/blockRowFactor);
 			long rixOut = (long)Math.ceil((double)inix.getRowIndex()/blockRowFactor);
 			int rlenBlk = (int) Math.min(rlenOut-(rixOut-1)*blockRowFactor, blockRowFactor);
 			int clenBlk = out.getValue().getNumColumns();

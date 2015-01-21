@@ -59,7 +59,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 	private int  _numMappers = -1;
 	private int  _numReducers = -1;
 	private int  _replication = -1;
-	private int  _max_retry = -1;
+	//private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
 
 	public ResultMergeRemoteMR(MatrixObject out, MatrixObject[] in, String outputFilename, long pfid, int numMappers, int numReducers, int replication, int max_retry, boolean jvmReuse) 
@@ -70,7 +70,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		_numMappers = numMappers;
 		_numReducers = numReducers;
 		_replication = replication;
-		_max_retry = max_retry;
+		//_max_retry = max_retry;
 		_jvmReuse = jvmReuse;
 	}
 
@@ -123,12 +123,12 @@ public class ResultMergeRemoteMR extends ResultMerge
 				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 				
 				String fnameCompare = _output.getFileName();
-				if( mcOld.nonZero==0 )
+				if( mcOld.getNonZeros()==0 )
 					fnameCompare = null; //no compare required
 				
 				executeMerge(fnameCompare, _outputFName, srcFnames.toArray(new String[0]), 
-						     metadata.getInputInfo(),metadata.getOutputInfo(), mcOld.get_rows(), mcOld.get_cols(),
-						     mcOld.get_rows_per_block(), mcOld.get_cols_per_block());
+						     metadata.getInputInfo(),metadata.getOutputInfo(), mcOld.getRows(), mcOld.getCols(),
+						     mcOld.getRowsPerBlock(), mcOld.getColsPerBlock());
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
 				String varName = _output.getVarName();
@@ -138,8 +138,8 @@ public class ResultMergeRemoteMR extends ResultMerge
 				moNew.setDataType( DataType.MATRIX );
 				OutputInfo oiOld = metadata.getOutputInfo();
 				InputInfo iiOld = metadata.getInputInfo();
-				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.get_rows(),mcOld.get_cols(),
-						                                             mcOld.get_rows_per_block(),mcOld.get_cols_per_block());
+				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
+						                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 				mc.setNonZeros( computeNonZeros(_output, inMO) );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );

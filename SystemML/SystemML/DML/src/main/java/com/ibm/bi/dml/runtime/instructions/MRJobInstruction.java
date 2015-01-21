@@ -1072,10 +1072,10 @@ public class MRJobInstruction extends Instruction
 		for ( int i=0; i < inputMatrices.length; i++ ) {
 			inputs[i] = inputMatrices[i].getFileName();
 			MatrixCharacteristics mc = ((MatrixDimensionsMetaData) inputMatrices[i].getMetaData()).getMatrixCharacteristics();
-			rlens[i] = mc.get_rows();
-			clens[i] = mc.get_cols();
-			brlens[i] = mc.get_rows_per_block();
-			bclens[i] = mc.get_cols_per_block();
+			rlens[i] = mc.getRows();
+			clens[i] = mc.getCols();
+			brlens[i] = mc.getRowsPerBlock();
+			bclens[i] = mc.getColsPerBlock();
 			if ( inputMatrices[i].getMetaData() instanceof MatrixFormatMetaData ) {
 				inputInfos[i] = ((MatrixFormatMetaData) inputMatrices[i].getMetaData()).getInputInfo();
 			}
@@ -1163,9 +1163,9 @@ public class MRJobInstruction extends Instruction
 		for(int i=0; i < outputVars.length; i++ ) {
 			LOG.trace("    " + _resultIndices[i] + " : " + outputVars[i] + 
 					" - [" + outputs[i] + 
-					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols() + 
+					"]  [" + resultStats[i].getRows() + ", " + resultStats[i].getCols() + 
 					"]  nnz[" + outputMatrices[i].getNnz() +
-					"]  block[" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols_per_block() + 
+					"]  block[" + resultStats[i].getRows() + ", " + resultStats[i].getColsPerBlock() + 
 					"]  [" + OutputInfo.outputInfoToString(outputInfos[i]) +
 					"]");
 		}

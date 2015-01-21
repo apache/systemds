@@ -249,11 +249,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
 			long rval = -1;
 			if(opcode.equalsIgnoreCase("nrow"))
-				rval = mc.get_rows();
+				rval = mc.getRows();
 			else if(opcode.equalsIgnoreCase("ncol"))
-				rval = mc.get_cols();
+				rval = mc.getCols();
 			else if(opcode.equalsIgnoreCase("length"))
-				rval = mc.get_rows() * mc.get_cols();
+				rval = mc.getRows() * mc.getCols();
 			
 			//create and set output scalar
 			ScalarObject ret = null;

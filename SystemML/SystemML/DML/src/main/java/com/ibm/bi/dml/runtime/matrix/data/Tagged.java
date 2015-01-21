@@ -103,4 +103,9 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 		Tagged that = (Tagged)o;
 		return (tag==that.tag && getBaseObject().equals(that.getBaseObject()));
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 }

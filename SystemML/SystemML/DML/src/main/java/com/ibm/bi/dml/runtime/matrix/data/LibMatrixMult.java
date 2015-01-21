@@ -47,6 +47,10 @@ public class LibMatrixMult
 	
 	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
 
+	private LibMatrixMult() {
+		//prevent instantiation via private constructor
+	}
+	
 	////////////////////////////////
 	// public matrix mult interface
 	////////////////////////////////

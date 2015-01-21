@@ -194,9 +194,8 @@ public class FunctionStatementBlock extends StatementBlock
 		VariableSet current = new VariableSet();
 		current.addVariables(activeInPassed);
 		
-		for (int  i = 0; i < fstmt.getBody().size(); i++){
-			
-			StatementBlock sb = fstmt.getBody().get(i);
+		for( StatementBlock sb : fstmt.getBody() )
+		{
 			current = sb.initializeforwardLV(current);	
 			
 			// for each generated variable in this block, check variable not killed

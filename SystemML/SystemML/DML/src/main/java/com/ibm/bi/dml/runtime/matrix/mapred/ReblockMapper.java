@@ -122,11 +122,11 @@ public class ReblockMapper extends MapperBase
 		{
 			tmpVal.setTag(e.getKey());
 			MatrixCharacteristics mc = e.getValue();
-			long rlen = mc.numRows;
-			long clen = mc.numColumns;
-			long brlen = mc.numRowsPerBlock;
-			long bclen = mc.numColumnsPerBlock;
-			long nnz = mc.nonZero;
+			long rlen = mc.getRows();
+			long clen = mc.getCols();
+			long brlen = mc.getRowsPerBlock();
+			long bclen = mc.getColsPerBlock();
+			long nnz = mc.getNonZeros();
 			
 			//output empty blocks on demand (not required if nnz ensures that values exist in each block)
 			if( nnz >= (rlen*clen-Math.min(brlen, rlen)*Math.min(bclen, clen)+1) 
@@ -189,7 +189,7 @@ public class ReblockMapper extends MapperBase
 					if( rbuff==null )
 					{
 						MatrixCharacteristics mc = dimensionsOut.get(ins.output);
-						rbuff = new ReblockBuffer( buffersize, mc.get_rows(), mc.get_cols(), ins.brlen, ins.bclen );
+						rbuff = new ReblockBuffer( buffersize, mc.getRows(), mc.getCols(), ins.brlen, ins.bclen );
 						buffer.put(ins.output, rbuff);
 					}
 					
@@ -199,8 +199,8 @@ public class ReblockMapper extends MapperBase
 					{
 						MatrixIndexes inIx = inValue.getIndexes();
 						MatrixCharacteristics mc = dimensionsIn.get(ins.input);
-						long row_offset = (inIx.getRowIndex()-1)*mc.get_rows_per_block() + 1;
-						long col_offset = (inIx.getColumnIndex()-1)*mc.get_cols_per_block() + 1;
+						long row_offset = (inIx.getRowIndex()-1)*mc.getRowsPerBlock() + 1;
+						long col_offset = (inIx.getColumnIndex()-1)*mc.getColsPerBlock() + 1;
 						//append entire block incl. flush on demand
 						rbuff.appendBlock(row_offset, col_offset, (MatrixBlock)mval, ins.output, out );
 					}

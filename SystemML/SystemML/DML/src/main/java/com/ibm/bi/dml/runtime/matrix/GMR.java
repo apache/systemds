@@ -237,7 +237,7 @@ public class GMR
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] dimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+			if ( stats[i].getRows() == -1 || stats[i].getCols() == -1 ) {
 				dimsUnknown[i] = (byte)1;
 			}
 			else {
@@ -297,7 +297,7 @@ public class GMR
 		//MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
+			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
 		}
 		
 		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";

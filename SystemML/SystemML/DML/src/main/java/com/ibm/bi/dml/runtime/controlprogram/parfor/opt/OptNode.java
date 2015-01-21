@@ -442,7 +442,7 @@ public class OptNode
 		if(    _ntype == NodeType.PARFOR 
 		    && _etype == ExecType.CP    )
 		{
-			maxc = (long)Math.floor((long)maxc / _k);
+			maxc = maxc / _k; //intdiv
 		}
 		
 		return maxc;

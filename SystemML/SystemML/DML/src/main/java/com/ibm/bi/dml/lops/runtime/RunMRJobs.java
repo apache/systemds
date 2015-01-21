@@ -357,8 +357,8 @@ public class RunMRJobs
 								SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
 										                        MatrixIndexes.class, MatrixBlock.class);
 								MatrixIndexes index = new MatrixIndexes(1, 1);
-								MatrixBlock block = new MatrixBlock((int)Math.min(mc.get_rows(), mc.get_rows_per_block()),
-																	(int)Math.min(mc.get_cols(), mc.get_cols_per_block()), true);
+								MatrixBlock block = new MatrixBlock((int)Math.min(mc.getRows(), mc.getRowsPerBlock()),
+																	(int)Math.min(mc.getCols(), mc.getColsPerBlock()), true);
 								writer.append(index, block);
 								writer.close();
 							}
@@ -546,10 +546,10 @@ public class RunMRJobs
 	private static boolean compareInputDimensions(MatrixCharacteristics[] stats, int numBlocks ) {
 		for(int i=0; i < stats.length; i++ ) {
 			// check if the input dimensions are smaller than the specified number of blocks
-			if ( stats[i].numRows != -1
-					&& stats[i].numRows <= (long)numBlocks * DMLTranslator.DMLBlockSize
-					&& stats[i].numColumns != -1
-					&& stats[i].numColumns <= (long)numBlocks * DMLTranslator.DMLBlockSize) {
+			if ( stats[i].getRows() != -1
+					&& stats[i].getRows() <= (long)numBlocks * DMLTranslator.DMLBlockSize
+					&& stats[i].getCols() != -1
+					&& stats[i].getCols() <= (long)numBlocks * DMLTranslator.DMLBlockSize) {
 				continue;
 			}
 			else 

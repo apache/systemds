@@ -512,7 +512,7 @@ public class DataOp extends Hop
 		{
 			MatrixCharacteristics mc = memo.getAllInputStats(getInput().get(0));
 			if( mc.dimsKnown() )
-				ret = new long[]{ mc.get_rows(), mc.get_cols(), mc.getNonZeros() };
+				ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
 		}
 		
 		return ret;

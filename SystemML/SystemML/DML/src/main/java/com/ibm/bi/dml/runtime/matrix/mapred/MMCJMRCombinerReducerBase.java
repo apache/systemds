@@ -62,7 +62,7 @@ public class MMCJMRCombinerReducerBase extends ReduceBase
 		//decide which matrix need to be cached for cross product
 		dim1=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input1);
 		dim2=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input2);
-		if(dim1.numRows>dim2.numColumns)
+		if(dim1.getRows()>dim2.getCols())
 		{
 			tagForLeft=1;
 			tagForRight=0;

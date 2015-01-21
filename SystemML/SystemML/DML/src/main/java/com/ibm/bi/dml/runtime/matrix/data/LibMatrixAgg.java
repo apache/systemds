@@ -70,6 +70,9 @@ public class LibMatrixAgg
 		INVALID,
 	}
 
+	private LibMatrixAgg() {
+		//prevent instantiation via private constructor
+	}
 	
 	/**
 	 * Core incremental matrix aggregate (ak+) as used in mapmult, tsmm, 

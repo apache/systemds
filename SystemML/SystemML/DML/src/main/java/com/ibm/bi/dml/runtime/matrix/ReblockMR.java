@@ -136,7 +136,7 @@ public class ReblockMR
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+			if ( stats[i].getRows() == -1 || stats[i].getCols() == -1 ) {
 				resultDimsUnknown[i] = (byte) 1;
 			}
 			else {
@@ -181,7 +181,7 @@ public class ReblockMR
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
+			stats[i].setNonZeros( group.getCounter(Integer.toString(i)) );
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		}
 

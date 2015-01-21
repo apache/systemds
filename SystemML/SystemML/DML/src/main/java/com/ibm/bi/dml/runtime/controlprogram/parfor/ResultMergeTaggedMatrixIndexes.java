@@ -101,4 +101,9 @@ public class ResultMergeTaggedMatrixIndexes implements WritableComparable<Result
 		ResultMergeTaggedMatrixIndexes that = (ResultMergeTaggedMatrixIndexes)other;
 		return (_ix.equals(that._ix) && _tag == that._tag);
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 }

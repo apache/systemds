@@ -103,10 +103,10 @@ public class ReblockReducer extends ReduceBase
 			if(block==null )
 			{
 				MatrixCharacteristics mc = dimensions.get(tag);
-				int brlen = mc.numRowsPerBlock;
-				int bclen = mc.numColumnsPerBlock;
-				int realBrlen=(int)Math.min((long)brlen, mc.numRows-(indexes.getRowIndex()-1)*brlen);
-				int realBclen=(int)Math.min((long)bclen, mc.numColumns-(indexes.getColumnIndex()-1)*bclen);
+				int brlen = mc.getRowsPerBlock();
+				int bclen = mc.getColsPerBlock();
+				int realBrlen=(int)Math.min((long)brlen, mc.getRows()-(indexes.getRowIndex()-1)*brlen);
+				int realBclen=(int)Math.min((long)bclen, mc.getCols()-(indexes.getColumnIndex()-1)*bclen);
 				block = cachedValues.holdPlace(tag, valueClass); //sparse block
 				block.getValue().reset(realBrlen, realBclen);
 				block.getIndexes().setIndexes(indexes);

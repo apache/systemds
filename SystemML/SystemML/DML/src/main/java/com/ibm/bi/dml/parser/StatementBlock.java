@@ -239,7 +239,7 @@ public class StatementBlock extends LiveVariableAnalysis
     	boolean ret = true;
     	
     	//reject external functions and function bodies with multiple blocks
-    	if(    fblock.getStatements().size() == 0 //empty blocks
+    	if(    fblock.getStatements().isEmpty() //empty blocks
     		|| fblock.getStatement(0) instanceof ExternalFunctionStatement  
     		|| ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 )
     	{
@@ -247,7 +247,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		}
 		
     	//reject control flow and non-inlinable functions
-    	if(fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0) 
+    	if(!fblock.getStatements().isEmpty() && !((FunctionStatement)fblock.getStatement(0)).getBody().isEmpty()) 
     	{
     		StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
 			
@@ -358,7 +358,7 @@ public class StatementBlock extends LiveVariableAnalysis
 
 		ArrayList<StatementBlock> result = new ArrayList<StatementBlock>();
 
-		if (sb == null || sb.size() == 0) {
+		if (sb == null || sb.isEmpty()) {
 			return new ArrayList<StatementBlock>();
 		}
 

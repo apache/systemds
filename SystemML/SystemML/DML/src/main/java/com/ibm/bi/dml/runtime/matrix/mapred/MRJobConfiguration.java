@@ -1411,7 +1411,7 @@ public class MRJobConfiguration
 				setMatrixCharactristicsForBinAgg(job, ins.input2, dim2);
 				MatrixCharacteristics.computeDimension(dims, ins);
 				if(forMMCJ)//there will be only one aggbin operation for MMCJ
-					numReduceGroups=(long) Math.ceil((double)dim1.numColumns/(double)dim1.numColumnsPerBlock);
+					numReduceGroups=(long) Math.ceil((double)dim1.getCols()/(double)dim1.getColsPerBlock());
 			}
 		}
 		if(!forMMCJ)
@@ -1422,8 +1422,8 @@ public class MRJobConfiguration
 			for(byte idx: mapOutputIndexes)
 			{
 				MatrixCharacteristics dim=dims.get(idx);
-				long x=(long)Math.ceil((double)dim.numRows/(double)dim.numRowsPerBlock);
-				long y=(long)Math.ceil((double)dim.numColumns/(double)dim.numColumnsPerBlock);
+				long x=(long)Math.ceil((double)dim.getRows()/(double)dim.getRowsPerBlock());
+				long y=(long)Math.ceil((double)dim.getCols()/(double)dim.getColsPerBlock());
 				
 				int i=0; 
 				boolean toadd=true;
@@ -1504,91 +1504,91 @@ public class MRJobConfiguration
 	public static void setIntermediateMatrixCharactristics(JobConf job,
 			byte tag, MatrixCharacteristics dim) {
 		
-		job.setLong(INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
-		job.setLong(INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
-		job.setInt(INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
-		job.setInt(INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumnsPerBlock);
+		job.setLong(INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.getRows());
+		job.setLong(INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getCols());
+		job.setInt(INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.getRowsPerBlock());
+		job.setInt(INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getColsPerBlock());
 	}
 	
 	public static MatrixCharacteristics getIntermediateMatrixCharactristics(JobConf job, byte tag)
 	{
 		MatrixCharacteristics dim=new MatrixCharacteristics();
-		dim.numRows=job.getLong(INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
-		dim.numColumns=job.getLong(INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
-		dim.numRowsPerBlock=job.getInt(INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		dim.setDimension( job.getLong(INTERMEDIATE_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		                  job.getLong(INTERMEDIATE_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(INTERMEDIATE_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1),
+		                  job.getInt(INTERMEDIATE_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );
 		return dim;
 	}
 
 	public static void setMatrixCharactristicsForOutput(JobConf job,
 			byte tag, MatrixCharacteristics dim)
 	{
-		job.setLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
-		job.setLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
-		job.setInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
-		job.setInt(OUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumnsPerBlock);
+		job.setLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.getRows());
+		job.setLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getCols());
+		job.setInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.getRowsPerBlock());
+		job.setInt(OUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getColsPerBlock());
 	}
 	
 	public static MatrixCharacteristics getMatrixCharacteristicsForOutput(JobConf job, byte tag)
 	{
 		MatrixCharacteristics dim=new MatrixCharacteristics();
-		dim.numRows=job.getLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
-		dim.numColumns=job.getLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
-		dim.numRowsPerBlock=job.getInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(OUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		dim.setDimension( job.getLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		                  job.getLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1), 
+		                  job.getInt(OUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );
 		return dim;
 	}
 	
 	public static MatrixCharacteristics getMatrixCharacteristicsForInput(JobConf job, byte tag)
 	{
 		MatrixCharacteristics dim=new MatrixCharacteristics();
-		dim.numRows=job.getLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
-		dim.numColumns=job.getLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
-		dim.numRowsPerBlock=job.getInt(INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);		
+		dim.setDimension( job.getLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		                  job.getLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1),
+		                  job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );		
 		return dim;
 	}
 	
 	public static void setMatrixCharactristicsForReblock(JobConf job,
 			byte tag, MatrixCharacteristics dim)
 	{
-		job.setLong(REBLOCK_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
-		job.setLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
-		job.setInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
-		job.setInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumnsPerBlock);
-		job.setLong(REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG+tag, dim.nonZero);
+		job.setLong(REBLOCK_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.getRows());
+		job.setLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getCols());
+		job.setInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.getRowsPerBlock());
+		job.setInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getColsPerBlock());
+		job.setLong(REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG+tag, dim.getNonZeros());
 	}
 	
 	public static MatrixCharacteristics getMatrixCharactristicsForReblock(JobConf job, byte tag)
 	{
 		MatrixCharacteristics dim=new MatrixCharacteristics();
-		dim.numRows=job.getLong(REBLOCK_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
-		dim.numColumns=job.getLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
-		dim.numRowsPerBlock=job.getInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		dim.setDimension( job.getLong(REBLOCK_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		                 job.getLong(REBLOCK_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(REBLOCK_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1),
+						 job.getInt(REBLOCK_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1));
 		
 		long nnz = job.getLong(REBLOCK_MATRIX_NUM_NNZ_PREFIX_CONFIG+tag, -1);
 		if( nnz>=0 )
-			dim.nonZero = nnz;
+			dim.setNonZeros( nnz );
 		
 		return dim;
 	}
 	
 	public static void setMatrixCharactristicsForBinAgg(JobConf job,
 			byte tag, MatrixCharacteristics dim) {
-		job.setLong(AGGBIN_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
-		job.setLong(AGGBIN_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
-		job.setInt(AGGBIN_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);
-		job.setInt(AGGBIN_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumnsPerBlock);
+		job.setLong(AGGBIN_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.getRows());
+		job.setLong(AGGBIN_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getCols());
+		job.setInt(AGGBIN_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.getRowsPerBlock());
+		job.setInt(AGGBIN_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getColsPerBlock());
 	}
 	
 	public static MatrixCharacteristics getMatrixCharactristicsForBinAgg(JobConf job, byte tag)
 	{
 		MatrixCharacteristics dim=new MatrixCharacteristics();
-		dim.numRows=job.getLong(AGGBIN_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
-		dim.numColumns=job.getLong(AGGBIN_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
-		dim.numRowsPerBlock=job.getInt(AGGBIN_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
-		dim.numColumnsPerBlock=job.getInt(AGGBIN_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		dim.setDimension( job.getLong(AGGBIN_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		                  job.getLong(AGGBIN_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(AGGBIN_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1),
+		                  job.getInt(AGGBIN_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );
 		return dim;
 	}
 	

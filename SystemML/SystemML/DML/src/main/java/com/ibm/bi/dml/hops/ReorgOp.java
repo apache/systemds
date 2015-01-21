@@ -247,14 +247,14 @@ public class ReorgOp extends Hop
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input
 				if( mc.dimsKnown() )
-					ret = new long[]{ mc.get_cols(), mc.get_rows(), mc.getNonZeros() };
+					ret = new long[]{ mc.getCols(), mc.getRows(), mc.getNonZeros() };
 				break;
 			}	
 			case DIAG:
 			{
 				// NOTE: diag is overloaded according to the number of columns of the input
 				
-				long k = mc.get_rows(); 
+				long k = mc.getRows(); 
 				
 				// CASE a) DIAG V2M
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
@@ -276,9 +276,9 @@ public class ReorgOp extends Hop
 				// #nnz in output is exactly the same as in input		
 				if( mc.dimsKnown() ) {
 					if( _dim1 > 0  )
-						ret = new long[]{ _dim1, mc.get_rows()*mc.get_cols()/_dim1, mc.nonZero};
+						ret = new long[]{ _dim1, mc.getRows()*mc.getCols()/_dim1, mc.getNonZeros()};
 					else if( _dim2 > 0 )	 
-						ret = new long[]{ mc.get_rows()*mc.get_cols()/_dim2, _dim2, mc.nonZero};
+						ret = new long[]{ mc.getRows()*mc.getCols()/_dim2, _dim2, mc.getNonZeros()};
 				}
 				break;
 			}

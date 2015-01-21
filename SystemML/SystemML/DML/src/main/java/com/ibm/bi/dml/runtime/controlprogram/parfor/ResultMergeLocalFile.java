@@ -165,8 +165,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
-		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.get_rows(),mcOld.get_cols(),
-				                                             mcOld.get_rows_per_block(),mcOld.get_cols_per_block());
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),
+				                                             mcOld.getRowsPerBlock(),mcOld.getColsPerBlock());
 		mc.setNonZeros( computeNonZeros(output, inMO) );
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
 		moNew.setMetaData( meta );
@@ -586,8 +586,8 @@ public class ResultMergeLocalFile extends ResultMerge
 
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) mo.getMetaData();
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		int brlen = mc.get_rows_per_block(); 
-		int bclen = mc.get_cols_per_block();
+		int brlen = mc.getRowsPerBlock(); 
+		int bclen = mc.getColsPerBlock();
 		//long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
 		//NOTE MB: Originally, we used long row, col but this led reproducibly to JIT compilation
 		// errors during runtime; experienced under WINDOWS, Intel x86-64, IBM JDK 64bit/32bit.
@@ -656,8 +656,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) mo.getMetaData();
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		int brlen = mc.get_rows_per_block();
-		int bclen = mc.get_cols_per_block();
+		int brlen = mc.getRowsPerBlock();
+		int bclen = mc.getColsPerBlock();
 		
 		for(Path lpath: MatrixReader.getSequenceFilePaths(fs, path))
 		{
@@ -757,10 +757,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		long rlen = mc.get_rows();
-		long clen = mc.get_cols();
-		int brlen = mc.get_rows_per_block();
-		int bclen = mc.get_cols_per_block();
+		long rlen = mc.getRows();
+		long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock();
+		int bclen = mc.getColsPerBlock();
 		
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
 		try
@@ -865,10 +865,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		long rlen = mc.get_rows();
-		long clen = mc.get_cols();
-		int brlen = mc.get_rows_per_block();
-		int bclen = mc.get_cols_per_block();
+		long rlen = mc.getRows();
+		long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock();
+		int bclen = mc.getColsPerBlock();
 				
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 		try
@@ -1014,10 +1014,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		long rlen = mc.get_rows();
-		long clen = mc.get_cols();
-		int brlen = mc.get_rows_per_block();
-		int bclen = mc.get_cols_per_block();
+		long rlen = mc.getRows();
+		long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock();
+		int bclen = mc.getColsPerBlock();
 				
 		
 		MatrixIndexes indexes = new MatrixIndexes(1,1);

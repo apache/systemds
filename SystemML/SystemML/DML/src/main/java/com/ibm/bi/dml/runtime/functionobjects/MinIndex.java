@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 public class MinIndex extends IndexFunction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static MinIndex singleObj = null;
@@ -57,8 +57,8 @@ public class MinIndex extends IndexFunction
 	
 	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
 	{
-		long minMatrix=Math.min(in.numRows, in.numColumns);
-		int minBlock=Math.min(in.numRowsPerBlock, in.numColumnsPerBlock);
+		long minMatrix=Math.min(in.getRows(), in.getCols());
+		int minBlock=Math.min(in.getRowsPerBlock(), in.getColsPerBlock());
 		out.set(minMatrix, minMatrix, minBlock, minBlock);
 		return false;
 	}

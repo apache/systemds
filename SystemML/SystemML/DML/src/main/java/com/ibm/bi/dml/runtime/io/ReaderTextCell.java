@@ -227,14 +227,11 @@ public class ReaderTextCell extends MatrixReader
 			}
 			
 			// skip until end-of-comments
-			do {
-				value = br.readLine();
-			} while(value.charAt(0) == '%');
+			while( (value = br.readLine())!=null && value.charAt(0) == '%' ) {
+				//do nothing just skip comments
+			}
 			
 			// the first line after comments is the one w/ matrix dimensions
-			
-			//value = br.readLine(); // line with matrix dimensions
-			
 			// validate (rlen clen nnz)
 			String[] fields = value.trim().split("\\s+"); 
 			long mm_rlen = Long.parseLong(fields[0]);

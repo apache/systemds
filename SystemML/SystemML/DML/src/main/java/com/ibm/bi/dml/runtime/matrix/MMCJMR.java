@@ -91,7 +91,7 @@ public class MMCJMR
 		
 		// Update resultDimsUnknown based on computed "stats"
 		// There is always a single output
-		if ( stats[0].numRows == -1 || stats[0].numColumns == -1 ) {
+		if ( stats[0].getRows() == -1 || stats[0].getCols() == -1 ) {
 			resultDimsUnknown = (byte) 1;
 			
 			// if the dimensions are unknown, then setup done in commonSetup() must be updated
@@ -105,29 +105,29 @@ public class MMCJMR
 		MatrixCharacteristics dim1 = MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, ins.input1);
 		MatrixCharacteristics dim2 = MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, ins.input2);
 		
-		if(dim1.numRowsPerBlock>dim1.numRows)
-			dim1.numRowsPerBlock=(int) dim1.numRows;
-		if(dim1.numColumnsPerBlock>dim1.numColumns)
-			dim1.numColumnsPerBlock=(int) dim1.numColumns;
-		if(dim2.numRowsPerBlock>dim2.numRows)
-			dim2.numRowsPerBlock=(int) dim2.numRows;
-		if(dim2.numColumnsPerBlock>dim2.numColumns)
-			dim2.numColumnsPerBlock=(int) dim2.numColumns;
+		if(dim1.getRowsPerBlock()>dim1.getRows())
+			dim1.setRowsPerBlock( (int) dim1.getRows() );
+		if(dim1.getColsPerBlock()>dim1.getCols())
+			dim1.setColsPerBlock( (int) dim1.getCols() );
+		if(dim2.getRowsPerBlock()>dim2.getRows())
+			dim2.setRowsPerBlock( (int) dim2.getRows() );
+		if(dim2.getColsPerBlock()>dim2.getCols())
+			dim2.setColsPerBlock( (int) dim2.getCols() );
 	
-		long blockSize1=77+8*dim1.numRowsPerBlock*dim1.numColumnsPerBlock;
-		long blockSize2=77+8*dim2.numRowsPerBlock*dim2.numColumnsPerBlock;
-		long blockSizeResult=77+8*dim1.numRowsPerBlock*dim2.numColumnsPerBlock;
+		long blockSize1=77+8*dim1.getRowsPerBlock()*dim1.getColsPerBlock();
+		long blockSize2=77+8*dim2.getRowsPerBlock()*dim2.getColsPerBlock();
+		long blockSizeResult=77+8*dim1.getRowsPerBlock()*dim2.getColsPerBlock();
 		
 		long cacheSize = -1;
 		//cache the first result
-		if(dim1.numRows<dim2.numColumns)
+		if(dim1.getRows()<dim2.getCols())
 		{
-			long numBlocks=(long)Math.ceil((double)dim1.numRows/(double)dim1.numRowsPerBlock);
+			long numBlocks=(long)Math.ceil((double)dim1.getRows()/(double)dim1.getRowsPerBlock());
 			cacheSize=numBlocks*(20+blockSize1)+32;
 		}
 		else //cache the second result
 		{
-			long numBlocks=(long)Math.ceil((double)dim2.numColumns/(double) dim2.numColumnsPerBlock);
+			long numBlocks=(long)Math.ceil((double)dim2.getCols()/(double) dim2.getColsPerBlock());
 			cacheSize=numBlocks*(20+blockSize2)+32;
 		}
 		//add known memory consumption (will be substracted from output buffer)
@@ -153,29 +153,9 @@ public class MMCJMR
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		
 		// number of non-zeros
-		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
-
-/*		Group rowgroup, colgroup;
-		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
-			if ( resultDimsUnknown != (byte) 1 )
-				throw new DMLRuntimeException("Unexpected error after executing MMCJ Job");
+		stats[outputIndex].setNonZeros(group.getCounter(Byte.toString(outputMatrixID)));
 		
-			rowgroup = runjob.getCounters().getGroup("max_rowdim_" + outputMatrixID );
-			colgroup = runjob.getCounters().getGroup("max_coldim_" + outputMatrixID );
-			int maxrow, maxcol;
-			maxrow = maxcol = 0;
-			for ( int rid=0; rid < numReducers; rid++ ) {
-				if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-					maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-				if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-					maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-			}
-			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-			stats[outputIndex].numRows = maxrow;
-			stats[outputIndex].numColumns = maxcol;
-		}
-*/		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
+		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
 	}
 	
 	private static MatrixCharacteristics[] commonSetup(JobConf job, boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 

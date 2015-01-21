@@ -140,6 +140,11 @@ public class CSVReblockMR
 			OffsetCount that = (OffsetCount)o;
 			return (filename.equals(that.filename) && fileOffset==that.fileOffset);
 		}
+		
+		@Override
+		public int hashCode() {
+			throw new RuntimeException("hashCode() should never be called on instances of this class.");
+		}
 	}
 	
 	public static class BlockRow implements Writable
@@ -362,7 +367,7 @@ public class CSVReblockMR
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+			if ( stats[i].getRows() == -1 || stats[i].getCols() == -1 ) {
 				resultDimsUnknown[i] = (byte) 1;
 			}
 			else {
@@ -415,7 +420,7 @@ public class CSVReblockMR
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
+			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		}
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());

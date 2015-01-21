@@ -88,7 +88,7 @@ public class IfStatement extends Statement
 	}
 	
 	public void mergeStatementBlocksElseBody(){
-		if (_elseBody.size() > 0)
+		if (!_elseBody.isEmpty())
 			_elseBody = StatementBlock.mergeStatementBlocks(_elseBody);
 	}
 	
@@ -126,7 +126,7 @@ public class IfStatement extends Statement
 			sb.append(block.toString());
 		}
 		sb.append("}\n");
-		if (_elseBody.size() > 0){
+		if (!_elseBody.isEmpty()){
 			sb.append(" else { \n");
 			for (StatementBlock block : _elseBody){
 				sb.append(block.toString());

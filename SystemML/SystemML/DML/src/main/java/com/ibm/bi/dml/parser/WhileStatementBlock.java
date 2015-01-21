@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 public class WhileStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Hop _predicateHops;
@@ -72,7 +72,7 @@ public class WhileStatementBlock extends StatementBlock
 			constVars = sb.getConstOut();
 		}
 				
-		if (body.size() > 0) {
+		if (!body.isEmpty()) {
 			_constVarsIn.putAll(body.get(0).getConstIn());
 			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 		}
@@ -148,7 +148,7 @@ public class WhileStatementBlock extends StatementBlock
 				constVars = sb.getConstOut();
 			}
 					
-			if (body.size() > 0) {
+			if (!body.isEmpty()) {
 				_constVarsIn.putAll(body.get(0).getConstIn());
 				_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 			}		
@@ -176,9 +176,8 @@ public class WhileStatementBlock extends StatementBlock
 		VariableSet current = new VariableSet();
 		current.addVariables(activeInPassed);
 		
-		for (int  i = 0; i < wstmt.getBody().size(); i++){
-			
-			StatementBlock sb = wstmt.getBody().get(i);
+		for( StatementBlock sb : wstmt.getBody() )
+		{
 			current = sb.initializeforwardLV(current);	
 			
 			// for each generated variable in this block, check variable not killed
@@ -242,7 +241,7 @@ public class WhileStatementBlock extends StatementBlock
 	
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
-		if (_hops != null && _hops.size() > 0){
+		if (_hops != null && !_hops.isEmpty()){
 			LOG.error(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 			throw new HopsException(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 		}

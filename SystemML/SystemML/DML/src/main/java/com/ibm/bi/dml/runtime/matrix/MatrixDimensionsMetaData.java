@@ -53,9 +53,9 @@ public class MatrixDimensionsMetaData extends MetaData
 
 	@Override
 	public String toString() {
-		return "[rows = " + matchar.numRows + 
-			   ", cols = " + matchar.numColumns + 
-			   ", rpb = " + matchar.numRowsPerBlock + 
-			   ", cpb = " + matchar.numColumnsPerBlock + "]"; 
+		return "[rows = " + matchar.getRows() + 
+			   ", cols = " + matchar.getCols() + 
+			   ", rpb = " + matchar.getRowsPerBlock() + 
+			   ", cpb = " + matchar.getColsPerBlock() + "]"; 
 	}
 }

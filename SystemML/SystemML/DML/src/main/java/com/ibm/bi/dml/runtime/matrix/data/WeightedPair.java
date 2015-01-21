@@ -93,4 +93,9 @@ public class WeightedPair extends WeightedCell
 		WeightedPair that = (WeightedPair)o;
 		return (value==that.value && other==that.other && weight == that.weight);
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 }

@@ -294,7 +294,7 @@ public class LeftIndexingOp  extends Hop
 		MatrixCharacteristics mc2 = memo.getAllInputStats(input2);
 		
 		if( mc1.dimsKnown() ) {
-			ret = new long[]{mc1.get_rows(), mc1.get_cols(), 
+			ret = new long[]{mc1.getRows(), mc1.getCols(), 
 				            (mc1.getNonZeros()>0&&mc2.getNonZeros()>0)?mc1.getNonZeros()+mc2.getNonZeros():-1};
 		}
 		

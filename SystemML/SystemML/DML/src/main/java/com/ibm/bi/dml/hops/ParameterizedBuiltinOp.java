@@ -560,7 +560,7 @@ public class ParameterizedBuiltinOp extends Hop
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
 			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
 			// get the size of longer dimension
-			long m = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
+			long m = (mc.getRows() > 1 ? mc.getRows() : mc.getCols()); 
 			if ( m > 1 )
 			{
 				//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): worstcase m="+m);
@@ -573,7 +573,7 @@ public class ParameterizedBuiltinOp extends Hop
 			// #nnz is exactly the same as in the input but sparsity can be higher if dimensions.
 			// change (denser output).
 			if ( mc.dimsKnown() )
-				ret= new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()}; 
+				ret= new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()}; 
 		}
 		else if (   _op == ParamBuiltinOp.REPLACE ) 
 		{ 
@@ -582,9 +582,9 @@ public class ParameterizedBuiltinOp extends Hop
 			if ( mc.dimsKnown() )
 			{
 				if( isNonZeroReplaceArguments() )
-					ret= new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
+					ret= new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 				else
-					ret= new long[]{mc.get_rows(), mc.get_cols(), -1};
+					ret= new long[]{mc.getRows(), mc.getCols(), -1};
 			}
 		}
 		

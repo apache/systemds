@@ -191,9 +191,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				
 				//Phase 2: scan empty rows/cols
 				if( diagBlocks )
-					ret = createKeyMappingDiag(stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii);
+					ret = createKeyMappingDiag(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
 				else
-					ret = createKeyMapping(stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii);
+					ret = createKeyMapping(stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii);
 				
 				//System.out.println("Executed phase 2 in "+time.stop());
 				
@@ -202,14 +202,14 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				if(   ii == InputInfo.TextCellInputInfo 
 				   || ii == InputInfo.BinaryCellInputInfo )
 				{
-					createCellResultFile( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
+					createCellResultFile( fnameNew, stagingDir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii );
 				}
 				else if( ii == InputInfo.BinaryBlockInputInfo )
 				{
 					if( diagBlocks )
-						createBlockResultFileDiag( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), ret, mc.getNonZeros(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
+						createBlockResultFileDiag( fnameNew, stagingDir, mc.getRows(), mc.getCols(), ret, mc.getNonZeros(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii );
 					else
-						createBlockResultFile( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), ret, mc.getNonZeros(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
+						createBlockResultFile( fnameNew, stagingDir, mc.getRows(), mc.getCols(), ret, mc.getNonZeros(), mc.getRowsPerBlock(), mc.getColsPerBlock(), ii );
 				}
 				
 				//System.out.println("Executed phase 3 in "+time.stop());
@@ -224,9 +224,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			
 			//create and return new output object
 			if( _margin.equals("rows") )
-				return createNewOutputObject(_src, _out, ret, mc.get_cols());
+				return createNewOutputObject(_src, _out, ret, mc.getCols());
 			else
-				return createNewOutputObject(_src, _out, mc.get_rows(), ret );
+				return createNewOutputObject(_src, _out, mc.getRows(), ret );
 		}
 		
 		/**
@@ -267,8 +267,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
 			OutputInfo oiOld = metadata.getOutputInfo();
 			InputInfo iiOld = metadata.getInputInfo();
-			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols, mcOld.get_rows_per_block(),
-					                                              mcOld.get_cols_per_block(), mcOld.getNonZeros());
+			MatrixCharacteristics mc = new MatrixCharacteristics( rows, cols, mcOld.getRowsPerBlock(),
+					                                              mcOld.getColsPerBlock(), mcOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
 			moNew.setMetaData( meta );
 
@@ -874,7 +874,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 										MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
 										
 										HashMap<Long,Long> lkeyMap = keyMap.get(blockRow);
-										long row_offset = blockRow*brlen;
+										long row_offset = (long)blockRow*brlen;
 										for( int i=0; i<tmp.getNumRows(); i++ )
 											if( lkeyMap.containsKey(row_offset+i) ) {	
 												//copy row
@@ -1026,7 +1026,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						for( ; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
 						{
 							int blockCol = blockRow; // for diag known to be equivalent
-							int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
+							int maxCol = (int)(((long)blockCol*bclen + bclen < clen) ? bclen : clen - (long)blockCol*bclen);
 							
 							//get reuse matrix block
 							MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);

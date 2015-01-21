@@ -262,7 +262,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (wsb.getLops() != null && wsb.getLops().size() > 0){
+			if (wsb.getLops() != null && !wsb.getLops().isEmpty() ){
 				LOG.error(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 				throw new LopsException(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 			}
@@ -330,7 +330,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (isb.getLops() != null && isb.getLops().size() > 0){
+			if (isb.getLops() != null && !isb.getLops().isEmpty() ){
 				LOG.error(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 				throw new LopsException(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 			}
@@ -408,7 +408,7 @@ public class DMLProgram
 			}
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (fsb.getLops() != null && fsb.getLops().size() > 0){
+			if (fsb.getLops() != null && !fsb.getLops().isEmpty()){
 				LOG.error(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 				throw new LopsException(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 			}
@@ -477,7 +477,7 @@ public class DMLProgram
 									basedir);
 				}
 				
-				if (fstmt.getBody().size() > 0){
+				if (!fstmt.getBody().isEmpty()){
 					LOG.error(fstmt.printErrorLocation() + "ExternalFunctionStatementBlock should have no statement blocks in body");
 					throw new LopsException(fstmt.printErrorLocation() + "ExternalFunctionStatementBlock should have no statement blocks in body");
 				}
@@ -496,7 +496,7 @@ public class DMLProgram
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (fsb.getLops() != null && fsb.getLops().size() > 0){
+			if (fsb.getLops() != null && !fsb.getLops().isEmpty()){
 				LOG.error(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 				throw new LopsException(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 			}
@@ -515,7 +515,7 @@ public class DMLProgram
 			dag = new Dag<Lop>();
 
 			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (sb.getLops() != null && sb.getLops().size() > 0){
+			if (sb.getLops() != null && !sb.getLops().isEmpty()){
 			
 				for (Lop l : sb.getLops()) {
 					l.addToDag(dag);
@@ -722,7 +722,7 @@ public class DMLProgram
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			ArrayList<ProgramBlock> childs = wpb.getChildBlocks();
-			if( childs.get(childs.size()-1).getInstructions().size()>0 ) //generic last level pb
+			if( !childs.get(childs.size()-1).getInstructions().isEmpty() ) //generic last level pb
 				childs.get(childs.size()-1).addInstruction(inst);
 			else{
 				ProgramBlock pbNew = new ProgramBlock(pb.getProgram());
@@ -734,7 +734,7 @@ public class DMLProgram
 		{
 			ForProgramBlock wpb = (ForProgramBlock)pb;
 			ArrayList<ProgramBlock> childs = wpb.getChildBlocks();
-			if( childs.get(childs.size()-1).getInstructions().size()>0 ) //generic last level pb
+			if( !childs.get(childs.size()-1).getInstructions().isEmpty() ) //generic last level pb
 				childs.get(childs.size()-1).addInstruction(inst);
 			else{
 				ProgramBlock pbNew = new ProgramBlock(pb.getProgram());

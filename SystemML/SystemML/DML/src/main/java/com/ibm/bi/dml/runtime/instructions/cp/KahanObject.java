@@ -50,6 +50,11 @@ public class KahanObject extends Data
 		return (_sum==that._sum && _correction==that._correction);
 	}
 	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
+	
 	public void read(DataInput in) throws IOException
 	{
 		_sum=in.readDouble();

@@ -108,8 +108,8 @@ public class RemoteParForMR
 				job.setInputFormat(RemoteParForColocatedNLineInputFormat.class);
 				MRJobConfiguration.setPartitioningFormat(job, colocatedDPMatrixObj.getPartitionFormat());
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)colocatedDPMatrixObj.getMetaData()).getMatrixCharacteristics();
-				MRJobConfiguration.setPartitioningBlockNumRows(job, mc.get_rows_per_block());
-				MRJobConfiguration.setPartitioningBlockNumCols(job, mc.get_cols_per_block());
+				MRJobConfiguration.setPartitioningBlockNumRows(job, mc.getRowsPerBlock());
+				MRJobConfiguration.setPartitioningBlockNumCols(job, mc.getColsPerBlock());
 				MRJobConfiguration.setPartitioningFilename(job, colocatedDPMatrixObj.getFileName());
 			}
 			else //default case 

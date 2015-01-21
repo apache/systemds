@@ -59,10 +59,10 @@ public class DiagIndex extends IndexFunction
 	
 	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
 	{
-		if( in.get_cols() == 1 ) //diagV2M
-			out.set(in.get_rows(), in.get_rows(), in.get_rows_per_block(), in.get_rows_per_block());
+		if( in.getCols() == 1 ) //diagV2M
+			out.set(in.getRows(), in.getRows(), in.getRowsPerBlock(), in.getRowsPerBlock());
 		else //diagM2V
-			out.set(in.get_rows(), 1, in.get_rows_per_block(), in.get_rows_per_block());
+			out.set(in.getRows(), 1, in.getRowsPerBlock(), in.getRowsPerBlock());
 		return false;
 	}
 

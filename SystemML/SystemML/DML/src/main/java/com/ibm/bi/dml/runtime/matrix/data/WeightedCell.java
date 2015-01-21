@@ -88,6 +88,11 @@ public class WeightedCell extends MatrixCell
 		WeightedCell that=(WeightedCell)o;
 		return (value==that.value && weight==that.weight);
 	}
+
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 	
 	public void setWeight(double w)
 	{

@@ -127,7 +127,6 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 				
 				covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
 				
-				matBlock1 = matBlock2 = wtBlock = null;
 				ec.releaseMatrixInput(input1.getName());
 				ec.releaseMatrixInput(input2.getName());
 				ec.releaseMatrixInput(input3.getName());

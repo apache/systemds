@@ -126,6 +126,11 @@ public class AdaptivePartialBlock implements WritableComparable<AdaptivePartialB
 		AdaptivePartialBlock that = (AdaptivePartialBlock)o;
 		return _blocked==that._blocked && (_blocked ? _block.equals(that._block) : _cell.equals(that._cell));
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 
 	@Override
 	public String toString()

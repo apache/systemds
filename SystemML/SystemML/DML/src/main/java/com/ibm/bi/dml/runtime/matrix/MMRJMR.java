@@ -139,7 +139,7 @@ public class MMRJMR
 		
 		byte[] dimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+			if ( stats[i].getRows() == -1 || stats[i].getCols() == -1 ) {
 				dimsUnknown[i] = (byte)1;
 			}
 			else {
@@ -193,37 +193,8 @@ public class MMRJMR
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
+			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
 		}
-
-/*		Group rowgroup, colgroup;
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
-		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-			
-			// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 )
-					throw new DMLRuntimeException("Unexpected error after executing GMR Job");
-			
-				rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);
-				colgroup = runjob.getCounters().getGroup("max_coldim_"+i);
-				int maxrow, maxcol;
-				maxrow = maxcol = 0;
-				for ( int rid=0; rid < numReducers; rid++ ) {
-					if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-						maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-					if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-						maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-				}
-				//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-				stats[i].numRows = maxrow;
-				stats[i].numColumns = maxcol;
-			}
-		}
-*/		
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}

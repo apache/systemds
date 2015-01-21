@@ -488,9 +488,8 @@ public class MapReduceTool
 					long maxRows = Long.parseLong(parts[1]);
 					long maxCols = Long.parseLong(parts[2]);
 					
-					stats[resultIndex].numRows = (stats[resultIndex].numRows < maxRows ? maxRows : stats[resultIndex].numRows);
-					stats[resultIndex].numColumns = (stats[resultIndex].numColumns < maxCols ? maxCols : stats[resultIndex].numColumns);
-					//System.out.println("     " + line);
+					stats[resultIndex].setDimension( (stats[resultIndex].getRows() < maxRows ? maxRows : stats[resultIndex].getRows()), 
+							                         (stats[resultIndex].getCols() < maxCols ? maxCols : stats[resultIndex].getCols()) );
 				}
 				
 				br.close();
@@ -540,15 +539,15 @@ public class MapReduceTool
           };
         
           line += 
-          "    ,\"" +  DataExpression.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
-		  "    ,\"" + DataExpression.READCOLPARAM 			+  "\": " + mc.numColumns + "\n";
+          "    ,\"" +  DataExpression.READROWPARAM 			+  "\": " + mc.getRows() + "\n" + 
+		  "    ,\"" + DataExpression.READCOLPARAM 			+  "\": " + mc.getCols() + "\n";
           // only output rows_in_block and cols_in_block for binary format 
           if ( outinfo == OutputInfo.BinaryBlockOutputInfo)  {
-         	 line += "    ,\"" + DataExpression.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
-		            "    ,\"" + DataExpression.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n";
+         	 line += "    ,\"" + DataExpression.ROWBLOCKCOUNTPARAM	+  "\": " + mc.getRowsPerBlock() + "\n" + 
+		            "    ,\"" + DataExpression.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.getColsPerBlock() + "\n";
           }
         
-          line += "    ,\"" +	DataExpression.READNUMNONZEROPARAM	+  "\": " + mc.nonZero + "\n" +
+          line += "    ,\"" +	DataExpression.READNUMNONZEROPARAM	+  "\": " + mc.getNonZeros() + "\n" +
 		          "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": "; 
         
           if ( outinfo == OutputInfo.TextCellOutputInfo ) {

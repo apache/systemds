@@ -876,8 +876,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				MatrixObject mobj = (MatrixObject) variableMapping.get(varName);
 				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) mobj.getMetaData();
 				Matrix m = new Matrix(mobj.getFileName(),
-						md.getMatrixCharacteristics().numRows,
-						md.getMatrixCharacteristics().numColumns,
+						md.getMatrixCharacteristics().getRows(),
+						md.getMatrixCharacteristics().getCols(),
 						getMatrixValueType(tokens.get(2)));
 				modifyInputMatrix(m, mobj);
 				inputObjects.add(m);

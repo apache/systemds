@@ -224,7 +224,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		return mc.get_rows ();
+		return mc.getRows ();
 	}
 
 	/**
@@ -235,7 +235,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		return mc.get_cols ();
+		return mc.getCols ();
 	}
 	
 	/**
@@ -246,7 +246,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		return mc.numRowsPerBlock;
+		return mc.getRowsPerBlock();
 	}
 	
 	/**
@@ -257,7 +257,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		return mc.numRowsPerBlock;
+		return mc.getColsPerBlock();
 	}
 	
 	/**
@@ -268,7 +268,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		return mc.nonZero;
+		return mc.getNonZeros();
 	}
 	
 	/**
@@ -280,7 +280,7 @@ public class MatrixObject extends CacheableData
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		
-		return ((double)mc.nonZero)/mc.numRows/mc.numColumns;
+		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
 	}
 
 	/**
@@ -883,8 +883,8 @@ public class MatrixObject extends CacheableData
 			//preparations for block wise access
 			MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-			int brlen = mc.get_rows_per_block();
-			int bclen = mc.get_cols_per_block();
+			int brlen = mc.getRowsPerBlock();
+			int bclen = mc.getColsPerBlock();
 			
 			//get filename depending on format
 			String fname = getPartitionFileName( pred, brlen, bclen );
@@ -904,18 +904,18 @@ public class MatrixObject extends CacheableData
 				{
 					case ROW_WISE:
 						rows = 1;
-						cols = mc.get_cols();
+						cols = mc.getCols();
 						break;
 					case ROW_BLOCK_WISE: 
 						rows = brlen;
-						cols = mc.get_cols();
+						cols = mc.getCols();
 						break;
 					case COLUMN_WISE:
-						rows = mc.get_rows();
+						rows = mc.getRows();
 						cols = 1;
 						break;
 					case COLUMN_BLOCK_WISE: 
-						rows = mc.get_rows();
+						rows = mc.getRows();
 						cols = bclen;
 						break;
 				}
@@ -1196,7 +1196,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		return readMatrixFromHDFS( filePathAndName, mc.get_rows(), mc.get_cols() );
+		return readMatrixFromHDFS( filePathAndName, mc.getRows(), mc.getCols() );
 	}
 	
 	/**
@@ -1217,13 +1217,13 @@ public class MatrixObject extends CacheableData
 		
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName 
-					+ ", dimensions: [" + mc.numRows + ", " + mc.numColumns + ", " + mc.nonZero + "]");
+					+ ", dimensions: [" + mc.getRows() + ", " + mc.getCols() + ", " + mc.getNonZeros() + "]");
 			begin = System.currentTimeMillis();
 		}
 			
-		double sparsity = ( mc.nonZero >= 0 ? ((double)mc.nonZero)/(mc.numRows*mc.numColumns) : 1.0d) ; //expected sparsity
+		double sparsity = ( mc.getNonZeros() >= 0 ? ((double)mc.getNonZeros())/(mc.getRows()*mc.getCols()) : 1.0d) ; //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
-				                           rlen, clen, mc.numRowsPerBlock, mc.numColumnsPerBlock, sparsity, _formatProperties);
+				                           rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, _formatProperties);
 		
 		if( newData == null )
 		{
@@ -1298,8 +1298,8 @@ public class MatrixObject extends CacheableData
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
-					(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication, formatProperties);
+					(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) {
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication, formatProperties);
 			}
 			else {
 				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc, replication, formatProperties);
@@ -1341,8 +1341,8 @@ public class MatrixObject extends CacheableData
 				
 				// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 				if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
-						(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
-					mc = new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
+						(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) {
+					mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
 				}
 				MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo, formatProperties);
 			}

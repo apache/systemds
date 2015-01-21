@@ -59,7 +59,7 @@ public class ReduceRow extends IndexFunction
 	
 	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) throws DMLRuntimeException
 	{
-		out.set(1, in.numColumns, in.numRowsPerBlock, in.numColumnsPerBlock);
+		out.set(1, in.getCols(), in.getRowsPerBlock(), in.getColsPerBlock());
 		return true;
 	}
 

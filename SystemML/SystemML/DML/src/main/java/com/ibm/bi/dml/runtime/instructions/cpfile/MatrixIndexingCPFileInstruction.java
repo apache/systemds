@@ -102,7 +102,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 		{
 			MatrixFormatMetaData meta = (MatrixFormatMetaData)mo.getMetaData();
 			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-			String pfname = mo.getPartitionFileName( new IndexRange(rl,ru,cl,cu), mc.get_rows_per_block(), mc.get_cols_per_block());
+			String pfname = mo.getPartitionFileName( new IndexRange(rl,ru,cl,cu), mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
@@ -116,10 +116,10 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 				switch( mo.getPartitionFormat() )
 				{
 					case ROW_WISE:
-						mcNew = new MatrixCharacteristics( 1, mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block() );
+						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
 						break;
 					case COLUMN_WISE:
-						mcNew = new MatrixCharacteristics( mc.get_rows(), 1, mc.get_rows_per_block(), mc.get_cols_per_block() );
+						mcNew = new MatrixCharacteristics( mc.getRows(), 1, mc.getRowsPerBlock(), mc.getColsPerBlock() );
 						break;					
 					default:
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE rangeReIndex: "+ mo.getPartitionFormat());

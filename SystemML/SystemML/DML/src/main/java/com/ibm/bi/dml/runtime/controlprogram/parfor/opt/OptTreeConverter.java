@@ -773,14 +773,14 @@ public class OptTreeConverter
 						MatrixObject mdat1 = (MatrixObject) dat;
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						
-						if( mc1.numRows*mc1.numColumns > maxSize )
+						if( mc1.getRows()*mc1.getCols() > maxSize )
 						{
-							ret.setDim1( mc1.numRows );
-							ret.setDim2( mc1.numColumns );
-							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
-							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? 
+							ret.setDim1( mc1.getRows() );
+							ret.setDim2( mc1.getCols() );
+							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
+							ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros()) ? 
 									            DataFormat.SPARSE : DataFormat.DENSE ); 
-							maxSize = mc1.numRows*mc1.numColumns;
+							maxSize = mc1.getRows()*mc1.getCols();
 						}
 					}
 				}
@@ -802,18 +802,18 @@ public class OptTreeConverter
 					{
 						MatrixObject mdat1 = (MatrixObject) dat1;
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
-						ret.setDim1( mc1.numRows );
-						ret.setDim2( mc1.numColumns );
-						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
-						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero)? DataFormat.SPARSE : DataFormat.DENSE); 
+						ret.setDim1( mc1.getRows() );
+						ret.setDim2( mc1.getCols() );
+						ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
+						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros())? DataFormat.SPARSE : DataFormat.DENSE); 
 					}
 					if( dat2 != null )
 					{
 						MatrixObject mdat2 = (MatrixObject) dat2;
 						MatrixCharacteristics mc2 = ((MatrixFormatMetaData)mdat2.getMetaData()).getMatrixCharacteristics();
-						ret.setDim3( mc2.numRows );
-						ret.setDim4( mc2.numColumns );
-						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc2.numRows, mc2.numColumns, mc2.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE ); 
+						ret.setDim3( mc2.getRows() );
+						ret.setDim4( mc2.getCols() );
+						ret.setDataFormat( MatrixBlock.evalSparseFormatInMemory(mc2.getRows(), mc2.getCols(), mc2.getNonZeros()) ? DataFormat.SPARSE : DataFormat.DENSE ); 
 					}
 				}
 				else //unary
@@ -824,10 +824,10 @@ public class OptTreeConverter
 						if( dat1 != null ) {
 							MatrixObject mdat1 = (MatrixObject) dat1;
 							MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
-							ret.setDim1( mc1.numRows );
-							ret.setDim2( mc1.numColumns );
-							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.nonZero) ); //sparsity
-							ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.numRows, mc1.numColumns, mc1.nonZero) ? DataFormat.SPARSE : DataFormat.DENSE); 
+							ret.setDim1( mc1.getRows() );
+							ret.setDim2( mc1.getCols() );
+							ret.setSparsity( OptimizerUtils.getSparsity(ret.getDim1(), ret.getDim2(), mc1.getNonZeros()) ); //sparsity
+							ret.setDataFormat(MatrixBlock.evalSparseFormatInMemory(mc1.getRows(), mc1.getCols(), mc1.getNonZeros()) ? DataFormat.SPARSE : DataFormat.DENSE); 
 						}
 					}
 				}

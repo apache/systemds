@@ -81,7 +81,7 @@ public class DataConverter
 	{
 		try {
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( outputinfo, replication, formatProperties );
-			writer.writeMatrixFromHDFS(mat, dir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), mc.getNonZeros());
+			writer.writeMatrixFromHDFS(mat, dir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
 		}
 		catch(Exception e)
 		{

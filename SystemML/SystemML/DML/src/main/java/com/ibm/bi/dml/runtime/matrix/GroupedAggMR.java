@@ -126,7 +126,7 @@ public class GroupedAggMR
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
 			stats[i]=new MatrixCharacteristics();
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
+			stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
 		}
 		
 		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";

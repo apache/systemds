@@ -1314,12 +1314,12 @@ public class BinaryOp extends Hop
 		if( op== OpOp2.APPEND )
 		{
 			if( mc[0].dimsKnown() && mc[1].dimsKnown() ) 
-				ret = new long[]{mc[0].get_rows(), mc[0].get_cols()+mc[1].get_cols(), mc[0].getNonZeros() + mc[1].getNonZeros()};
+				ret = new long[]{mc[0].getRows(), mc[0].getCols()+mc[1].getCols(), mc[0].getNonZeros() + mc[1].getNonZeros()};
 		}
 		else if ( op == OpOp2.SOLVE ) {
 			// Output is a (likely to be dense) vector of size number of columns in the first input
-			if ( mc[0].get_cols() > 0 ) {
-				ret = new long[]{ mc[0].get_cols(), 1, mc[0].get_cols()};
+			if ( mc[0].getCols() > 0 ) {
+				ret = new long[]{ mc[0].getCols(), 1, mc[0].getCols()};
 			}
 		}
 		else //general case
@@ -1329,22 +1329,22 @@ public class BinaryOp extends Hop
 			
 			if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR && mc[0].dimsKnown() )
 			{
-				ldim1 = mc[0].get_rows();
-				ldim2 = mc[0].get_cols();
+				ldim1 = mc[0].getRows();
+				ldim2 = mc[0].getCols();
 			}
 			else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
 			{
-				ldim1 = mc[1].get_rows();
-				ldim2 = mc[1].get_cols();
+				ldim1 = mc[1].getRows();
+				ldim2 = mc[1].getCols();
 			}
 			else //MATRIX - MATRIX 
 			{
 				//propagate if either input is known, rows need always be identical,
 				//for cols we need to be careful with regard to matrix-vector operations
-				ldim1 = (mc[0].get_rows()>0) ? mc[0].get_rows() : 
-				        (mc[1].get_rows()>1) ? mc[1].get_rows() : -1;
-				ldim2 = (mc[0].get_cols()>0) ? mc[0].get_cols() : 
-					    (mc[1].get_cols()>1) ? mc[1].get_cols() : -1;
+				ldim1 = (mc[0].getRows()>0) ? mc[0].getRows() : 
+				        (mc[1].getRows()>1) ? mc[1].getRows() : -1;
+				ldim2 = (mc[0].getCols()>0) ? mc[0].getCols() : 
+					    (mc[1].getCols()>1) ? mc[1].getCols() : -1;
 				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
 				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
 			}

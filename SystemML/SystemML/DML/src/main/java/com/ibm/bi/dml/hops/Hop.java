@@ -1330,14 +1330,14 @@ public abstract class Hop
 			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.get_rows()>0 )
-					ret = mc.get_rows();
+				if( mc.getRows()>0 )
+					ret = mc.getRows();
 			}
 			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
-				if( mc.get_cols()>0 )
-					ret = mc.get_cols();
+				if( mc.getCols()>0 )
+					ret = mc.getCols();
 			}
 		}
 		else if ( input instanceof LiteralOp )
@@ -1381,12 +1381,12 @@ public abstract class Hop
 			if(uroot.get_op() == Hop.OpOp1.NROW)
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
-				dim = mc.get_rows();
+				dim = mc.getRows();
 			}
 			else if( uroot.get_op() == Hop.OpOp1.NCOL )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
-				dim = mc.get_cols();
+				dim = mc.getCols();
 			}
 			if( dim != -1 ) //if known
 				ret = dim;

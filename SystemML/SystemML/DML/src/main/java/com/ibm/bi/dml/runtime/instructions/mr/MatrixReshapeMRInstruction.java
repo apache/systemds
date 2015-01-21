@@ -103,7 +103,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 	
 				//process instruction
 				IndexedMatrixValue in = imv;
-				out = LibMatrixReorg.reshape(in, _mcIn.get_rows(), _mcIn.get_cols(), brlen, bclen,
+				out = LibMatrixReorg.reshape(in, _mcIn.getRows(), _mcIn.getCols(), brlen, bclen,
 						                     out, _rows, _cols, brlen, bclen, _byrow);
 				
 				//put the output values in the output cache

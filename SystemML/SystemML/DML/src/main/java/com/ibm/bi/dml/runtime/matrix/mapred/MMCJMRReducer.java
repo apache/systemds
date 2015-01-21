@@ -233,10 +233,10 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 		//handle empty block output (on first reduce task only)
 		if( outputDummyRecords ) //required for rejecting empty blocks in mappers
 		{
-			long rlen = dim1.numRows;
-			long clen = dim2.numColumns;
-			int brlen = dim1.numRowsPerBlock;
-			int bclen = dim2.numColumnsPerBlock;
+			long rlen = dim1.getRows();
+			long clen = dim2.getCols();
+			int brlen = dim1.getRowsPerBlock();
+			int bclen = dim2.getColsPerBlock();
 			MatrixIndexes tmpIx = new MatrixIndexes();
 			MatrixBlock tmpVal = new MatrixBlock();
 			for(long i=0, r=1; i<rlen; i+=brlen, r++)
@@ -286,8 +286,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 			throw new RuntimeException(e);
 		} 
 		
-		int blockRlen=dim1.numRowsPerBlock;
-		int blockClen=dim2.numColumnsPerBlock;
+		int blockRlen=dim1.getRowsPerBlock();
+		int blockClen=dim2.getColsPerBlock();
 		int elementSize=(int)Math.ceil((double)(77+8*blockRlen*blockClen+20+12)/0.75);
 		OUT_CACHE_SIZE=((long)OptimizerUtils.getLocalMemBudget() //current jvm max mem
 				       -MRJobConfiguration.getMMCJCacheSize(job))/elementSize;

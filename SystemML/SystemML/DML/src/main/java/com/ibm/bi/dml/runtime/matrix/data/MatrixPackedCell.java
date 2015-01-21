@@ -168,6 +168,11 @@ public class MatrixPackedCell extends MatrixCell
 	}
 	
 	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
+	
+	@Override
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();

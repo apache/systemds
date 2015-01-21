@@ -229,9 +229,9 @@ public class IndexingOp extends Hop
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc != null ) 
 		{
-			long lnnz = mc.dimsKnown()?Math.min(mc.get_rows()*mc.get_cols(), mc.getNonZeros()):-1;
+			long lnnz = mc.dimsKnown()?Math.min(mc.getRows()*mc.getCols(), mc.getNonZeros()):-1;
 			//worst-case is input size, but dense
-			ret = new long[]{mc.get_rows(), mc.get_cols(), lnnz};
+			ret = new long[]{mc.getRows(), mc.getCols(), lnnz};
 			if( _rowLowerEqualsUpper ) ret[0]=1;
 			if( _colLowerEqualsUpper ) ret[1]=1;	
 		}

@@ -116,7 +116,7 @@ public class CombineMR
 			for(int i=0; i<resultIndexes.length; i++)
 			{
 				MatrixCharacteristics stat=MRJobConfiguration.getMatrixCharacteristicsForOutput(job, resultIndexes[i]);
-				outputBlockSizes.put(resultIndexes[i], new Pair<Integer, Integer>(stat.numRowsPerBlock, stat.numColumnsPerBlock));
+				outputBlockSizes.put(resultIndexes[i], new Pair<Integer, Integer>(stat.getRowsPerBlock(), stat.getColsPerBlock()));
 			}
 			for(MRInstruction ins: comb_instructions)
 			{

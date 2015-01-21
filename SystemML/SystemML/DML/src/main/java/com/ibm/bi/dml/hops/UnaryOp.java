@@ -658,10 +658,10 @@ public class UnaryOp extends Hop
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
 			{
-				ret = new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
+				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 			}
 			else 
-				ret = new long[]{mc.get_rows(), mc.get_cols(), -1};	
+				ret = new long[]{mc.getRows(), mc.getCols(), -1};	
 		}
 		
 		return ret;

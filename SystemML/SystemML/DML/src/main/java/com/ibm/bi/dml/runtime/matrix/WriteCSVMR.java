@@ -150,8 +150,7 @@ public class WriteCSVMR
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Integer.toString(i));
-			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
+			stats[i].setNonZeros( group.getCounter(Integer.toString(i)) );
 		}
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());

@@ -68,6 +68,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -1608,12 +1609,12 @@ public class PerfTestTool
 		//read existing profile
 		FileInputStream fis = new FileInputStream( fname );
 
-		//xml parsing
-		XMLInputFactory xif = XMLInputFactory.newInstance();
-		XMLStreamReader xsr = xif.createXMLStreamReader( fis );
-		
 		try
 		{
+			//xml parsing
+			XMLInputFactory xif = XMLInputFactory.newInstance();
+			XMLStreamReader xsr = xif.createXMLStreamReader( fis );
+			
 			int e = xsr.nextTag(); // profile start
 			
 			while( true ) //read all instructions
@@ -1655,8 +1656,7 @@ public class PerfTestTool
 		}
 		finally
 		{
-			if( fis != null )
-				fis.close();
+			IOUtilFunctions.closeSilently(fis);
 		}
 		
 		//mark profile as successfully read
@@ -1678,16 +1678,17 @@ public class PerfTestTool
 			dir.mkdir();
 		File f = new File( fname );
 		f.createNewFile();
-		FileOutputStream fos = new FileOutputStream( f );
 		
-		//create document
-		XMLOutputFactory xof = XMLOutputFactory.newInstance();
-		XMLStreamWriter xsw = xof.createXMLStreamWriter( fos );
-		//TODO use an alternative way for intentation
-		//xsw = new IndentingXMLStreamWriter( xsw ); //remove this line if no indenting required
+		FileOutputStream fos = new FileOutputStream( f );
 		
 		try
 		{
+			//create document
+			XMLOutputFactory xof = XMLOutputFactory.newInstance();
+			XMLStreamWriter xsw = xof.createXMLStreamWriter( fos );
+			//TODO use an alternative way for intentation
+			//xsw = new IndentingXMLStreamWriter( xsw ); //remove this line if no indenting required
+			
 			//write document content
 			xsw.writeStartDocument();
 			xsw.writeStartElement( XML_PROFILE );
@@ -1729,8 +1730,7 @@ public class PerfTestTool
 		}
 		finally
 		{
-			if( fos != null )
-				fos.close();
+			IOUtilFunctions.closeSilently(fos);
 		}
 	}
 

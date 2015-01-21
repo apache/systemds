@@ -359,9 +359,9 @@ public class AggUnaryOp extends Hop
 		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( _direction == Direction.Col && mc.colsKnown() ) 
-			ret = new long[]{1, mc.get_cols(), -1};
+			ret = new long[]{1, mc.getCols(), -1};
 		else if( _direction == Direction.Row && mc.rowsKnown() )
-			ret = new long[]{mc.get_rows(), 1, -1};
+			ret = new long[]{mc.getRows(), 1, -1};
 		
 		return ret;
 	}

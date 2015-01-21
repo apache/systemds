@@ -88,4 +88,9 @@ public class PartialBlock implements WritableComparable<PartialBlock>
 		PartialBlock that = (PartialBlock)o;
 		return (row==that.row && column==that.column && value==that.value);
 	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("hashCode() should never be called on instances of this class.");
+	}
 }

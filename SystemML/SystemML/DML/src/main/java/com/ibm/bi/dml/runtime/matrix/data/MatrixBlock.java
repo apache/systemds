@@ -4525,7 +4525,7 @@ public class MatrixBlock extends MatrixValue
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ )
 			sum_wt += quickGetValue(i, 1);
-		if ( Math.floor(sum_wt) != sum_wt ) {
+		if ( Math.floor(sum_wt) < sum_wt ) {
 			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
 		}
 		return sum_wt;
@@ -5430,6 +5430,11 @@ public class MatrixBlock extends MatrixValue
 	@Override
 	public boolean equals(Object arg0) {
 		throw new RuntimeException("Equals should never be called for matrix blocks.");
+	}
+	
+	@Override
+	public int hashCode() {
+		throw new RuntimeException("HashCode should never be called for matrix blocks.");
 	}
 	
 	@Override

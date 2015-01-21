@@ -995,10 +995,10 @@ public class ProgramConverter
 				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
 				boolean inplace = mo.isUpdateInPlaceEnabled();
 				matrixMetaData = new String[9];
-				matrixMetaData[0] = String.valueOf( mc.get_rows() );
-				matrixMetaData[1] = String.valueOf( mc.get_cols() );
-				matrixMetaData[2] = String.valueOf( mc.get_rows_per_block() );
-				matrixMetaData[3] = String.valueOf( mc.get_cols_per_block() );
+				matrixMetaData[0] = String.valueOf( mc.getRows() );
+				matrixMetaData[1] = String.valueOf( mc.getCols() );
+				matrixMetaData[2] = String.valueOf( mc.getRowsPerBlock() );
+				matrixMetaData[3] = String.valueOf( mc.getColsPerBlock() );
 				matrixMetaData[4] = String.valueOf( mc.getNonZeros() );
 				matrixMetaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
 				matrixMetaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );

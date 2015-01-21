@@ -201,12 +201,12 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 			MatrixCharacteristics dim=MRJobConfiguration.getMatrixCharacteristicsForInput(job, in.input);
 			delims[ri]=in.delim;
 			sparses[ri]=in.sparse;
-			numColBlocks[ri]=(long)Math.ceil((double)dim.get_cols()/(double) dim.get_cols_per_block());
-			lastBlockNCols[ri]=(int) (dim.get_cols()%dim.get_cols_per_block());
-			colsPerBlock[ri]=dim.get_cols_per_block();
-			long rstep=(long)Math.ceil((double)dim.get_rows()/(double)numParitions);
+			numColBlocks[ri]=(long)Math.ceil((double)dim.getCols()/(double) dim.getColsPerBlock());
+			lastBlockNCols[ri]=(int) (dim.getCols()%dim.getColsPerBlock());
+			colsPerBlock[ri]=dim.getColsPerBlock();
+			long rstep=(long)Math.ceil((double)dim.getRows()/(double)numParitions);
 			minRowIndexes[ri]=rowIndexes[ri]=rstep*taskID;
-			maxRowIndexes[ri]=Math.min(rstep*(taskID+1), dim.numRows);
+			maxRowIndexes[ri]=Math.min(rstep*(taskID+1), dim.getRows());
 			colIndexes[ri]=0;
 		}
 		

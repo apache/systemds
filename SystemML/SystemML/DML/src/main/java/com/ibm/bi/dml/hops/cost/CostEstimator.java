@@ -274,10 +274,10 @@ public abstract class CostEstimator
 			{
 				MatrixObject mo = (MatrixObject) dat;
 				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)mo.getMetaData()).getMatrixCharacteristics();
-				long rlen = mc.get_rows();
-				long clen = mc.get_cols();
-				long brlen = mc.get_rows_per_block();
-				long bclen = mc.get_cols_per_block();
+				long rlen = mc.getRows();
+				long clen = mc.getCols();
+				long brlen = mc.getRowsPerBlock();
+				long bclen = mc.getColsPerBlock();
 				long nnz = mc.getNonZeros();
 				boolean inmem = mo.getStatusAsString().equals("CACHED");
 				vs = new VarStats(rlen, clen, brlen, bclen, nnz, inmem);
@@ -438,7 +438,7 @@ public abstract class CostEstimator
 			if( !stats.containsKey(String.valueOf(ix)) )
 			{
 				MatrixCharacteristics mc = e.getValue();
-				VarStats vs = new VarStats(mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), mc.getNonZeros(), false);
+				VarStats vs = new VarStats(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros(), false);
 				stats.put(String.valueOf(ix), vs);	
 			}
 		}

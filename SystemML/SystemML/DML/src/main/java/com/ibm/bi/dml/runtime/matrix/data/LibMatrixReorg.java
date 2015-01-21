@@ -45,6 +45,10 @@ public class LibMatrixReorg
 		INVALID,
 	}
 	
+	private LibMatrixReorg() {
+		//prevent instantiation via private constructor
+	}
+	
 	/////////////////////////
 	// public interface    //
 	/////////////////////////

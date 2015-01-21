@@ -56,11 +56,15 @@ public class MatrixCharacteristics
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public long numRows=-1;
-	public long numColumns=-1;
-	public int numRowsPerBlock=1;
-	public int numColumnsPerBlock=1;
-	public long nonZero=-1;
+	private long numRows = -1;
+	private long numColumns = -1;
+	private int numRowsPerBlock = 1;
+	private int numColumnsPerBlock = 1;
+	private long nonZero = -1;
+	
+	public MatrixCharacteristics() {
+	
+	}
 	
 	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc)
 	{
@@ -72,47 +76,52 @@ public class MatrixCharacteristics
 		set(nr, nc, bnr, bnc, nnz);
 	}
 
-	public MatrixCharacteristics() {
-	}
-
 	public void set(long nr, long nc, int bnr, int bnc) {
-		numRows=nr;
-		numColumns=nc;
-		numRowsPerBlock=bnr;
-		numColumnsPerBlock=bnc;
+		numRows = nr;
+		numColumns = nc;
+		numRowsPerBlock = bnr;
+		numColumnsPerBlock = bnc;
 	}
 	
 	public void set(long nr, long nc, int bnr, int bnc, long nnz) {
-		numRows=nr;
-		numColumns=nc;
-		numRowsPerBlock=bnr;
-		numColumnsPerBlock=bnc;
+		numRows = nr;
+		numColumns = nc;
+		numRowsPerBlock = bnr;
+		numColumnsPerBlock = bnc;
 		nonZero = nnz;
 	}
 	
 	public void set(MatrixCharacteristics that) {
-		this.numRows=that.numRows;
-		this.numColumns=that.numColumns;
-		this.numRowsPerBlock=that.numRowsPerBlock;
-		this.numColumnsPerBlock=that.numColumnsPerBlock;
-		this.nonZero = that.nonZero;
+		numRows = that.numRows;
+		numColumns = that.numColumns;
+		numRowsPerBlock = that.numRowsPerBlock;
+		numColumnsPerBlock = that.numColumnsPerBlock;
+		nonZero = that.nonZero;
 	}
 	
-	public long get_rows(){
+	public long getRows(){
 		return numRows;
 	}
 
-	public long get_cols(){
+	public long getCols(){
 		return numColumns;
 	}
 	
-	public int get_rows_per_block() {
+	public int getRowsPerBlock() {
 		return numRowsPerBlock;
 	}
 	
-	public int get_cols_per_block() {
+	public void setRowsPerBlock( int brlen){
+		numRowsPerBlock = brlen;
+	} 
+	
+	public int getColsPerBlock() {
 		return numColumnsPerBlock;
 	}
+	
+	public void setColsPerBlock( int bclen){
+		numColumnsPerBlock = bclen;
+	} 
 	
 	public String toString()
 	{
@@ -122,14 +131,14 @@ public class MatrixCharacteristics
 	
 	public void setDimension(long nr, long nc)
 	{
-		numRows=nr;
-		numColumns=nc;
+		numRows = nr;
+		numColumns = nc;
 	}
 	
 	public void setBlockSize(int bnr, int bnc)
 	{
-		numRowsPerBlock=bnr;
-		numColumnsPerBlock=bnc;
+		numRowsPerBlock = bnr;
+		numColumnsPerBlock = bnc;
 	}
 	
 	public void setNonZeros(long nnz) {
@@ -153,64 +162,64 @@ public class MatrixCharacteristics
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
-			MatrixCharacteristics dim_out) throws DMLUnsupportedOperationException, DMLRuntimeException
+			MatrixCharacteristics dimOut) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		op.fn.computeDimension(dim, dim_out);
+		op.fn.computeDimension(dim, dimOut);
 	}
 	
 	public static void aggregateUnary(MatrixCharacteristics dim, AggregateUnaryOperator op, 
-			MatrixCharacteristics dim_out) throws DMLUnsupportedOperationException, DMLRuntimeException
+			MatrixCharacteristics dimOut) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		op.indexFn.computeDimension(dim, dim_out);
+		op.indexFn.computeDimension(dim, dimOut);
 	}
 	
 	public static void aggregateBinary(MatrixCharacteristics dim1, MatrixCharacteristics dim2,
-			AggregateBinaryOperator op, MatrixCharacteristics dim_out) 
+			AggregateBinaryOperator op, MatrixCharacteristics dimOut) 
 	throws DMLUnsupportedOperationException
 	{
 		//set dimension
-		dim_out.set(dim1.numRows, dim2.numColumns, dim1.numRowsPerBlock, dim2.numColumnsPerBlock);
+		dimOut.set(dim1.numRows, dim2.numColumns, dim1.numRowsPerBlock, dim2.numColumnsPerBlock);
 	}
 	
 	public static void computeDimension(HashMap<Byte, MatrixCharacteristics> dims, MRInstruction ins) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		MatrixCharacteristics dim_out=dims.get(ins.output);
-		if(dim_out==null)
+		MatrixCharacteristics dimOut=dims.get(ins.output);
+		if(dimOut==null)
 		{
-			dim_out=new MatrixCharacteristics();
-			dims.put(ins.output, dim_out);
+			dimOut=new MatrixCharacteristics();
+			dims.put(ins.output, dimOut);
 		}
 		
 		if(ins instanceof ReorgInstruction)
 		{
 			ReorgInstruction realIns=(ReorgInstruction)ins;
-			reorg(dims.get(realIns.input), (ReorgOperator)realIns.getOperator(), dim_out);
+			reorg(dims.get(realIns.input), (ReorgOperator)realIns.getOperator(), dimOut);
 		}
 		else if(ins instanceof AppendInstruction )
 		{
 			AppendInstruction realIns = (AppendInstruction)ins;
 			MatrixCharacteristics in_dim1 = dims.get(realIns.input1);
 			MatrixCharacteristics in_dim2 = dims.get(realIns.input2);
-			dim_out.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
+			dimOut.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
 		}
 		else if(ins instanceof CumsumAggregateInstruction)
 		{
 			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;
 			MatrixCharacteristics in = dims.get(realIns.input);
-			dim_out.set((long)Math.ceil( (double)in.get_rows()/in.get_rows_per_block()), in.get_cols(), in.get_rows_per_block(), in.get_cols_per_block());
+			dimOut.set((long)Math.ceil( (double)in.getRows()/in.getRowsPerBlock()), in.getCols(), in.getRowsPerBlock(), in.getColsPerBlock());
 		}
 		else if(ins instanceof AggregateUnaryInstruction)
 		{
 			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;
 			aggregateUnary(dims.get(realIns.input), 
-					(AggregateUnaryOperator)realIns.getOperator(), dim_out);
+					(AggregateUnaryOperator)realIns.getOperator(), dimOut);
 		}
 		else if(ins instanceof AggregateBinaryInstruction)
 		{
 			AggregateBinaryInstruction realIns=(AggregateBinaryInstruction)ins;
 			aggregateBinary(dims.get(realIns.input1), dims.get(realIns.input2),
-					(AggregateBinaryOperator)realIns.getOperator(), dim_out);
+					(AggregateBinaryOperator)realIns.getOperator(), dimOut);
 		}
 		else if(ins instanceof MapMultChainInstruction)
 		{
@@ -218,25 +227,25 @@ public class MatrixCharacteristics
 			MapMultChainInstruction realIns=(MapMultChainInstruction)ins;
 			MatrixCharacteristics mc1 = dims.get(realIns.getInput1());
 			MatrixCharacteristics mc2 = dims.get(realIns.getInput2());
-			dim_out.set(mc1.numColumns, mc2.numColumns, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
+			dimOut.set(mc1.numColumns, mc2.numColumns, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
 		}
 		else if(ins instanceof ReblockInstruction)
 		{
 			ReblockInstruction realIns=(ReblockInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);
-			dim_out.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen, in_dim.nonZero);
+			dimOut.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen, in_dim.nonZero);
 		}
 		else if( ins instanceof MatrixReshapeMRInstruction )
 		{
 			MatrixReshapeMRInstruction mrinst = (MatrixReshapeMRInstruction) ins;
 			MatrixCharacteristics in_dim=dims.get(mrinst.input);
-			dim_out.set(mrinst.getNumRows(),mrinst.getNumColunms(),in_dim.get_rows_per_block(), in_dim.get_cols_per_block(), in_dim.getNonZeros());
+			dimOut.set(mrinst.getNumRows(),mrinst.getNumColunms(),in_dim.getRowsPerBlock(), in_dim.getColsPerBlock(), in_dim.getNonZeros());
 		}
 		else if(ins instanceof RandInstruction
 				|| ins instanceof SeqInstruction
 				) {
 			DataGenMRInstruction dataIns=(DataGenMRInstruction)ins;
-			dim_out.set(dims.get(dataIns.getInput()));
+			dimOut.set(dims.get(dataIns.getInput()));
 		}
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
@@ -245,14 +254,14 @@ public class MatrixCharacteristics
 				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;
-			dim_out.set(dims.get(realIns.input));
+			dimOut.set(dims.get(realIns.input));
 		}
 		else if (ins instanceof MMTSJMRInstruction)
 		{
 			MMTSJMRInstruction mmtsj = (MMTSJMRInstruction)ins;
 			MMTSJType tstype = mmtsj.getMMTSJType();
 			MatrixCharacteristics mc = dims.get(mmtsj.input);
-			dim_out.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
+			dimOut.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
@@ -260,7 +269,7 @@ public class MatrixCharacteristics
 		{
 			PMMJMRInstruction pmmins = (PMMJMRInstruction) ins;
 			MatrixCharacteristics mc = dims.get(pmmins.input2);
-			dim_out.set( pmmins.getNumRows(),
+			dimOut.set( pmmins.getNumRows(),
 					     mc.numColumns,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
@@ -269,25 +278,25 @@ public class MatrixCharacteristics
 			RemoveEmptyMRInstruction realIns=(RemoveEmptyMRInstruction)ins;
 			MatrixCharacteristics mc = dims.get(realIns.input1);
 			if( realIns.isRemoveRows() )
-				dim_out.set(realIns.getOutputLen(), mc.get_cols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+				dimOut.set(realIns.getOutputLen(), mc.getCols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 			else
-				dim_out.set(mc.get_rows(), realIns.getOutputLen(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+				dimOut.set(mc.getRows(), realIns.getOutputLen(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{
 			BinaryMRInstructionBase realIns=(BinaryMRInstructionBase)ins;
-			dim_out.set(dims.get(realIns.input1));
+			dimOut.set(dims.get(realIns.input1));
 		}
 		else if (ins instanceof CombineTertiaryInstruction ) {
 			TertiaryInstruction realIns=(TertiaryInstruction)ins;
-			dim_out.set(dims.get(realIns.input1));
+			dimOut.set(dims.get(realIns.input1));
 		}
 		else if (ins instanceof CombineUnaryInstruction ) {
-			dim_out.set( dims.get(((CombineUnaryInstruction) ins).input));
+			dimOut.set( dims.get(((CombineUnaryInstruction) ins).input));
 		}
 		else if(ins instanceof CM_N_COVInstruction || ins instanceof GroupedAggregateInstruction )
 		{
-			dim_out.set(1, 1, 1, 1);
+			dimOut.set(1, 1, 1, 1);
 		}
 		else if(ins instanceof RangeBasedReIndexInstruction)
 		{
@@ -296,21 +305,21 @@ public class MatrixCharacteristics
 			IndexRange ixrange = realIns.getIndexRange(); 
 			long nrow=ixrange.rowEnd-ixrange.rowStart+1;
 			long ncol=ixrange.colEnd-ixrange.colStart+1;
-			dim_out.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
+			dimOut.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
 		else if (ins instanceof TertiaryInstruction) {
 			TertiaryInstruction realIns = (TertiaryInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
-			dim_out.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
+			dimOut.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
 		else { 
 			/*
 			 * if ins is none of the above cases then we assume that dim_out dimensions are unknown
 			 */
-			dim_out.numRows = -1;
-			dim_out.numColumns = -1;
-			dim_out.numRowsPerBlock=1;
-			dim_out.numColumnsPerBlock=1;
+			dimOut.numRows = -1;
+			dimOut.numColumns = -1;
+			dimOut.numRowsPerBlock=1;
+			dimOut.numColumnsPerBlock=1;
 		}
 	}
 

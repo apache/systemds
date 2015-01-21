@@ -67,8 +67,8 @@ public class MemoTable
 				if( tmp != null )
 				{
 					//enrich exact information with worst-case stats
-					dim1 = (dim1<=0) ? tmp.get_rows() : dim1;
-					dim2 = (dim2<=0) ? tmp.get_cols() : dim2;
+					dim1 = (dim1<=0) ? tmp.getRows() : dim1;
+					dim2 = (dim2<=0) ? tmp.getCols() : dim2;
 					nnz = (nnz<=0) ? tmp.getNonZeros() : nnz;
 				}
 				ret[i] = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
@@ -96,8 +96,8 @@ public class MemoTable
 			if( tmp != null )
 			{
 				//enrich exact information with worst-case stats
-				dim1 = (dim1<=0) ? tmp.get_rows() : dim1;
-				dim2 = (dim2<=0) ? tmp.get_cols() : dim2;
+				dim1 = (dim1<=0) ? tmp.getRows() : dim1;
+				dim2 = (dim2<=0) ? tmp.getCols() : dim2;
 				nnz = (nnz<=0) ? tmp.getNonZeros() : nnz;
 			}
 			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);

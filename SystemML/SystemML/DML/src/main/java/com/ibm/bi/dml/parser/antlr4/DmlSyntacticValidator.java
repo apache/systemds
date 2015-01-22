@@ -99,7 +99,6 @@ import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.PathStatement;
 import com.ibm.bi.dml.parser.PrintStatement;
-import com.ibm.bi.dml.parser.RelationalExpression;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.StringIdentifier;
@@ -109,6 +108,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	
+	private DmlSyntacticValidatorHelper helper = new DmlSyntacticValidatorHelper();
 	
 	// Functions we have to implement but don't really need it
 	@Override
@@ -256,7 +258,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitUnaryExpression(UnaryExpressionContext ctx) {
 		if(ctx.left.info.expr != null) {
-			String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+			String fileName = helper.getCurrentFileName();
 			int line = ctx.start.getLine();
 			int col = ctx.start.getCharPositionInLine();
 			
@@ -318,11 +320,31 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitRelationalExpression(RelationalExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
-			ctx.info.expr = new RelationalExpression(rop);
-			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-			((RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
-			setFileLineColumn(ctx.info.expr, ctx);
+			String fileName = helper.getCurrentFileName();
+			int line = ctx.start.getLine();
+			int col = ctx.start.getCharPositionInLine();
+			ArrayList<ParameterExpression> paramExpression = new ArrayList<ParameterExpression>();
+			paramExpression.add(new ParameterExpression(null, ctx.left.info.expr));
+			paramExpression.add(new ParameterExpression(null, ctx.right.info.expr));
+			ParameterExpression operator = new ParameterExpression(null, new StringIdentifier(ctx.op.getText(), fileName, line, col, line, col));
+			paramExpression.add(operator);
+			
+			try {
+				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression("ppred", paramExpression, fileName, line, col, line, col);
+				if (bife != null){
+					// It is a builtin function
+					ctx.info.expr = bife;
+					return;
+				}
+			}
+			catch(Exception e) {}
+			helper.notifyErrorListeners("Cannot parse relational expression", ctx.getStart());
+			
+//			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
+//			ctx.info.expr = new RelationalExpression(rop);
+//			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+//			((RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+//			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
 	
@@ -378,7 +400,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //			val = false;
 //		}
 //		else {
-//			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot parse the boolean value: \'" +  ctx.getText() + "\'", ctx.getStart());
+//			helper.notifyErrorListeners("cannot parse the boolean value: \'" +  ctx.getText() + "\'", ctx.getStart());
 //			return;
 //		}
 //		int linePosition = ctx.start.getLine();
@@ -397,7 +419,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot parse the double value: \'" +  ctx.getText() + "\'", ctx.getStart());
+			helper.notifyErrorListeners("cannot parse the double value: \'" +  ctx.getText() + "\'", ctx.getStart());
 			return;
 		}
 	}
@@ -412,7 +434,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot parse the integer value: \'" +  ctx.getText() + "\'", ctx.getStart());
+			helper.notifyErrorListeners("cannot parse the integer value: \'" +  ctx.getText() + "\'", ctx.getStart());
 			return;
 		}
 	}
@@ -428,7 +450,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			}
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("something wrong while parsing string ... strange", ctx.start);
+			helper.notifyErrorListeners("something wrong while parsing string ... strange", ctx.start);
 			return;
 		}
 			
@@ -445,14 +467,14 @@ public class DmlSyntacticValidator implements DmlListener {
 		ctx.info.expr = ctx.dataIdentifier().dataInfo.expr;
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
-		ctx.info.expr.setAllPositions(DmlSyntacticValidatorHelper.getCurrentFileName(), line, col, line, col);
+		ctx.info.expr.setAllPositions(helper.getCurrentFileName(), line, col, line, col);
 		setFileLineColumn(ctx.info.expr, ctx);
 //		if(ctx.getChild(0) instanceof DataIdentifierContext) {
 //			ctx.info.expr = ctx.dataIdentifier().dataInfo.expr;
 //		}
 //		else {
 //			String msg = "cannot evaluate data expression ... strange";
-//			DmlSyntacticValidatorHelper.notifyErrorListeners(msg, ctx.start);
+//			helper.notifyErrorListeners(msg, ctx.start);
 //		}
 	}
 	
@@ -493,7 +515,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				rowIndices.add(ctx.rowLower.info.expr);
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect index expression for row", ctx.start);
+				helper.notifyErrorListeners("incorrect index expression for row", ctx.start);
 				return;
 			}
 			
@@ -509,7 +531,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				colIndices.add(ctx.colLower.info.expr);
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect index expression for column", ctx.start);
+				helper.notifyErrorListeners("incorrect index expression for column", ctx.start);
 				return;
 			}
 			
@@ -527,7 +549,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //			if(ctx.rowUpper != null && !ctx.rowUpper.isEmpty() && (ctx.rowUpper.info.expr != null)) {
 //				rowIndices.add(ctx.rowUpper.info.expr);
 //				if(!rowIndexLowerSet) {
-//					DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect index expression for row", ctx.start);
+//					helper.notifyErrorListeners("incorrect index expression for row", ctx.start);
 //					return;
 //				}
 //			}
@@ -541,7 +563,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //			if(ctx.colUpper != null && !ctx.colUpper.isEmpty() && (ctx.colUpper.info.expr != null)) {
 //				colIndices.add(ctx.colUpper.info.expr);
 //				if(!colIndexLowerSet) {
-//					DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect index expression for column", ctx.start);
+//					helper.notifyErrorListeners("incorrect index expression for column", ctx.start);
 //					return;
 //				}
 //			}
@@ -550,7 +572,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			((IndexedIdentifier) ctx.dataInfo.expr).setIndices(exprList);
 		}
 		catch(Exception e) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot set the indices", ctx.start);
+			helper.notifyErrorListeners("cannot set the indices", ctx.start);
 			return;
 		}
 	}
@@ -589,14 +611,14 @@ public class DmlSyntacticValidator implements DmlListener {
 								else {
 									val = text;
 									// the commandline parameters can be passed without any quotes
-//									DmlSyntacticValidatorHelper.notifyErrorListeners("something wrong while parsing string ... strange", start);
+//									helper.notifyErrorListeners("something wrong while parsing string ... strange", start);
 //									return null;
 								}
 								return new StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
 							}
 						}
 						catch(Exception e3) {
-							DmlSyntacticValidatorHelper.notifyErrorListeners("unable to cast the commandline parameter into int/double/boolean/string", start);
+							helper.notifyErrorListeners("unable to cast the commandline parameter into int/double/boolean/string", start);
 							return null;
 						}
 					}
@@ -606,7 +628,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	private void fillExpressionInfoCommandLineParameters(String varName, ExpressionInfo dataInfo, Token start) {
 		
 		if(!varName.startsWith("$")) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("commandline param doesnot start with $ ... strange", start);
+			helper.notifyErrorListeners("commandline param doesnot start with $ ... strange", start);
 			return;
 		}
 		
@@ -614,7 +636,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		for(Map.Entry<String, String> arg : DMLParserWrapper.argVals.entrySet()) {
 			if(arg.getKey().trim().compareTo(varName) == 0) {
 				if(varValue != null) {
-					DmlSyntacticValidatorHelper.notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
+					helper.notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
 					return;
 				}
 				else {
@@ -624,7 +646,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 		
 		if(varValue == null) {
-			// DmlSyntacticValidatorHelper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", start);
+			// helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", start);
 			return;
 		}
 		
@@ -643,7 +665,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		if(ctx.dataInfo.expr == null) {
 			// Check if the parent is ifdef
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
+				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
 			}
 		}
 	}
@@ -655,7 +677,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		if(ctx.dataInfo.expr == null) {
 			// Check if the parent is ifdef
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
+				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
 			}
 		}
 	}
@@ -677,7 +699,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		
 		File importedFile = new File(filePath);
 		if(!importedFile.exists()) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
+			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
 			return;
 		}
 		else {
@@ -685,12 +707,12 @@ public class DmlSyntacticValidator implements DmlListener {
 			try {
 				prog = (new DMLParserWrapper()).doParse(filePath, null);
 			} catch (ParseException e) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+				helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 				return;
 			}
 	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
 			if(prog == null) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+				helper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
 				return;
 			}
 			else {
@@ -707,12 +729,12 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitAssignmentStatement(AssignmentStatementContext ctx) {
 		if(ctx.targetList == null || ctx.targetList.size() != 1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect parsing for assignment", ctx.start);
+			helper.notifyErrorListeners("incorrect parsing for assignment", ctx.start);
 			return;
 		}
 		String targetListText = ctx.targetList.get(0).getText(); 
 		if(targetListText.startsWith("$")) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("assignment of commandline parameters is not allowed. (Quickfix: try using someLocalVariable=ifdef(" + targetListText + ", default value))", ctx.start);
+			helper.notifyErrorListeners("assignment of commandline parameters is not allowed. (Quickfix: try using someLocalVariable=ifdef(" + targetListText + ", default value))", ctx.start);
 			return;
 		}
 		
@@ -728,12 +750,12 @@ public class DmlSyntacticValidator implements DmlListener {
 				setFileLineColumn(ctx.info.stmt, ctx);
 			} catch (LanguageException e) {
 				// TODO: extract more meaningful info from this exception.
-				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid assignment", ctx.targetList.get(0).start);
+				helper.notifyErrorListeners("invalid assignment", ctx.targetList.get(0).start);
 				return;
 			} 
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect lvalue ... strange", ctx.targetList.get(0).start);
+			helper.notifyErrorListeners("incorrect lvalue ... strange", ctx.targetList.get(0).start);
 			return;
 		}
 		
@@ -746,41 +768,41 @@ public class DmlSyntacticValidator implements DmlListener {
 			setFileLineColumn(ctx.info.stmt, ctx);
 		} catch (LanguageException e) {
 			// TODO: extract more meaningful info from this exception.
-			DmlSyntacticValidatorHelper.notifyErrorListeners("invalid function call", ctx.start);
+			helper.notifyErrorListeners("invalid function call", ctx.start);
 			return;
 		}
 	}
 	
 	private void setPrintStatement(FunctionCallAssignmentStatementContext ctx, String functionName) {
-		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = helper.getParameterExpressionList(ctx.paramExprs);
 		if(paramExpression.size() != 1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners(functionName + "() has only one parameter", ctx.start);
+			helper.notifyErrorListeners(functionName + "() has only one parameter", ctx.start);
 			return;
 		}
 		Expression expr = paramExpression.get(0).getExpr();
 		if(expr == null) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+			helper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
 		}
 		try {
 			ctx.info.stmt = new PrintStatement(functionName, expr);
 		} catch (LanguageException e) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
+			helper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
 		}
 	}
 	
 	private void setOutputStatement(FunctionCallAssignmentStatementContext ctx) {
-		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = helper.getParameterExpressionList(ctx.paramExprs);
 		if(paramExpression.size() < 2){
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect usage of write function (atleast 2 arguments required)", ctx.start);
+			helper.notifyErrorListeners("incorrect usage of write function (atleast 2 arguments required)", ctx.start);
 			return;
 		}
 		if(paramExpression.get(0).getExpr() instanceof DataIdentifier) {
 			//  && paramExpression.get(0).getName() == null
 			// correct usage of identifier
 			// if(paramExpression.get(1).getName() == null) {
-				String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+				String fileName = helper.getCurrentFileName();
 				int line = ctx.start.getLine();
 				int col = ctx.start.getCharPositionInLine();
 				HashMap<String, Expression> varParams = new HashMap<String, Expression>();
@@ -798,7 +820,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			//}
 		}
 		
-		DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect usage of write function", ctx.start);
+		helper.notifyErrorListeners("incorrect usage of write function", ctx.start);
 		return;
 		
 	}
@@ -818,7 +840,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			functionName = fnNames[1].trim();
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect function name", ctx.name);
+			helper.notifyErrorListeners("incorrect function name", ctx.name);
 			return;
 		}
 		
@@ -834,13 +856,13 @@ public class DmlSyntacticValidator implements DmlListener {
 		
 		boolean ignoreLValue = false;
 		if(ctx.targetList == null || ctx.targetList.size() == 0 || ctx.targetList.get(0).isEmpty()) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("function call needs to have lvalue (Quickfix: change it to \'tmpVar = " + functionName + "(...)\')", ctx.name);
+			helper.notifyErrorListeners("function call needs to have lvalue (Quickfix: change it to \'tmpVar = " + functionName + "(...)\')", ctx.name);
 		}
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = helper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
@@ -850,7 +872,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
 		} catch (ParseException e1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
+			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			 return;
 		}
 		
@@ -860,7 +882,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				target = (DataIdentifier) ctx.targetList.get(0).dataInfo.expr;
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect lvalue ... strange", ctx.targetList.get(0).start);
+				helper.notifyErrorListeners("incorrect lvalue ... strange", ctx.targetList.get(0).start);
 				//target = new DataIdentifier(); // so as not to avoid null pointer
 				return;
 			}
@@ -868,7 +890,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		
 		if(!functionName.contains("::") || functionName.startsWith(DMLProgram.DEFAULT_NAMESPACE)) {
 			// In global namespace, so it can be a builtin function
-			if(!DmlSyntacticValidatorHelper.validateBuiltinFunctions(ctx)) {
+			if(!helper.validateBuiltinFunctions(ctx)) {
 				return; // it is a built-in function and validation failed, so donot proceed ahead.
 			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
@@ -894,7 +916,7 @@ public class DmlSyntacticValidator implements DmlListener {
 					return;
 				}
 			} catch(Exception e) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
+				helper.notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
 				return ;
 			}
 		}
@@ -904,15 +926,15 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	@Override
 	public void exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext ctx) {
-//		if(!DmlSyntacticValidatorHelper.validateBuiltinFunctions(ctx)) {
+//		if(!helper.validateBuiltinFunctions(ctx)) {
 //			return; // it is a built-in function and validation failed, so donot proceed ahead.
 //		}
 		// Double verification: verify passed function name is a (non-parameterized) built-in function.
 		String functionName = ctx.name.getText();
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
-		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = helper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
@@ -939,15 +961,15 @@ public class DmlSyntacticValidator implements DmlListener {
 				return;
 			}
 		} catch(Exception e) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("unable to process builtin function expression " + functionName + ":" + e.getMessage(), ctx.start);
+			helper.notifyErrorListeners("unable to process builtin function expression " + functionName + ":" + e.getMessage(), ctx.start);
 			return ;
 		}
-		DmlSyntacticValidatorHelper.notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
+		helper.notifyErrorListeners("only builtin functions allowed as part of expression", ctx.start);
 	}
 	
 	private void setMultiAssignmentStatement(ArrayList<DataIdentifier> target, Expression expression, StatementContext ctx) {
 		ctx.info.stmt = new MultiAssignmentStatement(target, expression);
-		ctx.info.stmt.setAllPositions(DmlSyntacticValidatorHelper.getCurrentFileName(), ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+		ctx.info.stmt.setAllPositions(helper.getCurrentFileName(), ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
 		setFileLineColumn(ctx.info.stmt, ctx);
 	}
 
@@ -967,15 +989,15 @@ public class DmlSyntacticValidator implements DmlListener {
 			functionName = fnNames[1].trim();
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect function name", ctx.name);
+			helper.notifyErrorListeners("incorrect function name", ctx.name);
 			return;
 		}
 		
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
-		ArrayList<ParameterExpression> paramExpression = DmlSyntacticValidatorHelper.getParameterExpressionList(ctx.paramExprs);
+		ArrayList<ParameterExpression> paramExpression = helper.getParameterExpressionList(ctx.paramExprs);
 //		if(functionName.compareTo("read") == 0 && paramExpression.size() > 0 && paramExpression.get(0).getName() == null) {
 //			paramExpression.get(0).setName(DataExpression.IO_FILENAME);
 //		}
@@ -985,7 +1007,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
 		} catch (ParseException e1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
+			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			return;
 		}
 		
@@ -995,7 +1017,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				targetList.add((DataIdentifier) dataCtx.dataInfo.expr);
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect lvalue ... strange", dataCtx.start);
+				helper.notifyErrorListeners("incorrect lvalue ... strange", dataCtx.start);
 				//target = new DataIdentifier(); // so as not to avoid null pointer
 				return;
 			}
@@ -1003,7 +1025,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		
 		if(!functionName.contains("::") || functionName.startsWith(DMLProgram.DEFAULT_NAMESPACE)) {
 			// In global namespace, so it can be a builtin function
-//			if(!DmlSyntacticValidatorHelper.validateBuiltinFunctions(ctx)) {
+//			if(!helper.validateBuiltinFunctions(ctx)) {
 //				return; // it is a built-in function and validation failed, so donot proceed ahead.
 //			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
@@ -1029,7 +1051,7 @@ public class DmlSyntacticValidator implements DmlListener {
 					return;
 				}
 			} catch(Exception e) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
+				helper.notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
 				return;
 			}
 		}
@@ -1046,7 +1068,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		IfStatement ifStmt = new IfStatement();
 		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		ifStmt.setConditionalPredicate(predicate);
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		ifStmt.setAllPositions(fileName, line, col, line, col);
@@ -1074,7 +1096,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		WhileStatement whileStmt = new WhileStatement();
 		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		whileStmt.setPredicate(predicate);
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		whileStmt.setAllPositions(fileName, line, col, line, col);
@@ -1093,7 +1115,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitForStatement(ForStatementContext ctx) {
 		ForStatement forStmt = new ForStatement();
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
@@ -1119,7 +1141,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitParForStatement(ParForStatementContext ctx) {
 		ParForStatement parForStmt = new ParForStatement();
-		String fileName = DmlSyntacticValidatorHelper.getCurrentFileName();
+		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		
@@ -1183,7 +1205,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				dataId.setDataType(DataType.SCALAR);
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid datatype " + dataType, paramCtx.start);
+				helper.notifyErrorListeners("invalid datatype " + dataType, paramCtx.start);
 				return null;
 			}
 			
@@ -1202,11 +1224,11 @@ public class DmlSyntacticValidator implements DmlListener {
 				dataId.setValueType(ValueType.DOUBLE);
 			}
 			else if(valueType.compareTo("bool") == 0) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid valuetype " + valueType + " (Quickfix: use \'boolean\' instead)", paramCtx.start);
+				helper.notifyErrorListeners("invalid valuetype " + valueType + " (Quickfix: use \'boolean\' instead)", paramCtx.start);
 				return null;
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid valuetype " + valueType, paramCtx.start);
+				helper.notifyErrorListeners("invalid valuetype " + valueType, paramCtx.start);
 				return null;
 			}
 			retVal.add(dataId);
@@ -1240,7 +1262,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			functionStmt.mergeStatementBlocks();
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
+			helper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
 			return;
 		}
 		
@@ -1279,7 +1301,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				// Empty value allowed
 			}
 			else {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("the value of user parameter for external function should be of type string", ctx.start);
+				helper.notifyErrorListeners("the value of user parameter for external function should be of type string", ctx.start);
 				return;
 			}
 			otherParams.put(paramName, val);
@@ -1289,7 +1311,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 		functionStmt.setOtherParams(otherParams);
 		if(!atleastOneClassName) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("the parameter \'className\' needs to be passed for externalFunction", ctx.start);
+			helper.notifyErrorListeners("the parameter \'className\' needs to be passed for externalFunction", ctx.start);
 			return;
 		}
 		
@@ -1304,7 +1326,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //			((ExternalFunctionStatement) functionStmt).mergeStatementBlocks();
 //		}
 //		else {
-//			DmlSyntacticValidatorHelper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
+//			helper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
 //			return;
 //		}
 		
@@ -1324,17 +1346,17 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {
 		if(!ctx.commandLineParam.getText().startsWith("$")) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("the first argument of ifdef function should be a commandline argument parameter (which starts with $)", ctx.commandLineParam.start);
+			helper.notifyErrorListeners("the first argument of ifdef function should be a commandline argument parameter (which starts with $)", ctx.commandLineParam.start);
 			return;
 		}
 		
 		if(ctx.targetList == null || ctx.targetList.size() != 1) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect parsing for ifdef function", ctx.start);
+			helper.notifyErrorListeners("incorrect parsing for ifdef function", ctx.start);
 			return;
 		}
 		String targetListText = ctx.targetList.get(0).getText(); 
 		if(targetListText.startsWith("$")) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("lhs of ifdef function cannot be a commandline parameters. Use local variable instead", ctx.start);
+			helper.notifyErrorListeners("lhs of ifdef function cannot be a commandline parameters. Use local variable instead", ctx.start);
 			return;
 		}
 		
@@ -1359,13 +1381,13 @@ public class DmlSyntacticValidator implements DmlListener {
 				ctx.info.stmt = new AssignmentStatement(target, source, line, col, line, col);
 				setFileLineColumn(ctx.info.stmt, ctx);
 			} catch (LanguageException e) {
-				DmlSyntacticValidatorHelper.notifyErrorListeners("invalid assignment for ifdef function", ctx.targetList.get(0).start);
+				helper.notifyErrorListeners("invalid assignment for ifdef function", ctx.targetList.get(0).start);
 				return;
 			} 
 			
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect lvalue in ifdef function... strange", ctx.targetList.get(0).start);
+			helper.notifyErrorListeners("incorrect lvalue in ifdef function... strange", ctx.targetList.get(0).start);
 			return;
 		}
 		
@@ -1395,7 +1417,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			// Do nothing
 		}
 		else {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
+			helper.notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
 		}
 	}
 	
@@ -1420,7 +1442,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitIterablePredicateSeqExpression(IterablePredicateSeqExpressionContext ctx) {
 		if(ctx.ID().getText().compareTo("seq") != 0) {
-			DmlSyntacticValidatorHelper.notifyErrorListeners("incorrect function:\'" + ctx.ID().getText() + "\'. expected \'seq\'", ctx.start);
+			helper.notifyErrorListeners("incorrect function:\'" + ctx.ID().getText() + "\'. expected \'seq\'", ctx.start);
 			return;
 		}
 		ctx.info.from = ctx.from.info.expr;

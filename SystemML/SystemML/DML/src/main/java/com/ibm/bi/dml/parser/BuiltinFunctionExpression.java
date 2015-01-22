@@ -429,9 +429,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			DataType dt2 = getSecondExpr().getOutput().getDataType();
 			
 			//check input data types
-			if( dt1 == DataType.SCALAR && dt2 == DataType.SCALAR ) {
-				raiseValidateError("ppred() requires at least one matrix input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}			
+//			if( dt1 == DataType.SCALAR && dt2 == DataType.SCALAR ) {
+//				raiseValidateError("ppred() requires at least one matrix input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+//			}			
 			if( dt1 == DataType.MATRIX )
 				checkMatrixParam(getFirstExpr());
 			if( dt2 == DataType.MATRIX )

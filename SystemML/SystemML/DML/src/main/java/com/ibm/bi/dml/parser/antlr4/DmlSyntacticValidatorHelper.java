@@ -21,16 +21,16 @@ public class DmlSyntacticValidatorHelper {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static void notifyErrorListeners(String message, int line, int charPositionInLine) {
+	public void notifyErrorListeners(String message, int line, int charPositionInLine) {
 		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(line, charPositionInLine, message);
 	}
 	
-	public static void notifyErrorListeners(String message, Token op) {
+	public void notifyErrorListeners(String message, Token op) {
 		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
 	
-	public static String getCurrentFileName() {
-		return com.ibm.bi.dml.parser.antlr4.DmlSyntacticErrorListener.currentFileName.peek();
+	public String getCurrentFileName() {
+		return DmlSyntacticErrorListener.currentFileName.peek();
 	}
 	
 //	public static void setInfoForArithmeticOp(com.ibm.bi.dml.parser.Expression current, 
@@ -60,7 +60,7 @@ public class DmlSyntacticValidatorHelper {
 //		((com.ibm.bi.dml.parser.BooleanExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
 //	}
 	
-	public static boolean validateBuiltinFunctions(FunctionCallAssignmentStatementContext ctx) {
+	public boolean validateBuiltinFunctions(FunctionCallAssignmentStatementContext ctx) {
 		String functionName = ctx.name.getText().replaceAll(" ", "").trim();
 		if(functionName.compareTo("write") == 0 || functionName.compareTo(DMLProgram.DEFAULT_NAMESPACE + "::write") == 0) {
 			return validateBuiltinWriteFunction(ctx);
@@ -68,12 +68,12 @@ public class DmlSyntacticValidatorHelper {
 		return true;
 	}
 	
-	private static boolean validateBuiltinWriteFunction(FunctionCallAssignmentStatementContext ctx) {
+	private boolean validateBuiltinWriteFunction(FunctionCallAssignmentStatementContext ctx) {
 		
 		return true;
 	}
 	
-	public static ArrayList<com.ibm.bi.dml.parser.ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
+	public ArrayList<com.ibm.bi.dml.parser.ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
 		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> retVal = new ArrayList<com.ibm.bi.dml.parser.ParameterExpression>();
 		for(ParameterizedExpressionContext ctx : paramExprs) {
 			String paramName = null;

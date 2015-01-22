@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.io.jdk8.FloatingDecimal;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class IOUtilFunctions 
@@ -85,4 +86,14 @@ public class IOUtilFunctions
            LOG.error("Failed to buffered writer.", ex);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param br
+	 */
+	public static double parseDoubleParallel( String str ) 
+	{
+		return FloatingDecimal.parseDouble(str);
+	}
+
 }

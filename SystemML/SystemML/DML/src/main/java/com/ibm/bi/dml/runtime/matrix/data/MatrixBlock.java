@@ -287,6 +287,44 @@ public class MatrixBlock extends MatrixValue
 	
 	/**
 	 * 
+	 * @param val
+	 * @param r
+	 * @param c
+	 * @throws DMLRuntimeException
+	 */
+	public void init(double val, int r, int c)
+		throws DMLRuntimeException 
+	{	
+		//input checks 
+		if ( sparse )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
+		if( r*c > rlen*clen )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() invoked with too large dimensions ("+r+","+c+") vs ("+rlen+","+clen+")");
+		
+		if( val != 0 ) {
+			//allocate or resize dense block
+			allocateDenseBlock();
+			
+			if( r*c == rlen*clen ) { //FULL MATRIX INIT
+				//memset value  
+				Arrays.fill(denseBlock, val);
+			}
+			else { //PARTIAL MATRIX INIT
+				//rowwise memset value 
+				for(int i=0, ix=0; i < r; i++, ix+=clen) 
+					Arrays.fill(denseBlock, ix, ix+c, val);
+			}
+			
+			//set non zeros to input dims
+			nonZeros = r*c;
+		}
+		
+		maxrow = r;
+		maxcolumn = c;
+	}
+	
+	/**
+	 * 
 	 * @return
 	 */
 	public boolean isAllocated()
@@ -336,19 +374,33 @@ public class MatrixBlock extends MatrixValue
 	
 	/**
 	 * 
-	 * @param r
 	 */
-	public void adjustSparseRows(int r)
+	public void allocateSparseRowsBlock()
 	{
-		if(sparseRows==null)
+		allocateSparseRowsBlock(true);
+	}
+	
+	/**
+	 * 
+	 * @param clearNNZ
+	 */
+	public void allocateSparseRowsBlock(boolean clearNNZ)
+	{	
+		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
+		if( sparseRows == null ) {
 			sparseRows=new SparseRow[rlen];
-		else if(sparseRows.length<=r)
-		{
+		}
+		else if( sparseRows.length < rlen ) {
 			SparseRow[] oldSparseRows=sparseRows;
-			sparseRows=new SparseRow[rlen];
+			sparseRows = new SparseRow[rlen];
 			for(int i=0; i<Math.min(oldSparseRows.length, rlen); i++) {
 				sparseRows[i]=oldSparseRows[i];
 			}
+		}
+		
+		//clear nnz if necessary
+		if( clearNNZ ) {
+			nonZeros = 0;
 		}
 	}
 	
@@ -648,7 +700,8 @@ public class MatrixBlock extends MatrixValue
 		{
 			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
 				return;
-			adjustSparseRows(r);
+			//allocation on demand
+			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			
@@ -695,7 +748,8 @@ public class MatrixBlock extends MatrixValue
 	public void addValue(int r, int c, double v) {
 		if(sparse)
 		{
-			adjustSparseRows(r);
+			//allocation on demand
+			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			double curV=sparseRows[r].get(c);
@@ -740,7 +794,8 @@ public class MatrixBlock extends MatrixValue
 		{
 			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
 				return;
-			adjustSparseRows(r);
+			//allocation on demand
+			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			
@@ -810,7 +865,8 @@ public class MatrixBlock extends MatrixValue
 			quickSetValue(r, c, v);
 		else
 		{
-			adjustSparseRows(r);
+			//allocation on demand
+			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			sparseRows[r].append(c, v);
@@ -824,7 +880,8 @@ public class MatrixBlock extends MatrixValue
 			return;
 		if(sparse)
 		{
-			adjustSparseRows(r);
+			//allocation on demand
+			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(values);
 			else
@@ -1136,7 +1193,7 @@ public class MatrixBlock extends MatrixValue
 	{	
 		//LOG.info("**** denseToSparse: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
 		sparse=true;
-		adjustSparseRows(rlen-1);
+		allocateSparseRowsBlock();
 		reset();
 		if(denseBlock==null)
 			return;
@@ -1334,7 +1391,7 @@ public class MatrixBlock extends MatrixValue
 			return;
 		}
 	
-		adjustSparseRows(Math.min(that.rlen, that.sparseRows.length)-1);
+		allocateSparseRowsBlock(false);
 		for(int i=0; i<Math.min(that.sparseRows.length, rlen); i++)
 		{
 			if(that.sparseRows[i]!=null)
@@ -1414,7 +1471,7 @@ public class MatrixBlock extends MatrixValue
 			return;
 		}
 		
-		adjustSparseRows(rlen-1);
+		allocateSparseRowsBlock(false);
 	
 		for(int i=0, ix=0; i<rlen; i++)
 		{
@@ -1824,7 +1881,7 @@ public class MatrixBlock extends MatrixValue
 	private void readSparseBlock(DataInput in) 
 		throws IOException 
 	{			
-		adjustSparseRows(rlen-1);
+		allocateSparseRowsBlock();
 		resetSparse(); //reset all sparse rows
 		
 		if( in instanceof MatrixBlockDataInput ) //fast deserialize
@@ -1893,7 +1950,7 @@ public class MatrixBlock extends MatrixValue
 	private void readUltraSparseBlock(DataInput in) 
 		throws IOException 
 	{	
-		adjustSparseRows(rlen-1); //adjust to size
+		allocateSparseRowsBlock(false); //adjust to size
 		resetSparse(); //reset all sparse rows
 		
 		for(int i=0; i<nonZeros; i++)
@@ -2450,110 +2507,16 @@ public class MatrixBlock extends MatrixValue
 		if (!op.sparseSafe)
 			sp = false; // if the operation is not sparse safe, then result will be in dense format
 		
+		//allocate the output matrix block
 		if( ret==null )
 			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
 		else
 			ret.reset(rlen, clen, sp, this.nonZeros);
 		
-		ret.copy(this, sp);
-		
-		if(op.sparseSafe)
-			ret.sparseScalarOperationsInPlace(op);
-		else
-			ret.denseScalarOperationsInPlace(op);
+		//core scalar operations
+		LibMatrixBincell.bincellOp(this, ret, op);
 		
 		return ret;
-	}
-	
-	public void scalarOperationsInPlace(ScalarOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		if(op.sparseSafe)
-			this.sparseScalarOperationsInPlace(op);
-		else
-			this.denseScalarOperationsInPlace(op);
-	}
-	
-	/**
-	 * Note: only apply to non zero cells
-	 * 
-	 * @param op
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
-	 */
-	private void sparseScalarOperationsInPlace(ScalarOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//early abort possible since sparsesafe
-		if( isEmptyBlock(false) ) 
-			return; 
-		
-		if(sparse)
-		{
-			nonZeros=0;
-			for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-			{
-				if(sparseRows[r]==null) 
-					continue;
-				double[] values=sparseRows[r].getValueContainer();
-				int[] cols=sparseRows[r].getIndexContainer();
-				int pos=0;
-				for(int i=0; i<sparseRows[r].size(); i++)
-				{
-					double v=op.executeScalar(values[i]);
-					if(v!=0)
-					{
-						values[pos]=v;
-						cols[pos]=cols[i];
-						pos++;
-						nonZeros++;
-					}
-				}
-				sparseRows[r].truncate(pos);
-			}
-		}
-		else
-		{
-			int limit=rlen*clen;
-			nonZeros=0;
-			for(int i=0; i<limit; i++)
-			{
-				denseBlock[i]=op.executeScalar(denseBlock[i]);
-				if(denseBlock[i]!=0)
-					nonZeros++;
-			}
-		}
-	}
-	
-	private void denseScalarOperationsInPlace(ScalarOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{		
-		if( sparse ) //SPARSE MATRIX
-		{
-			double v;
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					v=op.executeScalar(quickGetValue(r, c));
-					quickSetValue(r, c, v);
-				}
-		}
-		else //DENSE MATRIX
-		{
-			//early abort not possible because not sparsesafe (e.g., A+7)
-			
-			//allocate dense block (if necessary), incl clear nnz
-			allocateDenseBlock(true);
-				
-			//compute scalar operation, incl nnz maintenance
-			int limit=rlen*clen;
-			for(int i=0; i<limit; i++) 
-			{
-				denseBlock[i] = op.executeScalar(denseBlock[i]);
-				if(denseBlock[i] != 0)
-					nonZeros++;
-			}
-		}
 	}
 		
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
@@ -3116,79 +3079,11 @@ public class MatrixBlock extends MatrixValue
 		{
 			//adjust sparse rows if required
 			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) )
-				result.adjustSparseRows(rlen-1);
+				result.allocateSparseRowsBlock();
 			result.appendToSparse(this, 0, 0);
 			result.appendToSparse(that, 0, clen);
 		}		
 		result.nonZeros = nnz;
-		
-		return result;
-	}
-	
-	/**
-	 * 
-	 * @param op
-	 * @param ret
-	 * @param startRow
-	 * @param startColumn
-	 * @param length
-	 * @return
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
-	 */
-	@Deprecated
-	public MatrixValue appendOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) 	
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
-	{
-		MatrixBlock result=checkType(ret);
-		CellIndex tempCellIndex = new CellIndex(-1,-1);
-		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
-		boolean sps;
-		if(reducedDim)
-			sps = false;
-		else
-			sps = this.evalSparseFormatInMemory();
-			
-		if(result==null)
-			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
-		else if(result.getNumRows()==0 && result.getNumColumns()==0)
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
-		
-		CellIndex temp = new CellIndex(0, 0);
-		if(sparse)
-		{
-			if(sparseRows!=null)
-			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if(sparseRows[r]==null) 
-						continue;
-					int[] cols=sparseRows[r].getIndexContainer();
-					double[] values=sparseRows[r].getValueContainer();
-					for(int i=0; i<sparseRows[r].size(); i++)
-					{
-						tempCellIndex.set(r, cols[i]);
-						op.fn.execute(tempCellIndex, temp);
-						result.appendValue(temp.row, temp.column, values[i]);
-					}
-				}
-			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int limit=rlen*clen;
-				int r,c;
-				for(int i=0; i<limit; i++)
-				{
-					r=i/clen;
-					c=i%clen;
-					temp.set(r, c);
-					op.fn.execute(temp, temp);
-					result.appendValue(temp.row, temp.column, denseBlock[i]);
-				}
-			}
-		}
 		
 		return result;
 	}
@@ -3224,7 +3119,7 @@ public class MatrixBlock extends MatrixValue
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public void permutatationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) 	
+	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//check input types and dimensions
@@ -4939,9 +4834,9 @@ public class MatrixBlock extends MatrixValue
 		
 		if( sparse ) //SPARSE
 		{
-			if( pattern !=0d ) //SPARSE <- SPARSE (sparse-safe)
+			if( pattern != 0d ) //SPARSE <- SPARSE (sparse-safe)
 			{
-				ret.adjustSparseRows(ret.rlen-1);
+				ret.allocateSparseRowsBlock();
 				SparseRow[] a = sparseRows;
 				SparseRow[] c = ret.sparseRows;
 				
@@ -5303,10 +5198,17 @@ public class MatrixBlock extends MatrixValue
 	public static MatrixBlock randOperations(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, long seed) 
 		throws DMLRuntimeException 
 	{
-		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 		MatrixBlock out = new MatrixBlock();
-		long[] nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+		Well1024a bigrand = null;
+		long[] nnzInBlock = null;
 
+		//setup seeds and nnz per block
+		if( !LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, pdf) ){
+			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
+			nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+		}
+		
+		//generate rand data
 		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
 			// for normally distributed values, min and max are specified as an invalid value NaN.
 			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, nnzInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);

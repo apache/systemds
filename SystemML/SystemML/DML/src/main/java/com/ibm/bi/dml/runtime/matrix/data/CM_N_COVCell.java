@@ -185,13 +185,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
-
-	@Override
-	public void scalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		throw new RuntimeException("operation not supported fro WeightedCell");
-	}
-
+	
 	@Override
 	public void setMaxColumn(int c) throws DMLRuntimeException {
 		

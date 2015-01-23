@@ -257,12 +257,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		return c3;
 	}
 
-	@Override
-	public void scalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		value=op.executeScalar(value);
-	}
-
 	public void sparseScalarOperationsInPlace(ScalarOperator op)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		value=op.executeScalar(value);

@@ -330,7 +330,7 @@ public class LibMatrixReorg
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
-		out.adjustSparseRows(m2-1);
+		out.allocateSparseRowsBlock();
 				
 		double[] a = in.getDenseArray();
 		SparseRow[] c = out.getSparseRows();
@@ -373,7 +373,7 @@ public class LibMatrixReorg
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
-		out.adjustSparseRows(m2-1);
+		out.allocateSparseRowsBlock();
 		
 		SparseRow[] a = in.getSparseRows();
 		SparseRow[] c = out.getSparseRows();

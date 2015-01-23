@@ -574,7 +574,8 @@ public class LibMatrixMult
 						int aix = aixs[0];
 						if( rightSparse ) { //sparse right matrix (full row copy)
 							if( m2.sparseRows!=null && m2.sparseRows[aix]!=null ) {
-								ret.adjustSparseRows( m ); //ensure allocated sparse rows ret
+								ret.rlen=m;
+								ret.allocateSparseRowsBlock(false); //allocation on demand
 								ret.sparseRows[i] = new SparseRow(m2.sparseRows[aix]); 
 								ret.nonZeros += ret.sparseRows[i].size();
 							}
@@ -1020,7 +1021,7 @@ public class LibMatrixMult
 		
 		//allocate first output block (second allocated if needed)
 		ret1.sparse = true;
-		ret1.adjustSparseRows(ret1.rlen);
+		ret1.allocateSparseRowsBlock();
 		
 		double[] a = pm1.denseBlock;
 		double[] b = m2.denseBlock;
@@ -1042,7 +1043,8 @@ public class LibMatrixMult
 				//allocate and switch to second output block
 				if( lastblk!=-1 && lastblk<blk ){ 
 					ret2.sparse = true;
-					ret2.adjustSparseRows(ret1.rlen);
+					ret2.rlen=ret1.rlen;
+					ret2.allocateSparseRowsBlock();
 					c = ret2.sparseRows;		
 				}
 		
@@ -1080,7 +1082,7 @@ public class LibMatrixMult
 		
 		//allocate first output block (second allocated if needed)
 		ret1.sparse = true;
-		ret1.adjustSparseRows(ret1.rlen);
+		ret1.allocateSparseRowsBlock();
 		
 		double[] a = pm1.denseBlock;
 		SparseRow[] b = m2.sparseRows;
@@ -1101,7 +1103,7 @@ public class LibMatrixMult
 				//allocate and switch to second output block
 				if( lastblk!=-1 && lastblk<blk ){ 
 					ret2.sparse = true;
-					ret2.adjustSparseRows(ret2.rlen);
+					ret2.allocateSparseRowsBlock();
 					c = ret2.sparseRows;		
 				}
 		

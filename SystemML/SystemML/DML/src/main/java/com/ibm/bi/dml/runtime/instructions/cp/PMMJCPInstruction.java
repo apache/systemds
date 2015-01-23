@@ -72,7 +72,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		
 		//execute operations
 		MatrixBlock ret = new MatrixBlock(rlen, matBlock2.getNumColumns(), matBlock2.isInSparseFormat());
-		matBlock1.permutatationMatrixMultOperations(matBlock2, ret, null);
+		matBlock1.permutationMatrixMultOperations(matBlock2, ret, null);
 		
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), ret);

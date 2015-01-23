@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
 /**
  * MB:
@@ -50,6 +51,30 @@ public class LibMatrixBincell
 	///////////////////////////////////
 	
 	/**
+	 * matrix-scalar, scalar-matrix binary operations.
+	 * 
+	 * @param m1
+	 * @param ret
+	 * @param op
+	 * @throws DMLRuntimeException
+	 */
+	public static void bincellOp(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) 
+		throws DMLRuntimeException
+	{
+		//check internal assumptions 
+		if(   (op.sparseSafe && m1.isInSparseFormat()!=ret.isInSparseFormat())
+			||(!op.sparseSafe && ret.isInSparseFormat()) ) {
+			throw new DMLRuntimeException("Wrong output representation for safe="+op.sparseSafe+": "+m1.isInSparseFormat()+", "+ret.isInSparseFormat());
+		}
+		
+		if(op.sparseSafe)
+			safeBinaryScalar(m1, ret, op);
+		else
+			unsafeBinaryScalar(m1, ret, op);
+	}
+	
+	/**
+	 * matrix-matrix binary operations, MM, MV
 	 * 
 	 * @param m1
 	 * @param m2
@@ -166,7 +191,7 @@ public class LibMatrixBincell
 			if(m1.sparse && m2.sparse)
 			{
 				if(ret.sparse)
-					ret.adjustSparseRows(ret.rlen-1);	
+					ret.allocateSparseRowsBlock();	
 				
 				//both sparse blocks existing
 				if(m1.sparseRows!=null && m2.sparseRows!=null)
@@ -392,7 +417,6 @@ public class LibMatrixBincell
 	}
 	
 	/**
-	 * TODO: custom implementation for sparse-sparse (row vector) possible
 	 * 
 	 * @param m1
 	 * @param m2
@@ -416,7 +440,7 @@ public class LibMatrixBincell
 		
 		//allocate once in order to prevent repeated reallocation
 		if( ret.sparse )
-			ret.adjustSparseRows(ret.rlen-1);
+			ret.allocateSparseRowsBlock();
 		
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
@@ -523,7 +547,7 @@ public class LibMatrixBincell
 		
 		//allocate once in order to prevent repeated reallocation 
 		if( ret.sparse )
-			ret.adjustSparseRows(ret.rlen-1);
+			ret.allocateSparseRowsBlock();
 		
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
 		{
@@ -610,6 +634,123 @@ public class LibMatrixBincell
 		}
 	}
 	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param op
+	 * @throws DMLRuntimeException
+	 */
+	private static void safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
+		throws DMLRuntimeException
+	{
+		//early abort possible since sparsesafe
+		if( m1.isEmptyBlock(false) ) {
+			return;
+		}
+		
+		if( m1.sparse ) //implies ret is sparse
+		{	
+			//allocate sparse row structure
+			ret.allocateSparseRowsBlock();
+			
+			SparseRow[] a = m1.sparseRows;
+			
+			for(int r=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++)
+				if( a[r]!=null && !a[r].isEmpty() )
+				{
+					int alen = a[r].size();
+					int[] aix = a[r].getIndexContainer();
+					double[] avals = a[r].getValueContainer();
+					for(int j=0; j<alen; j++) {
+						double val = op.executeScalar(avals[j]);
+						ret.appendValue(r, aix[j], val);
+					}
+				}
+		}
+		else //implies output is 
+		{
+			//allocate dense block
+			ret.allocateDenseBlock(true);
+		
+			double[] a = m1.denseBlock;
+			double[] c = ret.denseBlock;
+			
+			int limit = m1.rlen*m1.clen;
+			for( int i=0; i<limit; i++ )
+			{
+				c[i] = op.executeScalar( a[i] );
+				if( c[i] != 0 )
+					ret.nonZeros++;
+			}
+		}
+	}
+	
+	/**
+	 * Since this operation is sparse-unsafe, ret should always be passed in dense representation.
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param op
+	 * @throws DMLRuntimeException
+	 */
+	private static void unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
+		throws DMLRuntimeException
+	{
+		//early abort possible since sparsesafe
+		if( m1.isEmptyBlock(false) ) {
+			//compute 0 op constant once and set into dense output
+			double val = op.executeScalar(0);
+			if( val != 0 )
+				ret.init(val, ret.rlen, ret.clen);
+			return;
+		}
+		
+		if( m1.sparse ) //SPARSE MATRIX
+		{
+			ret.allocateDenseBlock();
+			
+			SparseRow[] a = m1.sparseRows;
+			double[] c = ret.denseBlock;			
+			int clen = m1.clen;
+			double cval0= op.executeScalar(0);
+			
+			for(int r=0, cix=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++, cix+=clen){
+				//set base val for row (in cache for subsequent update)
+				Arrays.fill(c, cix, cix+clen, cval0); 
+				ret.nonZeros += clen;
+				
+				if( a[r]!=null && !a[r].isEmpty() )
+				{
+					int alen = a[r].size();
+					int[] aix = a[r].getIndexContainer();
+					double[] avals = a[r].getValueContainer();
+					for(int j=0; j<alen; j++) {
+						double val = op.executeScalar(avals[j]);
+						c[ cix+aix[j] ] = val;
+						ret.nonZeros -= (val==0)? 1 : 0;
+					}
+				}
+			}
+		}
+		else //DENSE MATRIX
+		{
+			//allocate dense block (if necessary), incl clear nnz
+			ret.allocateDenseBlock(true);
+			
+			double[] a = m1.denseBlock;
+			double[] c = ret.denseBlock;
+			
+			//compute scalar operation, incl nnz maintenance
+			int limit = m1.rlen*m1.clen;
+			for( int i=0; i<limit; i++ )
+			{
+				c[i] = op.executeScalar( a[i] );
+				if( c[i] != 0 )
+					ret.nonZeros++;
+			}
+		}
+	}
 
 	/**
 	 * 
@@ -618,7 +759,8 @@ public class LibMatrixBincell
 	 * @param op
 	 * @throws DMLRuntimeException
 	 */
-	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) throws DMLRuntimeException 
+	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
+		throws DMLRuntimeException 
 	{
 		int rlen = m1ret.rlen;
 		int clen = m1ret.clen;
@@ -630,9 +772,9 @@ public class LibMatrixBincell
 				return;
 			
 			if(m1ret.sparseRows!=null)
-				m1ret.adjustSparseRows(rlen-1);
+				m1ret.allocateSparseRowsBlock();
 			if(m2.sparseRows!=null)
-				m2.adjustSparseRows(rlen-1);
+				m2.allocateSparseRowsBlock();
 			
 			if(m1ret.sparseRows!=null && m2.sparseRows!=null)
 			{

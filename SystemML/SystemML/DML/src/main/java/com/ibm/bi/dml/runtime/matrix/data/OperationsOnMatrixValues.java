@@ -38,12 +38,6 @@ public class OperationsOnMatrixValues
 		valueIn.scalarOperations(op, valueOut);
 	}
 	
-	public static void performScalarIgnoreIndexesInPlace(MatrixValue valueIn, ScalarOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		valueIn.scalarOperationsInPlace(op);
-	}
-	
 	public static void performUnaryIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, UnaryOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

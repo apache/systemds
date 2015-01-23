@@ -120,7 +120,7 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 			
 			//compute core matrix permutation (assumes that out1 has default blocksize, 
 			//hence we do a meta data correction afterwards)
-			mb1.permutatationMatrixMultOperations(mb2, out1.getValue(), (out2!=null)?out2.getValue():null);
+			mb1.permutationMatrixMultOperations(mb2, out1.getValue(), (out2!=null)?out2.getValue():null);
 			((MatrixBlock)out1.getValue()).setNumRows(computeBlockSize(_rlen, blockRowFactor, rowIX1));
 			out1.getIndexes().setIndexes(rowIX1, in2.getIndexes().getColumnIndex());
 			if( out2 != null )

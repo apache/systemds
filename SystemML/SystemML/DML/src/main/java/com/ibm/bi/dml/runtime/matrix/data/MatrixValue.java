@@ -137,9 +137,6 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
-	public abstract void scalarOperationsInPlace(ScalarOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
-	
 	public abstract MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	

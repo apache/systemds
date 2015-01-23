@@ -19,9 +19,6 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -130,17 +127,8 @@ public class WriteCSVMR
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
 		
-		// By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
-				
-		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
-		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 	
 		RunningJob runjob=JobClient.runJob(job);

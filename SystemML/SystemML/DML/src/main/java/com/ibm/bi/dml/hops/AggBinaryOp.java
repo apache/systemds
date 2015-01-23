@@ -68,9 +68,9 @@ public class AggBinaryOp extends Hop
 	public enum MMultMethod { 
 		CPMM,     //cross-product matrix multiplication (mr)
 		RMM,      //replication matrix multiplication (mr)
-		MAPMULT_L,  //map-side matrix-matrix multiplication using distributed cache (mr)
-		MAPMULT_R,  //map-side matrix-matrix multiplication using distributed cache (mr)
-		MAPMULT_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (mr)
+		MAPMM_L,  //map-side matrix-matrix multiplication using distributed cache (mr)
+		MAPMM_R,  //map-side matrix-matrix multiplication using distributed cache (mr)
+		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (mr)
 		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr)
 		TSMM,     //transpose-self matrix multiplication (mr/cp)
 		CP        //in-memory matrix multiplication (cp)
@@ -150,12 +150,12 @@ public class AggBinaryOp extends Hop
 			
 				//dispatch lops construction
 				switch( method ) {
-					case MAPMULT_L:
-					case MAPMULT_R: 	
-						constructLopsMR_MapMult(method); break;
+					case MAPMM_L:
+					case MAPMM_R: 	
+						constructLopsMR_MapMM(method); break;
 					
-					case MAPMULT_CHAIN:	
-						constructLopsMR_MapMultChain( chain ); break;		
+					case MAPMM_CHAIN:	
+						constructLopsMR_MapMMChain( chain ); break;		
 					
 					case CPMM:
 						constructLopsMR_CPMM(); break;					
@@ -465,10 +465,10 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_MapMult(MMultMethod method) 
+	private void constructLopsMR_MapMM(MMultMethod method) 
 		throws HopsException, LopsException
 	{
-		if( method == MMultMethod.MAPMULT_R && isLeftTransposeRewriteApplicable(false, true) )
+		if( method == MMultMethod.MAPMM_R && isLeftTransposeRewriteApplicable(false, true) )
 		{
 			setLops( constructMapMultMRLopWithLeftTransposeRewrite() );
 		}
@@ -484,7 +484,7 @@ public class AggBinaryOp extends Hop
 			Lop leftInput = getInput().get(0).constructLops(); 
 			Lop rightInput = getInput().get(1).constructLops();
 			if( needPart ) {
-				if( (method==MMultMethod.MAPMULT_L) ) //left in distributed cache
+				if( (method==MMultMethod.MAPMM_L) ) //left in distributed cache
 				{
 					Hop input = getInput().get(0);
 					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(input.getDim1(), input.getDim2(), OptimizerUtils.getSparsity(input.getDim1(), input.getDim2(), input.getNnz())) 
@@ -506,7 +506,7 @@ public class AggBinaryOp extends Hop
 			
 			//core matrix mult
 			MapMult mapmult = new MapMult( leftInput, rightInput, getDataType(), getValueType(), 
-					                (method==MMultMethod.MAPMULT_R), needPart, outputEmptyBlocks);
+					                (method==MMultMethod.MAPMM_R), needPart, outputEmptyBlocks);
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 			
@@ -536,7 +536,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_MapMultChain( ChainType chainType ) 
+	private void constructLopsMR_MapMMChain( ChainType chainType ) 
 		throws HopsException, LopsException
 	{
 		Lop mapmult = null; 
@@ -863,7 +863,7 @@ public class AggBinaryOp extends Hop
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
 		boolean needAgg = ( X.getDim1() <= 0 || X.getDim1() > X.getRowsInBlock() ); 
-		boolean needPart = requiresPartitioning(MMultMethod.MAPMULT_R, true); //R disregarding transpose rewrite
+		boolean needPart = requiresPartitioning(MMultMethod.MAPMM_R, true); //R disregarding transpose rewrite
 		
 		//pre partitioning
 		Lop dcinput = null;
@@ -956,14 +956,14 @@ public class AggBinaryOp extends Hop
 		boolean ret = true;
 		
 		//right side cached (no agg if left has just one column block)
-		if(  method == MMultMethod.MAPMULT_R && getInput().get(0).getDim2() > 0 //known num columns
+		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() > 0 //known num columns
 	         && getInput().get(0).getDim2() <= getInput().get(0).getColsInBlock() ) 
         {
             ret = false;
         }
         
 		//left side cached (no agg if right has just one row block)
-        if(  method == MMultMethod.MAPMULT_L && getInput().get(1).getDim1() > 0 //known num rows
+        if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() > 0 //known num rows
              && getInput().get(1).getDim1() <= getInput().get(1).getRowsInBlock() ) 
         {
        	    ret = false;
@@ -984,7 +984,7 @@ public class AggBinaryOp extends Hop
 		Hop input2 = getInput().get(1);
 		
 		//right side cached 
-		if(  method == MMultMethod.MAPMULT_R && input2.dimsKnown() ) { //known input size 
+		if(  method == MMultMethod.MAPMM_R && input2.dimsKnown() ) { //known input size 
             ret = (input2.getDim1()*input2.getDim2() > DistributedCacheInput.PARTITION_SIZE);
             
             //conservative: do not apply partitioning if this forces t(X) into separate job
@@ -993,7 +993,7 @@ public class AggBinaryOp extends Hop
         }
         
 		//left side cached (no agg if right has just one row block)
-		if(  method == MMultMethod.MAPMULT_L && input1.dimsKnown() ) { //known input size 
+		if(  method == MMultMethod.MAPMM_L && input1.dimsKnown() ) { //known input size 
             ret = (input1.getDim1()*input1.getDim2() > DistributedCacheInput.PARTITION_SIZE);
             
             //conservative: do not apply partitioning if this forces t(X) into separate job
@@ -1081,13 +1081,13 @@ public class AggBinaryOp extends Hop
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
 					&& OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) < memBudget )
 				{
-					return MMultMethod.MAPMULT_CHAIN;
+					return MMultMethod.MAPMM_CHAIN;
 				}
 				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
 					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
 					   + OptimizerUtils.estimateSize(m1_cols, m2_cols, 1.0) < memBudget )
 				{
-					return MMultMethod.MAPMULT_CHAIN;
+					return MMultMethod.MAPMM_CHAIN;
 				}
 			}
 		}
@@ -1117,9 +1117,9 @@ public class AggBinaryOp extends Hop
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
 			if( m1Size < m2Size )
-				return MMultMethod.MAPMULT_L;
+				return MMultMethod.MAPMM_L;
 			else
-				return MMultMethod.MAPMULT_R;
+				return MMultMethod.MAPMM_R;
 		}
 		
 		// Step 5: check for unknowns

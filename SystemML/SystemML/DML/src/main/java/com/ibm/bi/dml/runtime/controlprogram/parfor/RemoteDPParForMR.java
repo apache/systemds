@@ -28,7 +28,6 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -76,7 +75,7 @@ public class RemoteDPParForMR
 	 * @throws DMLRuntimeException
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String program, String resultFile, MatrixObject input, PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol,
-			                                   boolean enableCPCaching, ExecMode mode, int numReducers, int replication, int max_retry)  //opt params
+			                                   boolean enableCPCaching, int numReducers, int replication, int max_retry)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -164,15 +163,8 @@ public class RemoteDPParForMR
 			//note: currently disabled to use cluster config
 			//job.setInt("mapreduce.map.maxattempts", max_retry);
 			
-			// By default, the job executes in "cluster" mode.
-			// Determine if we can optimize and run it in "local" mode.
-			if ( mode == ExecMode.LOCAL ) {
-				job.set("mapred.job.tracker", "local");	
-				MRJobConfiguration.setStagingDir( job );
-			}
-			
 			//set unique working dir
-			MRJobConfiguration.setUniqueWorkingDir(job, mode);
+			MRJobConfiguration.setUniqueWorkingDir(job);
 			
 			/////
 			// execute the MR job			

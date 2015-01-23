@@ -16,9 +16,6 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -120,14 +117,8 @@ public class CMCOVMR
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
 		
-		ExecMode mode = RunMRJobs.getExecMode(JobType.CM_COV, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
-		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		
 		RunningJob runjob=JobClient.runJob(job);

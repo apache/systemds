@@ -18,9 +18,6 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -176,14 +173,9 @@ public class MMRJMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.MMRJ, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
 
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		
 		RunningJob runjob=JobClient.runJob(job);

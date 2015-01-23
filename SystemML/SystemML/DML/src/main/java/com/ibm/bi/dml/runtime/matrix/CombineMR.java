@@ -23,9 +23,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineTertiaryInstruction;
@@ -363,14 +360,9 @@ public class CombineMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.COMBINE, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
 
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		
 		RunningJob runjob=JobClient.runJob(job);

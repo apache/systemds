@@ -40,7 +40,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -900,7 +899,6 @@ public class PerfTestTool
 		{
 			//FIXME hardcoded for test
 			//MMRJMR.SORT_IO_MEM = sortio;
-			RunMRJobs.flagLocalModeOpt=false; //always use cluster mode
 		}
 		
 		//generate input and output matrices

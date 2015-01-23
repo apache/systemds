@@ -21,7 +21,6 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -308,8 +307,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 			//job.setInt("mapreduce.map.maxattempts", _max_retry);
 			
 			//set unique working dir
-			ExecMode mode = ExecMode.CLUSTER;
-			MRJobConfiguration.setUniqueWorkingDir(job, mode);
+			MRJobConfiguration.setUniqueWorkingDir(job);
 			
 			/////
 			// execute the MR job	

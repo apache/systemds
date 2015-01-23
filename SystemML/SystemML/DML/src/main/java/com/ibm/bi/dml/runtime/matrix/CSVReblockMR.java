@@ -30,9 +30,6 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -284,7 +281,7 @@ public class CSVReblockMR
 		// Determine if we can optimize and run it in "local" mode.
 		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		//set up the output file
 		ret.counterFile=new Path(MRJobConfiguration.constructTempOutputFilename());
@@ -398,14 +395,9 @@ public class CSVReblockMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK, inputStats); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
 		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		Path cachefile=new Path(counterFile, "part-00000");
 		DistributedCache.addCacheFile(cachefile.toUri(), job);
 		DistributedCache.createSymlink(job);

@@ -69,13 +69,6 @@ public class RunMRJobs
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	public static boolean flagLocalModeOpt = false;
-	public enum ExecMode { 
-		LOCAL, 
-		CLUSTER, 
-		INVALID 
-	}; 
 
 	/**
 	 * Wrapper for submitting MR job instructions incl preparation and actual submission.
@@ -492,56 +485,6 @@ public class RunMRJobs
 		return str_array;
 	}*/
 	
-	/**
-	 * Method to determine whether to execute a particular job in local-mode or 
-	 * cluster-mode. This decision is take based on the "jobType" 
-	 * (GMR, Reblock, etc.) as well as the input matrix dimensions, 
-	 * given by "stats". Currently, the thresholds are chosen empirically.
-	 * 
-	 * @param jobType
-	 * @param stats
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	@Deprecated
-	public static ExecMode getExecMode(JobType jt, MatrixCharacteristics[] stats) throws DMLRuntimeException {
-		
-		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-		//	return ExecMode.LOCAL;
-		
-		if ( !flagLocalModeOpt )
-			return ExecMode.CLUSTER;
-		
-		switch ( jt ) {
-		case GMR:
-		case DATAGEN:
-			if ( compareInputDimensions(stats, 3) )
-				return ExecMode.LOCAL;
-			break;
-		case REBLOCK:
-			if ( compareInputDimensions(stats, 1) )
-				return ExecMode.LOCAL;
-			break;
-		case MMCJ:
-			if ( compareInputDimensions(stats, 2) )
-				return ExecMode.LOCAL;
-			break;
-		case MMRJ:
-			if ( compareInputDimensions(stats, 1) ) // this needs to be verified (empirically)
-				return ExecMode.LOCAL;
-			break;
-		case CM_COV:
-		case SORT:
-		case COMBINE:
-			if ( compareInputDimensions(stats, 1) ) // this needs to be verified (empirically)
-				return ExecMode.LOCAL;
-			break;
-		default:
-			throw new DMLRuntimeException("Unknown job type (" + jt.getName() + ") while determining the execution mode.");
-		}
-		
-		return ExecMode.CLUSTER;
-	}
 	
 	private static boolean compareInputDimensions(MatrixCharacteristics[] stats, int numBlocks ) {
 		for(int i=0; i < stats.length; i++ ) {

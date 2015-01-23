@@ -33,7 +33,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -364,7 +363,7 @@ public class MRJobConfiguration
 	 * @param job
 	 * @param mode
 	 */
-	public static void setUniqueWorkingDir( JobConf job, ExecMode mode )
+	public static void setUniqueWorkingDir( JobConf job )
 	{
 		if( isLocalJobTracker(job) )
 		{

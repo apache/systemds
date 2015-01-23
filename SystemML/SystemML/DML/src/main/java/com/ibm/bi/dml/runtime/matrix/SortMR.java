@@ -36,9 +36,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
@@ -277,20 +274,12 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		MatrixCharacteristics[] s = new MatrixCharacteristics[1];
 		s[0] = new MatrixCharacteristics(rlen, clen, brlen, bclen);
 		
-	    // By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
-	    ExecMode mode = RunMRJobs.getExecMode(JobType.SORT, s); 
-		if ( mode == ExecMode.LOCAL ) {
-			job.set("mapred.job.tracker", "local");
-			MRJobConfiguration.setStagingDir( job );
-		}
-		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())
 			inst.printCompleteMRJobInstruction(s);
 		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		MRJobConfiguration.setUniqueWorkingDir(job);
 		
 		
 	    RunningJob runjob=JobClient.runJob(job);

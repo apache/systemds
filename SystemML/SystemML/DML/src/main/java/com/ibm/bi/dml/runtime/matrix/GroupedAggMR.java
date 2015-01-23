@@ -15,7 +15,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -116,7 +115,7 @@ public class GroupedAggMR
 		job.setReducerClass(GroupedAggMRReducer.class);
 		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 
+		MRJobConfiguration.setUniqueWorkingDir(job); 
 		
 		//execute job
 		RunningJob runjob=JobClient.runJob(job);

@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -137,7 +136,7 @@ public class MMCJMR
 		MRJobConfiguration.setMMCJCacheSize(job, (int)cacheSize);
 		
 		//set unique working dir
-		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 
+		MRJobConfiguration.setUniqueWorkingDir(job); 
 		
 		//run mmcj job
 		RunningJob runjob=JobClient.runJob(job);

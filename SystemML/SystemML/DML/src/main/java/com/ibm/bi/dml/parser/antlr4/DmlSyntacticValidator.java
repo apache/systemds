@@ -99,6 +99,7 @@ import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.PathStatement;
 import com.ibm.bi.dml.parser.PrintStatement;
+import com.ibm.bi.dml.parser.RelationalExpression;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.StringIdentifier;
@@ -320,31 +321,31 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitRelationalExpression(RelationalExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-			String fileName = helper.getCurrentFileName();
-			int line = ctx.start.getLine();
-			int col = ctx.start.getCharPositionInLine();
-			ArrayList<ParameterExpression> paramExpression = new ArrayList<ParameterExpression>();
-			paramExpression.add(new ParameterExpression(null, ctx.left.info.expr));
-			paramExpression.add(new ParameterExpression(null, ctx.right.info.expr));
-			ParameterExpression operator = new ParameterExpression(null, new StringIdentifier(ctx.op.getText(), fileName, line, col, line, col));
-			paramExpression.add(operator);
+//			String fileName = helper.getCurrentFileName();
+//			int line = ctx.start.getLine();
+//			int col = ctx.start.getCharPositionInLine();
+//			ArrayList<ParameterExpression> paramExpression = new ArrayList<ParameterExpression>();
+//			paramExpression.add(new ParameterExpression(null, ctx.left.info.expr));
+//			paramExpression.add(new ParameterExpression(null, ctx.right.info.expr));
+//			ParameterExpression operator = new ParameterExpression(null, new StringIdentifier(ctx.op.getText(), fileName, line, col, line, col));
+//			paramExpression.add(operator);
+//			
+//			try {
+//				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression("ppred", paramExpression, fileName, line, col, line, col);
+//				if (bife != null){
+//					// It is a builtin function
+//					ctx.info.expr = bife;
+//					return;
+//				}
+//			}
+//			catch(Exception e) {}
+//			helper.notifyErrorListeners("Cannot parse relational expression", ctx.getStart());
 			
-			try {
-				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression("ppred", paramExpression, fileName, line, col, line, col);
-				if (bife != null){
-					// It is a builtin function
-					ctx.info.expr = bife;
-					return;
-				}
-			}
-			catch(Exception e) {}
-			helper.notifyErrorListeners("Cannot parse relational expression", ctx.getStart());
-			
-//			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
-//			ctx.info.expr = new RelationalExpression(rop);
-//			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
-//			((RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
-//			setFileLineColumn(ctx.info.expr, ctx);
+			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
+			ctx.info.expr = new RelationalExpression(rop);
+			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
+			((RelationalExpression)ctx.info.expr).setRight(ctx.right.info.expr);
+			setFileLineColumn(ctx.info.expr, ctx);
 		}
 	}
 	

@@ -715,16 +715,16 @@ public class OptimizerUtils
 		UnaryOp uroot = (UnaryOp) root;
 		Hop input = uroot.getInput().get(0);
 		
-		if(uroot.get_op() == Hop.OpOp1.NROW)
+		if(uroot.getOp() == Hop.OpOp1.NROW)
 			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
-		else if( uroot.get_op() == Hop.OpOp1.NCOL )
+		else if( uroot.getOp() == Hop.OpOp1.NCOL )
 			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo);
 			if( lval != Double.MAX_VALUE )
 			{
-				switch( uroot.get_op() )
+				switch( uroot.getOp() )
 				{
 					case SQRT:	ret = Math.sqrt(lval); break;
 					case ROUND: ret = Math.round(lval); break;
@@ -759,16 +759,16 @@ public class OptimizerUtils
 		UnaryOp uroot = (UnaryOp) root;
 		Hop input = uroot.getInput().get(0);
 		
-		if(uroot.get_op() == Hop.OpOp1.NROW)
+		if(uroot.getOp() == Hop.OpOp1.NROW)
 			ret = (input.getDim1()>0) ? input.getDim1() : Double.MAX_VALUE;
-		else if( uroot.get_op() == Hop.OpOp1.NCOL )
+		else if( uroot.getOp() == Hop.OpOp1.NCOL )
 			ret = (input.getDim2()>0) ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
 			double lval = rEvalSimpleDoubleExpression(uroot.getInput().get(0), valMemo, vars);
 			if( lval != Double.MAX_VALUE )
 			{
-				switch( uroot.get_op() )
+				switch( uroot.getOp() )
 				{
 					case SQRT:	ret = Math.sqrt(lval); break;
 					case ROUND: ret = Math.round(lval); break;

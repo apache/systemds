@@ -123,7 +123,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 				if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS) 
 					&& left instanceof DataOp && left.getDataType() == DataType.SCALAR
 					&& root.getName().equals(left.getName()) 
-					&& right instanceof UnaryOp && ((UnaryOp) right).get_op() == OpOp1.CAST_AS_SCALAR
+					&& right instanceof UnaryOp && ((UnaryOp) right).getOp() == OpOp1.CAST_AS_SCALAR
 					&& right.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)right.getInput().get(0);
@@ -142,7 +142,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 				else if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS)  
 					&& right instanceof DataOp && right.getDataType() == DataType.SCALAR
 					&& root.getName().equals(right.getName()) 
-					&& left instanceof UnaryOp && ((UnaryOp) left).get_op() == OpOp1.CAST_AS_SCALAR
+					&& left instanceof UnaryOp && ((UnaryOp) left).getOp() == OpOp1.CAST_AS_SCALAR
 					&& left.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)left.getInput().get(0);

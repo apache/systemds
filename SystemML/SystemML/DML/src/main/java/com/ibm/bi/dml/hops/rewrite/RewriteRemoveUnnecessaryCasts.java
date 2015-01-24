@@ -76,7 +76,7 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 			rule_RemoveUnnecessaryCasts( inputs.get(i) );
 		
 		//remove cast if unnecessary
-		if( hop instanceof UnaryOp && HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).get_op()) )
+		if( hop instanceof UnaryOp && HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).getOp()) )
 		{
 			Hop in = hop.getInput().get(0);
 			ValueType vtIn = in.getValueType(); //type cast input

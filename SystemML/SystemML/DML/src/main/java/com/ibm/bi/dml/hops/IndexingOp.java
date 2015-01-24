@@ -299,14 +299,14 @@ public class IndexingOp extends Hop
 		boolean allRows = false;
 		if( input2 instanceof LiteralOp )
 		{
-			if ( ((LiteralOp)input2).getName().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
+			if ( ((LiteralOp)input2).getName().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).getOp() == OpOp1.NROW )
 				allRows = true;
 		}	
 		
 		boolean allCols = false;
 		if( input4 instanceof LiteralOp )
 		{
-			if ( ((LiteralOp)input4).getName().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
+			if ( ((LiteralOp)input4).getName().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).getOp() == OpOp1.NCOL )
 				allCols = true;
 		}
 		

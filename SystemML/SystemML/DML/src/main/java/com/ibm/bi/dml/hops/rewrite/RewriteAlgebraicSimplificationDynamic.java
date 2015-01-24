@@ -142,6 +142,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y));, if col vector
+			hi = simplifyDotProductSum(hop, hi, i);           //e.g., sum(v^2) -> t(v)%*%v if ncol(v)==1 
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
 			
@@ -291,7 +292,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 */
 	private Hop removeUnnecessaryCumSum(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof UnaryOp && ((UnaryOp)hi).get_op()==OpOp1.CUMSUM  )
+		if( hi instanceof UnaryOp && ((UnaryOp)hi).getOp()==OpOp1.CUMSUM  )
 		{
 			Hop input = hi.getInput().get(0); //input matrix
 			
@@ -582,7 +583,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			UnaryOp uhi = (UnaryOp)hi;
 			Hop input = uhi.getInput().get(0);
 			
-			if( HopRewriteUtils.isValidOp(uhi.get_op(), LOOKUP_VALID_EMPTY_UNARY) ){		
+			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_EMPTY_UNARY) ){		
 				
 				if( HopRewriteUtils.isEmpty(input) )
 				{
@@ -922,6 +923,68 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				LOG.debug("Applied simplifyDiagMatrixMult");
 			}	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop simplifyDotProductSum(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//sum(v^2) --> as.scalar(t(v)%*%v) in order to exploit tsmm vector dotproduct 
+		//w/o materialization of intermediates
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM //sum
+			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol //full aggregate	
+			&& hi.getInput().get(0).getDim2() == 1 ) //vector (for correctness)
+		{
+			Hop hi2 = hi.getInput().get(0); //check for ^2
+			if( hi2 instanceof BinaryOp && ((BinaryOp)hi2).getOp()==OpOp2.POW
+				&& hi2.getInput().get(1) instanceof LiteralOp 
+				&& HopRewriteUtils.getIntValue((LiteralOp)hi2.getInput().get(1))==2 )
+			{
+				//FIXME: linreog crashing
+				
+				Hop input = hi2.getInput().get(0);
+				
+				//remove link from parent to diag
+				HopRewriteUtils.removeChildReference(parent, hi);
+				
+				//create new operator chain
+				ReorgOp transpose = new ReorgOp(input.getName(), DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, input);
+				transpose.setRowsInBlock(input.getRowsInBlock());
+				transpose.setColsInBlock(input.getColsInBlock());
+				transpose.refreshSizeInformation();
+				
+				AggBinaryOp mmult = new AggBinaryOp(input.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, transpose, input);
+				mmult.setRowsInBlock(input.getRowsInBlock());
+				mmult.setColsInBlock(input.getColsInBlock());
+				mmult.refreshSizeInformation();
+				
+				UnaryOp cast = new UnaryOp(input.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp1.CAST_AS_SCALAR, mmult);
+				HopRewriteUtils.setOutputParameters(cast, 0, 0, 0, 0, -1);
+				
+				//rehang new subdag under parent node
+				HopRewriteUtils.addChildReference(parent, cast, pos);				
+				parent.refreshSizeInformation();
+				
+				//cleanup if only consumer of intermediate
+				if( hi.getParent().isEmpty() ) 
+					HopRewriteUtils.removeAllChildReferences( hi );
+				if( hi2.getParent().isEmpty() ) 
+					HopRewriteUtils.removeAllChildReferences( hi2 );
+				
+				hi = cast;
+				
+				LOG.debug("Applied simplifyDotProductSum.");
+			}
 		}
 		
 		return hi;

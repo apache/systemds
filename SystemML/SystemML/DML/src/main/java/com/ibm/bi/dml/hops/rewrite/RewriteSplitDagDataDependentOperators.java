@@ -240,7 +240,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			for( Hop p : hop.getParent() ) {
 				//list of operators without need for empty blocks to be extended as needed
 				noEmptyBlocks &= (   p instanceof AggBinaryOp && hop == p.getInput().get(0) 
-				                  || p instanceof UnaryOp && ((UnaryOp)p).get_op()==OpOp1.NROW);
+				                  || p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NROW);
 				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
 			}
 			pbhop.setOutputEmptyBlocks(!noEmptyBlocks);

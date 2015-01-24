@@ -1130,7 +1130,7 @@ public abstract class Hop
 						break;
 					}
 				}
-				else if(h instanceof UnaryOp && ((UnaryOp)h).get_op() == OpOp1.PRINT)
+				else if(h instanceof UnaryOp && ((UnaryOp)h).getOp() == OpOp1.PRINT)
 				{
 					hasWriteOutput = true;
 					break;
@@ -1327,13 +1327,13 @@ public abstract class Hop
 		
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
+			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.getRows()>0 )
 					ret = mc.getRows();
 			}
-			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
+			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.getCols()>0 )
@@ -1378,12 +1378,12 @@ public abstract class Hop
 		{
 			UnaryOp uroot = (UnaryOp) root;
 			long dim = -1;
-			if(uroot.get_op() == Hop.OpOp1.NROW)
+			if(uroot.getOp() == Hop.OpOp1.NROW)
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getRows();
 			}
-			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+			else if( uroot.getOp() == Hop.OpOp1.NCOL )
 			{
 				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getCols();

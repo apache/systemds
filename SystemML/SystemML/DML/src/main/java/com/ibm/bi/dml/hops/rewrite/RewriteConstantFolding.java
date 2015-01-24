@@ -274,6 +274,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
-				&& HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).get_op()));			
+				&& HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).getOp()));			
 	}
 }

@@ -45,7 +45,7 @@ public class DataGenOp extends Hop
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	 // defines the specific data generation method
-	private DataGenMethod _method;
+	private DataGenMethod _op;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -87,7 +87,7 @@ public class DataGenOp extends Hop
 		super(Kind.DataGenOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
 		
 		_id = id;
-		_method = mthd;
+		_op = mthd;
 
 		int index = 0;
 		for( Entry<String, Hop> e: inputParameters.entrySet() ) {
@@ -113,11 +113,11 @@ public class DataGenOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		return "dg(" + _method +")";
+		return "dg(" + _op +")";
 	}
 	
-	public DataGenMethod getDataGenMethod() {
-		return _method;
+	public DataGenMethod getOp() {
+		return _op;
 	}
 	
 	@Override
@@ -138,7 +138,7 @@ public class DataGenOp extends Hop
 					inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 			}
 			
-			DataGen rnd = new DataGen(_method, _id, inputLops,_baseDir,
+			DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
 					getDataType(), getValueType(), et);
 			
 			rnd.getOutputParameters().setDimensions(
@@ -207,7 +207,7 @@ public class DataGenOp extends Hop
 	{		
 		double ret = 0;
 		
-		if ( _method == DataGenMethod.RAND ) {
+		if ( _op == DataGenMethod.RAND ) {
 			if( hasConstantValue(0.0) ) { //if empty block
 				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
@@ -227,7 +227,7 @@ public class DataGenOp extends Hop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		if ( _method == DataGenMethod.RAND && dimsKnown() ) {
+		if ( _op == DataGenMethod.RAND && dimsKnown() ) {
 			long numBlocks = (long) (Math.ceil((double)dim1/DMLTranslator.DMLBlockSize) * Math.ceil((double)dim2/DMLTranslator.DMLBlockSize));
 			return 32 + numBlocks*8.0; // 32 bytes of overhead for an array of long & numBlocks long values.
 		}
@@ -238,7 +238,7 @@ public class DataGenOp extends Hop
 	@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
-		if( (_method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ) &&
+		if( (_op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) &&
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
 		{
 			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
@@ -278,7 +278,7 @@ public class DataGenOp extends Hop
 		}
 		
 		//always force string initialization into CP (not supported in MR)
-		if( _method == DataGenMethod.SINIT )
+		if( _op == DataGenMethod.SINIT )
 			_etype = ExecType.CP;
 		
 		return _etype;
@@ -291,7 +291,7 @@ public class DataGenOp extends Hop
 		Hop input2 = null; 
 		Hop input3 = null;
 
-		if ( _method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ) 
+		if ( _op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
 			input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
@@ -302,7 +302,7 @@ public class DataGenOp extends Hop
 			//refresh cols information
 			refreshColsParameterInformation(input2);
 		}
-		else if (_method == DataGenMethod.SEQ ) 
+		else if (_op == DataGenMethod.SEQ ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
 			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
@@ -332,7 +332,7 @@ public class DataGenOp extends Hop
 		}
 		
 		//refresh nnz information (for seq, sparsity is always -1)
-		if( _method == DataGenMethod.RAND && hasConstantValue(0.0) )
+		if( _op == DataGenMethod.RAND && hasConstantValue(0.0) )
 			_nnz = 0;
 		else if ( dimsKnown() && _sparsity>=0 ) //general case
 			_nnz = (long) (_sparsity * _dim1 * _dim2);
@@ -356,7 +356,7 @@ public class DataGenOp extends Hop
 	public boolean hasConstantValue() 
 	{
 		//string initialization does not exhibit constant values
-		if( _method == DataGenMethod.SINIT )
+		if( _op == DataGenMethod.SINIT )
 			return false;
 		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
@@ -387,7 +387,7 @@ public class DataGenOp extends Hop
 	public boolean hasConstantValue(double val) 
 	{
 		//string initialization does not exhibit constant values
-		if( _method == DataGenMethod.SINIT )
+		if( _op == DataGenMethod.SINIT )
 			return false;
 		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
@@ -435,7 +435,7 @@ public class DataGenOp extends Hop
 		ret.clone(this, false);
 		
 		//copy specific attributes
-		ret._method = _method;
+		ret._op = _op;
 		ret._id = _id;
 		ret._sparsity = _sparsity;
 		ret._baseDir = _baseDir;
@@ -452,7 +452,7 @@ public class DataGenOp extends Hop
 			return false;
 		
 		DataGenOp that2 = (DataGenOp)that;	
-		boolean ret = (  _method == that2._method
+		boolean ret = (  _op == that2._op
 				      && _sparsity == that2._sparsity
 				      && _baseDir.equals(that2._baseDir)
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
@@ -470,7 +470,7 @@ public class DataGenOp extends Hop
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
 			//note: if min and max is constant, we can safely merge those hops
-			if( _method == DataGenMethod.RAND || _method == DataGenMethod.SINIT ){
+			if( _op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ){
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));

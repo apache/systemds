@@ -974,7 +974,7 @@ public class TertiaryOp extends Hop
 						//for ctable_expand at least one dimension is known
 						if( isSequenceRewriteApplicable() )
 						{
-							if( input1 instanceof DataGenOp && ((DataGenOp)input1).getDataGenMethod()==DataGenMethod.SEQ )
+							if( input1 instanceof DataGenOp && ((DataGenOp)input1).getOp()==DataGenMethod.SEQ )
 								setDim1( input1._dim1 );
 							else //if( input2 instanceof DataGenOp && ((DataGenOp)input2).getDataGenMethod()==DataGenMethod.SEQ )
 								setDim2( input2._dim1 );
@@ -1091,7 +1091,7 @@ public class TertiaryOp extends Hop
 					if( left && input1 instanceof DataGenOp )
 					{
 						DataGenOp dgop = (DataGenOp) input1;
-						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
+						if( dgop.getOp() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 							ret = (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
@@ -1101,7 +1101,7 @@ public class TertiaryOp extends Hop
 					if( !left && input2 instanceof DataGenOp )
 					{
 						DataGenOp dgop = (DataGenOp) input2;
-						if( dgop.getDataGenMethod() == DataGenMethod.SEQ ){
+						if( dgop.getOp() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
 								   || dgop.getIncrementValue()==1.0; //set by recompiler;

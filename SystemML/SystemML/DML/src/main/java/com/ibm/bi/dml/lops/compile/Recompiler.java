@@ -1337,14 +1337,14 @@ public class Recompiler
 		{
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
-			if ( d.getDataGenMethod() == DataGenMethod.RAND || d.getDataGenMethod()==DataGenMethod.SINIT ) {
+			if ( d.getOp() == DataGenMethod.RAND || d.getOp()==DataGenMethod.SINIT ) {
 				int ix1 = params.get(DataExpression.RAND_ROWS);
 				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
 				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
 			} 
-			else if ( d.getDataGenMethod() == DataGenMethod.SEQ ) {
+			else if ( d.getOp() == DataGenMethod.SEQ ) {
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
@@ -1367,7 +1367,7 @@ public class Recompiler
 				}
 			}
 			else {
-				throw new DMLRuntimeException("Unexpect data generation method: " + d.getDataGenMethod());
+				throw new DMLRuntimeException("Unexpect data generation method: " + d.getOp());
 			}
 		}
 		//update size expression for reshape according to symbol table entries
@@ -1450,8 +1450,8 @@ public class Recompiler
 					}
 				}
 				//as.double/as.integer/as.boolean over scalar read - literal replacement
-				else if( c instanceof UnaryOp && (((UnaryOp)c).get_op() == OpOp1.CAST_AS_DOUBLE
-					|| ((UnaryOp)c).get_op() == OpOp1.CAST_AS_INT || ((UnaryOp)c).get_op() == OpOp1.CAST_AS_BOOLEAN )	
+				else if( c instanceof UnaryOp && (((UnaryOp)c).getOp() == OpOp1.CAST_AS_DOUBLE
+					|| ((UnaryOp)c).getOp() == OpOp1.CAST_AS_INT || ((UnaryOp)c).getOp() == OpOp1.CAST_AS_BOOLEAN )	
 						&& c.getInput().get(0) instanceof DataOp && c.getDataType()==DataType.SCALAR )
 				{
 					Data dat = vars.get(c.getInput().get(0).getName());
@@ -1460,7 +1460,7 @@ public class Recompiler
 						ScalarObject sdat = (ScalarObject)dat;
 						UnaryOp cast = (UnaryOp) c;
 						Hop literal = null;
-						switch( cast.get_op() ) {
+						switch( cast.getOp() ) {
 							case CAST_AS_INT:
 								literal = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
 								break;
@@ -1482,7 +1482,7 @@ public class Recompiler
 					}
 				}
 				//as.scalar/matrix read - literal replacement
-				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
+				else if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
 					&& c.getInput().get(0) instanceof DataOp )
 				{
 					Data dat = vars.get(c.getInput().get(0).getName());
@@ -1505,7 +1505,7 @@ public class Recompiler
 					}
 				}
 				//as.scalar/right indexing w/ literals/vars and matrix less than 10^6 cells
-				else if( c instanceof UnaryOp && ((UnaryOp)c).get_op() == OpOp1.CAST_AS_SCALAR 
+				else if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
 						&& c.getInput().get(0) instanceof IndexingOp )
 				{
 					IndexingOp rix = (IndexingOp)c.getInput().get(0);

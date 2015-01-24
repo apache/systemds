@@ -70,7 +70,7 @@ public class UnaryOp extends Hop
 	}
 
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
-	public OpOp1 get_op() {
+	public OpOp1 getOp() {
 		return _op;
 	}
 	

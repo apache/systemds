@@ -132,6 +132,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			hi = removeUnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	    //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
+			hi = simplifySumMatrixMult(hop, hi, i);             //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)),
 			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -164,7 +165,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			if( left.getDataType() == DataType.MATRIX && right instanceof DataGenOp )
 			{
 				DataGenOp dright = (DataGenOp) right;
-				if( dright.getDataGenMethod()==DataGenMethod.RAND && dright.hasConstantValue() )
+				if( dright.getOp()==DataGenMethod.RAND && dright.hasConstantValue() )
 				{
 					Hop drightIn = dright.getInput().get(dright.getParamIndex(DataExpression.RAND_MIN));
 					HopRewriteUtils.removeChildReference(bop, dright);
@@ -181,7 +182,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			else if( right.getDataType() == DataType.MATRIX && left instanceof DataGenOp )
 			{
 				DataGenOp dleft = (DataGenOp) left;
-				if( dleft.getDataGenMethod()==DataGenMethod.RAND && dleft.hasConstantValue()
+				if( dleft.getOp()==DataGenMethod.RAND && dleft.hasConstantValue()
 					&& (left.getDim2()==1 || right.getDim2()>1) 
 					&& (left.getDim1()==1 || right.getDim1()>1))
 				{
@@ -322,7 +323,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop right = bop.getInput().get(1);
 			
 			//left input rand and hence output matrix double, right scalar literal
-			if( left instanceof DataGenOp && ((DataGenOp)left).getDataGenMethod()==DataGenMethod.RAND &&
+			if( left instanceof DataGenOp && ((DataGenOp)left).getOp()==DataGenMethod.RAND &&
 				right instanceof LiteralOp )
 			{
 				DataGenOp inputGen = (DataGenOp)left;
@@ -350,7 +351,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
-			else if( right instanceof DataGenOp && ((DataGenOp)right).getDataGenMethod()==DataGenMethod.RAND &&
+			else if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND &&
 				left instanceof LiteralOp )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
@@ -399,7 +400,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			
-			if( right instanceof DataGenOp && ((DataGenOp)right).getDataGenMethod()==DataGenMethod.RAND &&
+			if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND &&
 				left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==0.0 )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
@@ -913,6 +914,58 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					LOG.debug("Applied simplifyGroupedAggregateCount");	
 				}
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifySumMatrixMult(Hop parent, Hop hi, int pos)
+	{
+		//sum(A%*%B) -> sum(t(colSums(A))*rowSums(B))
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM  //sum
+			&& hi.getInput().get(0) instanceof AggBinaryOp ) //A%*%B	
+		{
+			Hop hi2 = hi.getInput().get(0);
+			Hop left = hi2.getInput().get(0);
+			Hop right = hi2.getInput().get(1);
+				
+			//remove link from parent to diag
+			HopRewriteUtils.removeChildReference(hi, hi2);
+				
+			//create new operators
+			AggUnaryOp colSum = new AggUnaryOp(left.getName(), left.getDataType(), left.getValueType(), AggOp.SUM, Direction.Col, left);
+			colSum.setRowsInBlock(left.getRowsInBlock());
+			colSum.setColsInBlock(left.getColsInBlock());
+			colSum.refreshSizeInformation();
+			ReorgOp transpose = new ReorgOp(colSum.getName(), colSum.getDataType(), colSum.getValueType(), ReOrgOp.TRANSPOSE, colSum);
+			transpose.setRowsInBlock(colSum.getRowsInBlock());
+			transpose.setColsInBlock(colSum.getColsInBlock());
+			AggUnaryOp rowSum = new AggUnaryOp(right.getName(), right.getDataType(), right.getValueType(), AggOp.SUM, Direction.Row, right);
+			rowSum.setRowsInBlock(right.getRowsInBlock());
+			rowSum.setColsInBlock(right.getColsInBlock());
+			rowSum.refreshSizeInformation();
+			BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, transpose, rowSum);
+			mult.setRowsInBlock(right.getRowsInBlock());
+			mult.setColsInBlock(right.getColsInBlock());
+			mult.refreshSizeInformation();
+				
+			
+			//rehang new subdag under current node (keep hi intact)
+			HopRewriteUtils.addChildReference(hi, mult, 0);				
+			hi.refreshSizeInformation();
+				
+			//cleanup if only consumer of intermediate
+			if( hi2.getParent().isEmpty() ) 
+				HopRewriteUtils.removeAllChildReferences( hi2 );
+			
+			LOG.debug("Applied simplifySumMatrixMult.");	
 		}
 		
 		return hi;

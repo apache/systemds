@@ -582,10 +582,16 @@ public class StatementBlock extends LiveVariableAnalysis
 				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ)
 					setStatementFormatType(as, conditional);
 				
-				// Handle const vars: Basic Constant propagation 
+				// Handle const vars: (a) basic constant propagation, and (b) transitive constant propagation over assignments 
 				currConstVars.remove(target.getName());
-				if (source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){
+				if(source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){ //basic
 					currConstVars.put(target.getName(), (ConstIdentifier)source);
+				}
+				if( source instanceof DataIdentifier && !(target instanceof IndexedIdentifier) ){ //transitive
+					DataIdentifier diSource = (DataIdentifier) source;
+					if( currConstVars.containsKey(diSource.getName()) ){
+						currConstVars.put(target.getName(), currConstVars.get(diSource.getName()));
+					}
 				}
 			
 				if (source instanceof BuiltinFunctionExpression){

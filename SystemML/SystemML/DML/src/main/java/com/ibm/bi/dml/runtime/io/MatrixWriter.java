@@ -38,7 +38,7 @@ public abstract class MatrixWriter
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	public abstract void writeMatrixFromHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
+	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException;
 	
 	

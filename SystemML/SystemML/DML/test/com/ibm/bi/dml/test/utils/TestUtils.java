@@ -689,7 +689,7 @@ public class TestUtils
 	
 	public static void compareScalars(double d1, double d2, double tol) {
 		if(!compareCellValue(d1, d2, tol, false)) {
-			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , true);
+			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , false);
 		}
 	}
 

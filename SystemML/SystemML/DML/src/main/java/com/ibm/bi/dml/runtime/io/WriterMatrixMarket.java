@@ -34,7 +34,7 @@ public class WriterMatrixMarket extends MatrixWriter
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
-	public void writeMatrixFromHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//prepare file access

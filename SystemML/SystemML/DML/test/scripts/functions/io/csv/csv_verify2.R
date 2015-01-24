@@ -13,7 +13,7 @@ options(digits=22)
 
 library(Matrix);
 
-A = read.csv(args[1], header=FALSE);
+A = read.csv(args[1]);
 x = sum(A);
 write(x, args[2]);
 

@@ -91,7 +91,7 @@ public class ReadCSVTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
 		programArgs = new String[]{"-args", inputMatrixName, dmlOutput};
 		
-		fullRScriptName = HOME + "csv_verify.R";
+		fullRScriptName = HOME + "csv_verify2.R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixName + ".single " + rOutput;
 		
 		runTest(true, false, null, -1);

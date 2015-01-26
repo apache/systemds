@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -33,20 +33,19 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class WriteTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "functions/data/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/data/";
+		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		availableTestConfigurations.put("TextTest", new TestConfiguration("WriteTest",
-				new String[] { "a" }));
-		availableTestConfigurations.put("BinaryTest", new TestConfiguration("WriteTest",
-				new String[] { "a" }));
-		availableTestConfigurations.put("WriteTwiceTest", new TestConfiguration("WriteTwiceTest",
-				new String[] { "b", "c" }));
+		addTestConfiguration("TextTest", new TestConfiguration(TEST_DIR, "WriteTest", new String[] { "a" }));
+		addTestConfiguration("BinaryTest", new TestConfiguration(TEST_DIR, "WriteTest", new String[] { "a" }));
+		addTestConfiguration("WriteTwiceTest", new TestConfiguration(TEST_DIR, "WriteTwiceTest", new String[] { "b", "c" }));
 		
 		// negative tests
 	}

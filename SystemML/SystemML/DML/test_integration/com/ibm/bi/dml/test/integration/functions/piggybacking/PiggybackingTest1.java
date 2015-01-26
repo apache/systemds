@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class PiggybackingTest1 extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "Piggybacking1";
@@ -34,6 +34,7 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
+		TestUtils.clearAssertionInformation();
 		addTestConfiguration(
 				TEST_NAME, 
 				new TestConfiguration(TEST_DIR, TEST_NAME, 
@@ -56,41 +57,45 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	@Test
 	public void testDistCacheBug_mvmult()
 	{		
-
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = RUNTIME_PLATFORM.HADOOP;
 		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + "_mvmult.dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-											HOME + INPUT_DIR + "x", 
-											HOME + OUTPUT_DIR + config.getOutputFiles()[0] };
-
-		fullRScriptName = HOME + TEST_NAME + "_mvmult.R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + "A.mtx" + " " + 
-			       HOME + INPUT_DIR + "x.mtx" + " " + 
-			       HOME + EXPECTED_DIR + config.getOutputFiles()[0];
-
-		loadTestConfiguration(config);
-		
-		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
-		writeInputMatrixWithMTD("A", A, true, mc);
-		
-		double[][] x = getRandomMatrix(cols, 1, 0, 1, 1.0, 11);
-		mc.set(cols, 1, -1, -1);
-		writeInputMatrixWithMTD("x", x, true, mc);
-		
-		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
-		runRScript(true);
+		try
+		{
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + "_mvmult.dml";
+			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
+												HOME + INPUT_DIR + "x", 
+												HOME + OUTPUT_DIR + config.getOutputFiles()[0] };
 	
-		TestUtils.compareDMLHDFSFileWithRFile(comparisonFiles[0], outputDirectories[0], 1e-10);
+			fullRScriptName = HOME + TEST_NAME + "_mvmult.R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+				       HOME + INPUT_DIR + "A.mtx" + " " + 
+				       HOME + INPUT_DIR + "x.mtx" + " " + 
+				       HOME + EXPECTED_DIR + config.getOutputFiles()[0];
+	
+			loadTestConfiguration(config);
+			
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+			writeInputMatrixWithMTD("A", A, true, mc);
+			
+			double[][] x = getRandomMatrix(cols, 1, 0, 1, 1.0, 11);
+			mc.set(cols, 1, -1, -1);
+			writeInputMatrixWithMTD("x", x, true, mc);
+			
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1);
+			runRScript(true);
 		
-		rtplatform = rtold;
+			TestUtils.compareDMLHDFSFileWithRFile(comparisonFiles[0], outputDirectories[0], 1e-10);
+		}
+		finally
+		{
+			rtplatform = rtold;
+		}
 	}
 	
 	@Test

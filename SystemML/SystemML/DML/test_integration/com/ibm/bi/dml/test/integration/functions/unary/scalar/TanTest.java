@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,20 +29,22 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class TanTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
+		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("TanTest", new String[] { "int", "double" }));
-		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("TanTest", new String[] { "int", "double" }));
-		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("TanTest", new String[] { "int", "double" }));
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
+		addTestConfiguration("NegativeTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
+		addTestConfiguration("RandomTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
 		
 		// negative tests
 	}
@@ -56,7 +58,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.tan(intValue);
 		double computedDoubleValue = Math.tan(doubleValue);
@@ -79,7 +81,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.tan(intValue);
 		double computedDoubleValue = Math.tan(doubleValue);
@@ -102,7 +104,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.tan(intValue);
 		double computedDoubleValue = Math.tan(doubleValue);

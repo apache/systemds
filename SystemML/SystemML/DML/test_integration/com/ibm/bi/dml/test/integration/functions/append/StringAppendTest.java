@@ -10,10 +10,12 @@ package com.ibm.bi.dml.test.integration.functions.append;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class StringAppendTest extends AutomatedTestBase
 {
@@ -28,6 +30,7 @@ public class StringAppendTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
+		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"S"}));
 	}
@@ -79,15 +82,22 @@ public class StringAppendTest extends AutomatedTestBase
 
 		try
 		{
+			TestConfiguration config = getTestConfiguration(TEST_NAME);			
+			loadTestConfiguration(config);
+			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args",  Integer.toString(iters),
 					                             RI_HOME + OUTPUT_DIR + "C" };
 			
-			runTest(true, exceptionExpected, null, 0);
-			runRScript(true);
+			runTest(true, exceptionExpected, DMLException.class, 0);
 		}
 		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
+		}
+		finally
 		{
 			rtplatform = oldPlatform;	
 		}

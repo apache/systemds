@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class AppendMatrixTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "AppendMatrixTest";
@@ -53,6 +53,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
+		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
 				new String[] {"C"}));
 	}
@@ -105,48 +106,55 @@ public class AppendMatrixTest extends AutomatedTestBase
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
-	    rtplatform = platform;
-
-        config.addVariable("rows", rows);
-        config.addVariable("cols", cols1);
-          
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String RI_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
-				                             Long.toString(rows), 
-				                             Long.toString(cols1),
-							                 RI_HOME + INPUT_DIR + "B" ,
-							                 Long.toString(cols2),
-	                                         RI_HOME + OUTPUT_DIR + "C" };
-		fullRScriptName = RI_HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
-
-		Random rand=new Random(System.currentTimeMillis());
-		loadTestConfiguration(config);
-		double sparsity=rand.nextDouble();
-		double[][] A = getRandomMatrix(rows, cols1, min, max, sparsity, System.currentTimeMillis());
-        writeInputMatrix("A", A, true);
-        sparsity=rand.nextDouble();
-        double[][] B= getRandomMatrix(rows, cols2, min, max, sparsity, System.currentTimeMillis());
-        writeInputMatrix("B", B, true);
-        
-        boolean exceptionExpected = false;
-        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
-		int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
-		runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
-		runRScript(true);
-		Assert.assertEquals("Wrong number of executed MR jobs.",
-				            expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
-
-		for(String file: config.getOutputFiles())
+		try
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+		    rtplatform = platform;
+	
+	        config.addVariable("rows", rows);
+	        config.addVariable("cols", cols1);
+	          
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String RI_HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
+					                             Long.toString(rows), 
+					                             Long.toString(cols1),
+								                 RI_HOME + INPUT_DIR + "B" ,
+								                 Long.toString(cols2),
+		                                         RI_HOME + OUTPUT_DIR + "C" };
+			fullRScriptName = RI_HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
+	
+			Random rand=new Random(System.currentTimeMillis());
+			loadTestConfiguration(config);
+			double sparsity=rand.nextDouble();
+			double[][] A = getRandomMatrix(rows, cols1, min, max, sparsity, System.currentTimeMillis());
+	        writeInputMatrix("A", A, true);
+	        sparsity=rand.nextDouble();
+	        double[][] B= getRandomMatrix(rows, cols2, min, max, sparsity, System.currentTimeMillis());
+	        writeInputMatrix("B", B, true);
+	        
+	        boolean exceptionExpected = false;
+	        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
+			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
+			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
+			runRScript(true);
+			Assert.assertEquals("Wrong number of executed MR jobs.",
+					            expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
+	
+			for(String file: config.getOutputFiles())
+			{
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
+				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			}
 		}
-		rtplatform = prevPlfm;
+		finally
+		{
+			//reset execution platform
+			rtplatform = prevPlfm;
+		}
 	}
    
 }

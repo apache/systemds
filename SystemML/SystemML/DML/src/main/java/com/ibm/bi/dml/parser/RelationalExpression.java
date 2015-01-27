@@ -9,6 +9,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 
 public class RelationalExpression extends Expression
 {
@@ -135,9 +136,90 @@ public class RelationalExpression extends Expression
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		output.setBooleanProperties();
+		
+		boolean isLeftMatrix = (_left.getOutput() != null && _left.getOutput().getDataType() == DataType.MATRIX);
+		boolean isRightMatrix = (_right.getOutput() != null && _right.getOutput().getDataType() == DataType.MATRIX); 
+		if(isLeftMatrix || isRightMatrix) {
+			// Added to support matrix relational comparison
+			if(isLeftMatrix && isRightMatrix) {
+				checkMatchingDimensions(_left, _right, true);
+			}
+			
+			long[] dims = getBinaryMatrixCharacteristics(_left, _right);
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(dims[0], dims[1]);
+			output.setBlockDimensions(dims[2], dims[3]);
+			output.setValueType(ValueType.BOOLEAN);
+		}
+		else {
+			output.setBooleanProperties();
+		}
+		
 		this.setOutput(output);
 	}		
+	
+	/**
+	 * This is same as the function from BuiltinFunctionExpression which is called by ppred
+	 * @param expr1
+	 * @param expr2
+	 * @throws LanguageException
+	 */
+	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
+		throws LanguageException 
+	{
+		if (expr1 != null && expr2 != null) {
+			
+			// if any matrix has unknown dimensions, simply return
+			if(  expr1.getOutput().getDim1() == -1 || expr2.getOutput().getDim1() == -1 
+			   ||expr1.getOutput().getDim2() == -1 || expr2.getOutput().getDim2() == -1 ) 
+			{
+				return;
+			}
+			else if( (!allowsMV && expr1.getOutput().getDim1() != expr2.getOutput().getDim1())
+				  || (allowsMV && expr1.getOutput().getDim1() != expr2.getOutput().getDim1() && expr2.getOutput().getDim1() != 1)
+				  || (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
+				  || (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
+			{
+				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
+						+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+		}
+	}
+	
+	/**
+	 * This is same as the function from BuiltinFunctionExpression which is called by ppred
+	 * 
+	 * Returns the matrix characteristics for scalar-matrix, matrix-scalar, matrix-matrix
+	 * operations. Format: rlen, clen, brlen, bclen.
+	 * 
+	 * @param left
+	 * @param right
+	 * @return
+	 */
+	private static long[] getBinaryMatrixCharacteristics( Expression left, Expression right )
+	{
+		long[] ret = new long[]{ -1, -1, -1, -1 };
+		Identifier idleft = left.getOutput();
+		Identifier idright = right.getOutput();
+		
+		//rlen known
+		if( idleft.getDim1()>0 || idright.getDim1()>0 )
+			ret[ 0 ] = Math.max(idleft.getDim1(), idright.getDim1());
+		
+		//rlen known
+		if( idleft.getDim2()>0 || idright.getDim2()>0 )
+			ret[ 1 ] = Math.max(idleft.getDim2(), idright.getDim2());
+		
+		//brlen known
+		if( idleft.getRowsInBlock()>0 || idright.getRowsInBlock()>0 )
+			ret[ 2 ] = Math.max(idleft.getRowsInBlock(), idright.getRowsInBlock());
+		
+		//bclen known
+		if( idleft.getColumnsInBlock()>0 || idright.getColumnsInBlock()>0 )
+			ret[ 3 ] = Math.max(idleft.getColumnsInBlock(), idright.getColumnsInBlock());
+		
+		return ret;
+	}
 	
 	public String toString(){
 		return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";

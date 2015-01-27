@@ -1970,7 +1970,6 @@ public class DMLTranslator
 	 * @throws ParseException
 	 */
 	private Hop processExpression(Expression source, DataIdentifier target, HashMap<String, Hop> hops) throws ParseException {
-
 		if (source.getKind() == Expression.Kind.BinaryOp) {
 			return processBinaryExpression((BinaryExpression) source, target, hops);
 		} else if (source.getKind() == Expression.Kind.RelationalOp) {
@@ -2285,8 +2284,18 @@ public class DMLTranslator
 
 		if (target == null) {
 			target = createTarget(source);
-			target.setValueType(ValueType.BOOLEAN);
+			if(left.getDataType() == DataType.MATRIX || right.getDataType() == DataType.MATRIX) {
+				// Added to support matrix relational comparison
+				target.setDataType(DataType.MATRIX);
+				target.setValueType(ValueType.BOOLEAN);
+			}
+			else {
+				// Added to support scalar relational comparison
+				target.setDataType(DataType.SCALAR);
+				target.setValueType(ValueType.BOOLEAN);
+			}
 		}
+		
 		OpOp2 op = null;
 
 		if (source.getOpCode() == Expression.RelationalOp.LESS) {

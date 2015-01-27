@@ -32,6 +32,7 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
+import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -112,8 +113,15 @@ public class Connection
 		try
 		{
 			//parsing
-			DMLParserWrapper parser = new DMLParserWrapper();
-			DMLProgram prog = parser.parse(null, script, args);
+			DMLProgram prog = null;
+			if(DMLScript.ENABLE_PYTHON_PARSING) {
+				PyDMLParserWrapper parser = new PyDMLParserWrapper();
+				prog = parser.parse(null, script, args);
+			}
+			else {
+				DMLParserWrapper parser = new DMLParserWrapper();
+				prog = parser.parse(null, script, args);
+			}
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);

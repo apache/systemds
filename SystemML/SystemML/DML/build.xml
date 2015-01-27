@@ -144,6 +144,13 @@ The source code for this program is not published or otherwise divested of its t
 				<pathelement location="${hadoop.local.path}/antlr-4.3-complete.jar" />
 			</classpath>
 	    </java>
+		<echo message="Running Antlr on Pydml.g4"/>
+				<java fork="true" failonerror="yes" classname="org.antlr.v4.Tool" dir="src/main/java/com/ibm/bi/dml/parser/python/">
+			      	<arg line="Pydml.g4 -package com.ibm.bi.dml.parser.python"/>
+					<classpath>
+						<pathelement location="${hadoop.local.path}/antlr-4.3-complete.jar" />
+					</classpath>
+		</java>
 		<!-- end: comment this to disable antlr4 -->
 	</target>
 	

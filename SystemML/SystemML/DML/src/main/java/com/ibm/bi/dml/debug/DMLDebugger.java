@@ -7,23 +7,13 @@
 
 package com.ibm.bi.dml.debug;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.math.IntRange;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.debug.DMLDebuggerFunctions;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
@@ -560,45 +550,52 @@ public class DMLDebugger
 		}
 	}
 	    
-	
-	/**
-	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
-	 * @param  dmlScriptStr DML script contents (including new lines)
-	 * @param  argVals Key-value pairs defining arguments of DML script  
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 * @throws LanguageException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
-	 * @throws Exception 
-	 */
-	private void recompile(String dmlScriptStr, HashMap<String,String> argVals)
-			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, Exception
-	{
-		dbprog = new DMLDebuggerProgramInfo();
-			
-		//Step 1: parse dml script
-		DMLParserWrapper parser = new DMLParserWrapper();
-		dbprog.prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-			
-		//Step 3: construct HOP DAGs (incl LVA and validate)
-		dbprog.dmlt = new DMLTranslator(dbprog.prog);
-		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
-		dbprog.dmlt.validateParseTree(dbprog.prog);
-		dbprog.dmlt.constructHops(dbprog.prog);		
-		
-		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
-		dbprog.dmlt.rewriteHopsDAG(dbprog.prog); 
 
-		//Step 5: construct LOP DAGs
-		dbprog.dmlt.constructLops(dbprog.prog);
-	
-		//Step 6: generate runtime program
-		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
-		
-		//Set debug mode flag
-		setupDMLRuntime();
-	}
+//	Since the recompile option is disabled in the debugger to make the interface much cleaner
+//	/**
+//	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
+//	 * @param  dmlScriptStr DML script contents (including new lines)
+//	 * @param  argVals Key-value pairs defining arguments of DML script  
+//	 * @throws ParseException
+//	 * @throws IOException
+//	 * @throws DMLRuntimeException
+//	 * @throws LanguageException
+//	 * @throws HopsException
+//	 * @throws LopsException
+//	 * @throws DMLUnsupportedOperationException
+//	 * @throws Exception 
+//	 */
+//	private void recompile(String dmlScriptStr, HashMap<String,String> argVals)
+//			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, Exception
+//	{
+//		dbprog = new DMLDebuggerProgramInfo();
+//			
+//		//Step 1: parse dml script
+//		if(DMLScript.ENABLE_PYTHON_PARSING) {
+//			PyDMLParserWrapper parser = new PyDMLParserWrapper();
+//			dbprog.prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+//		}
+//		else {
+//			DMLParserWrapper parser = new DMLParserWrapper();
+//			dbprog.prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+//		}
+//			
+//		//Step 3: construct HOP DAGs (incl LVA and validate)
+//		dbprog.dmlt = new DMLTranslator(dbprog.prog);
+//		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
+//		dbprog.dmlt.validateParseTree(dbprog.prog);
+//		dbprog.dmlt.constructHops(dbprog.prog);		
+//		
+//		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
+//		dbprog.dmlt.rewriteHopsDAG(dbprog.prog); 
+//
+//		//Step 5: construct LOP DAGs
+//		dbprog.dmlt.constructLops(dbprog.prog);
+//	
+//		//Step 6: generate runtime program
+//		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
+//		
+//		//Set debug mode flag
+//		setupDMLRuntime();
+//	}
 }

@@ -59,6 +59,14 @@ public abstract class Statement
 	
 	public abstract Statement rewriteStatement(String prefix) throws LanguageException;
 	
+	// Used only insider python parser to allow for ignoring newline logic
+	private boolean isEmptyNewLineStatement = false;
+	public boolean isEmptyNewLineStatement() {
+		return isEmptyNewLineStatement;
+	}	
+	public void setEmptyNewLineStatement(boolean isEmptyNewLineStatement) {
+		this.isEmptyNewLineStatement = isEmptyNewLineStatement;
+	}
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for statements
@@ -112,4 +120,6 @@ public abstract class Statement
 	public String printInfoLocation(int beginLine, int beginColumn){
 		return "INFO: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
 	}
+
+	
 }

@@ -51,6 +51,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
+import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -97,6 +98,7 @@ public class DMLScript
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
+	public static boolean ENABLE_PYTHON_PARSING = false;
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 
@@ -116,6 +118,7 @@ public class DMLScript
 			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system)\n" 
 			//undocumented feature in beta 08/2014 release
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
+			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
@@ -297,6 +300,9 @@ public class DMLScript
 					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
+				}
+				else if( args[i].equalsIgnoreCase("-python") ) {					
+					ENABLE_PYTHON_PARSING = true;
 				}
 				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
 					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
@@ -570,8 +576,15 @@ public class DMLScript
 		}
 		
 		//Step 3: parse dml script
-		DMLParserWrapper parser = new DMLParserWrapper();
-		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		DMLProgram prog = null;
+		if(DMLScript.ENABLE_PYTHON_PARSING) {
+			PyDMLParserWrapper parser = new PyDMLParserWrapper();
+			prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		}
+		else {
+			DMLParserWrapper parser = new DMLParserWrapper();
+			prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		}
 		
 		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -687,8 +700,14 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		DMLParserWrapper parser = new DMLParserWrapper();
-		dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		if(DMLScript.ENABLE_PYTHON_PARSING) {
+			PyDMLParserWrapper parser = new PyDMLParserWrapper();
+			dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		}
+		else {
+			DMLParserWrapper parser = new DMLParserWrapper();
+			dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		}
 
 		//Step 3: construct HOP DAGs (incl LVA and validate)
 		dbprog.dmlt = new DMLTranslator(dbprog.prog);

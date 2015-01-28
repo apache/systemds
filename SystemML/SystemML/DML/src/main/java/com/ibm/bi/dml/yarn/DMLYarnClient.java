@@ -80,8 +80,6 @@ public class DMLYarnClient
 	public static final int APP_STATE_INTERVAL = 200;
 	// default application master name
 	public static final String APPMASTER_NAME = "SystemML-AM";
-	// default application queue
-	public static final String APP_QUEUE = "default"; 
 	
 	
 	private String _dmlScript = null;
@@ -168,11 +166,12 @@ public class DMLYarnClient
 			LOG.debug("Requested application resources: memory="+((int)(memHeap*MEM_FACTOR))+", vcores="+NUM_CORES);
 
 			// Finally, set-up ApplicationSubmissionContext for the application
+			String qname = _dmlConfig.getTextValue(DMLConfig.YARN_APPQUEUE);
 			appContext.setApplicationName(APPMASTER_NAME); // application name
 			appContext.setAMContainerSpec(amContainer);
 			appContext.setResource(capability);
-			appContext.setQueue(APP_QUEUE); // queue
-			LOG.debug("Configured application meta data: name="+APPMASTER_NAME+", queue="+APP_QUEUE);
+			appContext.setQueue(qname); // queue
+			LOG.debug("Configured application meta data: name="+APPMASTER_NAME+", queue="+qname);
 			
 			// submit application (non-blocking)
 			yarnClient.submitApplication(appContext);

@@ -1,7 +1,7 @@
 <!--
 IBM Confidential
 OCO Source Materials
-(C) Copyright IBM Corp. 2010, 2014
+(C) Copyright IBM Corp. 2010, 2015
 The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 -->
 
@@ -32,6 +32,9 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
    <dml.yarn.mapreduce.mem>2048</dml.yarn.mapreduce.mem>
+
+   <!-- yarn application submission queue, relevant for default capacity scheduler -->
+   <dml.yarn.app.queue>default</dml.yarn.app.queue>
 
    <!-- configuration properties for Nimble external package support -->
    <NumMergeTasks>4</NumMergeTasks>

@@ -104,7 +104,7 @@ public class DMLAppMaster
 		{
 			//stop periodic status reports
 			reporter.stopStatusReporter();
-			LOG.debug("Stoped status reporter");
+			LOG.debug("Stopped status reporter");
 				
 			//unregister resource manager client
 			rmClient.unregisterApplicationMaster(status, "", "");

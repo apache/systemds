@@ -56,6 +56,7 @@ public class DMLConfig
 	public static final String YARN_APPMASTER       = "dml.yarn.appmaster"; 	
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
+	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
 	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
 	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
 	public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
@@ -85,6 +86,7 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPMASTER,       "false" );
 		_defaultVals.put(YARN_APPMASTERMEM,    "2048" );
 		_defaultVals.put(YARN_MAPREDUCEMEM,    "-1" );
+		_defaultVals.put(YARN_APPQUEUE,    	   "default" );
 		_defaultVals.put(NUM_MERGE_TASKS,      "4" );
 		_defaultVals.put(NUM_SOW_THREADS,      "1" );
 		_defaultVals.put(NUM_REAP_THREADS,     "1" );

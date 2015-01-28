@@ -929,6 +929,10 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	/**
+	 * NOTE: dot-product-sum could be also applied to sum(a*b). However, we 
+	 * restrict ourselfs to sum(a^2) and transitively sum(a*a) since a general mm
+	 * a%*%b on MR can be also counter-productive (e.g., MMCJ) while tsmm is always 
+	 * beneficial. 
 	 * 
 	 * @param parent
 	 * @param hi
@@ -950,8 +954,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& hi2.getInput().get(1) instanceof LiteralOp 
 				&& HopRewriteUtils.getIntValue((LiteralOp)hi2.getInput().get(1))==2 )
 			{
-				//FIXME: linreog crashing
-				
 				Hop input = hi2.getInput().get(0);
 				
 				//remove link from parent to diag

@@ -8,10 +8,12 @@
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
+import com.ibm.bi.dml.lops.TertiaryAggregate;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -88,8 +90,15 @@ public class AggUnaryOp extends Hop
 				ExecType et = optFindExecType();
 				if ( et == ExecType.CP ) 
 				{
-					PartialAggregate agg1 = new PartialAggregate(getInput().get(0).constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et);
+					Lop agg1 = null;
+					if( isTertiaryAggregateRewriteApplicable() ) {
+						agg1 = constructLopsTertiaryAggregateRewrite();
+					}
+					else { //general case
+						agg1 = new PartialAggregate(getInput().get(0).constructLops(), 
+								HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et);
+					}
+					
 					agg1.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 					setLineNumbers(agg1);
 					setLops(agg1);
@@ -411,6 +420,85 @@ public class AggUnaryOp extends Hop
 				||( input.getDim2()>1 && input.getDim2()<=input.getColsInBlock() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
 	
 		return !noAggRequired;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private boolean isTertiaryAggregateRewriteApplicable() 
+	{
+		boolean ret = false;
+		
+		//currently we support only sum over binary multiply but potentially 
+		//it can be generalized to any RC aggregate over two common binary operations
+		if( _direction == Direction.RowCol 
+			&& _op == AggOp.SUM ) 
+		{
+			Hop input1 = getInput().get(0);
+			if( input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT 
+				&& input1.getDataType()==DataType.MATRIX&& input1.getDim2()==1 ) //all column vectors
+			{
+				Hop input11 = input1.getInput().get(0);
+				Hop input12 = input1.getInput().get(1);
+				
+				if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT )
+				{
+					ret = (input11.getInput().get(0).getDim1()==input1.getDim1() 
+						&& input11.getInput().get(1).getDim1()==input1.getDim1()
+						&& input12.getDim1()==input1.getDim1());
+				}
+				else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT )
+				{
+					ret = (input12.getInput().get(0).getDim1()==input1.getDim1() 
+							&& input12.getInput().get(1).getDim1()==input1.getDim1()
+							&& input11.getDim1()==input1.getDim1());
+				}
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructLopsTertiaryAggregateRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop input1 = getInput().get(0);
+		Hop input11 = input1.getInput().get(0);
+		Hop input12 = input1.getInput().get(1);
+		
+		Lop ret = null;
+		Lop in1 = null;
+		Lop in2 = null;
+		Lop in3 = null;
+		
+		if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT )
+		{
+			in1 = input11.getInput().get(0).constructLops();
+			in2 = input11.getInput().get(1).constructLops();
+			in3 = input12.constructLops();
+		}
+		else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT )
+		{
+			in1 = input11.constructLops();
+			in2 = input12.getInput().get(0).constructLops();
+			in3 = input12.getInput().get(1).constructLops();
+		}
+		else 
+		{
+			throw new HopsException("Failed to apply tertiary-aggregate hop-lop rewrite - missing binaryop.");
+		}
+
+		//create new tertiary aggregate operator 
+		ret = new TertiaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE);
+		
+		return ret;
 	}
 	
 	@Override

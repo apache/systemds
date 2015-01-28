@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.AggregateTertiaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
@@ -547,6 +548,21 @@ public abstract class CostEstimator
 			if( vs[2] == null ) //scalar output
 				vs[2] = _scalarStats;
 		}	
+		else if( inst instanceof AggregateTertiaryCPInstruction )
+		{
+			AggregateTertiaryCPInstruction binst = (AggregateTertiaryCPInstruction) inst;
+			//of same dimension anyway but missing third input
+			vs[0] = stats.get( binst.input1.getName() ); 
+			vs[1] = stats.get( binst.input2.getName() );
+			vs[2] = stats.get( binst.output.getName() );
+				
+			if( vs[0] == null ) //scalar input, 
+				vs[0] = _scalarStats;
+			if( vs[1] == null ) //scalar input, 
+				vs[1] = _scalarStats;
+			if( vs[2] == null ) //scalar output
+				vs[2] = _scalarStats;
+		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction )
 		{
 			//ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;

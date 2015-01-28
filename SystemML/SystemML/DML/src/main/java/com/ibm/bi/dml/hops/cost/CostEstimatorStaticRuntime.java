@@ -751,6 +751,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 					return 0;
 				
+				case AggregateTertiary: //opcodes: tak+*
+					return 6 * d1m * d1n; //2*1(*) + 4 (k+)
+					
 				case AggregateUnary: //opcodes: uak+, uark+, uack+, uamean, uarmean, uacmean, 
 									 //         uamax, uarmax, uarimax, uacmax, uamin, uarmin, uacmin, 
 									 //         ua+, uar+, uac+, ua*, uatrace, uaktrace, 

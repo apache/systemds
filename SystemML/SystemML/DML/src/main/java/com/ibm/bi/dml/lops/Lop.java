@@ -36,6 +36,7 @@ public abstract class Lop
 		UnaryCP, UNARY, BinaryCP, Binary, Tertiary,         //CP/MR unary/binary/tertiary
 		RangeReIndex, LeftIndex, ZeroOut,                   //CP/MR indexing 
 		Aggregate, PartialAggregate, BinUaggChain,  	    //CP/MR aggregation
+		TertiaryAggregate,                                  //CP tertiary-binary aggregates
 		Grouping, 											//MR grouping
 		Append,                                             //CP/MR append (column append)
 		CombineUnary, CombineBinary, CombineTertiary,       //MR combine (stitch together)

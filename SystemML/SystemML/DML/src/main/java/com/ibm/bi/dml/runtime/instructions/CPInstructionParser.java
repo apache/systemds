@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.AggregateTertiaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.AppendCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
@@ -56,6 +57,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 
 		String2CPInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
+		String2CPInstructionType.put( "tak+*"   	, CPINSTRUCTION_TYPE.AggregateTertiary);
 		
 		String2CPInstructionType.put( "uak+"   	, CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uark+"   , CPINSTRUCTION_TYPE.AggregateUnary);
@@ -221,12 +223,15 @@ public class CPInstructionParser extends InstructionParser
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		switch(cptype) {
-		case AggregateBinary:
-			return (CPInstruction) AggregateBinaryCPInstruction.parseInstruction(str);
-		
 		case AggregateUnary:
 			return (CPInstruction) AggregateUnaryCPInstruction.parseInstruction(str);
+		
+		case AggregateBinary:
+			return (CPInstruction) AggregateBinaryCPInstruction.parseInstruction(str);
 
+		case AggregateTertiary:
+			return (CPInstruction) AggregateTertiaryCPInstruction.parseInstruction(str);
+			
 		case ArithmeticBinary:
 			return (CPInstruction) ArithmeticBinaryCPInstruction.parseInstruction(str);
 		

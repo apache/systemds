@@ -39,6 +39,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
+import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
@@ -2958,7 +2959,7 @@ public class MatrixBlock extends MatrixValue
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(DiagIndex.getDiagIndexFnObject())))
+		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlock result=checkType(ret);
@@ -4478,6 +4479,64 @@ public class MatrixBlock extends MatrixValue
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param m3
+	 * @param op
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public ScalarObject aggregateTertiaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, AggregateBinaryOperator op) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//check input dimensions and operators
+		if( m1.rlen!=m2.rlen || m2.rlen!=m3.rlen || m1.clen!=1 || m2.clen!=1 || m3.clen!=1 )
+			throw new DMLRuntimeException("Invalid dimensions for aggregate tertiary ("+m1.rlen+"x"+m1.clen+", "+m2.rlen+"x"+m2.clen+", "+m3.rlen+"x"+m3.clen+").");
+		if( !( op.aggOp.increOp.fn instanceof KahanPlus && op.binaryFn instanceof Multiply) )
+			throw new DMLRuntimeException("Unsupported operator for aggregate tertiary operations.");
+			
+		//early abort if any block is empty
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) || m3.isEmptyBlock(false) )
+			return new DoubleObject(0);
+		
+		//setup meta data (dimensions, sparsity)
+		int rlen = m1.rlen;
+		
+		//compute block operations
+		KahanObject kbuff = new KahanObject(0, 0);
+		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		
+		if( !m1.sparse && !m2.sparse && !m3.sparse ) //DENSE
+		{
+			double[] a = m1.denseBlock;
+			double[] b = m2.denseBlock;
+			double[] c = m3.denseBlock;
+			
+			for( int i=0; i<rlen; i++ ) {
+				double val = a[i] * b[i] * c[i];
+				kplus.execute2( kbuff, val );
+			}
+		}
+		else //GENERAL CASE
+		{
+			for( int i=0; i<rlen; i++ ) {
+				double val1 = m1.quickGetValue(i, 0);
+				double val2 = m2.quickGetValue(i, 0);
+				double val3 = m3.quickGetValue(i, 0);
+				double val = val1 * val2 * val3;
+				kplus.execute2( kbuff, val );
+			}
+		}
+		
+		//create output
+		DoubleObject ret = new DoubleObject(kbuff._sum);
+		
+		return ret;	
 	}
 	
 	/**

@@ -16,6 +16,8 @@
 # Example Usage:
 # hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=data Y=labels model=model predictions=predictions accuracy=accuracy confusion=confusion fmt="text"
 
+print("!!!PLEASE NOTE: THIS IS AN EXPERIMENTAL SCRIPT!!!")
+
 cmdLine_Y = ifdef($Y, " ")
 cmdLine_confusion = ifdef($confusion, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")

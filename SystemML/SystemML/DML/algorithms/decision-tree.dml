@@ -497,6 +497,8 @@ recursiveCopy = function(Matrix[Double] local_model,
  * MAIN BEGINS HERE
  */
 
+print("!!!PLEASE NOTE: THIS IS AN EXPERIMENTAL SCRIPT!!!")
+
 cmdLine_fmt = ifdef($fmt, "text")
 cmdLine_bins = ifdef($bins, 50)
 cmdLine_depth = ifdef($depth, 10)

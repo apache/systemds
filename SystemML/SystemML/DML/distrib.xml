@@ -39,6 +39,8 @@
 				<include>stratstats.dml</include>
 				<include>transform.dml</include>
 				<include>apply-transform.dml</include>
+				<include>decision-tree.dml</include>
+				<include>decision-tree-predict.dml</include>
 				<include>utils/cbind.dml</include>
 				<include>utils/head.dml</include>
 				<include>utils/project.dml</include>
@@ -46,6 +48,7 @@
 				<include>utils/write.dml</include>
 				<include>utils/csv2bin.dml</include>
 				<include>utils/sample.dml</include>
+				<include>utils/rowIndexMax.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>

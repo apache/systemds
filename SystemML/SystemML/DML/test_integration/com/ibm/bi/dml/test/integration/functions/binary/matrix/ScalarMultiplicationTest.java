@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,31 +11,34 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
 public class ScalarMultiplicationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "functions/binary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
+		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		availableTestConfigurations.put("IntConstTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("IntVarTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleConstTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleVarTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("SparseTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("EmptyTest", new TestConfiguration("ScalarMultiplicationTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests
@@ -53,7 +56,7 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 		config.addVariable("vardeclaration", "");
 		config.addVariable("factor", factor);
 		
-		loadTestConfiguration("IntConstTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVector = new double[rows][1];
@@ -92,7 +95,7 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 		config.addVariable("vardeclaration", "Factor = " + factor);
 		config.addVariable("factor", "Factor");
 		
-		loadTestConfiguration("IntVarTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVector = new double[rows][1];
@@ -131,7 +134,7 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 		config.addVariable("vardeclaration", "");
 		config.addVariable("factor", factor);
 		
-		loadTestConfiguration("DoubleConstTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVector = new double[rows][1];
@@ -170,7 +173,7 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 		config.addVariable("vardeclaration", "Factor = " + factor);
 		config.addVariable("factor", "Factor");
 		
-		loadTestConfiguration("DoubleVarTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVector = new double[rows][1];
@@ -209,7 +212,7 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 		config.addVariable("vardeclaration", "");
 		config.addVariable("factor", factor);
 		
-		loadTestConfiguration("SparseTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 0.05, -1);
 		double[][] computedVector = new double[rows][1];

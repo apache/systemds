@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,43 +11,46 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class ModulusTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	double intIntValue1 = 9;
-	double intIntValue2 = 4;
-	double intDoubleValue1 = 9;
-	double intDoubleValue2 = 4;
-	double doubleDoubleValue1 = 9;
-	double doubleDoubleValue2 = 4;
-	double doubleIntValue1 = 9;
-	double doubleIntValue2 = 4;
+	private static final String TEST_DIR = "functions/binary/scalar/";
 	
-	double computedIntIntValue = intIntValue1 % intIntValue2;
-	double computedIntDoubleValue = intDoubleValue1 % intDoubleValue2;
-	double computedDoubleDoubleValue = doubleDoubleValue1 % doubleDoubleValue2;
-	double computedDoubleIntValue = doubleIntValue1 % doubleIntValue2;
+	private double intIntValue1 = 9;
+	private double intIntValue2 = 4;
+	private double intDoubleValue1 = 9;
+	private double intDoubleValue2 = 4;
+	private double doubleDoubleValue1 = 9;
+	private double doubleDoubleValue2 = 4;
+	private double doubleIntValue1 = 9;
+	private double doubleIntValue2 = 4;
+	
+	private double computedIntIntValue = intIntValue1 % intIntValue2;
+	private double computedIntDoubleValue = intDoubleValue1 % intDoubleValue2;
+	private double computedDoubleDoubleValue = doubleDoubleValue1 % doubleDoubleValue2;
+	private double computedDoubleIntValue = doubleIntValue1 % doubleIntValue2;
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("ConstConstTest", new TestConfiguration("ModulusTest", new String[] {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] {
 				"int_int", "int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("VarConstTest", new TestConfiguration("ModulusTest", new String[] { "int_int",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("ConstVarTest", new TestConfiguration("ModulusTest", new String[] { "int_int",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("VarVarTest", new TestConfiguration("ModulusTest", new String[] { "int_int",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("PositiveDivisionByZeroTest", new TestConfiguration("ModulusSingleTest",
+		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));
-		availableTestConfigurations.put("NegativeDivisionByZeroTest", new TestConfiguration("ModulusSingleTest",
+		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));
-		availableTestConfigurations.put("ZeroDivisionByZeroTest", new TestConfiguration("ModulusSingleTest",
+		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));		
 	}
 
@@ -55,6 +58,7 @@ public class ModulusTest extends AutomatedTestBase
 	public void testConstConst() {
 
 		TestConfiguration config = availableTestConfigurations.get("ConstConstTest");
+		
 		config.addVariable("intintvardeclaration", "");
 		config.addVariable("intintop1", intIntValue1);
 		config.addVariable("intintop2", intIntValue2);
@@ -68,7 +72,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("int_int", computedIntIntValue);
@@ -98,7 +102,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("int_int", computedIntIntValue);
@@ -128,7 +132,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("int_int", computedIntIntValue);
@@ -162,7 +166,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("int_int", computedIntIntValue);
@@ -185,7 +189,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("PositiveDivisionByZeroTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -205,7 +209,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("PositiveDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -225,7 +229,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("NegativeDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -245,7 +249,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("NegativeDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -265,7 +269,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("ZeroDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -285,7 +289,7 @@ public class ModulusTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("ZeroDivisionByZeroTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);

@@ -1116,7 +1116,7 @@ public class AggBinaryOp extends Hop
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1Size < m2Size )
+			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0) //FIXME
 				return MMultMethod.MAPMM_L;
 			else
 				return MMultMethod.MAPMM_R;

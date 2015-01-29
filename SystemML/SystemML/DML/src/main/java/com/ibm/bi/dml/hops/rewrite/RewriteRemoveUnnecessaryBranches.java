@@ -62,7 +62,7 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 				}
 				
 				state.setRemovedBranches();
-				LOG.debug("Applied removeUnnecessaryBranches.");
+				LOG.debug("Applied removeUnnecessaryBranches (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+").");
 			}
 			else //keep original sb (non-constant condition)
 				ret.add( sb );

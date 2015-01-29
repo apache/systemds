@@ -183,7 +183,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				throw new HopsException("Failed to split hops dag for data dependent operators with unknown size.", ex);
 			}
 			
-			LOG.debug("Applied splitDagDataDependentOperators.");
+			LOG.debug("Applied splitDagDataDependentOperators (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+").");
 		}
 		//keep original hop dag
 		else

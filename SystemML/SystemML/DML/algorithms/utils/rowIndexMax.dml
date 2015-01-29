@@ -1,0 +1,26 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to return for each row the column nbr with the largest value. If all the values in
+# a row are the same, then the largest column nbr is returned.
+#
+# Parameters:
+#    I       : (input)  filename of input
+#    O       : (output) filename of output
+#    ofmt    : default "csv"; format of O: "csv", "binary"
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/rowIndexMax.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx"
+#
+
+ofmt = ifdef($ofmt, "csv")
+
+M = read($I)
+C = rowIndexMax(M)
+write(C, $O, format=ofmt)

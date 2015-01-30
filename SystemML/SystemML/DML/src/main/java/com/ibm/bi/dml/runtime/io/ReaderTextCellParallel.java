@@ -82,7 +82,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		}
 			
 		ret.examSparsity();
-		
+
 		return ret;
 	}
 
@@ -134,7 +134,7 @@ public class ReaderTextCellParallel extends MatrixReader
 
 		} 
 		catch (Exception e) {
-			throw new IOException(e);
+			throw new IOException(e.getMessage());
 		}
 		
 	}
@@ -239,7 +239,10 @@ public class ReaderTextCellParallel extends MatrixReader
 							if( buff.size()>=CellBuffer.CAPACITY )
 								synchronized( _dest ){ //sparse requires lock
 									buff.flushCellBufferToMatrixBlock(_dest);
-								}							
+								}
+						}
+						synchronized( _dest ){ //sparse requires lock
+							buff.flushCellBufferToMatrixBlock(_dest);
 						}
 					} 
 					else //DENSE<-value

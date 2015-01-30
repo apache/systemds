@@ -31,13 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 /**
- * THIS IS AN EXPERIMENTAL IMPLEMENTATION AND NOT USED BY DEFAULT YET.
  * 
- * TODO thorough experimental evaluation for dense/sparse, different data sizes
- * 
- * Notes on differences to sequential textcell reader
- *   * The parallel textcell reader does not support MM files as well and hence will throw 
- *     exceptions if MM file headers are present in the given dataset.
  * 
  */
 public class ReaderTextCellParallel extends MatrixReader
@@ -73,14 +67,13 @@ public class ReaderTextCellParallel extends MatrixReader
 		//core read 
 		readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen, _isMMFile);
 		
-		//finally check if change of sparse/dense block representation required
-		if( ret.isInSparseFormat() ) {
+		//post-processing (representation-specific, change of sparse/dense block representation)
+		if( ret.isInSparseFormat() ){
 			ret.sortSparseRows();
-		} 
-		else {
-			ret.recomputeNonZeros();
 		}
-			
+		else {
+			ret.recomputeNonZeros();			
+		}
 		ret.examSparsity();
 
 		return ret;
@@ -103,7 +96,6 @@ public class ReaderTextCellParallel extends MatrixReader
 	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException
 	{
-		boolean sparse = dest.isInSparseFormat();
 		boolean isFirstSplit = true;
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
@@ -117,7 +109,7 @@ public class ReaderTextCellParallel extends MatrixReader
 			//create read tasks for all splits
 			ArrayList<ReadTask> tasks = new ArrayList<ReadTask>();
 			for( InputSplit split : splits ){
-				ReadTask t = new ReadTask(split, sparse, informat, job, dest, rlen, clen, isFirstSplit, matrixMarket);
+				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, isFirstSplit, matrixMarket);
 				isFirstSplit = false;
 				tasks.add(t);
 			}
@@ -126,15 +118,16 @@ public class ReaderTextCellParallel extends MatrixReader
 			pool.invokeAll(tasks);	
 			pool.shutdown();
 			
+			//early error notify in case not all tasks successful
 			for(ReadTask rt : tasks) {
-				if (!(rt.getReturnCode())) {
-					throw new IOException("Task Failed : " + rt.getErrMsg());
+				if( !rt.getReturnCode() ) {
+					throw new IOException("Read task for text input failed: " + rt.getErrMsg());
 				}
 			}
 
 		} 
 		catch (Exception e) {
-			throw new IOException(e.getMessage());
+			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
 		
 	}
@@ -158,10 +151,10 @@ public class ReaderTextCellParallel extends MatrixReader
 		private boolean _rc = true;
 		private String _errMsg = null;
 		
-		public ReadTask( InputSplit split, boolean sparse, TextInputFormat informat, JobConf job, MatrixBlock dest, long rlen, long clen, boolean isFirstSplit, boolean matrixMarket )
+		public ReadTask( InputSplit split, TextInputFormat informat, JobConf job, MatrixBlock dest, long rlen, long clen, boolean isFirstSplit, boolean matrixMarket )
 		{
 			_split = split;
-			_sparse = sparse;
+			_sparse = dest.isInSparseFormat();
 			_informat = informat;
 			_job = job;
 			_dest = dest;
@@ -182,12 +175,13 @@ public class ReaderTextCellParallel extends MatrixReader
 		@Override
 		public Object call() throws Exception 
 		{
+			//writables for reuse during read
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-			int row = -1;
-			int col = -1;
-			String line = null;
 			
+			//required for error handling
+			int row = -1; 
+			int col = -1; 
 			
 			try
 			{			
@@ -197,19 +191,16 @@ public class ReaderTextCellParallel extends MatrixReader
 				// Read the header lines, if reading from a matrixMarket file
 				if ( _isFirstSplit && _matrixMarket ) {
 					reader.next(key, value);
-					if ( !value.toString().startsWith("%%") ) {
+					if ( value==null || !value.toString().startsWith("%%") ) {
 						throw new IOException("Error while reading file in MatrixMarket format. Expecting a header line, but encountered, \"" + value +"\".");
 					}
 					
 					// skip until end-of-comments
-					do {
-						reader.next(key, value);
-					} while(value.charAt(0) == '%');
+					while( reader.next(key, value) && value.charAt(0) == '%' ) {
+						//do nothing just skip comments
+					}
 					
 					// the first line after comments is the one w/ matrix dimensions
-					
-					//value = br.readLine(); // line with matrix dimensions
-					
 					// validate (rlen clen nnz)
 					String[] fields = value.toString().trim().split("\\s+"); 
 					long mm_rlen = Long.parseLong(fields[0]);
@@ -236,11 +227,14 @@ public class ReaderTextCellParallel extends MatrixReader
 							double lvalue = st.nextDoubleForParallel();
 							
 							buff.addCell(row, col, lvalue);
-							if( buff.size()>=CellBuffer.CAPACITY )
+							//capacity buffer flush on demand
+							if( buff.size()>=CellBuffer.CAPACITY ) 
 								synchronized( _dest ){ //sparse requires lock
 									buff.flushCellBufferToMatrixBlock(_dest);
 								}
 						}
+						
+						//final buffer flush 
 						synchronized( _dest ){ //sparse requires lock
 							buff.flushCellBufferToMatrixBlock(_dest);
 						}

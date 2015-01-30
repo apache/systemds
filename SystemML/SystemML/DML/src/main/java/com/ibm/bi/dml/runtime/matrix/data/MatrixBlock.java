@@ -84,10 +84,6 @@ public class MatrixBlock extends MatrixValue
 	protected boolean sparse = true;
 	protected int nonZeros   = 0;
 	
-	//for parallel reader : offset & length info per split
-	protected int[] offsetPerSplit = null;
-	protected int[] lenghtPerSplit = null;
-	
 	//matrix data (sparse or dense)
 	protected double[] denseBlock    = null;
 	protected SparseRow[] sparseRows = null;
@@ -462,31 +458,6 @@ public class MatrixBlock extends MatrixValue
 	public void setNumRows(int r) 
 	{
 		rlen = r;
-	}
-	
-	public void allocateOffsetLenghtPerSplit(int numSplits){
-		lenghtPerSplit = new int[numSplits];
-		offsetPerSplit = new int[numSplits];
-	}
-	
-	public int getLenghtPerSplit(int split)
-	{
-		return lenghtPerSplit[split];
-	}
-	
-	public void setLenghtPerSplit(int split, int r) 
-	{
-		lenghtPerSplit[split] = r;
-	}
-	
-	public int getOffsetPerSplit(int split)
-	{
-		return offsetPerSplit[split];
-	}
-	
-	public void setOffsetPerSplit(int split, int o) 
-	{
-		offsetPerSplit[split] = o;
 	}
 	
 	public int getNumColumns()

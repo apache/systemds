@@ -1329,7 +1329,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		else if(inDefaultNamespace(namespace) && functionName.compareTo("arctan") == 0) {
 			functionName = "atan";
 		}
-		else if(inDefaultNamespace(namespace) && functionName.compareTo("save") == 0) {
+		else if(inDefaultNamespace(namespace) && functionName.compareTo("load") == 0) {
 			functionName = "read";
 		}
 		else if(inDefaultNamespace(namespace) && functionName.compareTo("eigen") == 0) {
@@ -1405,7 +1405,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			setPrintStatement(ctx, functionName);
 			return;
 		}
-		else if(functionName.compareTo("load") == 0 && namespace.compareTo(DMLProgram.DEFAULT_NAMESPACE) == 0) {
+		else if(functionName.compareTo("save") == 0 && namespace.compareTo(DMLProgram.DEFAULT_NAMESPACE) == 0) {
 			setOutputStatement(ctx);
 			return;
 		}

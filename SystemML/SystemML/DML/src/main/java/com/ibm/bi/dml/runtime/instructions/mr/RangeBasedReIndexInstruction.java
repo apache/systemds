@@ -57,6 +57,12 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 			colStart=cs;
 			colEnd=ce;
 		}
+		
+		@Override
+		public String toString()
+		{
+			return "["+rowStart+":"+rowEnd+", "+colStart+":"+colEnd+"]";
+		}
 	}
 	
 	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {

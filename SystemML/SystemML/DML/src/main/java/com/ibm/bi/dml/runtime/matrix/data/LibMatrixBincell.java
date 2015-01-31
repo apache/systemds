@@ -541,7 +541,7 @@ public class LibMatrixBincell
 		int clen = m1.clen;
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		
-		//early abort on skip and empy
+		//early abort on skip and empty
 		if( skipEmpty && (m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) )
 			return; // skip entire empty block
 		
@@ -762,19 +762,27 @@ public class LibMatrixBincell
 	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
+		//early abort on skip and empty
+		if( (op.fn instanceof Multiply && (m1ret.isEmptyBlock(false) || m2.isEmptyBlock(false) ))
+			|| (m1ret.isEmptyBlock(false) && m2.isEmptyBlock(false)) )
+		{
+			return; // skip entire empty block
+		}
+		//special case: start aggregation
+		else if( op.fn instanceof Plus && m1ret.isEmptyBlock(false) ){
+			m1ret.copy(m2);
+			return; 
+		}
+		
 		int rlen = m1ret.rlen;
 		int clen = m1ret.clen;
 		
 		if(m1ret.sparse && m2.sparse)
 		{
-			//special case, if both matrices are all 0s, just return
-			if(m1ret.sparseRows==null && m2.sparseRows==null)
-				return;
-			
 			if(m1ret.sparseRows!=null)
-				m1ret.allocateSparseRowsBlock();
+				m1ret.allocateSparseRowsBlock(false);
 			if(m2.sparseRows!=null)
-				m2.allocateSparseRowsBlock();
+				m2.allocateSparseRowsBlock(false);
 			
 			if(m1ret.sparseRows!=null && m2.sparseRows!=null)
 			{

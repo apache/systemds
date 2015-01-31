@@ -762,12 +762,9 @@ public class LibMatrixBincell
 	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
-		//early abort on skip and empty
-		if( (op.fn instanceof Multiply && (m1ret.isEmptyBlock(false) || m2.isEmptyBlock(false) ))
-			|| (m1ret.isEmptyBlock(false) && m2.isEmptyBlock(false)) )
-		{
+		//early abort on skip and empty 
+		if( m1ret.isEmptyBlock(false) && m2.isEmptyBlock(false) )
 			return; // skip entire empty block
-		}
 		//special case: start aggregation
 		else if( op.fn instanceof Plus && m1ret.isEmptyBlock(false) ){
 			m1ret.copy(m2);

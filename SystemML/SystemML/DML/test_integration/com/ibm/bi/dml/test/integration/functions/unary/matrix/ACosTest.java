@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,26 +11,28 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
 public class ACosTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/matrix/";
 	private static final double EPS = 1e-14;
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("ACosTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("ACosTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("ACosTest", new String[] { "vector", "matrix" }));
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "ACosTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("NegativeTest",
+				new TestConfiguration(TEST_DIR, "ACosTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("RandomTest",
+				new TestConfiguration(TEST_DIR, "ACosTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test
@@ -42,7 +44,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] acosVector = new double[rows][1];
@@ -76,7 +78,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 0, 1, -1);
 		double[][] acosVector = new double[rows][1];
@@ -110,7 +112,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 1, -1);
 		double[][] acosVector = new double[rows][1];

@@ -49,7 +49,8 @@ public class AppendMatrixTest extends AutomatedTestBase
 	private final static int cols1d = 1460;
 	private final static int cols2d = 1920;
 		
-	
+	private final static double sparsity1 = 0.5;
+	private final static double sparsity2 = 0.01;
 	
 	@Override
 	public void setUp() {
@@ -59,8 +60,13 @@ public class AppendMatrixTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testAppendInBlock1CP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a);
+	public void testAppendInBlock1DenseCP() {
+		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, false);
+	}
+	
+	@Test
+	public void testAppendInBlock1SparseCP() {
+		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, true);
 	}
 	
 	//NOTE: different dimension use cases only relvant for MR
@@ -81,30 +87,60 @@ public class AppendMatrixTest extends AutomatedTestBase
 	}*/
 	
 	@Test
-	public void testAppendInBlock1MR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a);
+	public void testAppendInBlock1DenseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, false);
 	}   
 	
 	@Test
-	public void testAppendInBlock2MR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b);
+	public void testAppendInBlock1SparseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, true);
 	}   
 	
 	@Test
-	public void testAppendOutBlock1MR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c);
+	public void testAppendInBlock2DenseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, false);
 	}
 	
 	@Test
-	public void testAppendOutBlock2MR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d);
+	public void testAppendInBlock2SparseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, true);
 	}
 	
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2)
+	@Test
+	public void testAppendOutBlock1DenseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, false);
+	}
+	
+	@Test
+	public void testAppendOutBlock1SparseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, true);
+	}
+	
+	@Test
+	public void testAppendOutBlock2DenseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, false);
+	}
+	
+	@Test
+	public void testAppendOutBlock2SparseMR() {
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, true);
+	}
+	
+	/**
+	 * 
+	 * @param platform
+	 * @param rows
+	 * @param cols1
+	 * @param cols2
+	 * @param sparse
+	 */
+	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse)
 	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		
+		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		
 		try
 		{
@@ -128,7 +164,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 	
 			Random rand=new Random(System.currentTimeMillis());
 			loadTestConfiguration(config);
-			double sparsity=rand.nextDouble();
 			double[][] A = getRandomMatrix(rows, cols1, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);
 	        sparsity=rand.nextDouble();

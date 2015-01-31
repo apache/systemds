@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class RightIndexingMatrixTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "RightIndexingMatrixTest";
@@ -36,6 +36,10 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	private final static int min=0;
 	private final static int max=100;
 	
+	private final static double sparsity1 = 0.5;
+	private final static double sparsity2 = 0.01;
+	
+	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
@@ -43,18 +47,35 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRightIndexingCP() 
+	public void testRightIndexingDenseCP() 
 	{
-		runRightIndexingTest(ExecType.CP);
+		runRightIndexingTest(ExecType.CP, false);
 	}
 	
 	@Test
-	public void testRightIndexingMR() 
+	public void testRightIndexingDenseMR() 
 	{
-		runRightIndexingTest(ExecType.MR);
+		runRightIndexingTest(ExecType.MR, false);
 	}
 	
-	public void runRightIndexingTest( ExecType et ) 
+	@Test
+	public void testRightIndexingSparseCP() 
+	{
+		runRightIndexingTest(ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRightIndexingSparseMR() 
+	{
+		runRightIndexingTest(ExecType.MR, true);
+	}
+	
+	/**
+	 * 
+	 * @param et
+	 * @param sparse
+	 */
+	public void runRightIndexingTest( ExecType et, boolean sparse ) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 				
@@ -63,6 +84,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
 		    rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
 			
+		    double sparsity = sparse ? sparsity2 : sparsity1;
 		    
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
@@ -93,8 +115,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 			       RI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + RI_HOME + EXPECTED_DIR;
 	
 			loadTestConfiguration(config);
-			double sparsity=rand.nextDouble();
-	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
+			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);
 	        
 	        boolean exceptionExpected = false;

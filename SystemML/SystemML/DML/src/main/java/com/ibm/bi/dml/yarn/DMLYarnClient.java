@@ -250,7 +250,7 @@ public class DMLYarnClient
 	 * @throws InterruptedException 
 	 */
 	@SuppressWarnings("deprecation")
-	private void copyResourcesToHdfsWorkingDir(YarnConfiguration yconf, String hdfsWD ) 
+	private void copyResourcesToHdfsWorkingDir( YarnConfiguration yconf, String hdfsWD ) 
 		throws ParseException, IOException, DMLRuntimeException, InterruptedException 
 	{
 		FileSystem fs = FileSystem.get(yconf);
@@ -279,7 +279,11 @@ public class DMLYarnClient
 		if( fname == null ){
 			//get location of unpacked jar classes and repackage (if required)
 			String lclassFile = DMLYarnClient.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-			fname = createJar(lclassFile);
+			File flclassFile = new File( lclassFile );
+			if( !flclassFile.isDirectory() ) //called w/ jar 
+				fname = lclassFile;
+			else //called w/ unpacked jar (need to be repackaged)	
+				fname = createJar(lclassFile);
 		}
 		Path srcPath = new Path(fname);
 		Path dstPath = new Path(hdfsWD, srcPath.getName());

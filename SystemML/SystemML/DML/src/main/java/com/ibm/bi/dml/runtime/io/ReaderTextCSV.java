@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ReaderTextCSV extends MatrixReader
 {
@@ -139,7 +140,7 @@ public class ReaderTextCSV extends MatrixReader
 								cellValue = fillValue;
 							}
 							else {
-								cellValue = Double.parseDouble(part);
+								cellValue = UtilFunctions.parseToDouble(part);
 							}
 							if ( Double.compare(cellValue, 0.0) != 0 )
 								dest.appendValue(row, col, cellValue);
@@ -156,27 +157,27 @@ public class ReaderTextCSV extends MatrixReader
 				} 
 				else //DENSE<-value
 				{
-					while( (value=br.readLine())!=null )
+					while( (value=br.readLine())!=null ) //foreach line
 					{
 						cellStr = value.toString().trim();
+						String[] parts = compiledDelim.split(cellStr, -1);
 						col = 0;
-						for(String part : compiledDelim.split(cellStr, -1)) {
+						
+						for( String part : parts ) //foreach cell
+						{
 							part = part.trim();
 							if ( part.isEmpty() ) {
-								if ( !fill ) {
+								if ( !fill )
 									throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
-								}
-								else {
-									cellValue = fillValue;
-								}
+								cellValue = fillValue;
 							}
 							else {
-								cellValue = Double.parseDouble(part);
+								cellValue = UtilFunctions.parseToDouble(part);
 							}
 							dest.setValueDenseUnsafe(row, col, cellValue);
 							col++;
 						}
-						if ( col != clen ) {
+						if ( parts.length != clen ) {
 							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
 						}
 						row++;

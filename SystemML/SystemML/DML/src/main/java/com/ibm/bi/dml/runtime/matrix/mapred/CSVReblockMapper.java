@@ -87,7 +87,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 							row.data.appendValue(0, k, ins.fillValue);
 						}
 						else
-							row.data.appendValue(0, k, Double.parseDouble(cells[k+start]));
+							row.data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
 					}
 					out.collect(outIndexes, row);
 					start+=ins.bclen;
@@ -106,7 +106,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 							row.data.appendValue(0, k, ins.fillValue);
 						}
 						else
-							row.data.appendValue(0, k, Double.parseDouble(cells[k+start]));
+							row.data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
 					}
 					out.collect(outIndexes, row);
 				}

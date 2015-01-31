@@ -25,13 +25,20 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.io.ReaderTextCellParallel.CellBuffer;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 
-
+/**
+ * Parallel version of ReaderTextCSV.java. To summarize, we do two passes in order to compute
+ * row offsets and the actual read. We accordingly create count and read tasks and use fixed-size
+ * thread pools to execute these tasks. If the target matrix is dense, the inserts are done lock-free. 
+ * In contrast to textcell parallel read, we also do lock-free inserts. If the matrix is sparse, 
+ * because splits contain row partitioned lines and hence there is no danger of lost updates. 
+ * Note, there is also no sorting of sparse rows required because data comes in sorted order per row.
+ * 
+ */
 public class ReaderTextCSVParallel extends MatrixReader 
 {
 	@SuppressWarnings("unused")
@@ -45,13 +52,12 @@ public class ReaderTextCSVParallel extends MatrixReader
 	
 	public ReaderTextCSVParallel(CSVFileFormatProperties props) 
 	{
+		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		_props = props;
-		_numThreads = InfrastructureAnalyzer.getLocalParallelism();
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen,
-			int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{	
 		// prepare file access
@@ -78,12 +84,11 @@ public class ReaderTextCSVParallel extends MatrixReader
 		readCSVMatrixFromHDFS(splits, path, job, ret, rlen, clen, brlen,
 				bclen, _props.hasHeader(), _props.getDelim(), _props.isFill(),
 				_props.getFillValue());
-
+		
 		//post-processing (representation-specific, change of sparse/dense block representation)
-		if( ret.isInSparseFormat() )
-			ret.sortSparseRows();
-		else
-			ret.recomputeNonZeros();
+		//- no sorting required for CSV because it is read in sorted order per row
+		//- always recompute non zeros (not maintained for dense, potential lost updates for sparse)
+		ret.recomputeNonZeros();
 		ret.examSparsity();
 
 		//sanity check for parallel row count (since determined internally)
@@ -117,7 +122,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
-
+		
 		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 
 		try 
@@ -126,9 +131,8 @@ public class ReaderTextCSVParallel extends MatrixReader
 			ArrayList<CSVReadTask> tasks = new ArrayList<CSVReadTask>();
 			int splitCount = 0;
 			for( InputSplit split : splits ){
-				CSVReadTask t = new CSVReadTask(split, _offsets, informat, job, dest, rlen, clen, hasHeader, delim, fill, fillValue, splitCount);
+				CSVReadTask t = new CSVReadTask(split, _offsets, informat, job, dest, rlen, clen, hasHeader, delim, fill, fillValue, splitCount++);
 				tasks.add(t);
-				splitCount++;
 			}
 
 			pool.invokeAll(tasks);	
@@ -140,7 +144,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 					throw new IOException("Read task for csv input failed " + rt.getErrMsg());
 				}
 			}
-
 		} 
 		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
@@ -177,28 +180,22 @@ public class ReaderTextCSVParallel extends MatrixReader
 		// count no of entities in the first non-header row
 		LongWritable key = new LongWritable();
 		Text oneLine = new Text();
-		try {
-			RecordReader<LongWritable,Text> reader = informat.getRecordReader(splits[0], job, Reporter.NULL);
-			try {
-				if (hasHeader) {
-					reader.next(key, oneLine); // ignore header
-				}
-				if( reader.next(key, oneLine) ) {
-					reader.next(key, oneLine);
-					cellStr = oneLine.toString().trim();
-					ncol = compiledDelim.split(cellStr,-1).length;
-				}
-			} 
-			catch(Exception ex) {
-				throw new IOException("CSV parse error " + ex.getMessage());
+		RecordReader<LongWritable,Text> reader = informat.getRecordReader(splits[0], job, Reporter.NULL);
+		try 
+		{
+			if (hasHeader) {
+				reader.next(key, oneLine); // ignore header
 			}
-			finally {
-				if( reader != null )
-					reader.close();
+			if( reader.next(key, oneLine) ) {
+				reader.next(key, oneLine);
+				cellStr = oneLine.toString().trim();
+				ncol = compiledDelim.split(cellStr,-1).length;
 			}
-		} 
-		catch (Exception e) {
-			throw new IOException("RecordReader error " + e.getMessage());
+		}
+		finally 
+		{
+			if( reader != null )
+				reader.close();
 		}
 
 		// count rows in parallel per split
@@ -252,7 +249,13 @@ public class ReaderTextCSVParallel extends MatrixReader
 			lenghtPerSplit = new int[numSplits];
 			offsetPerSplit = new int[numSplits];
 		}
-		
+
+		@SuppressWarnings("unused")
+		public SplitOffsetInfos(SplitOffsetInfos offsets) {
+			lenghtPerSplit = offsets.lenghtPerSplit.clone();
+			offsetPerSplit = offsets.offsetPerSplit.clone();
+		}
+
 		public int getLenghtPerSplit(int split)
 		{
 			return lenghtPerSplit[split];
@@ -310,34 +313,34 @@ public class ReaderTextCSVParallel extends MatrixReader
 		}
 	
 		@Override
-		public Object call() throws Exception 
+		public Object call() 
+			throws Exception 
 		{
 			LongWritable key = new LongWritable();
 			Text oneLine = new Text();
-			try {
-				RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
-				
+			
+			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
+			
+			try 
+			{
 				// count rows from the first non-header row
-				try {
-					if (_hasHeader) reader.next(key, oneLine);
-					
-					while(reader.next(key, oneLine)) {
-						_nrows++;
-					}
-				} catch(Exception ex) {
-					_rc = false;
-					_errMsg = new String("Unable to read rows in CSV format. split: " + _split.toString() + ex.getMessage());
-					throw new IOException(_errMsg);
+				if (_hasHeader) {
+					reader.next(key, oneLine);
 				}
-				finally {
-					if( reader != null )
-						reader.close();
-				}
-			} catch (Exception e) {
+				while(reader.next(key, oneLine)) {
+					_nrows++;
+				}	
+			} 
+			catch (Exception e) {
 				_rc = false;
-				_errMsg = new String("RecordReader error CSV format. split: " + _split.toString() + e.getMessage());
+				_errMsg = "RecordReader error CSV format. split: " + _split.toString() + e.getMessage();
 				throw new IOException(_errMsg);
 			}
+			finally {
+				if( reader != null )
+					reader.close();
+			}
+			
 			return null;
 		}
 	}
@@ -370,7 +373,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 				long rlen, long clen, boolean hasHeader, String delim, boolean fill, double fillValue, int splitCount)
 		{
 			_split = split;
-			_splitoffsets = offsets;
+			_splitoffsets = offsets; //new SplitOffsetInfos(offsets);
 			_sparse = dest.isInSparseFormat();
 			_informat = informat;
 			_job = job;
@@ -417,81 +420,60 @@ public class ReaderTextCSVParallel extends MatrixReader
 					reader.next(key, value);
 				}
 	
-				boolean emptyValuesFound = false;
+				boolean noFillEmpty = false; 
 				row = _splitoffsets.getOffsetPerSplit(_splitCount);
-				try{
+				
+				try
+				{
 					if( _sparse ) //SPARSE<-value
 					{
-						CellBuffer buff = new CellBuffer();
-						
-						while( reader.next(key, value) )
+						while( reader.next(key, value) ) //foreach line
 						{
-							col = 0;
 							cellStr = value.toString().trim();
-							emptyValuesFound = false;
-	
-							for(String part : compiledDelim.split(cellStr, -1)) {
+							String[] parts = compiledDelim.split(cellStr, -1);
+							col = 0;
+							
+							for(String part : parts)  //foreach cell
+							{
 								part = part.trim();
 								if ( part.isEmpty() ) {
-									emptyValuesFound = true;
+									noFillEmpty |= !_fill;
 									cellValue = _fillValue;
 								}
 								else {
 									cellValue = IOUtilFunctions.parseDoubleParallel(part);
 								}
 								
-								if ( Double.compare(cellValue, 0.0) != 0 ) {
-									buff.addCell(row, col, cellValue);
-	
-									if( buff.size() >= (CellBuffer.CAPACITY) ) {
-										synchronized( _dest ){ //sparse requires lock
-											buff.flushCellBufferToMatrixBlock(_dest);
-										}
-									}
-								}
+								if ( Double.compare(cellValue, 0.0) != 0 )
+									_dest.appendValue(row, col, cellValue);
 								col++;
 							}
 							
-							if ( !_fill && emptyValuesFound) {
-								_rc = false;
-								_errMsg = new String("Empty fields found in delimited file (" + _split.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
-								throw new IOException(_errMsg);
+							//sanity checks (number of columns, fill values)
+							if ( parts.length != _clen ) {
+								throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + _split.toString() + "). Expecting (" + _clen + "): " + value);
+							}
+							if ( noFillEmpty ) {
+								throw new IOException("Empty fields found in delimited file (" + _split.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
 							}
 							
-							if ( col != _clen ) {
-								_rc = false;
-								_errMsg = new String("Invalid number of columns (" + col + ") found in delimited file (" + _split.toString() + "). Expecting (" + _clen + "): " + value);
-								throw new IOException(_errMsg);
-							}
 							row++;
 						}
-	
-						if (row != (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount))) {
-							_rc = false;
-							_errMsg = new String("Incorrect number of rows (" + row + ") found in delimited file (" + _split.toString() + "). Expecting (" + (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount)) + "): " + value);
-							throw new IOException(_errMsg);						
-						}
-	
-						synchronized( _dest ){ //sparse requires lock
-							buff.flushCellBufferToMatrixBlock(_dest);
-						}
-	
 					} 
 					else //DENSE<-value
 					{
-						while( reader.next(key, value) )
+						while( reader.next(key, value) ) //foreach line
 						{
 							cellStr = value.toString().trim();
+							String[] parts = compiledDelim.split(cellStr, -1);
 							col = 0;
-							for(String part : compiledDelim.split(cellStr, -1)) {
+							
+							for( String part : parts )  //foreach cell
+							{
 								part = part.trim();
 								if ( part.isEmpty() ) {
-									if ( !_fill ) {
-										throw new IOException("Empty fields found in delimited file (" + _split.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
-									}
-									else {
-										cellValue = _fillValue;
-									}
+									noFillEmpty |= !_fill;
+									cellValue = _fillValue;
 								}
 								else {
 									cellValue = IOUtilFunctions.parseDoubleParallel(part);
@@ -499,20 +481,22 @@ public class ReaderTextCSVParallel extends MatrixReader
 								_dest.setValueDenseUnsafe(row, col, cellValue);
 								col++;
 							}
-							if ( col != _clen ) {
-								_rc = false;
-								_errMsg = new String("Invalid number of columns (" + col + ") found in delimited file (" + _split.toString() + "). Expecting (" + _clen + "): " + value);
-								throw new IOException(_errMsg);
+							
+							//sanity checks (number of columns, fill values)
+							if ( parts.length != _clen ) {
+								throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + _split.toString() + "). Expecting (" + _clen + "): " + value);
 							}
+							if ( noFillEmpty ) {
+								throw new IOException("Empty fields found in delimited file (" + _split.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
+							}
+							
 							row++;
 						}
-	
-	
-						if (row != (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount))) {
-							_rc = false;
-							_errMsg = new String("Incorrect number of rows (" + row + ") found in delimited file (" + (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount)) + "): " + value);
-							throw new IOException(_errMsg);						
-						}
+					}
+					
+					//sanity checks (number of rows)
+					if (row != (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount))) {
+						throw new IOException("Incorrect number of rows (" + row + ") found in delimited file (" + (_splitoffsets.getOffsetPerSplit(_splitCount) + _splitoffsets.getLenghtPerSplit(_splitCount)) + "): " + value);						
 					}
 				}
 				finally
@@ -523,7 +507,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 			}
 			catch(Exception ex)
 			{
+				//central error handling (return code, message) 
 				_rc = false;
+				_errMsg = ex.getMessage();
 	
 				//post-mortem error handling and bounds checking
 				if( row < 0 || row + 1 > _rlen || col < 0 || col + 1 > _clen )

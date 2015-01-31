@@ -107,10 +107,11 @@ public class Recompiler
 	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
 	
-	//max threshold for in-memory reblock of text input [in bytes]
+	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
+	//note that we scale this threshold up by the degree of available parallelism
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = (long)1024*1024*1024; 
-	private static final long CP_CSV_REBLOCK_THRESHOLD_SIZE = (long)256*1024*1024;
+	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
 	
 	//reused rewriter for dynamic rewrites during recompile
 	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
@@ -1676,7 +1677,7 @@ public class Recompiler
 				{
 					Path path = new Path(mo.getFileName());
 					long size = MapReduceTool.getFilesizeOnHDFS(path);
-					if( size > CP_CSV_REBLOCK_THRESHOLD_SIZE || CP_CSV_REBLOCK_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
+					if( size > CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE || CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;
@@ -1708,9 +1709,14 @@ public class Recompiler
 					|| iimd.getInputInfo()==InputInfo.BinaryCellInputInfo)
 					&& !mo.isDirty() )
 				{
+					//get file size on hdfs (as indicator for estimated read time)
 					Path path = new Path(mo.getFileName());
-					long size = MapReduceTool.getFilesizeOnHDFS(path);
-					if( size > CP_REBLOCK_THRESHOLD_SIZE ) {
+					long fileSize = MapReduceTool.getFilesizeOnHDFS(path);
+					//compute cp reblock size threshold based on available parallelism
+					long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
+							           OptimizerUtils.getParallelTextReadParallelism();
+					
+					if( fileSize > cpThreshold ) {
 						ret = false;
 						break;
 					}

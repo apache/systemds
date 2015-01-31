@@ -26,6 +26,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -73,6 +74,7 @@ public class Connection
 		//setup basic parameters for embedded execution
 		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		OptimizerUtils.PARALLEL_READ_TEXTFORMATS = false;
 		CacheableData.disableCaching();
 		
 		//create default configuration

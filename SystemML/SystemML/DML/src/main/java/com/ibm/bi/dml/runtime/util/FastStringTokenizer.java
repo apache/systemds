@@ -97,12 +97,19 @@ public class FastStringTokenizer
     
     public double nextDouble()
     {
-    	//return FloatingDecimal.parseDouble(nextToken());
-    	return Double.parseDouble( nextToken() );
+    	//return Double.parseDouble( nextToken() );
+    
+    	//see nextDoubleForParallel, we use the same double parsing
+    	//for sequential and parallel parsing because (1) it is faster (~10%)
+    	//and (2) for consistency between sequential and parallel readers
+    	
+    	return FloatingDecimal.parseDouble(nextToken());	
     }
     
     public double nextDoubleForParallel()
     {
+    	//JDK 8 floating decimal, which removes a severe scalability bottleneck
+    	//(synchronized static cache) in JDK7
     	return FloatingDecimal.parseDouble(nextToken());
     	
     	/*

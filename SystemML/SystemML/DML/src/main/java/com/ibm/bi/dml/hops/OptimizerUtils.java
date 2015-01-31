@@ -150,6 +150,21 @@ public class OptimizerUtils
 	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
 	
 	
+	/**
+	 * Enables parallel read of all text formats (textcell, csv, mm). 
+	 * 
+	 */
+	public static boolean PARALLEL_READ_TEXTFORMATS = true;
+	
+	/**
+	 * Specifies a multiplier computing the degree of parallelism of parallel
+	 * text read out of the available degree of parallelism. Set it to 1.0
+	 * to get a number of threads equal the number of virtual cores.
+	 * 
+	 */
+	public static final double PARALLEL_READ_PARALLELISM_MULTIPLIER = 1.0;
+	
+	
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////
@@ -357,6 +372,26 @@ public class OptimizerUtils
 		
 		return ret;
 	}
+	
+	/**
+	 * Returns the degree of parallelism used for parallel text read. 
+	 * This is computed as the number of virtual cores scales by the 
+	 * PARALLEL_READ_PARALLELISM_MULTIPLIER. If PARALLEL_READ_TEXTFORMATS
+	 * is disabled, this method returns 1.
+	 * 
+	 * @return
+	 */
+	public static int getParallelTextReadParallelism()
+	{
+		if( !PARALLEL_READ_TEXTFORMATS )
+			return 1; // sequential execution
+			
+		//compute degree of parallelism for parallel text read
+		double dop = InfrastructureAnalyzer.getLocalParallelism()
+				     * PARALLEL_READ_PARALLELISM_MULTIPLIER;
+		return (int) Math.round(dop);
+	}
+	
 	
 	////////////////////////
 	// Memory Estimates   //

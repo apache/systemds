@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,13 +22,14 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 @RunWith(value = Parameterized.class)
 public class ID3Test extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     private final static String TEST_DIR = "applications/id3/";
@@ -88,10 +90,14 @@ public class ID3Test extends AutomatedTestBase
         
         //run tests
         //(changed expected MR from 62 to 66 because we now also count MR jobs in predicates)
-		runTest(true, false, null, 66); //max 66 compiled jobs		
-		
+        //(changed expected MR from 66 to 68 because we now rewrite sum(v1*v2) to t(v1)%*%v2 which rarely creates more jobs due to MMCJ incompatibility of other operations)
+		runTest(true, false, null, 68); //max 68 compiled jobs		
 		runRScript(true);
         
+		//check also num actually executed jobs
+		long actualMR = Statistics.getNoOfExecutedMRJobs();
+		Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
+		
 		//compare results
         HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");
         HashMap<CellIndex, Double> nDML= readDMLMatrixFromHDFS("nodes");

@@ -944,34 +944,55 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private Hop simplifyDotProductSum(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
-		//sum(v^2) --> as.scalar(t(v)%*%v) in order to exploit tsmm vector dotproduct 
+		//sum(v^2)/sum(v1*v2) --> as.scalar(t(v)%*%v) in order to exploit tsmm vector dotproduct 
 		//w/o materialization of intermediates
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM //sum
 			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol //full aggregate	
 			&& hi.getInput().get(0).getDim2() == 1 ) //vector (for correctness)
 		{
-			Hop hi2 = hi.getInput().get(0); //check for ^2
+			Hop baLeft = null;
+			Hop baRight = null;
+			
+			Hop hi2 = hi.getInput().get(0); //check for ^2 w/o multiple consumers
+			//check for sum(v^2), might have been rewritten from sum(v*v)
 			if( hi2 instanceof BinaryOp && ((BinaryOp)hi2).getOp()==OpOp2.POW
 				&& hi2.getInput().get(1) instanceof LiteralOp 
-				&& HopRewriteUtils.getIntValue((LiteralOp)hi2.getInput().get(1))==2 )
+				&& HopRewriteUtils.getIntValue((LiteralOp)hi2.getInput().get(1))==2
+				&& hi2.getParent().size() == 1 ) //no other consumer than sum
 			{
 				Hop input = hi2.getInput().get(0);
-				
+				baLeft = input;
+				baRight = input;
+			}
+			//check for sum(v1*v2), but prevent to rewrite sum(v1*v2*v3) which is later compiled into a ta+* lop
+			else if(   hi2 instanceof BinaryOp && ((BinaryOp)hi2).getOp()==OpOp2.MULT
+					&& hi2.getInput().get(0).getDim2()==1 && hi2.getInput().get(1).getDim2()==1
+					&& hi2.getParent().size() == 1  //no other consumer than sum
+					&& !(hi2.getInput().get(0) instanceof BinaryOp && ((BinaryOp)hi2.getInput().get(0)).getOp()==OpOp2.MULT)
+					&& !(hi2.getInput().get(1) instanceof BinaryOp && ((BinaryOp)hi2.getInput().get(1)).getOp()==OpOp2.MULT))
+			{
+				baLeft = hi2.getInput().get(0);
+				baRight = hi2.getInput().get(1);
+			}
+			
+			//perform actual rewrite (if necessary)
+			if( baLeft != null && baRight != null  )
+			{
 				//remove link from parent to diag
 				HopRewriteUtils.removeChildReference(parent, hi);
 				
 				//create new operator chain
-				ReorgOp transpose = new ReorgOp(input.getName(), DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, input);
-				transpose.setRowsInBlock(input.getRowsInBlock());
-				transpose.setColsInBlock(input.getColsInBlock());
+				ReorgOp transpose = new ReorgOp(baLeft.getName(), DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, baLeft);
+				transpose.setRowsInBlock(baLeft.getRowsInBlock());
+				transpose.setColsInBlock(baLeft.getColsInBlock());
 				transpose.refreshSizeInformation();
 				
-				AggBinaryOp mmult = new AggBinaryOp(input.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, transpose, input);
-				mmult.setRowsInBlock(input.getRowsInBlock());
-				mmult.setColsInBlock(input.getColsInBlock());
+				AggBinaryOp mmult = new AggBinaryOp(baLeft.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, transpose, baRight);
+				mmult.setRowsInBlock(baLeft.getRowsInBlock());
+				mmult.setColsInBlock(baLeft.getColsInBlock());
 				mmult.refreshSizeInformation();
 				
-				UnaryOp cast = new UnaryOp(input.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp1.CAST_AS_SCALAR, mmult);
+				UnaryOp cast = new UnaryOp(baLeft.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp1.CAST_AS_SCALAR, mmult);
 				HopRewriteUtils.setOutputParameters(cast, 0, 0, 0, 0, -1);
 				
 				//rehang new subdag under parent node

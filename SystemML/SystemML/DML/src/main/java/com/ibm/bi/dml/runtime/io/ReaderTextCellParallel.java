@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 /**
  * Parallel version of ReaderTextCell.java. To summarize, we create read tasks per split
@@ -44,9 +45,8 @@ import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
  *    in the subsequent split. This would create incorrect results or errors. However, this
  *    scenario is extremely unlikely (num threads > num lines if 1 comment line) and hence ignored 
  *    similar to our parallel MR setting (but there we have a 128MB guarantee).     
- *   
- *    TODO we can potentially determine if this case (one split sees a comment as last line) 
- *    happens and fall back to a sequential read 
+ * 3) However, we use MIN_FILESIZE_MM (8KB) to give guarantees for the common case of small headers
+ *    in order the issue described in (2).
  * 
  */
 public class ReaderTextCellParallel extends MatrixReader
@@ -55,13 +55,15 @@ public class ReaderTextCellParallel extends MatrixReader
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	private static final long MIN_FILESIZE_MM = 8L * 1024; //8KB
+	
 	private boolean _isMMFile = false;
 	private int _numThreads = 1;
 	
 	public ReaderTextCellParallel(InputInfo info)
 	{
-		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
+		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 	}
 	
 	@Override
@@ -109,12 +111,20 @@ public class ReaderTextCellParallel extends MatrixReader
 	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException
 	{
+		int par = _numThreads;
+		
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		
-		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
-		InputSplit[] splits = informat.getSplits(job, 8/* _numThreads*/);
+		//check for min file size for matrix market (adjust num splits if necessary)
+		if( _isMMFile ){
+			long len = MapReduceTool.getFilesizeOnHDFS(path);
+			par = ( len < MIN_FILESIZE_MM ) ? 1: par; 
+		}	
+		
+		ExecutorService pool = Executors.newFixedThreadPool(par);
+		InputSplit[] splits = informat.getSplits(job, par);
 		
 		try 
 		{

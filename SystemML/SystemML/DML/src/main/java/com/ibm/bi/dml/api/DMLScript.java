@@ -195,8 +195,7 @@ public class DMLScript
 		DMLScript.executeScript(conf, otherArgs); 
 		} catch (DMLScriptException e){
 			// In case of DMLScriptException, simply print the error message.
-			String msg = e.prepErrorMessage();
-			System.err.println(msg);
+			System.err.println(e.getMessage());
 		}
 	} 
 
@@ -224,7 +223,7 @@ public class DMLScript
 			boolean ret = executeScript(conf, args);
 			return Boolean.toString(ret);
 		} catch(DMLScriptException e) {
-			return (e.prepErrorMessage());
+			return e.getMessage();
 		}
 	}
 	
@@ -339,6 +338,7 @@ public class DMLScript
 			ret = true;
 		}
 		catch (DMLScriptException e) {
+			//rethrow DMLScriptException to propagate stop call
 			throw e;
 		}
 		catch(Exception ex)

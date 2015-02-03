@@ -429,6 +429,25 @@ public class DMLConfig
 	
 	/**
 	 * 
+	 * @throws IOException
+	 */
+	public void makeQualifiedScratchSpacePath() 
+		throws IOException
+	{
+		NodeList list2 = xml_root.getElementsByTagName(SCRATCH_SPACE);
+		if (list2 != null && list2.getLength() > 0) {
+			Element elem = (Element) list2.item(0);
+			
+			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+			String fname = elem.getFirstChild().getNodeValue();
+			Path path = new Path(fname).makeQualified(fs);
+			
+			elem.getFirstChild().setNodeValue(path.toString());
+		}
+	}
+	
+	/**
+	 * 
 	 * @param key
 	 * @return
 	 */

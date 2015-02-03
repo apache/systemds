@@ -417,7 +417,7 @@ public class ProgramBlock
 		{
 			if (!DMLScript.ENABLE_DEBUG_MODE) {
 				if ( e instanceof DMLScriptException) 
-					throw new DMLScriptException(e);
+					throw (DMLScriptException)e;
 				else
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 			}

@@ -11,6 +11,9 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -25,6 +28,9 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 
 public class DMLAppMaster 
 {
@@ -95,9 +101,15 @@ public class DMLAppMaster
 			else
 				status = FinalApplicationStatus.FAILED;
 		}
+		catch(DMLScriptException ex)
+		{
+			LOG.error( DMLYarnClient.APPMASTER_NAME+": Failed to executed DML script due to stop call:\n\t" + ex.getMessage() );
+			status = FinalApplicationStatus.FAILED;
+			writeMessageToHDFSWorkingDir( ex.getMessage() );
+		}
 		catch(Exception ex)
 		{
-			LOG.error("Failed to executed DML script.", ex);
+			LOG.error( DMLYarnClient.APPMASTER_NAME+": Failed to executed DML script.", ex );
 			status = FinalApplicationStatus.FAILED;
 		}
 		finally
@@ -109,6 +121,30 @@ public class DMLAppMaster
 			//unregister resource manager client
 			rmClient.unregisterApplicationMaster(status, "", "");
 			LOG.debug("Unregistered the SystemML application master");
+		}
+	}
+	
+	/**
+	 * 
+	 * @param msg
+	 */
+	private void writeMessageToHDFSWorkingDir(String msg)
+	{
+		//construct working directory (consistent with client)
+		DMLConfig conf = ConfigurationManager.getConfig();
+		String hdfsWD = DMLAppMasterUtils.constructHDFSWorkingDir(conf, _appId);
+		Path msgPath = new Path(hdfsWD, DMLYarnClient.DML_STOPMSG_NAME);
+		
+		//write given message to hdfs
+		try {
+			FileSystem fs = FileSystem.get(_conf);
+			FSDataOutputStream fout = fs.create(msgPath, true);
+			fout.writeBytes( msg );
+			fout.close();
+			LOG.debug("Stop message written to HDFS file: "+msgPath );
+		}
+		catch(Exception ex) {
+			LOG.error("Failed to write stop message to HDFS file: "+msgPath, ex);
 		}
 	}
 	

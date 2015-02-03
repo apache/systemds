@@ -7,14 +7,17 @@
 
 package com.ibm.bi.dml.yarn;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,9 +43,9 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -80,6 +83,14 @@ public class DMLYarnClient
 	public static final int APP_STATE_INTERVAL = 200;
 	// default application master name
 	public static final String APPMASTER_NAME = "SystemML-AM";
+	// default dml script file name for hdfs script serialization
+	public static final String DML_SCRIPT_NAME = "script.dml";
+	// default dml config file name for hdfs config serialization
+	public static final String DML_CONFIG_NAME = "config.xml";
+	// default SystemML jar file name for hdfs jar copy
+	public static final String DML_JAR_NAME = "SystemML.jar";
+	// default dml stop message file name for hdfs message serialization
+	public static final String DML_STOPMSG_NAME = "stop_msg.txt";
 	
 	
 	private String _dmlScript = null;
@@ -120,7 +131,7 @@ public class DMLYarnClient
 	 * @throws IOException 
 	 */
 	protected boolean launchDMLYarnAppmaster() 
-		throws IOException
+		throws IOException, DMLScriptException
 	{
 		boolean ret = false;
 		String hdfsWD = null;
@@ -145,7 +156,7 @@ public class DMLYarnClient
 			
 			// prepare hdfs working directory via ApplicationID
 			// copy script, config, jar file to hdfs
-			hdfsWD = constructHDFSWorkingDir(_dmlConfig, appId);
+			hdfsWD = DMLAppMasterUtils.constructHDFSWorkingDir(_dmlConfig, appId);
 			copyResourcesToHdfsWorkingDir(yconf, hdfsWD);
 			
 			//construct command line argument
@@ -205,13 +216,24 @@ public class DMLYarnClient
 			
 			//raised script-level error in case of failed final status
 			if( finalState != FinalApplicationStatus.SUCCEEDED )
+			{
+				//propagate script-level stop call message
+				String stop_msg = readMessageToHDFSWorkingDir(_dmlConfig, yconf, appId);
+				if( stop_msg != null ) 
+					throw new DMLScriptException(stop_msg);
+				
+				//generic failure message
 				throw new DMLRuntimeException("DML yarn app master finished with final status: "+finalState+".");
+			}
 			
 			ret = true;
 		}
-		catch(Exception ex)
-		{
-			LOG.warn("Failed to run DML yarn app master.", ex);
+		catch(DMLScriptException ex) {
+			//rethrow DMLScriptException to propagate stop call
+			throw ex;
+		}
+		catch(Exception ex) {
+			LOG.error("Failed to run DML yarn app master.", ex);
 			ret = false;
 		}
 		finally
@@ -223,23 +245,6 @@ public class DMLYarnClient
 		
 		return ret;
 	}
-
-	/**
-	 * 
-	 * @param conf
-	 * @param appId
-	 * @return
-	 */
-	private String constructHDFSWorkingDir(DMLConfig conf, ApplicationId appId)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( conf.getTextValue(DMLConfig.SCRATCH_SPACE) );
-		sb.append( Lop.FILE_SEPARATOR );
-		sb.append( appId );
-		sb.append( Lop.FILE_SEPARATOR );
-		return sb.toString();	
-	}
-
 	
 	/**
 	 * 	
@@ -258,16 +263,17 @@ public class DMLYarnClient
 		//create working directory
 		MapReduceTool.createDirIfNotExistOnHDFS(hdfsWD, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
-		//serialize the dml config to HDFS file
-		Path confPath = new Path(hdfsWD, "config.xml");
+		//serialize the dml config to HDFS file (ensure absolute hdfs scratch_space because user might be changed)
+		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
 		FSDataOutputStream fout = fs.create(confPath, true);
+		_dmlConfig.makeQualifiedScratchSpacePath(); 
 		fout.writeBytes(_dmlConfig.serializeDMLConfig() + "\n");
 		fout.close();
 		_hdfsDMLConfig = confPath.makeQualified(fs).toString();
 		LOG.debug("DML config written to HDFS file: "+_hdfsDMLConfig+"");
 
 		//serialize the dml script to HDFS file
-		Path scriptPath = new Path(hdfsWD, "script.dml");
+		Path scriptPath = new Path(hdfsWD, DML_SCRIPT_NAME);
 		FSDataOutputStream fout2 = fs.create(scriptPath, true);
 		fout2.writeBytes(_dmlScript);
 		fout2.close();
@@ -335,7 +341,7 @@ public class DMLYarnClient
 		throws IOException, InterruptedException
 	{
 		//construct jar command
-		String jarname = dir+"/SystemML.jar";
+		String jarname = dir+"/"+DML_JAR_NAME;
 		File fdir = new File(dir);
 		File[] tmp = fdir.listFiles();
 		StringBuilder flist = new StringBuilder();
@@ -439,7 +445,7 @@ public class DMLYarnClient
 		resource.setType(LocalResourceType.FILE);
 		resource.setVisibility(LocalResourceVisibility.PUBLIC);
 		
-		rMap.put("SystemML.jar", resource);
+		rMap.put(DML_JAR_NAME, resource);
 		return rMap;
 	}
 	
@@ -471,4 +477,38 @@ public class DMLYarnClient
 		
 		return eMap;
 	}	
+	
+	/**
+	 * 
+	 * @param conf
+	 * @param yconf
+	 * @param appId
+	 * @return
+	 */
+	private String readMessageToHDFSWorkingDir(DMLConfig conf, YarnConfiguration yconf, ApplicationId appId)
+	{
+		String ret = null;
+		
+		//construct working directory (consistent with client)
+		String hdfsWD = DMLAppMasterUtils.constructHDFSWorkingDir(conf, appId);
+		Path msgPath = new Path(hdfsWD, DMLYarnClient.DML_STOPMSG_NAME);
+		
+		//write given message to hdfs
+		try {
+			FileSystem fs = FileSystem.get(yconf);
+			if( fs.exists(msgPath) )
+			{
+				FSDataInputStream fin = fs.open(msgPath);
+				BufferedReader br = new BufferedReader(new InputStreamReader(fin));
+				ret = br.readLine();
+				fin.close();
+				LOG.debug("Stop message read from HDFS file "+msgPath+": "+ret );
+			}
+		}
+		catch(Exception ex) {
+			LOG.error("Failed to read stop message from HDFS file: "+msgPath, ex);
+		}
+		
+		return ret;
+	}
 }

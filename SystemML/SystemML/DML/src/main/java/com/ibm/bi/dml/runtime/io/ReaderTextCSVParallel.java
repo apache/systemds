@@ -187,7 +187,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 				reader.next(key, oneLine); // ignore header
 			}
 			if( reader.next(key, oneLine) ) {
-				reader.next(key, oneLine);
 				cellStr = oneLine.toString().trim();
 				ncol = compiledDelim.split(cellStr,-1).length;
 			}

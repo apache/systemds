@@ -223,7 +223,9 @@ public class ReaderTextCellParallel extends MatrixReader
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
 						double lvalue = st.nextDoubleForParallel();
-						_dest.quickSetValue(row, col, lvalue);
+						synchronized( _dest ){ //sparse requires lock	
+							_dest.appendValue(row, col, lvalue);
+						}
 					}
 				}
 

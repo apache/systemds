@@ -240,11 +240,11 @@ public class LeftIndexingOp  extends Hop
 			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
 			double subSize = -1;
 			if( _rowLowerEqualsUpper && _colLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(1, 1, 1.0);	
+				subSize = OptimizerUtils.estimateSize(1, 1);	
 			else if( _rowLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(1, _dim2, 1.0);
+				subSize = OptimizerUtils.estimateSize(1, _dim2);
 			else if( _colLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(_dim1, 1, 1.0);
+				subSize = OptimizerUtils.estimateSize(_dim1, 1);
 			else 
 				subSize = _outputMemEstimate; //worstcase
 
@@ -308,7 +308,9 @@ public class LeftIndexingOp  extends Hop
 		checkAndSetForcedPlatform();
 		
 		if( _etypeForced != null ) 			
+		{
 			_etype = _etypeForced;
+		}
 		else 
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -316,9 +318,16 @@ public class LeftIndexingOp  extends Hop
 				checkAndModifyRecompilationStatus();
 			}
 			else if ( getInput().get(0).areDimsBelowThreshold() )
+			{
 				_etype = ExecType.CP;
+			}
 			else 
+			{
 				_etype = ExecType.MR;
+			}
+			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )

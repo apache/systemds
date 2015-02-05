@@ -684,7 +684,7 @@ public class InterProceduralAnalysis
 							MatrixObject moOut = (MatrixObject)dat;
 							MatrixCharacteristics mc = ((MatrixFormatMetaData)moOut.getMetaData()).getMatrixCharacteristics();
 							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
-							    < OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns(), 1.0d) )
+							    < OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
 							{
 								//update statistics if necessary
 								mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());

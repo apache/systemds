@@ -920,12 +920,15 @@ public class TertiaryOp extends Hop
 	
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
-		
+	protected ExecType optFindExecType() 
+		throws HopsException 
+	{	
 		checkAndSetForcedPlatform();
 		
 		if( _etypeForced != null ) 			
+		{
 			_etype = _etypeForced;
+		}
 		else
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -940,6 +943,9 @@ public class TertiaryOp extends Hop
 			else
 				_etype = ExecType.MR;
 			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
+			
 			//mark for recompile (forever)
 			// Necessary condition for recompilation is unknown dimensions.
 			// When execType=CP, it is marked for recompilation only when additional
@@ -949,6 +955,7 @@ public class TertiaryOp extends Hop
 					setRequiresRecompile();
 			}
 		}
+		
 		return _etype;
 	}
 	

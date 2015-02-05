@@ -604,7 +604,9 @@ public class ParameterizedBuiltinOp extends Hop
 		checkAndSetForcedPlatform();
 
 		if( _etypeForced != null ) 			
+		{
 			_etype = _etypeForced;	
+		}
 		else 
 		{
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -619,6 +621,9 @@ public class ParameterizedBuiltinOp extends Hop
 			{
 				_etype = ExecType.MR;
 			}
+			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )

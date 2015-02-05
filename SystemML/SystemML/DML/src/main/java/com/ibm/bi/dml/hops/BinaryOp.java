@@ -1415,6 +1415,9 @@ public class BinaryOp extends Hop
 					_etype = ExecType.MR;
 			}
 		
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
+			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) 
 				|| (op == OpOp2.APPEND && getDataType()!=DataType.SCALAR) ) )
@@ -1595,13 +1598,13 @@ public class BinaryOp extends Hop
 		double footprint = 0;
 		
 		// size of left input (matrix block)
-		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2, m1_cpb), 1.0);
+		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2, m1_cpb));
 		
 		// size of right input (vector)
-		footprint += OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0);
+		footprint += OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
 		
 		// size of the output (only boundary block is merged)
-		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2+m2_dim2, m1_cpb), 1.0);
+		footprint += OptimizerUtils.estimateSize(Math.min(m1_dim1, m1_rpb), Math.min(m1_dim2+m2_dim2, m1_cpb));
 		
 		return footprint;
 	}

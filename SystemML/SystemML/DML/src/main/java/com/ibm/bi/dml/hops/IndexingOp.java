@@ -245,21 +245,31 @@ public class IndexingOp extends Hop
 		checkAndSetForcedPlatform();
 
 		if( _etypeForced != null ) 			
+		{
 			_etype = _etypeForced;
+		}
 		else
 		{	
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			else if ( getInput().get(0).areDimsBelowThreshold() )
+			{
 				_etype = ExecType.CP;
+			}
 			else
+			{
 				_etype = ExecType.MR;
+			}
+			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
 				setRequiresRecompile();
 		}
+		
 		return _etype;
 	}
 	

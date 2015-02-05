@@ -557,6 +557,9 @@ public class DataOp extends Hop
 				{
 					_etype = ExecType.MR;
 				}
+			
+				//check for valid CP dimensions and matrix size
+				checkAndSetInvalidCPDimsAndSize();
 				
 				//mark for recompile (forever)
 				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )

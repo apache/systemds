@@ -314,10 +314,14 @@ public class AggBinaryOp extends Hop
 				_etype = ExecType.MR;
 			}
 			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
+			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
 				setRequiresRecompile();			
 		}
+		
 		return _etype;
 	}
 	
@@ -559,7 +563,7 @@ public class AggBinaryOp extends Hop
 			Hop hw = getInput().get(1).getInput().get(0);
 			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
 			
-			double mestW = OptimizerUtils.estimateSize(hw.getDim1(), hw.getDim2(), 1.0);
+			double mestW = OptimizerUtils.estimateSize(hw.getDim1(), hw.getDim2());
 			boolean needPart = !hw.dimsKnown() || hw.getDim1() * hw.getDim2() > DistributedCacheInput.PARTITION_SIZE;
 			Lop X = hX.constructLops(), v = hv.constructLops(), w = null;
 			if( needPart ){ //requires partitioning
@@ -720,7 +724,7 @@ public class AggBinaryOp extends Hop
 		Lop lnrow = nrow.constructLops();
 		
 		boolean needPart = !pmInput.dimsKnown() || pmInput.getDim1() > DistributedCacheInput.PARTITION_SIZE;
-		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1, 1.0);
+		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
 		if( needPart ){ //requires partitioning
 			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
 			lpmInput.getOutputParameters().setDimensions(pmInput.getDim1(), 1, getRowsInBlock(), getColsInBlock(), pmInput.getDim1());
@@ -1014,12 +1018,12 @@ public class AggBinaryOp extends Hop
 	{
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
-		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
-		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb), 1.0);
-		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb), 1.0);
-		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols, 1.0); //output per m1 block if m2 in cache
-		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb), 1.0); //output per m2 block if m1 in cache
+		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
+		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb));
+		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb));
+		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols); //output per m1 block if m2 in cache
+		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb)); //output per m2 block if m1 in cache
 	
 		double footprint = 0;
 		if( pmm )
@@ -1079,13 +1083,13 @@ public class AggBinaryOp extends Hop
 				&& m2_cols>=0 && m2_cols<=m2_cpb )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
-					&& OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) < memBudget )
+					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudget )
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
 				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
-					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols, 1.0 ) 
-					   + OptimizerUtils.estimateSize(m1_cols, m2_cols, 1.0) < memBudget )
+					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols ) 
+					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudget )
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
@@ -1109,8 +1113,8 @@ public class AggBinaryOp extends Hop
 		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
 		// memory footprint if right input is put into cache
 		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
-		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols, 1.0);
-		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
+		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
 			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
 		{

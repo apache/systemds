@@ -55,6 +55,8 @@ public class OptimizerUtils
 	public static final long BOOLEAN_SIZE = 1;
 	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
+	public static final long MAX_NUMCELLS_CP_DENSE = Integer.MAX_VALUE;
+	
 	/**
 	 * Enables/disables dynamic re-compilation of lops/instructions.
 	 * If enabled, we recompile each program block that contains at least
@@ -427,10 +429,9 @@ public class OptimizerUtils
 	 * @param sp
 	 * @return
 	 */
-	public static long estimateSize(long nrows, long ncols, double expectedSparsity) 
+	public static long estimateSize(long nrows, long ncols) 
 	{
-		double lexpectedSparsity = 1.0;		
-		return estimateSizeExactSparsity(nrows, ncols, lexpectedSparsity);
+		return estimateSizeExactSparsity(nrows, ncols, 1.0);
 	}
 	
 	/**
@@ -472,6 +473,43 @@ public class OptimizerUtils
 		long allocatedCells = (long)Math.pow(2, Math.ceil(Math.log(numCells)/Math.log(2)) );
 		long rowSize = basicSize +  allocatedCells * cellSize;
 		return rowSize;
+	}
+	
+	/**
+	 * Returns false if dimensions known to be invalid; other true
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @return
+	 */
+	public static boolean isValidCPDimensions( long rows, long cols )
+	{
+		//the current CP runtime implementation requires that rows and cols
+		//are integers since we use a single matrixblock to represent the
+		//entire matrix
+		return (rows <= Integer.MAX_VALUE && cols<=Integer.MAX_VALUE);
+	}
+	
+	/**
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param sparsity
+	 * @return
+	 */
+	public static boolean isValidCPMatrixSize( long rows, long cols, double sparsity )
+	{
+		//the current CP runtime implementation has a limitation of 16GB for
+		//dense matrices because we use a linearized array (bounded to int in java)
+		boolean ret = true;
+		
+		long nnz = (long)(sparsity * rows * cols);
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, nnz);
+		
+		if( !sparse )
+			ret = ((rows * cols) <= MAX_NUMCELLS_CP_DENSE);
+		
+		return ret;
 	}
 	
 

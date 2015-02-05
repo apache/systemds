@@ -361,7 +361,7 @@ public class UnaryOp extends Hop
 		int level = 0;
 		
 		//recursive preaggregation until aggregates fit into CP memory budget
-		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen, 1.0) + OptimizerUtils.estimateSize(1, clen, 1.0)) 
+		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
 				 > OptimizerUtils.getLocalMemBudget()
 			   && TEMP.getOutputParameters().getNumRows()>1) || unknownSize )
 		{
@@ -677,12 +677,13 @@ public class UnaryOp extends Hop
 	@Override
 	protected ExecType optFindExecType() 
 		throws HopsException 
-	{
-		
+	{		
 		checkAndSetForcedPlatform();
 	
 		if( _etypeForced != null ) 			
+		{
 			_etype = _etypeForced;		
+		}
 		else 
 		{
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -690,14 +691,22 @@ public class UnaryOp extends Hop
 			}
 			// Choose CP, if the input dimensions are below threshold or if the input is a vector
 			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			{
 				_etype = ExecType.CP;
+			}
 			else 
+			{
 				_etype = ExecType.MR;
+			}
+			
+			//check for valid CP dimensions and matrix size
+			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
 				setRequiresRecompile();
 		}
+		
 		return _etype;
 	}
 	

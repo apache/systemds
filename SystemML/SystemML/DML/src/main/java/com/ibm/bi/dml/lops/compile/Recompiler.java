@@ -1209,7 +1209,7 @@ public class Recompiler
 					MatrixObject mo = (MatrixObject)dat;
 					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 					if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
-					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2(), 1.0d) )
+					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2()) )
 					{
 						//update statistics if necessary
 						mc.setDimension(hop.getDim1(), hop.getDim2());
@@ -1689,7 +1689,10 @@ public class Recompiler
 					long nnz = mo.getNnz();
 					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
-					if( mem >= OptimizerUtils.getLocalMemBudget() ) {
+					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
+						|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
+						|| mem >= OptimizerUtils.getLocalMemBudget() ) 
+					{
 						ret = false;
 						break;
 					}
@@ -1766,7 +1769,9 @@ public class Recompiler
 					long cols = lrandInst.getCols();
 					double sparsity = lrandInst.getSparsity();
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sparsity);				
-					if( mem >= OptimizerUtils.getLocalMemBudget() )
+					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
+						|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sparsity)	
+						|| mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;
@@ -1780,7 +1785,9 @@ public class Recompiler
 					long rows = lrandInst.getRows();
 					long cols = lrandInst.getCols();
 					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, 1.0d);				
-					if( mem >= OptimizerUtils.getLocalMemBudget() )
+					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
+					    || !OptimizerUtils.isValidCPMatrixSize(rows, cols, 1.0d)	
+						|| mem >= OptimizerUtils.getLocalMemBudget() )
 					{
 						ret = false;
 						break;

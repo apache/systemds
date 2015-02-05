@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -90,6 +91,10 @@ public abstract class MatrixReader
 	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, long estnnz, boolean mallocDense ) 
 		throws IOException, DMLRuntimeException
 	{
+		//check input dimension
+		if( !OptimizerUtils.isValidCPDimensions(rlen, clen) )
+			throw new DMLRuntimeException("Matrix dimensions too large for CP runtime: "+rlen+" x "+clen);
+		
 		//determine target representation (sparse/dense)
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
 		

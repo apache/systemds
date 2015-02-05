@@ -324,6 +324,11 @@ public class DMLYarnClient
 			fname = null; //indicate to use fallback strategy
 		}
 		
+		//give warning that we fallback to alternative jar shipping method
+		if( fname == null ) {
+			LOG.warn("Failed to find jar file via environment variable '"+JARFILE_ENV_CONST+"', fallback to jar packaging.");
+		}
+		
 		return fname;
 	}
 	
@@ -350,8 +355,20 @@ public class DMLYarnClient
 			flist.append(" ");
 		}
 		
+		//get jdk home (property 'java.home' gives jre-home of parent jdk or standalone)
+		String javahome = System.getProperty("java.home");
+		File fjdkhome = new File(new File(javahome).getParent() + File.separator  + "bin");
+		String jarPrefix = "";
+		if( fjdkhome.exists() ) { //exists if jdk
+			jarPrefix = fjdkhome.getAbsolutePath();
+			jarPrefix += File.separator;
+		}
+		if( jarPrefix.isEmpty() )
+			LOG.warn("Failed to find jdk home of running jre (java.home="+javahome+").");
+		
 		//execute jar command
-		String command = "jar cf "+jarname+" "+flist.subSequence(0, flist.length()-1);
+		String command = jarPrefix+"jar cf "+jarname+" "+flist.subSequence(0, flist.length()-1);
+		LOG.debug("Packaging jar of unzipped files: "+command);
 		Process child = Runtime.getRuntime().exec(command, null, fdir);		
 		int c = 0;
 		while ((c = child.getInputStream().read()) != -1)

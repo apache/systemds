@@ -1,15 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
-	<version>3.4.0.2-SNAPSHOT</version>
 	<name>SystemML compiler</name>
 
- <!--  
-  <scm>
-<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
-  </scm> 
--->  
+
   
   <scm>
 <url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
@@ -17,11 +11,12 @@
 <developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
  </scm>
   
-	<parent>
-		<groupId>com.ibm.biginsights</groupId>
-		<artifactId>java-parent</artifactId>
-		<version>1.3.14</version>
-	</parent>
+ <parent>
+	  <groupId>com.ibm.biginsights</groupId>
+  	<artifactId>systemml-reactor</artifactId>
+  	<version>4.0-SNAPSHOT</version>
+  	<relativePath>../pom.xml</relativePath>
+  </parent>
 
 	<build>
 		<plugins>

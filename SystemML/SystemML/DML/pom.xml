@@ -6,21 +6,21 @@
 
  <!--  
   <scm>
-    <connection>scm:jazz:${JAZZ_SCM_URL}</connection>
-    <developerConnection>scm:jazz:${JAZZ_SCM_URL}</developerConnection>
+<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
   </scm> 
 -->  
   
   <scm>
-		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
  </scm>
   
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
 		<artifactId>java-parent</artifactId>
-		<version>1.3.6</version>
+		<version>1.3.14</version>
 	</parent>
 
 	<build>

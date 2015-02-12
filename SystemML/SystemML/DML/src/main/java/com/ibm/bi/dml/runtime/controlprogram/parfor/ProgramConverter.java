@@ -548,8 +548,9 @@ public class ProgramConverter
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;
 					if( !plain )
 					{
-						//no safe replacement required because concatenation only
-						tmpString = tmp.toString().replaceAll(tmp.getFunctionName(), tmp.getFunctionName() + CP_CHILD_THREAD+pid);  
+						//safe replacement because target variables might include the function name
+						tmp.updateInstStringFunctionName(tmp.getFunctionName(), tmp.getFunctionName() + CP_CHILD_THREAD+pid);
+						tmpString = tmp.toString();  
 					}
 					//otherwise: preserve functionname
 				}

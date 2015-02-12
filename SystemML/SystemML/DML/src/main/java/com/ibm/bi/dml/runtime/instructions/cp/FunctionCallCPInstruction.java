@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -221,10 +222,33 @@ public class FunctionCallCPInstruction extends CPInstruction
 	{
 		//update instruction string
 		String oldfname = _functionName;
-		instString = instString.replaceAll(oldfname, fname);
+		updateInstStringFunctionName(oldfname, fname);
 		
 		//set attribute
 		_functionName = fname;
 		_opcode = fname;
 	}
+
+	/**
+	 * 
+	 * @param pattern
+	 * @param replace
+	 */
+	public void updateInstStringFunctionName(String pattern, String replace)
+	{
+		//split current instruction
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+		if( parts[3].equals(pattern) )
+			parts[3] = replace;	
+		
+		//construct and set modified instruction
+		StringBuilder sb = new StringBuilder();
+		for( String part : parts ) {
+			sb.append(part);
+			sb.append(Lop.OPERAND_DELIMITOR);
+		}
+		instString = sb.substring( 0, sb.length()-Lop.OPERAND_DELIMITOR.length() );
+	}
+	
+	
 }

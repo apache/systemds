@@ -71,7 +71,7 @@ public class AggBinaryOp extends Hop
 		MAPMM_L,  //map-side matrix-matrix multiplication using distributed cache (mr)
 		MAPMM_R,  //map-side matrix-matrix multiplication using distributed cache (mr)
 		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (mr)
-		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr)
+		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr/cp)
 		TSMM,     //transpose-self matrix multiplication (mr/cp)
 		CP        //in-memory matrix multiplication (cp)
 	};

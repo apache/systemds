@@ -267,6 +267,13 @@ public class DMLTranslator
 		}
 	}
 		
+	/**
+	 * 
+	 * @param dmlp
+	 * @throws ParseException
+	 * @throws LanguageException
+	 * @throws HopsException
+	 */
 	public void rewriteHopsDAG(DMLProgram dmlp) 
 		throws ParseException, LanguageException, HopsException 
 	{
@@ -278,7 +285,7 @@ public class DMLTranslator
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
 			InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-		    ipa.analyzeProgram(this, dmlp);
+		    ipa.analyzeProgram(dmlp);
 		   	resetHopsDAGVisitStatus(dmlp);
 		}
 		
@@ -1184,7 +1191,7 @@ public class DMLTranslator
 		}
 	}
 	
-	public void resetHopsDAGVisitStatus(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
+	public static void resetHopsDAGVisitStatus(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
 
 		// for each namespace, handle function program blocks -- forward direction
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
@@ -1201,7 +1208,7 @@ public class DMLTranslator
 		}
 	}
 			
-	public void resetHopsDAGVisitStatus(StatementBlock current) throws ParseException, HopsException {
+	public static void resetHopsDAGVisitStatus(StatementBlock current) throws ParseException, HopsException {
 	
 		ArrayList<Hop> hopsDAG = current.get_hops();
 		if (hopsDAG != null && !hopsDAG.isEmpty() ) {

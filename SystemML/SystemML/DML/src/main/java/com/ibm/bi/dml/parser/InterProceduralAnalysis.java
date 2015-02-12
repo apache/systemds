@@ -121,7 +121,7 @@ public class InterProceduralAnalysis
 	 * @throws ParseException
 	 * @throws LanguageException
 	 */
-	public void analyzeProgram( DMLTranslator dmlt, DMLProgram dmlp ) 
+	public void analyzeProgram( DMLProgram dmlp ) 
 		throws HopsException, ParseException, LanguageException
 	{
 		//step 1: get candidates for statistics propagation into functions (if required)
@@ -136,10 +136,10 @@ public class InterProceduralAnalysis
 			allFCandKeys.addAll(fcandCounts.keySet()); //cp before pruning
 			pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
 			determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
-			dmlt.resetHopsDAGVisitStatus( dmlp );
+			DMLTranslator.resetHopsDAGVisitStatus( dmlp );
 		}
 		
-		if( fcandCounts.size()>0 || INTRA_PROCEDURAL_ANALYSIS ) {
+		if( !fcandCounts.isEmpty() || INTRA_PROCEDURAL_ANALYSIS ) {
 			//step 2: propagate statistics into functions and across DAGs
 			//(callVars used to chain outputs/inputs of multiple functions calls) 
 			LocalVariableMap callVars = new LocalVariableMap();
@@ -156,6 +156,39 @@ public class InterProceduralAnalysis
 		if( FLAG_FUNCTION_RECOMPILE_ONCE && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ){
 			flagFunctionsForRecompileOnce( dmlp );
 		}
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 * @throws ParseException 
+	 * @throws HopsException 
+	 */
+	public Set<String> analyzeSubProgram( StatementBlock sb ) 
+		throws HopsException, ParseException
+	{
+		DMLTranslator.resetHopsDAGVisitStatus(sb);
+		
+		//step 1: get candidates for statistics propagation into functions (if required)
+		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
+		Map<String, FunctionOp> fcandHops = new HashMap<String, FunctionOp>();
+		Map<String, Set<Long>> fcandSafeNNZ = new HashMap<String, Set<Long>>(); 
+		Set<String> allFCandKeys = new HashSet<String>();
+		getFunctionCandidatesForStatisticPropagation( sb, fcandCounts, fcandHops );
+		allFCandKeys.addAll(fcandCounts.keySet()); //cp before pruning
+		pruneFunctionCandidatesForStatisticPropagation( fcandCounts, fcandHops );	
+		determineFunctionCandidatesNNZPropagation( fcandHops, fcandSafeNNZ );
+		DMLTranslator.resetHopsDAGVisitStatus( sb );
+		
+		if( !fcandCounts.isEmpty() ) {
+			//step 2: propagate statistics into functions and across DAGs
+			//(callVars used to chain outputs/inputs of multiple functions calls) 
+			LocalVariableMap callVars = new LocalVariableMap();
+			propagateStatisticsAcrossBlock( sb, fcandCounts.keySet(), callVars, fcandSafeNNZ, new HashSet<String>() );
+		}
+		
+		return fcandCounts.keySet();
 	}
 	
 	

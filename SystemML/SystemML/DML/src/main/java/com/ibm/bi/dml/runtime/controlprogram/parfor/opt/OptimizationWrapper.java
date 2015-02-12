@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +33,7 @@ import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.InterProceduralAnalysis;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -73,7 +75,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class OptimizationWrapper 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -235,7 +237,7 @@ public class OptimizationWrapper
 				}
 			}
 			
-			//constant propagation into parfor body and called functions
+			//constant propagation into parfor body 
 			//(input scalars to parfor are guaranteed read only, but need to ensure safe-replace on multiple reopt
 			//separate propagation required because recompile in-place without literal replacement)
 			try{
@@ -261,13 +263,32 @@ public class OptimizationWrapper
 				throw new DMLRuntimeException(ex);
 			}
 			
-			//recompilation of parfor body:
-			//* clone of variables in order to allow for statistics propagation across DAGs
-			//(tid=0, because deep copies created after opt)
+			//recompilation of parfor body and called functions (if safe)
 			try{
+				//core parfor body recompilation (based on symbol table entries)
+				//* clone of variables in order to allow for statistics propagation across DAGs
+				//(tid=0, because deep copies created after opt)
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0);
-			}catch(Exception ex){
+				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, true);
+				
+				//inter-procedural optimization (based on previous recompilation)
+				InterProceduralAnalysis ipa = new InterProceduralAnalysis();
+				Set<String> fcand = ipa.analyzeSubProgram(sb);		
+				
+				if( !fcand.isEmpty() ) {
+					//regenerate runtime program of modified functions
+					for( String func : fcand )
+					{
+						String[] funcparts = DMLProgram.splitFunctionKey(func);
+						FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(funcparts[0], funcparts[1]);
+						//reset recompilation flags according to recompileOnce because it is only safe if function is recompileOnce 
+						//because then recompiled for every execution (otherwise potential issues if func also called outside parfor)
+						Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, fpb.isRecompileOnce());
+					}		
+				}
+				
+			}
+			catch(Exception ex){
 				throw new DMLRuntimeException(ex);
 			}
 		}

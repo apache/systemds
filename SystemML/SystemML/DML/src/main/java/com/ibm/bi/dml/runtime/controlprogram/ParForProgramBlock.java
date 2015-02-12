@@ -187,7 +187,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 	// internal parameters
 	public static final boolean OPTIMIZE                    = true;	// run all automatic optimizations on top-level parfor
-	public static final boolean USE_PB_CACHE                = true;  	// reuse copied program blocks whenever possible
+	public static final boolean USE_PB_CACHE                = false; // reuse copied program blocks whenever possible, not there can be issues related to recompile
 	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = true;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)

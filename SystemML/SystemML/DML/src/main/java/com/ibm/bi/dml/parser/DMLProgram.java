@@ -762,5 +762,15 @@ public class DMLProgram
 	{
 		return fnamespace + Program.KEY_DELIM + fname;
 	}
+	
+	/**
+	 * 
+	 * @param fkey
+	 * @return
+	 */
+	public static String[] splitFunctionKey(String fkey)
+	{
+		return fkey.split(Program.KEY_DELIM);
+	}
 }
 

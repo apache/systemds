@@ -76,8 +76,12 @@ public class FunctionProgramBlock extends ProgramBlock
 				&& isRecompileOnce() 
 				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
 			{
+				//note: it is important to reset the recompilation flags here
+				// (1) it is safe to reset recompilation flags because a 'recompile_once'
+				//     function will be recompiled for every execution.
+				// (2) without reset, there would be no benefit in recompiling the entire function
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid);
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true);
 			}
 		}
 		catch(Exception ex) {

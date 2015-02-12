@@ -1050,8 +1050,8 @@ public class TertiaryOp extends Hop
 				&& getInput().get(2) == that2.getInput().get(2));
 		
 		//compare optional dimension parameters
-		ret &= _dimInputsPresent == that2._dimInputsPresent;
-		if( _dimInputsPresent ){
+		ret &= (_dimInputsPresent == that2._dimInputsPresent);
+		if( ret && _dimInputsPresent ){
 			ret &= getInput().get(3) == that2.getInput().get(3)
 				&& getInput().get(4) == that2.getInput().get(4);
 		}

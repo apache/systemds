@@ -7,12 +7,15 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
@@ -254,6 +257,35 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				rval = mc.getCols();
 			else if(opcode.equalsIgnoreCase("length"))
 				rval = mc.getRows() * mc.getCols();
+
+			//check for valid output, and acquire read if necessary
+			//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
+			//we however, support unspecified input sizes, which requires a read to obtain the
+			//required meta data)
+			//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
+			if( !mc.dimsKnown() ) //invalid nrow/ncol/length
+			{
+				if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+				{
+					//read the input data and explicitly refresh input data
+					MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+					mo.acquireRead();
+					mo.refreshMetaData();
+					mo.release();
+					
+					//update meta data information
+					mc = ec.getMatrixCharacteristics(input1.getName());
+					if(opcode.equalsIgnoreCase("nrow"))
+						rval = mc.getRows();
+					else if(opcode.equalsIgnoreCase("ncol"))
+						rval = mc.getCols();
+					else if(opcode.equalsIgnoreCase("length"))
+						rval = mc.getRows() * mc.getCols();
+				}
+				else {
+					throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval);
+				}
+			}
 			
 			//create and set output scalar
 			ScalarObject ret = null;

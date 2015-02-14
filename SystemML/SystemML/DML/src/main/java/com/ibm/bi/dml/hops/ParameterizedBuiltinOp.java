@@ -293,12 +293,58 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			if( et == ExecType.CP && isTargetDiagInput() && marginHop instanceof LiteralOp 
+					 && ((LiteralOp)marginHop).getStringValue().equals("rows")
+					 && _outputPermutationMatrix ) //SPECIAL CASE SELECTION VECTOR
+			{
+				//TODO this special case could be taken into account for memory estimates in order
+				// to reduce the estimates for the input diag and subsequent matrix multiply
+				
+				//get input vector (without materializing diag())
+				Hop input = targetHop.getInput().get(0);
+				long brlen = input.getRowsInBlock();
+				long bclen = input.getColsInBlock();
+				MemoTable memo = new MemoTable();
 			
-			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(pbilop);
-			setLops(pbilop);
+				boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
+				
+				//step1: compute index vectors
+				Hop ppred0 = input;
+				if( !isPPredInput ) { //ppred only if required
+					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+					HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+					ppred0.refreshSizeInformation();
+					ppred0.computeMemEstimate(memo); //select exec type
+					HopRewriteUtils.copyLineNumbers(this, ppred0);
+				}
+				
+				UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
+				HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
+				cumsum.refreshSizeInformation(); 
+				cumsum.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, cumsum);	
+			
+				BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
+				HopRewriteUtils.setOutputBlocksizes(sel, brlen, bclen); 
+				sel.refreshSizeInformation();
+				sel.computeMemEstimate(memo); //select exec type
+				HopRewriteUtils.copyLineNumbers(this, sel);
+				Lop loutput = sel.constructLops();
+				
+				//Step 4: cleanup hops (allow for garbage collection)
+				HopRewriteUtils.removeChildReference(ppred0, input);
+				
+				setLops( loutput );
+			}
+			else //GENERAL CASE
+			{
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
+						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+				
+				pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(pbilop);
+				setLops(pbilop);
+			}
 		}
 		//special compile for mr removeEmpty-diag 
 		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 

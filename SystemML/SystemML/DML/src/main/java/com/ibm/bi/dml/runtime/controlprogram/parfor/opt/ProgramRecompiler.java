@@ -186,7 +186,7 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), ec.getVariables(), true, 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb, sb.get_hops(), ec.getVariables(), null, true, 0);
 					pb.setInstructions( newInst ); 
 				}
 			}

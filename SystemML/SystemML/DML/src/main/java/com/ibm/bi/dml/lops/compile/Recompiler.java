@@ -141,7 +141,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, boolean inplace, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -181,11 +181,16 @@ public class Recompiler
 			if( !inplace )
 				rewriter.rewriteHopDAGs( hops, null );
 			
-			// refresh memory estimates (based on updated stats)
+			// refresh memory estimates (based on updated stats,
+			// before: init memo table with propagated worst-case estimates,
+			// after: extract worst-case estimates from memo table 
 			Hop.resetVisitStatus(hops);
 			MemoTable memo = new MemoTable();
+			memo.init(hops, status);
+			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
 				hopRoot.refreshMemEstimates(memo); 
+			memo.extract(hops, status);
 			
 			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
@@ -418,10 +423,12 @@ public class Recompiler
 	{
 		try 
 		{
+			RecompileStatus status = new RecompileStatus();
+			
 			synchronized( pbs )
 			{
 				for( ProgramBlock pb : pbs )
-					rRecompileProgramBlock(pb, vars, tid, resetRecompile);
+					rRecompileProgramBlock(pb, vars, status, tid, resetRecompile);
 			}
 		}
 		catch(Exception ex)
@@ -635,7 +642,7 @@ public class Recompiler
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, long tid, boolean resetRecompile ) 
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
@@ -648,13 +655,15 @@ public class Recompiler
 			removeUpdatedScalars(vars, wsb); 
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
+			status.clearStatus();
 			for (ProgramBlock pb2 : wpb.getChildBlocks())
-				rRecompileProgramBlock(pb2, vars, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
 			if( reconcileUpdatedCallVarsLoops(oldVars, vars, wsb) ) {
 				//second pass with unknowns if required
 				recompileWhilePredicate(wpb, wsb, vars, tid, resetRecompile);
+				status.clearStatus();
 				for (ProgramBlock pb2 : wpb.getChildBlocks())
-					rRecompileProgramBlock(pb2, vars, tid, resetRecompile);
+					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
 			}
 			removeUpdatedScalars(vars, wsb);
 		}
@@ -667,10 +676,13 @@ public class Recompiler
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			LocalVariableMap varsElse = (LocalVariableMap) vars.clone();
+			status.clearStatus();
 			for( ProgramBlock pb2 : ipb.getChildBlocksIfBody() )
-				rRecompileProgramBlock(pb2, vars, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
+			status.clearStatus();
 			for( ProgramBlock pb2 : ipb.getChildBlocksElseBody() )
-				rRecompileProgramBlock(pb2, varsElse, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, varsElse, status, tid, resetRecompile);
+			status.clearStatus();
 			reconcileUpdatedCallVarsIf(oldVars, vars, varsElse, isb);
 			removeUpdatedScalars(vars, ipb.getStatementBlock());
 		}
@@ -684,13 +696,15 @@ public class Recompiler
 			removeUpdatedScalars(vars, fpb.getStatementBlock()); 
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
+			status.clearStatus();
 			for( ProgramBlock pb2 : fpb.getChildBlocks() )
-				rRecompileProgramBlock(pb2, vars, tid, resetRecompile);
+				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
 			if( reconcileUpdatedCallVarsLoops(oldVars, vars, fsb) ) {
 				//second pass with unknowns if required
 				recompileForPredicates(fpb, fsb, vars, tid, resetRecompile);
+				status.clearStatus();
 				for( ProgramBlock pb2 : fpb.getChildBlocks() )
-					rRecompileProgramBlock(pb2, vars, tid, resetRecompile);		
+					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);		
 			}
 			removeUpdatedScalars(vars, fpb.getStatementBlock());
 		}		
@@ -707,7 +721,7 @@ public class Recompiler
 				//&& Recompiler.requiresRecompilation( sb.get_hops() ) 
 				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
-				tmp = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, true, tid);
+				tmp = Recompiler.recompileHopsDag(sb, sb.get_hops(), vars, status, true, tid);
 				pb.setInstructions( tmp );
 				
 				//propagate stats across hops (should be executed on clone of vars)

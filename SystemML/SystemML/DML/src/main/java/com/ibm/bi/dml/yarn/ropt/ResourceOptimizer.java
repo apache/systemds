@@ -289,7 +289,7 @@ public class ResourceOptimizer
 		{
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.get_hops(), 
-					                                   new LocalVariableMap(), false, 0);
+					                                   new LocalVariableMap(), null, false, 0);
 			pb.setInstructions( inst );
 			B.add(pb);
 			_cntCompilePB ++;
@@ -388,7 +388,7 @@ public class ResourceOptimizer
 		{
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.get_hops(), 
-					                                   new LocalVariableMap(), false, 0);
+					                                   new LocalVariableMap(), null, false, 0);
 			inst = annotateMRJobInstructions(inst, cp, mr);
 			pb.setInstructions( inst );
 		}

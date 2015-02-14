@@ -152,7 +152,7 @@ public class ProgramBlock
 				&& _sb.requiresRecompilation() )
 				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
 			{
-				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), false, _tid);
+				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

@@ -120,7 +120,7 @@ public abstract class CostEstimator
 	{
 		double costs = 0;
 		
-		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, false, 0);
+		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, null, false, 0);
 		ProgramBlock pb = new ProgramBlock(null);
 		pb.setInstructions(linst);
 		costs = rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), true);

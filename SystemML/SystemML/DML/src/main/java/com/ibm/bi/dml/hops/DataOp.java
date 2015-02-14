@@ -514,6 +514,13 @@ public class DataOp extends Hop
 			if( mc.dimsKnown() )
 				ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
 		}
+		else if( _dataop == DataOpTypes.TRANSIENTREAD )
+		{
+			//prepare statistics, passed from cross-dag transient writes
+			MatrixCharacteristics mc = memo.getAllInputStats(this);
+			if( mc.dimsKnown() )
+				ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
+		}
 		
 		return ret;
 	}

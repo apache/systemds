@@ -205,13 +205,13 @@ The source code for this program is not published or otherwise divested of its t
 			<exclude name="com/ibm/bi/dml/test/**" />
 			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble_hadoop2.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/avro-1.7.4.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-annotations-4.3.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/antlr4-runtime-4.3.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math3-3.1.1.jar"/>
 			<zipfileset includes="**/*.class" src="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->          
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/log4j-1.2.15.jar" /> <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
-			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/opencsv-1.8.jar" /> <!-- for read/write csv -->
 			<zipfileset includes="**/*.class" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" />
 			<zipfileset includes="META-INF/services/*" src="${hadoop.local.path}/hadoop-core-2.2.0-mr1.jar" />

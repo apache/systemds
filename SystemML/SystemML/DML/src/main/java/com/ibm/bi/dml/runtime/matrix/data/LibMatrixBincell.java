@@ -359,7 +359,8 @@ public class LibMatrixBincell
 	private static void safeBinaryMVDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
-		boolean skipEmpty = (op.fn instanceof Multiply);
+		boolean isMultiply = (op.fn instanceof Multiply);
+		boolean skipEmpty = (isMultiply);
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 		int rlen = m1.rlen;
 		int clen = m1.clen;
@@ -379,7 +380,15 @@ public class LibMatrixBincell
 			{
 				//replicate vector value
 				double v2 = (b==null) ? 0 : b[i];
-				if( !skipEmpty || v2 != 0 ) //skip empty rows
+				if( skipEmpty && v2 == 0 ) //skip empty rows
+					continue;
+					
+				if( isMultiply && v2 == 1 ) //ROW COPY
+				{
+					//a guaranteed to be non-null (see early abort)
+					System.arraycopy(a, ix, c, ix, clen);
+				}
+				else //GENERAL CASE
 				{
 					if( a != null )
 						for( int j=0; j<clen; j++ )
@@ -427,7 +436,8 @@ public class LibMatrixBincell
 	private static void safeBinaryMVSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
-		boolean skipEmpty = (op.fn instanceof Multiply);
+		boolean isMultiply = (op.fn instanceof Multiply);
+		boolean skipEmpty = (isMultiply);
 		
 		int rlen = m1.rlen;
 		int clen = m1.clen;
@@ -455,30 +465,47 @@ public class LibMatrixBincell
 					continue; //skip empty rows
 				}
 					
-				int lastIx = -1;
-				if( arow != null && !arow.isEmpty() ) 
+				if( isMultiply && v2==1 ) //ROW COPY
 				{
-					int alen = arow.size();
-					int[] aix = arow.getIndexContainer();
-					double[] avals = arow.getValueContainer();
-					for( int j=0; j<alen; j++ )
-					{
-						//empty left
-						for( int k = lastIx+1; k<aix[j]; k++ ){
-							double v = op.fn.execute( 0, v2 );
-							ret.appendValue(i, k, v);
-						}
-						//actual value
-						double v = op.fn.execute( avals[j], v2 );
-						ret.appendValue(i, aix[j], v);	
-						lastIx = aix[j];
+					if( ret.sparse && arow != null && !arow.isEmpty() ) {
+						ret.getSparseRows()[i] = new SparseRow(arow);
+						ret.nonZeros += arow.size();
+					}
+					else if( !ret.sparse ) {
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();
+						for( int j=0; j<alen; j++ )
+							ret.quickSetValue(i, aix[j], avals[j]);
 					}
 				}
-				
-				//empty left
-				for( int k = lastIx+1; k<clen; k++ ){
-					double v = op.fn.execute( 0, v2 );
-					ret.appendValue(i, k, v);
+				else //GENERAL CASE
+				{
+					int lastIx = -1;
+					if( arow != null && !arow.isEmpty() ) 
+					{
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();
+						for( int j=0; j<alen; j++ )
+						{
+							//empty left
+							for( int k = lastIx+1; k<aix[j]; k++ ){
+								double v = op.fn.execute( 0, v2 );
+								ret.appendValue(i, k, v);
+							}
+							//actual value
+							double v = op.fn.execute( avals[j], v2 );
+							ret.appendValue(i, aix[j], v);	
+							lastIx = aix[j];
+						}
+					}
+					
+					//empty left
+					for( int k = lastIx+1; k<clen; k++ ){
+						double v = op.fn.execute( 0, v2 );
+						ret.appendValue(i, k, v);
+					}
 				}
 			}
 		}
@@ -536,7 +563,8 @@ public class LibMatrixBincell
 	private static void safeBinaryMVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
-		boolean skipEmpty = (op.fn instanceof Multiply);
+		boolean isMultiply = (op.fn instanceof Multiply);
+		boolean skipEmpty = (isMultiply);
 		int rlen = m1.rlen;
 		int clen = m1.clen;
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
@@ -555,7 +583,19 @@ public class LibMatrixBincell
 			{
 				//replicate vector value
 				double v2 = m2.quickGetValue(i, 0);
-				if( !skipEmpty || v2 != 0 ) {//skip zero rows
+				if( skipEmpty && v2 == 0 ) //skip zero rows
+					continue;
+				
+				if(isMultiply && v2 == 1) //ROW COPY
+				{
+					for( int j=0; j<clen; j++ )
+					{
+						double v1 = m1.quickGetValue(i, j);
+						ret.appendValue(i, j, v1);		
+					}
+				}
+				else //GENERAL CASE
+				{
 					for( int j=0; j<clen; j++ )
 					{
 						double v1 = m1.quickGetValue(i, j);

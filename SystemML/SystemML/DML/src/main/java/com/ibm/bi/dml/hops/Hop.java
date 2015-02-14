@@ -1043,9 +1043,10 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.INTERQUANTILE, "interquantile");
 		HopsOpOp2String.put(OpOp2.IQM, "IQM");
 		HopsOpOp2String.put(OpOp2.MEDIAN, "median");
-		HopsOpOp2String.put(OpOp2.CENTRALMOMENT, "centraMoment");
+		HopsOpOp2String.put(OpOp2.CENTRALMOMENT, "cm");
 		HopsOpOp2String.put(OpOp2.COVARIANCE, "cov");
-		HopsOpOp2String.put(OpOp2.APPEND, "APP");
+		HopsOpOp2String.put(OpOp2.APPEND, "app");
+		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
 	}
 	
 	public static String getOpOp2String( OpOp2 op ) {
@@ -1058,7 +1059,7 @@ public abstract class Hop
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
 		HopsOpOp3String.put(OpOp3.INTERQUANTILE, "interquantile");
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
-		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "centraMoment");
+		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "cm");
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 	}
 

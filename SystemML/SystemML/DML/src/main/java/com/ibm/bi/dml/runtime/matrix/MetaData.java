@@ -32,4 +32,7 @@ public abstract class MetaData
 	
 	@Override
 	public abstract String toString();
+	
+	@Override 
+	public abstract Object clone();
 }

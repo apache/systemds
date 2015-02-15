@@ -58,4 +58,13 @@ public class MatrixDimensionsMetaData extends MetaData
 			   ", rpb = " + matchar.getRowsPerBlock() + 
 			   ", cpb = " + matchar.getColsPerBlock() + "]"; 
 	}
+	
+	@Override
+	public Object clone()
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics(matchar);
+		MatrixDimensionsMetaData ret = new MatrixDimensionsMetaData(mc);
+		
+		return ret;
+	}
 }

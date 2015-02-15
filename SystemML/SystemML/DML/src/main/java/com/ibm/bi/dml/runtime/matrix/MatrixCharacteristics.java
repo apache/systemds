@@ -75,6 +75,11 @@ public class MatrixCharacteristics
 	{
 		set(nr, nc, bnr, bnc, nnz);
 	}
+	
+	public MatrixCharacteristics(MatrixCharacteristics that)
+	{
+		set(that.numRows, that.numColumns, that.numRowsPerBlock, that.numColumnsPerBlock, that.nonZero);
+	}
 
 	public void set(long nr, long nc, int bnr, int bnc) {
 		numRows = nr;

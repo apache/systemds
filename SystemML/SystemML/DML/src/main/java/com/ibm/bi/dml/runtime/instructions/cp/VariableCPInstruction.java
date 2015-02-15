@@ -458,7 +458,9 @@ public class VariableCPInstruction extends CPInstruction
 				MatrixObject mobj = new MatrixObject(input1.getValueType(), fname );
 				mobj.setVarName(input1.getName());
 				mobj.setDataType(DataType.MATRIX);
-				mobj.setMetaData(metadata);
+				//clone meta data because it is updated on copy-on-write, otherwise there
+				//is potential for hidden side effects between variables.
+				mobj.setMetaData((MetaData)metadata.clone());
 				mobj.setFileFormatProperties(formatProperties);
 				
 				ec.setVariable(input1.getName(), mobj);

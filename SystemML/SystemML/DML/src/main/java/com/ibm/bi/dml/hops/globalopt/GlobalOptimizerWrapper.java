@@ -7,12 +7,16 @@
 
 package com.ibm.bi.dml.hops.globalopt;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.enumerate.GlobalEnumerationOptimizer;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GraphBuilder;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -23,22 +27,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  * Main entry point for Global Data Flow Optimization. It is intended to be invoked after 
  * the initial runtime program was created (and thus with constructed hops and lops).
  * 
- * Initial implementation by Mathias Peters.
- * 
- * MB Solved issues
- * - Merge and cleanup with BI repository
- * - NPEs on DAG piggypacking while costing enumerated plans
- * - Cleanup: removed unnecessary classes and methods
- * 
- * 
- * MB Open Issues TODO
- * - Non-deterministic behavior (different optimal plans generated) 
- * - Many unnecessary reblocks generated into "optimal" plan
- * - No lops modifications (pure configuration on hops level) for integration with dyn recompile
- * - Consolidate properties, configurations, params, options etc into property/config
- * 
- * Additional Ideas Experiments
- * - replication-factor -> any usecase that uses read-only matrices in loops (e.g., logistic regression)
  * 
  */
 public class GlobalOptimizerWrapper 
@@ -77,8 +65,13 @@ public class GlobalOptimizerWrapper
 		//create optimizer instance
 		GlobalOptimizer optimizer = createGlobalOptimizer( OPTIM );
 		
-		//core optimization
-		rtprog = optimizer.optimize(prog, rtprog);
+		//create global data flow graph
+		ArrayList<GDFNode> roots = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
+		for( GDFNode node : roots )
+			System.out.println(node+":\n"+node.explain(1));
+		
+		//core optimization FIXME work on new global data flow graph
+		//rtprog = optimizer.optimize(prog, rtprog);
 		
 		LOG.info("Finished optimization in " + time.stop() + " ms.");
 		return rtprog;

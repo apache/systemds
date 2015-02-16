@@ -26,8 +26,6 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.HopsDag;
 import com.ibm.bi.dml.hops.globalopt.LoopOp;
 import com.ibm.bi.dml.hops.globalopt.MergeOp;
-import com.ibm.bi.dml.hops.globalopt.PrintVisitor;
-import com.ibm.bi.dml.hops.globalopt.RefreshMetaDataVisitor;
 import com.ibm.bi.dml.hops.globalopt.SplitOp;
 import com.ibm.bi.dml.hops.globalopt.LoopOp.LoopType;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -77,27 +75,9 @@ public class GlobalGraphCreator
 	}
 	
 	private void refreshMetaData(Map<String, HopsDag> inVars) {
-		for(HopsDag dag : inVars.values()) {
-			RefreshMetaDataVisitor visitor = new RefreshMetaDataVisitor();
-			visitor.initialize(dag);
-		}
 		
 	}
 
-	public Map<String, HopsDag> createGraph(Program program, boolean print) throws HopsException {
-		this.createGraph(program);
-		if(print) {
-			for(String var : this.varNameToMggs.keySet()) {
-				HopsDag dag = this.varNameToMggs.get(var);
-				PrintVisitor v = new PrintVisitor(null);
-				for(String outVarName : dag.getDagOutputs().keySet()) {
-					dag.getDagOutputs().get(outVarName).accept(v);
-				}
-			}
-		}
-		return this.varNameToMggs;
-	}
-	
 
 	/**
 	 * @param b

@@ -780,7 +780,7 @@ public class DMLScript
 		if(OptimizerUtils.isOptLevel(OptimizationLevel.O3_GLOBAL_TIME_MEMORY) ) 
 		{
 			LOG.warn("Optimization level '" + OptimizationLevel.O3_GLOBAL_TIME_MEMORY + "' " +
-					 "is still in experimental state and not intended for productive use.");
+					 "is still in experimental state and not intended for production use.");
 			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
 		}
 		

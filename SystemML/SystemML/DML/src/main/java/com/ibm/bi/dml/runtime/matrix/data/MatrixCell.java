@@ -367,22 +367,22 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null)
-			ctable.execute(this.value, c2.value, c3.value, ctableResult);
+			ctable.execute(this.value, c2.value, c3.value, false, ctableResult);
 		else
-			ctable.execute(this.value, c2.value, c3.value, ctableResultBlock);
+			ctable.execute(this.value, c2.value, c3.value, false, ctableResultBlock);
 	}
 
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue that,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public void tertiaryOperations(Operator op, MatrixValue that, double scalarThat2, boolean ignoreZeros, 
+			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null)
-			ctable.execute(this.value, c2.value, scalarThat2, ctableResult);		
+			ctable.execute(this.value, c2.value, scalarThat2, ignoreZeros, ctableResult);		
 		else
-			ctable.execute(this.value, c2.value, scalarThat2, ctableResultBlock);		
+			ctable.execute(this.value, c2.value, scalarThat2, ignoreZeros, ctableResultBlock);		
 	}
 
 	@Override
@@ -392,9 +392,9 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	{
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null)
-			ctable.execute(this.value, scalarThat, scalarThat2, ctableResult);		
+			ctable.execute(this.value, scalarThat, scalarThat2, false, ctableResult);		
 		else
-			ctable.execute(this.value, scalarThat, scalarThat2, ctableResultBlock);		
+			ctable.execute(this.value, scalarThat, scalarThat2, false, ctableResultBlock);		
 	}
 	
 	@Override
@@ -406,15 +406,15 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null ) {
 			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, ctableResult);		
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, ctableResult);		
 			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, ctableResult);			
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, ctableResult);			
 		} 
 		else {
 			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, ctableResultBlock);		
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, ctableResultBlock);		
 			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, ctableResultBlock);			
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, ctableResultBlock);			
 		}
 	}
 
@@ -426,9 +426,9 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null)
-			ctable.execute(this.value, scalarThat, c3.value, ctableResult);
+			ctable.execute(this.value, scalarThat, c3.value, false, ctableResult);
 		else 
-			ctable.execute(this.value, scalarThat, c3.value, ctableResultBlock);
+			ctable.execute(this.value, scalarThat, c3.value, false, ctableResultBlock);
 
 	}
 

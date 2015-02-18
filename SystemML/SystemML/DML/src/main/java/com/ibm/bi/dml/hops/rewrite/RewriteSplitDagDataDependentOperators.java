@@ -237,7 +237,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		//#1 removeEmpty
 		if(    hop instanceof ParameterizedBuiltinOp 
 			&& ((ParameterizedBuiltinOp) hop).getOp()==ParamBuiltinOp.RMEMPTY 
-			&& !noSplitRequired )
+			&& !noSplitRequired
+			&& !(hop.getParent().size()==1 && hop.getParent().get(0) instanceof TertiaryOp 
+			     && ((TertiaryOp)hop.getParent().get(0)).isMatrixIgnoreZeroRewriteApplicable()))
 		{
 			ParameterizedBuiltinOp pbhop = (ParameterizedBuiltinOp)hop;
 			cand.add(pbhop);

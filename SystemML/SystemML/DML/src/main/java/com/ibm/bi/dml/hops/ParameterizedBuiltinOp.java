@@ -109,6 +109,13 @@ public class ParameterizedBuiltinOp extends Hop
 		_outputPermutationMatrix = flag;
 	}
 	
+	public Hop getTargetHop()
+	{
+		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
+		
+		return targetHop;
+	}
+	
 	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 
@@ -862,7 +869,5 @@ public class ParameterizedBuiltinOp extends Hop
 				&& ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
 				&& targetHop.getInput().get(0).getDim2() == 1 ); 
 	}
-
-	
 	
 }

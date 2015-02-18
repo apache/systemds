@@ -100,7 +100,7 @@ public class OperationsOnMatrixValues
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, valueIn2, scalarIn3, ctableResult, ctableResultBlock);
+		valueIn1.tertiaryOperations(op, valueIn2, scalarIn3, false, ctableResult, ctableResultBlock);
 	}
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)

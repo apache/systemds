@@ -4998,7 +4998,7 @@ public class MatrixBlock extends MatrixValue
 				{
 					double v1 = this.quickGetValue(i, j);
 					double w = that2.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultMap);
+					ctable.execute(v1, v2, w, false, resultMap);
 				}
 		}
 		else {
@@ -5007,7 +5007,7 @@ public class MatrixBlock extends MatrixValue
 				{
 					double v1 = this.quickGetValue(i, j);
 					double w = that2.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultBlock);
+					ctable.execute(v1, v2, w, false, resultBlock);
 				}
 			resultBlock.recomputeNonZeros();
 		}
@@ -5037,7 +5037,7 @@ public class MatrixBlock extends MatrixValue
 				for( int j=0; j<clen; j++ )
 				{
 					double v1 = this.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultMap);
+					ctable.execute(v1, v2, w, false, resultMap);
 				}
 		}
 		else {
@@ -5045,7 +5045,7 @@ public class MatrixBlock extends MatrixValue
 				for( int j=0; j<clen; j++ )
 				{
 					double v1 = this.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultBlock);
+					ctable.execute(v1, v2, w, false, resultBlock);
 				}	
 			resultBlock.recomputeNonZeros();
 		}		
@@ -5074,9 +5074,9 @@ public class MatrixBlock extends MatrixValue
 				{
 					double v1 = this.quickGetValue(i, j);
 					if( left )
-						ctable.execute(offset+i+1, v1, w, resultMap);
+						ctable.execute(offset+i+1, v1, w, false, resultMap);
 					else
-						ctable.execute(v1, offset+i+1, w, resultMap);
+						ctable.execute(v1, offset+i+1, w, false, resultMap);
 				}
 		}
 		else {
@@ -5085,9 +5085,9 @@ public class MatrixBlock extends MatrixValue
 				{
 					double v1 = this.quickGetValue(i, j);
 					if( left )
-						ctable.execute(offset+i+1, v1, w, resultBlock);
+						ctable.execute(offset+i+1, v1, w, false, resultBlock);
 					else
-						ctable.execute(v1, offset+i+1, w, resultBlock);
+						ctable.execute(v1, offset+i+1, w, false, resultBlock);
 				}
 			resultBlock.recomputeNonZeros();
 		}
@@ -5100,38 +5100,72 @@ public class MatrixBlock extends MatrixValue
 	 * (i1,j1,v1) from input1 (this)
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
+	 * 
+	 * NOTE: This method supports both vectors and matrices. In case of matrices and ignoreZeros=true
+	 * we can also use a sparse-safe implementation
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue thatVal,
-			double scalarThat2, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+	public void tertiaryOperations(Operator op, MatrixValue thatVal, double scalarThat2, boolean ignoreZeros,
+			     HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
+		//setup ctable computation
 		MatrixBlock that = checkType(thatVal);
 		CTable ctable = CTable.getCTableFnObject();
 		double w = scalarThat2;
 		
-		//sparse-unsafe ctable execution
-		//(because input values of 0 are invalid and have to result in errors) 
-		if ( resultBlock == null ) {
+		if( ignoreZeros //SPARSE-SAFE & SPARSE INPUTS
+			&& this.sparse && that.sparse )
+		{
+			//note: only used if both inputs have aligned zeros, which
+			//allows us to infer that the nnz both inputs are equivalent
+			
+			//early abort on empty blocks possible
+			if( this.isEmptyBlock(false) && that.isEmptyBlock(false) )
+				return;
+			
+			SparseRow[] a = this.sparseRows;
+			SparseRow[] b = that.sparseRows;
+			for( int i=0; i<rlen; i++ )
+			{
+				SparseRow arow = a[i];
+				SparseRow brow = b[i];
+				if( arow != null && !arow.isEmpty() )
+				{
+					int alen = arow.size();
+					double[] avals = arow.getValueContainer();
+					double[] bvals = brow.getValueContainer();
+					
+					if( resultBlock == null ) {
+						for( int j=0; j<alen; j++ )
+							ctable.execute(avals[j], bvals[j], w, ignoreZeros, resultMap);		
+					}
+					else {
+						for( int j=0; j<alen; j++ )
+							ctable.execute(avals[j], bvals[j], w, ignoreZeros, resultBlock);			
+					}
+				}
+			}	
+		}
+		else //SPARSE-UNSAFE | GENERIC INPUTS
+		{
+			//sparse-unsafe ctable execution
+			//(because input values of 0 are invalid and have to result in errors) 
 			for( int i=0; i<rlen; i++ )
 				for( int j=0; j<clen; j++ )
 				{
 					double v1 = this.quickGetValue(i, j);
 					double v2 = that.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultMap);
+					if( resultBlock == null )
+						ctable.execute(v1, v2, w, ignoreZeros, resultMap);
+					else
+						ctable.execute(v1, v2, w, ignoreZeros, resultBlock);
 				}
 		}
-		else {
-			for( int i=0; i<rlen; i++ ){
-				for( int j=0; j<clen; j++ )
-				{
-					double v1 = this.quickGetValue(i, j);
-					double v2 = that.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultBlock);
-				}
-			}
+		
+		//maintain nnz (if necessary)
+		if( resultBlock!=null )
 			resultBlock.recomputeNonZeros();
-		}
 	}
 	
 	/**
@@ -5195,7 +5229,7 @@ public class MatrixBlock extends MatrixValue
 					double v1 = this.quickGetValue(i, j);
 					double v2 = that.quickGetValue(i, j);
 					double w = that2.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultMap);
+					ctable.execute(v1, v2, w, false, resultMap);
 				}		
 		}
 		else 
@@ -5206,7 +5240,7 @@ public class MatrixBlock extends MatrixValue
 					double v1 = this.quickGetValue(i, j);
 					double v2 = that.quickGetValue(i, j);
 					double w = that2.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, resultBlock);
+					ctable.execute(v1, v2, w, false, resultBlock);
 				}
 			resultBlock.recomputeNonZeros();
 		}

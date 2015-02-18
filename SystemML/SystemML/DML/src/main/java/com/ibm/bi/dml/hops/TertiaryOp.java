@@ -62,7 +62,7 @@ public class TertiaryOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITE = true;
+	public static boolean ALLOW_CTABLE_SEQUENCE_REWRITES = true;
 	
 	private OpOp3 _op = null;
 	
@@ -386,8 +386,15 @@ public class TertiaryOp extends Hop
 		{	
 			//for CP we support only ctable expand left
 			Tertiary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			boolean ignoreZeros = false;
 			
-			Tertiary tertiary = new Tertiary(inputLops, tertiaryOp, getDataType(), getValueType(), et);
+			if( isMatrixIgnoreZeroRewriteApplicable() ) { 
+				ignoreZeros = true; //table - rmempty - rshape
+				inputLops[0] = ((ParameterizedBuiltinOp)getInput().get(0)).getTargetHop().getInput().get(0).constructLops();
+				inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
+			}
+			
+			Tertiary tertiary = new Tertiary(inputLops, tertiaryOp, getDataType(), getValueType(), ignoreZeros, et);
 			
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -1083,7 +1090,7 @@ public class TertiaryOp extends Hop
 		boolean ret = false;
 		
 		//early abort if rewrite globally not allowed
-		if( !ALLOW_CTABLE_SEQUENCE_REWRITE )
+		if( !ALLOW_CTABLE_SEQUENCE_REWRITES )
 			return ret;
 		
 		try
@@ -1123,6 +1130,72 @@ public class TertiaryOp extends Hop
 			//ret = false;
 		}
 			
+		return ret;
+	}
+	
+	/**
+	 * Used for (1) constructing CP lops (hop-lop rewrite), and (2) in order to determine
+	 * if dag split after removeEmpty necessary (#2 is precondition for #1). 
+	 * 
+	 * @return
+	 */
+	public boolean isMatrixIgnoreZeroRewriteApplicable() 
+	{
+		boolean ret = false;
+		
+		//early abort if rewrite globally not allowed
+		if( !ALLOW_CTABLE_SEQUENCE_REWRITES || _op!=OpOp3.CTABLE )
+			return ret;
+		
+		try
+		{
+			//1) check for ctable CTABLE_TRANSFORM_SCALAR_WEIGHT
+			if( getInput().size()==2 || (getInput().size()>2 && getInput().get(2).getDataType()==DataType.SCALAR) )
+			{
+				Hop input1 = getInput().get(0);
+				Hop input2 = getInput().get(1);
+				//2) check for remove empty pair 
+				if( input1.getDataType() == DataType.MATRIX && input2.getDataType() == DataType.MATRIX 
+					&& input1 instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)input1).getOp()==ParamBuiltinOp.RMEMPTY
+					&& input2 instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)input2).getOp()==ParamBuiltinOp.RMEMPTY )
+				{
+					ParameterizedBuiltinOp pb1 = (ParameterizedBuiltinOp)input1;
+					ParameterizedBuiltinOp pb2 = (ParameterizedBuiltinOp)input2;
+					Hop pbin1 = pb1.getTargetHop();
+					Hop pbin2 = pb2.getTargetHop();
+					
+					//3) check for reshape pair
+					if(    pbin1 instanceof ReorgOp && ((ReorgOp)pbin1).getOp()==ReOrgOp.RESHAPE
+						&& pbin2 instanceof ReorgOp && ((ReorgOp)pbin2).getOp()==ReOrgOp.RESHAPE )
+					{
+						//4) check common non-zero input (this allows to infer two things: 
+						//(a) that the dims are equivalent, and zero values for remove empty are aligned)
+						Hop left = pbin1.getInput().get(0);
+						Hop right = pbin2.getInput().get(0);
+						if(    left instanceof BinaryOp && ((BinaryOp)left).getOp()==OpOp2.MULT
+							&& left.getInput().get(0) instanceof BinaryOp && ((BinaryOp)left.getInput().get(0)).getOp()==OpOp2.NOTEQUAL
+							&& left.getInput().get(0).getInput().get(1) instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left.getInput().get(0).getInput().get(1))==0 
+							&& left.getInput().get(0).getInput().get(0) == right ) //relies on CSE
+						{	
+							ret = true;
+						}
+						else if(    right instanceof BinaryOp && ((BinaryOp)right).getOp()==OpOp2.MULT
+							&& right.getInput().get(0) instanceof BinaryOp && ((BinaryOp)right.getInput().get(0)).getOp()==OpOp2.NOTEQUAL
+							&& right.getInput().get(0).getInput().get(1) instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)right.getInput().get(0).getInput().get(1))==0 
+							&& right.getInput().get(0).getInput().get(0) == left ) //relies on CSE
+						{
+							ret = true;
+						}
+					}
+				}			
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new RuntimeException(ex);
+			//ret = false;
+		}
+		
 		return ret;
 	}
 }

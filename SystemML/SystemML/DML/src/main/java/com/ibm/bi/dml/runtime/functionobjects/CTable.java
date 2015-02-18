@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class CTable extends ValueFunction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static CTable singleObj = null;
@@ -112,7 +112,7 @@ public class CTable extends ValueFunction
 	 * @param ctableResult
 	 * @throws DMLRuntimeException
 	 */
-	public void execute(double v1, double v2, double w, HashMap<MatrixIndexes, Double> ctableResult) 
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, HashMap<MatrixIndexes, Double> ctableResult) 
 		throws DMLRuntimeException 
 	{	
 		// If any of the values are NaN (i.e., missing) then 
@@ -124,8 +124,14 @@ public class CTable extends ValueFunction
 		// safe casts to long for consistent behavior with indexing
 		long row = UtilFunctions.toLong( v1 );
 		long col = UtilFunctions.toLong( v2 );
-				
-		if ( row <= 0 || col <= 0 ) {
+		
+		// skip this entry as it does not fall within specified output dimensions
+		if( ignoreZeros && row == 0 && col == 0 ) {
+			return;
+		}
+		
+		//check for incorrect ctable inputs
+		if( row <= 0 || col <= 0 ) {
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
 		} 
 		
@@ -144,7 +150,7 @@ public class CTable extends ValueFunction
 	 * @param ctableResult
 	 * @throws DMLRuntimeException
 	 */
-	public void execute(double v1, double v2, double w, MatrixBlock ctableResult) 
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, MatrixBlock ctableResult) 
 		throws DMLRuntimeException 
 	{	
 		// If any of the values are NaN (i.e., missing) then 
@@ -156,14 +162,21 @@ public class CTable extends ValueFunction
 		// safe casts to long for consistent behavior with indexing
 		long row = UtilFunctions.toLong( v1 );
 		long col = UtilFunctions.toLong( v2 );
-				
-		if ( row <= 0 || col <= 0 ) {
-			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
-		} 
 		
 		// skip this entry as it does not fall within specified output dimensions
-		if ( row > ctableResult.getNumRows() || col > ctableResult.getNumColumns() )
+		if( ignoreZeros && row == 0 && col == 0 ) {
 			return;
+		}
+		
+		//check for incorrect ctable inputs
+		if( row <= 0 || col <= 0 ) {
+			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
+		}
+		
+		// skip this entry as it does not fall within specified output dimensions
+		if( row > ctableResult.getNumRows() || col > ctableResult.getNumColumns() ) {
+			return;
+		}
 		
 		ctableResult.addValue((int)row-1, (int)col-1, w);
 	}

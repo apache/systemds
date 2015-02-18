@@ -169,10 +169,10 @@ public class CTableSequenceTest extends AutomatedTestBase
 		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		boolean rewriteOld = TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITE;
+		boolean rewriteOld = TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
 		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITE = rewrite;
+		TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewrite;
 		
 		try
 		{
@@ -214,7 +214,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
-			TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITE = rewriteOld;
+			TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
 		}
 	}
 

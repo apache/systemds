@@ -302,7 +302,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void tertiaryOperations(Operator op, MatrixValue that,
-			double scalarThat2,
+			double scalarThat2, boolean ignoreZeros,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");

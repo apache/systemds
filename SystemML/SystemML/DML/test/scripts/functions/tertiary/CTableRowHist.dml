@@ -1,0 +1,19 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A = read($1, format="text");            
+
+IA = ppred (A, 0, "!=") * seq (1, nrow (A), 1);
+IA = matrix (IA, rows = (nrow (A) * ncol(A)), cols = 1, byrow = FALSE);
+VA = matrix ( A, rows = (nrow (A) * ncol(A)), cols = 1, byrow = FALSE);
+IA = removeEmpty (target = IA, margin = "rows");
+VA = removeEmpty (target = VA, margin = "rows");
+B = table (IA, VA, nrow(A), max(A));
+
+write(B, $2, format="text");

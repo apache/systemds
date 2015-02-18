@@ -26,6 +26,8 @@ public class Tertiary extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private boolean _ignoreZeros = false;
+	
 	public enum OperationTypes { 
 		CTABLE_TRANSFORM, 
 		CTABLE_TRANSFORM_SCALAR_WEIGHT, 
@@ -38,8 +40,13 @@ public class Tertiary extends Lop
 	
 
 	public Tertiary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		this(inputLops, op, dt, vt, false, et);
+	}
+	
+	public Tertiary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
 		super(Lop.Type.Tertiary, dt, vt);
 		init(inputLops, op, et);
+		_ignoreZeros = ignoreZeros;
 	}
 	
 	private void init(Lop[] inputLops, OperationTypes op, ExecType et) {
@@ -170,6 +177,9 @@ public class Tertiary extends Lop
 			sb.append( OPERAND_DELIMITOR ); 
 		}
 		sb.append( this.prepOutputOperand(output));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _ignoreZeros );
 		
 		return sb.toString();
 	}

@@ -152,7 +152,7 @@ public abstract class MatrixValue implements WritableComparable
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
-	public abstract void tertiaryOperations(Operator op, MatrixValue that, double scalar_that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void tertiaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)

@@ -407,6 +407,31 @@ public class DataConverter
 		
 		return mb;
 	}
+	
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock( HashMap<MatrixIndexes,Double> map, int rlen, int clen )
+	{
+		int nnz = map.size();
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
+		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
+		
+		// copy map values into new block
+		for (MatrixIndexes index : map.keySet()) 
+		{
+			int rix = (int)index.getRowIndex();
+			int cix = (int)index.getColumnIndex();
+			double value  = map.get(index).doubleValue();
+			
+			if( value != 0 && rix<=rlen && cix<=clen )
+				mb.quickSetValue( rix-1, cix-1, value );
+		}
+		
+		return mb;
+	}
 
 	
 	/**

@@ -35,10 +35,11 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 	private boolean _dim1Literal; 
 	private boolean _dim2Literal;
 	private boolean _isExpand;
+	private boolean _ignoreZeros;
 	
 	public TertiaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
 							 String outputDim1, boolean dim1Literal,String outputDim2, boolean dim2Literal, 
-							 boolean isExpand, String opcode, String istr )
+							 boolean isExpand, boolean ignoreZeros, String opcode, String istr )
 	{
 		super(op, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
@@ -46,11 +47,12 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		_outDim2 = outputDim2;
 		_dim2Literal = dim2Literal;
 		_isExpand = isExpand;
+		_ignoreZeros = ignoreZeros;
 	}
 
 	public static TertiaryCPInstruction parseInstruction(String inst) throws DMLRuntimeException{
 		
-		InstructionUtils.checkNumFields ( inst, 6 );
+		InstructionUtils.checkNumFields ( inst, 7 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
@@ -71,9 +73,10 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		String[] dim2Fields = parts[5].split(Instruction.LITERAL_PREFIX);
 
 		CPOperand out = new CPOperand(parts[6]);
+		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, opcode, inst);
+		return new TertiaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
 	}
 	
 /*	static TertiaryOperator getTertiaryOperator(String opcode) throws DMLRuntimeException{
@@ -101,46 +104,50 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		Tertiary.OperationTypes ctableOp = findCtableOperation();
 		ctableOp = _isExpand ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
-		long _outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
-		long _outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
+		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
+		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
 		
-		boolean outputDimsKnown = (_outputDim1 != -1 && _outputDim2 != -1);
+		boolean outputDimsKnown = (outputDim1 != -1 && outputDim2 != -1);
 		if ( outputDimsKnown ) {
 			int inputRows = matBlock1.getNumRows();
-			boolean sparse = (inputRows < _outputDim1*_outputDim2);
-			resultBlock = new MatrixBlock((int)_outputDim1, (int)_outputDim2, sparse);
+			int inputCols = matBlock1.getNumColumns();
+			boolean sparse = (inputRows*inputCols < outputDim1*outputDim2);
+			//only create result block if dense; it is important not to aggregate on sparse result
+			//blocks because it would implicitly turn the O(N) algorithm into O(N log N). 
+			if( !sparse )
+				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false); 
 		}
 		if( _isExpand ){
 			resultBlock = new MatrixBlock( matBlock1.getNumRows(), Integer.MAX_VALUE, true );
 		}
 		
 		switch(ctableOp) {
-		case CTABLE_TRANSFORM:
+		case CTABLE_TRANSFORM: //(VECTOR)
 			// F=ctable(A,B,W)
 			matBlock2 = ec.getMatrixInput(input2.getName());
 			wtBlock = ec.getMatrixInput(input3.getName());
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, ctableMap, resultBlock);
 			break;
-		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
+		case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = ec.getMatrixInput(input2.getName());
 			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, ctableMap, resultBlock);
+			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, _ignoreZeros, ctableMap, resultBlock);
 			break;
-		case CTABLE_EXPAND_SCALAR_WEIGHT:
+		case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 			// F = ctable(seq,A) or F = ctable(seq,B,1)
 			matBlock2 = ec.getMatrixInput(input2.getName());
 			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			// only resultBlock.rlen known, resultBlock.clen set in operation
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, matBlock2, cst1, resultBlock);
 			break;
-		case CTABLE_TRANSFORM_HISTOGRAM:
+		case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
 			cst2 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)_optr, cst1, cst2, ctableMap, resultBlock);
 			break;
-		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
+		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 			// F=ctable(A,1,W)
 			wtBlock = ec.getMatrixInput(input3.getName());
 			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
@@ -158,8 +165,14 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		if(input3.getDataType() == DataType.MATRIX)
 			ec.releaseMatrixInput(input3.getName());
 		
-		if ( resultBlock == null )
-			resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
+		if ( resultBlock == null ){
+			//we need to respect potentially specified output dimensions here, because we might have 
+			//decided for hash-aggregation just to prevent inefficiency in case of sparse outputs.  
+			if( outputDimsKnown )
+				resultBlock = DataConverter.convertToMatrixBlock( ctableMap, (int)outputDim1, (int)outputDim2 );
+			else
+				resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
+		}
 		else
 			resultBlock.examSparsity();
 		

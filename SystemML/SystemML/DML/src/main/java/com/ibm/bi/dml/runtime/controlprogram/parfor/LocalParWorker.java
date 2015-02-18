@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
+import java.util.Collection;
+
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -26,6 +28,8 @@ public class LocalParWorker extends ParWorker implements Runnable
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected LocalTaskQueue<Task> _taskQueue   = null;
+	
+	protected Collection<String> _fnNames = null;
 	
 	protected boolean   _stopped     = false;
 	protected int 		_max_retry   = -1;
@@ -47,6 +51,16 @@ public class LocalParWorker extends ParWorker implements Runnable
 	public void setStopped()
 	{
 		_stopped = true;
+	}
+	
+	public void setFunctionNames(Collection<String> fnNames)
+	{
+		_fnNames = fnNames;
+	}
+	
+	public Collection<String> getFunctionNames()
+	{
+		return _fnNames;
 	}
 	
 	@Override

@@ -205,7 +205,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ){
@@ -292,7 +292,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS )
@@ -354,7 +354,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		return newInst;
 	}
@@ -406,7 +406,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		return newInst;
 	}

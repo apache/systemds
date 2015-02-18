@@ -27,6 +27,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -480,6 +481,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
+		System.out.println("PARFOR: num func: "+getProgram().getFunctionProgramBlocks().size());
+		
+		
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
 		// add the iterable predicate variable to the variable set
@@ -572,7 +576,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//cleanup unpinned shared variables
 		cleanupSharedVariables(ec, varState);
-		
 		
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getLongValue() ); //consistent with for
@@ -718,6 +721,17 @@ public class ParForProgramBlock extends ForProgramBlock
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
 					                    localVariables );
+			
+			// Step 5) cleanup local parworkers (e.g., remove created functions)
+			for( int i=0; i<_numThreads; i++ )
+			{
+				Collection<String> fnNames = workers[i].getFunctionNames();
+				if( fnNames!=null && !fnNames.isEmpty() )
+					for( String fn : fnNames ) {
+						String[] parts = DMLProgram.splitFunctionKey(fn);
+						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
+					}
+			}
 		}
 		finally 
 		{
@@ -729,8 +743,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( _enableRuntimePiggybacking )
 				RuntimePiggybacking.stop();
 			
-			if( _monitor ) 
-			{
+			if( _monitor )  {
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
@@ -1155,7 +1168,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			//create deep copies of required elements
 			//child blocks
-			ArrayList<ProgramBlock> cpChildBlocks = null;		
+			ArrayList<ProgramBlock> cpChildBlocks = null;	
+			HashSet<String> fnNames = new HashSet<String>();
 			if( USE_PB_CACHE )
 			{
 				if( _pbcache.containsKey(pwID) )
@@ -1164,13 +1178,13 @@ public class ParForProgramBlock extends ForProgramBlock
 				}
 				else
 				{
-					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false, false); 
+					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), fnNames, false, false); 
 					_pbcache.put(pwID, cpChildBlocks);
 				}
 			}
 			else
 			{
-				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false, false); 
+				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), fnNames, false, false); 
 			}             
 			
 			// Deep copy Execution Context
@@ -1179,6 +1193,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//create the actual parallel worker
 			ParForBody body = new ParForBody( cpChildBlocks, _resultVars, cpEc );
 			pw = new LocalParWorker( pwID, queue, body, MAX_RETRYS_ON_ERROR, _monitor );
+			pw.setFunctionNames(fnNames);
 		}
 		catch(Exception ex)
 		{

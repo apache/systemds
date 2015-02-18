@@ -2334,7 +2334,7 @@ public class OptimizerRuleBased extends Optimizer
 				Program prog = parfor.getProgram();
 				DMLProgram dmlprog = parfor.getStatementBlock().getDMLProg();
 				FunctionProgramBlock fpb = prog.getFunctionProgramBlock(fnamespace, fname);	
-				FunctionProgramBlock copyfpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<String>());
+				FunctionProgramBlock copyfpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<String>(), new HashSet<String>());
 				prog.addFunctionProgramBlock(fnamespace, fnameNew, copyfpb);
 				dmlprog.addFunctionStatementBlock(fnamespace, fnameNew, (FunctionStatementBlock)copyfpb.getStatementBlock());
 				

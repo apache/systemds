@@ -40,8 +40,8 @@ public class Program
 	 * @param fname
 	 * @param fpb
 	 */
-	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
-		
+	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb)
+	{	
 		if (namespace == null) 
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
@@ -53,6 +53,24 @@ public class Program
 		}
 		
 		namespaceBlocks.put(fname,fpb);
+	}
+	
+	/**
+	 * 
+	 * @param namespace
+	 * @param fname
+	 */
+	public synchronized void removeFunctionProgramBlock(String namespace, String fname) 
+	{	
+		if (namespace == null) 
+			namespace = DMLProgram.DEFAULT_NAMESPACE;
+		
+		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
+		if( _namespaceFunctions.containsKey(namespace) ){
+			namespaceBlocks = _namespaceFunctions.get(namespace);
+			if( namespaceBlocks.containsKey(fname) )
+				namespaceBlocks.remove(fname);
+		}
 	}
 	
 	/**

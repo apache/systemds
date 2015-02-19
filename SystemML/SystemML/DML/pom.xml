@@ -156,39 +156,6 @@
           </execution>
         </executions>
       </plugin>
-      
-      <plugin>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>rpm-maven-plugin</artifactId>
-			<version>2.1.2</version>
-			<extensions>true</extensions>
-			<executions>
-				<execution>
-					<id>generate-rpm</id>
-					<goals>
-						<goal>rpm</goal>
-					</goals>
-				</execution>
-			</executions>
-			<configuration>
-				<group>Application/BigInsights</group>
-				<needarch>false</needarch>
-				<mappings>
-            		<mapping>
-              			<directory>${installDir}/bigr</directory>
-              			<filemode>775</filemode>
-              			<username>${username}</username>
-              			<groupname>${groupname}</groupname>
-              			<sources>
-                			<source>
-                  				<location>${basedir}/target/system-ml-3.5-SNAPSHOT-distrib.tar.gz</location>
-                  				<destination>SystemML-3.5.tar.gz</destination>
-                			</source>
-              			</sources>
-            		</mapping>
-				</mappings>
-			</configuration>
-		</plugin>
 
 		</plugins>
 

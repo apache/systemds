@@ -34,6 +34,7 @@
 	
   <modules>
     <module>DML</module>
+    <module>systemml-installer</module>
    </modules>
 
   <build>

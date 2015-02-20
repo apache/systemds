@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -137,25 +135,29 @@ public class MRJobInstruction extends Instruction
 	public MRJobInstruction(MRJobInstruction that) 
 		throws IllegalArgumentException, IllegalAccessException 
 	{
-		this(that.getJobType());
-		Class<MRJobInstruction> cla = MRJobInstruction.class;
+		this( that.jobType );
 		
-		//copy fields
-		Field[] fields = cla.getDeclaredFields();
-		for( Field f : fields )
-		{
-			f.setAccessible(true);
-			if(!Modifier.isStatic(f.getModifiers()))
-				f.set(this, f.get(that));
-		}
+		//copy all static variables (but no need to copy variables that are
+		//overwritten in extractInputMatrices/extractOutputMatrices anyway)
 		
-		//replace inputs/outputs (arrays)
+		//copy basic variables
+		_randInstructions         = that._randInstructions;
+		_recordReaderInstructions = that._recordReaderInstructions;
+		_mapperInstructions       = that._mapperInstructions; 
+		_shuffleInstructions      = that._shuffleInstructions; 
+		_aggInstructions          = that._aggInstructions;
+		_otherInstructions        = that._otherInstructions;
+		iv_numReducers            = that.iv_numReducers;
+		iv_replication            = that.iv_replication;
+		dimsUnknownFilePrefix     = that.dimsUnknownFilePrefix;
+		_mapperMem                = that._mapperMem;
+		MRJobInstructionsLineNumbers = that.MRJobInstructionsLineNumbers;
+		
+		//copy array variables (via clone)
 		inputVars = that.inputVars.clone();
 		outputVars = that.outputVars.clone();
 		_resultIndices = that._resultIndices.clone();
 	}	
-	
-	
 	
 	public JobType getJobType()
 	{

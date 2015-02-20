@@ -137,9 +137,6 @@ public class MRJobInstruction extends Instruction
 	{
 		this( that.jobType );
 		
-		//copy all static variables (but no need to copy variables that are
-		//overwritten in extractInputMatrices/extractOutputMatrices anyway)
-		
 		//copy basic variables
 		_randInstructions         = that._randInstructions;
 		_recordReaderInstructions = that._recordReaderInstructions;
@@ -154,9 +151,28 @@ public class MRJobInstruction extends Instruction
 		MRJobInstructionsLineNumbers = that.MRJobInstructionsLineNumbers;
 		
 		//copy array variables (via clone)
-		inputVars = that.inputVars.clone();
-		outputVars = that.outputVars.clone();
+		inputVars      = that.inputVars.clone();
+		outputVars     = that.outputVars.clone();
 		_resultIndices = that._resultIndices.clone();
+		
+		//copy all remaining attributes (these are overwritten by
+		//extractInputMatrices/extractOutputMatrices but we need to
+		//shallow copy them for special cases of runtime piggybacking
+		inputs         = that.inputs;
+		inputInfos     = that.inputInfos;
+		rlens          = that.rlens;
+		clens          = that.clens;
+		brlens         = that.brlens;
+		bclens         = that.bclens;
+		outputs        = that.outputs;
+		outputInfos    = that.outputInfos;
+		partitioned    = that.partitioned;
+		pformats       = that.pformats;
+		psizes         = that.psizes;
+		inputMatrices  = that.inputMatrices;
+		outputMatrices = that.outputMatrices;
+		inputDataTypes = that.inputDataTypes;
+
 	}	
 	
 	public JobType getJobType()

@@ -14,7 +14,6 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.globalopt.MergeOp;
 import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -103,6 +102,7 @@ public class OptimizedPlan
 		this.cumulatedCost = 0.0;
 		this.cumulatedCost += this.cost;
 		
+		/*
 		if(this.operator instanceof MergeOp) {
 			for(MemoEntry p : inputPlans) {
 				this.cumulatedCost += p.getCost();
@@ -113,6 +113,7 @@ public class OptimizedPlan
 				this.cumulatedCost += p.getCost();
 			}
 		}
+		*/
 	}
 
 	public Rewrite getRewrite(RewriteConfigType type) {

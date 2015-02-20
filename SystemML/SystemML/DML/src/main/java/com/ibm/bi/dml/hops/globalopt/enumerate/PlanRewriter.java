@@ -20,7 +20,6 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReblockOp;
-import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
 import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.FormatType;
 import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Lop;
@@ -138,6 +137,7 @@ public abstract class PlanRewriter
 		
 		RewriteConfig formatParam = rcs.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 		
+		/*
 		//in this case no reblock is required but just setting the current block size
 		//TODO both should be better separated
 		if(reblockRewrite == null || !(reblockRewrite instanceof ReblockRewrite)) {
@@ -153,7 +153,7 @@ public abstract class PlanRewriter
 		}else {
 			((ReblockRewrite)reblockRewrite).setFormat(FormatType.values()[formatParam.getValue()]);
 		}
-		
+		*/
 	}
 	
 	public static boolean isValidForOperator(Hop hop, RewriteConfigSet rcs) {
@@ -212,11 +212,11 @@ public abstract class PlanRewriter
 		if(rcf.getValue()==FormatType.BINARY_BLOCK.ordinal()) {
 			return true;
 		}
-		
+		/*
 		if(hop instanceof CrossBlockOp) {
 			return true;
 		}
-		
+		*/
 		if(hop instanceof FunctionOp) {
 			if(!(rcf.getValue()==FormatType.BINARY_CELL.ordinal())) {
 				return true;

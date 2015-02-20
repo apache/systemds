@@ -11,10 +11,12 @@ import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.enumerate.GlobalEnumerationOptimizer;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GraphBuilder;
 import com.ibm.bi.dml.lops.LopsException;
@@ -35,8 +37,8 @@ public class GlobalOptimizerWrapper
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	
-	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
+	private static final Log LOG = LogFactory.getLog(GlobalOptimizerWrapper.class);
+	private static final boolean LDEBUG = false; //local debug flag
 	
 	//supported optimizers
 	public enum GlobalOptimizerType{
@@ -46,6 +48,15 @@ public class GlobalOptimizerWrapper
 	
 	//internal parameters
 	private static final GlobalOptimizerType OPTIM = GlobalOptimizerType.ENUMERATE_DP; 
+	
+	static
+	{
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("com.ibm.bi.dml.hops.globalopt")
+			      .setLevel((Level) Level.DEBUG);
+		}
+	}
 	
 	/**
 	 * 
@@ -59,21 +70,27 @@ public class GlobalOptimizerWrapper
 	public static Program optimizeProgram(DMLProgram prog, Program rtprog) 
 		throws DMLRuntimeException, HopsException, LopsException
 	{
-		LOG.info("Starting global data flow optimization.");
+		LOG.debug("Starting global data flow optimization.");
 		Timing time = new Timing(true);
 		
 		//create optimizer instance
 		GlobalOptimizer optimizer = createGlobalOptimizer( OPTIM );
 		
 		//create global data flow graph
-		ArrayList<GDFNode> roots = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
-		for( GDFNode node : roots )
-			System.out.println(node+":\n"+node.explain(1));
+		GDFGraph graph = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
+		if( LOG.isDebugEnabled() ) {
+			ArrayList<GDFNode> nodes = graph.getGraphRootNodes();
+			for( GDFNode node : nodes )
+				LOG.debug( node+":\n"+node.explain(1) );
+		}
 		
-		//core optimization FIXME work on new global data flow graph
-		//rtprog = optimizer.optimize(prog, rtprog);
+		//core global data flow optimization 
+		graph = optimizer.optimize(graph);
 		
-		LOG.info("Finished optimization in " + time.stop() + " ms.");
+		//get the final runtime program
+		rtprog = graph.getRuntimeProgram();
+		
+		LOG.debug("Finished optimization in " + time.stop() + " ms.");
 		return rtprog;
 	}
 	

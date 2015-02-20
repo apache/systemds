@@ -7,47 +7,16 @@
 
 package com.ibm.bi.dml.hops.globalopt.enumerate;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
-import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizer;
-import com.ibm.bi.dml.hops.globalopt.HopsDag;
-import com.ibm.bi.dml.hops.globalopt.LoopOp;
-import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.FormatType;
-import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.InterestingPropertyType;
-import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
-import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.compile.Dag;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 
 /**
@@ -59,10 +28,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	private static final Log LOG = LogFactory.getLog(GlobalEnumerationOptimizer.class);
-	private static final boolean LDEBUG = false; //local debug flag
-	
 	
 	//internal configuration parameters
 	public static final int[] BLOCK_SIZES         = new int[]{-1,600,2000,3000,4000,5000};
@@ -96,17 +61,24 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		
 		
 		//TODO
-		this.configToProperties = new HashMap<RewriteConfigSet, InterestingPropertySet>();
-		this.generatedConfigs = RewriteConfigUtils.generateConfigCombinations(rewriteConfigs);
-		this.interestingPropertyCombinations = generatePropertyCombinations(this.generatedConfigs);
+		//this.configToProperties = new HashMap<RewriteConfigSet, InterestingPropertySet>();
+		//this.generatedConfigs = RewriteConfigUtils.generateConfigCombinations(rewriteConfigs);
+		//this.interestingPropertyCombinations = generatePropertyCombinations(this.generatedConfigs);
+	}
+
+	@Override
+	public GDFGraph optimize(GDFGraph gdfgraph) 
+		throws DMLRuntimeException, HopsException, LopsException 
+	{
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
-	/**
-	 * @throws HopsException 
-	 * @throws LopsException 
-	 */
+	
+	
+/*
 	@Override
-	public Program optimize(DMLProgram prog, Program rtprog) 
+	public Program optimize(GDFGraph graph) 
 		throws DMLRuntimeException, HopsException, LopsException 
 	{		
 		currentProgram = rtprog;
@@ -129,22 +101,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			populatePlanToProgram(optimalPlan, d);
 			
 			//TODO: turn into proper logging
-			/*if(this.debug) 
-			{
-				System.out.println(summary);
-			}*/
 		}
 		return rtprog;
 	}
 
-	/**
-	 * Use the node configurations and put them into the respective nodes.
-	 * 
-	 * 
-	 * 
-	 * @param optimalPlan
-	 * @param program
-	 */
 	private void populatePlanToProgram(OptimizedPlan optimalPlan,
 			HopsDag dag) {
 		Set<Long> addedLopIDs = new HashSet<Long>();
@@ -178,13 +138,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		LOG.info("populating lops done");
 	}
 
-	/**
-	 * Put all the root lops into a {@link Dag} per program block and then iterate over all the touched program blocks
-	 * and generate new instructions. 
-	 * @param dag
-	 * @param root
-	 * @param addedLopIDs
-	 */
+	
 	private void generateInstructions(HopsDag dag, Set<Long> addedLopIDs) {
 		
 		for(Hop output : dag.getDagOutputs().values()) {
@@ -198,50 +152,11 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 
 		}
 		
-		//MB: the lops should not be replicated, all configuration changes must be made on hops level for consistency
-		//iterate over the program block which have been modified by the algorithm
-		/*
-		for(ProgramBlock block : dag.getHopsToBlocks().values()) {
-			Dag<Lop> lopsDag = block.getLopsDag();
-			try {
-				ArrayList<Instruction> instructions = lopsDag.getJobs(block.getStatementBlock(),null);
-				block.setInstructions(instructions);
-			} catch (LopsException e) {
-				LOG.error(e.getMessage(), e);
-			} catch (DMLRuntimeException e) {
-				LOG.error(e.getMessage(), e);
-			} catch (DMLUnsupportedOperationException e) {
-				LOG.error(e.getMessage(), e);
-			} catch (IOException e) {
-				LOG.error(e.getMessage(), e);
-			}
-		}
-		*/
 	}
 
-	/**
-	 * Recursive method to descend in the {@link HopsDag} and put all the root lops into a {@link Dag} 
-	 * (which is used for instructions generation later). Root lops are lops from transient writes/function ops 
-	 * of blocks. The association between @param root and @param dag is created in @see {@link GlobalGraphCreator}.
-	 * 
-	 * @param dag
-	 * @param addedLopIDs
-	 * @param output
-	 * @throws LopsException 
-	 * @throws HopsException 
-	 */
 	private void addRootLopsToDag(HopsDag dag, Hop root) throws HopsException, LopsException {
 		if(dag.containsBlockForHop(root)) {
-			////MB: the lops should not be replicated, all configuration changes must be made on hops level for consistency
-			/*
-			ProgramBlock block = dag.getBlockForHop(root);
-			Dag<Lop> lopsDag = block.getLopsDag();
-			if(lopsDag == null) {
-				LOG.info("lops dag is null for block: " + block.getProgram().getProgramBlocks().indexOf(block));
-				lopsDag = new Dag<Lop>();
-				block.setLopsDag(lopsDag);
-			}
-			*/
+
 			Dag<Lop> lopsDag = new Dag<Lop>(); //MB
 			
 			Lop getLops = root.constructLops();
@@ -258,13 +173,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * Recursive method to iterate over all operators from the {@link OptimizedPlan} (depth first)
-	 *  and put the generated {@link Lops} of the optimal plan into the program. 
-	 * @param optimalRoot
-	 * @param hopsDag
-	 * @param addedLopIDs
-	 */
 	private void applyLops(OptimizedPlan optimalRoot, HopsDag hopsDag, Set<Long> addedLopIDs) {
 		Hop root = optimalRoot.getOperator();
 		
@@ -301,7 +209,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		
 	}
 
-	/**
+
 	 *  Main method the enumeration approach.
 	 *  For given operator @param out do:
 	 *  (1) check the memo table if entry then return entry
@@ -322,7 +230,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @return
 	 * @throws LopsException 
 	 * @throws HopsException 
-	 */
+	 
 	public Map<InterestingPropertySet, MemoEntry> enumOpt(Hop out, Summary summary) 
 		throws HopsException, LopsException 
 	{
@@ -383,14 +291,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return _memo.getEntry(out);
 	}
 
-	/**
-	 * Checks if any of the optimal plans for the given {@link InterestingPropertySet}s has multiple inputs and 
-	 * if those inputs share a node. In this case, the optimal plan has to have the same {@link InterestingPropertySet}.
-	 * If that is not the case the memo table has to be wiped out, and enumeration has to be repeated for those two plans with fixed 
-	 * ips.
-	 * @param intermediates
-	 * @return
-	 */
 	private boolean checkForContainment(Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates) {
 		LOG.info("checking for containment");
 		for(Entry<InterestingPropertySet, Set<OptimizedPlan>> entry : intermediates.entrySet()) {
@@ -416,13 +316,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return false;
 	}
 
-	/**
-	 * Iterate over the first input to find shared nodes on a path of optimal plans down to the data sources. 
-	 * 
-	 * @param firstInput
-	 * @param secondInput
-	 * @param visited
-	 */
 	private void pairWiseFirst(MemoEntry firstInput, MemoEntry secondInput,
 			HashSet<Long> visited) {
 		if(!visited.contains(firstInput.getRootHop().getHopID())) {
@@ -436,12 +329,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * Iterate over the second input to eventually find shared nodes.
-	 * @param firstInput
-	 * @param secondInput
-	 * @param visited
-	 */
 	private void pairWiseSecond(MemoEntry firstInput, MemoEntry secondInput, Set<Long> visited) {
 		OptimizedPlan firstPlan = firstInput.getOptPlan();
 		OptimizedPlan secondPlan = secondInput.getOptPlan();
@@ -470,11 +357,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		
 	}
 
-	/**
-	 * Convenience method to retrieve the inputs whether real hops or crossblock operators
-	 * @param out
-	 * @return
-	 */
 	private ArrayList<Hop> getInputs(Hop out) {
 		ArrayList<Hop> inputs = out.getInput();
 		if(inputs.isEmpty() && out.getCrossBlockInput() != null) {
@@ -485,30 +367,11 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return inputs;
 	}
 	
-	/**
-	 * this function should do the following:
-	 * 	(1) prepare the memotable (create new one versus just appending to the old one)
-	 *  (2) detect LI (just a member call now)
-	 *  (3) detect known predicate
-	 *  (4) depending on (2) and (3) unroll, cost once or unroll 
-	 *  (5) cost
-	 *  (6) detect vectorization or partitioning
-	 *  
-	 * @param out
-	 */
 	private void enumLoop(Hop out) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	/**
-	 * By definition node plans is technically just a map IP->OptPlan, since pruneSuboptimal(set, true) 
-	 * results in exactly one plan per IP.
-	 * This method finally stores the lop per IP as a memo entry
-	 * @param nodePlans
-	 * @param root
-	 * @return
-	 */
 	public Map<InterestingPropertySet, MemoEntry> createMemoEntry(
 			Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans, Hop root) {
 		Map<InterestingPropertySet, MemoEntry> retVal = new HashMap<InterestingPropertySet, MemoEntry>();
@@ -538,19 +401,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return retVal;
 	}
 
-	/**
-	 * Assign costs to each candidate per {@link InterestingPropertySet}. Generates runtime plans for candidates and
-	 * hands them over to the cost model. 
-	 * 
-	 * TODO: consolidate logic for checking rewrites to one place
-	 * 
-	 * @param nodePlans
-	 * @param completeSubplan
-	 * @param summary
-	 * @param record
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
 	private void pruneSuboptimal(
 			Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans,
 			boolean completeSubplan, Summary summary, SummaryEntry record)
@@ -643,11 +493,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	
 	}
 
-	/**
-	 * MB: Fix costing with corrupted hop dags.
-	 * 
-	 * @param hop
-	 */
 	private void rCleanupHopsDAG( Hop hop )
 	{
 		if( hop==null || hop.getVisited()==VisitStatus.DONE )
@@ -667,17 +512,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	}
 	
 	
-	
-	/**
-	 *  (1) Puts the optimal runtime sub plans into the inputs 
-	 *  (2) generates the rewrites according to the current logic and 
-	 *  (3) puts them in.
-	 * 
-	 * @param p
-	 * @param root
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
+
 	public void generateRuntimePlan(OptimizedPlan p, Hop root)
 			throws HopsException, LopsException {
 		
@@ -708,12 +543,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	}
 
 	private void createCrossBlockOutputsForFunctionOps(OptimizedPlan p, InterestingPropertySet interestingProperties) {
-		/**
-		 * This function creates two memo entries one for the funcOp and one for the follwoing crossblock hop
-		 * binblock is per default in DMLBlockSize
-		 * costing has to be done here
-		 * remember reblocks
-		 */
+
 		
 		
 		Hop operator = p.getOperator();
@@ -784,12 +614,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * Configure the inputs according to the stored parameters in the memotable.
-	 * 
-	 * @param p
-	 * @param root
-	 */
 	private void configureInputLops(OptimizedPlan p, Hop root) {
 		for (int i = 0; i < root.getInput().size(); i++) {
 			Hop input = root.getInput().get(i);
@@ -806,12 +630,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					Lop lop = _memo.getPlan(lopId);
 					input.setLops(lop);
 					
-					/*
-					 * TODO: generalize that to all operators
-					 * basically, determine if a sibling of lop is executed in MR 
-					 * and pick that block size and configure lop with that block size
-					 * 
-					*/
 					if(inputConfig.getConfigByType(RewriteConfigType.EXEC_TYPE).getValue()==ExecType.CP.ordinal()) {
 						boolean fromSibling = false;
 						for(Hop in : root.getInput()) {
@@ -865,15 +683,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * Prune invalid (combinations of) configurations/rewrites from the set of intermediates.
-	 * Such could be e.g. Configurations for a persistent read of a matrix in CP or combinations of n-ary ops with inputs of different 
-	 * block sizes.
-	 * 
-	 * TODO: simplify the logic here. The more rewrites and configuration parameters the more complex this method got
-	 * @param combined
-	 * @param record 
-	 */
+
 	private void pruneInvalid(Map<InterestingPropertySet, Set<OptimizedPlan>> combined, Summary summary, SummaryEntry record) {
 		long pruneCounter = 0;
 		long planCounter = 0;
@@ -937,14 +747,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * TODO: refactor to {@link FormatProperty}
-	 * 
-	 * Should check if the current operator is something else than a {@link DataOp} or FunctionOp 
-	 * and if one of its inputs delivers text
-	 * @param plan
-	 * @return
-	 */
+
 	private boolean isFormatValid(OptimizedPlan plan) {
 		Hop operator = plan.getOperator();
 		//RewriteConfigSet rootConfig = plan.getConfig();
@@ -963,12 +766,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return true;
 	}
 
-	/**
-	 * Compare the values of input matrices to have matching block size and format.
-	 * 
-	 * @param inputPlans
-	 * @return
-	 */
 	private boolean checkValidityOfInputs(RewriteConfigSet rootConfig, List<MemoEntry> inputPlans) {
 		boolean areInputsValid = true;
 		
@@ -994,15 +791,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return areInputsValid;
 	}
 
-	/**
-	 * Checks if 
-	 * (1) this is a plan for a CBH 
-	 * (2) the input to this plan is a CBH
-	 * (3) this a plan for a transient write.
-	 * In any case the formats and block sizes need to match. 
-	 * @param plan
-	 * @return
-	 */
 	private boolean isCrossBlockHopWiringValid(OptimizedPlan plan) {
 		
 		Hop operator = plan.getOperator();
@@ -1056,15 +844,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return true;
 	}
 
-	/** 
-	 * Combine every candidate of the existing intermediate candidates with the enumerated optimal sub plans 
-	 * (@param children) of the input
-	 * @param intermediates
-	 * @param children
-	 * @param summary
-	 * @param record
-	 * @return
-	 */
 	public Map<InterestingPropertySet, Set<OptimizedPlan>> combine(
 			Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates,
 			Map<InterestingPropertySet, MemoEntry> children, Summary summary, SummaryEntry record) {
@@ -1119,14 +898,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return combinations;
 	}
 
-	/**
-	 * Checks if the combination of configuration, inputplans and interesting properties 
-	 * requires a (reblock) rewrite or not. 
-	 * TODO: This needs to be consolidated with the apply-methos of {@link Rewrite}s since there is also 
-	 * logic applied.  
-	 * 
-	 * @param newPlan
-	 */
 	private void checkRewrites(Collection<Set<OptimizedPlan>> planSets) {
 		
 		for(Set<OptimizedPlan> plans : planSets) {
@@ -1161,12 +932,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 		
 	}
-
-	/**
-	 * Examines the interestiong properties from the dirst input matrix 
-	 * @param plan
-	 * @param config
-	 */
+	
 	private void checkRewriteFromFirstChild(OptimizedPlan plan,
 			RewriteConfigSet config) {
 		List<MemoEntry> inputPlans = plan.getInputPlans();
@@ -1194,12 +960,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * TODO: redundant -> refactor
-	 * @param plan
-	 * @param config
-	 * @param operator
-	 */
 	private void checkRewriteForReadOperators(OptimizedPlan plan,
 			RewriteConfigSet config, Hop operator) {
 		DataOp dataOp = (DataOp)operator;
@@ -1219,11 +979,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * @param plan
-	 * @param nodeBlockSize
-	 * @param operator
-	 */
 	private void checkReblockRewriteForMR(OptimizedPlan plan,
 			int nodeBlockSize, Hop operator) {
 		if(nodeBlockSize != -1 || operator instanceof CrossBlockOp)	{
@@ -1252,18 +1007,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 	}
 
-	/**
-	 * Depending on the type of operator and the number of interesting properties 
-	 * all the meta data combinations will be generated.
-	 * 
-	 * TODO: 
-	 * 	- requires reblock should be a very concise, type&rule specific method => refactor to ConfigParam, Configuration or ...
-	 * 
-	 * 
-	 * @param out
-	 * @param record 
-	 * @return
-	 */
 	public Map<InterestingPropertySet, Set<OptimizedPlan>> enumConfig(Hop out, Summary summary, SummaryEntry record) {
 		long planCounter = 0;
 		
@@ -1307,18 +1050,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		record.addEntryVal(planCounter);
 		return retVal;
 	}
-
-	/**
-	 * @param out
-	 * @param summary
-	 * @param planCounter
-	 * @param retVal
-	 * @param c
-	 * @param combination
-	 * @param functionOp
-	 * @param formatProperty
-	 * @return
-	 */
 	
 	private long enumerateFunctionOps(Hop out, Summary summary,
 			long planCounter,
@@ -1393,11 +1124,6 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return retVal;
 	}
 	
-	/**
-	 * This has been necessary for a while to convert into a map of strings and sets. That ist not 
-	 * necessary anymore. However, is this method need as a copy? 
-	 * @param dataConfigs
-	 */
 	@Deprecated
 	public Map<InterestingPropertySet, Set<OptimizedPlan>> createIntermediatesSet(
 			Map<InterestingPropertySet, OptimizedPlan> dataConfigs) {
@@ -1421,5 +1147,5 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	public void setCurrentProgram(Program currentProgram) {
 		this.currentProgram = currentProgram;
 	}
-	
+	*/
 }

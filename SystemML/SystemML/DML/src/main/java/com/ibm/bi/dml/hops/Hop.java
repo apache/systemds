@@ -9,8 +9,6 @@ package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,12 +17,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
-import com.ibm.bi.dml.hops.globalopt.HopsMetaData;
-import com.ibm.bi.dml.hops.globalopt.HopsVisitor;
-import com.ibm.bi.dml.hops.globalopt.SplitOp;
-import com.ibm.bi.dml.hops.globalopt.HopsVisitor.Flag;
-import com.ibm.bi.dml.hops.globalopt.enumerate.Rewrite;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -1552,152 +1544,5 @@ public abstract class Hop
 	{
 		lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	}
-	
-	/////////////////////////////////////////////////
-	// Extension for Global Data Flow Optimization
-	// by Mathias Peters
-	///////
-	
-	/**
-	 * Short prototypical hack here to enable stitching up HopsDags across Statement blocks
-	 */
-	protected CrossBlockOp crossBlockInput;
-	protected CrossBlockOp crossBlockOutput;
-	protected HopsMetaData metaData;
-	protected List<Rewrite> postConstructionRewrites = new ArrayList<Rewrite>();
-	
-	//TODO: refactor use of variable 
-	protected Map<HopsVisitor, Boolean> hopsVisited = new HashMap<HopsVisitor, Boolean>();
-	
-	public void accept(HopsVisitor visitor) {
-		if(visitor.traverseBackwards()) {
-			acceptSinkToSource(visitor);
-		}else { 
-			acceptSourceToSink(visitor);
-		}
-	}
-
-	/**
-	 * Implement traversal from sinks to sources
-	 * @param visitor
-	 */
-	private void acceptSinkToSource(HopsVisitor visitor) {
-		throw new RuntimeException("Not Implemented Yet!");
-	}
-
-
-	/**
-	 * @param visitor
-	 */
-	private void acceptSourceToSink(HopsVisitor visitor) {
-		Flag flag = visitor.preVisit(this);
-		hopsVisited.put(visitor, true);
-		
-		if(flag != Flag.STOP_INPUT) {
-			if(getInput() != null) {
-				for(Hop in : getInput()) {
-					if(!in.isHopsVisited(visitor) && visitor.matchesPattern(in))
-					{
-						in.accept(visitor);
-					}
-				}
-			}
-			if(this.crossBlockInput	!= null 
-					&& !this.crossBlockInput.isHopsVisited(visitor)
-					&& visitor.matchesPattern(this.crossBlockInput)) {
-				this.crossBlockInput.accept(visitor);
-			}
-		}
-		
-		visitor.visit(this);
-		
-		if(flag != Flag.STOP_OUTPUT ) {
-			if(this.getParent() != null) {
-				for(Hop parent : this.getParent()) {
-					if(!parent.isHopsVisited(visitor) && visitor.matchesPattern(parent))
-						parent.accept(visitor);
-				}
-			}
-		
-			if(this.getCrossBlockOutput() != null 
-					&& !this.getCrossBlockOutput().isHopsVisited(visitor) 
-					&& visitor.matchesPattern(this.getCrossBlockOutput()))
-			{
-				this.getCrossBlockOutput().accept(visitor);
-			}
-		}
-		visitor.postVisit(this);
-	}
-	public boolean isHopsVisited(HopsVisitor visitor) {
-		return (this.hopsVisited.get(visitor) !=null) ? this.hopsVisited.get(visitor) : false;
-	}
-	
-	public void resetVisitStatus(HopsVisitor toReset) {
-		this.hopsVisited.remove(toReset);
-	}
-	
-
-	public List<Rewrite> getPostConstructionRewrites() {
-		return postConstructionRewrites;
-	}
-
-	public void setPostConstructionRewrites(List<Rewrite> postConstructionRewrites) {
-		this.postConstructionRewrites = postConstructionRewrites;
-	}
-	
-	public void addPostRewrite(Rewrite rewrite) {
-		this.postConstructionRewrites.add(rewrite);
-	}
-	
-	public void clearRewrites() {
-		this.postConstructionRewrites.clear();
-	}
-	
-	
-	/**
-	 * Create a meta edge that connects this hops with the target across statement blocks.
-	 * @param target
-	 */
-	public void append(Hop target) {
-		if(this instanceof SplitOp) {
-			((SplitOp)this).addOutput(target);
-			target.prepend((SplitOp)this);
-		}else {
-			this.crossBlockOutput = new CrossBlockOp(this, target);
-			target.prepend(this.crossBlockOutput);
-		}
-		
-	}
-	
-	public void prepend(CrossBlockOp input) {
-		this.crossBlockInput = input;
-		this.setDim1(Math.max(_dim1, input.getDim1()));
-		this.setDim2(Math.max(_dim2, input.getDim2()));
-	}
-
-	public void setCrossBlockOutput(CrossBlockOp crossBlockOutput) {
-		this.crossBlockOutput = crossBlockOutput;
-	}
-	
-	public CrossBlockOp getCrossBlockOutput() {
-		return this.crossBlockOutput;
-	}
- 
-	public CrossBlockOp getCrossBlockInput() {
-		return crossBlockInput;
-	}
-	
-	public void setCrossBlockInput(CrossBlockOp crossBlockInput) {
-		this.crossBlockInput = crossBlockInput;
-	}
-
-	public HopsMetaData getMetaData() {
-		return metaData;
-	}
-	
-	public void setMetaData(HopsMetaData meta) {
-		metaData = meta;
-	}
-
 	
 } // end class

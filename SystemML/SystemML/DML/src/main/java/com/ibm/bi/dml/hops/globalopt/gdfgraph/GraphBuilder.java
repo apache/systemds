@@ -55,7 +55,7 @@ public class GraphBuilder
 	 * @throws DMLRuntimeException
 	 * @throws HopsException 
 	 */
-	public static ArrayList<GDFNode> constructGlobalDataFlowGraph( Program prog )
+	public static GDFGraph constructGlobalDataFlowGraph( Program prog )
 		throws DMLRuntimeException, HopsException
 	{
 		HashMap<String, GDFNode> roots = new HashMap<String, GDFNode>();
@@ -63,11 +63,14 @@ public class GraphBuilder
 		for( ProgramBlock pb : prog.getProgramBlocks() )
 			constructGDFGraph( pb, roots );
 		
-		//create output 
+		//create GDF graph root nodes 
 		ArrayList<GDFNode> ret = new ArrayList<GDFNode>();
 		ret.addAll( roots.values() );
 		
-		return ret;
+		//create GDF graph
+		GDFGraph graph = new GDFGraph(prog, ret);
+		
+		return graph;
 	}
 	
 	/**

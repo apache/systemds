@@ -8,11 +8,7 @@
 package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
 import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -294,35 +290,5 @@ public class FunctionOp extends Hop
 	public boolean compare( Hop that )
 	{
 		return false;
-	}
-	
-	
-	/////////////////////////////////////////////////
-	// Extension for Global Data Flow Optimization
-	// by Mathias Peters
-	///////
-	
-	/**
-	 * FuncOps can have multiple outputs
-	 */
-	protected Map<String, CrossBlockOp> crossBlockOutputs = new HashMap<String, CrossBlockOp>();
-	
-	/**
-	 * Create a meta edge that connects this hops with the target across statement blocks.
-	 * @param target
-	 */
-	public void append(Hop target) {
-		CrossBlockOp crossBlock = new CrossBlockOp(this, target);
-		target.prepend(crossBlock);
-	}
-	
-	@Override
-	public void setCrossBlockOutput(CrossBlockOp crossBlockOutput) {
-		this.crossBlockOutputs.put(crossBlockOutput.getName(), crossBlockOutput);
-		
-	}
-	
-	public Collection<CrossBlockOp> getCrossBlockOutputs() {
-		return this.crossBlockOutputs.values();
 	}
 }

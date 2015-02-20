@@ -14,7 +14,6 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.OutputParameters;
@@ -49,9 +48,6 @@ public class BlockSizeRewrite extends Rewrite
 		
 		try {
 			constructedLop = operator.constructLops();
-			if(operator instanceof CrossBlockOp) {
-				((CrossBlockOp)operator).addRewrite(this);
-			}
 			
 			OutputParameters outputParameters = constructedLop.getOutputParameters();
 			Long nnz = outputParameters.getNnz();

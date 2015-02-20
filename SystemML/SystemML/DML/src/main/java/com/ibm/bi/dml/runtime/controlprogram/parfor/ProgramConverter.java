@@ -32,7 +32,6 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -502,24 +501,21 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	@SuppressWarnings("unchecked")
 	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean cpFunctions) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		ArrayList<Instruction> tmp = (ArrayList<Instruction>) instSet.clone();
-		for( int i=0; i<instSet.size(); i++ )
+		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		for( Instruction inst : instSet )
 		{
-			Instruction inst1 = instSet.get(i);
-			if( inst1 instanceof FunctionCallCPInstruction && cpFunctions )
+			if( inst instanceof FunctionCallCPInstruction && cpFunctions )
 			{
-				FunctionCallCPInstruction finst1 = (FunctionCallCPInstruction) inst1;
-				createDeepCopyFunctionProgramBlock( finst1.getNamespace(),
-						                            finst1.getFunctionName(), 
+				FunctionCallCPInstruction finst = (FunctionCallCPInstruction) inst;
+				createDeepCopyFunctionProgramBlock( finst.getNamespace(),
+						                            finst.getFunctionName(), 
 						                            pid, IDPrefix, prog, fnStack, fnCreated, plain );
 			}
 			
-			Instruction inst2 = cloneInstruction( inst1, pid, plain, cpFunctions ); 
-			tmp.set(i, inst2);
+			tmp.add( cloneInstruction( inst, pid, plain, cpFunctions ) );
 		}
 		
 		return tmp;
@@ -537,7 +533,6 @@ public class ProgramConverter
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		Instruction inst = null;
-
 		String tmpString = oInst.toString();
 		
 		try
@@ -550,10 +545,10 @@ public class ProgramConverter
 					if( !plain )
 					{
 						//safe replacement because target variables might include the function name
-						tmp.updateInstStringFunctionName(tmp.getFunctionName(), tmp.getFunctionName() + CP_CHILD_THREAD+pid);
-						tmpString = tmp.toString();  
+						//note: this is no update-in-place in order to keep the original function name as basis
+						tmpString = tmp.updateInstStringFunctionName(tmp.getFunctionName(), tmp.getFunctionName() + CP_CHILD_THREAD+pid);
 					}
-					//otherwise: preserve functionname
+					//otherwise: preserve function name
 				}
 				
 				inst = InstructionParser.parseSingleInstruction(tmpString);
@@ -596,12 +591,12 @@ public class ProgramConverter
 				&& sb != null  //forced deep copy for function recompilation
 				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
 			{
-				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
-				ret.setLiveIn( new VariableSet(sb.liveIn()) );
-				ret.setLiveOut( new VariableSet(sb.liveOut()) );
-				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
-				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
+				ret.setLiveIn( sb.liveIn() ); 
+				ret.setLiveOut( sb.liveOut() ); 
+				ret.setUpdatedVariables( sb.variablesUpdated() );
+				ret.setReadVariables( sb.variablesRead() );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -647,12 +642,12 @@ public class ProgramConverter
 				&& sb != null //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
-				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new IfStatementBlock();
-				ret.setLiveIn( new VariableSet(sb.liveIn()) );
-				ret.setLiveOut( new VariableSet(sb.liveOut()) );
-				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
-				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
+				ret.setLiveIn( sb.liveIn() );
+				ret.setLiveOut( sb.liveOut() );
+				ret.setUpdatedVariables( sb.variablesUpdated() );
+				ret.setReadVariables( sb.variablesRead() );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -699,12 +694,12 @@ public class ProgramConverter
 				&& sb != null  //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
-				//create new statement (copy livein/liveout for recompile, line numbers for explain)
+				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new WhileStatementBlock();
-				ret.setLiveIn( new VariableSet(sb.liveIn()) );
-				ret.setLiveOut( new VariableSet(sb.liveOut()) );
-				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
-				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
+				ret.setLiveIn( sb.liveIn() );
+				ret.setLiveOut( sb.liveOut() );
+				ret.setUpdatedVariables( sb.variablesUpdated() );
+				ret.setReadVariables( sb.variablesRead() );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());
@@ -756,11 +751,11 @@ public class ProgramConverter
 			{
 				ret = (sb instanceof ParForStatementBlock) ? new ParForStatementBlock() : new ForStatementBlock();
 				
-				//create new statement (copy livein/liveout for recompile, line numbers for explain)
-				ret.setLiveIn( new VariableSet(sb.liveIn()) );
-				ret.setLiveOut( new VariableSet(sb.liveOut()) );
-				ret.setUpdatedVariables( new VariableSet(sb.variablesUpdated()) );
-				ret.setReadVariables( new VariableSet(sb.variablesRead()) );
+				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
+				ret.setLiveIn( sb.liveIn() );
+				ret.setLiveOut( sb.liveOut() );
+				ret.setUpdatedVariables( sb.variablesUpdated() );
+				ret.setReadVariables( sb.variablesRead() );
 				ret.setBeginLine(sb.getBeginLine());
 				ret.setBeginColumn(sb.getBeginColumn());
 				ret.setEndLine(sb.getEndLine());

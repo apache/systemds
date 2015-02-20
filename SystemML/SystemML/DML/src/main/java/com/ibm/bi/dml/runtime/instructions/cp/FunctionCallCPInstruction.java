@@ -8,7 +8,10 @@
 package com.ibm.bi.dml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -151,7 +154,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		HashMap<String,Boolean> pinStatus = ec.pinVariables(this._boundInputParamNames);
+	    HashMap<String,Boolean> pinStatus = ec.pinVariables(this._boundInputParamNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
@@ -170,19 +173,39 @@ public class FunctionCallCPInstruction extends CPInstruction
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
 		
-		// Unpin the pinned variables
-		ec.unpinVariables(this._boundInputParamNames, pinStatus);
+		LocalVariableMap retVars = fn_ec.getVariables();  
 		
-		LocalVariableMap returnedVariables = fn_ec.getVariables();  
+		// cleanup all returned variables w/o binding 
+		Collection<String> retVarnames = new LinkedList<String>(retVars.keySet());
+		HashSet<String> probeVars = new HashSet<String>();
+		for(DataIdentifier di : fpb.getOutputParams())
+			probeVars.add(di.getName());
+		for( String var : retVarnames ) {
+			if( !probeVars.contains(var) ) //cleanup candidate
+			{
+				Data dat = fn_ec.removeVariable(var);
+				if( dat != null && dat instanceof MatrixObject )
+					fn_ec.cleanupMatrixObject((MatrixObject)dat);
+			}
+		}
+		
+		// Unpin the pinned variables
+		ec.unpinVariables(_boundInputParamNames, pinStatus);
 		
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){
 		
-			String boundVarName = this._boundOutputParamNames.get(i); 
-			Data boundValue = returnedVariables.get(fpb.getOutputParams().get(i).getName());
+			String boundVarName = _boundOutputParamNames.get(i); 
+			Data boundValue = retVars.get(fpb.getOutputParams().get(i).getName());
 			if (boundValue == null)
 				throw new DMLUnsupportedOperationException(boundVarName + " was not assigned a return value");
 
+			//cleanup existing data bound to output variable name
+			Data exdata = ec.removeVariable(boundVarName);
+			if ( exdata != null && exdata instanceof MatrixObject && exdata != boundValue ) {
+				ec.cleanupMatrixObject( (MatrixObject)exdata );
+			}
+			
 			//add/replace data in symbol table
 			if( boundValue instanceof MatrixObject )
 				((MatrixObject) boundValue).setVarName(boundVarName);
@@ -222,7 +245,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 	{
 		//update instruction string
 		String oldfname = _functionName;
-		updateInstStringFunctionName(oldfname, fname);
+		instString = updateInstStringFunctionName(oldfname, fname);
 		
 		//set attribute
 		_functionName = fname;
@@ -234,7 +257,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 	 * @param pattern
 	 * @param replace
 	 */
-	public void updateInstStringFunctionName(String pattern, String replace)
+	public String updateInstStringFunctionName(String pattern, String replace)
 	{
 		//split current instruction
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
@@ -247,7 +270,8 @@ public class FunctionCallCPInstruction extends CPInstruction
 			sb.append(part);
 			sb.append(Lop.OPERAND_DELIMITOR);
 		}
-		instString = sb.substring( 0, sb.length()-Lop.OPERAND_DELIMITOR.length() );
+
+		return sb.substring( 0, sb.length()-Lop.OPERAND_DELIMITOR.length() );
 	}
 	
 	

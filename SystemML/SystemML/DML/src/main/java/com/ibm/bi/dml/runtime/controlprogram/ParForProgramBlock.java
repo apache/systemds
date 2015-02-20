@@ -481,9 +481,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
-		System.out.println("PARFOR: num func: "+getProgram().getFunctionProgramBlocks().size());
-		
-		
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
 		// add the iterable predicate variable to the variable set
@@ -1004,16 +1001,16 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * Cleanup result variables of parallel workers after result merge.
 	 * @param in 
 	 * @param out 
-	 * @throws CacheException 
+	 * @throws DMLRuntimeException 
 	 */
-	private void cleanWorkerResultVariables(MatrixObject out, MatrixObject[] in) 
-		throws CacheException
+	private void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in) 
+		throws DMLRuntimeException
 	{
 		for( MatrixObject tmp : in )
 		{
 			//check for empty inputs (no iterations executed)
 			if( tmp != null && tmp != out )
-				tmp.clearData();
+				ec.cleanupMatrixObject(tmp);
 		}
 	}
 	
@@ -1527,11 +1524,18 @@ public class ParForProgramBlock extends ForProgramBlock
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );
 					else
-						outNew = rm.executeSerialMerge(); 			
-					ec.setVariable(var, outNew);
-			
+						outNew = rm.executeSerialMerge(); 		
+					
+					//cleanup existing var
+					Data exdata = ec.removeVariable(var);
+					if( exdata != null && exdata != outNew && exdata instanceof MatrixObject )
+						ec.cleanupMatrixObject((MatrixObject)exdata);
+							
 					//cleanup of intermediate result variables
-					cleanWorkerResultVariables( out, in );
+					cleanWorkerResultVariables( ec, out, in );
+					
+					//set merged result variable
+					ec.setVariable(var, outNew);
 				}
 			}
 		}
@@ -1836,7 +1840,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					}
 		
 					//cleanup of intermediate result variables
-					cleanWorkerResultVariables( out, in );
+					cleanWorkerResultVariables( _ec, out, in );
 				}
 			}
 			catch(Exception ex)

@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.controlprogram;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,6 +32,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 
@@ -372,6 +374,42 @@ public class ExecutionContext
 		return varlist;
 	}
 
+	
+	/**
+	 * 
+	 * @param mo
+	 * @throws CacheException
+	 * @throws IOException
+	 */
+	public void cleanupMatrixObject(MatrixObject mo) 
+		throws DMLRuntimeException 
+	{
+		try
+		{
+			if ( mo.isCleanupEnabled() ) 
+			{
+				//compute ref count only if matrix cleanup actually necessary
+				if ( !getVariables().hasReferences(mo) ) {
+					//clean cached data	
+					mo.clearData(); 
+					if( mo.isFileExists() )
+					{
+						//clean hdfs data
+						String fpath = mo.getFileName();
+						if (fpath != null) {
+							MapReduceTool.deleteFileIfExistOnHDFS(fpath);
+							MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
+						}
+					}
+				}
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
+	}
+	
 	
 	///////////////////////////////
 	// Debug State Functionality

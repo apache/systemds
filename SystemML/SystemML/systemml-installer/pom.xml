@@ -1,92 +1,93 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ibm.biginsights</groupId>
-	<artifactId>systemml-installer</artifactId>
+	<artifactId>systemml</artifactId>
 	<name>SystemML rpm installer</name>
 
 
-  
-  <scm>
+
+	<scm>
 		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
 		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
 		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
- </scm>
-  
+	</scm>
+
 	<parent>
-	  <groupId>com.ibm.biginsights</groupId>
-  	<artifactId>systemml-reactor</artifactId>
-  	<version>3.6-SNAPSHOT</version>
-  	<relativePath>../pom.xml</relativePath>
-  </parent>
+		<groupId>com.ibm.biginsights</groupId>
+		<artifactId>systemml-reactor</artifactId>
+		<version>3.6-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
 
 	<build>
 		<plugins>
-		<plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-dependency-plugin</artifactId>   
-			<version>2.4</version>
-			<executions>
-			<execution>
-				<id>unpack</id>
-				<phase>package</phase>
-				<goals>
-               		<goal>unpack</goal>
-             	</goals>
-             	 <configuration>
-               <artifactItems>
-                 <artifactItem>
-	  <groupId>com.ibm.biginsights</groupId>
-  	<artifactId>system-ml</artifactId>
-                   <version>${project.version}</version>
-                   <classifier>distrib</classifier>
-                   <type>tar.gz</type>
-                   <overWrite>true</overWrite>
-                   <outputDirectory>${project.build.directory}/machine-learning</outputDirectory>
-                   <destFileName>optional-new-name.jar</destFileName>
-                   <includes>**/*.jar</includes>
-                 </artifactItem>
-               </artifactItems>
-               <includes>**/*.java</includes>
-               <excludes>**/*.properties</excludes>
-               <outputDirectory>${project.build.directory}/wars</outputDirectory>
-               <overWriteReleases>false</overWriteReleases>
-               <overWriteSnapshots>true</overWriteSnapshots>
-             </configuration>
-			</execution>
-			</executions>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.4</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>package</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>com.ibm.biginsights</groupId>
+									<artifactId>system-ml</artifactId>
+									<version>${project.version}</version>
+									<classifier>distrib</classifier>
+									<type>tar.gz</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${project.build.directory}/machine-learning</outputDirectory>
+									<destFileName>optional-new-name.jar</destFileName>
+									<includes>**/*.jar</includes>
+								</artifactItem>
+							</artifactItems>
+							<includes>**/*.java</includes>
+							<excludes>**/*.properties</excludes>
+							<outputDirectory>${project.build.directory}/wars</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
-			
-			      <plugin>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>rpm-maven-plugin</artifactId>
-			<version>2.1.2</version>
-			<extensions>true</extensions>
-			<executions>
-				<execution>
-					<id>generate-rpm</id>
-					<goals>
-						<goal>rpm</goal>
-					</goals>
-				</execution>
-			</executions>
-			<configuration>
-				<group>Application/BigInsights</group>
-				<needarch>false</needarch>
-				<mappings>
-            		<mapping>
-              			<directory>${installDir}/machine-learning</directory>
-              			<filemode>775</filemode>
-              			<username>${username}</username>
-              			<groupname>${groupname}</groupname>
-              			<sources>
-                			<source>
-                  				<location>${project.build.directory}/machine-learning/</location>
-                			</source>
-              			</sources>
-            		</mapping>
-				</mappings>
-			</configuration>
-		</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>rpm-maven-plugin</artifactId>
+				<version>2.1.2</version>
+				<extensions>true</extensions>
+				<executions>
+					<execution>
+						<id>generate-rpm</id>
+						<goals>
+							<goal>rpm</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<group>Application/BigInsights</group>
+					<needarch>false</needarch>
+					<mappings>
+						<mapping>
+							<directory>${installDir}/machine-learning</directory>
+							<filemode>775</filemode>
+							<username>${username}</username>
+							<groupname>${groupname}</groupname>
+							<sources>
+								<source>
+									<location>${project.build.directory}/machine-learning/</location>
+								</source>
+							</sources>
+						</mapping>
+					</mappings>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

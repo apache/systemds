@@ -737,7 +737,6 @@ public class Recompiler
 				}
 			}
 			
-			removeUpdatedScalars(vars, sb);			
 		}
 		
 	}
@@ -1230,6 +1229,13 @@ public class Recompiler
 							vars.put(varName, new IntObject(uop.getInput().get(0).getDim1()));
 						else if( uop.getOp()==OpOp1.NCOL && uop.getInput().get(0).getDim2()>0 )
 							vars.put(varName, new IntObject(uop.getInput().get(0).getDim2()));
+					}
+					//remove other updated scalars
+					else
+					{
+						//we need to remove other updated scalars in order to ensure result
+						//correctness of recompilation w/o being too conservative
+						vars.remove(varName);
 					}
 				}
 			}

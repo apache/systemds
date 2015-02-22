@@ -38,7 +38,6 @@ public class ReBlock extends Lop
 	private Long _cols_per_block;
 
 	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks)
-		throws LopsException 
 	{
 		super(Lop.Type.ReBlock, dt, vt);		
 		this.addInput(input);

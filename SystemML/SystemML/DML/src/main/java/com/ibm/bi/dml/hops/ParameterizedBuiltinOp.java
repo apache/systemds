@@ -20,7 +20,6 @@ import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
-import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
@@ -250,29 +249,17 @@ public class ParameterizedBuiltinOp extends Hop
 				
 			}
 			
-			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-					getDataType(), getValueType());
+			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType());
+			
 			// output dimensions are unknown at compilation time
 			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			//setLops(grp_agg);
-			
-			ReBlock reblock = null;
-			try {
-				reblock = new ReBlock(
-						grp_agg, getRowsInBlock(),
-						getColsInBlock(), getDataType(),
-						getValueType(), true);
-			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
-			}
-			reblock.getOutputParameters().setDimensions(-1, -1, 
-					getRowsInBlock(), getColsInBlock(), -1);
-			
-			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLops(grp_agg);
+			setRequiresReblock(true);
 
-			setLops(reblock);
+			// construct and set reblock lop as current root lop
+			constructAndSetReblockLopIfRequired();
 		}
 		else //CP 
 		{
@@ -862,7 +849,7 @@ public class ParameterizedBuiltinOp extends Hop
 	 */
 	public boolean isTargetDiagInput()
 	{
-		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
+		Hop targetHop = getTargetHop();
 		
 		//input vector (guarantees diagV2M), implies remove rows
 		return (   targetHop instanceof ReorgOp 

@@ -11,7 +11,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -32,7 +31,7 @@ public class ReblockOp extends Hop
 	// Constructor that adds a Reblock Hop *AFTER* a hop (e.g. Read Hop) to
 	// produce a block size
 	public ReblockOp(Hop inp, int rows_per_block, int cols_per_block) {
-		super(Kind.Reblock, inp.getName(), inp.getDataType(), inp
+		super(Kind.ReblockOp, inp.getName(), inp.getDataType(), inp
 				.getValueType());
 
 		setDim1(inp.getDim1());
@@ -64,7 +63,7 @@ public class ReblockOp extends Hop
 	// size(e.g. Write Hop)
 
 	public ReblockOp(Hop par) {
-		super(Kind.Reblock, par.getName(), par.getDataType(), par
+		super(Kind.ReblockOp, par.getName(), par.getDataType(), par
 				.getValueType());
 
 		setDim1(par.getDim1());
@@ -117,16 +116,13 @@ public class ReblockOp extends Hop
 							
 							setLops(rcsv);
 					}
-					else {
-						ReBlock reblock = new ReBlock(
-							getInput().get(0).constructLops(), getRowsInBlock(), getColsInBlock(), 
-							getDataType(), getValueType(), true);
-						reblock.getOutputParameters().setDimensions(getDim1(),
-								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					else //TEXT / BINARYBLOCK / BINARYCELL  
+					{
+						setLops( getInput().get(0).constructLops() );
+						setRequiresReblock(true);
 						
-						setLops(reblock);
+						// construct and set reblock lop as current root lop
+						constructAndSetReblockLopIfRequired();
 					}
 				}
 				else 
@@ -244,7 +240,7 @@ public class ReblockOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.Reblock )
+		if( that._kind!=Kind.ReblockOp )
 			return false;
 		
 		ReblockOp that2 = (ReblockOp)that;	

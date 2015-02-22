@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.CentralMoment;
@@ -19,7 +17,6 @@ import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PickByCount;
-import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Tertiary;
 import com.ibm.bi.dml.lops.UnaryCP;
@@ -70,7 +67,6 @@ public class TertiaryOp extends Hop
 	// flag to indicate the existence of additional inputs representing output dimensions
 	private boolean _dimInputsPresent = false;
 	private boolean _disjointInputs = false;
-	private boolean _outputEmptyBlocks = true;
 	
 	
 	private TertiaryOp() {
@@ -114,10 +110,6 @@ public class TertiaryOp extends Hop
 	
 	public void setDisjointInputs(boolean flag){
 		_disjointInputs = flag;
-	}
-	
-	public void setOutputEmptyBlocks(boolean flag){
-		_outputEmptyBlocks = flag;
 	}
 	
 	@Override
@@ -398,17 +390,12 @@ public class TertiaryOp extends Hop
 			
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
-				|| et == ExecType.CP ) {
-				
-				if( et == ExecType.CP ){
-					//force blocked output in CP (see below), otherwise binarycell
-					tertiary.getOutputParameters().setDimensions(_dim1, _dim2, 1000, 1000, -1);
-				}
-				
-				//tertiary opt, w/o reblock in CP
-				setLops(tertiary);
-			}
+			
+			//force blocked output in CP (see below), otherwise binarycell
+			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+			
+			//tertiary opt, w/o reblock in CP
+			setLops(tertiary);
 		}
 		else //MR
 		{
@@ -598,33 +585,22 @@ public class TertiaryOp extends Hop
 	
 				agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-				// kahamSum is used for aggreagtion but inputs do not have
+				// kahamSum is used for aggregation but inputs do not have
 				// correction values
 				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
 				lctable = agg1;
 			}
 
-			if ( dimsKnown() || _dimInputsPresent ) {
-				// In this case, output dimensions are known at the time of its execution
-				// No need introduce reblock lop since table() itself outputs in blocked format, whenever the output dimensions are known.
-				setLops(lctable);
+			setLops( lctable );
+			
+			// In this case, output dimensions are known at the time of its execution, no need 
+			// to introduce reblock lop since table itself outputs in blocked format if dims known.
+			if ( !dimsKnown() && !_dimInputsPresent ) {
+				setRequiresReblock( true );
 			}
-			else {
-				ReBlock reblock = null;
-				try {
-					reblock = new ReBlock( lctable, getRowsInBlock(),
-							getColsInBlock(), getDataType(),
-							getValueType(), _outputEmptyBlocks);
-				} catch (Exception e) {
-					throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
-				}
-				reblock.getOutputParameters().setDimensions(-1, -1, 
-						getRowsInBlock(), getColsInBlock(), -1);
-
-				reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				setLops(reblock);
-			}
+			
+			// construct and set reblock lop as current root lop
+			constructAndSetReblockLopIfRequired();
 		}
 	}
 	
@@ -1037,7 +1013,6 @@ public class TertiaryOp extends Hop
 		ret._op = _op;
 		ret._dimInputsPresent  = _dimInputsPresent;
 		ret._disjointInputs    = _disjointInputs;
-		ret._outputEmptyBlocks = _outputEmptyBlocks;
 		
 		return ret;
 	}

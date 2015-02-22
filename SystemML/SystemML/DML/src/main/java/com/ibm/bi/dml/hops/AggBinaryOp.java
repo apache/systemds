@@ -482,7 +482,7 @@ public class AggBinaryOp extends Hop
 			// i.e., entire matrix multiplication can be performed in the mappers.
 			boolean needAgg = requiresAggregation(method); 
 			boolean needPart = requiresPartitioning(method, false);
-			boolean outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 			
 			//pre partitioning 
 			Lop leftInput = getInput().get(0).constructLops(); 
@@ -510,7 +510,7 @@ public class AggBinaryOp extends Hop
 			
 			//core matrix mult
 			MapMult mapmult = new MapMult( leftInput, rightInput, getDataType(), getValueType(), 
-					                (method==MMultMethod.MAPMM_R), needPart, outputEmptyBlocks);
+					                (method==MMultMethod.MAPMM_R), needPart, _outputEmptyBlocks);
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 			
@@ -731,8 +731,8 @@ public class AggBinaryOp extends Hop
 			setLineNumbers(lpmInput);	
 		}
 		
-		boolean outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), needPart, outputEmptyBlocks, ExecType.MR);
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), needPart, _outputEmptyBlocks, ExecType.MR);
 		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(pmm);
 		

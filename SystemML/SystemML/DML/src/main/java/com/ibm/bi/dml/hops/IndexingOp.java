@@ -45,7 +45,7 @@ public class IndexingOp extends Hop
 	//right indexing doesn't really need the dimensionality of the left matrix
 	//private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	public IndexingOp(String l, DataType dt, ValueType vt, Hop inpMatrix, Hop inpRowL, Hop inpRowU, Hop inpColL, Hop inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
-		super(Kind.Indexing, l, dt, vt);
+		super(Kind.IndexingOp, l, dt, vt);
 
 		getInput().add(0, inpMatrix);
 		getInput().add(1, inpRowL);
@@ -343,7 +343,7 @@ public class IndexingOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{		
-		if(  that._kind!=Kind.Indexing 
+		if(  that._kind!=Kind.IndexingOp 
 			&& getInput().size() != that.getInput().size() )
 		{
 			return false;

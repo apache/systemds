@@ -19,6 +19,7 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -44,20 +45,32 @@ public abstract class Hop
 	protected static final boolean SPLITLARGEMATRIXMULT = true;
 	
 	public enum Kind {
-		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, DataGenOp, GenericFunctionOp, 
-		TertiaryOp, ParameterizedBuiltinOp, Indexing, FunctionOp, CrossBlockOp,
+		AggUnaryOp, 
+		AggBinaryOp, 
+		UnaryOp, 
+		BinaryOp, 
+		TertiaryOp,
+		ReorgOp, 
+		ReblockOp,
+		DataOp, 
+		LiteralOp, 
+		DataGenOp,
+		ParameterizedBuiltinOp, 
+		IndexingOp, 
+		LeftIndexingOp,
+		FunctionOp, 
 	};
 
 	public enum VisitStatus {
 		DONE, 
 		VISITING, 
-		NOTVISITED
+		NOTVISITED,
 	}
 
 	// static variable to assign an unique ID to every hop that is created
-	private static IDSequence UniqueHopID = new IDSequence();
+	private static IDSequence _seqHopID = new IDSequence();
 	
-	protected long ID;
+	protected long _ID;
 	protected Kind _kind;
 	protected String _name;
 	protected DataType _dataType;
@@ -88,6 +101,15 @@ public abstract class Hop
 	// (in that case re-complication ensures robustness and efficiency)
 	protected boolean _requiresRecompile = false;
 
+	// indicates if the output of this hop needs to be reblocked
+	// (usually this happens on persistent reads dataops)
+	protected boolean _requiresReblock = false;
+	
+	// indicates if the output of this hops needs to contain materialized empty blocks 
+	// if those exists; otherwise only blocks w/ non-zero values are materialized
+	protected boolean _outputEmptyBlocks = true;
+	
+	
 	private Lop _lops = null;
 	private SQLLops _sqllops = null;
 	
@@ -97,19 +119,19 @@ public abstract class Hop
 		
 	public Hop(Kind k, String l, DataType dt, ValueType vt) {
 		_kind = k;
+		_ID = getNextHopID();
 		setName(l);
 		setDataType(dt);
 		setValueType(vt);
-		ID = getNextHopID();
 	}
 
 	
 	private static long getNextHopID() {
-		return UniqueHopID.getNextID();
+		return _seqHopID.getNextID();
 	}
 	
 	public long getHopID() {
-		return ID;
+		return _ID;
 	}
 	
 	public ExecType getExecType()
@@ -201,6 +223,47 @@ public abstract class Hop
 		}
 	}
 	
+	public void setRequiresReblock(boolean flag)
+	{
+		_requiresReblock = flag;
+	}
+	
+	public boolean requiresReblock()
+	{
+		return _requiresReblock;
+	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 */
+	public void constructAndSetReblockLopIfRequired() 
+		throws HopsException
+	{
+		//add reblock lop to output if required
+		if( _requiresReblock )
+		{
+			Lop input = getLops();
+		
+			ReBlock reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
+					                       getDataType(), getValueType(), _outputEmptyBlocks);
+		
+			reblock.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+			setLops(reblock);
+		}
+	}
+	
+	public void setOutputEmptyBlocks(boolean flag)
+	{
+		_outputEmptyBlocks = flag;
+	}
+	
+	public boolean isOutputEmptyBlocks()
+	{
+		return _outputEmptyBlocks;
+	}
 	
 	/**
 	 * Returns the memory estimate for the output produced from this Hop.
@@ -516,8 +579,6 @@ public abstract class Hop
 			//System.out.println(s);
 			LOG.debug(s);
 		}
-		// This is the old format for reference
-		// %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
 		
 		return et;
 	}
@@ -572,11 +633,11 @@ public abstract class Hop
 	public abstract Lop constructLops() 
 		throws HopsException, LopsException;
 	
-	abstract public SQLLops constructSQLLOPs() throws HopsException; 
+	public abstract SQLLops constructSQLLOPs() throws HopsException; 
 
-	abstract protected ExecType optFindExecType() throws HopsException;
+	protected abstract ExecType optFindExecType() throws HopsException;
 	
-	abstract public String getOpString();
+	public abstract String getOpString();
 
 	protected boolean isVector() {
 		return (dimsKnown() && (_dim1 == 1 || _dim2 == 1) );
@@ -594,7 +655,6 @@ public abstract class Hop
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)) );
 	}
 
-	
 	public static void resetVisitStatus( ArrayList<Hop> hops )
 	{
 		for( Hop hopRoot : hops )
@@ -1471,7 +1531,7 @@ public abstract class Hop
 		if( withRefs )
 			throw new CloneNotSupportedException( "Hops deep copy w/ lops/inputs/parents not supported." );
 		
-		ID = that.ID;
+		_ID = that._ID;
 		_kind = that._kind;
 		_name = that._name;
 		_dataType = that._dataType;
@@ -1495,6 +1555,8 @@ public abstract class Hop
 		_memEstimate = that._memEstimate;
 		_processingMemEstimate = that._processingMemEstimate;
 		_requiresRecompile = that._requiresRecompile;
+		_requiresReblock = that._requiresReblock;
+		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;
 		_beginColumn = that._beginColumn;

@@ -88,7 +88,7 @@ public abstract class MatrixReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, long estnnz, boolean mallocDense ) 
+	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
 		throws IOException, DMLRuntimeException
 	{
 		//check input dimension
@@ -104,7 +104,7 @@ public abstract class MatrixReader
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
 			Arrays.fill(ret.getDenseArray(),0);
 		}
-		else if( sparse )
+		else if( sparse && mallocSparse  )
 			ret.allocateSparseRowsBlock();
 		
 		return ret;

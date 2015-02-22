@@ -910,7 +910,7 @@ public class MatrixBlock extends MatrixValue
 			return; //nothing to append
 		
 		//init sparse rows if necessary
-		//adjustSparseRows(rlen-1);
+		allocateSparseRowsBlock(false);
 		
 		if( that.sparse ) //SPARSE <- SPARSE
 		{

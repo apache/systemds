@@ -79,7 +79,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		checkValidInputFile(fs, path);
 		
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true, false);
 	
 		//core read 
 		readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen, _isMMFile);

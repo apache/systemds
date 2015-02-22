@@ -47,7 +47,7 @@ public class ReaderTextCSV extends MatrixReader
 		//allocate output matrix block
 		MatrixBlock ret = null;
 		if( rlen>0 && clen>0 ) //otherwise CSV reblock based on file size for matrix w/ unknown dimensions
-			ret = createOutputMatrixBlock(rlen, clen, estnnz, true);
+			ret = createOutputMatrixBlock(rlen, clen, estnnz, true, false);
 		
 		//prepare file access
 		JobConf job = new JobConf();	

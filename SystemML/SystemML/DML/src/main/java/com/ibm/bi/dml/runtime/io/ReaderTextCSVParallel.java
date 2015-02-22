@@ -224,8 +224,9 @@ public class ReaderTextCSVParallel extends MatrixReader
 			}
 			
 			
-			//allocate target matrix block based on given size 
-			dest = createOutputMatrixBlock(nrow, ncol, estnnz, true);
+			//allocate target matrix block based on given size
+			//need to allocate sparse as well since lock-free insert into target
+			dest = createOutputMatrixBlock(nrow, ncol, estnnz, true, true);
 		} 
 		catch (Exception e) {
 			throw new IOException("Threadpool Error " + e.getMessage(), e);

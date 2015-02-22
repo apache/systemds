@@ -46,7 +46,7 @@ public class ReaderTextCell extends MatrixReader
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true, false);
 		
 		//prepare file access
 		JobConf job = new JobConf();	
@@ -74,7 +74,7 @@ public class ReaderTextCell extends MatrixReader
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true, false);
 	
 		//core read 
 		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, _isMMFile);

@@ -17,7 +17,6 @@ import org.junit.Test;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction.RemoveEmpty;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -142,7 +141,6 @@ public class RemoveEmptyTest
 			moOut.setVarName("VarOut");
 			moOut.setMetaData(meta);
 			
-			ParameterizedBuiltinCPFileInstruction pb = new ParameterizedBuiltinCPFileInstruction(null,null,null,null,null);
 			RemoveEmpty rm = new RemoveEmpty(margin, moIn, moOut);
 			moOut = rm.execute();
 					

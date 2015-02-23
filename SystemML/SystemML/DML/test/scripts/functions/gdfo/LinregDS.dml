@@ -10,12 +10,17 @@
 X = read($1);
 y = read($2);
 I = matrix(1, ncol(X), 1);
-lambda = 0;
+intercept = $3;
+lambda = $4;
 
-if( 1==1 ) {}
+if( intercept == 1 ){
+   ones = matrix(1, nrow(X), 1); 
+   X = append(X, ones);
+   I = matrix(1, ncol(X), 1);
+}
 
 A = t(X) %*% X + diag(I)*lambda;
 b = t(X) %*% y;
 beta = solve(A, b);
 
-write(beta, $3);
+write(beta, $5);

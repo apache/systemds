@@ -13,11 +13,18 @@ library("Matrix")
 
 X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
 y = as.matrix(readMM(paste(args[1], "y.mtx", sep="")))
-lambda = 0;
+I = as.vector(matrix(1, ncol(X), 1));
+intercept = as.integer(args[2])
+lambda = as.double(args[3]);
 
-I = matrix(1, ncol(X), 1);
+if( intercept == 1 ){
+   ones = matrix(1, nrow(X), 1); 
+   X = cbind(X, ones);
+   I = as.vector(matrix(1, ncol(X), 1));
+}
+
 A = t(X) %*% X + diag(I)*lambda;
 b = t(X) %*% y;
 beta = solve(A, b);
 
-writeMM(as(beta,"CsparseMatrix"), paste(args[2], "B", sep=""))
+writeMM(as(beta,"CsparseMatrix"), paste(args[4], "B", sep=""))

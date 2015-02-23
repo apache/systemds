@@ -38,6 +38,9 @@ public class GDFOLinregDS extends AutomatedTestBase
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
+	private final static int intercept = 0;
+	private final static double lambda = 0.01;
+	
 	@Override
 	public void setUp() 
 	{
@@ -54,10 +57,20 @@ public class GDFOLinregDS extends AutomatedTestBase
 	@Test
 	public void testGDFOLinregDSSparseCP() 
 	{
-		runGDFOTest(TEST_NAME1, false, ExecType.CP);
+		runGDFOTest(TEST_NAME1, true, ExecType.CP);
 	}
 	
-	//TODO MR as soon as costing is integrated
+	@Test
+	public void testGDFOLinregDSDenseMR() 
+	{
+		runGDFOTest(TEST_NAME1, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGDFOLinregDSSparseMR() 
+	{
+		runGDFOTest(TEST_NAME1, true, ExecType.MR);
+	}
 	
 	/**
 	 * 
@@ -82,10 +95,14 @@ public class GDFOLinregDS extends AutomatedTestBase
 			programArgs = new String[]{ "-config="+HOME+TEST_CONF,
 					                    "-args", HOME + INPUT_DIR + "X",
 					                             HOME + INPUT_DIR + "y",
+					                             String.valueOf(intercept),
+					                             String.valueOf(lambda),
 					                            HOME + OUTPUT_DIR + "B"};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			       HOME + INPUT_DIR + " " + 
+			       String.valueOf(intercept) + " " + String.valueOf(lambda) + " " +
+			       HOME + EXPECTED_DIR;
 			
 			loadTestConfiguration(config);
 	

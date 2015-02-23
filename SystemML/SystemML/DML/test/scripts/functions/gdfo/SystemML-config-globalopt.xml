@@ -1,0 +1,46 @@
+<!--
+IBM Confidential
+OCO Source Materials
+(C) Copyright IBM Corp. 2010, 2015
+The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+-->
+
+<root>
+   <!-- local fs tmp working directory-->
+   <localtmpdir>/tmp/systemml</localtmpdir>
+
+   <!-- hdfs tmp working directory--> 
+   <scratch>scratch_space</scratch> 
+
+   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3, default: 2 -->
+   <optlevel>3</optlevel>  
+
+   <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
+   <numreducers>10</numreducers> 
+   
+   <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
+   <jvmreuse>false</jvmreuse> 
+
+   <!-- default block dim for binary block files -->
+   <defaultblocksize>1000</defaultblocksize> 
+
+   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
+   <dml.yarn.appmaster>false</dml.yarn.appmaster>
+
+   <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
+   <dml.yarn.appmaster.mem>2048</dml.yarn.appmaster.mem>
+
+   <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
+   <dml.yarn.mapreduce.mem>2048</dml.yarn.mapreduce.mem>
+
+   <!-- yarn application submission queue, relevant for default capacity scheduler -->
+   <dml.yarn.app.queue>default</dml.yarn.app.queue>
+
+   <!-- configuration properties for Nimble external package support -->
+   <NumMergeTasks>4</NumMergeTasks>
+   <NumberOfSowThreads>1</NumberOfSowThreads>
+   <NumberOfReapThreads>1</NumberOfReapThreads>
+   <SowerWaitInterval>1000</SowerWaitInterval>
+   <ReaperWaitInterval>1000</ReaperWaitInterval>
+   <NimbleScratch>nimbleoutput</NimbleScratch>
+</root>

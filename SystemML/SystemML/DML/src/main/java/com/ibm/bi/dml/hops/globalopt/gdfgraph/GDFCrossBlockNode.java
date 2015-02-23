@@ -28,7 +28,7 @@ public class GDFCrossBlockNode extends GDFNode
 		MERGE,
 	}
 	
-	private CrossBlockNodeType _type = null;
+	private CrossBlockNodeType _cbtype = null;
 	private String _name = null;
 	
 	/**
@@ -42,10 +42,11 @@ public class GDFCrossBlockNode extends GDFNode
 	public GDFCrossBlockNode( Hop hop, ProgramBlock pb, GDFNode input, String name )
 	{
 		super(hop, pb, null);
+		_type = NodeType.CROSS_BLOCK_NODE;
 		_inputs = new ArrayList<GDFNode>();
 		_inputs.add( input );
 		
-		_type = CrossBlockNodeType.PLAIN;
+		_cbtype = CrossBlockNodeType.PLAIN;
 		_name = name;
 	}
 	
@@ -61,13 +62,15 @@ public class GDFCrossBlockNode extends GDFNode
 	public GDFCrossBlockNode( Hop hop, ProgramBlock pb, GDFNode input1, GDFNode input2, String name )
 	{
 		super(hop, pb, null);
+		_type = NodeType.CROSS_BLOCK_NODE;
 		_inputs = new ArrayList<GDFNode>();
 		_inputs.add( input1 );
 		_inputs.add( input2 );
 		
-		_type = CrossBlockNodeType.MERGE;
+		_cbtype = CrossBlockNodeType.MERGE;
 		_name = name;
 	}
+	
 	
 	public String explain(int level) 
 	{
@@ -78,7 +81,7 @@ public class GDFCrossBlockNode extends GDFNode
 			sb.append("-");
 		
 		//current node details
-		sb.append(" CBNode ["+_name+", "+_type.toString().toLowerCase()+"]\n");
+		sb.append(" CBNode ["+_name+", "+_cbtype.toString().toLowerCase()+"]\n");
 		
 		//recursively explain childs
 		for( GDFNode c : _inputs ) {

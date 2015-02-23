@@ -9,8 +9,17 @@ package com.ibm.bi.dml.hops.globalopt.gdfgraph;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.AggUnaryOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.Direction;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.hops.Hop.ReOrgOp;
+import com.ibm.bi.dml.hops.ReblockOp;
+import com.ibm.bi.dml.hops.ReorgOp;
+import com.ibm.bi.dml.hops.UnaryOp;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * The reason of a custom graph structure is to unify both within DAG
@@ -28,6 +37,17 @@ public class GDFNode
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	public enum NodeType{
+		HOP_NODE,
+		LOOP_NODE,
+		CROSS_BLOCK_NODE,
+	}
+	
+	private static IDSequence _seqID = new IDSequence();
+	
+	protected NodeType _type = null;
+	protected long _ID = -1;
+	
 	//references to original program and hop dag
 	protected Hop _hop = null;
 	protected ProgramBlock _pb = null;
@@ -37,21 +57,61 @@ public class GDFNode
 	
 	public GDFNode()
 	{
-		
+		_ID = _seqID.getNextID();
 	}
 	
 	public GDFNode( Hop hop, ProgramBlock pb, ArrayList<GDFNode> inputs )
 	{
+		this();
+		_type = NodeType.HOP_NODE;
 		_hop = hop;
 		_pb = pb;
 		_inputs = inputs;
+	}
+	
+	public NodeType getNodeType()
+	{
+		return _type;
+	}
+	
+	public long getID()
+	{
+		return _ID;
 	}
 	
 	public Hop getHop()
 	{
 		return _hop;
 	}
-
+	
+	public ArrayList<GDFNode> getInputs()
+	{
+		return _inputs;
+	}
+	
+	public DataType getDataType()
+	{
+		return _hop.getDataType();
+	}
+	
+	/**
+	 * 
+	 * @param format
+	 * @return
+	 */
+	public boolean isValidInputFormatForOperation( FileFormatTypes format )
+	{
+		return (   _hop instanceof ReblockOp //any format
+				|| _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
+				|| (_hop instanceof AggUnaryOp && ((AggUnaryOp)_hop).getDirection()==Direction.RowCol && format!=FileFormatTypes.CSV)
+				|| (_hop instanceof ReorgOp && ((ReorgOp)_hop).getOp()==ReOrgOp.TRANSPOSE && format!=FileFormatTypes.CSV));
+	}
+	
+	/**
+	 * 
+	 * @param level
+	 * @return
+	 */
 	public String explain(int level) 
 	{
 		StringBuilder sb = new StringBuilder();

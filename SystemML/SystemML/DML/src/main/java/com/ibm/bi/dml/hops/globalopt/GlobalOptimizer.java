@@ -11,6 +11,7 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
 /**
  * Super class for all optimizers (e.g., transformation-based, and enumeration-based)
@@ -32,7 +33,8 @@ public abstract class GlobalOptimizer
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
+	 * @throws  
 	 */
 	public abstract GDFGraph optimize( GDFGraph gdfgraph )
-		throws DMLRuntimeException, HopsException, LopsException;
+		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException;
 }

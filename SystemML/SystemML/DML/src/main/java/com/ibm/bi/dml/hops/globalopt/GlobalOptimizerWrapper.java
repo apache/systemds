@@ -7,21 +7,18 @@
 
 package com.ibm.bi.dml.hops.globalopt;
 
-import java.util.ArrayList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.globalopt.enumerate.GlobalEnumerationOptimizer;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GraphBuilder;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 
@@ -38,7 +35,7 @@ public class GlobalOptimizerWrapper
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(GlobalOptimizerWrapper.class);
-	private static final boolean LDEBUG = false; //local debug flag
+	private static final boolean LDEBUG = true; //local debug flag
 	
 	//supported optimizers
 	public enum GlobalOptimizerType{
@@ -66,9 +63,10 @@ public class GlobalOptimizerWrapper
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException
 	 * @throws LopsException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static Program optimizeProgram(DMLProgram prog, Program rtprog) 
-		throws DMLRuntimeException, HopsException, LopsException
+		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException
 	{
 		LOG.debug("Starting global data flow optimization.");
 		Timing time = new Timing(true);
@@ -78,11 +76,11 @@ public class GlobalOptimizerWrapper
 		
 		//create global data flow graph
 		GDFGraph graph = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
-		if( LOG.isDebugEnabled() ) {
+		/*if( LOG.isDebugEnabled() ) {
 			ArrayList<GDFNode> nodes = graph.getGraphRootNodes();
 			for( GDFNode node : nodes )
 				LOG.debug( node+":\n"+node.explain(1) );
-		}
+		}*/
 		
 		//core global data flow optimization 
 		graph = optimizer.optimize(graph);
@@ -90,7 +88,7 @@ public class GlobalOptimizerWrapper
 		//get the final runtime program
 		rtprog = graph.getRuntimeProgram();
 		
-		LOG.debug("Finished optimization in " + time.stop() + " ms.");
+		LOG.debug("Finished global data flow optimization in " + time.stop() + " ms.");
 		return rtprog;
 	}
 	
@@ -109,7 +107,7 @@ public class GlobalOptimizerWrapper
 		switch( type )
 		{
 			case ENUMERATE_DP: 
-				optimizer = new GlobalEnumerationOptimizer();
+				optimizer = new GDFEnumOptimizer();
 				break;
 				
 			//case TRANSFORM: 

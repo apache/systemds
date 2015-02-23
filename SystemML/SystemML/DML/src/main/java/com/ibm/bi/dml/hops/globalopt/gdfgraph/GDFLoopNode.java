@@ -18,7 +18,6 @@ public class GDFLoopNode extends GDFNode
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	
 	private GDFNode _predicate = null; 
 	private HashMap<String,GDFNode> _linputs = null;
 	private HashMap<String,GDFNode> _loutputs = null;
@@ -26,11 +25,11 @@ public class GDFLoopNode extends GDFNode
 	public GDFLoopNode( ProgramBlock pb, GDFNode predicate, HashMap<String, GDFNode> inputs, HashMap<String,GDFNode> outputs )
 	{
 		super(null, pb, new ArrayList<GDFNode>(inputs.values()));
+		_type = NodeType.LOOP_NODE;
 		_predicate = predicate;
 		_linputs = inputs;
 		_loutputs = outputs;
 	}
-
 	
 	public String explain(int level) 
 	{

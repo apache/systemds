@@ -47,6 +47,7 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${build.ownlib}/blas.jar" />
 		<pathelement location="${build.ownlib}/netlib-java-0.9.2.jar" />  <!-- for using lapack etc., mainly used by nimble-related stuff -->
 		<pathelement location="${build.ownlib}/f2jutil.jar" />  <!-- for using lapack etc., mainly used by nimble-related stuff -->
+		<pathelement location="${hadoop.local.path}/guava-11.0.2.jar" /> <!-- for GDFO --> 
 	</path>
 	
 	<path id="SHARED.classpath">

@@ -213,6 +213,9 @@ public class FunctionOp extends Hop
 			if ( et != ExecType.CP ) {
 				throw new HopsException("Invalid execution type for function: " + _fname);
 			}
+			else if ( et == ExecType.SPARK )  {
+				throw new HopsException("constructLop for FunctionOp not implemented for Spark");
+			}
 			//construct input lops (recursive)
 			ArrayList<Lop> tmp = new ArrayList<Lop>();
 			for( Hop in : getInput() )

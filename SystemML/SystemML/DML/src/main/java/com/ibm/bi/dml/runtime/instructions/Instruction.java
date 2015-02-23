@@ -21,7 +21,7 @@ public abstract class Instruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT };
+	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT, SPARK };
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;

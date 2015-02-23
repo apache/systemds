@@ -57,12 +57,18 @@ import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.CleanupMR;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -89,6 +95,7 @@ public class DMLScript
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
 		NZ,             // execute matrix operations on NZ SQL backend
+		SPARK			// execute matrix operations in Spark
 	};
 	
 	//switch to disable Netezza runtime for production
@@ -513,6 +520,8 @@ public class DMLScript
 			lrtplatform = RUNTIME_PLATFORM.HYBRID;
 		else if ( platform.equalsIgnoreCase("nz"))
 			lrtplatform = RUNTIME_PLATFORM.NZ;
+		else if ( platform.equalsIgnoreCase("spark"))
+			lrtplatform = RUNTIME_PLATFORM.SPARK;
 		else 
 			System.err.println("ERROR: Unknown runtime platform: " + platform);
 		
@@ -625,6 +634,9 @@ public class DMLScript
 				if( DISABLE_NZ_RUNTIME )
 					throw new DMLRuntimeException("Runtime platform '"+rtplatform+"' is disabled for production use.");
 				executeNetezza(dmlt, prog, conf, "dmlnz");		
+			case SPARK:
+				executeSpark(dmlt, prog, conf, dmlScriptStr, allArgs);
+				break;
 				
 			default:
 				throw new DMLRuntimeException("Unsupported runtime platform: "+rtplatform);
@@ -780,7 +792,7 @@ public class DMLScript
 		if(OptimizerUtils.isOptLevel(OptimizationLevel.O3_GLOBAL_TIME_MEMORY) ) 
 		{
 			LOG.warn("Optimization level '" + OptimizationLevel.O3_GLOBAL_TIME_MEMORY + "' " +
-					 "is still in experimental state and not intended for production use.");
+					"is still in experimental state and not intended for production use.");
 			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
 		}
 		
@@ -917,6 +929,118 @@ public class DMLScript
 	
 	
 	
+	
+	/**
+	 * executeSpark: handles execution on Spark runtime
+	 * 
+	 * @param dmlt DML Translator
+	 * @param prog DML program from parsed DML script
+	 * @param config from parsed config file (e.g., config.xml)
+	 * @throws ParseException 
+	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
+	 */
+	private static void executeSpark(DMLTranslator dmlt, DMLProgram prog, DMLConfig conf, String dmlScriptStr, String[] allArgs) 
+			throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		LOG.info("\n********************** OPTIMIZER *******************\n" + 
+		          "Level = " + OptimizerUtils.getOptLevel() + "\n"
+				 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
+				 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
+		
+		/////////////////////// construct the lops ///////////////////////////////////
+		dmlt.constructLops(prog);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("\n********************** LOPS DAG *******************");
+			dmlt.printLops(prog);
+			dmlt.resetLopsDAGVisitStatus(prog);
+		}
+
+		// lops plan visualization 
+		if(VISUALIZE){
+//			DotGraph gt = new DotGraph();
+//			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
+//			dmlt.resetLopsDAGVisitStatus(prog);
+		}
+		
+		////////////////////// generate runtime program ///////////////////////////////
+		Program rtprog = prog.getRuntimeProgram(conf);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.info("********************** Instructions *******************");
+			rtprog.printMe();
+			LOG.info("*******************************************************");
+		}
+
+		//optional global data flow optimization
+		if(OptimizerUtils.isOptLevel(OptimizationLevel.O3_GLOBAL_TIME_MEMORY) ) 
+		{
+			LOG.warn("Optimization level '" + OptimizationLevel.O3_GLOBAL_TIME_MEMORY + "' " +
+					 "is still in experimental state and not intended for productive use.");
+			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
+		}
+		
+		//launch SystemML appmaster (if requested and not already in launched AM)
+		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
+				return; //if AM launch unsuccessful, fall back to normal execute
+			if( isActiveAM() ) //in AM context (not failed AM launch)
+				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
+		}
+		
+		//count number compiled MR jobs	
+		int jobCount = Explain.countCompiledMRJobs(rtprog);
+		Statistics.setNoOfCompiledMRJobs( jobCount );				
+		
+		//explain plan of program (hops or runtime)
+		if( EXPLAIN != ExplainType.NONE ) {
+			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
+					 + Explain.explainMemoryBudget()
+					 + Explain.explain(prog, rtprog, EXPLAIN));
+		}
+		
+		// Just for testing whether the instructions that are generated are of type SPInstruction or not.
+		for( ProgramBlock pb : rtprog.getProgramBlocks() ) {
+			if (pb instanceof FunctionProgramBlock || pb instanceof WhileProgramBlock 
+					|| pb instanceof IfProgramBlock || pb instanceof ForProgramBlock) {
+				// Not supported
+			}
+			else {
+				for( Instruction inst : pb.getInstructions()) {
+					// System.out.println(Explain.explainGenericInstruction(inst, 0));
+				}
+			}
+		}
+		
+		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
+		//System.out.println("Estimated costs: "+costs);
+		
+		
+		/////////////////////////// execute program //////////////////////////////////////
+		Statistics.startRunTimer();		
+		try 
+		{  
+			initHadoopExecution( conf );
+			
+			//run execute (w/ exception handling to ensure proper shutdown)
+			rtprog.execute( new ExecutionContext(rtprog) );  
+		}
+		finally //ensure cleanup/shutdown
+		{	
+			//display statistics (incl caching stats if enabled)
+			Statistics.stopRunTimer();
+			LOG.info(Statistics.display());
+			LOG.info("END DML run " + getDateTime() );
+			
+			//shut down nimble queue (if existing)
+			ExternalFunctionProgramBlock.shutDownNimbleQueue();
+			
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution( conf );		
+		}
+
+	} 
 
 	/**
 	 * @throws ParseException 

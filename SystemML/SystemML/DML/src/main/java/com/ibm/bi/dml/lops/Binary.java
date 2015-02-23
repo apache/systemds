@@ -68,7 +68,7 @@ public class Binary extends Lop
 			lps.addCompatibility(JobType.REBLOCK);
 			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
-		else if ( et == ExecType.CP ){
+		else if ( et == ExecType.CP || et == ExecType.SPARK ){
 			lps.addCompatibility(JobType.INVALID);
 			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}

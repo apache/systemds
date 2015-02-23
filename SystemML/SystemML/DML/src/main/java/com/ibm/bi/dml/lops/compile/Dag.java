@@ -57,6 +57,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
@@ -1398,7 +1399,7 @@ public class Dag<N extends Lop>
 		//for(Instruction inst : deleteInst) {
 		for(int i=0; i < deleteInst.size(); i++) {
 			Instruction inst = deleteInst.get(i);
-			if (inst.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM 
+			if ((inst.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM  || inst.getType() == INSTRUCTION_TYPE.SPARK)
 					&& ((CPInstruction)inst).getCPInstructionType() == CPINSTRUCTION_TYPE.Variable 
 					&& ((VariableCPInstruction)inst).isRemoveVariable(varName) ) {
 				deleteInst.remove(i);
@@ -1633,7 +1634,15 @@ public class Dag<N extends Lop>
 				try {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Generating simple instruction - "+ inst_string);
-					CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
+					Instruction currInstr = null;
+					if(node.getExecType() == ExecType.SPARK) {
+						// This will throw an exception if the exectype of hop is set incorrectly
+						// Note: the exec type and exec location of lops needs to be set to SPARK and ControlProgram respectively
+						currInstr = SPInstructionParser.parseSingleInstruction(inst_string);
+					}
+					else {
+						currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
+					}
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						if (node._beginLine != 0)
 							currInstr.setLineNum(node._beginLine);

@@ -117,32 +117,50 @@ public class BinaryOp extends Hop
 			switch(op) {
 				case IQM: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsIQM for BinaryOp not implemented for Spark");
+					}
 					constructLopsIQM(et);
 					break;
 				}
 				case CENTRALMOMENT: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsCentralMoment for BinaryOp not implemented for Spark");
+					}
 					constructLopsCentralMoment(et);
 					break;
 				}	
 				case COVARIANCE: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
+					}
 					constructLopsCovariance(et);
 					break;
 				}
 				case QUANTILE:
 				case INTERQUANTILE: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsQuantile for BinaryOp not implemented for Spark");
+					}
 					constructLopsQuantile(et);
 					break;
 				}
 				case MEDIAN: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsMedian for BinaryOp not implemented for Spark");
+					}
 					constructLopsMedian(et);
 					break;
 				}
 				case APPEND: {
 					ExecType et = optFindExecType();
+					if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLopsAppend for BinaryOp not implemented for Spark");
+					}
 					constructLopsAppend(et);
 					break;
 				}
@@ -557,7 +575,7 @@ public class BinaryOp extends Hop
 
 			// Both operands are Matrixes
 			ExecType et = optFindExecType();
-			if ( et == ExecType.CP ) {
+			if ( et == ExecType.CP || et == ExecType.SPARK) {
 				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				

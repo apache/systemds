@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 
 
 public class InstructionUtils 
@@ -139,6 +140,20 @@ public class InstructionUtils
 		String opcode = getOpCode(str);
 		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode ); 
 		return mrtype;
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static SPINSTRUCTION_TYPE getSPType( String str ) 
+		throws DMLUnsupportedOperationException 
+	{
+		String opcode = getOpCode(str);
+		SPINSTRUCTION_TYPE sptype = SPInstructionParser.String2SPInstructionType.get( opcode ); 
+		return sptype;
 	}
 	
 	/**

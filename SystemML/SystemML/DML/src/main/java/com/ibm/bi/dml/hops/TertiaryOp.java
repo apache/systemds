@@ -189,7 +189,11 @@ public class TertiaryOp extends Hop
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			setLops(unary1);
-		} else {
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsCentralMoment for TertiaryOp not implemented for Spark");
+		}
+		else {
 			//System.out.println("CM Tertiary executing in CP...");
 			CentralMoment cm = new CentralMoment(
 					getInput().get(0).constructLops(),
@@ -244,6 +248,9 @@ public class TertiaryOp extends Hop
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			setLops(unary1);
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsCovariance for TertiaryOp not implemented for Spark");
 		}
 		else {
 			//System.out.println("COV Tertiary executing in CP...");
@@ -313,6 +320,9 @@ public class TertiaryOp extends Hop
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 
 			setLops(pick);
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsQuantile for TertiaryOp not implemented for Spark");
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
@@ -396,6 +406,9 @@ public class TertiaryOp extends Hop
 			
 			//tertiary opt, w/o reblock in CP
 			setLops(tertiary);
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsCtable for TertiaryOp not implemented for Spark");
 		}
 		else //MR
 		{

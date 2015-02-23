@@ -9,6 +9,7 @@ package com.ibm.bi.dml.lops;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -71,7 +72,7 @@ public class ParameterizedBuiltin extends Lop
 	}
 	
 	public ParameterizedBuiltin(ExecType et, HashMap<String, Lop> 
-		       inputParametersLops, OperationTypes op, DataType dt, ValueType vt) 
+		       inputParametersLops, OperationTypes op, DataType dt, ValueType vt) throws HopsException 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
 		_operation = op;
@@ -103,6 +104,9 @@ public class ParameterizedBuiltin extends Lop
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("Parameterized for ParameterizedBuiltinOp not implemented for Spark");
 		}
 		else //executed in CP / CP_FILE
 		{

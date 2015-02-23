@@ -194,6 +194,8 @@ public abstract class Hop
 			_etypeForced = ExecType.CP;
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
 			_etypeForced = ExecType.MR;
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
+			_etypeForced = ExecType.SPARK;
 	}
 	
 	/**

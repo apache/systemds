@@ -144,6 +144,9 @@ public class ReorgOp extends Hop
 						
 						setLops(agg1);
 					}
+					else if ( et == ExecType.SPARK )  {
+						throw new HopsException("constructLops for ReorgOp not implemented for Spark");
+					}
 					else //CP
 					{
 						Transform transform1 = new Transform(

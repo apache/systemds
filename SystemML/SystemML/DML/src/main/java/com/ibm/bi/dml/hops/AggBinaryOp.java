@@ -136,6 +136,15 @@ public class AggBinaryOp extends Hop
 				}
 					
 			}
+			else if ( et == ExecType.SPARK ) {
+				// SPARK_INTEGRATION: MMCJ
+				// TODO: Implement tsmm, pmm, and left transpose rewrite of CP_MM
+				Lop matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+											 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
+				matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers( matmultCP );
+				setLops(matmultCP);
+			}
 			else if ( et == ExecType.MR ) 
 			{
 				Hop input1 = getInput().get(0);

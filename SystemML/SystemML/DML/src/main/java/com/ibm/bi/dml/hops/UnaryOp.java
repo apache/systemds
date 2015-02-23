@@ -141,6 +141,9 @@ public class UnaryOp extends Hop
 					Lop cumsumLop = constructLopsMRCumsum();
 					setLops(cumsumLop);
 				}
+				else if ( et == ExecType.SPARK )  {
+					throw new HopsException("constructLops (cumsum) for UnaryOp not implemented for Spark");
+				}
 				else //default unary 
 				{
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
@@ -199,6 +202,9 @@ public class UnaryOp extends Hop
 			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			return pick;
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsMedian for UnaryOp not implemented for Spark");
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
@@ -308,6 +314,9 @@ public class UnaryOp extends Hop
 			iqm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			return iqm;
+		}
+		else if ( et == ExecType.SPARK )  {
+			throw new HopsException("constructLopsIQM for UnaryOp not implemented for Spark");
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(

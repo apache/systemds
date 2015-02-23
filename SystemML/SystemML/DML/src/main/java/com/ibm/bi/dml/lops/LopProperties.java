@@ -18,7 +18,7 @@ public class LopProperties
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum ExecType { CP, CP_FILE, MR, INVALID };
+	public enum ExecType { CP, CP_FILE, MR, SPARK, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 
 	// static variable to assign an unique ID to every lop that is created

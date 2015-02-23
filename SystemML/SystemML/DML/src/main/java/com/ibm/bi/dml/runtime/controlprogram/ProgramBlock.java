@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
@@ -39,6 +40,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
@@ -365,16 +367,19 @@ public class ProgramBlock
 				
 				//System.out.println("MRJob: " + currMRInst.getJobType() );
 			} 
-			else if (currInst instanceof CPInstruction) 
+			else if (currInst instanceof CPInstruction || currInst instanceof SPInstruction) 
 			{
-				CPInstruction tmp = (CPInstruction)currInst;
-
+				Instruction tmp = currInst;
+				
 				if( tmp.requiresLabelUpdate() ) //update labels only if required
 				{
 					//update labels if required
 					//note: no exchange of updated instruction as labels might change in the general case
 					String updInst = RunMRJobs.updateLabels(currInst.toString(), ec.getVariables());
-					tmp = CPInstructionParser.parseSingleInstruction(updInst);
+					if (tmp instanceof CPInstruction)
+						tmp = CPInstructionParser.parseSingleInstruction(updInst);
+					else
+						tmp = SPInstructionParser.parseSingleInstruction(updInst);
 				}
 
 				//check if function call 
@@ -383,8 +388,11 @@ public class ProgramBlock
 				}
 
 				//execute original or updated instruction
-				tmp.processInstruction(ec);
-
+				if (tmp instanceof CPInstruction) 
+					((CPInstruction) tmp).processInstruction(ec);
+				else
+					((SPInstruction) tmp).processInstruction(ec);
+				
 				//check if function returned
 				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {
 					ec.handleDebugFunctionExit((FunctionCallCPInstruction) tmp);
@@ -397,7 +405,10 @@ public class ProgramBlock
 
 				if( DMLScript.STATISTICS) {
 					long t3 = System.nanoTime();
-					Statistics.maintainCPHeavyHitters(tmp.getOpcode(), t3-t2);
+					if (tmp instanceof CPInstruction) 
+						Statistics.maintainCPHeavyHitters(((CPInstruction) tmp).getOpcode(), t3-t2);
+					else 
+						Statistics.maintainCPHeavyHitters(((SPInstruction) tmp).getOpcode(), t3-t2);
 				}
 				
 				if( CHECK_MATRIX_SPARSITY )

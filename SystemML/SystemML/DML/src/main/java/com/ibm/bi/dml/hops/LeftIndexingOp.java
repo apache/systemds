@@ -168,6 +168,9 @@ public class LeftIndexingOp  extends Hop
 	
 					setLops(binary);
 				}
+				else if ( et == ExecType.SPARK )  {
+					throw new HopsException("constructLops for LeftIndexingOp not implemented for Spark");
+				}
 				else {
 					LeftIndex left = new LeftIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 

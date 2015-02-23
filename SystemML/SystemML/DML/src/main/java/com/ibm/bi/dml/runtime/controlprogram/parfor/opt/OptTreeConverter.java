@@ -326,6 +326,7 @@ public class OptTreeConverter
 				//node.addParam(ParamType.OPTYPE,mrinst.getMRInstructionType().toString());
 				break;
 			default:
+				// In initial prototype, parfor is not supported for spark, so this exception will be thrown
 				throw new DMLUnsupportedOperationException("Unsupported instruction type.");
 		}
 		

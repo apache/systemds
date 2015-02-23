@@ -107,6 +107,9 @@ public class AggUnaryOp extends Hop
 						agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
 					}
 				}
+				else if ( et == ExecType.SPARK )  {
+					throw new HopsException("constructLops for AggUnaryOp not implemented for Spark");
+				}
 				else //ExecType.MR
 				{
 					Hop input = getInput().get(0);

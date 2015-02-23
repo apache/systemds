@@ -98,7 +98,7 @@ public class ReblockOp extends Hop
 
 			try {
 				ExecType et = optFindExecType();
-				if ( et == ExecType.MR ) {
+				if ( et == ExecType.MR || et == ExecType.SPARK) {
 					Hop input = getInput().get(0);
 					
 					// Create the reblock lop according to the format of the input hop
@@ -114,12 +114,20 @@ public class ReblockOp extends Hop
 				
 							rcsv.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							
-							setLops(rcsv);
+						if(et == ExecType.SPARK) {
+							throw new HopsException("CSV Reblock not implemented for spark");
+						}
+						setLops(rcsv);
+					
 					}
 					else //TEXT / BINARYBLOCK / BINARYCELL  
 					{
 						setLops( getInput().get(0).constructLops() );
 						setRequiresReblock(true);
+						
+						if(et == ExecType.SPARK) {
+							throw new HopsException("Reblock not implemented for Spark");
+						}
 						
 						// construct and set reblock lop as current root lop
 						constructAndSetReblockLopIfRequired();
@@ -205,6 +213,12 @@ public class ReblockOp extends Hop
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
+		
+		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+			_etypeForced = ExecType.SPARK;
+			_etype = ExecType.SPARK;
+			return _etype;
+		}
 		
 		if( _etypeForced != null & _etypeForced != ExecType.MR ) 			
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");

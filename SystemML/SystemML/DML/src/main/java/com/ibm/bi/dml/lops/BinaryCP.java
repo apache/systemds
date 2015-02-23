@@ -38,6 +38,24 @@ public class BinaryCP extends Lop
 	
 	OperationTypes operation;
 
+	/**
+	 * This overloaded constructor is used for setting exec type in case of spark backend
+	 */
+	public BinaryCP(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	{
+		super(Lop.Type.BinaryCP, dt, vt);		
+		operation = op;		
+		this.addInput(input1);
+		this.addInput(input2);
+		input1.addOutput(this);
+		input2.addOutput(this);
+
+		boolean breaksAlignment = false; // this field does not carry any meaning for this lop
+		boolean aligner = false;
+		boolean definesMRJob = false;
+		lps.addCompatibility(JobType.INVALID);
+		this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+	}
 	
 	/**
 	 * Constructor to perform a scalar operation

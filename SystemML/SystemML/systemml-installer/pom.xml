@@ -91,9 +91,7 @@
 		</plugins>
 	</build>
 
-
-
 	<properties>
-		<installDir>/opt/ibm/biginsights/${BIVersion}</installDir>
+		<installDir>/usr/biginsights/${BIVersion}</installDir>
 	</properties>
 </project>

@@ -248,14 +248,15 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					
 					//new row left indexing operator
 					Hop parent = ihop0.getParent().get(0);
-					HopRewriteUtils.removeChildReference(parent, ihop0); //input data
+					int pos = HopRewriteUtils.getChildReferencePos(parent, ihop0);
+					HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, pos); //input data
 				
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 													rowExpr, rowExpr, new LiteralOp("1",1), 
 													HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
-					HopRewriteUtils.addChildReference(parent, newLix, 0);
+					HopRewriteUtils.addChildReference(parent, newLix, pos);
 					
 					appliedRow = true;
 					LOG.debug("Applied vectorizeLeftIndexingRow");
@@ -271,7 +272,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp tmp = (LeftIndexingOp) current.getInput().get(0);
 					if(    tmp.getParent().size()>1  //multiple consumers, i.e., not a simple chain
 						|| !((LeftIndexingOp) tmp).getColLowerEqualsUpper() //row merge not applicable
-						|| tmp.getInput().get(4) != ihop0.getInput().get(4) ) //not the same row
+						|| tmp.getInput().get(4) != ihop0.getInput().get(4) ) //not the same col
 					{
 						break;
 					}
@@ -305,14 +306,15 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					
 					//new row left indexing operator
 					Hop parent = ihop0.getParent().get(0);
-					HopRewriteUtils.removeChildReference(parent, ihop0); //input data
+					int pos = HopRewriteUtils.getChildReferencePos(parent, ihop0);
+					HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, pos); //input data
 				
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 							                        new LiteralOp("1",1), HopRewriteUtils.createValueHop(input, true), 
 													colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
-					HopRewriteUtils.addChildReference(parent, newLix, 0);
+					HopRewriteUtils.addChildReference(parent, newLix, pos);
 					
 					appliedRow = true;
 					LOG.debug("Applied vectorizeLeftIndexingCol");

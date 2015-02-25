@@ -5,8 +5,6 @@
 	<artifactId>SystemML</artifactId>
 	<name>SystemML rpm installer</name>
 
-
-
 	<scm>
 		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
 		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>

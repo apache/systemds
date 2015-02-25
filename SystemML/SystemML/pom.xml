@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.ibm.biginsights</groupId>
-	<version>3.6-SNAPSHOT</version>
+	<version>3.6</version>
 	<artifactId>systemml-reactor</artifactId>
 	<packaging>pom</packaging>
 
@@ -14,9 +13,9 @@
 
 
 	<scm>
-		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.6</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.6</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.6</developerConnection>
 	</scm>
 
 

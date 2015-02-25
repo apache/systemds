@@ -811,7 +811,8 @@ public class DMLScript
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {
 			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget()
+					 + Explain.explainMemoryBudget()+"\n"
+					 + Explain.explainDegreeOfParallelism()
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
 				
@@ -996,7 +997,8 @@ public class DMLScript
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {
 			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget()
+					 + Explain.explainMemoryBudget()+"\n"
+					 + Explain.explainDegreeOfParallelism()
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
 		

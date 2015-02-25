@@ -41,9 +41,11 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class Explain 
 {
@@ -84,6 +86,33 @@ public class Explain
 		sb.append( "MB/" );
 		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetReduce()) );
 		sb.append( "MB" );
+		
+		return sb.toString();		 
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static String explainDegreeOfParallelism()
+	{
+		int lk = InfrastructureAnalyzer.getLocalParallelism();
+		int rk = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+		int rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		
+		//correction max number of mappers/reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() ){
+			rk = (int)Math.max(rk, YarnClusterAnalyzer.getNumCores());
+			rk2 = (int)Math.max(rk2, YarnClusterAnalyzer.getNumCores()/2);
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( "# Degree of Parallelism (vcores) local/remote = " );
+		sb.append( lk );
+		sb.append( "/" );
+		sb.append( rk );
+		sb.append( "/" );
+		sb.append( rk2 );
 		
 		return sb.toString();		 
 	}

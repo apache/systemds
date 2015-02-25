@@ -1,22 +1,23 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
 	<name>SystemML compiler</name>
 
 
-  
-  <scm>
-<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
- </scm>
-  
- <parent>
-	  <groupId>com.ibm.biginsights</groupId>
-  	<artifactId>systemml-reactor</artifactId>
-  	<version>4.0-SNAPSHOT</version>
-  	<relativePath>../pom.xml</relativePath>
-  </parent>
+
+	<scm>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+	</scm>
+
+	<parent>
+		<groupId>com.ibm.biginsights</groupId>
+		<artifactId>systemml-reactor</artifactId>
+		<version>4.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
 
 	<build>
 		<plugins>
@@ -24,6 +25,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.3</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -48,34 +50,22 @@
 						<configuration>
 							<sources>
 								<source>${basedir}/src/test_integration/java</source>
+								<source>${basedir}/src/test_long_running/java</source>
 							</sources>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!--plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>javacc-maven-plugin</artifactId>
-				<version>2.6</version>
-				<configuration>
-					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>javacc</id>
-						<goals>
-							<goal>javacc</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin-->
+			<!--plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>javacc-maven-plugin</artifactId> 
+				<version>2.6</version> <configuration> <sourceDirectory>${basedir}/src/main/java</sourceDirectory> 
+				</configuration> <executions> <execution> <id>javacc</id> <goals> <goal>javacc</goal> 
+				</goals> </execution> </executions> </plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<excludes>
-						<exclude>**/udf/lib/EigenWrapper.java</exclude>
 						<exclude>**/udf/lib/LinearSolverWrapperCP.java</exclude>
 						<exclude>**/dml/utils/visualize/*.java</exclude>
 					</excludes>
@@ -83,16 +73,6 @@
 
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.16</version>
-				<configuration>
-					<excludes>
-						<exclude>**/test/integration/**.*</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
 
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -116,7 +96,7 @@
 						</goals>
 						<configuration>
 							<descriptors>
-								<descriptor>distrib.xml</descriptor>
+								<descriptor>src/assembly/distrib.xml</descriptor>
 							</descriptors>
 						</configuration>
 					</execution>
@@ -130,57 +110,183 @@
 				<configuration>
 					<archive>
 						<index>true</index>
-<!-- 						<manifest> -->
-<!-- 							<addClasspath>true</addClasspath> -->
-<!-- 						</manifest> -->
+						<!-- <manifest> -->
+						<!-- <addClasspath>true</addClasspath> -->
+						<!-- </manifest> -->
 						<manifestEntries>
 							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>
 			</plugin>
-		<plugin>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr4-maven-plugin</artifactId>
-        <configuration>
+			<plugin>
+				<groupId>org.antlr</groupId>
+				<artifactId>antlr4-maven-plugin</artifactId>
+				<configuration>
 					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
 					<outputDirectory>${basedir}/src/main/java</outputDirectory>
-					</configuration>
-        <version>4.3</version>
-        <executions>
-          <execution>
-            <id>antlr</id>
-            <goals>
-              <goal>antlr4</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin> 
+				</configuration>
+				<version>4.3</version>
+				<executions>
+					<execution>
+						<id>antlr</id>
+						<goals>
+							<goal>antlr4</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** The BigInsights 
+				Jenkins server does not allow builds to run for more than 30 minutes, so 
+				there isn't enough time to run the full test suite during the "test" phase 
+				of the Maven lifecycle. As a workaround for this problem, we put longer running 
+				tests and integration tests under src/test_integration. Unfortunately, Maven 
+				doesn't really like having integration tests in the same component as unit 
+				tests. Surefire happily compiles and runs all the tests under both src/test 
+				and src/test_integration. As far as I can tell, the best practice for this 
+				issue is to put long-running tests into a separate Maven component. Unfortunately, 
+				RTC's Maven integration doesn't deal well with multi-component projects. 
+				Hence the hack used here. The "test" phase of this component runs all the 
+				tests whose PACKAGE NAMES do not include directories called "slowtest" or 
+				"integration". The "integration-test" phase runs a copy of Failsafe that 
+				invokes tests that do not contain "test" in their package names. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.18</version>
+				<configuration>
+					<!-- STDERR/STDOUT to individual .txt files instead of console -->
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+					<!-- Run (num cores) test harness classes in parallel, each in a separate 
+						process -->
+					<forkCount>1C</forkCount>
+					<reuseForks>true</reuseForks>
+
+					<!-- Third argument prevents Java from popping up lots of windows on 
+						MacOS -->
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Djava.awt.headless=true</argLine>
+
+					<includes>
+						<include>**/*Test.java</include>
+					</includes>
+
+					<excludes>
+						<exclude>**/slowtest/**</exclude>
+						<exclude>**/integration/**</exclude>
+					</excludes>
+
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				
+				<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** -->
+				<!-- Failsafe 2.18 has a bug in computing # cores, so use 2.17 -->
+				<version>2.17</version>
+				<!-- *** END HACK *** -->
+
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<!-- STDERR/STDOUT to individual .txt files instead of console -->
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+					<!-- Run (num cores) test harness classes in parallel, each in a separate 
+						process -->
+					<forkCount>1C</forkCount>
+					<reuseForks>true</reuseForks>
+
+					<!-- Third argument prevents Java from popping up lots of windows on 
+						MacOS -->
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Djava.awt.headless=true</argLine>
+
+					<includes>
+						<include>**/integration/**/*Test.java</include>
+					</includes>
+
+					<excludes>
+						<exclude>**/slowtest/**</exclude>
+					</excludes>
+
+				</configuration>
+			</plugin>
 
 		</plugins>
 
 	</build>
 
+	<!-- Hack continues: Build profile for long-running tests -->
+	<profiles>
+		<profile>
+			<id>slowtest</id>
+			<activation>
+				<property>
+					<name>slowtest</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>failsafe-slow</id>
+								<phase>integration-test</phase>
+								<goals>
+									<goal>test</goal>
+								</goals>
+								<configuration>
+									<excludes>
+										<exclude>none</exclude>
+									</excludes>
+									<includes>
+										<include>**/slowtest/**</include>
+									</includes>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+
+	<!-- *** END HACK *** -->
+
 	<dependencies>
 
-	<dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <version>2.2.0</version>
-      <scope>provided</scope>
-    </dependency>
-    <!-- dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <version>2.2.0</version>
-      <scope>provided</scope>
-    </dependency-->
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-      <version>2.2.0</version>
-      <scope>provided</scope>
-    </dependency>  
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_2.10</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-common</artifactId>
+			<version>2.4.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- dependency> <groupId>org.apache.hadoop</groupId> <artifactId>hadoop-mapreduce-client-core</artifactId> 
+			<version>2.2.0</version> <scope>provided</scope> </dependency -->
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-hdfs</artifactId>
+			<version>2.4.0</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
@@ -253,48 +359,48 @@
 		</dependency>
 
 
-	 <dependency>
-	 	<groupId>org.antlr</groupId>
-	 	<artifactId>antlr4</artifactId>
-	 	<version>4.3</version>
-	 	<scope>provided</scope>
-	 </dependency>
-	 <dependency>
-	 	<groupId>org.antlr</groupId>
-	 	<artifactId>antlr4-runtime</artifactId>
-	 	<version>4.3</version>
-	 </dependency>
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>antlr4</artifactId>
+			<version>4.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>antlr4-runtime</artifactId>
+			<version>4.3</version>
+		</dependency>
 
-      <!-- Libraries for yarn integration -->
-	  <dependency>
-		<groupId>org.apache.hadoop</groupId>
-		<artifactId>hadoop-yarn-api</artifactId>
-		<version>2.4.1-4</version>
-		<scope>provided</scope>
-	  </dependency>     
+		<!-- Libraries for yarn integration -->
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-yarn-api</artifactId>
+			<version>2.4.1-4</version>
+			<scope>provided</scope>
+		</dependency>
 
-	 <dependency>
-	   	<groupId>org.apache.hadoop</groupId>
-	  	<artifactId>hadoop-yarn-common</artifactId>
-	  	<version>2.4.1-4</version>
-	  	<scope>provided</scope>
-	 </dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-yarn-common</artifactId>
+			<version>2.4.1-4</version>
+			<scope>provided</scope>
+		</dependency>
 
-	 <dependency>
-	 	<groupId>org.apache.hadoop</groupId>
-	 	<artifactId>hadoop-yarn-client</artifactId>
-	 	<version>2.4.1-4</version>
-	 	<scope>provided</scope>
-	 </dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-yarn-client</artifactId>
+			<version>2.4.1-4</version>
+			<scope>provided</scope>
+		</dependency>
 
-	 <dependency>
-		<groupId>org.apache.hadoop</groupId>
-		<artifactId>hadoop-mapreduce-client-common</artifactId>
-		<version>2.4.1-4</version>
-		<scope>provided</scope>
-	 </dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-mapreduce-client-common</artifactId>
+			<version>2.4.1-4</version>
+			<scope>provided</scope>
+		</dependency>
 
 	</dependencies>
 
-	<groupId>com.ibm.biginsights</groupId>
+	<!-- <groupId>com.ibm.biginsights</groupId> -->
 </project>

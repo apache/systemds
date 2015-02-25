@@ -205,7 +205,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			boolean isSingleCol = ihop0.getColLowerEqualsUpper();
 			boolean appliedRow = false;
 			
-			if( isSingleRow && isSingleCol ){
+			if( isSingleRow && isSingleCol )
+			{
 				//collect simple chains (w/o multiple consumers) of left indexing ops
 				ArrayList<Hop> ihops = new ArrayList<Hop>();
 				ihops.add(ihop0);
@@ -214,13 +215,15 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp tmp = (LeftIndexingOp) current.getInput().get(0);
 					if(    tmp.getParent().size()>1  //multiple consumers, i.e., not a simple chain
 						|| !((LeftIndexingOp) tmp).getRowLowerEqualsUpper() //row merge not applicable
-						|| tmp.getInput().get(2) != ihop0.getInput().get(2) ) //not the same row
+						|| tmp.getInput().get(2) != ihop0.getInput().get(2) //not the same row
+						|| tmp.getInput().get(0).getDim2() <= 1 ) //target is single column or unknown 
 					{
 						break;
 					}
 					ihops.add( tmp );
 					current = tmp;
 				}
+				
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					Hop input = current.getInput().get(0);
@@ -246,24 +249,35 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						c.refreshSizeInformation();
 					}
 					
-					//new row left indexing operator
-					Hop parent = ihop0.getParent().get(0);
-					int pos = HopRewriteUtils.getChildReferencePos(parent, ihop0);
-					HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, pos); //input data
-				
+					//new row left indexing operator (for all parents, only intermediates are guaranteed to have 1 parent)
+					//(note: it's important to clone the parent list before creating newLix on top of ihop0)
+					ArrayList<Hop> ihop0parents = (ArrayList<Hop>) ihop0.getParent().clone();
+					ArrayList<Integer> ihop0parentsPos = new ArrayList<Integer>();
+					for( Hop parent : ihop0parents ) {
+						int posp = HopRewriteUtils.getChildReferencePos(parent, ihop0);
+						HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, posp); //input data
+						ihop0parentsPos.add(posp);
+					}
+					
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 													rowExpr, rowExpr, new LiteralOp("1",1), 
 													HopRewriteUtils.createValueHop(input, false), true, false); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
-					HopRewriteUtils.addChildReference(parent, newLix, pos);
+					
+					for( int i=0; i<ihop0parentsPos.size(); i++ ) {
+						Hop parent = ihop0parents.get(i);
+						int posp = ihop0parentsPos.get(i);
+						HopRewriteUtils.addChildReference(parent, newLix, posp);
+					}
 					
 					appliedRow = true;
 					LOG.debug("Applied vectorizeLeftIndexingRow");
 				}
 			}
 			
-			if( isSingleRow && isSingleCol && !appliedRow ){
+			if( isSingleRow && isSingleCol && !appliedRow )
+			{
 				//collect simple chains (w/o multiple consumers) of left indexing ops
 				ArrayList<Hop> ihops = new ArrayList<Hop>();
 				ihops.add(ihop0);
@@ -272,7 +286,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp tmp = (LeftIndexingOp) current.getInput().get(0);
 					if(    tmp.getParent().size()>1  //multiple consumers, i.e., not a simple chain
 						|| !((LeftIndexingOp) tmp).getColLowerEqualsUpper() //row merge not applicable
-						|| tmp.getInput().get(4) != ihop0.getInput().get(4) ) //not the same col
+						|| tmp.getInput().get(4) != ihop0.getInput().get(4)  //not the same col
+						|| tmp.getInput().get(0).getDim1() <= 1 )  //target is single row or unknown
 					{
 						break;
 					}
@@ -304,17 +319,27 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 						c.refreshSizeInformation();
 					}
 					
-					//new row left indexing operator
-					Hop parent = ihop0.getParent().get(0);
-					int pos = HopRewriteUtils.getChildReferencePos(parent, ihop0);
-					HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, pos); //input data
-				
+					//new row left indexing operator (for all parents, only intermediates are guaranteed to have 1 parent)
+					//(note: it's important to clone the parent list before creating newLix on top of ihop0)
+					ArrayList<Hop> ihop0parents = (ArrayList<Hop>) ihop0.getParent().clone();
+					ArrayList<Integer> ihop0parentsPos = new ArrayList<Integer>();
+					for( Hop parent : ihop0parents ) {
+						int posp = HopRewriteUtils.getChildReferencePos(parent, ihop0);
+						HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, posp); //input data
+						ihop0parentsPos.add(posp);
+					}
+					
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, input, ihop0, 
 							                        new LiteralOp("1",1), HopRewriteUtils.createValueHop(input, true), 
 													colExpr, colExpr, false, true); 
 					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
 					newLix.refreshSizeInformation();
-					HopRewriteUtils.addChildReference(parent, newLix, pos);
+					
+					for( int i=0; i<ihop0parentsPos.size(); i++ ) {
+						Hop parent = ihop0parents.get(i);
+						int posp = ihop0parentsPos.get(i);
+						HopRewriteUtils.addChildReference(parent, newLix, posp);
+					}
 					
 					appliedRow = true;
 					LOG.debug("Applied vectorizeLeftIndexingCol");

@@ -54,12 +54,12 @@ public abstract class AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	protected static final String SCRIPT_DIR = "./DML/test/scripts/";
+	protected static final String SCRIPT_DIR = "./src/test_integration/scripts/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
-	protected static final String CONFIG_DIR = "./DML/";
+	protected static final String CONFIG_DIR = "./src/test_integration/config/";
 	
 	
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;

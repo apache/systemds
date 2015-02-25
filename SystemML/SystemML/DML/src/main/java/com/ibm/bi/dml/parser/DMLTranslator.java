@@ -1650,10 +1650,19 @@ public class DMLTranslator
 					//assignment, function call
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
-					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-					if (fstmt == null){
-						LOG.error(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
-						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					
+					//error handling missing function
+					if (fsb == null){
+						String error = source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace(); 
+						LOG.error(error);
+						throw new LanguageException(error);
+					}
+					
+					//error handling unsupported function call in indexing expression
+					if( target instanceof IndexedIdentifier ) {
+						String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(),fci.getName());
+						throw new LanguageException("Unsupported function call to '"+fkey+"' in left indexing expression. " +
+								                    "Please, assign the function output to a variable.");
 					}
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();

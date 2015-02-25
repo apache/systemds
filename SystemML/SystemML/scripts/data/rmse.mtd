@@ -1,6 +1,0 @@
-{ 
-    "data_type": "scalar"
-    ,"value_type": "double"
-    ,"format": "text"
-    ,"description": { "author": "SystemML" } 
- }

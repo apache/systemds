@@ -1,3 +1,0 @@
-A = read ($1, rows = 5, cols = 1, format = "text");
-s = sum(A) * $2;
-write (s, $3);

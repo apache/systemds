@@ -1,14 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>system-ml</artifactId>
+	<name>SystemML compiler</name>
 
-  <groupId>com.ibm.biginsights</groupId>
-  <version>4.0-SNAPSHOT</version>
-  <artifactId>systemml-reactor</artifactId>
-  <packaging>pom</packaging>
-
-  <name>IBM BigInsights SystemML</name>
-  <description />
 
   
   <scm>
@@ -17,28 +11,290 @@
 <developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
  </scm>
   
+ <parent>
+	  <groupId>com.ibm.biginsights</groupId>
+  	<artifactId>systemml-reactor</artifactId>
+  	<version>4.0-SNAPSHOT</version>
+  	<relativePath>../pom.xml</relativePath>
+  </parent>
 
-	<parent>
-		<groupId>com.ibm.biginsights</groupId>
-		<artifactId>java-parent</artifactId>
-		<version>1.3.14</version>
-	</parent>
+	<build>
+		<plugins>
+			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" NIMBLE INTO SYSTEMML.JAR -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
 
-  <modules>
-    <module>DML</module>
-   </modules>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<id>add-test-source</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${basedir}/src/test_integration/java</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.5</version>
+			<!--plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>javacc-maven-plugin</artifactId>
+				<version>2.6</version>
+				<configuration>
+					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>javacc</id>
+						<goals>
+							<goal>javacc</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>**/udf/lib/EigenWrapper.java</exclude>
+						<exclude>**/udf/lib/LinearSolverWrapperCP.java</exclude>
+						<exclude>**/dml/utils/visualize/*.java</exclude>
+					</excludes>
+				</configuration>
+
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.16</version>
+				<configuration>
+					<excludes>
+						<exclude>**/test/integration/**.*</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4</version>
+				<executions>
+					<execution>
+						<id>create-package-assemblies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<skipAssembly>true</skipAssembly>
+						</configuration>
+					</execution>
+					<execution>
+						<id>create-bigsheets-package-assemblies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>distrib.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<index>true</index>
+<!-- 						<manifest> -->
+<!-- 							<addClasspath>true</addClasspath> -->
+<!-- 						</manifest> -->
+						<manifestEntries>
+							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+		<plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
         <configuration>
-          <skip>false</skip>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+					<outputDirectory>${basedir}/src/main/java</outputDirectory>
+					</configuration>
+        <version>4.3</version>
+        <executions>
+          <execution>
+            <id>antlr</id>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin> 
 
+		</plugins>
+
+	</build>
+
+	<dependencies>
+
+	<dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency-->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>2.2.0</version>
+      <scope>provided</scope>
+    </dependency>  
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.1.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.1.1</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.15</version>
+			<scope>provided</scope>
+		</dependency>
+
+
+		<dependency>
+			<groupId>net.sf.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>1.8</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.ibm.json</groupId>
+			<artifactId>JSON4J</artifactId>
+			<version>1.0.1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.ibm.thirdparty</groupId>
+			<artifactId>nimble-hadoop</artifactId>
+			<version>1.0.2</version>
+		</dependency>
+		<!-- <dependency> -->
+		<!-- <groupId>com.ibm.thirdparty</groupId> -->
+		<!-- <artifactId>grappa-vis</artifactId> -->
+		<!-- <version>1.0.0</version> -->
+		<!-- </dependency> -->
+
+
+		<dependency>
+			<groupId>com.ibm.jaql</groupId>
+			<artifactId>jaql</artifactId>
+			<version>0.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>stax</groupId>
+			<artifactId>stax-api</artifactId>
+			<version>1.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.2.1</version>
+			<scope>provided</scope>
+		</dependency>
+
+
+	 <dependency>
+	 	<groupId>org.antlr</groupId>
+	 	<artifactId>antlr4</artifactId>
+	 	<version>4.3</version>
+	 	<scope>provided</scope>
+	 </dependency>
+	 <dependency>
+	 	<groupId>org.antlr</groupId>
+	 	<artifactId>antlr4-runtime</artifactId>
+	 	<version>4.3</version>
+	 </dependency>
+
+      <!-- Libraries for yarn integration -->
+	  <dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-yarn-api</artifactId>
+		<version>2.4.1-4</version>
+		<scope>provided</scope>
+	  </dependency>     
+
+	 <dependency>
+	   	<groupId>org.apache.hadoop</groupId>
+	  	<artifactId>hadoop-yarn-common</artifactId>
+	  	<version>2.4.1-4</version>
+	  	<scope>provided</scope>
+	 </dependency>
+
+	 <dependency>
+	 	<groupId>org.apache.hadoop</groupId>
+	 	<artifactId>hadoop-yarn-client</artifactId>
+	 	<version>2.4.1-4</version>
+	 	<scope>provided</scope>
+	 </dependency>
+
+	 <dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-mapreduce-client-common</artifactId>
+		<version>2.4.1-4</version>
+		<scope>provided</scope>
+	 </dependency>
+
+	</dependencies>
+
+	<groupId>com.ibm.biginsights</groupId>
 </project>
-

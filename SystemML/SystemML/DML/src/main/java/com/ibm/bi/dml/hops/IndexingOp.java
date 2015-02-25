@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
@@ -297,8 +298,6 @@ public class IndexingOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		//TODO MB: generalize this.
-		
 		Hop input1 = getInput().get(0); //original matrix
 		Hop input2 = getInput().get(1); //inpRowL
 		Hop input3 = getInput().get(2); //inpRowU
@@ -306,25 +305,32 @@ public class IndexingOp extends Hop
 		Hop input5 = getInput().get(4); //inpColU
 		
 		//parse input information
-		boolean allRows = false;
-		if( input2 instanceof LiteralOp )
-		{
-			if ( ((LiteralOp)input2).getName().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).getOp() == OpOp1.NROW )
-				allRows = true;
-		}	
-		
-		boolean allCols = false;
-		if( input4 instanceof LiteralOp )
-		{
-			if ( ((LiteralOp)input4).getName().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).getOp() == OpOp1.NCOL )
-				allCols = true;
-		}
+		boolean allRows = 
+			(    input2 instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)input2)==1 
+			  && input3 instanceof UnaryOp && ((UnaryOp)input3).getOp() == OpOp1.NROW  );
+		boolean allCols = 
+			(    input4 instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)input4)==1 
+			  && input5 instanceof UnaryOp && ((UnaryOp)input5).getOp() == OpOp1.NCOL );
+		boolean constRowRange = (input2 instanceof LiteralOp && input3 instanceof LiteralOp);
+		boolean constColRange = (input4 instanceof LiteralOp && input5 instanceof LiteralOp);
 		
 		//set dimension information
-		if( _rowLowerEqualsUpper )    setDim1(1);
-		else if( allRows ) setDim1(input1.getDim1());
-		if( _colLowerEqualsUpper )    setDim2(1);
-		else if( allCols ) setDim2(input1.getDim2());
+		if( _rowLowerEqualsUpper ) //ROWS
+			setDim1(1);
+		else if( allRows ) 
+			setDim1(input1.getDim1());
+		else if( constRowRange ){
+			setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)input3)
+					-HopRewriteUtils.getIntValueSafe((LiteralOp)input2)+1 );
+		}
+		if( _colLowerEqualsUpper ) //COLS
+			setDim2(1);
+		else if( allCols ) 
+			setDim2(input1.getDim2());
+		else if( constColRange ){
+			setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input5)
+					-HopRewriteUtils.getIntValueSafe((LiteralOp)input4)+1 );
+		} 
 	}
 	
 	@Override

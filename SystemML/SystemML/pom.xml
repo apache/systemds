@@ -14,9 +14,9 @@
 
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
-		<artifactId>systemml-reactor</artifactId>
-		<version>4.0-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+  	<artifactId>systemml-reactor</artifactId>
+  	<version>3.7-SNAPSHOT</version>
+  	<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<build>
@@ -403,4 +403,8 @@
 	</dependencies>
 
 	<!-- <groupId>com.ibm.biginsights</groupId> -->
+
+	<properties>
+		<installDir>/usr/ibm/biginsights/${BIVersion}</installDir>
+	</properties>
 </project>

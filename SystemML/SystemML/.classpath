@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="com/ibm/bi/dml/packagesupport/LinearSolverWrapperCP.java|com/ibm/bi/dml/packagesupport/EigenWrapper.java|com/ibm/bi/dml/utils/visualize/DAGFrame.java|com/ibm/bi/dml/utils/visualize/DotGraph.java" including="**/*.java" kind="src" path="src/main/java"/>
+	<classpathentry excluding="**/udf/lib/LinearSolverWrapperCP.java|**/dml/utils/visualize/*.java" kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/xml/bind/jaxb-api/2.2.2/jaxb-api-2.2.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/activation/activation/1.1/activation-1.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/servlet/jsp/jsp-api/2.1/jsp-api-2.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/mail/mail/1.4/mail-1.4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/javax/jms/jms/1.1/jms-1.1.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="var" path="M2_REPO/FIXME/accelerator_development_libraries/biginsights/ihc/hadoop-core/2.2.0-mr1/hadoop-core-2.2.0-mr1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-common/2.2.0/hadoop-common-2.2.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-annotations/2.2.0/hadoop-annotations-2.2.0.jar"/>
@@ -57,11 +66,37 @@
 	<classpathentry kind="var" path="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/ibm/thirdparty/nimble-hadoop/1.0.2/nimble-hadoop-1.0.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/ibm/jaql/jaql/0.5.2/jaql-0.5.2.jar"/>
-	<classpathentry kind="lib" path="lib/tmp_dev/conf"/>
-	<classpathentry kind="output" path="target/classes"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-yarn-api/2.4.1-4/hadoop-yarn-api-2.4.1-4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-yarn-client/2.4.1-4/hadoop-yarn-client-2.4.1-4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-yarn-common/2.4.1-4/hadoop-yarn-common-2.4.1-4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/hadoop/hadoop-mapreduce-client-common/2.4.1-4/hadoop-mapreduce-client-common-2.4.1-4.jar"/>
-
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test_integration/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test_long_running/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>

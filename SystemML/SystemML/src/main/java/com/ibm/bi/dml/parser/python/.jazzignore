@@ -24,20 +24,10 @@
 # NOTE: modifying ignore files will not change the ignore status of 
 #     Eclipse derived resources.
 
-core.ignore.recursive= \
-	{*.class} 
+core.ignore.recursive= 
 
 core.ignore= \
-	{.1318885481390.-797278204.crc} \
-	{.1318897100093.-287828418.crc} \
-	{.1319585826421.-1945863460.crc} \
-	{.settings} \
-	{1318885481390.-797278204} \
-	{1318897100093.-287828418} \
-	{1319585826421.-1945863460} \
-	{42843f7c} \
-	{75ce52cf} \
-	{bin} \
-	{dependency-reduced-pom.xml} \
-	{scratch_space} \
-	{target} 
+	{PydmlBaseListener.java} \
+	{PydmlLexer.java} \
+	{PydmlListener.java} \
+	{PydmlParser.java} 

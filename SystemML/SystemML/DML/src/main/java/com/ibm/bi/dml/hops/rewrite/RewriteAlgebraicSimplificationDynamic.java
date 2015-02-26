@@ -141,7 +141,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyIdentityRepMatrixMult(hop, hi, i);   //e.g., X%*%y -> X if y matrix(1,1,1);
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
-			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y));, if col vector
+			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
+			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
+			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = simplifyDotProductSum(hop, hi, i);           //e.g., sum(v^2) -> t(v)%*%v if ncol(v)==1 
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product
@@ -924,6 +926,123 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				LOG.debug("Applied simplifyDiagMatrixMult");
 			}	
+		}
+		
+		return hi;
+	}
+	
+
+	/**
+	 * 
+	 * @param hi
+	 */
+	private Hop simplifySumDiagToTrace(Hop hi)
+	{
+		if( hi instanceof AggUnaryOp ) 
+		{
+			AggUnaryOp au = (AggUnaryOp) hi;
+			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum	
+			{
+				Hop hi2 = au.getInput().get(0);
+				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
+				{
+					Hop hi3 = hi2.getInput().get(0);
+					
+					//remove diag operator
+					HopRewriteUtils.removeChildReference(au, hi2);
+					HopRewriteUtils.addChildReference(au, hi3, 0);	
+					
+					//change sum to trace
+					au.setOp( AggOp.TRACE );
+					
+					//cleanup if only consumer of intermediate
+					if( hi2.getParent().isEmpty() ) 
+						HopRewriteUtils.removeAllChildReferences( hi2 );
+					
+					LOG.debug("Applied simplifySumDiagToTrace");
+				}
+			}
+				
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop pushdownBinaryOperationOnDiag(Hop parent, Hop hi, int pos) 
+	{
+		//diag(X)*7 --> diag(X*7) in order to (1) reduce required memory for b(*) and
+		//(2) in order to make the binary operation more efficient (dense vector vs sparse matrix)
+		if( hi instanceof BinaryOp && ((BinaryOp)hi).getOp()==OpOp2.MULT )
+		{
+			Hop left = hi.getInput().get(0);
+			Hop right = hi.getInput().get(1);
+			
+			boolean applyLeft = false;
+			boolean applyRight = false;
+			
+			//left input is diag
+			if( left instanceof ReorgOp && ((ReorgOp)left).getOp()==ReOrgOp.DIAG
+				&& left.getParent().size()==1 //binary op only parent
+				&& left.getInput().get(0).getDim2()==1 //col vector
+				&& right.getDataType() == DataType.SCALAR )
+			{
+				applyLeft = true;
+			}
+			else if( right instanceof ReorgOp && ((ReorgOp)right).getOp()==ReOrgOp.DIAG
+					&& right.getParent().size()==1 //binary op only parent
+					&& right.getInput().get(0).getDim2()==1 //col vector
+					&& left.getDataType() == DataType.SCALAR )
+			{
+				applyRight = true;
+			}
+			
+			//perform actual rewrite
+			if( applyLeft || applyRight )
+			{
+				//remove all parent links to binary op (since we want to reorder
+				//we cannot just look at the current parent)
+				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+				ArrayList<Integer> parentspos = new ArrayList<Integer>(); 
+				for(Hop lparent : parents) {
+					int lpos = HopRewriteUtils.getChildReferencePos(lparent, hi);
+					HopRewriteUtils.removeChildReferenceByPos(lparent, hi, lpos);
+					parentspos.add(lpos);
+				}
+				
+				//rewire binop-diag-input into diag-binop-input
+				if( applyLeft ) {
+					Hop input = left.getInput().get(0);
+					HopRewriteUtils.removeChildReferenceByPos(hi, left, 0);
+					HopRewriteUtils.removeChildReferenceByPos(left, input, 0);
+					HopRewriteUtils.addChildReference(left, hi, 0);
+					HopRewriteUtils.addChildReference(hi, input, 0);
+					hi.refreshSizeInformation();
+					hi = left;
+				}
+				else if ( applyRight ) {
+					Hop input = right.getInput().get(0);
+					HopRewriteUtils.removeChildReferenceByPos(hi, right, 1);
+					HopRewriteUtils.removeChildReferenceByPos(right, input, 0);
+					HopRewriteUtils.addChildReference(right, hi, 0);
+					HopRewriteUtils.addChildReference(hi, input, 1);	
+					hi.refreshSizeInformation();
+					hi = right;
+				}
+				
+				//relink all parents to the diag operation
+				for( int i=0; i<parents.size(); i++ ) {
+					Hop lparent = parents.get(i);
+					int lpos = parentspos.get(i);
+					HopRewriteUtils.addChildReference(lparent, hi, lpos);
+				}				
+			}
 		}
 		
 		return hi;

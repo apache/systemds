@@ -127,10 +127,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);      //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
 			hi = fuseBinarySubDAGToUnaryOperation(hi);          //e.g., X*(1-X)-> pow2mc(1)
-			hi = simplifySumDiagToTrace(hi);                    //e.g., sum(diag(X)) -> trace(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
-			hi = removeUnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
-			hi = removeUnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
+			hi = removeUnnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
+			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	    //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
@@ -722,42 +721,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	/**
-	 * 
-	 * @param hi
-	 */
-	private Hop simplifySumDiagToTrace(Hop hi)
-	{
-		if( hi instanceof AggUnaryOp ) 
-		{
-			AggUnaryOp au = (AggUnaryOp) hi;
-			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum	
-			{
-				Hop hi2 = au.getInput().get(0);
-				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
-				{
-					Hop hi3 = hi2.getInput().get(0);
-					
-					//remove diag operator
-					HopRewriteUtils.removeChildReference(au, hi2);
-					HopRewriteUtils.addChildReference(au, hi3, 0);	
-					
-					//change sum to trace
-					au.setOp( AggOp.TRACE );
-					
-					//cleanup if only consumer of intermediate
-					if( hi2.getParent().isEmpty() ) 
-						HopRewriteUtils.removeAllChildReferences( hi2 );
-					
-					LOG.debug("Applied simplifySumDiagToTrace");
-				}
-			}
-				
-		}
-		
-		return hi;
-	}
-	
 	
 	/**
 	 * 
@@ -818,7 +781,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * @param hi
 	 * @param pos
 	 */
-	private Hop removeUnecessaryTranspose(Hop parent, Hop hi, int pos)
+	private Hop removeUnnecessaryTranspose(Hop parent, Hop hi, int pos)
 	{
 		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE  ) //first transpose
 		{
@@ -852,7 +815,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * @return
 	 * @throws HopsException 
 	 */
-	private Hop removeUnecessaryMinus(Hop parent, Hop hi, int pos) 
+	private Hop removeUnnecessaryMinus(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
 		if( hi.getDataType() == DataType.MATRIX && hi instanceof BinaryOp 

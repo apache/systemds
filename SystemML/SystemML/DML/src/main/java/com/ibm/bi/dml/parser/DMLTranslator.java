@@ -1523,7 +1523,7 @@ public class DMLTranslator
 		}
 
 	
-		for (int i = 0; i < sb.getNumStatements(); i++) {
+		for( int i = 0; i < sb.getNumStatements(); i++ ) {
 			Statement current = sb.getStatement(i);
 
 			if (current instanceof OutputStatement) {
@@ -1532,6 +1532,12 @@ public class DMLTranslator
 				DataExpression source = os.getSource();
 				DataIdentifier target = os.getIdentifier();
 
+				//error handling unsupported indexing expression in write statement
+				if( target instanceof IndexedIdentifier ) {
+					throw new LanguageException(source.printErrorLocation()+": Unsupported indexing expression in write statement. " +
+							                    "Please, assign the right indexing result to a variable and write this variable.");
+				}
+				
 				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
 				ae.setFormatType(Expression.convertFormatType(formatName));

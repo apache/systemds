@@ -184,6 +184,12 @@ public class ParameterizedBuiltinOp extends Hop
 	private void constructLopsGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
+		
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsGroupedAggregate for ParameterizedBuiltinOp not implemented for Spark");
+			et = ExecType.CP;
+		}
+		
 		if ( et == ExecType.MR ) 
 		{
 			// construct necessary lops: combineBinary/combineTertiary and
@@ -261,9 +267,6 @@ public class ParameterizedBuiltinOp extends Hop
 			// construct and set reblock lop as current root lop
 			constructAndSetReblockLopIfRequired();
 		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsGroupedAggregate for ParameterizedBuiltinOp not implemented for Spark");
-		}
 		else //CP 
 		{
 			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
@@ -287,6 +290,11 @@ public class ParameterizedBuiltinOp extends Hop
 	{
 		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
 		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
+		
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsRemoveEmpty for ParameterizedBuiltinOp not implemented for Spark");
+			et = ExecType.CP;
+		}
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
@@ -355,9 +363,6 @@ public class ParameterizedBuiltinOp extends Hop
 				setLops(pbilop);
 			}
 			*/
-		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsRemoveEmpty for ParameterizedBuiltinOp not implemented for Spark");
 		}
 		//special compile for mr removeEmpty-diag 
 		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 

@@ -12,6 +12,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 
 
 public class InstructionParser 
@@ -31,7 +32,12 @@ public class InstructionParser
 		{
 			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
 			return CPInstructionParser.parseSingleInstruction (cptype, str);
-		} 
+		}
+		else if (   execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
+		{
+			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
+			return SPInstructionParser.parseSingleInstruction (sptype, str);
+		}
 		else if ( execType.equalsIgnoreCase("MR") ) {
 			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
 			if ( mrtype == null )

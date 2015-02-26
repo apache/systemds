@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -95,8 +96,12 @@ public class ID3Test extends AutomatedTestBase
 		runRScript(true);
         
 		//check also num actually executed jobs
-		long actualMR = Statistics.getNoOfExecutedMRJobs();
-		Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
+		
+		if(AutomatedTestBase.rtplatform != RUNTIME_PLATFORM.SPARK) {
+			long actualMR = Statistics.getNoOfExecutedMRJobs();
+			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
+		}
+		
 		
 		//compare results
         HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");

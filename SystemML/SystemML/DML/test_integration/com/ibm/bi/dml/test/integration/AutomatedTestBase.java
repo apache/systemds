@@ -812,6 +812,8 @@ public abstract class AutomatedTestBase
 			args.add("singlenode");
 		else if (rtplatform == RUNTIME_PLATFORM.NZ)
 			args.add("nz");
+		else if (rtplatform == RUNTIME_PLATFORM.SPARK)
+			args.add("spark");
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}

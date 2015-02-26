@@ -134,15 +134,16 @@ public class UnaryOp extends Hop
 			else //general case MATRIX
 			{
 				ExecType et = optFindExecType();
+				if ( et == ExecType.SPARK )  {
+					// throw new HopsException("constructLops (cumsum) for UnaryOp not implemented for Spark");
+					et = ExecType.CP;
+				}
 				
 				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
 				{
 					//TODO additional physical operation if offsets fit in memory
 					Lop cumsumLop = constructLopsMRCumsum();
 					setLops(cumsumLop);
-				}
-				else if ( et == ExecType.SPARK )  {
-					throw new HopsException("constructLops (cumsum) for UnaryOp not implemented for Spark");
 				}
 				else //default unary 
 				{
@@ -166,6 +167,10 @@ public class UnaryOp extends Hop
 
 	private Lop constructLopsMedian() throws HopsException, LopsException {
 		ExecType et = optFindExecType();
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsMedian for UnaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(
 					getInput().get(0).constructLops(),
@@ -203,9 +208,6 @@ public class UnaryOp extends Hop
 
 			return pick;
 		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsMedian for UnaryOp not implemented for Spark");
-		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
 								getInput().get(0).constructLops(), 
@@ -236,6 +238,11 @@ public class UnaryOp extends Hop
 	
 	private Lop constructLopsIQM() throws HopsException, LopsException {
 		ExecType et = optFindExecType();
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsIQM for UnaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
+		
 		Hop input = getInput().get(0);
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
@@ -314,9 +321,6 @@ public class UnaryOp extends Hop
 			iqm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			return iqm;
-		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsIQM for UnaryOp not implemented for Spark");
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(

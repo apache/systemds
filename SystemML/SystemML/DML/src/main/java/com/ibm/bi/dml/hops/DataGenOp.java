@@ -127,6 +127,10 @@ public class DataGenOp extends Hop
 		if(getLops() == null)
 		{
 			ExecType et = optFindExecType();
+			if(et == ExecType.SPARK) {
+				// throw new Exception
+				et = ExecType.CP;
+			}
 			
 			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
 			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {

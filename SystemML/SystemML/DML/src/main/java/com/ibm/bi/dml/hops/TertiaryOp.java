@@ -163,6 +163,10 @@ public class TertiaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.CENTRALMOMENT );
 		
 		ExecType et = optFindExecType();
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsCentralMoment for TertiaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary.constructCombineLop(
 					OperationTypes.PreCentralMoment, 
@@ -190,9 +194,6 @@ public class TertiaryOp extends Hop
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			setLops(unary1);
 		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsCentralMoment for TertiaryOp not implemented for Spark");
-		}
 		else {
 			//System.out.println("CM Tertiary executing in CP...");
 			CentralMoment cm = new CentralMoment(
@@ -218,6 +219,10 @@ public class TertiaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COVARIANCE );
 		
 		ExecType et = optFindExecType();
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsCovariance for TertiaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
 		if ( et == ExecType.MR ) {
 			// combineTertiary -> CoVariance -> CastAsScalar
 			CombineTertiary combine = CombineTertiary
@@ -249,9 +254,6 @@ public class TertiaryOp extends Hop
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			setLops(unary1);
 		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsCovariance for TertiaryOp not implemented for Spark");
-		}
 		else {
 			//System.out.println("COV Tertiary executing in CP...");
 			CoVariance cov = new CoVariance(
@@ -277,6 +279,11 @@ public class TertiaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
 		
 		ExecType et = optFindExecType();
+		
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsQuantile for TertiaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
 		
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary
@@ -320,9 +327,6 @@ public class TertiaryOp extends Hop
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 
 			setLops(pick);
-		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsQuantile for TertiaryOp not implemented for Spark");
 		}
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
@@ -384,6 +388,11 @@ public class TertiaryOp extends Hop
 		}
 		
 		ExecType et = optFindExecType();
+		if ( et == ExecType.SPARK )  {
+			// throw new HopsException("constructLopsCtable for TertiaryOp not implemented for Spark");
+			et = ExecType.CP;
+		}
+		
 		if ( et == ExecType.CP ) 
 		{	
 			//for CP we support only ctable expand left
@@ -406,9 +415,6 @@ public class TertiaryOp extends Hop
 			
 			//tertiary opt, w/o reblock in CP
 			setLops(tertiary);
-		}
-		else if ( et == ExecType.SPARK )  {
-			throw new HopsException("constructLopsCtable for TertiaryOp not implemented for Spark");
 		}
 		else //MR
 		{

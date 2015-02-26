@@ -94,6 +94,10 @@ public class ReorgOp extends Hop
 		if (getLops() == null) {
 			
 			ExecType et = optFindExecType();
+			if ( et == ExecType.SPARK )  {
+				// throw new HopsException("constructLops not implemented for Spark");
+				et = ExecType.CP;
+			}
 			
 			switch( op )
 			{
@@ -143,9 +147,6 @@ public class ReorgOp extends Hop
 						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
 						setLops(agg1);
-					}
-					else if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLops for ReorgOp not implemented for Spark");
 					}
 					else //CP
 					{

@@ -64,6 +64,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -537,7 +538,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( oInst instanceof CPInstruction || oInst instanceof MRInstruction )
+			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof MRInstruction )
 			{
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions )
 				{
@@ -1063,7 +1064,8 @@ public class ProgramConverter
 		for( Instruction linst : inst )
 		{
 			//check that only cp instruction are transmitted 
-			if( !(   linst instanceof CPInstruction 
+			if( !(   linst instanceof CPInstruction
+				  || linst instanceof SPInstruction
 				  || linst instanceof ExternalFunctionInvocationInstruction ) )
 			{
 				throw new DMLRuntimeException( NOT_SUPPORTED_MR_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );

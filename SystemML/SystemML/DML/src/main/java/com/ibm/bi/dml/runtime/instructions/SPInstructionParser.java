@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
@@ -37,6 +38,16 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "%%"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special ^ case
+		String2SPInstructionType.put( "^2c-" , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special ^ case
+		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special * case
+		// Relational Instruction Opcodes 
+		String2SPInstructionType.put( "=="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "!="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "<"    , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( ">"    , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( "<="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		String2SPInstructionType.put( ">="   , SPINSTRUCTION_TYPE.RelationalBinary);
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -67,6 +78,8 @@ public class SPInstructionParser extends InstructionParser {
 			return (SPInstruction) ReorgSPInstruction.parseInstruction(str);
 		case ArithmeticBinary:
 			return ArithmeticBinarySPInstruction.parseInstruction(str);
+		case RelationalBinary:
+			return RelationalBinarySPInstruction.parseInstruction(str);
 		case INVALID:
 		default:
 			// return null;

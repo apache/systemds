@@ -118,7 +118,8 @@ public class BinaryOp extends Hop
 				case IQM: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsIQM for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLops not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsIQM(et);
 					break;
@@ -126,7 +127,8 @@ public class BinaryOp extends Hop
 				case CENTRALMOMENT: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsCentralMoment for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLops not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsCentralMoment(et);
 					break;
@@ -134,7 +136,8 @@ public class BinaryOp extends Hop
 				case COVARIANCE: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsCovariance(et);
 					break;
@@ -143,7 +146,8 @@ public class BinaryOp extends Hop
 				case INTERQUANTILE: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsQuantile for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLops not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsQuantile(et);
 					break;
@@ -151,7 +155,8 @@ public class BinaryOp extends Hop
 				case MEDIAN: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsMedian for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLops not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsMedian(et);
 					break;
@@ -159,7 +164,8 @@ public class BinaryOp extends Hop
 				case APPEND: {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.SPARK )  {
-						throw new HopsException("constructLopsAppend for BinaryOp not implemented for Spark");
+						// throw new HopsException("constructLops not implemented for Spark");
+						et = ExecType.CP;
 					}
 					constructLopsAppend(et);
 					break;

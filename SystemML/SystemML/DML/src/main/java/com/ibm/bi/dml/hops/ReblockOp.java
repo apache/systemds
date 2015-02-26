@@ -98,7 +98,12 @@ public class ReblockOp extends Hop
 
 			try {
 				ExecType et = optFindExecType();
-				if ( et == ExecType.MR || et == ExecType.SPARK) {
+				if ( et == ExecType.SPARK )  {
+					// throw new HopsException("constructLops for LeftIndexingOp not implemented for Spark");
+					et = ExecType.MR; // For now, all reblock will happen in MR.
+				}
+				
+				if ( et == ExecType.MR) {
 					Hop input = getInput().get(0);
 					
 					// Create the reblock lop according to the format of the input hop
@@ -113,10 +118,7 @@ public class ReblockOp extends Hop
 									getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 				
 							rcsv.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							
-						if(et == ExecType.SPARK) {
-							throw new HopsException("CSV Reblock not implemented for spark");
-						}
+						
 						setLops(rcsv);
 					
 					}
@@ -124,10 +126,6 @@ public class ReblockOp extends Hop
 					{
 						setLops( getInput().get(0).constructLops() );
 						setRequiresReblock(true);
-						
-						if(et == ExecType.SPARK) {
-							throw new HopsException("Reblock not implemented for Spark");
-						}
 						
 						// construct and set reblock lop as current root lop
 						constructAndSetReblockLopIfRequired();

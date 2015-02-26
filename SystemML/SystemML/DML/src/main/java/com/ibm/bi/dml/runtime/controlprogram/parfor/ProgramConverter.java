@@ -2122,7 +2122,7 @@ public class ProgramConverter
 		String name = st.nextToken();
 		DataType datatype = DataType.valueOf( st.nextToken() );
 		ValueType valuetype = ValueType.valueOf( st.nextToken() );
-		String valString = st.nextToken();
+		String valString = st.hasMoreTokens() ? st.nextToken() : "";
 		Data dat = null;
 		switch( datatype )
 		{

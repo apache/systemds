@@ -1354,8 +1354,7 @@ public class Dag<N extends Lop>
 
 				// next generate MR instructions
 				if (!execNodes.isEmpty())
-					generateMRJobs(execNodes, inst, deleteInst,
-							jobNodes);
+					generateMRJobs(execNodes, inst, writeInst, deleteInst, jobNodes);
 
 				handleSingleOutputJobs(execNodes, jobNodes, finishedNodes);
 
@@ -1504,14 +1503,14 @@ public class Dag<N extends Lop>
 				if (node.getDataType() == DataType.SCALAR) {
 					// Output from lops with SCALAR data type must
 					// go into Temporary Variables (Var0, Var1, etc.)
-					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false);
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false, false);
 					inst.addAll(out.getPreInstructions()); // dummy
 					deleteInst.addAll(out.getLastInstructions());
 				} else {
 					// Output from lops with non-SCALAR data type must
 					// go into Temporary Files (temp0, temp1, etc.)
 					
-					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false);
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false, false);
 					inst.addAll(out.getPreInstructions());
 					
 					boolean hasTransientWriteParent = false;
@@ -1673,7 +1672,7 @@ public class Dag<N extends Lop>
 						doRmVar = false;
 					}
 					else {
-						out = setupNodeOutputs(node, ExecType.CP, false);
+						out = setupNodeOutputs(node, ExecType.CP, false, false);
 						if ( dnode.getDataType() == DataType.SCALAR ) {
 							// processing is same for both transient and persistent scalar writes 
 							writeInst.addAll(out.getLastInstructions());
@@ -2512,6 +2511,7 @@ public class Dag<N extends Lop>
 
 	public void generateMRJobs(ArrayList<N> execNodes,
 			ArrayList<Instruction> inst,
+			ArrayList<Instruction> writeinst,
 			ArrayList<Instruction> deleteinst, ArrayList<ArrayList<N>> jobNodes)
 			throws LopsException, DMLUnsupportedOperationException,
 			DMLRuntimeException
@@ -2550,7 +2550,7 @@ public class Dag<N extends Lop>
 					// split the nodes by recordReader lops
 					ArrayList<ArrayList<N>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
 					for (int i = 0; i < rrlist.size(); i++) {
-						generateMapReduceInstructions(rrlist.get(i), inst, deleteinst, rmvarinst, jt);
+						generateMapReduceInstructions(rrlist.get(i), inst, writeinst, deleteinst, rmvarinst, jt);
 					}
 				}
 				else if ( jt.allowsSingleShuffleInstruction() ) {
@@ -2583,13 +2583,13 @@ public class Dag<N extends Lop>
 								addParents(jobNodes.get(index).get(i), nodesForASingleJob, jobNodes.get(index));
 							}
 							
-							generateMapReduceInstructions(nodesForASingleJob, inst, deleteinst, rmvarinst, jt);
+							generateMapReduceInstructions(nodesForASingleJob, inst, writeinst, deleteinst, rmvarinst, jt);
 						}
 					}
 				}
 				else {
 					// the default case
-					generateMapReduceInstructions(jobNodes.get(index), inst, deleteinst, rmvarinst, jt);
+					generateMapReduceInstructions(jobNodes.get(index), inst, writeinst, deleteinst, rmvarinst, jt);
 				}
 			}
 		}
@@ -2798,7 +2798,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 */
-	private NodeOutput setupNodeOutputs(N node, ExecType et, boolean cellModeOverride) 
+	private NodeOutput setupNodeOutputs(N node, ExecType et, boolean cellModeOverride, boolean copyTWrite) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException, LopsException {
 		
 		OutputParameters oparams = node.getOutputParameters();
@@ -2946,6 +2946,15 @@ public class Dag<N extends Lop>
 						out.setFileName(constFileName);
 					}
 					else {
+						if(copyTWrite) {
+							Instruction currInstr = VariableCPInstruction.prepareCopyInstruction(node.getInputs().get(0).getOutputParameters().getLabel(), oparams.getLabel());
+							if(DMLScript.ENABLE_DEBUG_MODE) {
+								currInstr.setLineNum(node._beginLine);
+							}
+							out.addLastInstruction(currInstr);
+							return out;
+						}
+						
 						/*
 						 * Since the "rootNode" is a transient data node, we first need to generate a 
 						 * temporary filename as well as a variable name to hold the <i>immediate</i> 
@@ -3008,7 +3017,7 @@ public class Dag<N extends Lop>
 						 */
 						
 						// rename the temp variable to constant variable (e.g., cpvar tVarAtemp tVarA)
-						Instruction currInstr = VariableCPInstruction.prepareCopyInstruction(tempVarName, constVarName);
+						/*Instruction currInstr = VariableCPInstruction.prepareCopyInstruction(tempVarName, constVarName);
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							currInstr.setLineNum(node._beginLine);
 						}
@@ -3017,7 +3026,16 @@ public class Dag<N extends Lop>
 						if(DMLScript.ENABLE_DEBUG_MODE) {
 							tempInstr.setLineNum(node._beginLine);
 						}
-						out.addLastInstruction(tempInstr);
+						out.addLastInstruction(tempInstr);*/
+
+						// Generate a single mvvar instruction (e.g., mvvar tempA A) 
+						//    instead of two instructions "cpvar tempA A" and "rmvar tempA"
+						Instruction currInstr = VariableCPInstruction.prepareMoveInstruction(tempVarName, constVarName);
+						if(DMLScript.ENABLE_DEBUG_MODE) {
+							currInstr.setLineNum(node._beginLine);
+						}
+						out.addLastInstruction(currInstr);
+
 						// finally, add the temporary filename and variable name to the list of outputs 
 						out.setFileName(tempFileName);
 						out.setVarName(tempVarName);
@@ -3182,7 +3200,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException
 	 */
 	public void generateMapReduceInstructions(ArrayList<N> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
+			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
 			JobType jt) throws LopsException,
 			DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -3204,7 +3222,7 @@ public class Dag<N extends Lop>
 		ArrayList<String> outputLabels = new ArrayList<String>();
 		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
-		ArrayList<Instruction> writeInstructions = new ArrayList<Instruction>();
+		ArrayList<Instruction> postInstructions = new ArrayList<Instruction>();
 		ArrayList<Integer> MRJobLineNumbers = null;
 		if(DMLScript.ENABLE_DEBUG_MODE) {
 			MRJobLineNumbers = new ArrayList<Integer>();
@@ -3324,32 +3342,42 @@ public class Dag<N extends Lop>
 		ArrayList<String> otherInstructionsReducer = new ArrayList<String>();
 
 		for (int i = 0; i < rootNodes.size(); i++) {
+			N rn = rootNodes.get(i);
 			int resultIndex = getAggAndOtherInstructions(
-					rootNodes.get(i), execNodes, shuffleInstructions, aggInstructionsReducer,
+					rn, execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
 					inputLabels, inputLops, MRJobLineNumbers);
 			if ( resultIndex == -1)
 				throw new LopsException("Unexpected error in piggybacking!");
-			resultIndices.add(Byte.valueOf((byte)resultIndex));
 			
-			// setup output filenames and outputInfos and generate related instructions
-			NodeOutput out = setupNodeOutputs(rootNodes.get(i), ExecType.MR, cellModeOverride);
-			outputLabels.add(out.getVarName());
-			outputs.add(out.getFileName());
-			outputInfos.add(out.getOutInfo());
-			if (LOG.isTraceEnabled()) {
-				LOG.trace("    Output Info: " + out.getFileName() + ";" + OutputInfo.outputInfoToString(out.getOutInfo()) + ";" + out.getVarName());
+			if ( rn.getExecLocation() == ExecLocation.Data 
+					&& ((Data)rn).getOperationType() == Data.OperationTypes.WRITE && ((Data)rn).isTransient() 
+					&& rootNodes.contains(rn.getInputs().get(0))
+					) {
+				// Both rn (a transient write) and its input are root nodes.
+				// Instead of creating two copies of the data, simply generate a cpvar instruction 
+				if ( !resultIndices.contains(Byte.valueOf(Integer.toString(resultIndex))) ) {
+					throw new LopsException("Unexpected error in piggybacking!");
+				}
+				NodeOutput out = setupNodeOutputs(rootNodes.get(i), ExecType.MR, cellModeOverride, true);
+				writeinst.addAll(out.getLastInstructions());
 			}
-			renameInstructions.addAll(out.getLastInstructions());
-			variableInstructions.addAll(out.getPreInstructions());
-			writeInstructions.addAll(out.getPostInstructions());
+			else {
+				resultIndices.add(Byte.valueOf((byte)resultIndex));
 			
-		}
-		
-		// a sanity check
-		if (resultIndices.size() != rootNodes.size()) {
-			throw new LopsException("Unexected error in piggybacking: "
-					+ resultIndices.size() + " != " + rootNodes.size());
+				// setup output filenames and outputInfos and generate related instructions
+				NodeOutput out = setupNodeOutputs(rootNodes.get(i), ExecType.MR, cellModeOverride, false);
+				outputLabels.add(out.getVarName());
+				outputs.add(out.getFileName());
+				outputInfos.add(out.getOutInfo());
+				if (LOG.isTraceEnabled()) {
+					LOG.trace("    Output Info: " + out.getFileName() + ";" + OutputInfo.outputInfoToString(out.getOutInfo()) + ";" + out.getVarName());
+				}
+				renameInstructions.addAll(out.getLastInstructions());
+				variableInstructions.addAll(out.getPreInstructions());
+				postInstructions.addAll(out.getPostInstructions());
+			}
+			
 		}
 		
 		/* Determine if the output dimensions are known */
@@ -3411,7 +3439,7 @@ public class Dag<N extends Lop>
 		/* Add the prepared instructions to output set */
 		inst.addAll(variableInstructions);
 		inst.add(mr);
-		inst.addAll(writeInstructions);
+		inst.addAll(postInstructions);
 		deleteinst.addAll(renameInstructions);
 		
 		for (Lop l : inputLops) {

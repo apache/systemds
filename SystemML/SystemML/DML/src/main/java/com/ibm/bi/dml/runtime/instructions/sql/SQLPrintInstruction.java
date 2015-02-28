@@ -8,7 +8,8 @@
 package com.ibm.bi.dml.runtime.instructions.sql;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 
 
@@ -28,15 +29,19 @@ public class SQLPrintInstruction extends SQLInstructionBase
 	//PrintStream stream;
 	
 	@Override
-	public ExecutionResult execute(ExecutionContext ec) throws DMLRuntimeException {
+	public ExecutionResult execute(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
+		
 		String s = null;
 		try {
-			if(ec.isDebug())
+			if(sec.isDebug())
 			{
 				System.out.println("#" + this.id + "\r\n");
 				System.out.println(sql);
 			}
-			s = ec.getVariableString(sql.substring(2, sql.length()-2), false);
+			s = sec.getVariableString(sql.substring(2, sql.length()-2), false);
 		} catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}

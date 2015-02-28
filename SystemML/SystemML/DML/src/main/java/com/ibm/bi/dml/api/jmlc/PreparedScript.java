@@ -13,10 +13,11 @@ import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
@@ -206,7 +207,7 @@ public class PreparedScript
 		throws DMLException
 	{
 		//create and populate execution context
-		ExecutionContext ec = new ExecutionContext(_prog);	
+		ExecutionContext ec = ExecutionContextFactory.createContext(_prog);	
 		ec.setVariables(_vars);
 		
 		//core execute runtime program	

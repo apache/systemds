@@ -14,7 +14,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.math.IntRange;
 
 import com.ibm.bi.dml.debug.DMLDebuggerFunctions;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 /** 
@@ -62,7 +63,7 @@ public class DMLDebugger
 		argVals = args;		
 		debuggerUI = new DMLDebuggerInterface();
 		dbFunctions = new DMLDebuggerFunctions();		
-		preEC = new ExecutionContext(dbprog.rtprog);
+		preEC = ExecutionContextFactory.createContext(dbprog.rtprog);
 		setupDMLRuntime();
 	}
 	

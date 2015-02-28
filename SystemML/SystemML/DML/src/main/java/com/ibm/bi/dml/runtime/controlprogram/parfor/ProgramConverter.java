@@ -35,7 +35,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -49,6 +48,8 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -152,7 +153,7 @@ public class ProgramConverter
 	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec) 
 		throws CloneNotSupportedException 
 	{
-		ExecutionContext cpec = new ExecutionContext(false, ec.getProgram());
+		ExecutionContext cpec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
 	
 		return cpec;
@@ -2198,7 +2199,7 @@ public class ProgramConverter
 		if( !lin.equals( EMPTY ) )
 		{
 			LocalVariableMap vars = parseVariables(lin);
-			ec = new ExecutionContext( false, prog );
+			ec = ExecutionContextFactory.createContext( false, prog );
 			ec.setVariables(vars);
 		}
 		

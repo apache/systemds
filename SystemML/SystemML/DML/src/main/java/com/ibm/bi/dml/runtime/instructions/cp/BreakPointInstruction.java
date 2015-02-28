@@ -9,7 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.debug.DebugState;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 
 

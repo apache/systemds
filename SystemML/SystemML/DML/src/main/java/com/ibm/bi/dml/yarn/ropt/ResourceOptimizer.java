@@ -30,7 +30,6 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -39,6 +38,8 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -455,12 +456,14 @@ public class ResourceOptimizer
 		if( COST_INDIVIDUAL_BLOCKS ) {
 			LocalVariableMap vars = new LocalVariableMap();
 			collectReadVariables(pb.getStatementBlock().get_hops(), vars);
-			ExecutionContext ec = new ExecutionContext(vars);
+			ExecutionContext ec = ExecutionContextFactory.createContext(false, null);
+			ec.setVariables(vars);
 			val = CostEstimationWrapper.getTimeEstimate(pb, ec, false);	
 		}
 		else{
 			//we need to cost the entire program in order to take in-memory status into account
-			val = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), new ExecutionContext());
+			ExecutionContext ec = ExecutionContextFactory.createContext();
+			val = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), ec);
 		}
 		
 		_cntCostPB ++;
@@ -478,7 +481,8 @@ public class ResourceOptimizer
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//we need to cost the entire program in order to take in-memory status into account
-		double val = CostEstimationWrapper.getTimeEstimate(prog, new ExecutionContext());
+		ExecutionContext ec = ExecutionContextFactory.createContext();
+		double val = CostEstimationWrapper.getTimeEstimate(prog, ec);
 		_cntCostPB ++;
 		
 		return val;
@@ -708,8 +712,9 @@ public class ResourceOptimizer
 		for( int i=0; i<len; i++ )
 		{
 			ProgramBlock pb = Bp.get(i);
+			ExecutionContext ec = ExecutionContextFactory.createContext();
 			memo[i][0] = min;
-			memo[i][1] = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), new ExecutionContext());
+			memo[i][1] = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), ec);
 		}
 		
 		return memo;

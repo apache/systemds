@@ -10,7 +10,8 @@ package com.ibm.bi.dml.runtime.instructions.sql;
 import java.sql.SQLException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 
 
@@ -43,17 +44,18 @@ public class SQLDropTableInstruction extends SQLInstructionBase
 
 	@Override
 	public ExecutionResult execute(ExecutionContext ec)
-			throws DMLRuntimeException {
-		
+			throws DMLRuntimeException 
+	{	
 		//String prepSQL = "DROP TABLE \"" + this.tableName + "\";";
-		
+	
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
 		ExecutionResult res = new ExecutionResult();
 		
 		long time = System.currentTimeMillis();
 		try
 		{
-			ec.getNzConnector().executeSQL(instString);
-			if(ec.isDebug())
+			sec.getNzConnector().executeSQL(instString);
+			if(sec.isDebug())
 			{
 				//System.out.println("#" + this.id + "\r\n");
 				System.out.println(instString);
@@ -69,7 +71,7 @@ public class SQLDropTableInstruction extends SQLInstructionBase
 		}
 		res.setRuntimeInMilliseconds(System.currentTimeMillis() - time);
 		
-		ec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
+		sec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
 		
 		return res;
 	}

@@ -18,6 +18,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -96,6 +97,8 @@ public class MatrixObject extends CacheableData
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
 	private boolean _pinnedFlag = false; //flag if in-place update TODO maybe rename to updateInPlace
+	
+	private Object _rddHandle = null;
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -334,6 +337,16 @@ public class MatrixObject extends CacheableData
 		return str.toString();
 	}
 	
+	public Object getRDDHandle()
+	{
+		return _rddHandle;
+	}
+	
+	public void setRDDHandle( Object rdd )
+	{
+		_rddHandle = rdd;
+	}
+	
 	
 	// *********************************************
 	// ***                                       ***
@@ -381,7 +394,10 @@ public class MatrixObject extends CacheableData
 			{
 				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
-				_data = readMatrixFromHDFS( _hdfsFileName );
+				if( getRDDHandle()==null )
+					_data = readMatrixFromHDFS( _hdfsFileName );
+				else
+					_data = readMatrixFromRDD( getRDDHandle() );
 				_dirtyFlag = false;
 			}
 			catch (IOException e)
@@ -797,6 +813,7 @@ public class MatrixObject extends CacheableData
 		return ret;
 	}
 	
+	
 	// *********************************************
 	// ***                                       ***
 	// ***       HIGH-LEVEL PUBLIC METHODS       ***
@@ -1197,6 +1214,29 @@ public class MatrixObject extends CacheableData
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		return readMatrixFromHDFS( filePathAndName, mc.getRows(), mc.getCols() );
+	}
+	
+	/**
+	 * 
+	 * @param rdd
+	 * @return
+	 * @throws IOException 
+	 */
+	private MatrixBlock readMatrixFromRDD(Object rdd) 
+		throws IOException
+	{
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		MatrixBlock mb = null;
+		try {
+			mb = SparkExecutionContext.toMatrixBlock(rdd, (int)mc.getRows(), (int)mc.getCols(),
+					                       (int)mc.getRowsPerBlock(), (int)mc.getColsPerBlock());	
+		}
+		catch(DMLRuntimeException ex) {
+			throw new IOException(ex);
+		}
+		
+		return mb;
 	}
 	
 	/**

@@ -55,11 +55,13 @@ import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -819,7 +821,8 @@ public class DMLScript
 			initHadoopExecution( conf );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
-			rtprog.execute( new ExecutionContext(rtprog) );  
+			ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);
+			rtprog.execute( ec );  
 		}
 		finally //ensure cleanup/shutdown
 		{	
@@ -876,7 +879,7 @@ public class DMLScript
 		NetezzaConnector con = new NetezzaConnector();
 		try
 		{
-			ExecutionContext ec = new ExecutionContext(con);
+			SQLExecutionContext ec = ExecutionContextFactory.createSQLContext(con);
 			ec.setDebug(false);
 	
 			con.connect();

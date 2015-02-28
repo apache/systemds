@@ -11,6 +11,7 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
@@ -22,12 +23,14 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * This represent the indexes to the blocks of the matrix.
  * Please note that these indexes are 1-based, whereas the data in the block are zero-based (as they are double arrays).
  */
-public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>
+public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>, Serializable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final long serialVersionUID = -1521166657518127789L;
+		
 	public static final int BYTE_SIZE = (Long.SIZE+Long.SIZE)/8;
 	public static final long ADD_PRIME1 = 99991;
 	public static final long ADD_PRIME2 = 853;

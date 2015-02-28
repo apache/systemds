@@ -10,7 +10,8 @@ package com.ibm.bi.dml.runtime.instructions.sql;
 import java.sql.SQLException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 
 
@@ -30,6 +31,8 @@ public class SQLInstruction extends SQLInstructionBase
 	
 	private String prepare(ExecutionContext ec)
 	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
+		
 		if(!sql.contains("##"))
 			return sql;
 		
@@ -46,17 +49,20 @@ public class SQLInstruction extends SQLInstructionBase
 				break;
 			start = to + 2;
 			String name = prepSQL.substring(from+2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, true));
+			prepSQL = prepSQL.replace("##" + name + "##", sec.getVariableString(name, true));
 		}
 		return prepSQL;
 	}
 	
 	@Override
-	public ExecutionResult execute(ExecutionContext ec) throws DMLRuntimeException {
+	public ExecutionResult execute(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
 		ExecutionResult res = new ExecutionResult();
 		String prepSQL = prepare(ec);
 
-		if(ec.isDebug())
+		if(sec.isDebug())
 		{
 			System.out.println("#" + this.id + "\r\n");
 			System.out.println(prepSQL);
@@ -64,7 +70,7 @@ public class SQLInstruction extends SQLInstructionBase
 		
 		try {
 			long time = System.currentTimeMillis();
-			ec.getNzConnector().executeSQL(prepSQL);
+			sec.getNzConnector().executeSQL(prepSQL);
 			res.setRuntimeInMilliseconds(System.currentTimeMillis() - time);
 			
 		} catch (SQLException e) {
@@ -72,7 +78,7 @@ public class SQLInstruction extends SQLInstructionBase
 			throw new DMLRuntimeException(e);
 		}
 		System.out.println("#" + this.id + ": " + res.getRuntimeInMilliseconds() + "\r\n");
-		ec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
+		sec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
 		return res;
 	}
 

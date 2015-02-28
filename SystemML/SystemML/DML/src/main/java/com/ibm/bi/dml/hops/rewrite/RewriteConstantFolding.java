@@ -27,9 +27,10 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 
@@ -243,7 +244,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private static ExecutionContext getExecutionContext()
 	{
 		if( _tmpEC == null )
-			_tmpEC = new ExecutionContext();
+			_tmpEC = ExecutionContextFactory.createContext();
 		return _tmpEC;
 	}
 	

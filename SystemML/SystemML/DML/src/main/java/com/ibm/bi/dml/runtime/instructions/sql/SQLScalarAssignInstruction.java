@@ -9,7 +9,8 @@ package com.ibm.bi.dml.runtime.instructions.sql;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
@@ -75,6 +76,8 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase
 
 	private void prepare(ExecutionContext ec)
 	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
+		
 		prepName = variableName;
 		prepSQL = sql;
 		
@@ -93,15 +96,18 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase
 			if(to == -1)
 				break;
 			String name = prepSQL.substring(from + 2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, hasSelect));
+			prepSQL = prepSQL.replace("##" + name + "##", sec.getVariableString(name, hasSelect));
 		}
 	}
 	
 	@Override
-	public ExecutionResult execute(ExecutionContext ec) throws DMLRuntimeException {
-		prepare(ec);
+	public ExecutionResult execute(ExecutionContext ec) 
+		throws DMLRuntimeException 
+	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
+		prepare(sec);
 		
-		if(ec.isDebug())
+		if(sec.isDebug())
 		{
 			//System.out.println("#" + this.id + "\r\n");
 			System.out.println(prepName + " := " + prepSQL);
@@ -121,23 +127,23 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase
 		{
 			if(this.vt == ValueType.BOOLEAN)
 			{
-				boolean val = ec.getNzConnector().getScalarBoolean(this.prepSQL);
+				boolean val = sec.getNzConnector().getScalarBoolean(this.prepSQL);
 				ec.setVariable(this.prepName, new BooleanObject(val));
 			}
 			else if(this.vt == ValueType.DOUBLE)
 			{
-				double val = ec.getNzConnector().getScalarDouble(this.prepSQL);
+				double val = sec.getNzConnector().getScalarDouble(this.prepSQL);
 				//System.out.println("VALUE FOR VARIABLE " + prepName + " = " + val);
 				ec.setVariable(this.prepName, new DoubleObject(val));
 			}
 			else if(this.vt == ValueType.INT)
 			{
-				int val = ec.getNzConnector().getScalarInteger(this.prepSQL);
+				int val = sec.getNzConnector().getScalarInteger(this.prepSQL);
 				ec.setVariable(this.prepName, new IntObject(val));
 			}
 			else if(this.vt == ValueType.STRING)
 			{
-				String val = ec.getNzConnector().getScalarString(this.prepSQL);
+				String val = sec.getNzConnector().getScalarString(this.prepSQL);
 				ec.setVariable(this.prepName, new StringObject(val));
 			}
 		}
@@ -150,7 +156,7 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase
 
 		System.out.println("#" + this.id + ": " + res.getRuntimeInMilliseconds() + "\r\n");
 		
-		ec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
+		sec.addStatistic(this.getId(), res.getRuntimeInMilliseconds(), this.instString);
 		
 		return res;
 	}

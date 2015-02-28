@@ -16,9 +16,10 @@ import junit.framework.Assert;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
@@ -101,7 +102,7 @@ public class ParForParWorkerTest extends ParWorker
 		Program prog = new Program();
 		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
 		pbs.add(new ProgramBlock(prog));
-		ExecutionContext ec = new ExecutionContext();
+		ExecutionContext ec = ExecutionContextFactory.createContext();
 		ParForBody body = new ParForBody(pbs,new ArrayList<String>(),ec);
 		
 		_workerID = -1;

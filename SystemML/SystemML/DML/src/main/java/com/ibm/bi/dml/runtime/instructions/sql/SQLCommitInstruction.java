@@ -10,7 +10,8 @@ package com.ibm.bi.dml.runtime.instructions.sql;
 import java.sql.SQLException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 
 
@@ -27,11 +28,13 @@ public class SQLCommitInstruction extends SQLInstructionBase
 	
 	@Override
 	public ExecutionResult execute(ExecutionContext ec)
-			throws DMLRuntimeException {
+			throws DMLRuntimeException 
+	{
+		SQLExecutionContext sec = (SQLExecutionContext)ec;
 		
 		try {
-			if(!ec.getNzConnector().getConnection().getAutoCommit())
-			ec.getNzConnector().getConnection().commit();
+			if(!sec.getNzConnector().getConnection().getAutoCommit())
+				sec.getNzConnector().getConnection().commit();
 		} catch (SQLException e) {
 			throw new DMLRuntimeException(e);
 		}

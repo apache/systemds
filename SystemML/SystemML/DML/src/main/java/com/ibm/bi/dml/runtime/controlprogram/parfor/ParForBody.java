@@ -9,9 +9,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 
 /**
  * Wrapper for exchanging parfor body data structures.

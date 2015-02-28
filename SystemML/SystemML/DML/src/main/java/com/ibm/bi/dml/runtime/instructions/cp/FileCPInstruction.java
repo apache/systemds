@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.RemoveFile;
 import com.ibm.bi.dml.runtime.functionobjects.RenameFile;
 import com.ibm.bi.dml.runtime.instructions.Instruction;

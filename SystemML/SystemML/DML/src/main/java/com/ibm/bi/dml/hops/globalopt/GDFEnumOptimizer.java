@@ -23,8 +23,9 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 
 /**
@@ -65,7 +66,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		ArrayList<GDFNode> roots = gdfgraph.getGraphRootNodes();
 		
 		//Step 1: baseline costing for branch and bound costs
-		double initCosts = CostEstimationWrapper.getTimeEstimate(prog, new ExecutionContext());
+		ExecutionContext ec = ExecutionContextFactory.createContext(prog);
+		double initCosts = CostEstimationWrapper.getTimeEstimate(prog, ec);
 	
 		//Step 2: dynamic programming plan generation
 		//(finally, pick optimal root plans over all interesting property sets)
@@ -82,7 +84,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		//generate final runtime plan (w/ optimal config)
 		//TODO apply final configurations to runtime plan, recompile, and cost
 		
-		double optCosts = CostEstimationWrapper.getTimeEstimate(prog, new ExecutionContext());
+		ec = ExecutionContextFactory.createContext(prog);
+		double optCosts = CostEstimationWrapper.getTimeEstimate(prog, ec);
 		
 		
 		//print optimization summary

@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package com.ibm.bi.dml.runtime.controlprogram.context;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +18,8 @@ import com.ibm.bi.dml.debug.DebugState;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -33,8 +35,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 
 
 public class ExecutionContext 
@@ -44,47 +44,37 @@ public class ExecutionContext
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//program reference (e.g., function repository)
-	private Program _prog;
+	protected Program _prog = null;
 	
 	//symbol table
-	private LocalVariableMap _variables;
+	protected LocalVariableMap _variables;
 	
-	//SQL-specific (TODO should be separated)
-	private NetezzaConnector nzConnector;
-	private boolean debug;
-	ArrayList<SQLExecutionStatistics> statistics;
+	//debugging (optional)
+	protected DebugState _dbState = null;
 	
-	//debugging
-	private DebugState _dbState = null;
-	
-	public ExecutionContext()
+	protected ExecutionContext()
 	{
+		//protected constructor to force use of ExecutionContextFactory
 		this( true, null );
 	}
 	
-	public ExecutionContext(Program prog)
+	protected ExecutionContext(Program prog)
 	{
+		//protected constructor to force use of ExecutionContextFactory
 		this( true, prog );
 		
 	}
 	
-	public ExecutionContext(LocalVariableMap vars)
+	protected ExecutionContext(LocalVariableMap vars)
 	{
+		//protected constructor to force use of ExecutionContextFactory
 		this( false, null);
 		_variables = vars;
 	}
 
-	public ExecutionContext(NetezzaConnector nzCon)
+	protected ExecutionContext( boolean allocateVariableMap, Program prog )
 	{
-		this( true, null );
-		nzConnector = nzCon;
-		statistics = new ArrayList<SQLExecutionStatistics>();
-	}
-	
-	public ExecutionContext( boolean allocateVariableMap, Program prog )
-	{
-		nzConnector = null;
-		statistics = null;
+		//protected constructor to force use of ExecutionContextFactory
 		if( allocateVariableMap )
 			_variables = new LocalVariableMap();
 		else
@@ -95,51 +85,6 @@ public class ExecutionContext
 		}
 	}
 	
-	public void addStatistic(int instructionId, long runtime, String opString)
-	{
-		SQLExecutionStatistics s = new SQLExecutionStatistics(opString, instructionId, runtime);
-		statistics.add(s);
-	}
-	
-	public void clearStatistics()
-	{
-		statistics.clear();
-	}
-	
-	public HashMap<Integer, SQLExecutionStatistics> getStatisticsByInstruction() {
-		HashMap<Integer, SQLExecutionStatistics> stats = new HashMap<Integer, SQLExecutionStatistics>();
-		
-		for(SQLExecutionStatistics s : statistics)
-		{
-			if(stats.containsKey(s.getInstructionId()))
-			{
-				SQLExecutionStatistics st = stats.get(s.getInstructionId());
-				st.setRuntime(st.getRuntime() + s.getRuntime());
-				st.setTimesRun(st.getTimesRun() + 1);
-			}
-			else
-				stats.put(s.getInstructionId(), s);
-		}
-		
-		return stats;
-	}
-	
-	public ArrayList<SQLExecutionStatistics> getStatistics() {
-		return statistics;
-	}
-	
-	public boolean isDebug() {
-		return debug;
-	}
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-	
-	public NetezzaConnector getNzConnector() {
-		return nzConnector;
-	}
-
-
 	public Program getProgram(){
 		return _prog;
 	}
@@ -158,69 +103,85 @@ public class ExecutionContext
 	 * -------------------------------------------------------
 	 */
 	
-	public Data getVariable(String name) {
+	public Data getVariable(String name) 
+	{
 		return _variables.get(name);
 	}
 	
-	public void setVariable(String name, Data val) throws DMLRuntimeException{
+	public void setVariable(String name, Data val) 
+		throws DMLRuntimeException
+	{
 		_variables.put(name, val);
 	}
 
-	public Data removeVariable(String name) {
+	public Data removeVariable(String name) 
+	{
 		return _variables.remove(name);
 	}
 
-	public String getVariableString(String name, boolean forSQL)
+	public void setMetaData(String fname, MetaData md) 
+		throws DMLRuntimeException 
 	{
-		Data obj = _variables.get(name);
-		if(obj != null)
-		{
-			String s = ((ScalarObject)obj).getStringValue();
-			if(obj instanceof StringObject)
-				s = "'" + s + "'";
-			else if (obj instanceof DoubleObject && forSQL)
-				s = s + "::double precision";
- 			return s;
-		}
-		else return name;
-	}
-
-	public void setMetaData(String fname, MetaData md) throws DMLRuntimeException {
 		_variables.get(fname).setMetaData(md);
 	}
 	
-	public MetaData getMetaData(String varname) throws DMLRuntimeException {
+	public MetaData getMetaData(String varname) 
+		throws DMLRuntimeException 
+	{
 		return _variables.get(varname).getMetaData();
 	}
 	
-	public void removeMetaData(String varname) throws DMLRuntimeException {
+	public void removeMetaData(String varname) 
+		throws DMLRuntimeException 
+	{
 		_variables.get(varname).removeMetaData();
 	}
 	
-	public MatrixCharacteristics getMatrixCharacteristics( String varname ) throws DMLRuntimeException{
+	public MatrixObject getMatrixObject(String varname) 
+		throws DMLRuntimeException
+	{
+		Data dat = getVariable(varname);
+		
+		//error handling if non existing or no matrix
+		if( dat == null )
+			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+		if( dat instanceof MatrixObject )
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
+		
+		return (MatrixObject) dat;
+	}
+	
+	public MatrixCharacteristics getMatrixCharacteristics( String varname ) 
+		throws DMLRuntimeException
+	{
 		MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData) getMetaData(varname);
 		return dims.getMatrixCharacteristics();
 	}
 	
-	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {
-		
+	public MatrixBlock getMatrixInput(String varName) 
+		throws DMLRuntimeException 
+	{	
 		try {
-			MatrixObject mobj = (MatrixObject) this.getVariable(varName);
+			MatrixObject mobj = (MatrixObject) getVariable(varName);
 			return mobj.acquireRead();
 		} catch (CacheException e) {
 			throw new DMLRuntimeException( e );
 		}
 	}
 	
-	public void releaseMatrixInput(String varName) throws DMLRuntimeException {
+	public void releaseMatrixInput(String varName) 
+		throws DMLRuntimeException 
+	{
 		try {
-			((MatrixObject)this.getVariable(varName)).release();
+			((MatrixObject)getVariable(varName)).release();
 		} catch (CacheException e) {
 			throw new DMLRuntimeException(e);
 		}
 	}
 	
-	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral) throws DMLRuntimeException {
+	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral)
+		throws DMLRuntimeException 
+	{
 		if ( isLiteral ) {
 			switch (vt) {
 			case INT:
@@ -252,25 +213,25 @@ public class ExecutionContext
 	}
 
 	
-	public void setScalarOutput(String varName, ScalarObject so) throws DMLRuntimeException {
-		this.setVariable(varName, so);
+	public void setScalarOutput(String varName, ScalarObject so) 
+		throws DMLRuntimeException 
+	{
+		setVariable(varName, so);
 	}
 	
-	public void setMatrixOutput(String varName, MatrixBlock outputData) throws DMLRuntimeException {
+	public void setMatrixOutput(String varName, MatrixBlock outputData) 
+		throws DMLRuntimeException 
+	{
 		MatrixObject sores = (MatrixObject) this.getVariable (varName);
         
-		try {
+		try 
+		{
 			sores.acquireModify (outputData);
-	        
-	        // Output matrix is stored in cache and it is written to HDFS, on demand, at a later point in time. 
-	        // downgrade() and exportData() need to be called only if we write to HDFS.
-	        //sores.downgrade();
-	        //sores.exportData();
 	        sores.release();
 	        
-	        this.setVariable (varName, sores);
-		
-		} catch ( CacheException e ) {
+	        setVariable (varName, sores);
+		} 
+		catch ( CacheException e ) {
 			throw new DMLRuntimeException( e );
 		}
 	}

@@ -9,6 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.io.csv;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +40,25 @@ public class FormatChangeTest extends AutomatedTestBase
 
 	private int _rows, _cols;
 	private double _sparsity;
+	
+	/** Main method for running one test at a time from Eclipse. */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+		
+		// Test has multiple parametrized runs.  Pick just one.
+		List<Object[]> data = (List<Object[]>) data();
+		Object[] chosenData = data.get(0);
+		
+		FormatChangeTest t= new FormatChangeTest((Integer)chosenData[0],
+				(Integer)chosenData[1], (Double)chosenData[2]);
+		t.setUpBase();
+		t.setUp();
+		t.testFormatChangeCP();
+		t.tearDown();
+		
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+	}
 	
 	@Override
 	public void setUp() 
@@ -209,7 +229,7 @@ public class FormatChangeTest extends AutomatedTestBase
 		       csvFile + " " + rOutput;
 		
 		// Run the verify test
-		runTest(true, false, null, -1);
+		runTest(true, false, null, -1);	
 		runRScript(true);
 		
 		double dmlScalar = TestUtils.readDMLScalar(dmlOutput); 

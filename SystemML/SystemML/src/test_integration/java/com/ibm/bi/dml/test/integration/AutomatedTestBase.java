@@ -124,7 +124,7 @@ public abstract class AutomatedTestBase
 		inputRFiles = new ArrayList<String>();
 		expectedFiles = new ArrayList<String>();
 		outputDirectories = new String[0];
-		isOutAndExpectedDeletionDisabled = false;
+		setOutAndExpectedDeletionDisabled(false);
 		lTimeBeforeTest = System.currentTimeMillis();
 	}
 
@@ -851,6 +851,7 @@ public abstract class AutomatedTestBase
 				//else
 					DMLScript.main(args.toArray(new String[args.size()]));
 			}
+			
 		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
@@ -1083,17 +1084,19 @@ public abstract class AutomatedTestBase
 	public void tearDown() {
 		System.out.println("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
+		
 		assertTrue("expected String did not occur: " + expectedStdOut, iExpectedStdOutState == 0
 				|| iExpectedStdOutState == 2);
 		assertTrue("expected String did not occur (stderr): " + expectedStdErr, iExpectedStdErrState == 0
 				|| iExpectedStdErrState == 2);
 		TestUtils.displayAssertionBuffer();
 
-		TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
-		TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
-		TestUtils.removeTemporaryFiles();
 
-		if (!isOutAndExpectedDeletionDisabled) {
+		if (!isOutAndExpectedDeletionDisabled()) {
+			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
+			TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
+			TestUtils.removeTemporaryFiles();
+
 			TestUtils.clearDirectory(baseDirectory + OUTPUT_DIR);
 			TestUtils.removeHDFSFiles(expectedFiles.toArray(new String[expectedFiles.size()]));
 			TestUtils.clearDirectory(baseDirectory + EXPECTED_DIR);
@@ -1111,7 +1114,7 @@ public abstract class AutomatedTestBase
 	 * folder for this test.
 	 */
 	public void disableOutAndExpectedDeletion() {
-		isOutAndExpectedDeletionDisabled = true;
+		setOutAndExpectedDeletionDisabled(true);
 	}
 
 	/**
@@ -1144,6 +1147,9 @@ public abstract class AutomatedTestBase
 				if (line.contains(expectedStdOut)) {
 					iExpectedStdOutState = 2;
 					System.setOut(originalPrintStreamStd);
+				} else {
+					// Reset buffer
+					line = "";
 				}
 			}
 			originalPrintStreamStd.write(b);
@@ -1175,6 +1181,9 @@ public abstract class AutomatedTestBase
 				if (line.contains(expectedStdErr)) {
 					iExpectedStdErrState = 2;
 					System.setErr(originalErrStreamStd);
+				} else {
+					// Reset buffer
+					line = "";
 				}
 			}
 			originalErrStreamStd.write(b);
@@ -1209,5 +1218,23 @@ public abstract class AutomatedTestBase
 	 */
 	protected double[][] createNonRandomMatrixValues(int rows, int cols) {
 		return TestUtils.createNonRandomMatrixValues(rows, cols, true);
+	}
+
+	/**
+	 * @return TRUE if the test harness is not deleting temporary files
+	 */
+	protected boolean isOutAndExpectedDeletionDisabled() {
+		return isOutAndExpectedDeletionDisabled;
+	}
+
+	/**
+	 * Call this method from a subclass's setUp() method.
+	 * @param isOutAndExpectedDeletionDisabled
+	 *            TRUE to disable code that deletes temporary files for this
+	 *            test case
+	 */
+	protected void setOutAndExpectedDeletionDisabled(
+			boolean isOutAndExpectedDeletionDisabled) {
+		this.isOutAndExpectedDeletionDisabled = isOutAndExpectedDeletionDisabled;
 	}
 }

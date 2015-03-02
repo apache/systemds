@@ -14,9 +14,9 @@
 
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
-  	<artifactId>systemml-reactor</artifactId>
-  	<version>3.7-SNAPSHOT</version>
-  	<relativePath>../pom.xml</relativePath>
+		<artifactId>systemml-reactor</artifactId>
+		<version>3.7-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<build>
@@ -35,6 +35,21 @@
 					</execution>
 				</executions>
 
+				<configuration>
+					<!-- Include signature files so that recent versions of Java will run 
+						the resulting jar without complaining about "Invalid signature file digest 
+						for Manifest main attributes". -->
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -100,6 +115,18 @@
 							</descriptors>
 						</configuration>
 					</execution>
+					<execution>
+						<id>create-standalone-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/standalone.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 
@@ -154,7 +181,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.18</version>
+				<version>2.17</version>
 				<configuration>
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -183,7 +210,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				
+
 				<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** -->
 				<!-- Failsafe 2.18 has a bug in computing # cores, so use 2.17 -->
 				<version>2.17</version>
@@ -201,14 +228,12 @@
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 
-					<!-- Run (num cores) test harness classes in parallel, each in a separate 
-						process -->
-					<forkCount>1C</forkCount>
-					<reuseForks>true</reuseForks>
+					<forkCount>1</forkCount>
+					<reuseForks>false</reuseForks>
 
 					<!-- Third argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx3g -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<include>**/integration/**/*Test.java</include>
@@ -270,8 +295,9 @@
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.10</artifactId>
-			<version>1.2.0</version>
+			<version>1.2.1_IBM_1</version>
 		</dependency>
+
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>

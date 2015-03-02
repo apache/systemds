@@ -1,0 +1,28 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to return head, i.e. 1:n rows, from input data.
+#
+# Parameters:
+#    x    : (input) data set
+#    n    : (input) number of rows to return, i.e.: 1:n
+#    o    : (output) 
+#    ofmt : (default "csv") format of output
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/head.dml -nvargs x="/tmp/M.mtx" n=100 o="/tmp/o.mtx"
+#
+
+ofmt = ifdef ($ofmt, "csv");
+
+x = read ($x);
+
+o = x[1:$n,];
+
+write (o, $o, format=ofmt);

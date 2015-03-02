@@ -1,0 +1,211 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
+# THIS SCRIPT SOLVES LINEAR REGRESSION USING A DIRECT SOLVER FOR (X^T X + lambda) beta = X^T y
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
+# Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# O     String  " "     Location to write the printed statistics; by default is standard output
+# icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double 0.000001 Regularization constant (lambda) for L2-regularization; set to nonzero
+#                       for highly dependend/sparse/numerous features
+# fmt   String "text"   Matrix output format for B (the betas) only, usually "text" or "csv"
+# --------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
+#         OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
+# icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
+# icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+# icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+#                        Col.2: betas for shifted/rescaled X and intercept
+#
+# In addition, some regression statistics are provided in CSV format, one comma-separated
+# name-value pair per each line, as follows:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------
+# AVG_TOT_Y             Average of the response value Y
+# STDEV_TOT_Y           Standard Deviation of the response value Y
+# AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
+# STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
+# DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
+# PLAIN_R2              Plain R^2 of residual with bias included vs. total average
+# ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
+# PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
+# ADJUSTED_R2_NOBIAS    Adjusted R^2 of residual with bias subtracted vs. total average
+# PLAIN_R2_VS_0         * Plain R^2 of residual with bias included vs. zero constant
+# ADJUSTED_R2_VS_0      * Adjusted R^2 of residual with bias included vs. zero constant
+# -------------------------------------------------------------------------------------
+# * The last two statistics are only printed if there is no intercept (icpt=0)
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f LinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
+#     O=OUTPUT_DIR/Out icpt=2 reg=1.0 fmt=csv
+
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fileO = ifdef ($O, " ");
+fmtB  = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0);     # $icpt=0;
+regularization = ifdef ($reg, 0.000001); # $reg=0.000001;
+
+print ("BEGIN LINEAR REGRESSION SCRIPT");
+print ("Reading X and Y...");
+X = read (fileX);
+y = read (fileY);
+
+n = nrow (X);
+m = ncol (X);
+ones_n = matrix (1, rows = n, cols = 1);
+zero_cell = matrix (0, rows = 1, cols = 1);
+
+# Introduce the intercept, shift and rescale the columns of X if needed
+
+m_ext = m;
+if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
+{
+    X = append (X, ones_n);
+    m_ext = ncol (X);
+}
+
+scale_lambda = matrix (1, rows = m_ext, cols = 1);
+if (intercept_status == 1 | intercept_status == 2)
+{
+    scale_lambda [m_ext, 1] = 0;
+}
+
+if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
+{                           # Important assumption: X [, m_ext] = ones_n
+    avg_X_cols = t(colSums(X)) / n;
+    var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
+    is_unsafe = ppred (var_X_cols, 0.0, "<=");
+    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+    scale_X [m_ext, 1] = 1;
+    shift_X = - avg_X_cols * scale_X;
+    shift_X [m_ext, 1] = 0;
+} else {
+    scale_X = matrix (1, rows = m_ext, cols = 1);
+    shift_X = matrix (0, rows = m_ext, cols = 1);
+}
+
+# Henceforth, if intercept_status == 2, we use "X %*% (SHIFT/SCALE TRANSFORM)"
+# instead of "X".  However, in order to preserve the sparsity of X,
+# we apply the transform associatively to some other part of the expression
+# in which it occurs.  To avoid materializing a large matrix, we rewrite it:
+#
+# ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
+# ssX_A  = diag (scale_X) %*% A;
+# ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A;
+#
+# tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
+# tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+
+lambda = scale_lambda * regularization;
+
+# BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
+
+A = t(X) %*% X;
+b = t(X) %*% y;
+if (intercept_status == 2) {
+    A = t(diag (scale_X) %*% A + shift_X %*% A [m_ext, ]);
+    A =   diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+    b =   diag (scale_X) %*% b + shift_X %*% b [m_ext, ];
+}
+A = A + diag (lambda);
+
+print ("Calling the Direct Solver...");
+
+beta_unscaled = solve (A, b);
+
+# END THE DIRECT SOLVE ALGORITHM
+
+if (intercept_status == 2) {
+    beta = scale_X * beta_unscaled;
+    beta [m_ext, ] = beta [m_ext, ] + t(shift_X) %*% beta_unscaled;
+} else {
+    beta = beta_unscaled;
+}
+
+print ("Computing the statistics...");
+
+avg_tot = sum (y) / n;
+ss_tot = sum (y ^ 2);
+ss_avg_tot = ss_tot - n * avg_tot ^ 2;
+var_tot = ss_avg_tot / (n - 1);
+y_residual = y - X %*% beta;
+avg_res = sum (y_residual) / n;
+ss_res = sum (y_residual ^ 2);
+ss_avg_res = ss_res - n * avg_res ^ 2;
+
+plain_R2 = 1 - ss_res / ss_avg_tot;
+if (n > m_ext) {
+    dispersion  = ss_res / (n - m_ext);
+    adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
+} else {
+    dispersion  = 0.0 / 0.0;
+    adjusted_R2 = 0.0 / 0.0;
+}
+
+plain_R2_nobias = 1 - ss_avg_res / ss_avg_tot;
+deg_freedom = n - m - 1;
+if (deg_freedom > 0) {
+    var_res = ss_avg_res / deg_freedom;
+    adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
+} else {
+    var_res = 0.0 / 0.0;
+    adjusted_R2_nobias = 0.0 / 0.0;
+    print ("Warning: zero or negative number of degrees of freedom.");
+}
+
+plain_R2_vs_0 = 1 - ss_res / ss_tot;
+if (n > m) {
+    adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
+} else {
+    adjusted_R2_vs_0 = 0.0 / 0.0;
+}
+
+str = "AVG_TOT_Y," + avg_tot;                                    #  Average of the response value Y
+str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y
+str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
+str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
+str = append (str, "DISPERSION," + dispersion);                  #  GLM-style dispersion, i.e. residual sum of squares / # d.f.
+str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
+str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
+str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average
+str = append (str, "ADJUSTED_R2_NOBIAS," + adjusted_R2_nobias);  #  Adjusted R^2 of residual with bias subtracted vs. total average
+if (intercept_status == 0) {
+    str = append (str, "PLAIN_R2_VS_0," + plain_R2_vs_0);        #  Plain R^2 of residual with bias included vs. zero constant
+    str = append (str, "ADJUSTED_R2_VS_0," + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
+}
+
+if (fileO != " ") {
+    write (str, fileO);
+} else {
+    print (str);
+}
+
+# Prepare the output matrix
+print ("Writing the output matrix...");
+
+if (intercept_status == 2) {
+    beta_out = append (beta, beta_unscaled);
+} else {
+    beta_out = beta;
+}
+write (beta_out, fileB, format=fmtB);
+print ("END LINEAR REGRESSION SCRIPT");

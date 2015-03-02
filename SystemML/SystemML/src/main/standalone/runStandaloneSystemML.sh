@@ -6,11 +6,10 @@ printUsageExit()
 cat << EOF
 Usage: $0 <dml-filename> [arguments] [-help]
     -help     - Print this usage message and exit
-    Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
 EOF
   exit 1
 }
-
+#    Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
 
 while getopts "h:" options; do
   case $options in
@@ -29,6 +28,18 @@ if [ -z $1 ] ; then
     printUsageExit;
 fi
 
+# Peel off first argument so that $@ contains arguments to DML script
+SCRIPT_FILE=$1
+shift
+
+# Build up a classpath with all included libraries
+CLASSPATH=""
+for f in ./lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
 # invoke the jar with options and arguments
-java -Xmx4g -Xms4g -Xmn400m -jar jSystemML.jar -f $1 -exec singlenode -config=SystemML-config.xml $2
+java -Xmx4g -Xms4g -Xmn400m -cp ${CLASSPATH} com.ibm.bi.dml.api.DMLScript \
+     -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
+     $@
 

@@ -2,11 +2,15 @@
 	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<id>distrib</id>
+
+	<!-- Assembly file for the "standalone" SystemML release for unning on a 
+		standalone machine. -->
+
+	<id>standalone</id>
 	<formats>
 		<format>tar.gz</format>
 	</formats>
-	
+
 	<includeBaseDirectory>false</includeBaseDirectory>
 
 	<fileSets>
@@ -52,7 +56,7 @@
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>
-		
+
 		<fileSet>
 			<directory>${basedir}/docs/Language Reference</directory>
 			<includes>
@@ -61,7 +65,7 @@
 			</includes>
 			<outputDirectory>./docs</outputDirectory>
 		</fileSet>
-		
+
 		<fileSet>
 			<directory>${basedir}/docs/Algorithms Reference</directory>
 			<includes>
@@ -69,16 +73,49 @@
 			</includes>
 			<outputDirectory>./docs</outputDirectory>
 		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>log4j.properties</include>
+				<include>readme.txt</include>
+				<include>SystemML-config.xml</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+		
+		<!--  Make scripts executable. -->
+		<fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>*.sh</include>
+				<include>*.bat</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+			<fileMode>0755</fileMode>
+		</fileSet>
 	</fileSets>
-	
+
+	<!-- 
 	<files>
 		<file>
 			<source>target/${artifactId}-${project.version}.jar</source>
 			<outputDirectory>.</outputDirectory>
-			<destName>SystemML.jar</destName>
+			<destName>SystemML.jar</destName> 
 		</file>
 	</files>
+	-->
 	
-	<!-- <dependencySets> <dependencySet> <includes> <include>com.ibm.biginsights:system-ml:jar:*</include> 
-		</includes> <outputDirectory>.</outputDirectory> </dependencySet> </dependencySets> -->
+	<!--  Include all the libraries needed to run in standalone mode. -->
+	<dependencySets>
+		<dependencySet>
+			<includes>
+				<include>*:*</include>
+			</includes>
+			<outputDirectory>./lib</outputDirectory>
+			<scope>provided</scope>
+		</dependencySet>
+	</dependencySets>
+	
+
 </assembly>

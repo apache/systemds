@@ -249,7 +249,7 @@ public class RoundTest extends AutomatedTestBase
 							                //Double.toString(sparsity),
 					                        HOME + OUTPUT_DIR + "R" };
 	
-			fullRScriptName = HOME + test + ".R";
+			fullRScriptName = HOME + test.scriptName + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;	
 	
 			loadTestConfiguration(config);

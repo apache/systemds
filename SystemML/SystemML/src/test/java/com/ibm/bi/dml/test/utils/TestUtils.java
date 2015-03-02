@@ -16,11 +16,14 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -31,6 +34,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -592,7 +596,7 @@ public class TestUtils
 		return Double.NaN;
 	}
 	
-	public static String processMultiPartCSVForR(String csvFile) {
+	public static String processMultiPartCSVForR(String csvFile) throws IOException {
 		File csv = new File(csvFile);
 		if (csv.isDirectory()) {
 			File[] parts = csv.listFiles();
@@ -612,10 +616,37 @@ public class TestUtils
 				csvFile = parts[index].toString();
 			}
 			else if ( count > 1 ) {
-				//File tmp = new File(csvFile+"_temp.csv");
-				//BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp)));
-		
-				throw new RuntimeException("Need to handle multi-part csv file read in R");
+				File tmp = new File(csvFile+"_temp.csv");
+				OutputStreamWriter out = null;
+
+				try {
+					out = new OutputStreamWriter(new FileOutputStream(tmp),
+							"UTF-8");
+
+					// Directory listing may contain .crc files or may be in the
+					// wrong order. Sanitize the list of names.
+					ArrayList<String> partNames = new ArrayList<String>();
+					for (File part : parts) {
+						String partName = part.getName();
+						if (false == partName.endsWith(".crc")) {
+							partNames.add(partName);
+						}
+					}
+					Collections.sort(partNames);
+
+					for (String name : partNames) {
+						File part = new File(csv, name);
+						// Assume that each file fits into memory.
+						String fileContents = FileUtils.readFileToString(part,
+								"UTF-8");
+						out.append(fileContents);
+					}
+				} finally {
+					if (null != out)
+						out.close();
+				}
+				
+				csvFile = tmp.getCanonicalPath();
 			}
 			else {
 				throw new RuntimeException("Unexpected error while reading a CSV file in R: " + count);

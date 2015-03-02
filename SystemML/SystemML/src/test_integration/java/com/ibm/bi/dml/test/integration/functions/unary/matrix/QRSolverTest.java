@@ -27,6 +27,21 @@ public class QRSolverTest extends AutomatedTestBase
 	private final static int cols = 50;
 	private final static double sparsity = 0.7;
 	
+	/** Main method for running single tests from Eclipse. */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+		QRSolverTest t = new QRSolverTest();
+		
+		t.setUpBase();
+		t.setUp();
+		t.testQRSolveMR();
+		
+		t.tearDown();
+		
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec.\n", elapsedMsec / 1000.0);
+	}
+	
 	@Override
 	public void setUp() 
 	{

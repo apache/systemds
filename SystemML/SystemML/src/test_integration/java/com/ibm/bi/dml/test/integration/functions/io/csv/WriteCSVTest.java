@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.test.integration.functions.io.csv;
 
+import java.io.IOException;
+
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -44,46 +46,46 @@ public class WriteCSVTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSV1_CP() {
+	public void testCSV1_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, true, ":", true);
 	}
 	
 	@Test
-	public void testCSV1_MR() {
+	public void testCSV1_MR() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, true, ":", true);
 	}
 	
 	@Test
-	public void testCSV2_CP() {
+	public void testCSV2_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ":", true);
 	}
 	
 	@Test
-	public void testCSV2_MR() {
+	public void testCSV2_MR() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ":", true);
 	}
 	
 	@Test
-	public void testCSV3_CP() {
+	public void testCSV3_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ":", false);
 	}
 	
 	@Test
-	public void testCSV3_MR() {
+	public void testCSV3_MR() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ":", false);
 	}
 	
 	@Test
-	public void testCSV4_CP() {
+	public void testCSV4_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ".", false);
 	}
 	
 	@Test
-	public void testCSV4_MR() {
+	public void testCSV4_MR() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ".", false);
 	}
 	
-	private void runCSVWriteTest(RUNTIME_PLATFORM platform, boolean header, String sep, boolean sparse) {
+	private void runCSVWriteTest(RUNTIME_PLATFORM platform, boolean header, String sep, boolean sparse) throws IOException {
 		
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
 		rtplatform = platform;
@@ -99,12 +101,15 @@ public class WriteCSVTest extends AutomatedTestBase
 		String rOutput = HOME + OUTPUT_DIR + "R.scalar";
 		
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", inputMatrixName, dmlOutput, csvOutputName, Boolean.toString(header), sep, Boolean.toString(sparse) };
+		programArgs = new String[]{"-explain" ,
+				"-args", inputMatrixName, dmlOutput, csvOutputName, 
+				Boolean.toString(header), sep, Boolean.toString(sparse) };
 		
 		runTest(true, false, null, -1);
 
 		// Verify produced CSV file w/ R
 		csvOutputName = TestUtils.processMultiPartCSVForR(csvOutputName);
+		
 		fullRScriptName = HOME + "writecsv_verify.R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + csvOutputName + " " + Boolean.toString(header).toUpperCase() + " " + sep + " " + rOutput;
 		runRScript(true);

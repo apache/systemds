@@ -46,7 +46,7 @@ public class kMeansTest extends AutomatedTestBase
 		fullDMLScriptName = KMEANS_HOME + TEST_KMEANS + ".dml";
 		programArgs = new String[]{"-args",  KMEANS_HOME + INPUT_DIR + "M" , 
 				                        Integer.toString(rows), Integer.toString(cols), 
-				                         KMEANS_HOME + OUTPUT_DIR + "kcenters" };
+				                         KMEANS_HOME + OUTPUT_DIR + "kCenters" };
 		
 		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, 10);
 		

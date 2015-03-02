@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.unary.matrix;
+package com.ibm.bi.dml.slowtest.integration.functions.unary.matrix;
 
 import org.junit.Test;
 
@@ -14,18 +14,19 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-public class LUFactorizeTest extends AutomatedTestBase 
+public class EigenFactorizeTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "lu";
+	private final static String TEST_NAME1 = "eigen";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 
 	private final static int rows1 = 500;
-	private final static int rows2 = 2500;
+	private final static int rows2 = 1000;
 	private final static double sparsity = 0.9;
+	private final static int numEigenValuesToEvaluate = 15;
 	
 	@Override
 	public void setUp() 
@@ -41,42 +42,42 @@ public class LUFactorizeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testLUFactorizeDenseCP() 
+	public void testEigenFactorizeDenseCP() 
 	{
-		runTestLUFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLUFactorizeDenseMR() 
+	public void testEigenFactorizeDenseMR() 
 	{
-		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
+		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLUFactorizeDenseHybrid() 
+	public void testEigenFactorizeDenseHybrid() 
 	{
-		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
+		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseCP() 
+	public void testLargeEigenFactorizeDenseCP() 
 	{
-		runTestLUFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseMR() 
+	public void testLargeEigenFactorizeDenseMR() 
 	{
-		runTestLUFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
+		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test
-	public void testLargeLUFactorizeDenseHybrid() 
+	public void testLargeEigenFactorizeDenseHybrid() 
 	{
-		runTestLUFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
+		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
 	}
 	
-	private void runTestLUFactorize( int rows, RUNTIME_PLATFORM rt)
+	private void runTestEigenFactorize( int rows, RUNTIME_PLATFORM rt)
 	{		
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
@@ -88,6 +89,7 @@ public class LUFactorizeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
+												Integer.toString(numEigenValuesToEvaluate),
 												HOME + OUTPUT_DIR + "D" };
 	
 			loadTestConfiguration(config);
@@ -97,8 +99,10 @@ public class LUFactorizeTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
 			// Expected matrix = 1x1 zero matrix 
-			double[][] D  = new double[1][1];
-			D[0][0] = 0.0;
+			double[][] D  = new double[numEigenValuesToEvaluate][1];
+			//D[0][0] = 0.0;
+			for(int i=0; i < numEigenValuesToEvaluate; i++)
+				D[i][0] = 0.0;
 			writeExpectedMatrix("D", D);		
 			
 			boolean exceptionExpected = false;

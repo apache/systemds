@@ -27,48 +27,57 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.Statistics;
 
-public class CSVReadUnknownSizeTest extends AutomatedTestBase 
-{
+public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n"
+			+ "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
 	private final static String TEST_NAME = "csv_read_unknown";
 	private final static String TEST_DIR = "functions/recompile/";
-	
+
 	private final static int rows = 10;
-	private final static int cols = 15;    
-	
-	
+	private final static int cols = 15;
+
+	/** Main method for running one test at a time from Eclipse. */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		CSVReadUnknownSizeTest t = new CSVReadUnknownSizeTest();
+		t.setUpBase();
+		t.setUp();
+		t.testCSVReadUnknownSizeSplitRewrites();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+	}
+
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "X" }) );
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR,
+				TEST_NAME, new String[] { "X" }));
+		setOutAndExpectedDeletionDisabled(true);
 	}
 
 	@Test
-	public void testCSVReadUnknownSizeNoSplitNoRewrites() 
-	{
-		runCSVReadUnknownSizeTest( false, false );
+	public void testCSVReadUnknownSizeNoSplitNoRewrites() {
+		runCSVReadUnknownSizeTest(false, false);
 	}
-	
+
 	@Test
-	public void testCSVReadUnknownSizeNoSplitRewrites() 
-	{
-		runCSVReadUnknownSizeTest( false, true );
+	public void testCSVReadUnknownSizeNoSplitRewrites() {
+		runCSVReadUnknownSizeTest(false, true);
 	}
-	
+
 	@Test
-	public void testCSVReadUnknownSizeSplitNoRewrites() 
-	{
-		runCSVReadUnknownSizeTest( true, false );
+	public void testCSVReadUnknownSizeSplitNoRewrites() {
+		runCSVReadUnknownSizeTest(true, false);
 	}
-	
+
 	@Test
-	public void testCSVReadUnknownSizeSplitRewrites() 
-	{
-		runCSVReadUnknownSizeTest( true, true );
+	public void testCSVReadUnknownSizeSplitRewrites() {
+		runCSVReadUnknownSizeTest(true, true);
 	}
 
 	/**
@@ -108,7 +117,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase
 			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "X.mtd", ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
 			
 			runTest(true, false, null, -1); 
-			
+	
 			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
@@ -116,7 +125,17 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase
 				for( int j=0; j<cols; j++ )
 				{
 					Double tmp = dmlfile.get(new CellIndex(i+1,j+1));
-					Assert.assertEquals(mb.quickGetValue(i, j), (tmp==null)?0:tmp);
+					
+					double expectedValue = mb.quickGetValue(i, j);			
+					double actualValue =  (tmp==null)?0.0:tmp;
+					
+					if (expectedValue != actualValue) {
+						throw new Exception(String.format("Value of cell (%d,%d) "
+								+ "(zero-based indices) in output file %s is %f, "
+								+ "but original value was %f",
+								i, j, baseDirectory + OUTPUT_DIR + "R",
+								actualValue, expectedValue));
+					}
 				}
 			
 			
@@ -138,5 +157,4 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
 	}
-	
 }

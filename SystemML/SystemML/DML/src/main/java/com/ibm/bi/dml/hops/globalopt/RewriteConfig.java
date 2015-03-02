@@ -38,10 +38,11 @@ public class RewriteConfig
 	private int      _rewriteSetBlockSize = -1;
 	private FileFormatTypes _rewriteFormat = null;
 	
-	public RewriteConfig( ExecType et, int bs )
+	public RewriteConfig( ExecType et, int bs, FileFormatTypes format )
 	{
 		_rewriteSetExecType = et;
 		_rewriteSetBlockSize = bs;
+		_rewriteFormat = format;
 	}
 	
 	public RewriteConfig( RewriteConfig rc )

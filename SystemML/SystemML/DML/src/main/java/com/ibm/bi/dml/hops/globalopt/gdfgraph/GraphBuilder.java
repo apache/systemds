@@ -65,7 +65,9 @@ public class GraphBuilder
 		
 		//create GDF graph root nodes 
 		ArrayList<GDFNode> ret = new ArrayList<GDFNode>();
-		ret.addAll( roots.values() );
+		for( GDFNode root : roots.values() )
+			if( !(root instanceof GDFCrossBlockNode) )
+				ret.add(root);
 		
 		//create GDF graph
 		GDFGraph graph = new GDFGraph(prog, ret);

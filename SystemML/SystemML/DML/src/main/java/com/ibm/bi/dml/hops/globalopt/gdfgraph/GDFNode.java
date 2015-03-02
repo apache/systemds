@@ -18,6 +18,7 @@ import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
@@ -84,6 +85,13 @@ public class GDFNode
 		return _hop;
 	}
 	
+	public Program getProgram()
+	{
+		if( _pb != null )
+			return _pb.getProgram();
+		return null;
+	}
+	
 	public ArrayList<GDFNode> getInputs()
 	{
 		return _inputs;
@@ -92,6 +100,23 @@ public class GDFNode
 	public DataType getDataType()
 	{
 		return _hop.getDataType();
+	}
+	
+	/**
+	 * If the output or any input is a matrix we need to consider
+	 * MR configurations. This for examples excludes Literals or
+	 * any purely scalar operation.
+	 * 
+	 * @return
+	 */
+	public boolean requiresMREnumeration()
+	{
+		boolean ret = _hop.getDataType() == DataType.MATRIX;
+		
+		for( Hop c : _hop.getInput() )
+			ret |= (c.getDataType() == DataType.MATRIX);
+		
+		return ret;
 	}
 	
 	/**
@@ -104,7 +129,8 @@ public class GDFNode
 		return (   _hop instanceof ReblockOp //any format
 				|| _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
 				|| (_hop instanceof AggUnaryOp && ((AggUnaryOp)_hop).getDirection()==Direction.RowCol && format!=FileFormatTypes.CSV)
-				|| (_hop instanceof ReorgOp && ((ReorgOp)_hop).getOp()==ReOrgOp.TRANSPOSE && format!=FileFormatTypes.CSV));
+				|| (_hop instanceof ReorgOp && ((ReorgOp)_hop).getOp()==ReOrgOp.TRANSPOSE && format!=FileFormatTypes.CSV)
+				|| format==FileFormatTypes.BINARY ); //any op
 	}
 	
 	/**

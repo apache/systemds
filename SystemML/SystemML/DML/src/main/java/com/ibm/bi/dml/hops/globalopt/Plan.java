@@ -2,19 +2,24 @@ package com.ibm.bi.dml.hops.globalopt;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.FunctionOp;
+import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 
 
 public class Plan 
 {
+	private GDFNode _node              = null;
+	
 	private InterestingProperties _ips = null;
 	private RewriteConfig _conf        = null;
 	private ArrayList<Plan> _childs    = null;
 	private double _costs = -1;
 	
-	public Plan(InterestingProperties ips, RewriteConfig rc, ArrayList<Plan> childs)
+	public Plan(GDFNode node, InterestingProperties ips, RewriteConfig rc, ArrayList<Plan> childs)
 	{
+		_node = node;
 		_ips = ips;
 		_conf = rc;
 		if( childs != null && !childs.isEmpty() )
@@ -25,6 +30,7 @@ public class Plan
 	
 	public Plan( Plan p )
 	{	
+		_node = p._node;
 		_ips = new InterestingProperties(p._ips);
 		_conf = new RewriteConfig(p._conf);
 		_costs = p._costs;
@@ -33,7 +39,11 @@ public class Plan
 			_childs = (ArrayList<Plan>) p._childs.clone();
 		else
 			_childs = new ArrayList<Plan>();
-			
+	}
+	
+	public GDFNode getNode()
+	{
+		return _node;
 	}
 	
 	public void addChild( Plan c )
@@ -41,9 +51,19 @@ public class Plan
 		_childs.add(c);
 	}
 	
+	public ArrayList<Plan> getChilds()
+	{
+		return _childs;
+	}
+	
 	public InterestingProperties getInterestingProperties()
 	{
 		return _ips;
+	}
+	
+	public RewriteConfig getRewriteConfig()
+	{
+		return _conf;
 	}
 	
 	public void setCosts( double costs )
@@ -71,8 +91,11 @@ public class Plan
 			&& _childs != null && _childs.size() > 1 ) 
 		{
 			int size0 = _childs.get(0)._conf.getBlockSize();
-			for( Plan c : _childs )
-				ret &= (c._conf.getBlockSize() == size0);
+			if( size0 > 0 ) { //-1 compatible with everything
+				for( Plan c : _childs )
+					ret &= (  c._conf.getBlockSize() == size0
+					        ||c._conf.getBlockSize() <= 0 );
+			}
 		}
 		
 		return ret;
@@ -86,7 +109,7 @@ public class Plan
 	 * @param node
 	 * @return
 	 */
-	public boolean checkValidFormatInMR( GDFNode node )
+	public boolean checkValidFormatInMR()
 	{
 		boolean ret = true;
 		
@@ -94,8 +117,18 @@ public class Plan
 		{
 			if( _childs != null )
 				for( Plan c : _childs )
-					ret &= node.isValidInputFormatForOperation(c._conf.getFormat());
+					ret &= _node.isValidInputFormatForOperation(c._conf.getFormat());
 		}
+		
+		return ret;
+	}
+	
+	public boolean checkValidExecutionType()
+	{
+		boolean ret = true;
+		
+		ret &= !( _node.getHop() instanceof FunctionOp && _conf.getExecType()!=ExecType.CP );
+		ret &= !( _node.getHop() instanceof ReblockOp &&  _conf.getExecType()!=ExecType.MR );
 		
 		return ret;
 	}

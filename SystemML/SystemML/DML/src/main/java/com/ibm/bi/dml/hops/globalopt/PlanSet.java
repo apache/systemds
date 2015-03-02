@@ -81,12 +81,14 @@ public class PlanSet
 	public PlanSet crossProductChild(PlanSet pc) 
 	{
 		//check for empty child plan set (return current plan set)
-		if( pc==null || pc.isEmpty() )
+		if( pc==null || pc.isEmpty() ) {
 			return this;
+		}
 		//check for empty parent plan set (pass-through child)
 		//(e.g., for crossblockop; this also implicitly reused costed runtime plans)
-		if( _plans == null || _plans.isEmpty() )
+		if( _plans == null || _plans.isEmpty() ) {
 			return pc;
+		}
 		
 		ArrayList<Plan> Pnew = new ArrayList<Plan>();  
 		

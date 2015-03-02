@@ -2834,8 +2834,8 @@ public class Dag<N extends Lop>
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
 				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-				int rpb = Integer.parseInt("" + oparams.getRowsInBlock());
-				int cpb = Integer.parseInt("" + oparams.getColsInBlock());
+				int rpb = (int) oparams.getRowsInBlock();
+				int cpb = (int) oparams.getColsInBlock();
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 									        oparams.getLabel(),
 											oparams.getFile_name(), 
@@ -2980,8 +2980,8 @@ public class Dag<N extends Lop>
 						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.getDataType(), node.getValueType(), tempFileName, oparams, out.getOutInfo());
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
 						
-						int rpb = Integer.parseInt(""+oparams.getRowsInBlock());
-						int cpb = Integer.parseInt(""+oparams.getColsInBlock());
+						int rpb = (int) oparams.getRowsInBlock();
+						int cpb = (int) oparams.getColsInBlock();
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 													tempVarName, 
 													tempFileName, 
@@ -3050,8 +3050,8 @@ public class Dag<N extends Lop>
 						//String createInst = prepareVariableInstruction("createvar", node);
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
 
-						int rpb = Integer.parseInt(""+oparams.getRowsInBlock());
-						int cpb = Integer.parseInt(""+oparams.getColsInBlock());
+						int rpb = (int) oparams.getRowsInBlock();
+						int cpb = (int) oparams.getColsInBlock();
 						Lop fnameLop = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
 						String fnameStr = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral()) ? 
 								           fnameLop.getOutputParameters().getLabel() 

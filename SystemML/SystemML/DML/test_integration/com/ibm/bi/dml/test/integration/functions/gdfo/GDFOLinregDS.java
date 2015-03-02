@@ -92,7 +92,7 @@ public class GDFOLinregDS extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-config="+HOME+TEST_CONF,
+			programArgs = new String[]{ "-explain","hops","-config="+HOME+TEST_CONF,
 					                    "-args", HOME + INPUT_DIR + "X",
 					                             HOME + INPUT_DIR + "y",
 					                             String.valueOf(intercept),

@@ -17,7 +17,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
-public class SequenceMiner extends AutomatedTestBase 
+public class SequenceMinerTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -25,6 +25,23 @@ public class SequenceMiner extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/external/";
 	private final static String TEST_SEQMINER = "SeqMiner"; 
+	
+	/** 
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+			long startMsec = System.currentTimeMillis();
+
+			SequenceMinerTest t= new SequenceMinerTest();
+			t.setUpBase();
+			t.setUp();
+			t.testSequenceMiner();
+			t.tearDown();
+			
+			long elapsedMsec = System.currentTimeMillis() - startMsec;
+			System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+		
+	}
 	
 	@Override
 	public void setUp() {
@@ -41,6 +58,10 @@ public class SequenceMiner extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("SeqMiner");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		
+		
+		// Need to load the config here because only loadTestConfiguration sets baseDirectory
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test by constructing the arguments directly */
 		String SEQMINER_HOME = baseDirectory;
@@ -71,9 +92,7 @@ public class SequenceMiner extends AutomatedTestBase
 		writeExpectedMatrix("fseq", expected_fseq);
 		writeExpectedMatrix("sup", expected_sup);
 		
-		
-		
-		loadTestConfiguration(config);
+
 
 		// no expected number of M/R jobs are calculated, set to default for now
 		runTest(true, false, null, -1);

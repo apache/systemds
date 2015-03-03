@@ -19,16 +19,16 @@ import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.OpOp3;
 import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
+import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -106,7 +106,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						varname = twrite.getName();
 						
 						//create new transient read
-						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
 						tread.setVisited(VisitStatus.DONE);
 						HopRewriteUtils.copyLineNumbers(c, tread);
@@ -136,7 +136,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						varname = _varnamePredix + _seq.getNextID();
 						
 						//create new transient read
-						DataOp tread = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
 			                    DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, brlen, bclen);
 						tread.setVisited(VisitStatus.DONE);
 						HopRewriteUtils.copyLineNumbers(c, tread);
@@ -155,7 +155,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						}
 						
 						//add data-dependent operator sub dag to first statement block
-						DataOp twrite = new DataOp(varname, DataType.MATRIX, ValueType.DOUBLE,
+						DataOp twrite = new DataOp(varname, c.getDataType(), c.getValueType(),
 								                   c, DataOpTypes.TRANSIENTWRITE, null);
 						twrite.setVisited(VisitStatus.DONE);
 						twrite.setOutputParams(rlen, clen, nnz, brlen, bclen);
@@ -167,8 +167,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					DataIdentifier diVar = new DataIdentifier(varname);
 					diVar.setDimensions(rlen, clen);
 					diVar.setBlockDimensions(brlen, bclen);
-					diVar.setDataType(DataType.MATRIX);
-					diVar.setValueType(ValueType.DOUBLE);
+					diVar.setDataType(c.getDataType());
+					diVar.setValueType(c.getValueType());
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
 					sb.liveIn().addVariable(varname, new DataIdentifier(diVar));
 				}
@@ -277,6 +277,22 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			cand.add(hop);
 			investigateChilds = false;
 		}
+	    
+	    //#3 orderby childs computed in same DAG
+	    if(   hop instanceof ReorgOp 
+	       && ((ReorgOp)hop).getOp()==ReOrgOp.SORT )
+	    {
+	    	//params 'decreasing' / 'indexreturn'
+	    	for( int i=2; i<=3; i++ ) {
+	    		Hop c = hop.getInput().get(i);
+	    		if( !(c instanceof LiteralOp || c instanceof DataOp) ){
+		    		cand.add(c);
+		    		c.setVisited(VisitStatus.DONE);
+		    		investigateChilds = false;	
+		    	}
+
+	    	}	    	
+	    }
 		
 		//process children (if not already found a special operators;
 	    //otherwise, processed by recursive rule application)

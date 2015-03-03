@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
+import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
@@ -2962,7 +2963,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex) )
+		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex || op.fn instanceof SortIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlock result=checkType(ret);
@@ -2985,6 +2986,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		{
 			//SPECIAL case (operators with special performance requirements, 
 			//or size-dependent special behavior)
+			//currently supported opcodes: r', rdiag, rsort
 			LibMatrixReorg.reorg(this, result, op);
 		}
 		else 

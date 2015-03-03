@@ -7,13 +7,13 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
+orderExternal = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
 			    implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
 
 foo = function( Matrix[Double] A ) return (Matrix[Double] B)  
 {
    for( i in 1:ncol(A) ) {
-      B = order(A*A+7, i, TRUE);
+      B = orderExternal(A*A+7, i, TRUE);
    }
 }
  

@@ -26,7 +26,7 @@ public class UnivariateStatsTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "applications/descriptivestats/";
 
-	private final static double epsilon=0.0000000001;
+	private final static double epsilon=0.000000001;
 	private final static int rows1 = 2000;
 	private final static int rows2 = 5;
 	//private final static int cols = 1;

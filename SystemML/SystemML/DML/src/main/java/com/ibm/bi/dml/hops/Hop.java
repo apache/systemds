@@ -763,6 +763,13 @@ public abstract class Hop
 		_dim2 = dim2;
 	}
 	
+	protected void setOutputDimensions(Lop lop) 
+		throws HopsException
+	{
+		lop.getOutputParameters().setDimensions(
+			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
+	}
+	
 	public Lop getLops() {
 		return _lops;
 	}
@@ -835,7 +842,7 @@ public abstract class Hop
 	};
 
 	public enum ReOrgOp {
-		TRANSPOSE, DIAG, RESHAPE
+		TRANSPOSE, DIAG, RESHAPE, SORT
 		//Note: Diag types are invalid because for unknown sizes this would 
 		//create incorrect plans (now we try to infer it for memory estimates
 		//and rewrites but the final choice is made during runtime)
@@ -899,6 +906,7 @@ public abstract class Hop
 		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
 		HopsTransf2Lops.put(ReOrgOp.DIAG, com.ibm.bi.dml.lops.Transform.OperationTypes.Diag);
 		HopsTransf2Lops.put(ReOrgOp.RESHAPE, com.ibm.bi.dml.lops.Transform.OperationTypes.Reshape);
+		HopsTransf2Lops.put(ReOrgOp.SORT, com.ibm.bi.dml.lops.Transform.OperationTypes.Sort);
 
 	}
 
@@ -1144,6 +1152,7 @@ public abstract class Hop
 		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
 		HopsTransf2String.put(ReOrgOp.DIAG, "diag");
 		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
+		HopsTransf2String.put(ReOrgOp.SORT, "sort");
 	}
 
 	protected static final HashMap<DataOpTypes, String> HopsData2String;

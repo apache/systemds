@@ -53,7 +53,7 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction
 		return parse(instr, in1, in2, in3, out);
 	}
 
-	private static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+	static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		
 		// first part is the opcode, last part is the output, middle parts are input operands

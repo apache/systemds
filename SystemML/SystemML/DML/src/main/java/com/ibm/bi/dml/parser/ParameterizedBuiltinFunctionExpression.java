@@ -40,6 +40,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.RMEMPTY;
 		else if (functionName.equals("replace"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.REPLACE;
+		else if (functionName.equals("order"))
+			pbifop = Expression.ParameterizedBuiltinFunctionOp.ORDER;
 		else
 			return null;
 		
@@ -306,6 +308,53 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
+			
+			break;
+		}
+		
+		case ORDER:
+		{
+			//check existence and correctness of arguments
+			Expression target = getVarParam("target"); //[MANDATORY] TARGET
+			if( target==null ) {				
+				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( target.getOutput().getDataType() != DataType.MATRIX ){
+				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}	
+			
+			Expression orderby = getVarParam("by"); //[OPTIONAL] BY
+			if( orderby == null ) { //default first column, good fit for vectors
+				orderby = new IntIdentifier(1, "1", -1, -1, -1, -1);
+				addVarParam("indexreturn", orderby);
+			}
+			else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
+				raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}	
+			
+			Expression decreasing = getVarParam("decreasing"); //[OPTIONAL] DECREASING
+			if( decreasing == null ) { //default: ascending
+				addVarParam("decreasing", new BooleanIdentifier(false, "false", -1, -1, -1, -1));
+			}
+			else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){				
+				raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
+			Expression indexreturn = getVarParam("indexreturn"); //[OPTIONAL] DECREASING
+			if( indexreturn == null ) { //default: sorted data
+				indexreturn = new BooleanIdentifier(false, "false", -1, -1, -1, -1);
+				addVarParam("indexreturn", indexreturn);
+			}
+			else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
+				raiseValidateError("Return type 'indexreturn' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
+					((BooleanIdentifier)indexreturn).getValue() ? 1: target.getOutput().getDim2() : -1; 
+			
+			// Output is a matrix with same dims as input
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setDimensions(target.getOutput().getDim1(), dim2 );
 			
 			break;
 		}

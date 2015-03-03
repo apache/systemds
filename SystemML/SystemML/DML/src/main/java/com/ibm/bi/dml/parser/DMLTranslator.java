@@ -2442,6 +2442,17 @@ public class DMLTranslator
 					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.REPLACE, paramHops);
 			break;	
 			
+		case ORDER:
+			ArrayList<Hop> inputs = new ArrayList<Hop>();
+			inputs.add(paramHops.get("target"));
+			inputs.add(paramHops.get("by"));
+			inputs.add(paramHops.get("decreasing"));
+			inputs.add(paramHops.get("indexreturn"));
+			
+			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
+			
+			break;
+			
 		default:
 			
 			LOG.error(source.printErrorLocation() + 

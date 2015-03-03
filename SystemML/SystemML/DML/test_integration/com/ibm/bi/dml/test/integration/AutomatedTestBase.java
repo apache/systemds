@@ -314,6 +314,12 @@ public abstract class AutomatedTestBase
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
 	
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, int nnz, boolean bIncludeR) 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, nnz);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
+	}
+	
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) 
 	{
 		writeInputMatrix(name, matrix, bIncludeR);

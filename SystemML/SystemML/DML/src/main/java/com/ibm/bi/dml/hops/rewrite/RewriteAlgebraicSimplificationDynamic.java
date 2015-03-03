@@ -137,6 +137,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
 			hi = simplifyEmptyUnaryOperation(hop, hi, i);     //e.g., round(X) -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0			
 			hi = simplifyEmptyReorgOperation(hop, hi, i);     //e.g., t(X) -> matrix(0, ncol(X), nrow(X)) 
+			hi = simplifyEmptySortOperation(hop, hi, i);      //e.g., order(X) -> seq(1, nrow(X)), if nnz(X)==0 
 			hi = simplifyEmptyMatrixMult(hop, hi, i);         //e.g., X%*%Y -> matrix(0,...), if nnz(Y)==0 | X if Y==matrix(1,1,1)
 			hi = simplifyIdentityRepMatrixMult(hop, hi, i);   //e.g., X%*%y -> X if y matrix(1,1,1);
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
@@ -650,6 +651,55 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					hi = hnew;
 					
 					LOG.debug("Applied simplifyEmptyReorgOperation");
+				}
+			}
+			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyEmptySortOperation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//order(X, indexreturn=FALSE) -> matrix(0,nrow(X),1)
+		//order(X, indexreturn=TRUE) -> seq(1,nrow(X),1)
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.SORT  ) 
+		{
+			ReorgOp rhi = (ReorgOp)hi;
+			Hop input = rhi.getInput().get(0);
+			
+			if( HopRewriteUtils.isEmpty(input) ) //empty input
+			{
+				//reorg-operation-specific rewrite  
+				Hop hnew = null;
+				boolean ixret = false;
+				
+				if( rhi.getInput().get(3) instanceof LiteralOp ) //index return known
+				{
+					ixret = HopRewriteUtils.getBooleanValue((LiteralOp)rhi.getInput().get(3));
+					if( ixret )
+						hnew = HopRewriteUtils.createSeqDataGenOp(input);
+					else
+						hnew = HopRewriteUtils.createDataGenOp(input, 0);
+				}
+								
+				//modify dag if one of the above rules applied
+				if( hnew != null ){ 
+					HopRewriteUtils.removeChildReference(parent, hi);
+					HopRewriteUtils.addChildReference(parent, hnew, pos);
+					parent.refreshSizeInformation();
+					hi = hnew;
+					
+					LOG.debug("Applied simplifyEmptySortOperation (indexreturn="+ixret+").");
 				}
 			}
 			

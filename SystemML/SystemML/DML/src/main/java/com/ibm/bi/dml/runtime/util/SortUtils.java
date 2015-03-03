@@ -43,14 +43,12 @@ public class SortUtils
 	 * In-place sort of two arrays, only indexes is used for comparison and values
 	 * of same position are sorted accordingly. 
 	 * 
-	 * NOTE: This is a copy of IBM JDK Arrays.sort, extended for two related arrays.
-	 * 
      * @param start
      * @param end
      * @param indexes
      * @param values
      */
-    public static void sort(int start, int end, int[] indexes, double[] values) 
+    public static void sortByIndex(int start, int end, int[] indexes, double[] values) 
     {
         int tempIx;
         double tempVal;
@@ -142,10 +140,116 @@ public class SortUtils
             values[h++] = tempVal;
         }
         if ((length = b - a) > 0) {
-            sort(start, start + length, indexes, values);
+            sortByIndex(start, start + length, indexes, values);
         }
         if ((length = d - c) > 0) {
-            sort(end - length, end, indexes, values);
+            sortByIndex(end - length, end, indexes, values);
+        }
+    }
+    
+    /**
+     * 
+     * @param start
+     * @param end
+     * @param values
+     * @param valuesXXX
+     */
+    public static void sortByValue(int start, int end, double[] values, int[] indexes) 
+    {
+        double tempVal;
+        int tempIx;
+        
+        int length = end - start;
+        if (length < 7) {
+            for (int i = start + 1; i < end; i++) {
+                for (int j = i; j > start && values[j - 1] > values[j]; j--) {
+                    tempVal = values[j];
+                    values[j] = values[j - 1];
+                    values[j - 1] = tempVal;
+                    tempIx = indexes[j];
+                    indexes[j] = indexes[j - 1];
+                    indexes[j - 1] = tempIx;
+                }
+            }
+            return;
+        }
+        int middle = (start + end) / 2;
+        if (length > 7) {
+            int bottom = start;
+            int top = end - 1;
+            if (length > 40) {
+                length /= 8;
+                bottom = med3(values, bottom, bottom + length, bottom
+                        + (2 * length));
+                middle = med3(values, middle - length, middle, middle + length);
+                top = med3(values, top - (2 * length), top - length, top);
+            }
+            middle = med3(values, bottom, middle, top);
+        }
+        double partionValue = values[middle];
+        int a, b, c, d;
+        a = b = start;
+        c = d = end - 1;
+        while (true) {
+            while (b <= c && values[b] <= partionValue) {
+                if (values[b] == partionValue) {
+                    tempVal = values[a];
+                    values[a] = values[b];
+                    values[b] = tempVal;
+                    tempIx = indexes[a];
+                    indexes[a++] = indexes[b];
+                    indexes[b] = tempIx;
+                }
+                b++;
+            }
+            while (c >= b && values[c] >= partionValue) {
+                if (values[c] == partionValue) {
+                    tempVal = values[c];
+                    values[c] = values[d];
+                    values[d] = tempVal;
+                    tempIx = indexes[c];
+                    indexes[c] = indexes[d];
+                    indexes[d--] = tempIx;
+                }
+                c--;
+            }
+            if (b > c) {
+                break;
+            }
+            tempVal = values[b];
+            values[b] = values[c];
+            values[c] = tempVal;
+            tempIx = indexes[b];
+            indexes[b++] = indexes[c];
+            indexes[c--] = tempIx;
+        }
+        length = a - start < b - a ? a - start : b - a;
+        int l = start;
+        int h = b - length;
+        while (length-- > 0) {
+            tempVal = values[l];
+            values[l] = values[h];
+            values[h] = tempVal;
+            tempIx = indexes[l];
+            indexes[l++] = indexes[h];
+            indexes[h++] = tempIx;
+        }
+        length = d - c < end - 1 - d ? d - c : end - 1 - d;
+        l = b;
+        h = end - length;
+        while (length-- > 0) {
+            tempVal = values[l];
+            values[l] = values[h];
+            values[h] = tempVal;
+            tempIx = indexes[l];
+            indexes[l++] = indexes[h];
+            indexes[h++] = tempIx;
+        }
+        if ((length = b - a) > 0) {
+            sortByValue(start, start + length, values, indexes);
+        }
+        if ((length = d - c) > 0) {
+            sortByValue(end - length, end, values, indexes);
         }
     }
     
@@ -160,6 +264,21 @@ public class SortUtils
     private static int med3(int[] array, int a, int b, int c) 
     {
         int x = array[a], y = array[b], z = array[c];
+        return x < y ? (y < z ? b : (x < z ? c : a)) : (y > z ? b : (x > z ? c
+                : a));
+    }
+    
+    /**
+     * 
+     * @param array
+     * @param a
+     * @param b
+     * @param c
+     * @return
+     */
+    private static int med3(double[] array, int a, int b, int c) 
+    {
+        double x = array[a], y = array[b], z = array[c];
         return x < y ? (y < z ? b : (x < z ? c : a)) : (y > z ? b : (x > z ? c
                 : a));
     }
@@ -181,7 +300,7 @@ public class SortUtils
     	Timing time = new Timing();
     	
     	time.start();   	
-    	SortUtils.sort(0, indexes.length, indexes, values);    	
+    	SortUtils.sortByIndex(0, indexes.length, indexes, values);    	
     	System.out.println("quicksort n="+n+" in "+time.stop()+"ms.");
     	
     	time.start();   	

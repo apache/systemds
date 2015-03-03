@@ -11,15 +11,18 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
+import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
+import com.ibm.bi.dml.runtime.util.SortUtils;
 
 /**
  * MB:
@@ -27,7 +30,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
  * and all combinations of dense and sparse representations.
  * 
  * Current list of supported operations:
- *  - reshape, r' (transpose)
+ *  - reshape, 
+ *  - r' (transpose), 
+ *  - rdiag (diagV2M/diagM2V), 
+ *  - rsort (sorting data/indexes)
  * 
  */
 public class LibMatrixReorg 
@@ -42,6 +48,7 @@ public class LibMatrixReorg
 		TRANSPOSE,
 		DIAG,
 		RESHAPE,
+		SORT,
 		INVALID,
 	}
 	
@@ -77,8 +84,13 @@ public class LibMatrixReorg
 		
 		switch( type )
 		{
-			case TRANSPOSE: return transpose(in, out);
-			case DIAG:      return diag(in, out); 
+			case TRANSPOSE: 
+				return transpose(in, out);
+			case DIAG:      
+				return diag(in, out); 
+			case SORT:      
+				SortIndex ix = (SortIndex) op.fn;
+				return sort(in, out, ix.getCol(), ix.getDecreasing(), ix.getIndexReturn());
 			
 			default:        
 				throw new DMLRuntimeException("Unsupported reorg operator: "+op.fn);
@@ -123,7 +135,7 @@ public class LibMatrixReorg
 	 * @throws DMLRuntimeException
 	 */
 	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) 
-			throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
 		
@@ -144,6 +156,136 @@ public class LibMatrixReorg
 			throw new DMLRuntimeException("Reorg diagM2V requires squared block input. ("+rlen+", "+clen+")");
 		
 		//System.out.println("rdiag ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param by
+	 * @param desc
+	 * @param ixret
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int by, boolean desc, boolean ixret) 
+		throws DMLRuntimeException
+	{
+		//meta data gathering and preparation
+		boolean sparse = in.isInSparseFormat();
+		int rlen = in.rlen;
+		int clen = in.clen;
+		out.sparse = (in.sparse && !ixret);
+		out.nonZeros = ixret ? rlen : in.nonZeros;
+		
+		//step 1: error handling
+		if( by <= 0 || clen < by )
+			throw new DMLRuntimeException("Sort configuration issue: non-existing orderby column: "+by+" ("+rlen+"x"+clen+" input).");
+		
+		//step 2: empty block / special case handling
+		if( !ixret ) //SORT DATA
+		{
+			if( in.isEmptyBlock(false) ) //EMPTY INPUT BLOCK
+				return out;
+			
+			if( !sparse && clen == 1 ) { //DENSE COLUMN VECTOR
+				//in-place quicksort, unstable (no indexes needed)
+				out.copy( in ); //dense
+				Arrays.sort(out.denseBlock);
+				if( desc )
+					sortReverseDense(out);
+				return out;
+			}
+		}
+		else //SORT INDEX
+		{
+			if( in.isEmptyBlock(false) ) { //EMPTY INPUT BLOCK
+				out.allocateDenseBlock(false);
+				for( int i=0; i<rlen; i++ ) //seq(1,n)
+					out.setValueDenseUnsafe(i, 0, i+1);
+				return out;
+			}
+		}
+		
+		//step 3: index vector sorting
+		
+		/* VERSION 1: conclusively too slow 
+		//create index vector
+		Integer[] vix = new Integer[rlen];
+		for( int i=0; i<rlen; i++ )
+			vix[i] = i;
+		
+		//sort index vector on original data
+		if( !desc )
+			Arrays.sort(vix, new AscRowComparator(in, by-1));
+		else
+			Arrays.sort(vix, new DescRowComparator(in, by-1));
+		*/
+		
+		//create index vector and extract values
+		int[] vix = new int[rlen];
+		double[] values = new double[rlen];
+		for( int i=0; i<rlen; i++ ) {
+			vix[i] = i;
+			values[i] = in.quickGetValue(i, by-1);
+		}
+		
+		//sort index vector on extracted data (unstable)
+		SortUtils.sortByValue(0, rlen, values, vix);
+
+		//flip order if descending requested (note that this needs to happen
+		//before we ensure stable outputs, hence we also flip values)
+		if(desc) {
+			sortReverseDense(vix);
+			sortReverseDense(values);
+		}
+		
+		//final pass to ensure stable output
+		for( int i=0; i<rlen-1; i++ ) {
+			double tmp = values[i];
+			//determine run of equal values
+			int len = 0;
+			while( i+len+1<rlen && tmp==values[i+len+1] )
+				len++;
+			//unstable sort of run indexes (equal value guaranteed)
+			if( len>0 ) {
+				Arrays.sort(vix, i, i+len+1);
+				i += len; //skip processed run
+			}
+		}
+
+		//step 4: create output matrix (guaranteed non-empty, see step 2)
+		if( !ixret )
+		{
+			//copy input data in sorted order into result
+			if( !sparse ) //DENSE
+			{
+				out.allocateDenseBlock(false);
+				for( int i=0; i<rlen; i++ ) {
+					System.arraycopy(in.denseBlock, vix[i]*clen, out.denseBlock, i*clen, clen);
+				}
+			}
+			else //SPARSE
+			{
+				out.allocateSparseRowsBlock(false);
+				for( int i=0; i<rlen; i++ ) {
+					int ix = vix[i];
+					if( in.sparseRows[ix]!=null && !in.sparseRows[ix].isEmpty() ) {
+						out.sparseRows[i] = new SparseRow(in.sparseRows[ix]);
+					}
+				}
+			}
+		}
+		else
+		{
+			//copy sorted index vector into result
+			out.allocateDenseBlock(false);
+			for( int i=0; i<rlen; i++ )
+				out.setValueDenseUnsafe(i, 0, vix[i]+1);
+		}
 		
 		return out;
 	}
@@ -256,11 +398,14 @@ public class LibMatrixReorg
 	 */
 	private static ReorgType getReorgType( ReorgOperator op )
 	{
-		if( op.fn.equals(SwapIndex.getSwapIndexFnObject()) )  //transpose
+		if( op.fn instanceof SwapIndex )  //transpose
 			return ReorgType.TRANSPOSE;
 		
-		if( op.fn.equals(DiagIndex.getDiagIndexFnObject()) ) //diag
+		else if( op.fn instanceof DiagIndex ) //diag
 			return ReorgType.DIAG;
+		
+		else if( op.fn instanceof SortIndex ) //sort
+			return ReorgType.SORT;
 				
 		return ReorgType.INVALID;
 	}
@@ -546,6 +691,7 @@ public class LibMatrixReorg
 				out.quickSetValue(i, 0, val);
 		}
 	}
+	
 	
 	/**
 	 * 
@@ -1229,5 +1375,101 @@ public class LibMatrixReorg
 
 		ixout.setIndexes(ci, cj);	
 		return ixout;
+	}
+
+
+	/**
+	 * Utility method for in-place transformation of an ascending sorted
+	 * order into a descending sorted order. This method assumes dense
+	 * column vectors as input.
+	 * 
+	 * @param m1
+	 */
+	private static void sortReverseDense( MatrixBlock m1 )
+	{
+		int rlen = m1.rlen;
+		double[] a = m1.denseBlock;
+		
+		for( int i=0; i<rlen/2; i++ ) {
+			double tmp = a[i];
+			a[i] = a[rlen - i -1];
+			a[rlen - i - 1] = tmp;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 */
+	private static void sortReverseDense( int[] a )
+	{
+		int rlen = a.length;
+		
+		for( int i=0; i<rlen/2; i++ ) {
+			int tmp = a[i];
+			a[i] = a[rlen - i -1];
+			a[rlen - i - 1] = tmp;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 */
+	private static void sortReverseDense( double[] a )
+	{
+		int rlen = a.length;
+		
+		for( int i=0; i<rlen/2; i++ ) {
+			double tmp = a[i];
+			a[i] = a[rlen - i -1];
+			a[rlen - i - 1] = tmp;
+		}
+	}
+	
+	/**
+	 *
+	 */
+	private static class AscRowComparator implements Comparator<Integer> 
+	{
+		private MatrixBlock _mb = null;
+		private int _col = -1;
+		
+		public AscRowComparator( MatrixBlock mb, int col )
+		{
+			_mb = mb;
+			_col = col;
+		}
+
+		@Override
+		public int compare(Integer arg0, Integer arg1) 
+		{			
+			double val0 = _mb.quickGetValue(arg0, _col);
+			double val1 = _mb.quickGetValue(arg1, _col);			
+			return (val0 < val1 ? -1 : (val0 == val1 ? 0 : 1));
+		}		
+	}
+	
+	/**
+	 * 
+	 */
+	private static class DescRowComparator implements Comparator<Integer> 
+	{
+		private MatrixBlock _mb = null;
+		private int _col = -1;
+		
+		public DescRowComparator( MatrixBlock mb, int col )
+		{
+			_mb = mb;
+			_col = col;
+		}
+
+		@Override
+		public int compare(Integer arg0, Integer arg1) 
+		{			
+			double val0 = _mb.quickGetValue(arg0, _col);
+			double val1 = _mb.quickGetValue(arg1, _col);	
+			return (val0 > val1 ? -1 : (val0 == val1 ? 0 : 1));
+		}		
 	}
 }

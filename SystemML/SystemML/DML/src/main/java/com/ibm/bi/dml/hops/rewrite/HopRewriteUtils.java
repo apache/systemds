@@ -75,6 +75,26 @@ public class HopRewriteUtils
 		}
 	}
 
+	public static boolean getBooleanValueSafe( LiteralOp op )
+	{
+		try
+		{
+			switch( op.getValueType() )
+			{
+				case DOUBLE:  return op.getDoubleValue() != 0; 
+				case INT:	  return op.getLongValue()   != 0;
+				case BOOLEAN: return op.getBooleanValue();
+				
+				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
+			}
+		}
+		catch(Exception ex){
+			//silently ignore error
+		}
+		
+		return false;
+	}
+	
 	/**
 	 * 
 	 * @param op
@@ -410,16 +430,30 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+
 	public static DataGenOp createSeqDataGenOp( Hop input ) 
+		throws HopsException
+	{
+		return createSeqDataGenOp(input, true);
+	}
+	
+	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) 
 		throws HopsException
 	{		
 		Hop to = (input.getDim1()>0) ? new LiteralOp(String.valueOf(input.getDim1()),input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
-		params.put(Statement.SEQ_FROM, new LiteralOp("1",1));
-		params.put(Statement.SEQ_TO, to);
-		params.put(Statement.SEQ_INCR, new LiteralOp("1",1));
+		if( asc ) {
+			params.put(Statement.SEQ_FROM, new LiteralOp("1",1));
+			params.put(Statement.SEQ_TO, to);
+			params.put(Statement.SEQ_INCR, new LiteralOp("1",1));
+		}
+		else {
+			params.put(Statement.SEQ_FROM, to);
+			params.put(Statement.SEQ_TO, new LiteralOp("1",1));
+			params.put(Statement.SEQ_INCR, new LiteralOp("-1",-1));	
+		}
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(DataGenMethod.SEQ, new DataIdentifier("tmp"), params);

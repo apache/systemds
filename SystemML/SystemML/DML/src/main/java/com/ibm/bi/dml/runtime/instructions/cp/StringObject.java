@@ -32,18 +32,18 @@ public class StringObject extends ScalarObject
 	}
 	
 	@Override
-	public boolean getBooleanValue(){
-		throw new UnsupportedOperationException();
+	public boolean getBooleanValue() {
+		return "TRUE".equals(_value);
 	}
 
 	@Override
 	public long getLongValue(){
-		throw new UnsupportedOperationException();
+		return getBooleanValue() ? 1 : 0;
 	}
 
 	@Override
 	public double getDoubleValue(){
-		throw new UnsupportedOperationException();
+		return getBooleanValue() ? 1d : 0d;
 	}
 
 	@Override

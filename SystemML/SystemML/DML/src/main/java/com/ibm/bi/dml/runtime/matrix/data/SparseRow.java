@@ -374,7 +374,7 @@ public class SparseRow implements Serializable
 	public void sort()
 	{
 		if( size<=100 || !SortUtils.isSorted(0, size, indexes) )
-			SortUtils.sort(0, size, indexes, values);
+			SortUtils.sortByIndex(0, size, indexes, values);
 	}
 	
 	/**

@@ -160,13 +160,16 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "seqincr" 	, CPINSTRUCTION_TYPE.Variable); 
 
-		// User-defined function Opcodes
-		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
-
+		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2CPInstructionType.put( "r'"   	    , CPINSTRUCTION_TYPE.Reorg);
 		String2CPInstructionType.put( "rdiag"       , CPINSTRUCTION_TYPE.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPINSTRUCTION_TYPE.MatrixReshape);
+		String2CPInstructionType.put( "rsort"      , CPINSTRUCTION_TYPE.Reorg);
 		
+		
+		// User-defined function Opcodes
+		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
+
 		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
 		String2CPInstructionType.put( DataGen.RAND_OPCODE  , CPINSTRUCTION_TYPE.Rand);

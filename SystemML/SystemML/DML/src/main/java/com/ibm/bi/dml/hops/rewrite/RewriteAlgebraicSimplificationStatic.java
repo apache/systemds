@@ -119,19 +119,21 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				rule_AlgebraicSimplification(hi, descendFirst); //see below
 			
 			//apply actual simplification rewrites (of childs incl checks)
-			hi = removeUnnecessaryVectorizeOperation(hi);       //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
-			hi = removeUnnecessaryBinaryOperation(hop, hi, i);  //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
-			hi = fuseDatagenAndBinaryOperation(hop, hi, i);     //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
-			hi = fuseDatagenAndMinusOperation(hop, hi, i);     //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
- 			hi = simplifyBinaryToUnaryOperation(hi);            //e.g., X*X -> X^2 (pow2)
+			hi = removeUnnecessaryVectorizeOperation(hi);        //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
+			hi = removeUnnecessaryBinaryOperation(hop, hi, i);   //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
+			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
+			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
+ 			hi = simplifyBinaryToUnaryOperation(hi);             //e.g., X*X -> X^2 (pow2)
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
- 			hi = simplifyBushyBinaryOperation(hop, hi, i);      //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
-			hi = fuseBinarySubDAGToUnaryOperation(hi);          //e.g., X*(1-X)-> pow2mc(1)
-			hi = simplifyTraceMatrixMult(hop, hi, i);           //e.g., trace(X%*%Y)->sum(X*t(Y));    
+ 			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
+			hi = fuseBinarySubDAGToUnaryOperation(hi);           //e.g., X*(1-X)-> pow2mc(1)
+			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));    
+			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
+			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = removeUnnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
-			hi = simplifyGroupedAggregate(hi);          	    //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
-			//hi = removeUnecessaryPPred(hop, hi, i);           //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
+			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
+			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -770,6 +772,106 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				LOG.debug("Applied simplifyTraceMatrixMult");
 			}	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyConstantSort(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//order(matrix(7), indexreturn=FALSE) -> matrix(7)
+		//order(matrix(7), indexreturn=TRUE) -> seq(1,nrow(X),1)
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.SORT )  //order
+		{
+			Hop hi2 = hi.getInput().get(0);
+			
+			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==DataGenMethod.RAND
+				&& ((DataGenOp)hi2).hasConstantValue() 
+				&& hi.getInput().get(3) instanceof LiteralOp ) //known indexreturn
+			{
+				if( HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(3)) )
+				{
+					//order(matrix(7), indexreturn=TRUE) -> seq(1,nrow(X),1)
+					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+					Hop seq = HopRewriteUtils.createSeqDataGenOp(hi2);
+					seq.refreshSizeInformation();
+					HopRewriteUtils.addChildReference(parent, seq, pos);
+					if( hi.getParent().isEmpty() )
+						HopRewriteUtils.removeChildReference(hi, hi2);
+					hi = seq;
+					
+					LOG.debug("Applied simplifyConstantSort1.");
+				}
+				else
+				{
+					//order(matrix(7), indexreturn=FALSE) -> matrix(7)
+					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+					HopRewriteUtils.addChildReference(parent, hi2, pos);
+					if( hi.getParent().isEmpty() )
+						HopRewriteUtils.removeChildReference(hi, hi2);
+					hi = hi2;
+					
+					LOG.debug("Applied simplifyConstantSort2.");
+				}
+			}	
+		}
+		
+		return hi;
+	}
+	
+	private Hop simplifyOrderedSort(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//order(seq(2,N+1,1), indexreturn=FALSE) -> matrix(7)
+		//order(seq(2,N+1,1), indexreturn=TRUE) -> seq(1,N,1)/seq(N,1,-1)
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.SORT )  //order
+		{
+			Hop hi2 = hi.getInput().get(0);
+			
+			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==DataGenMethod.SEQ )
+			{
+				Hop incr = hi2.getInput().get(((DataGenOp)hi2).getParamIndex(Statement.SEQ_INCR));
+				//check for known ascending ordering and known indexreturn
+				if( incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1
+					&& hi.getInput().get(2) instanceof LiteralOp      //decreasing
+					&& hi.getInput().get(3) instanceof LiteralOp )    //indexreturn
+				{
+					if( HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(3)) ) //IXRET, ASC/DESC
+					{
+						//order(seq(2,N+1,1), indexreturn=TRUE) -> seq(1,N,1)/seq(N,1,-1)
+						boolean desc = HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2));
+						HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+						Hop seq = HopRewriteUtils.createSeqDataGenOp(hi2, !desc);
+						seq.refreshSizeInformation();
+						HopRewriteUtils.addChildReference(parent, seq, pos);
+						if( hi.getParent().isEmpty() )
+							HopRewriteUtils.removeChildReference(hi, hi2);
+						hi = seq;
+						
+						LOG.debug("Applied simplifyOrderedSort1.");
+					}
+					else if( !HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2)) ) //DATA, ASC
+					{
+						//order(seq(2,N+1,1), indexreturn=FALSE) -> seq(2,N+1,1)
+						HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+						HopRewriteUtils.addChildReference(parent, hi2, pos);
+						if( hi.getParent().isEmpty() )
+							HopRewriteUtils.removeChildReference(hi, hi2);
+						hi = hi2;
+						
+						LOG.debug("Applied simplifyOrderedSort2.");
+					}
+				}
+			}	   
 		}
 		
 		return hi;

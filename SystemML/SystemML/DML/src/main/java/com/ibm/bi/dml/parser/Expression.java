@@ -98,7 +98,7 @@ public abstract class Expression
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {
-		CDF, GROUPEDAGG, RMEMPTY, REPLACE, INVALID
+		CDF, GROUPEDAGG, RMEMPTY, REPLACE, ORDER, INVALID
 	};
 	
 	public enum DataOp {

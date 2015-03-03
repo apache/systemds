@@ -27,7 +27,8 @@ public class Transform extends Lop
 	public enum OperationTypes {
 		Transpose,
 		Diag,
-		Reshape
+		Reshape,
+		Sort,
 	};
 	
 	private OperationTypes operation = null;
@@ -115,7 +116,11 @@ public class Transform extends Lop
 		case Reshape:
 			// Transform a vector into a diagonal matrix
 			return "rshape";
-				
+		
+		case Sort:
+			// Transform a matrix into a sorted matrix 
+			return "rsort";
+		
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				

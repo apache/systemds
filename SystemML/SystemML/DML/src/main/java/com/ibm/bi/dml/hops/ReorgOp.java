@@ -9,6 +9,7 @@ package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
@@ -27,7 +28,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 /**
  *  Reorg (cell) operation: aij
  * 		Properties: 
- * 			Symbol: ', diag, reshape
+ * 			Symbol: ', rdiag, rshape, rsort
  * 			1 Operand
  * 	
  * 		Semantic: change indices (in mapper or reducer)
@@ -104,26 +105,22 @@ public class ReorgOp extends Hop
 				case TRANSPOSE:
 				case DIAG:
 				{
-					Transform transform1 = new Transform(
-							getInput().get(0).constructLops(), HopsTransf2Lops
-									.get(op), getDataType(), getValueType(), et);
-					transform1.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
-					transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
+					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+					setOutputDimensions(transform1);
+					setLineNumbers(transform1);
 					setLops(transform1);
+					
 					break;
 				}
 				case RESHAPE:
 				{
 					if( et==ExecType.MR )
 					{
-						Transform transform1 = new Transform(
-								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
-								getDataType(), getValueType(), et);
-						transform1.getOutputParameters().setDimensions(getDim1(),
-								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
-						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+								HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+						setOutputDimensions(transform1);
+						setLineNumbers(transform1);
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
 							Lop ltmp = getInput().get(i).constructLops();
@@ -150,12 +147,11 @@ public class ReorgOp extends Hop
 					}
 					else //CP
 					{
-						Transform transform1 = new Transform(
-								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
-								getDataType(), getValueType(), et);
-						transform1.getOutputParameters().setDimensions(getDim1(),
-								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());	
-						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+								HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+						setOutputDimensions(transform1);
+						setLineNumbers(transform1);
+						
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
 							Lop ltmp = getInput().get(i).constructLops();
@@ -166,13 +162,121 @@ public class ReorgOp extends Hop
 						
 						setLops(transform1);
 					}
+					break;
 				}
+				case SORT:
+				{
+					Hop input = getInput().get(0);
+					Hop by = getInput().get(1);
+					Hop desc = getInput().get(2);
+					Hop ixret = getInput().get(3);
+					
+					if( et==ExecType.MR )
+					{
+						
+						if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
+							LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
+							setRequiresRecompile();
+							desc = new LiteralOp("FALSE", false);
+							ixret = new LiteralOp("FALSE", false);
+						}
+							
+						//Step 1: extraction (if unknown ncol or multiple columns)
+						Hop vinput = input;
+						if( input.getDim2() != 1 ) {
+							vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp("1", 1L), 
+									HopRewriteUtils.createValueHop(input, true), by, by, false, true);
+							vinput.refreshSizeInformation();
+							HopRewriteUtils.copyLineNumbers(this, vinput);	
+						}
+						
+						
+						//Step 2: Index vector sort //TODO generalize large vs small vector
+						if( OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
+							> OptimizerUtils.getRemoteMemBudgetReduce() ) { 
+							LOG.warn("Unsupported large orderby vector size.");
+						}
+						
+						ArrayList<Hop> sinputs = new ArrayList<Hop>();
+						sinputs.add(vinput);
+						sinputs.add(new LiteralOp("1",1)); //by
+						sinputs.add(desc);
+						sinputs.add(new LiteralOp("TRUE", true));
+						ReorgOp voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
+						HopRewriteUtils.copyLineNumbers(this, voutput);	
+						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
+						voutput.setLops( constructCPSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3)) );
+						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
+						setLops( voutput.constructLops() );
+						
+						//Step 3: Data permutation (only required for sorting data) 
+						// -- done via X' = table(seq(), IX') %*% X;
+						if( !HopRewriteUtils.getBooleanValueSafe((LiteralOp)ixret) ) 
+						{
+							//generate seq 
+							DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(voutput);
+							seq.setName("tmp4");
+							seq.refreshSizeInformation(); 
+							seq.computeMemEstimate(new MemoTable()); //select exec type
+							HopRewriteUtils.copyLineNumbers(this, seq);	
+							
+							//generate table
+							TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L));
+							HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
+							table.refreshSizeInformation();
+							table.setForcedExecType(ExecType.MR); //force MR 
+							HopRewriteUtils.copyLineNumbers(this, table);
+							table.setDisjointInputs(true);
+							table.setOutputEmptyBlocks(false);
+							
+							//generate matrix mult
+							AggBinaryOp mmult = new AggBinaryOp("tmp6", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, table, input);
+							HopRewriteUtils.setOutputBlocksizes(mmult, getRowsInBlock(), getColsInBlock());
+							mmult.refreshSizeInformation();
+							table.setForcedExecType(ExecType.MR); //force MR 
+							
+							setLops( mmult.constructLops() );
+							
+							//cleanups
+							HopRewriteUtils.removeChildReference(table, input);		
+						}
+					}
+					else //CP
+					{
+						Lop transform1 = constructCPSortLop(input, by, desc, ixret);
+						setOutputDimensions(transform1);
+						setLineNumbers(transform1);
+						
+						setLops(transform1);
+					}
+					break;
+				}
+				
+				default: 
+					throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 			}
 		}
 		
 		return getLops();
 	}
 
+	private static Lop constructCPSortLop( Hop input, Hop by, Hop desc, Hop ixret ) 
+		throws HopsException, LopsException
+	{
+		Transform transform1 = new Transform( input.constructLops(), HopsTransf2Lops.get(ReOrgOp.SORT), 
+				     input.getDataType(), input.getValueType(), ExecType.CP);
+		
+		for( Hop c : new Hop[]{by,desc,ixret} ) {
+			Lop ltmp = c.constructLops();
+			transform1.addInput(ltmp);
+			ltmp.addOutput(transform1);
+		}
+		
+		transform1.setLevel(); //force order of added lops
+		
+		return transform1;
+	}
+	
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 		if (this.getSqlLops() == null) {
@@ -233,6 +337,23 @@ public class ReorgOp extends Hop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
+		if( op == ReOrgOp.SORT ) 
+		{
+			Hop ixreturn = getInput().get(3);	
+			if( !(ixreturn instanceof LiteralOp && !HopRewriteUtils.getBooleanValueSafe((LiteralOp)ixreturn)
+				 && (dim2==1 || nnz==0) ) ) //NOT early abort case 
+			{
+				//Version 2: memory requirements for temporary index int[] array,
+				//(temporary double[] array already covered by output)
+				return dim1 * 4;
+				
+				//Version 1: memory requirements for temporary index Integer[] array
+				//8-16 (12) bytes for object, 4byte int payload, 4-8 (8) byte pointers.
+				//return dim1 * 24; 
+			}
+		}
+		
+		//default: no intermediate memory requirements
 		return 0;
 	}
 	
@@ -285,6 +406,23 @@ public class ReorgOp extends Hop
 						ret = new long[]{ mc.getRows()*mc.getCols()/_dim2, _dim2, mc.getNonZeros()};
 				}
 				break;
+			}
+			case SORT:
+			{
+				// input is a [k1,k2] matrix and output is a [k1,k3] matrix, where k3=k2 if no index return;
+				// otherwise k3=1 (for the index vector)	
+				Hop input4 = getInput().get(3); //indexreturn
+				boolean unknownIxRet = !(input4 instanceof LiteralOp);
+				
+				if( !unknownIxRet ) {
+					boolean ixret = HopRewriteUtils.getBooleanValueSafe((LiteralOp)input4);
+					long dim2 = ixret ? 1 : mc.getCols();
+					long nnz = ixret ? mc.getRows() : mc.getNonZeros();
+					ret = new long[]{ mc.getRows(), dim2, nnz};
+				}
+				else {
+					ret = new long[]{ mc.getRows(), -1, -1};
+				}
 			}
 		}	
 		
@@ -391,6 +529,24 @@ public class ReorgOp extends Hop
  				}
 				break;
 			}
+			case SORT:
+			{
+				// input is a [k1,k2] matrix and output is a [k1,k3] matrix, where k3=k2 if no index return;
+				// otherwise k3=1 (for the index vector)
+				Hop input4 = getInput().get(3); //indexreturn
+				boolean unknownIxRet = !(input4 instanceof LiteralOp);
+				
+				_dim1 = input1.getDim1();
+				if( !unknownIxRet ) {
+					boolean ixret = HopRewriteUtils.getBooleanValueSafe((LiteralOp)input4);
+					_dim2 = ixret ? 1 : input1.getDim2();
+					_nnz = ixret ? input1.getDim1() : input1.getNnz();
+				}
+				else {
+					_dim2 = -1;
+					_nnz = -1;
+				}
+			}
 		}	
 	}
 	
@@ -415,8 +571,15 @@ public class ReorgOp extends Hop
 			return false;
 		
 		ReorgOp that2 = (ReorgOp)that;		
-		return (   op == that2.op
-				&& getInput().get(0) == that2.getInput().get(0));
+		boolean ret =  (op == that2.op)
+				    && (getInput().size()==that.getInput().size());
+				
+		//compare all childs (see reshape, sort)
+		if( ret ) //sizes matched
+			for( int i=0; i<_input.size(); i++ )
+				ret &= getInput().get(i) == that2.getInput().get(i);
+		
+		return ret;
 	}
 	
 	

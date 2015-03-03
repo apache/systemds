@@ -13,6 +13,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
@@ -29,6 +30,7 @@ public class SPInstructionParser extends InstructionParser {
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
 		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.MMCJ);
+		String2SPInstructionType.put( "mapmult",  SPINSTRUCTION_TYPE.MapMult);
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "r'"   	    , SPINSTRUCTION_TYPE.Reorg);
 		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -71,11 +73,13 @@ public class SPInstructionParser extends InstructionParser {
 		
 		switch(sptype) {
 		case MMCJ:
-			return (SPInstruction) MMCJSPInstruction.parseInstruction(str);
+			return MMCJSPInstruction.parseInstruction(str);
+		case MapMult:
+			return MapMultSPInstruction.parseInstruction(str);
 		case MatrixIndexing:
-			return (SPInstruction) MatrixIndexingSPInstruction.parseInstruction(str);
+			return MatrixIndexingSPInstruction.parseInstruction(str);
 		case Reorg:
-			return (SPInstruction) ReorgSPInstruction.parseInstruction(str);
+			return ReorgSPInstruction.parseInstruction(str);
 		case ArithmeticBinary:
 			return ArithmeticBinarySPInstruction.parseInstruction(str);
 		case RelationalBinary:

@@ -9,15 +9,17 @@ package com.ibm.bi.dml.runtime.controlprogram.context;
 
 //import java.util.LinkedList;
 //import java.util.List;
-//
+
 //import org.apache.hadoop.mapred.SequenceFileInputFormat;
-//
+
+//import org.apache.spark.SparkConf;
 //import org.apache.spark.api.java.JavaPairRDD;
 //import org.apache.spark.api.java.JavaSparkContext;
 //import org.apache.spark.broadcast.Broadcast;
-//
+
 //import scala.Tuple2;
-//
+
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 //import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -32,19 +34,25 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	//executor memory and relative fractions as obtained from the spark configuration
+	private static long _memExecutors = -1;
+	private static double _memRatioData = -1;
+	private static double _memRatioShuffle = -1;
+	
+	
 //	private JavaSparkContext _spctx = null; 
 //	
-	protected SparkExecutionContext(Program prog) 
-	{
-		//protected constructor to force use of ExecutionContextFactory
-		this( true, prog );
-	}
-
+//	protected SparkExecutionContext(Program prog) 
+//	{
+//		//protected constructor to force use of ExecutionContextFactory
+//		this( true, prog );
+//	}
+//
 	protected SparkExecutionContext(boolean allocateVars, Program prog) 
 	{
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, prog );
-
+//
 //		//create a default spark context (master, appname, etc refer to system properties
 //		//as given in the spark configuration or during spark-submit)
 //		_spctx = new JavaSparkContext();
@@ -208,7 +216,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-//	@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	public static MatrixBlock toMatrixBlock(Object rdd, int rlen, int clen, int brlen, int bclen) 
 		throws DMLRuntimeException
 	{
@@ -256,4 +264,49 @@ public class SparkExecutionContext extends ExecutionContext
 //		
 //		return out;
 //	}
+	
+	/**
+	 * Returns the available memory budget for broadcast variables in bytes.
+	 * In detail, this takes into account the total executor memory as well
+	 * as relative ratios for data and shuffle. Note, that this is a conservative
+	 * estimate since both data memory and shuffle memory might not be fully
+	 * utilized. 
+	 * 
+	 * @return
+	 */
+	public static double getBroadcastMemoryBudget()
+	{
+		if( _memExecutors < 0 || _memRatioData < 0 || _memRatioShuffle < 0 )
+			analyzeSparkConfiguation();
+		
+		//70% of remaining free memory
+		double membudget = OptimizerUtils.MEM_UTIL_FACTOR *
+			              (  _memExecutors 
+			               - _memExecutors*(_memRatioData+_memRatioShuffle));
+		
+		return membudget;
+	}
+	
+	/**
+	 * 
+	 */
+	public static void analyzeSparkConfiguation() 
+	{
+//		SparkConf sconf = new SparkConf();
+//		
+//		//parse absolute executor memory
+//		String tmp = sconf.get("spark.executor.memory", "512m");
+//		if ( tmp.endsWith("g") || tmp.endsWith("G") )
+//			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024 * 1024 * 1024;
+//		else if ( tmp.endsWith("m") || tmp.endsWith("M") )
+//			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024 * 1024;
+//		else if( tmp.endsWith("k") || tmp.endsWith("K") )
+//			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024;
+//		else 
+//			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-2));
+//		
+//		//get data and shuffle memory ratios (defaults not specified in job conf)
+//		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
+//		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
+	}
 }

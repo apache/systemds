@@ -7,12 +7,16 @@
 
 package com.ibm.bi.dml.runtime.functionobjects;
 
-public class Or extends ValueFunction 
+import java.io.Serializable;
+
+public class Or extends ValueFunction implements Serializable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final long serialVersionUID = -2847467729680510910L;
+		
 	private static Or singleObj = null;
 
 	private Or() {

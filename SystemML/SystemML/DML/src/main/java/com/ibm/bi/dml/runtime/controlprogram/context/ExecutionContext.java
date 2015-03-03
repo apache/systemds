@@ -145,7 +145,7 @@ public class ExecutionContext
 		//error handling if non existing or no matrix
 		if( dat == null )
 			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
-		if( dat instanceof MatrixObject )
+		if( !(dat instanceof MatrixObject) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
 		
 		return (MatrixObject) dat;

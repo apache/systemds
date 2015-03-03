@@ -166,7 +166,10 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 
 			// Constraint C3:
 			else {
-				if ( !canReblock ) {
+				//TODO MB this is workaround for Spark until we support reblock 
+				//(otherwise any collects will fail). This workaround should be removed
+				//whenever we don't need it anymore.
+				if ( !canReblock && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK ) {
 					hop.setRowsInBlock(-1);
 					hop.setColsInBlock(-1);
 				}

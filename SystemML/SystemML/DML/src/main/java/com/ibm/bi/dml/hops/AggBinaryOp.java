@@ -29,6 +29,7 @@ import com.ibm.bi.dml.lops.Transform.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
@@ -117,6 +118,9 @@ public class AggBinaryOp extends Hop
 		//construct matrix mult lops (currently only supported aggbinary)
 		if ( isMatrixMultiply() ) 
 		{
+			Hop input1 = getInput().get(0);
+			Hop input2 = getInput().get(1);
+			
 			//matrix mult operation selection part 1 (CP vs MR)
 			ExecType et = optFindExecType();
 			MMTSJType mmtsj = checkTransposeSelf();
@@ -126,8 +130,8 @@ public class AggBinaryOp extends Hop
 				if( mmtsj != MMTSJType.NONE ) { //CP TSMM
 					constructLopsCP_TSMM( mmtsj );
 				}
-				else if( _hasLeftPMInput && getInput().get(0).getDim2()==1 
-						&& getInput().get(1).getDim1()!=1 ) //CP PMM
+				else if( _hasLeftPMInput && input1.getDim2()==1 
+						&& input2.getDim1()!=1 ) //CP PMM
 				{
 					constructLopsCP_PMM();
 				}
@@ -136,23 +140,48 @@ public class AggBinaryOp extends Hop
 				}
 					
 			}
-			else if ( et == ExecType.SPARK ) {
-				// SPARK_INTEGRATION: MMCJ
-				// TODO: Implement tsmm, pmm, and left transpose rewrite of CP_MM
-				Lop matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-											 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
-				matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers( matmultCP );
-				setLops(matmultCP);
+			else if ( et == ExecType.SPARK ) 
+			{
+				MMultMethod method = optFindMMultMethodSpark ( 
+						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
+						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock());
+			
+				switch( method )
+				{
+					case MAPMM_L:
+					case MAPMM_R:
+						// If number of columns is smaller than block size then explicit aggregation is not required.
+						// i.e., entire matrix multiplication can be performed in the mappers.
+						boolean needAgg = requiresAggregation(method); 
+						_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+						
+						//core matrix mult
+						MapMult mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+								                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
+								                _outputEmptyBlocks, needAgg);
+						setOutputDimensions(mapmult);
+						setLineNumbers(mapmult);
+						setLops(mapmult);
+						
+						break;
+						
+					case CPMM:	
+						// SPARK_INTEGRATION: MMCJ
+						// TODO: Implement tsmm, pmm, and left transpose rewrite of CP_MM
+						Lop matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+													 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
+						matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+						setLineNumbers( matmultCP );
+						setLops(matmultCP);
+						
+						break;
+				}
 			}
 			else if ( et == ExecType.MR ) 
 			{
-				Hop input1 = getInput().get(0);
-				Hop input2 = getInput().get(1);
-				
 				//matrix mult operation selection part 2 (MR type)
 				ChainType chain = checkMapMultChain();
-				MMultMethod method = optFindMMultMethod ( 
+				MMultMethod method = optFindMMultMethodMR ( 
 							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
 							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(),
 							mmtsj, chain, _hasLeftPMInput);
@@ -1062,7 +1091,7 @@ public class AggBinaryOp extends Hop
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
 	 */
-	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
+	private static MMultMethod optFindMMultMethodMR ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
 			                                        long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, 
 			                                        MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
 	{	
@@ -1182,6 +1211,34 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.CPMM;
 		else 
 			return MMultMethod.RMM;
+	}
+
+	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb ) 
+	{	
+		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
+		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
+		
+		// Step 1: check MapMult
+		// If the size of one input is small, choose a method that uses broadcast variables
+		// (currently we only apply this if a single output block)
+		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
+		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
+		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
+		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0 && m1_rows<=m1_rpb)
+			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0 && m2_cols<=m2_cpb) ) 
+		{
+			//apply map mult if one side fits in remote task memory 
+			//(if so pick smaller input for distributed cache)
+			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0) //FIXME
+				return MMultMethod.MAPMM_L;
+			else
+				return MMultMethod.MAPMM_R;
+		}
+		
+		// Step 2: fallback strategy MMCJ
+		return MMultMethod.CPMM;
 	}
 	
 	@Override

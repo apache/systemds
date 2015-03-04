@@ -51,7 +51,7 @@ public class ReaderBinaryBlockParFiles extends MatrixReader {
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, false, false);
 		
 		//prepare file access
 		JobConf job = new JobConf();	

@@ -1,0 +1,92 @@
+#uses the sparsa algorithm to perform lasso regression
+
+X = read($X)
+y = read($Y)
+
+#params
+tol = 10^(-15)
+M = 5
+tau = 1
+maxiter = 1000
+
+n = nrow(X)
+m = ncol(X)
+
+#constants
+eta = 2
+sigma = 0.01
+alpha_min = 10^(-30)
+alpha_max = 10^(30)
+
+#init
+alpha = 1
+w = Rand(rows=m, cols=1, min=0, max=1, pdf="uniform")
+history = -1*10^30 * matrix(1, rows=M, cols=1)
+
+r = X %*% w - y
+g = t(X) %*% r
+obj = 0.5 * sum(r*r) + tau*sum(abs(w))
+
+print("Initial OBJ=" + obj)
+
+history[M,1] = obj
+
+inactive_set = matrix(1, rows=m, cols=1)
+iter = 0
+continue = TRUE
+while(iter < maxiter & continue){
+	dw = matrix(0, rows=m, cols=1)
+	dg = matrix(0, rows=m, cols=1)
+	relChangeObj = -1.0
+	
+	inner_iter = 0
+	inner_continue = TRUE
+	inner_maxiter = 100
+	while(inner_iter < inner_maxiter & inner_continue){
+		u = w - g/alpha
+		lambda = tau/alpha
+		
+		signum_u = ppred(u, 0, ">") - ppred(u, 0, "<")
+		wnew = signum_u * (abs(u) - lambda) * ppred(abs(u) - lambda, 0, ">")
+	
+		dw = wnew - w
+		dw2 = sum(dw*dw)
+		
+		r = X %*% wnew - y
+		gnew = t(X) %*% r
+		objnew = 0.5 * sum(r*r) + tau*sum(abs(wnew))
+		
+		obj_threshold = max(history) - 0.5*sigma*alpha*dw2
+		if(objnew <= obj_threshold){
+			w = wnew
+			dg = gnew - g
+			g = gnew
+			inner_continue = FALSE
+			
+			history[1:(M-1),] = history[2:M,]
+			history[M,1] = objnew
+			relChangeObj = abs(objnew - obj)/obj
+			obj = objnew
+		}else alpha = eta*alpha
+	
+		inner_iter = inner_iter + 1
+	}
+	
+	if(inner_continue) print("Inner loop did not converge")
+	
+	alphanew = sum(dw*dg)/sum(dw*dw)
+	alpha = max(alpha_min, min(alpha_max, alphanew))
+	
+	old_inactive_set = inactive_set
+    inactive_set = ppred(w, 0, "!=")
+    diff = sum(abs(old_inactive_set - inactive_set))
+
+    if(diff == 0 & relChangeObj < tol) continue = FALSE
+
+    num_inactive = sum(ppred(w, 0, "!="))
+    print("ITER=" + iter + " OBJ=" + obj + " relative change=" + relChangeObj + " num_inactive=" + num_inactive)
+
+	iter = iter + 1
+}
+
+write(w, $model)

@@ -326,7 +326,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			Expression orderby = getVarParam("by"); //[OPTIONAL] BY
 			if( orderby == null ) { //default first column, good fit for vectors
 				orderby = new IntIdentifier(1, "1", -1, -1, -1, -1);
-				addVarParam("indexreturn", orderby);
+				addVarParam("by", orderby);
 			}
 			else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
 				raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);

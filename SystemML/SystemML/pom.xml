@@ -193,7 +193,7 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<include>**/*Test.java</include>
@@ -233,7 +233,7 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx3g -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<include>**/integration/**/*Test.java</include>

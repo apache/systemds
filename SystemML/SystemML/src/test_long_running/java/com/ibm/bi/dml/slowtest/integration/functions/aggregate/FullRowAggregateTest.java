@@ -17,6 +17,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 /**
@@ -53,6 +54,26 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		ROW_MIN,
 		ROW_INDEXMAX,
 		ROW_INDEXMIN
+	}
+	
+	/**
+	 * Main method for running one test at a time from Eclipse.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		FullRowAggregateTest t= new FullRowAggregateTest();
+		t.setUpBase();
+		t.setUp();
+		
+		t.setOutAndExpectedDeletionDisabled(true);
+		
+		t.testRowIndexMaxDenseMatrixNegMR();
+		t.tearDown();
+		
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+	
 	}
 	
 	

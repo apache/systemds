@@ -126,6 +126,8 @@ public abstract class AutomatedTestBase
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
 		lTimeBeforeTest = System.currentTimeMillis();
+		
+		TestUtils.clearAssertionInformation();
 	}
 
 	/**

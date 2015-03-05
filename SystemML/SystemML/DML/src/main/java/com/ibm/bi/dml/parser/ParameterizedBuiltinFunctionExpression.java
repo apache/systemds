@@ -340,13 +340,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
-			Expression indexreturn = getVarParam("indexreturn"); //[OPTIONAL] DECREASING
+			Expression indexreturn = getVarParam("index.return"); //[OPTIONAL] DECREASING
 			if( indexreturn == null ) { //default: sorted data
 				indexreturn = new BooleanIdentifier(false, "false", -1, -1, -1, -1);
-				addVarParam("indexreturn", indexreturn);
+				addVarParam("index.return", indexreturn);
 			}
 			else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
-				raiseValidateError("Return type 'indexreturn' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
 					((BooleanIdentifier)indexreturn).getValue() ? 1: target.getOutput().getDim2() : -1; 

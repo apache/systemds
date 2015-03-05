@@ -11,6 +11,6 @@ A = read($1);
 
 if(1==1){} #for recompilation rewrites
 
-B = order(target=A, by=$2, decreasing=$3, indexreturn=$4);
+B = order(target=A, by=$2, decreasing=$3, index.return=$4);
 
 write(B, $5, format="text");  

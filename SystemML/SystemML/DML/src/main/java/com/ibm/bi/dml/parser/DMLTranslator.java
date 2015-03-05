@@ -2447,7 +2447,7 @@ public class DMLTranslator
 			inputs.add(paramHops.get("target"));
 			inputs.add(paramHops.get("by"));
 			inputs.add(paramHops.get("decreasing"));
-			inputs.add(paramHops.get("indexreturn"));
+			inputs.add(paramHops.get("index.return"));
 			
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
 			

@@ -153,7 +153,7 @@ strictParameterizedKeyValueString : paramName=ID '=' paramVal=STRING ;
 ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
     // Special ID cases:
    // | 'matrix' // --> This is a special case which causes lot of headache
-   | 'as.scalar' | 'as.matrix' | 'as.double' | 'as.integer' | 'as.logical'
+   | 'as.scalar' | 'as.matrix' | 'as.double' | 'as.integer' | 'as.logical' | 'index.return'
 ;
 // Unfortunately, we have datatype name clashing with builtin function name: matrix :(
 // Therefore, ugly work around for checking datatype

@@ -73,7 +73,12 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		byte[] inputIX = MRJobConfiguration.getInputIndexesInMapper(job);
 		for( byte ix : inputIX )
 			dimensions.put(ix, MRJobConfiguration.getMatrixCharacteristicsForInput(job, ix));	
-		byte[] outputIX = MRJobConfiguration.getOutputIndexesInMapper(job);
+		
+		byte[] mapOutputIX = MRJobConfiguration.getOutputIndexesInMapper(job);
+		for(byte ix : mapOutputIX)
+			dimensions.put(ix, MRJobConfiguration.getMatrixCharacteristicsForMapOutput(job, ix));
+		
+		byte[] outputIX = MRJobConfiguration.getResultIndexes(job);
 		for( byte ix : outputIX )
 			dimensions.put(ix, MRJobConfiguration.getMatrixCharacteristicsForOutput(job, ix));	
 		

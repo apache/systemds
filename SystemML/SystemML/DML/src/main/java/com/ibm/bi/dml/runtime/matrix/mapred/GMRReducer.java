@@ -17,6 +17,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.instructions.mr.AppendRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -50,7 +51,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		processAggregateInstructions(indexes, values);
 		
 		//perform mixed operations
-		processReducerInstructionsInGMR();
+		processReducerInstructionsInGMR(indexes);
 		
 		//output the final result matrices
 		outputResultsFromCachedValuesForGMR(reporter);
@@ -62,7 +63,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	 * 
 	 * @throws IOException
 	 */
-	protected void processReducerInstructionsInGMR() 
+	protected void processReducerInstructionsInGMR(MatrixIndexes indexes) 
 		throws IOException 
 	{
 		if(mixed_instructions==null)
@@ -78,6 +79,20 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 					((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), _buff.getBlockBuffer(), dim.getRowsPerBlock(), dim.getColsPerBlock());
 					if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
 						_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
+				}
+				else if(ins instanceof AppendRInstruction) {
+					MatrixCharacteristics dims1 = dimensions.get(((AppendRInstruction) ins).input1);
+					MatrixCharacteristics dims2 = dimensions.get(((AppendRInstruction) ins).input2);
+					long nbi1 = (long) Math.ceil((double)dims1.getRows()/dims1.getRowsPerBlock());
+					long nbi2 = (long) Math.ceil((double)dims2.getRows()/dims2.getRowsPerBlock());
+					long nbj1 = (long) Math.ceil((double)dims1.getCols()/dims1.getColsPerBlock());
+					long nbj2 = (long) Math.ceil((double)dims2.getCols()/dims2.getColsPerBlock());
+					
+					// Execute the instruction only if current indexes fall within the range of input dimensions
+					if((nbi1 < indexes.getRowIndex() && nbi2 < indexes.getRowIndex()) || (nbj1 < indexes.getColumnIndex() && nbj2 < indexes.getColumnIndex()))
+						continue;
+					else
+						processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 				}
 				else
 					processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);

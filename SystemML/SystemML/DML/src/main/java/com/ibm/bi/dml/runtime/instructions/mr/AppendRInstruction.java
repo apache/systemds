@@ -52,7 +52,7 @@ public class AppendRInstruction extends AppendInstruction
 
 		//check non-existing block
 		if( left == null || right == null )
-			throw new DMLRuntimeException("Missing append input.");
+			throw new DMLRuntimeException("Missing append input: isNull(left): " + (left==null) + ", isNull(right): " + (right==null));
 		
 		//core append operation
 		MatrixBlock mbLeft = (MatrixBlock)left.getValue();

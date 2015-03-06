@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
@@ -113,6 +113,12 @@ public class MRJobConfiguration
 	private static final String INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG="input.block.num.row.";
 	private static final String INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG="input.block.num.column.";
 	private static final String INPUT_MATRIX_NUM_NNZ_PREFIX_CONFIG="input.matrix.num.nnz.";
+	
+	//characteristics about the matrices to map outputs
+	private static final String MAPOUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG="map.output.matrix.num.row.";
+	private static final String MAPOUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG="map.output.matrix.num.column.";
+	private static final String MAPOUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG="map.output.block.num.row.";
+	private static final String MAPOUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG="map.output.block.num.column.";
 	
 	//operations performed in the mapper
 	private static final String INSTRUCTIONS_IN_MAPPER_CONFIG="instructions.in.mapper";
@@ -1394,8 +1400,23 @@ public class MRJobConfiguration
 		Instruction[] aggIns = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
 		if(aggIns!=null)
 		{
-			for(Instruction ins: aggIns)
+			for(Instruction ins: aggIns) {
 				MatrixCharacteristics.computeDimension(dims, (MRInstruction) ins);
+			
+				// if instruction's output is not in resultIndexes, then add its dimensions to jobconf
+				MRInstruction mrins = (MRInstruction)ins;
+				boolean found = false;
+				for(byte b : resultIndexes) {
+					if(b==mrins.output) {
+						found = true;
+						break;
+					}
+				}
+				if(!found) {
+					setIntermediateMatrixCharactristics(job, mrins.output, dims.get(mrins.output));
+					intermediateMatrixIndexes.add(mrins.output);	
+				}
+			}
 		}
 		
 		long numReduceGroups=0;
@@ -1483,10 +1504,27 @@ public class MRJobConfiguration
 							dims.get(tempIns.input1));
 					intermediateMatrixIndexes.add(tempIns.input1);	
 				}
+				
+				// if instruction's output is not in resultIndexes, then add its dimensions to jobconf
+				boolean found = false;
+				for(byte b : resultIndexes) {
+					if(b==ins.output) {
+						found = true;
+						break;
+					}
+				}
+				if(!found) {
+					setIntermediateMatrixCharactristics(job, ins.output, 
+							dims.get(ins.output));
+					intermediateMatrixIndexes.add(ins.output);	
+				}
 			}
 		}
 		
 		setIntermediateMatrixIndexes(job, intermediateMatrixIndexes);
+		
+		for (byte tag : mapOutputIndexes)
+			setMatrixCharactristicsForMapperOutput(job, tag, dims.get(tag));
 		
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
 		MatrixCharacteristics resultDims;
@@ -1548,6 +1586,25 @@ public class MRJobConfiguration
 		return dim;
 	}
 	
+	public static void setMatrixCharactristicsForMapperOutput(JobConf job,
+		byte tag, MatrixCharacteristics dim)
+	{
+		job.setLong(MAPOUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.getRows());
+		job.setLong(MAPOUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getCols());
+		job.setInt(MAPOUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.getRowsPerBlock());
+		job.setInt(MAPOUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, dim.getColsPerBlock());
+	}
+	 	
+	public static MatrixCharacteristics getMatrixCharacteristicsForMapOutput(JobConf job, byte tag)
+	{
+		MatrixCharacteristics dim=new MatrixCharacteristics();
+		dim.setDimension( job.getLong(MAPOUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0),
+		job.getLong(MAPOUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0) );
+		dim.setBlockSize( job.getInt(MAPOUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1), 
+		job.getInt(MAPOUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );
+		return dim;
+	}
+
 	public static void setMatrixCharactristicsForReblock(JobConf job,
 			byte tag, MatrixCharacteristics dim)
 	{

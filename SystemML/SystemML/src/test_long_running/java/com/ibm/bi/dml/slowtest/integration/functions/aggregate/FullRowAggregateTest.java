@@ -932,7 +932,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "A",
 					                        Integer.toString(rows),
 					                        Integer.toString(cols),
 					                        HOME + OUTPUT_DIR + "B"    };

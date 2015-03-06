@@ -35,6 +35,11 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
  */
 public class Builtin extends ValueFunction 
 {
+	/**
+	 * Version ID for serialization
+	 */
+	private static final long serialVersionUID = 3836744687789840574L;
+
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -190,9 +195,13 @@ public class Builtin extends ValueFunction
 			if ( stopObj == null )
 				stopObj = new Builtin(BuiltinFunctionCode.STOP);
 			return stopObj;
+
+		default:
+			// Unknown code --> return null
+			return null;
 		}
 		
-		return null;
+		
 	}
 	
 	public Object clone() throws CloneNotSupportedException {
@@ -304,10 +313,35 @@ public class Builtin extends ValueFunction
 		case MIN:
 			//return (Double.compare(in1, in2) <= 0 ? in1 : in2);
 			return (in1 <= in2 ? in1 : in2);
-		case MAXINDEX: 
-			return (in1 >= in2) ? 1 : 0;
-		case MININDEX: 
-			return (in1 <= in2) ? 1 : 0;
+			
+			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+			// rowIndexMax() and its siblings require comparing four values, but
+			// the aggregation API only allows two values. So the execute()
+			// method receives as its argument the two cell values to be
+			// compared and performs just the value part of the comparison. We
+			// return an integer cast down to a double, since the aggregation
+			// API doesn't have any way to return anything but a double. The
+			// integer returned takes on three posssible values: //
+			// .     0 => keep the index associated with in1 //
+			// .     1 => use the index associated with in2 //
+			// .     2 => use whichever index is higher (tie in value) //
+		case MAXINDEX:
+			if (in1 == in2) {
+				return 2;
+			} else if (in1 > in2) {
+				return 1;
+			} else { // in1 < in2
+				return 0;
+			}
+		case MININDEX:
+			if (in1 == in2) {
+				return 2;
+			} else if (in1 < in2) {
+				return 1;
+			} else { // in1 > in2
+				return 0;
+			}
+			// *** END HACK ***
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
@@ -341,8 +375,11 @@ public class Builtin extends ValueFunction
 				return (in1 >= in2) ? 1 : 0;	
 			case MININDEX: 
 				return (in1 <= in2) ? 1 : 0;	
+				
+			default:
+				// For performance reasons, avoid throwing an exception 
+				return -1;
 		}
-		return -1;
 	}
 	
 	public double execute (int in1, int in2) throws DMLRuntimeException {

@@ -2724,17 +2724,41 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX
 			         || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX )
 			         ){
+					// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+					// rowIndexMax() and its siblings don't fit very well into the standard
+					// aggregate framework. We (ab)use the "correction factor" argument to
+					// hold the maximum value in each row/column.
+				
+					// The execute() method for this aggregate takes as its argument
+					// two candidates for the highest value. Bookkeeping about
+					// indexes (return column/row index with highest value, breaking
+					// ties in favor of higher indexes) is handled in this function.
+					// Note that both versions of incrementalAggregate() contain
+					// very similar blocks of special-case code. If one block is
+					// modified, the other needs to be changed to match.
 					for(int r=0; r<rlen; r++){
 						double currMaxValue = cor.quickGetValue(r, 0);
 						long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
 						double newMaxValue = newWithCor.quickGetValue(r, 1);
 						double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
-						    
-						if(update == 1){
+						
+						System.err.printf("Row %d: currMaxValue = %e; newMaxIndex = %d; newMaxValue = %e; update = %f\n",
+								r, currMaxValue, newMaxIndex, newMaxValue, update);
+						
+						if (2.0 == update) {
+							// Return value of 2 ==> both values the same, break ties
+							// in favor of higher index.
+							long curMaxIndex = (long) quickGetValue(r,0);
+							quickSetValue(r, 0, Math.max(curMaxIndex, newMaxIndex));
+						} else if(1.0 == update){
+							// Return value of 1 ==> new value is better; use its index
 							quickSetValue(r, 0, newMaxIndex);
 							cor.quickSetValue(r, 0, newMaxValue);
+						} else {
+							// Other return value ==> current answer is best
 						}
 					}
+					// *** END HACK ***
 				}else{
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen; c++)
@@ -2876,17 +2900,38 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX 
 			        || ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
 			        ){
+				// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+				// rowIndexMax() and its siblings don't fit very well into the standard
+				// aggregate framework. We (ab)use the "correction factor" argument to
+				// hold the maximum value in each row/column.
+			
+				// The execute() method for this aggregate takes as its argument
+				// two candidates for the highest value. Bookkeeping about
+				// indexes (return column/row index with highest value, breaking
+				// ties in favor of higher indexes) is handled in this function.
+				// Note that both versions of incrementalAggregate() contain
+				// very similar blocks of special-case code. If one block is
+				// modified, the other needs to be changed to match.
 				for(int r = 0; r < rlen; r++){
 					double currMaxValue = quickGetValue(r, 1);
 					long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
 					double newMaxValue = newWithCor.quickGetValue(r, 1);
 					double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
-					
-					if(update == 1){
+	
+					if (2.0 == update) {
+						// Return value of 2 ==> both values the same, break ties
+						// in favor of higher index.
+						long curMaxIndex = (long) quickGetValue(r,0);
+						quickSetValue(r, 0, Math.max(curMaxIndex, newMaxIndex));
+					} else if(1.0 == update){
+						// Return value of 1 ==> new value is better; use its index
 						quickSetValue(r, 0, newMaxIndex);
 						quickSetValue(r, 1, newMaxValue);
+					} else {
+						// Other return value ==> current answer is best
 					}
 				}
+				// *** END HACK ***
 			}
 			else
 			{

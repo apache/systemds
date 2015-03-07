@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.globalopt;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 
@@ -33,11 +34,12 @@ public class MemoStructure
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private HashMap<Long, PlanSet> _entries = null; //NODEID | PLANSET
-	//private HashMap<Long, Plan> _allPlans = null; //PID | PLAN
+	private HashMap<Long, Long>    _nodeIDs = null; //NODEID | HOPID
 	
 	public MemoStructure()
 	{
 		_entries = new HashMap<Long, PlanSet>();
+		_nodeIDs = new HashMap<Long, Long>();
 	}
 	
 	///////////////////////////////////////////////////
@@ -51,10 +53,35 @@ public class MemoStructure
 	public void putEntry( GDFNode node, PlanSet entry )
 	{
 		_entries.put( node.getID(), entry );
+		if( node.getHop()!=null )
+			_nodeIDs.put( node.getID(), node.getHop().getHopID() );
+		else
+			_nodeIDs.put( node.getID(), -1L );	
 	}
 	
 	public PlanSet getEntry( GDFNode node )
 	{
 		return _entries.get( node.getID()) ;
+	}
+	
+	@Override
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("------------------------------------\n");
+		sb.append("MEMO STRUCTURE (gdfnodeid, plans):  \n");
+		sb.append("------------------------------------\n");
+		
+		for( Entry<Long, PlanSet> e : _entries.entrySet() )
+		{
+			sb.append("------------------------------------\n");
+			sb.append("Node "+e.getKey()+" (hop "+_nodeIDs.get(e.getKey())+"):\n");
+			for( Plan p : e.getValue().getPlans() ) {
+				sb.append(p.toString());
+				sb.append("\n");
+			}
+		}
+		
+		return sb.toString();
 	}
 }

@@ -13,9 +13,12 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
@@ -23,6 +26,7 @@ import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -49,6 +53,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	private static final Log LOG = LogFactory.getLog(GDFEnumOptimizer.class);
 
 	public static final boolean BRANCH_AND_BOUND_PRUNING = true;
+	public static final boolean PREFERRED_PLAN_SELECTION = true;
 	
 	//internal configuration parameters //TODO remove -1 
 	public static final int[] BLOCK_SIZES         = new int[]{1000/*-1,2000,4000*/};
@@ -157,6 +162,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		//memoization of created entries
 		memo.putEntry(node, P);
 		
+		
+		
 		return P;
 	}
 	
@@ -170,16 +177,18 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		ArrayList<Plan> plans = new ArrayList<Plan>();
 		
 		//ENUMERATE HOP PLANS
-		//do nothing for scalars (leads to pass-through for something like sum)
-		if( node.getNodeType() == NodeType.HOP_NODE ) 
+		// CASE 1: core hop enumeration (other than persistent/transient read/write) 
+		if( node.getNodeType() == NodeType.HOP_NODE && !(node.getHop() instanceof DataOp ) ) 
 		{
-			//create cp plan (most interesting proeprties are irrelevant for CP)
-			RewriteConfig rccp = new RewriteConfig(ExecType.CP, -1, FileFormatTypes.BINARY);
-			InterestingProperties ipscp = rccp.deriveInterestingProperties();
-			Plan cpplan = new Plan(node, ipscp, rccp, null);
-			plans.add( cpplan );
+			//create cp plan, if allowed (note: most interesting proeprties are irrelevant for CP)
+			if( node.getHop().getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
+				RewriteConfig rccp = new RewriteConfig(ExecType.CP, -1, FileFormatTypes.BINARY);
+				InterestingProperties ipscp = rccp.deriveInterestingProperties();
+				Plan cpplan = new Plan(node, ipscp, rccp, null);
+				plans.add( cpplan );
+			}
 			
-			//create mr plans
+			//create mr plans, if required
 			if( node.requiresMREnumeration() ) {
 				for( Integer bs : BLOCK_SIZES )
 				{
@@ -188,6 +197,31 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 					Plan mrplan = new Plan(node, ipsmr, rcmr, null);
 					plans.add( mrplan );			
 				}
+			}
+		}
+		//CASE 2: dataop hop enumeration 
+		else if( node.getHop() instanceof DataOp )
+		{
+			DataOp dhop = (DataOp)node.getHop();
+			
+			if(    dhop.get_dataop()==DataOpTypes.PERSISTENTREAD
+				|| dhop.get_dataop()==DataOpTypes.PERSISTENTWRITE )
+			{
+				//for persistent read/write the interesting properties are fixed by the input (read)
+				//and default configuration or specification (write)
+				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()) ? 
+						       ExecType.MR : ExecType.CP;
+				int blocksize = dhop.getFormatType() == FileFormatTypes.BINARY ? 
+						       DMLTranslator.DMLBlockSize : -1; //e.g., -1 for text
+				RewriteConfig rcmr = new RewriteConfig(et, blocksize, dhop.getFormatType());
+				InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
+				Plan mrplan = new Plan(node, ipsmr, rcmr, null);
+				plans.add( mrplan );	
+			}
+			else if(   dhop.get_dataop()==DataOpTypes.TRANSIENTREAD
+					|| dhop.get_dataop()==DataOpTypes.TRANSIENTWRITE)
+			{
+				//do nothing for transient read/write (leads to pass-through on cross product)			
 			}
 		}
 		//ENUMERATE LOOP PLANS
@@ -257,23 +291,34 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	{
 		//costing of all plans incl containment check
 		for( Plan p : plans.getPlans() )
+		{
+			
 			p.setCosts( costRuntimePlan(p) );
+		}
 		
 		//build and probe for optimal plans (hash-groupby on IPC, min costs) 
-		HashMap<InterestingProperties, Plan> probeMap = new HashMap<InterestingProperties, Plan>();
+		HashMap<Integer, Plan> probeMap = new HashMap<Integer, Plan>();
 		for( Plan p : plans.getPlans() )
 		{
 			//max cost pruning filter (branch-and-bound)
-			if( BRANCH_AND_BOUND_PRUNING && p.getCosts() > maxCosts )
+			if( BRANCH_AND_BOUND_PRUNING && p.getCosts() > maxCosts ) {
 				continue;
+			}
 			
-			//best plan per IPS pruning filter
-			Plan best = probeMap.get(p.getInterestingProperties());
-			if( best!=null && p.getCosts() > best.getCosts() )
+			//plan cost per IPS pruning filter (allow smaller or equal costs)
+			Plan best = probeMap.get(p.getInterestingProperties().hashCode());
+			if( best!=null && p.getCosts() > best.getCosts() ) {
 				continue;
+			}
 			
+			//non-preferred plan pruning filter (allow smaller cost or equal cost and preferred plan)
+			if( PREFERRED_PLAN_SELECTION && best!=null && 
+				p.getCosts() == best.getCosts() && !p.isPreferredPlan() ) {
+				continue;
+			}
+				
 			//add plan as best per IPS
-			probeMap.put(p.getInterestingProperties(), p);
+			probeMap.put(p.getInterestingProperties().hashCode(), p);
 		}
 		
 		//copy over plans per IPC into one plan set

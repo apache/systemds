@@ -45,7 +45,7 @@ public class GDFLoopNode extends GDFNode
 		//recursively explain childs
 		if( _predicate != null )
 			sb.append(_predicate.explain(level+1));	
-		for( GDFNode c : _inputs ) {
+		for( GDFNode c : _linputs.values() ) {
 			sb.append(c.explain(level+1));
 		}
 		

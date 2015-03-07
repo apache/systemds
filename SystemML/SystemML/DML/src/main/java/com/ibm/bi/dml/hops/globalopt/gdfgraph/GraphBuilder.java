@@ -227,14 +227,20 @@ public class GraphBuilder
 	 * @param fsb
 	 * @param roots
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	private static HashMap<String, GDFNode> constructLoopInputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots )
+	private static HashMap<String, GDFNode> constructLoopInputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots ) 
+		throws DMLRuntimeException
 	{
 		HashMap<String, GDFNode> ret = new HashMap<String, GDFNode>();
 		Set<String> invars = fsb.variablesRead().getVariableNames();
 		for( String var : invars ) {
-			GDFNode node = roots.get(var);
-			ret.put(var, node);
+			if( fsb.liveIn().containsVariable(var) ) {
+				GDFNode node = roots.get(var);
+				if( node == null )
+					throw new DMLRuntimeException("Non-existing input node for variable: "+var);
+				ret.put(var, node);
+			}
 		}
 		
 		return ret;

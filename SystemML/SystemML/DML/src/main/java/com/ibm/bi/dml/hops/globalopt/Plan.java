@@ -6,10 +6,15 @@ import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 
 public class Plan 
 {
+	private static IDSequence _seqID   = new IDSequence();
+	
+	private long _ID                   = -1;
 	private GDFNode _node              = null;
 	
 	private InterestingProperties _ips = null;
@@ -19,6 +24,7 @@ public class Plan
 	
 	public Plan(GDFNode node, InterestingProperties ips, RewriteConfig rc, ArrayList<Plan> childs)
 	{
+		_ID = _seqID.getNextID();
 		_node = node;
 		_ips = ips;
 		_conf = rc;
@@ -30,6 +36,7 @@ public class Plan
 	
 	public Plan( Plan p )
 	{	
+		_ID = _seqID.getNextID();
 		_node = p._node;
 		_ips = new InterestingProperties(p._ips);
 		_conf = new RewriteConfig(p._conf);
@@ -133,16 +140,38 @@ public class Plan
 		return ret;
 	}
 	
+	/**
+	 * A plan is defined as preferred if its output interesting properties
+	 * match the interesting properties of all its matrix inputs.
+	 * 
+	 * @return
+	 */
+	public boolean isPreferredPlan()
+	{
+		boolean ret = true;
+		
+		for( Plan c : _childs )
+			if( c.getNode().getDataType()==DataType.MATRIX )
+				ret &= _ips.equals( c.getInterestingProperties() );
+		
+		return ret;
+	}
+	
 	@Override
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("PLAN [");
+		sb.append("PLAN("+_ID+") [");
 		sb.append(_ips.toString());
 		sb.append(",");
 		sb.append(_conf.toString());
-		sb.append(",");
-		//TODO childs
+		sb.append(",{");
+		for( Plan c : _childs ){
+			sb.append(c._ID);
+			sb.append(",");
+		}
+		sb.setLength(sb.length()-1);
+		sb.append("},");	
 		sb.append(_costs);
 		sb.append("]");
 		

@@ -16,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -23,6 +24,7 @@ import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
@@ -31,6 +33,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -38,10 +41,11 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 /**
  * Global data flow optimization via enumeration-based optimizer (dynamic programming). 
  * 
- * TODO investigate dag anomaly for tsmm operations on X; potentially resolve with
- * treatment of same costs
  * 
- * TODO only enumerate CP plans if below memory budget
+ * ADDITIONAL PERFORMANCE OPT (once everything is completely working)
+ * TODO cache for interesting properties
+ * TODO partial runtime plan generation
+ * TODO partial runtime plan costing  
  * 
  */
 public class GDFEnumOptimizer extends GlobalOptimizer
@@ -52,18 +56,20 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 
 	private static final Log LOG = LogFactory.getLog(GDFEnumOptimizer.class);
 
-	public static final boolean BRANCH_AND_BOUND_PRUNING = true;
+	//internal configuration parameters 
+	//note: that branch and bound pruning is invalid if we cost entire programs
+	public static final boolean BRANCH_AND_BOUND_PRUNING = true; 
 	public static final boolean PREFERRED_PLAN_SELECTION = true;
+	public static final boolean COST_FULL_PROGRAMS       = false;
 	
 	//internal configuration parameters //TODO remove -1 
 	public static final int[] BLOCK_SIZES         = new int[]{1000/*-1,2000,4000*/};
 	public static final int[] REPLICATION_FACTORS = new int[]{1,3,5};
-		
-	//TODO cache for interesting properties
-	
+			
 	private MemoStructure _memo = null; //plan memoization table
 	private static long _enumeratedPlans = 0;
-	private static long _prunedPlans = 0;
+	private static long _prunedInvalidPlans = 0;
+	private static long _prunedSuboptimalPlans = 0;
 	private static long _compiledPlans = 0;
 	private static long _costedPlans = 0;
 
@@ -112,13 +118,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		
 		//print optimization summary
 		LOG.info("Optimization summary:");
-		LOG.info("-- costs of intial plan: "+initCosts);
-		LOG.info("-- costs of optimal plan: "+optCosts);
-		LOG.info("-- # enumerated plans:    "+_enumeratedPlans);
-		LOG.info("-- # pruned plans:        "+_prunedPlans);
-		LOG.info("-- # of block compiles:   "+_compiledPlans);
-		LOG.info("-- # of block costings:   "+_costedPlans);
-		LOG.info("-- optimization time:     "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
+		LOG.info("-- costs of initial plan:  "+initCosts);
+		LOG.info("-- costs of optimal plan:  "+optCosts);
+		LOG.info("-- # enumerated plans:     "+_enumeratedPlans);
+		LOG.info("-- # pruned invalid plans: "+_prunedInvalidPlans);
+		LOG.info("-- # pruned subopt plans:  "+_prunedSuboptimalPlans);
+		LOG.info("-- # of program compiles:  "+_compiledPlans);
+		LOG.info("-- # of program costings:  "+_costedPlans);
+		LOG.info("-- optimization time:      "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
 		
 		return gdfgraph;
 	}
@@ -155,14 +162,12 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			//prune invalid plans
 			pruneInvalidPlans( P );
 		}
-		
+
 		//prune suboptimal plans
 		pruneSuboptimalPlans( P, maxCosts );
 		
 		//memoization of created entries
 		memo.putEntry(node, P);
-		
-		
 		
 		return P;
 	}
@@ -273,7 +278,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		//debug output
 		int sizeBefore = plans.size();
 		int sizeAfter = valid.size();
-		_prunedPlans += (sizeBefore-sizeAfter);
+		_prunedInvalidPlans += (sizeBefore-sizeAfter);
 		LOG.debug("Pruned invalid plans: "+sizeBefore+" --> "+sizeAfter);
 		
 		plans.setPlans( valid );
@@ -290,9 +295,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//costing of all plans incl containment check
-		for( Plan p : plans.getPlans() )
-		{
-			
+		for( Plan p : plans.getPlans() ) {
 			p.setCosts( costRuntimePlan(p) );
 		}
 		
@@ -319,6 +322,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				
 			//add plan as best per IPS
 			probeMap.put(p.getInterestingProperties().hashCode(), p);
+			
 		}
 		
 		//copy over plans per IPC into one plan set
@@ -326,7 +330,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		
 		int sizeBefore = plans.size();
 		int sizeAfter = optimal.size();
-		_prunedPlans += (sizeBefore-sizeAfter);
+		_prunedSuboptimalPlans += (sizeBefore-sizeAfter);
 		LOG.debug("Pruned suboptimal plans: "+sizeBefore+" --> "+sizeAfter);
 		
 		plans.setPlans(optimal);
@@ -345,22 +349,62 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		Program prog = p.getNode().getProgram();
 		if( prog == null )
 			throw new DMLRuntimeException("Program not available for runtime plan costing.");
-		 
+		
 		//put data flow configuration into program
 		rSetRuntimePlanConfig(p, new HashMap<Long,Plan>());
 		
-		//recompile entire program (and release forced configuration)
-		Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
-		//System.out.println(Explain.explain(prog));
-		rResetRuntimePlanConfig(p, new HashMap<Long,Plan>());
-		_compiledPlans++;
+		double costs = -1;
+		if( COST_FULL_PROGRAMS || 
+		   (p.getNode().getHop()==null || p.getNode().getProgramBlock()==null) )
+		{
+			//recompile entire runtime program
+			Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
+			_compiledPlans++;
+			
+			//cost entire runtime program
+			ExecutionContext ec = ExecutionContextFactory.createContext(prog);
+			costs = CostEstimationWrapper.getTimeEstimate(prog, ec);
+		}
+		else
+		{
+			Hop currentHop = p.getNode().getHop();
+			ProgramBlock pb = p.getNode().getProgramBlock();
+			
+			try
+			{
+				//keep the old dag roots
+				ArrayList<Hop> oldRoots = pb.getStatementBlock().get_hops();
+				Hop tmpHop = null;
+				if( !(currentHop instanceof DataOp && ((DataOp)currentHop).isWrite()) ){
+					ArrayList<Hop> newRoots = new ArrayList<Hop>();
+					tmpHop = new DataOp("_tmp", currentHop.getDataType(), currentHop.getValueType(), currentHop, DataOpTypes.TRANSIENTWRITE, "tmp");
+					tmpHop.setVisited(VisitStatus.DONE); //ensure recursive visitstatus reset on recompile
+					newRoots.add(tmpHop);
+					pb.getStatementBlock().set_hops(newRoots);
+				}
+				
+				//recompile modified runtime program
+				Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
+				_compiledPlans++;
+				
+				//cost partial runtime program up to current hop
+				ExecutionContext ec = ExecutionContextFactory.createContext(prog);
+				costs = CostEstimationWrapper.getTimeEstimate(prog, ec);	
+				
+				//restore original hop dag
+				if( tmpHop !=null )
+					HopRewriteUtils.removeChildReference(tmpHop, currentHop);
+				pb.getStatementBlock().set_hops(oldRoots);	
+			}
+			catch(HopsException ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
+		}
 		
-		//cost runtime program
-		ExecutionContext ec = ExecutionContextFactory.createContext(prog);
-		double costs = CostEstimationWrapper.getTimeEstimate(prog, ec);
+		//release forced data flow configuration from program
+		rResetRuntimePlanConfig(p, new HashMap<Long,Plan>());		
 		_costedPlans++;
-		
-		//System.out.println("Recompiled plan costs = "+costs);
 		
 		return costs;
 	}
@@ -375,7 +419,6 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				LOG.warn(p.getInterestingProperties().toString());
 				LOG.warn(memo.get(p.getNode().getID()).getInterestingProperties());
 				return;
-				
 			}
 		}
 		

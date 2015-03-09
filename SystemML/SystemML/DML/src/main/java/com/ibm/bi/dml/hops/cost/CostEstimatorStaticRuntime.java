@@ -582,12 +582,18 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
+		double bytes = (double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn));
+		double mbytes = bytes / (1024*1024);  		
 		
+		double ret = -1;
 		if( sparse )
-			ret /= DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
+			ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
 		else //dense
-			ret /= DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE;
+			ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE;
+		
+		if( LOG.isDebugEnabled() )
+			LOG.debug("Costs[export] = "+ret+"s, "+mbytes+" MB ("+dm+","+dn+","+ds+").");
+		
 		
 		return ret;
 	}

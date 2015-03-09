@@ -262,6 +262,11 @@ public class DataOp extends Hop
 		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD );
 	}
 	
+	public boolean isWrite()
+	{
+		return( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE );
+	}
+	
 	public boolean isPersistentReadWrite()
 	{
 		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.PERSISTENTWRITE );

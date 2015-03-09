@@ -85,6 +85,11 @@ public class GDFNode
 		return _hop;
 	}
 	
+	public ProgramBlock getProgramBlock()
+	{
+		return _pb;
+	}
+	
 	public Program getProgram()
 	{
 		if( _pb != null )

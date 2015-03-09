@@ -84,7 +84,7 @@ public class RewriteConfig
 	public String toString() 
 	{
 		//TODO
-		return "RC[]";//+_type+"="+_value + "]";
+		return "RC["+_rewriteSetExecType+"]";//+_type+"="+_value + "]";
 	}
 
 }

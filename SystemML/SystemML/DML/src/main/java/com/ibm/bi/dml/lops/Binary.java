@@ -25,7 +25,7 @@ public class Binary extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
+		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		MAX, MIN, POW, SOLVE, NOTSUPPORTED};	
@@ -111,6 +111,8 @@ public class Binary extends Lop
 			return "%%";	
 		case INTDIV:
 			return "%/%";		
+		case MATMULT:
+			return "ba+*";
 		
 		/* Relational */
 		case LESS_THAN:

@@ -19,7 +19,7 @@ import com.ibm.bi.dml.parser.Expression.*;
  * Example i = j + k, i = i + 1. 
  */
 
-public class BinaryCP extends Lop 
+public class BinaryScalar extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
@@ -33,7 +33,7 @@ public class BinaryCP extends Lop
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
 		Over,
-		MATMULT, SEQINCR
+		SEQINCR
 	}
 	
 	OperationTypes operation;
@@ -41,7 +41,7 @@ public class BinaryCP extends Lop
 	/**
 	 * This overloaded constructor is used for setting exec type in case of spark backend
 	 */
-	public BinaryCP(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		super(Lop.Type.BinaryCP, dt, vt);		
 		operation = op;		
@@ -63,7 +63,7 @@ public class BinaryCP extends Lop
 	 * @param op
 	 */
 
-	public BinaryCP(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) 
+	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.BinaryCP, dt, vt);		
 		operation = op;		
@@ -183,9 +183,6 @@ public class BinaryCP extends Lop
 			case IQSIZE:
 				return "iqsize"; 
 			
-			case MATMULT:
-				return "ba+*";
-				
 			case SEQINCR:
 				return "seqincr";
 				

@@ -13,7 +13,7 @@ import com.ibm.bi.dml.lops.AppendCP;
 import com.ibm.bi.dml.lops.AppendG;
 import com.ibm.bi.dml.lops.AppendR;
 import com.ibm.bi.dml.lops.Binary;
-import com.ibm.bi.dml.lops.BinaryCP;
+import com.ibm.bi.dml.lops.BinaryScalar;
 import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.BinaryUAggChain;
 import com.ibm.bi.dml.lops.CentralMoment;
@@ -541,7 +541,7 @@ public class BinaryOp extends Hop
 		if (dt1 == dt2 && dt1 == DataType.SCALAR) {
 
 			// Both operands scalar
-			BinaryCP binScalar1 = new BinaryCP(getInput().get(0)
+			BinaryScalar binScalar1 = new BinaryScalar(getInput().get(0)
 					.constructLops(),
 					getInput().get(1).constructLops(), HopsOpOp2LopsBS
 							.get(op), getDataType(), getValueType());
@@ -1452,10 +1452,6 @@ public class BinaryOp extends Hop
 		
 		if ( op == OpOp2.SOLVE ) {
 			_etype = ExecType.CP;
-			/*
-			if ( getMemEstimate() > OptimizerUtils.getMemBudget(true) )
-				throw new HopsException("Insufficient memory to execute function: solve()" );
-				*/
 		}
 		
 		return _etype;

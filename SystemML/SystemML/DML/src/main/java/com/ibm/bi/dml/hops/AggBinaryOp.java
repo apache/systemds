@@ -9,17 +9,17 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.BinaryCP;
+import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
-import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PMMJ;
@@ -34,15 +34,15 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
+import com.ibm.bi.dml.sql.sqllops.SQLCondition.BOOLOP;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
-import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
-import com.ibm.bi.dml.sql.sqllops.SQLCondition.BOOLOP;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
+import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
+import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
+import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)
@@ -168,8 +168,8 @@ public class AggBinaryOp extends Hop
 					case CPMM:	
 						// SPARK_INTEGRATION: MMCJ
 						// TODO: Implement tsmm, pmm, and left transpose rewrite of CP_MM
-						Lop matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-													 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
+						Lop matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+													 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
 						matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 						setLineNumbers( matmultCP );
 						setLops(matmultCP);
@@ -447,8 +447,8 @@ public class AggBinaryOp extends Hop
 		if( isLeftTransposeRewriteApplicable(true, false) )
 			matmultCP = constructCPLopWithLeftTransposeRewrite();
 		else
-			matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType());
+			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);
 		
 		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );
@@ -873,7 +873,7 @@ public class AggBinaryOp extends Hop
 		setLineNumbers(tY);
 		
 		//matrix mult
-		Lop mult = new BinaryCP(tY, X.constructLops(), BinaryCP.OperationTypes.MATMULT, getDataType(), getValueType());	
+		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);	
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
 		

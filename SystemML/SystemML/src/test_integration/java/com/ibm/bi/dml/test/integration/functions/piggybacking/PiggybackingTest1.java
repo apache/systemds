@@ -16,6 +16,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class PiggybackingTest1 extends AutomatedTestBase 
@@ -30,6 +31,23 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	private final static int rows = 500;
 	private final static int cols = 500;
 	private final static double sparsity = 0.3;
+	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		PiggybackingTest1 t = new PiggybackingTest1();
+		t.setUpBase();
+		t.setUp();
+		t.testDistCacheBug_append();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
 	
 	@Override
 	public void setUp() 

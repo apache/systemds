@@ -2,7 +2,7 @@ package com.ibm.bi.dml.test.integration.functions.io;
 
 import java.io.IOException;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 
@@ -36,6 +36,22 @@ public class SeqParReadTest extends AutomatedTestBase {
 	
 	private final static double eps = 1e-9;
 
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		SeqParReadTest t = new SeqParReadTest();
+		t.setUpBase();
+		t.setUp();
+		t.testParReadTextcellSparseBig();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
 	
 	@Override
 	public void setUp() 

@@ -193,7 +193,8 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
+						-Djava.awt.headless=true</argLine>
 
 					<includes>
 						<include>**/*Test.java</include>
@@ -231,9 +232,11 @@
 					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
 
-					<!-- Third argument prevents Java from popping up lots of windows on 
+					<!-- Last argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
+						${integrationTestExtraJVMArgs}
+						-Djava.awt.headless=true</argLine>
 
 					<includes>
 						<include>**/integration/**/*Test.java</include>
@@ -253,10 +256,10 @@
 	<!-- Hack continues: Build profile for long-running tests -->
 	<profiles>
 		<profile>
-			<id>slowtest</id>
+			<id>slowtests</id>
 			<activation>
 				<property>
-					<name>slowtest</name>
+					<name>slowTests</name>
 				</property>
 			</activation>
 			<build>
@@ -269,14 +272,15 @@
 								<id>failsafe-slow</id>
 								<phase>integration-test</phase>
 								<goals>
-									<goal>test</goal>
+									<goal>integration-test</goal>
+									<goal>verify</goal>
 								</goals>
 								<configuration>
 									<excludes>
 										<exclude>none</exclude>
 									</excludes>
 									<includes>
-										<include>**/slowtest/**</include>
+										<include>**/slowtest/**/*Test.java</include>
 									</includes>
 								</configuration>
 							</execution>
@@ -285,10 +289,25 @@
 				</plugins>
 			</build>
 		</profile>
+		<!-- *** END HACK *** -->
+
+		<!-- Profile for Windows builds. -->
+		<profile>
+			<id>platform-windows</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<properties>
+				<!-- Integration tests won't work without native binaries -->
+				<integrationTestExtraJVMArgs>-Dhadoop.home.dir=${basedir}\src\test_integration\config\hadoop_bin_windows
+				-Djava.library.path=${basedir}\src\test_integration\config\hadoop_bin_windows\bin</integrationTestExtraJVMArgs>
+			</properties>
+		</profile>
 	</profiles>
 
 
-	<!-- *** END HACK *** -->
 
 	<dependencies>
 
@@ -431,6 +450,9 @@
 	<!-- <groupId>com.ibm.biginsights</groupId> -->
 
 	<properties>
+		<!--  OS-specific JVM arguments for running integration tests -->
+		<integrationTestExtraJVMArgs></integrationTestExtraJVMArgs>
+	
 		<installDir>/usr/ibm/biginsights/${BIVersion}</installDir>
 	</properties>
 </project>

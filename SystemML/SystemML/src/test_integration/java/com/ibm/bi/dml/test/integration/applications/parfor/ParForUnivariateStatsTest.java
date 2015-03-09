@@ -39,6 +39,23 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 	private final static double minVal=1;    // minimum value in each vector 
 	private final static double maxVal=5; // maximum value in each vector 
 
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		ParForUnivariateStatsTest t = new ParForUnivariateStatsTest();
+		t.setUpBase();
+		t.setUp();
+		t.testParForUnivariateStatsDefaultMR();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	@Override
 	public void setUp() 
 	{

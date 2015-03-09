@@ -803,11 +803,20 @@ public abstract class AutomatedTestBase
 		if (DEBUG) {
 			args.add("-Dsystemml.logging=trace");
 		}
-		args.add("-f");
-		if ( newWay == true )
-			args.add(fullDMLScriptName);
-		else
-			args.add(executionFile);
+		
+		
+		if (newWay == true) {
+			// Need a null pointer check because some tests read DML from a string.
+			if (null != fullDMLScriptName) {
+				args.add("-f");
+				args.add(fullDMLScriptName);
+			}
+		} else {
+			if (null != executionFile) {
+				args.add("-f");
+				args.add(executionFile);
+			}
+		}
 		// program-independent parameters
 		if(VISUALIZE)
 			args.add("-v");

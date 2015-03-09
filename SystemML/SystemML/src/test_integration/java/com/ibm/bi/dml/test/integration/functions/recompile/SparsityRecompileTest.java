@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.Statistics;
 
@@ -44,6 +45,22 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	private final static double sparsity = 0.00001d;    
 	private final static double val = 7.0;
 	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		SparsityRecompileTest t = new SparsityRecompileTest();
+		t.setUpBase();
+		t.setUp();
+		t.testParForRecompile();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
 	
 	@Override
 	public void setUp() 
@@ -126,7 +143,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args",HOME + INPUT_DIR + "V",
+			programArgs = new String[]{"-explain", "-args",HOME + INPUT_DIR + "V",
 					                           Double.toString(val),
 					                           HOME + OUTPUT_DIR + "R" };
 			fullRScriptName = HOME + testname + ".R";

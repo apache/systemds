@@ -26,21 +26,21 @@ public class SequenceMinerTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/external/";
 	private final static String TEST_SEQMINER = "SeqMiner"; 
 	
-	/** 
+	/**
 	 * Main method for running one test at a time.
 	 */
 	public static void main(String[] args) {
-			long startMsec = System.currentTimeMillis();
+		long startMsec = System.currentTimeMillis();
 
-			SequenceMinerTest t= new SequenceMinerTest();
-			t.setUpBase();
-			t.setUp();
-			t.testSequenceMiner();
-			t.tearDown();
-			
-			long elapsedMsec = System.currentTimeMillis() - startMsec;
-			System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-		
+		SequenceMinerTest t = new SequenceMinerTest();
+		t.setUpBase();
+		t.setUp();
+		t.testSequenceMiner();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
 	}
 	
 	@Override

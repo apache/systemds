@@ -50,6 +50,23 @@ public class FullOrderTest extends AutomatedTestBase
 		EMPTY,
 	}
 	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+		
+		FullOrderTest t = new FullOrderTest();
+		t.setUpBase();
+		t.setUp();
+		t.testOrderVectorIndexAscEmptyNoRewriteMR();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	@Override
 	public void setUp() 
 	{

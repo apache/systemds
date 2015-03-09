@@ -21,6 +21,23 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		ElementwiseAdditionTest t = new ElementwiseAdditionTest();
+		t.setUpBase();
+		t.setUp();
+		t.testSparse();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";

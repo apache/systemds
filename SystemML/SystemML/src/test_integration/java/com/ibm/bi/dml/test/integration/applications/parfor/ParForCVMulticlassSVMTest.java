@@ -42,6 +42,23 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 	private final static double lambda = 1.0;
 	private final static int maxiter = 100;
 	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		ParForCVMulticlassSVMTest t = new ParForCVMulticlassSVMTest();
+		t.setUpBase();
+		t.setUp();
+		t.testForCVMulticlassSVMSerialDense();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	@Override
 	public void setUp() 
 	{

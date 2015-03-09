@@ -38,6 +38,23 @@ public class DMLScriptTest2 extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/dmlscript/";
 	
+	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		DMLScriptTest2 t = new DMLScriptTest2();
+		t.setUpBase();
+		t.setUp();
+		t.testWithString();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+	}
+	
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/dmlscript/";

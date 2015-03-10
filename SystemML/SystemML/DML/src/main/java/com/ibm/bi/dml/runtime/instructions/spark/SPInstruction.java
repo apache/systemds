@@ -28,8 +28,10 @@ public abstract class SPInstruction extends Instruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// public enum SPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTertiary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, PMMJ, MatrixReshape, Partition, StringInit }; 
-	public enum SPINSTRUCTION_TYPE { INVALID, MMCJ, MapMult, MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary };
-	protected SPINSTRUCTION_TYPE _sptype;
+	public enum SPINSTRUCTION_TYPE { 
+		INVALID, MMCJ, MapMult, MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary };
+	
+		protected SPINSTRUCTION_TYPE _sptype;
 	protected Operator _optr;
 	
 	protected String _opcode = null;

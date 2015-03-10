@@ -1430,6 +1430,7 @@ public class LibMatrixReorg
 	/**
 	 *
 	 */
+	@SuppressWarnings("unused")
 	private static class AscRowComparator implements Comparator<Integer> 
 	{
 		private MatrixBlock _mb = null;
@@ -1453,6 +1454,7 @@ public class LibMatrixReorg
 	/**
 	 * 
 	 */
+	@SuppressWarnings("unused")
 	private static class DescRowComparator implements Comparator<Integer> 
 	{
 		private MatrixBlock _mb = null;

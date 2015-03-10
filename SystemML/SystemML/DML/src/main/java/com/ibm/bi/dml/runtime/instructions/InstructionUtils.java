@@ -14,12 +14,23 @@ import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.Mean;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 
 
 public class InstructionUtils 
@@ -213,4 +224,103 @@ public class InstructionUtils
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static AggregateUnaryOperator parseBasicAggregateUnaryOperator(String opcode)
+	{
+		AggregateUnaryOperator aggun = null;
+		
+		if ( opcode.equalsIgnoreCase("uak+") ) {
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		} 		
+		else if ( opcode.equalsIgnoreCase("uark+") ) {
+			// RowSums
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uack+") ) {
+			// ColSums
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uamean") ) {
+			// Mean
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uarmean") ) {
+			// RowMeans
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uacmean") ) {
+			// ColMeans
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("ua+") ) {
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uar+") ) {
+			// RowSums
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uac+") ) {
+			// ColSums
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("ua*") ) {
+			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uamax") ) {
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uamin") ) {
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uatrace") ) {
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
+		} 		
+		else if ( opcode.equalsIgnoreCase("uarmax") ) {
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		} 
+		else if (opcode.equalsIgnoreCase("uarimax") ) {
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uarmin") ) {
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		} 
+		else if (opcode.equalsIgnoreCase("uarimin") ) {
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacmax") ) {
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("uacmin") ) {
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		
+		return aggun;
+	}
 }

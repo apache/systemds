@@ -7,10 +7,13 @@
 
 package com.ibm.bi.dml.runtime.functionobjects;
 
-public class IndexFunction extends FunctionObject 
+import java.io.Serializable;
+
+public class IndexFunction extends FunctionObject implements Serializable 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final long serialVersionUID = -7672111359444767237L;
 }

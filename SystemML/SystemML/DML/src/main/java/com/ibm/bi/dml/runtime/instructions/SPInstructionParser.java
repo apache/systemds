@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
@@ -29,8 +30,31 @@ public class SPInstructionParser extends InstructionParser {
 	public static final HashMap<String, SPINSTRUCTION_TYPE> String2SPInstructionType;
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
+		//matrix multiplication operators
 		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.MMCJ);
 		String2SPInstructionType.put( "mapmult",  SPINSTRUCTION_TYPE.MapMult);
+		//unary aggregate operators
+		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uark+"   , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uack+"   , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uamean"  , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarmean" , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uacmean" , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uamax"   , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarmax"  , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarimax",  SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uacmax"  , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uamin"   , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarmin"  , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarimin" , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uacmin"  , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "ua+"     , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uar+"    , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uac+"    , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "ua*"     , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uatrace" , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uaktrace", SPINSTRUCTION_TYPE.AggregateUnary);
+
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "r'"   	    , SPINSTRUCTION_TYPE.Reorg);
 		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -71,23 +95,28 @@ public class SPInstructionParser extends InstructionParser {
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		
-		switch(sptype) {
-		case MMCJ:
-			return MMCJSPInstruction.parseInstruction(str);
-		case MapMult:
-			return MapMultSPInstruction.parseInstruction(str);
-		case MatrixIndexing:
-			return MatrixIndexingSPInstruction.parseInstruction(str);
-		case Reorg:
-			return ReorgSPInstruction.parseInstruction(str);
-		case ArithmeticBinary:
-			return ArithmeticBinarySPInstruction.parseInstruction(str);
-		case RelationalBinary:
-			return RelationalBinarySPInstruction.parseInstruction(str);
-		case INVALID:
-		default:
-			// return null;
-			throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );
+		switch(sptype) 
+		{
+			case MMCJ:
+				return MMCJSPInstruction.parseInstruction(str);
+			case MapMult:
+				return MapMultSPInstruction.parseInstruction(str);
+				
+			case AggregateUnary:
+				return AggregateUnarySPInstruction.parseInstruction(str);
+				
+			case MatrixIndexing:
+				return MatrixIndexingSPInstruction.parseInstruction(str);
+			case Reorg:
+				return ReorgSPInstruction.parseInstruction(str);
+			case ArithmeticBinary:
+				return ArithmeticBinarySPInstruction.parseInstruction(str);
+			case RelationalBinary:
+				return RelationalBinarySPInstruction.parseInstruction(str);
+			
+			case INVALID:
+			default:
+				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );
 		}
 	}
 	

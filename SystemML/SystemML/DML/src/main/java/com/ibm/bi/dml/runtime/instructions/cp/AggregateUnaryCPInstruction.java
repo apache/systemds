@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -18,20 +17,11 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.Mean;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -89,128 +79,6 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 												   out, 
 												   opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase("uak+") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uark+") ) {
-			// RowSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uack+") ) {
-			// ColSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		}
-		else if ( opcode.equalsIgnoreCase("uamean") ) {
-			// Mean
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uarmean") ) {
-			// RowMeans
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uacmean") ) {
-			// ColMeans
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		}
-		else if ( opcode.equalsIgnoreCase("ua+") ) {
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uar+") ) {
-			// RowSums
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uac+") ) {
-			// ColSums
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		}
-		
-		else if ( opcode.equalsIgnoreCase("ua*") ) {
-			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uamax") ) {
-			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-			// return new AggregateUnaryCPInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in, out, str);
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("uamin") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-			// return new AggregateUnaryCPInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("min")), in, out, str);
-		} 
-		else if ( opcode.equalsIgnoreCase("uatrace") ) {
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 		
-		else if ( opcode.equalsIgnoreCase("uarmax") ) {
-			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if (opcode.equalsIgnoreCase("uarimax") ) {
-			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		}
-		
-		else if ( opcode.equalsIgnoreCase("uarmin") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		
-		else if (opcode.equalsIgnoreCase("uarimin") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		}
-		
-		else if ( opcode.equalsIgnoreCase("uacmax") ) {
-			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
-		else if ( opcode.equalsIgnoreCase("uacmin") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);
-		} 
 		else if ( opcode.equalsIgnoreCase("cm")) {
 			/* 
 			 * Exact order of the central moment MAY NOT be known at compilation time.
@@ -235,8 +103,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
 			return new AggregateUnaryCPInstruction(cm, in1, in2, in3, out, opcode, str);
 		}
-		
-		return null;
+		else //DEFAULT BEHAVIOR
+		{
+			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);				
+		}
 	}
 	
 	@Override

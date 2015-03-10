@@ -26,14 +26,52 @@ public class PartialAggregate extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum DirectionTypes {
-		RowCol, Row, Col
+		RowCol, 
+		Row, 
+		Col
 	};
 
-	public enum CorrectionLocationType { NONE, LASTROW, LASTCOLUMN, LASTTWOROWS, LASTTWOCOLUMNS, INVALID };
-	Aggregate.OperationTypes operation;
-	DirectionTypes direction;
-
+	public enum CorrectionLocationType { 
+		NONE, 
+		LASTROW, 
+		LASTCOLUMN, 
+		LASTTWOROWS, 
+		LASTTWOCOLUMNS, 
+		INVALID 
+	};
+	
+	private Aggregate.OperationTypes operation;
+	private DirectionTypes direction;
 	private boolean _dropCorr = false;
+	
+	//optional attribute for spark exec type
+	private boolean _aggregate = true;
+	
+	
+	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
+		throws LopsException 
+	{
+		super(Lop.Type.PartialAggregate, dt, vt);
+		init(input, op, direct, dt, vt, ExecType.MR);
+	}
+
+	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et)
+		throws LopsException 
+	{
+		super(Lop.Type.PartialAggregate, dt, vt);
+		init(input, op, direct, dt, vt, et);
+	}
+	
+	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, boolean aggregate, ExecType et)
+		throws LopsException 
+	{
+		super(Lop.Type.PartialAggregate, dt, vt);
+		init(input, op, direct, dt, vt, et);
+		_aggregate = aggregate;
+	}
 	
 	/**
 	 * Constructor to setup a partial aggregate operation.
@@ -43,7 +81,6 @@ public class PartialAggregate extends Lop
 	 * @return 
 	 * @throws LopsException
 	 */
-
 	private void init(Lop input,
 			Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et) {
@@ -56,7 +93,8 @@ public class PartialAggregate extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		if ( et == ExecType.MR ) {
+		if ( et == ExecType.MR ) 
+		{
 			/*
 			 * This lop CAN NOT be executed in PARTITION, SORT, STANDALONE MMCJ:
 			 * only in mapper.
@@ -68,28 +106,11 @@ public class PartialAggregate extends Lop
 			lps.addCompatibility(JobType.MMRJ);
 			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 		} 
-		else {
+		else //CP | SPARK
+		{
 			lps.addCompatibility(JobType.INVALID);
 			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
-	}
-	
-	public PartialAggregate(
-			Lop input,
-			Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
-			throws LopsException {
-		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, ExecType.MR);
-	}
-
-	public PartialAggregate(
-			Lop input,
-			Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et)
-			throws LopsException {
-		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, et);
 	}
 
 	public void setDropCorrection()
@@ -208,8 +229,9 @@ public class PartialAggregate extends Lop
 		return getOpcode(operation, direction);
 	}
 
-	
-		
+	/**
+	 * Instruction generation for for CP and Spark
+	 */
 	@Override
 	public String getInstructions(String input1, String output) 
 		throws LopsException 
@@ -222,6 +244,12 @@ public class PartialAggregate extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1) );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output) );
+		
+		//in case of spark, we also compile the optional aggregate flag into the instruction.
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _aggregate );	
+		}
 		
 		return sb.toString();
 	}

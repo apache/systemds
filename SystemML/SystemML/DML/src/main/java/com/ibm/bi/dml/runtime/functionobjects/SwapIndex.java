@@ -7,18 +7,22 @@
 
 package com.ibm.bi.dml.runtime.functionobjects;
 
+import java.io.Serializable;
+
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 
 
-public class SwapIndex extends IndexFunction
+public class SwapIndex extends IndexFunction implements Serializable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = -8898087610410746689L;
+
 	private static SwapIndex singleObj = null;
 	
 	private SwapIndex() {

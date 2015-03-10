@@ -98,7 +98,11 @@ public class MatrixObject extends CacheableData
 	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
 	private boolean _pinnedFlag = false; //flag if in-place update TODO maybe rename to updateInPlace
 	
-	private Object _rddHandle = null;
+	//spark-specific handles
+	//TODO we need to extend the notion of dirty variables to 
+	//dirty in CP memory vs pending RDD operations
+	private Object _rddHandle = null; //RDD handle
+	private Object _bcHandle = null; //Broadcast handle
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -345,6 +349,16 @@ public class MatrixObject extends CacheableData
 	public void setRDDHandle( Object rdd )
 	{
 		_rddHandle = rdd;
+	}
+	
+	public Object getBroadcastHandle()
+	{
+		return _bcHandle;
+	}
+	
+	public void setBroadcastHandle( Object bc )
+	{
+		_bcHandle = bc;
 	}
 	
 	
@@ -708,10 +722,11 @@ public class MatrixObject extends CacheableData
 			pWrite = true;  // i.e., export is called from "write" instruction
 		}
 
-		  //actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
-		  if(  isDirty()  ||      //use dirty for skipping parallel exports
+		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
+		if(  isDirty()  ||      //use dirty for skipping parallel exports
+			 getRDDHandle()!=null || //use RDD handle to determine write requirement
 		    (pWrite && !isEqualOutputFormat(outputFormat)) ) 
-		  {
+		{
 		  
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix		
@@ -720,7 +735,10 @@ public class MatrixObject extends CacheableData
 			    //read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				try
 				{
-			        _data = readMatrixFromHDFS( _hdfsFileName );
+					if( getRDDHandle()==null )
+						_data = readMatrixFromHDFS( _hdfsFileName );
+					else
+						_data = readMatrixFromRDD( getRDDHandle() );
 					_dirtyFlag = false;
 				}
 				catch (IOException e)
@@ -758,7 +776,10 @@ public class MatrixObject extends CacheableData
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
 				writeMetaData( fName, outputFormat, formatProperties );
-				MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
+				if( getRDDHandle()==null )
+					MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
+				else //write might 
+					writeMatrixFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
 			}
 			catch (Exception e)
 			{
@@ -1225,6 +1246,9 @@ public class MatrixObject extends CacheableData
 	private MatrixBlock readMatrixFromRDD(Object rdd) 
 		throws IOException
 	{
+		//note: the read of a matrix block from an RDD might trigger
+		//lazy evaluation of pending transformations.
+		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		MatrixBlock mb = null;
@@ -1237,6 +1261,22 @@ public class MatrixObject extends CacheableData
 		}
 		
 		return mb;
+	}
+	
+	/**
+	 * 
+	 * @param rdd
+	 * @param fname
+	 * @param outputFormat
+	 */
+	private void writeMatrixFromRDDtoHDFS(Object rdd, String fname, String outputFormat)
+	{
+		//note: the write of an RDD to HDFS might trigger
+		//lazy evaluation of pending transformations.
+				
+		OutputInfo oinfo = OutputInfo.stringToOutputInfo (outputFormat);
+		SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
+
 	}
 	
 	/**

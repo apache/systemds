@@ -9,23 +9,24 @@ package com.ibm.bi.dml.runtime.controlprogram.context;
 
 //import java.util.LinkedList;
 //import java.util.List;
-
+//
 //import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 //import org.apache.spark.SparkConf;
 //import org.apache.spark.api.java.JavaPairRDD;
 //import org.apache.spark.api.java.JavaSparkContext;
 //import org.apache.spark.broadcast.Broadcast;
-
+//
 //import scala.Tuple2;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
+//import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 //import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 //import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 //import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -41,23 +42,23 @@ public class SparkExecutionContext extends ExecutionContext
 	
 	
 //	private JavaSparkContext _spctx = null; 
-//	
-//	protected SparkExecutionContext(Program prog) 
-//	{
-//		//protected constructor to force use of ExecutionContextFactory
-//		this( true, prog );
-//	}
-//
+	
+	protected SparkExecutionContext(Program prog) 
+	{
+		//protected constructor to force use of ExecutionContextFactory
+		this( true, prog );
+	}
+
 	protected SparkExecutionContext(boolean allocateVars, Program prog) 
 	{
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, prog );
-//
-//		//create a default spark context (master, appname, etc refer to system properties
-//		//as given in the spark configuration or during spark-submit)
+
+		//create a default spark context (master, appname, etc refer to system properties
+		//as given in the spark configuration or during spark-submit)
 //		_spctx = new JavaSparkContext();
 	}
-//	
+	
 //	public JavaSparkContext getSparkContext()
 //	{
 //		return _spctx;
@@ -119,6 +120,10 @@ public class SparkExecutionContext extends ExecutionContext
 //	}
 //	
 //	/**
+//	 * TODO So far we only create broadcast variables but never destroy
+//	 * them. This is a memory leak which might lead to executor out-of-memory.
+//	 * However, in order to handle this, we need to keep track when broadcast 
+//	 * variables are no longer required.
 //	 * 
 //	 * @param varname
 //	 * @return
@@ -130,10 +135,19 @@ public class SparkExecutionContext extends ExecutionContext
 //	{
 //		MatrixObject mo = getMatrixObject(varname);
 //		
-//		//read data into memory (no matter where it comes from)
-//		MatrixBlock mb = mo.acquireRead();
-//		Broadcast<MatrixBlock> bret = _spctx.broadcast(mb);
-//		mo.release();
+//		Broadcast<MatrixBlock> bret = null;
+//		if( mo.getBroadcastHandle()!=null ) 
+//		{
+//			//reuse existing bradcast handle
+//			bret = (Broadcast<MatrixBlock>) mo.getBroadcastHandle();
+//		}
+//		else 
+//		{
+//			//read data into memory (no matter where it comes from)
+//			MatrixBlock mb = mo.acquireRead();
+//			bret = _spctx.broadcast(mb);
+//			mo.release();
+//		}
 //		
 //		return bret;
 //	}
@@ -266,6 +280,20 @@ public class SparkExecutionContext extends ExecutionContext
 //	}
 	
 	/**
+	 * 
+	 * @param rdd
+	 * @param oinfo
+	 */
+	public static void writeRDDtoHDFS( Object rdd, String path, OutputInfo oinfo )
+	{
+//		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>)rdd;
+//		lrdd.saveAsHadoopFile(path, 
+//				oinfo.outputKeyClass, 
+//				oinfo.outputValueClass, 
+//				oinfo.outputFormatClass);
+	}
+	
+	/**
 	 * Returns the available memory budget for broadcast variables in bytes.
 	 * In detail, this takes into account the total executor memory as well
 	 * as relative ratios for data and shuffle. Note, that this is a conservative
@@ -276,22 +304,23 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static double getBroadcastMemoryBudget()
 	{
-		if( _memExecutors < 0 || _memRatioData < 0 || _memRatioShuffle < 0 )
-			analyzeSparkConfiguation();
-		
-		//70% of remaining free memory
-		double membudget = OptimizerUtils.MEM_UTIL_FACTOR *
-			              (  _memExecutors 
-			               - _memExecutors*(_memRatioData+_memRatioShuffle));
-		
-		return membudget;
+//		if( _memExecutors < 0 || _memRatioData < 0 || _memRatioShuffle < 0 )
+//			analyzeSparkConfiguation();
+//		
+//		//70% of remaining free memory
+//		double membudget = OptimizerUtils.MEM_UTIL_FACTOR *
+//			              (  _memExecutors 
+//			               - _memExecutors*(_memRatioData+_memRatioShuffle));
+//		
+//		return membudget;
+		return 0;
 	}
 	
-	/**
-	 * 
-	 */
-	public static void analyzeSparkConfiguation() 
-	{
+//	/**
+//	 * 
+//	 */
+//	public static void analyzeSparkConfiguation() 
+//	{
 //		SparkConf sconf = new SparkConf();
 //		
 //		//parse absolute executor memory
@@ -308,5 +337,5 @@ public class SparkExecutionContext extends ExecutionContext
 //		//get data and shuffle memory ratios (defaults not specified in job conf)
 //		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 //		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
-	}
+//	}
 }

@@ -124,7 +124,19 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 					throw new HopsException(hop.printErrorLocation() + "unexpected non-scalar Data HOP in reblock.\n");
 				}
 			}
-		} else {
+			else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK 
+					  && !(hop instanceof DataOp && ((DataOp)hop).isPersistentReadWrite()) )
+			{
+				//TODO MB this is workaround for Spark until we support reblock 
+				//(otherwise any collects will fail). This workaround should be removed
+				//whenever we don't need it anymore.
+				
+				hop.setRowsInBlock(GLOBAL_BLOCKSIZE);
+				hop.setColsInBlock(GLOBAL_BLOCKSIZE);
+			}
+		} 
+		else //NO DATAOP 
+		{
 			// TODO: following two lines are commented, and the subsequent hack is used instead!
 			//set_rows_per_block(GLOBAL_BLOCKSIZE);
 			//set_cols_per_block(GLOBAL_BLOCKSIZE);

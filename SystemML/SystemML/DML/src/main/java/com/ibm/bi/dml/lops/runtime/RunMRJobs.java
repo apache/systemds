@@ -95,7 +95,7 @@ public class RunMRJobs
 		{
 			//export matrices
 			for(MatrixObject m : inputMatrices) {
-				if ( m.isDirty() )
+				if ( m.isDirty() || m.getRDDHandle()!=null )
 					m.exportData();
 			}
 

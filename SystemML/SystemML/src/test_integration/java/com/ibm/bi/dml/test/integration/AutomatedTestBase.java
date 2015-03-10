@@ -7,9 +7,10 @@
 
 package com.ibm.bi.dml.test.integration;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -17,6 +18,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 
@@ -58,8 +60,21 @@ public abstract class AutomatedTestBase
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
-	protected static final String TEMP_DIR = "./tmp/";
-	protected static final String CONFIG_DIR = "./src/test_integration/config/";
+	
+	/** Location where this class writes files for inspection if DEBUG is set to true. */
+	private static final String DEBUG_TEMP_DIR = "./tmp/";
+	
+	/** Directory under which config files shared across tests are located. */
+	private static final String CONFIG_DIR = "./src/test_integration/config/";
+	
+	/**
+	 * Location of the SystemML config file that we use as a template when
+	 * generating the configs for each test case.
+	 */
+	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
+	
+	/** Location under which we create local temporary directories for test cases. */
+	private static final File LOCAL_TEMP_ROOT = new File("./target/testTemp");
 	
 	
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
@@ -86,6 +101,10 @@ public abstract class AutomatedTestBase
 	protected ArrayList<String> inputDirectories;
 	protected ArrayList<String> inputRFiles;
 	protected ArrayList<String> expectedFiles;
+	
+	private File curLocalTempDir = null;
+	
+
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
 	private long lTimeBeforeTest = 0;
@@ -145,6 +164,32 @@ public abstract class AutomatedTestBase
 			fail("unable to load test configuration");
 
 		return availableTestConfigurations.get(testName);
+	}
+	
+	/**
+	 * Subclasses must call {@link #loadTestConfiguration(TestConfiguration)}
+	 * before calling this method.
+	 * 
+	 * @return the directory where the current test case should write temp
+	 *         files. This directory also contains the current test's customized
+	 *         SystemML config file.
+	 */
+	protected File getCurLocalTempDir() {
+		if (null == curLocalTempDir) {
+			throw new RuntimeException(
+					"Called getCurLocalTempDir() before calling loadTestConfiguration()");
+		}
+		return curLocalTempDir;
+	}
+	
+	/**
+	 * Subclasses must call {@link #loadTestConfiguration(TestConfiguration)}
+	 * before calling this method.
+	 * 
+	 * @return the location of the current test case's SystemML config file
+	 */
+	protected File getCurConfigFile() {
+		return new File(getCurLocalTempDir(), "SystemML-config.xml");
 	}
 
 	/**
@@ -249,7 +294,7 @@ public abstract class AutomatedTestBase
 
 		TestUtils.writeTestMatrix(completePath, matrix, bIncludeR);
 		if (DEBUG)
-			TestUtils.writeTestMatrix(TEMP_DIR + completePath, matrix);
+			TestUtils.writeTestMatrix(DEBUG_TEMP_DIR + completePath, matrix);
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 		return matrix;
 	}
@@ -304,7 +349,7 @@ public abstract class AutomatedTestBase
 			inputRFiles.add(completeRPath);
 		}
 		if (DEBUG)
-			TestUtils.writeTestMatrix(TEMP_DIR + completePath, matrix);
+			TestUtils.writeTestMatrix(DEBUG_TEMP_DIR + completePath, matrix);
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 
 		return matrix;
@@ -406,7 +451,6 @@ public abstract class AutomatedTestBase
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, false);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
@@ -414,11 +458,11 @@ public abstract class AutomatedTestBase
 		if (rowsInBlock == 1 && colsInBlock == 1) {
 			TestUtils.writeBinaryTestMatrixCells(completePath, matrix);
 			if (DEBUG)
-				TestUtils.writeBinaryTestMatrixCells(TEMP_DIR + completePath, matrix);
+				TestUtils.writeBinaryTestMatrixCells(DEBUG_TEMP_DIR + completePath, matrix);
 		} else {
 			TestUtils.writeBinaryTestMatrixBlocks(completePath, matrix, rowsInBlock, colsInBlock, sparseFormat);
 			if (DEBUG)
-				TestUtils.writeBinaryTestMatrixBlocks(TEMP_DIR + completePath, matrix, rowsInBlock, colsInBlock,
+				TestUtils.writeBinaryTestMatrixBlocks(DEBUG_TEMP_DIR + completePath, matrix, rowsInBlock, colsInBlock,
 						sparseFormat);
 		}
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
@@ -583,9 +627,42 @@ public abstract class AutomatedTestBase
 		testVariables.put("readhelper", "Helper = read(\"" + baseDirectory + INPUT_DIR + "helper/in\", "
 				+ "rows=1, cols=2, format=\"text\");");
 		testVariables.put("Routdir", baseDirectory + EXPECTED_DIR);
+		
+		// Create a temporary directory for this test case.
+		// Eventually all files written by the tests should go under here, but making
+		// that change will take quite a bit of effort.
+		try {
+			curLocalTempDir = new File(LOCAL_TEMP_ROOT, String.format("%s/%s",
+					testDirectory, selectedTest));
+			
+			curLocalTempDir.mkdirs();
+			TestUtils.clearDirectory(curLocalTempDir.getPath());
+
+			// Create a SystemML config file for this test case.
+			// Use the canned file under src/test_integration/config as a template
+			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE,
+					"UTF-8");
+			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
+					String.format("<scratch>%s%sscratch_space</scratch>",
+							curLocalTempDir.getPath(), File.separator));
+			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>", 
+					String.format("<localtmpdir>%s%slocaltmp</localtmpdir>",
+							curLocalTempDir.getPath(), File.separator));
+			configContents = configContents.replace("<NimbleScratch>nimbleoutput</NimbleScratch>", 
+					String.format("<NimbleScratch>%s%snimbleoutput</NimbleScratch>",
+							curLocalTempDir.getPath(), File.separator));
+			
+			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
+			
+			System.out.printf(
+					"This test case will use SystemML config file %s\n",
+					getCurConfigFile());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
 		if (DEBUG)
-			TestUtils.clearDirectory(TEMP_DIR + baseDirectory + INPUT_DIR);
+			TestUtils.clearDirectory(DEBUG_TEMP_DIR + baseDirectory + INPUT_DIR);
 	}
 
 	/**
@@ -835,7 +912,7 @@ public abstract class AutomatedTestBase
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}
 		//use optional config file since default under SystemML/DML
-		args.add("-config="+CONFIG_DIR+"SystemML-config.xml");
+		args.add("-config="+ getCurConfigFile().getPath());
 		
 		
 		// program-specific parameters
@@ -912,12 +989,12 @@ public abstract class AutomatedTestBase
 		}
 	}
 	
-	public static void cleanupScratchSpace()
+	public void cleanupScratchSpace()
 	{
 		try 
 		{
 			//parse config file
-			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 
 			// delete the scratch_space and all contents
 			// (prevent side effect between tests)

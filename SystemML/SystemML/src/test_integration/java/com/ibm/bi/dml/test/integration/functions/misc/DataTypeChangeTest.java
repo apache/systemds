@@ -23,6 +23,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
+import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 /**
  * GENERAL NOTE
@@ -166,7 +167,14 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		boolean raisedException = false;
 		try
 		{
-			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			// Tell the superclass about the name of this test, so that the superclass can
+			// create temporary directories.
+			TestConfiguration testConfig = new TestConfiguration(TEST_DIR, fullTestName, 
+						new String[] {});
+			addTestConfiguration(fullTestName, testConfig);
+			loadTestConfiguration(testConfig);
+			
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setConfig(conf);
 			
 			String dmlScriptString="";
@@ -195,7 +203,8 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		catch(Exception ex2)
 		{
 			ex2.printStackTrace();
-			Assert.fail( "Unexpected exception occured during test run." );
+			throw new RuntimeException(ex2);
+			//Assert.fail( "Unexpected exception occured during test run." );
 		}
 		
 		//check correctness

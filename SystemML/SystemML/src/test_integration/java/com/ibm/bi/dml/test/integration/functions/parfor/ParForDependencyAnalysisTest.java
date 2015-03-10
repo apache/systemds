@@ -22,6 +22,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
+import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 /**
  * Different test cases for ParFOR loop dependency analysis:
@@ -56,7 +57,26 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static String DIR = SCRIPT_DIR+"/functions/parfor/";
+	public static final String REL_DIR = "functions/parfor";
+	public static String DIR = SCRIPT_DIR+ "/" + REL_DIR + "/";
+	
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		ParForDependencyAnalysisTest t = new ParForDependencyAnalysisTest();
+		t.setUpBase();
+		t.setUp();
+		t.testDependencyAnalysis1();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	
 	@Override
 	public void setUp() {
@@ -275,7 +295,14 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 		boolean raisedException = false;
 		try
 		{
-			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			// Tell the superclass about the name of this test, so that the superclass can
+			// create temporary directories.
+			TestConfiguration testConfig = new TestConfiguration(REL_DIR, scriptFilename, 
+					new String[] {});
+			addTestConfiguration(scriptFilename, testConfig);
+			loadTestConfiguration(testConfig);
+			
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setConfig(conf);
 			
 			String dmlScriptString="";
@@ -303,7 +330,8 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 		catch(Exception ex2)
 		{
 			ex2.printStackTrace();
-			Assert.fail( "Unexpected exception occured during test run." );
+			throw new RuntimeException(ex2);
+			//Assert.fail( "Unexpected exception occured during test run." );
 		}
 		
 		//check correctness

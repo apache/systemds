@@ -9,7 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 
@@ -24,7 +24,6 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.Statistics;
 
@@ -176,11 +175,12 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals((double)val, dmlfile.get(new CellIndex(1,1)));
+			Assert.assertEquals((Double)val, dmlfile.get(new CellIndex(1,1)));
 		}
 		catch(Exception ex)
 		{
-			Assert.fail("Failed to run test: "+ex.getMessage());
+			throw new RuntimeException(ex);
+			//Assert.fail("Failed to run test: "+ex.getMessage());
 		}
 		finally
 		{

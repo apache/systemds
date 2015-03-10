@@ -7,8 +7,8 @@
 
 package com.ibm.bi.dml.test.utils;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -16,14 +16,12 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -46,8 +44,8 @@ import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.MatrixIndex;
 

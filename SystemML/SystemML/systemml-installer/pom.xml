@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ibm.biginsights</groupId>
-	<artifactId>SystemML</artifactId>
+	<artifactId>BigR-SystemML</artifactId>
 	<name>SystemML rpm installer</name>
 
 	<scm>
@@ -72,7 +72,7 @@
 					<needarch>false</needarch>
 					<mappings>
 						<mapping>
-							<directory>${installDir}/machine-learning</directory>
+							<directory>${installDir}</directory>
 							<filemode>775</filemode>
 							<username>${username}</username>
 							<groupname>${groupname}</groupname>
@@ -89,6 +89,6 @@
 	</build>
 
 	<properties>
-		<installDir>/usr/biginsights/${BIVersion}</installDir>
+		<installDir>/usr/biginsights/machine-learning/${project.version}</installDir>
 	</properties>
 </project>

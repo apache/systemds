@@ -25,9 +25,6 @@
 # fmt: Preferred format of the model file (default is ijv/"text")
 #
 
-order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
-	implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
-	
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
 	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
   
@@ -169,7 +166,7 @@ scaleSplit = function(Matrix[Double] feature_vals,
 		    		Integer is_left_child_pure_4_best,
 		    		Integer is_right_child_pure_4_best,
 		    		Double make_leaf){
-      sorted_feature_vals = order(feature_vals, 1, FALSE)
+      sorted_feature_vals = order(target=feature_vals, by=1, decreasing=FALSE, indexreturn=FALSE)
 		
       /*
        * print("feature=" + i + " sorted feature values:")
@@ -532,7 +529,7 @@ count_thresholds = matrix(0, rows=1, cols=ncol(X))
 thresholds = matrix(0, rows=num_bins+1, cols=ncol(X))
 parfor(i8 in 1:ncol(X)) {
    if(as.scalar(kinds[i8,1]) == 1){
-      [col] = order(X[,i8], 1, FALSE);
+      col = order(target=X[,i8], by=1, decreasing=FALSE, indexreturn=FALSE);
       [col_bins, num_bins_defined] = binning(col, bin_size, num_bins);
       count_thresholds[,i8] = num_bins_defined;
       thresholds[,i8] = col_bins;	

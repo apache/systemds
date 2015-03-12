@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.functionobjects;
 
 import java.util.HashMap;
 
+import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.FDistribution;
@@ -28,22 +29,25 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ParameterizedBuiltin extends ValueFunction
 {
+	private static final long serialVersionUID = -5966242955816522697L;
+	
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
-	public enum ParameterizedBuiltinCode { INVALID, CDF, CDF_NORMAL, CDF_EXP, CDF_CHISQ, CDF_F, CDF_T, RMEMPTY, REPLACE };
+	public enum ParameterizedBuiltinCode { INVALID, CDF, INVCDF, RMEMPTY, REPLACE };
 	public enum ProbabilityDistributionCode { INVALID, NORMAL, EXP, CHISQ, F, T };
 	
 	public ParameterizedBuiltinCode bFunc;
-	
+	public ProbabilityDistributionCode distFunc;
 	
 	static public HashMap<String, ParameterizedBuiltinCode> String2ParameterizedBuiltinCode;
 	static {
 		String2ParameterizedBuiltinCode = new HashMap<String, ParameterizedBuiltinCode>();
 		
 		String2ParameterizedBuiltinCode.put( "cdf", ParameterizedBuiltinCode.CDF);
+		String2ParameterizedBuiltinCode.put( "invcdf", ParameterizedBuiltinCode.INVCDF);
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
 		String2ParameterizedBuiltinCode.put( "replace", ParameterizedBuiltinCode.REPLACE);
 	}
@@ -61,16 +65,23 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	// We should create one object for every builtin function that we support
 	private static ParameterizedBuiltin normalObj = null, expObj = null, chisqObj = null, fObj = null, tObj = null;
+	private static ParameterizedBuiltin inormalObj = null, iexpObj = null, ichisqObj = null, ifObj = null, itObj = null;
 	
 	private ParameterizedBuiltin(ParameterizedBuiltinCode bf) {
 		bFunc = bf;
+		distFunc = ProbabilityDistributionCode.INVALID;
+	}
+	
+	private ParameterizedBuiltin(ParameterizedBuiltinCode bf, ProbabilityDistributionCode dist) {
+		bFunc = bf;
+		distFunc = dist;
 	}
 
-	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str) {
+	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str) throws DMLRuntimeException {
 		return getParameterizedBuiltinFnObject (str, null);
 	}
 
-	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str, String str2) {
+	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str, String str2) throws DMLRuntimeException {
 		
 		ParameterizedBuiltinCode code = String2ParameterizedBuiltinCode.get(str);
 		
@@ -79,39 +90,70 @@ public class ParameterizedBuiltin extends ValueFunction
 			case CDF:
 				// str2 will point the appropriate distribution
 				ProbabilityDistributionCode dcode = String2DistCode.get(str2.toLowerCase());
+				
 				switch(dcode) {
 				case NORMAL:
 					if ( normalObj == null )
-						normalObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_NORMAL);
+						normalObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF, dcode);
 					return normalObj;
 				case EXP:
 					if ( expObj == null )
-						expObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_EXP);
+						expObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF, dcode);
 					return expObj;
 				case CHISQ:
 					if ( chisqObj == null )
-						chisqObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_CHISQ);
+						chisqObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF, dcode);
 					return chisqObj;
 				case F:
 					if ( fObj == null )
-						fObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_F);
+						fObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF, dcode);
 					return fObj;
 				case T:
 					if ( tObj == null )
-						tObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_T);
+						tObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF, dcode);
 					return tObj;
+				default:
+					throw new DMLRuntimeException("Invalid distribution code: " + dcode);
 				}
-				break;
+				
+			case INVCDF:
+				// str2 will point the appropriate distribution
+				ProbabilityDistributionCode distcode = String2DistCode.get(str2.toLowerCase());
+				
+				switch(distcode) {
+				case NORMAL:
+					if ( inormalObj == null )
+						inormalObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.INVCDF, distcode);
+					return inormalObj;
+				case EXP:
+					if ( iexpObj == null )
+						iexpObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.INVCDF, distcode);
+					return iexpObj;
+				case CHISQ:
+					if ( ichisqObj == null )
+						ichisqObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.INVCDF, distcode);
+					return ichisqObj;
+				case F:
+					if ( ifObj == null )
+						ifObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.INVCDF, distcode);
+					return ifObj;
+				case T:
+					if ( itObj == null )
+						itObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.INVCDF, distcode);
+					return itObj;
+				default:
+					throw new DMLRuntimeException("Invalid distribution code: " + distcode);
+				}
 				
 			case RMEMPTY:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.RMEMPTY);
 				
 			case REPLACE:
-				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REPLACE);	
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REPLACE);
+			
+			default:
+				throw new DMLRuntimeException("Invalid parameterized builtin code: " + code);
 		}
-		
-		
-		return null;
 	}
 	
 	public Object clone() throws CloneNotSupportedException {
@@ -121,15 +163,17 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	public double execute(HashMap<String,String> params) throws DMLRuntimeException {
 		switch(bFunc) {
-		case CDF_NORMAL:
-		case CDF_EXP:
-		case CDF_CHISQ:
-		case CDF_F:
-		case CDF_T:
-			try {
-				return computeCDF(bFunc, params);
-			} catch (MathArithmeticException e) {
-				throw new DMLRuntimeException(e);
+		case CDF:
+		case INVCDF:
+			switch(distFunc) {
+			case NORMAL:
+			case EXP:
+			case CHISQ:
+			case F:
+			case T:
+				return computeFromDistribution(distFunc, params, (bFunc==ParameterizedBuiltinCode.INVCDF));
+			default:
+				throw new DMLRuntimeException("Unsupported distribution (" + distFunc + ").");	
 			}
 			
 		default:
@@ -137,84 +181,116 @@ public class ParameterizedBuiltin extends ValueFunction
 		}
 	}
 	
-	private double computeCDF (ParameterizedBuiltinCode bFunc, HashMap<String,String> params ) throws MathArithmeticException, DMLRuntimeException {
+	/**
+	 * Helper function to compute distribution-specific cdf (both lowertail and uppertail) and inverse cdf.
+	 * 
+	 * @param dcode
+	 * @param params
+	 * @param inverse
+	 * @return
+	 * @throws MathArithmeticException
+	 * @throws DMLRuntimeException
+	 */
+	private double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) throws MathArithmeticException, DMLRuntimeException {
 		
-		double quantile = Double.parseDouble(params.get("target"));
+		// given value is "quantile" when inverse=false, and it is "probability" when inverse=true
+		double val = Double.parseDouble(params.get("target"));
 		
-		switch(bFunc) {
-		case CDF_NORMAL:
-			double mean = 0.0, sd = 1.0;
+		boolean lowertail = true;
+		if(params.get("lowertail") != null) {
+			lowertail = Boolean.parseBoolean(params.get("lowertail"));
+		}
+		
+		AbstractRealDistribution distFunction = null;
+		
+		switch(dcode) {
+		case NORMAL:
+			
+			double mean = 0.0, sd = 1.0; // default values for mean and sd
+			
 			String mean_s = params.get("mean"), sd_s = params.get("sd");
-			if ( (mean_s != null && sd_s == null) 
-					|| (mean_s == null && sd_s != null )) {
-				throw new DMLRuntimeException("" +
-						"Both mean and standard deviation must be provided to compute probabilities from normal distribution " +
-						"(e.g., q = cumulativeProbability(1.5, dist=\"normal\", mean=1.2, sd=2.5))");
-			}
-			if ( params.get("mean") != null && params.get("sd") != null ) {
-				mean = Double.parseDouble(params.get("mean"));
-				sd = Double.parseDouble(params.get("sd"));
-			}
-			if ( sd <= 0 ) {
+			if(mean_s != null) mean = Double.parseDouble(mean_s);
+			if(sd_s != null) sd = Double.parseDouble(sd_s);
+			
+			if ( sd <= 0 ) 
 				throw new DMLRuntimeException("Standard deviation for Normal distribution must be positive (" + sd + ")");
-			}
-			NormalDistribution ndist = new NormalDistribution(mean, sd);
-			return ndist.cumulativeProbability(quantile);
+			
+			distFunction = new NormalDistribution(mean, sd);
+			break;
 		
-		case CDF_EXP:
-			if ( params.get("mean") == null ) {
-				throw new DMLRuntimeException("" +
-						"Mean must be specified to compute probabilities from exponential distribution " +
-						"(e.g., q = cumulativeProbability(1.5, dist=\"exp\", mean=1.2))");
+		case EXP:
+			double exp_rate = 1.0; // default value for 1/mean or rate
+			
+			if(params.get("rate") != null) exp_rate = Double.parseDouble(params.get("rate"));
+			if ( exp_rate <= 0 ) {
+				throw new DMLRuntimeException("Rate for Exponential distribution must be positive (" + exp_rate + ")");
 			}
-			double exp_mean = Double.parseDouble(params.get("mean"));
-			if ( exp_mean <= 0 ) {
-				throw new DMLRuntimeException("Mean for Exponential distribution must be positive (" + exp_mean + ")");
-			}
-			ExponentialDistribution expdist = new ExponentialDistribution(exp_mean);
-			return expdist.cumulativeProbability(quantile);
+			// For exponential distribution: mean = 1/rate
+			distFunction = new ExponentialDistribution(1.0/exp_rate);
+			break;
 		
-		case CDF_CHISQ:
+		case CHISQ:
 			if ( params.get("df") == null ) {
 				throw new DMLRuntimeException("" +
-						"Degrees of freedom is needed to compute probabilities from chi-squared distribution " +
-						"(e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
+						"Degrees of freedom must be specified for chi-squared distribution " +
+						"(e.g., q=qchisq(0.5, df=20); p=pchisq(target=q, df=1.2))");
 			}
 			int df = UtilFunctions.parseToInt(params.get("df"));
 			
 			if ( df <= 0 ) {
-				throw new DMLRuntimeException("Degrees of Freedom for ChiSquared distribution must be positive (" + df + ")");
+				throw new DMLRuntimeException("Degrees of Freedom for chi-squared distribution must be positive (" + df + ")");
 			}
-			ChiSquaredDistribution chdist = new ChiSquaredDistribution(df);
-			return chdist.cumulativeProbability(quantile);
+			distFunction = new ChiSquaredDistribution(df);
+			break;
 		
-		case CDF_F:
+		case F:
 			if ( params.get("df1") == null || params.get("df2") == null ) {
 				throw new DMLRuntimeException("" +
-						"Degrees of freedom is needed to compute probabilities from F distribution " +
-						"(e.g., q = cumulativeProbability(1.5, dist=\"f\", df1=20, df2=30))");
+						"Degrees of freedom must be specified for F distribution " +
+						"(e.g., q = qf(target=0.5, df1=20, df2=30); p=pf(target=q, df1=20, df2=30))");
 			}
 			int df1 = UtilFunctions.parseToInt(params.get("df1"));
 			int df2 = UtilFunctions.parseToInt(params.get("df2"));
 			if ( df1 <= 0 || df2 <= 0) {
-				throw new DMLRuntimeException("Degrees of Freedom for F-distribution must be positive (" + df1 + "," + df2 + ")");
+				throw new DMLRuntimeException("Degrees of Freedom for F distribution must be positive (" + df1 + "," + df2 + ")");
 			}
-			FDistribution fdist = new FDistribution(df1, df2);
-			return fdist.cumulativeProbability(quantile);
-		case CDF_T:
+			distFunction = new FDistribution(df1, df2);
+			break;
+			
+		case T:
 			if ( params.get("df") == null ) {
 				throw new DMLRuntimeException("" +
-						"Degrees of freedom is needed to compute probabilities from T distribution " +
-						"(e.g., q = cumulativeProbability(1.5, dist=\"t\", df=10))");
+						"Degrees of freedom is needed to compute probabilities from t distribution " +
+						"(e.g., q = qt(target=0.5, df=10); p = pt(target=q, df=10))");
 			}
 			int t_df = UtilFunctions.parseToInt(params.get("df"));
 			if ( t_df <= 0 ) {
-				throw new DMLRuntimeException("Degrees of Freedom for t-distribution must be positive (" + t_df + ")");
+				throw new DMLRuntimeException("Degrees of Freedom for t distribution must be positive (" + t_df + ")");
 			}
-			TDistribution tdist = new TDistribution(t_df);
-			return tdist.cumulativeProbability(quantile);
+			distFunction = new TDistribution(t_df);
+			break;
+		
+		default:
+			throw new DMLRuntimeException("Invalid distribution code: " + dcode);
+
 		}
 		
-		return 0.0;
+		double ret = Double.NaN;
+		if(inverse) {
+			// inverse cdf
+			ret = distFunction.inverseCumulativeProbability(val);
+		}
+		else if(lowertail) {
+			// cdf (lowertail)
+			ret = distFunction.cumulativeProbability(val);
+		}
+		else {
+			// cdf (upper tail)
+			
+			// TODO: more accurate distribution-specific computation of upper tail probabilities 
+			ret = 1.0 - distFunction.cumulativeProbability(val);
+		}
+		
+		return ret;
 	}
 }

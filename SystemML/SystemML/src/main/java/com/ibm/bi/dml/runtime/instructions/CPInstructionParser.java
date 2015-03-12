@@ -134,11 +134,13 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "round" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "ceil"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "floor" , CPINSTRUCTION_TYPE.BuiltinUnary);
-		String2CPInstructionType.put( "ucumk+" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ucumk+", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "inverse", CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "invcdf"	 	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "groupedagg"	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "replace"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);

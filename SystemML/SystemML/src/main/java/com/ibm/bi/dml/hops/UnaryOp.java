@@ -687,6 +687,15 @@ public class UnaryOp extends Hop
 		return true;
 	}
 	
+	private boolean isInMemoryOperation() {
+		switch(_op) {
+		case INVERSE:
+			return true;
+		default:
+			return false;
+		}
+	}
+	
 	@Override
 	protected ExecType optFindExecType() 
 		throws HopsException 
@@ -703,7 +712,9 @@ public class UnaryOp extends Hop
 				_etype = findExecTypeByMemEstimate();
 			}
 			// Choose CP, if the input dimensions are below threshold or if the input is a vector
-			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			// Also, matrix inverse is currently implemented only in CP (through commons math)
+			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() 
+						|| isInMemoryOperation() )
 			{
 				_etype = ExecType.CP;
 			}

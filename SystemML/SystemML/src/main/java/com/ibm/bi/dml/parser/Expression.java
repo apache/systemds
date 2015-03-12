@@ -94,11 +94,15 @@ public abstract class Expression
 		SOLVE,
 		CEIL,
 		FLOOR,
-		MEDIAN
+		MEDIAN,
+		INVERSE
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {
-		CDF, GROUPEDAGG, RMEMPTY, REPLACE, ORDER, INVALID
+		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
+		// Distribution Functions
+		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
+		INVALID
 	};
 	
 	public enum DataOp {

@@ -926,8 +926,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						xf = 16;
 					return xf * d1m * d1n * d1n; //for 1kx1k ~ 2GFLOP -> 1s
 					
-				case ParameterizedBuiltin: //opcodes: cdf, groupedagg, rmempty
-					if( optype.equals("cdf") )
+				case ParameterizedBuiltin: //opcodes: cdf, invcdf, groupedagg, rmempty
+					if( optype.equals("cdf") || optype.equals("invcdf"))
 						return DEFAULT_NFLOP_UNKNOWN; //scalar call to commons.math
 					else if( optype.equals("groupedagg") ){	
 						double xga = 1;

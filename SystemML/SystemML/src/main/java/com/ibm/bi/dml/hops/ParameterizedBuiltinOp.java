@@ -128,7 +128,7 @@ public class ParameterizedBuiltinOp extends Hop
 						.constructLops());
 			}
 
-			if (   _op == ParamBuiltinOp.CDF ) 
+			if ( _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF ) 
 			{
 				// simply pass the hashmap of parameters to the lop
 
@@ -761,6 +761,7 @@ public class ParameterizedBuiltinOp extends Hop
 		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;	
 		boolean ret = (_op == that2._op
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null
+					  && _paramIndexMap.size() == that2._paramIndexMap.size()
 					  && _outputEmptyBlocks == that2._outputEmptyBlocks
 					  && _outputPermutationMatrix == that2._outputPermutationMatrix );
 		if( ret )

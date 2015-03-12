@@ -9,7 +9,9 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.matrix.data.LibCommonsMath;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
@@ -33,13 +35,22 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 		UnaryOperator u_op = (UnaryOperator) _optr;
 		String output_name = output.getName();
+		MatrixBlock resultBlock = null;
 		
-		MatrixBlock resultBlock = (MatrixBlock) (matBlock.unaryOperations(u_op, new MatrixBlock()));
+		String opcode = getOpcode();
+		if(LibCommonsMath.isSupportedUnaryOperation(opcode)) {
+			resultBlock = LibCommonsMath.unaryOperations((MatrixObject)ec.getVariable(input1.getName()),getOpcode());
+			ec.setMatrixOutput(output_name, resultBlock);
+		}
+		else {
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+			resultBlock = (MatrixBlock) (matBlock.unaryOperations(u_op, new MatrixBlock()));
+			
+			ec.setMatrixOutput(output_name, resultBlock);
+			ec.releaseMatrixInput(input1.getName());
+		}
 		
-		ec.setMatrixOutput(output_name, resultBlock);
-		ec.releaseMatrixInput(input1.getName());
 	}
 }

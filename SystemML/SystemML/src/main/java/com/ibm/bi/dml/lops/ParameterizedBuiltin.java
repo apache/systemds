@@ -27,7 +27,10 @@ public class ParameterizedBuiltin extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum OperationTypes { INVALID, CDF, RMEMPTY, REPLACE };
+	public enum OperationTypes { 
+		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, 
+		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP
+	};
 	
 	private OperationTypes _operation;
 	private HashMap<String, Lop> _inputParams;
@@ -130,7 +133,8 @@ public class ParameterizedBuiltin extends Lop
 		switch(_operation) 
 		{
 			case CDF:
-				sb.append( "cdf" );
+			case INVCDF:
+				sb.append( (_operation == OperationTypes.CDF ? "cdf" : "invcdf") );
 				sb.append( OPERAND_DELIMITOR );
 				
 				for ( String s : _inputParams.keySet() ) 

@@ -28,7 +28,7 @@ public class Unary extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, POW2CM, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, CEIL, FLOOR, CUMSUM, MR_IQM, NOTSUPPORTED
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, POW2CM, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, CEIL, FLOOR, CUMSUM, MR_IQM, INVERSE, NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -102,9 +102,16 @@ public class Unary extends Lop
 		init(input1, op, dt, vt, ExecType.MR);
 	}
 	
+	private ExecType forceExecType(OperationTypes op, ExecType et) {
+		if ( op == OperationTypes.INVERSE )
+			return ExecType.CP;
+		return et;
+	}
 	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 
+		et = forceExecType(op, et);
+		
 		valInput = null;
 
 		this.addInput(input1);
@@ -133,12 +140,12 @@ public class Unary extends Lop
 	@Override
 	public String toString() {
 		if (valInput != null)
-			return " Operation: " + operation + " " + "Label: "
+			return "Operation: " + operation + " " + "Label: "
 					+ valInput.getOutputParameters().getLabel()
 					+ " input types " + this.getInputs().get(0).toString()
 					+ " " + this.getInputs().get(1).toString();
 		else
-			return " Operation: " + operation + " " + "Label: N/A";
+			return "Operation: " + operation + " " + "Label: N/A";
 	}
 
 	private String getOpcode() throws LopsException {
@@ -238,6 +245,9 @@ public class Unary extends Lop
 		
 		case CUMSUM:
 			return "ucumk+";
+			
+		case INVERSE:
+			return "inverse";
 			
 		case MR_IQM:
 			return "mr-iqm";

@@ -224,13 +224,13 @@ if (fileY != " ")
     
     if (Z_logl == Z_logl) {
         Z_logl_absneg = - abs (Z_logl);
-        Z_logl_pValue = 2.0 * cumulativeProbability (target = Z_logl_absneg, dist = "normal", mean = 0, sd = 1);
+        Z_logl_pValue = 2.0 * pnorm(target = Z_logl_absneg);
     }
     if (X2_pearson == X2_pearson & df_pearson > 0) {
-        X2_pearson_pValue = 1 - cumulativeProbability (target = X2_pearson, dist = "chisq", df = df_pearson);
+        X2_pearson_pValue = pchisq(target = X2_pearson, df = df_pearson, lowertail=FALSE);
     }
     if (G2_deviance == G2_deviance & df_deviance > 0) {
-        G2_deviance_pValue = 1 - cumulativeProbability (target = G2_deviance, dist = "chisq", df = df_deviance);
+        G2_deviance_pValue = pchisq(target = G2_deviance, df = df_deviance, lowertail=FALSE);
     }
     
     Z_logl_scaled = Z_logl / sqrt (dispersion);
@@ -239,13 +239,13 @@ if (fileY != " ")
 
     if (Z_logl_scaled == Z_logl_scaled) {
         Z_logl_scaled_absneg = - abs (Z_logl_scaled);
-        Z_logl_scaled_pValue = 2.0 * cumulativeProbability (target = Z_logl_scaled_absneg, dist = "normal", mean = 0, sd = 1);
+        Z_logl_scaled_pValue = 2.0 * pnorm(target = Z_logl_scaled_absneg);
     }
     if (X2_scaled == X2_scaled & df_pearson > 0) {
-        X2_scaled_pValue = 1 - cumulativeProbability (target = X2_scaled, dist = "chisq", df = df_pearson);
+        X2_scaled_pValue = pchisq(target = X2_scaled, df = df_pearson, lowertail=FALSE);
     }
     if (G2_scaled == G2_scaled & df_deviance > 0) {
-        G2_scaled_pValue = 1 - cumulativeProbability (target = G2_scaled, dist = "chisq", df = df_deviance);
+        G2_scaled_pValue = pchisq(target = G2_scaled, df = df_deviance, lowertail=FALSE);
     }
     
     avg_tot_Y = colSums (    Y    ) / sum (Y_counts);

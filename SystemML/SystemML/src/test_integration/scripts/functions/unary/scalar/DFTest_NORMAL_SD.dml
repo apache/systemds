@@ -1,0 +1,20 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+q = qnorm(target=$1, sd=$2);
+p = pnorm(target=q, sd=$2);
+pl = pnorm(target=q, sd=$2, lowertail=FALSE);
+
+out = matrix(0, rows=3, cols=1);
+out[1,1] = q;
+out[2,1] = p;
+out[3,1] = pl;
+
+write(out, $3);

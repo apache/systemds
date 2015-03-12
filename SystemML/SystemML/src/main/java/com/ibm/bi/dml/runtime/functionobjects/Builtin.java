@@ -44,7 +44,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -76,17 +76,23 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "stop"   , BuiltinFunctionCode.STOP);
 		String2BuiltinFunctionCode.put( "ceil"   , BuiltinFunctionCode.CEIL);
 		String2BuiltinFunctionCode.put( "floor"  , BuiltinFunctionCode.FLOOR);
-		String2BuiltinFunctionCode.put( "ucumk+"  , BuiltinFunctionCode.CUMSUM);
+		String2BuiltinFunctionCode.put( "ucumk+" , BuiltinFunctionCode.CUMSUM);
+		String2BuiltinFunctionCode.put( "inverse", BuiltinFunctionCode.INVERSE);
 	}
 	
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
-	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null, cumsumObj=null, stopObj = null;
+	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
+	private static Builtin inverseObj=null, cumsumObj=null, stopObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
+	}
+	
+	public BuiltinFunctionCode getBuiltinFunctionCode() {
+		return bFunc;
 	}
 	
 	public static Builtin getBuiltinFnObject (String str) {
@@ -191,6 +197,10 @@ public class Builtin extends ValueFunction
 			if ( cumsumObj == null )
 				cumsumObj = new Builtin(BuiltinFunctionCode.CUMSUM);
 			return cumsumObj;	
+		case INVERSE:
+			if ( inverseObj == null )
+				inverseObj = new Builtin(BuiltinFunctionCode.INVERSE);
+			return inverseObj;	
 		case STOP:
 			if ( stopObj == null )
 				stopObj = new Builtin(BuiltinFunctionCode.STOP);
@@ -232,6 +242,7 @@ public class Builtin extends ValueFunction
 		case CEIL:
 		case FLOOR:
 		case CUMSUM:
+		case INVERSE:
 			return (_arity == 1);
 		
 		case LOG:

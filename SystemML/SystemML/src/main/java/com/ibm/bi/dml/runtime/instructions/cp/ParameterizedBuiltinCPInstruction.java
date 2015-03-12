@@ -74,8 +74,15 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		ValueFunction func = null;
 		if ( opcode.equalsIgnoreCase("cdf") ) {
 			if ( paramsMap.get("dist") == null ) 
-				throw new DMLRuntimeException("Probability distribution must to be specified to compute cumulative probability. (e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
-			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist") );
+				throw new DMLRuntimeException("Invalid distribution: " + str);
+			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
+			// Determine appropriate Function Object based on opcode
+			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+		}
+		else if ( opcode.equalsIgnoreCase("invcdf") ) {
+			if ( paramsMap.get("dist") == null ) 
+				throw new DMLRuntimeException("Invalid distribution: " + str);
+			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
@@ -113,6 +120,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		ScalarObject sores = null;
 		
 		if ( opcode.equalsIgnoreCase("cdf")) {
+			SimpleOperator op = (SimpleOperator) _optr;
+			double result =  op.fn.execute(params);
+			sores = new DoubleObject(result);
+			ec.setScalarOutput(output.getName(), sores);
+		} 
+		else if ( opcode.equalsIgnoreCase("invcdf")) {
 			SimpleOperator op = (SimpleOperator) _optr;
 			double result =  op.fn.execute(params);
 			sores = new DoubleObject(result);

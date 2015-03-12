@@ -269,7 +269,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B, Double maxDomain) return
 
     # compute p-value
     degFreedom = (nrow(F)-1)*(ncol(F)-1);
-    pValue = 1 - cumulativeProbability(target=chi_squared, dist="chisq", df=degFreedom);
+    pValue = pchisq(target=chi_squared, df=degFreedom, lowertail=FALSE);
 
     # Cramer's V
     R = nrow(F);
@@ -334,7 +334,7 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain)
 	
     AnovaF = bw_mean_square/within_mean_square;
     
-    pval = 1-cumulativeProbability(target=AnovaF, dist="F", df1=bw_df, df2=within_df)
+    pval = pf(target=AnovaF, df1=bw_df, df2=within_df, lowertail=FALSE)
 }
 
 

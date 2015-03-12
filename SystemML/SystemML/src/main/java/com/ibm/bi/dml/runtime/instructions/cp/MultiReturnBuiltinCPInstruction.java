@@ -10,12 +10,6 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.commons.math3.linear.QRDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -25,9 +19,9 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.data.LibCommonsMath;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 
 
 public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction 
@@ -121,109 +115,17 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		String opcode = getOpcode();
+		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
+		MatrixBlock[] out = null;
 		
-		if (opcode.equalsIgnoreCase("qr")) {
-			performQR(ec);
-		}
-		else if ( opcode.equalsIgnoreCase("lu") ) {
-			performLU(ec);
-		}
-		else if ( opcode.equalsIgnoreCase("eigen") ) {
-			performEigen(ec);
-		}
-		else {
+		if(LibCommonsMath.isSupportedMultiReturnOperation(opcode))
+			out = LibCommonsMath.multiReturnOperations(mo, opcode);
+		else 
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
-		}
-	}
 
-	private void performLU(ExecutionContext ec) throws DMLRuntimeException {
-		// Prepare input to commons math function
-		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.getName());
-		if ( mobjInput.getNumRows() != mobjInput.getNumColumns() ) {
-			throw new DMLRuntimeException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + mobjInput.getNumRows() + ", cols="+ mobjInput.getNumColumns() +")");
+		
+		for(int i=0; i < _outputs.size(); i++) {
+			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
 		}
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
-		
-		// Perform LUP decomposition
-		LUDecomposition ludecompose = new LUDecomposition(matrixInput);
-		RealMatrix P = ludecompose.getP();
-		RealMatrix L = ludecompose.getL();
-		RealMatrix U = ludecompose.getU();
-		
-		// Read the results into native format
-		MatrixBlock mbP = DataConverter.convertToMatrixBlock(P.getData());
-		MatrixBlock mbL = DataConverter.convertToMatrixBlock(L.getData());
-		MatrixBlock mbU = DataConverter.convertToMatrixBlock(U.getData());
-		
-		ec.setMatrixOutput(_outputs.get(0).getName(), mbP);
-		ec.setMatrixOutput(_outputs.get(1).getName(), mbL);
-		ec.setMatrixOutput(_outputs.get(2).getName(), mbU);
-		//ec.releaseMatrixInput(input1.getName());
 	}
-	
-	private void performQR(ExecutionContext ec) throws DMLRuntimeException {
-		// Prepare input to commons math function
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
-		
-		// Perform QR decomposition
-		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
-		RealMatrix H = qrdecompose.getH();
-		RealMatrix R = qrdecompose.getR();
-		
-		// Read the results into native format
-		MatrixBlock mbH = DataConverter.convertToMatrixBlock(H.getData());
-		MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
-		
-		ec.setMatrixOutput(_outputs.get(0).getName(), mbH);
-		ec.setMatrixOutput(_outputs.get(1).getName(), mbR);
-	}
-	
-	/**
-	 * Helper function to perform eigen decomposition using commons-math library.
-	 * Input matrix must be a symmetric matrix.
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 */
-	private void performEigen(ExecutionContext ec) throws DMLRuntimeException {
-		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.getName());
-		if ( mobjInput.getNumRows() != mobjInput.getNumColumns() ) {
-			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + mobjInput.getNumRows() + ", cols="+ mobjInput.getNumColumns() +")");
-		}
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
-		
-		EigenDecomposition eigendecompose = new EigenDecomposition(matrixInput, 0.0);
-		RealMatrix eVectorsMatrix = eigendecompose.getV();
-		double[][] eVectors = eVectorsMatrix.getData();
-		double[] eValues = eigendecompose.getRealEigenvalues();
-		
-		//Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
-		int n = eValues.length;
-		for (int i = 0; i < n; i++) {
-		    int k = i;
-		    double p = eValues[i];
-		    for (int j = i + 1; j < n; j++) {
-		        if (eValues[j] < p) {
-		            k = j;
-		            p = eValues[j];
-		        }
-		    }
-		    if (k != i) {
-		        eValues[k] = eValues[i];
-		        eValues[i] = p;
-		        for (int j = 0; j < n; j++) {
-		            p = eVectors[j][i];
-		            eVectors[j][i] = eVectors[j][k];
-		            eVectors[j][k] = p;
-		        }
-		    }
-		}
-
-		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
-		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
-		
-		ec.setMatrixOutput(_outputs.get(0).getName(), mbValues);
-		ec.setMatrixOutput(_outputs.get(1).getName(), mbVectors);
-	}
-
 }

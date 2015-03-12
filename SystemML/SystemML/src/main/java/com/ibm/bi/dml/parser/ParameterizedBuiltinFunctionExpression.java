@@ -10,6 +10,7 @@ package com.ibm.bi.dml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 
 
@@ -22,27 +23,67 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private ParameterizedBuiltinFunctionOp _opcode;
 	private HashMap<String,Expression> _varParams;
 	
+	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
+	static {
+		opcodeMap = new HashMap<String, Expression.ParameterizedBuiltinFunctionOp>();
+		opcodeMap.put("aggregate", Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
+		opcodeMap.put("groupedAggregate", Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
+		opcodeMap.put("removeEmpty",Expression.ParameterizedBuiltinFunctionOp.RMEMPTY);
+		opcodeMap.put("replace", 	Expression.ParameterizedBuiltinFunctionOp.REPLACE);
+		opcodeMap.put("order", 		Expression.ParameterizedBuiltinFunctionOp.ORDER);
+		
+		// Distribution Functions
+		opcodeMap.put("cdf",	Expression.ParameterizedBuiltinFunctionOp.CDF);
+		opcodeMap.put("pnorm",	Expression.ParameterizedBuiltinFunctionOp.PNORM);
+		opcodeMap.put("pt",		Expression.ParameterizedBuiltinFunctionOp.PT);
+		opcodeMap.put("pf",		Expression.ParameterizedBuiltinFunctionOp.PF);
+		opcodeMap.put("pchisq",	Expression.ParameterizedBuiltinFunctionOp.PCHISQ);
+		opcodeMap.put("pexp",	Expression.ParameterizedBuiltinFunctionOp.PEXP);
+		
+		opcodeMap.put("icdf",	Expression.ParameterizedBuiltinFunctionOp.INVCDF);
+		opcodeMap.put("qnorm",	Expression.ParameterizedBuiltinFunctionOp.QNORM);
+		opcodeMap.put("qt",		Expression.ParameterizedBuiltinFunctionOp.QT);
+		opcodeMap.put("qf",		Expression.ParameterizedBuiltinFunctionOp.QF);
+		opcodeMap.put("qchisq",	Expression.ParameterizedBuiltinFunctionOp.QCHISQ);
+		opcodeMap.put("qexp",	Expression.ParameterizedBuiltinFunctionOp.QEXP);
+	}
+	
+	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
+	static {
+		pbHopMap = new HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp>();
+		
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.RMEMPTY, ParamBuiltinOp.RMEMPTY);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.REPLACE, ParamBuiltinOp.REPLACE);
+		
+		// For order, a ReorgOp is constructed with ReorgOp.SORT type
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.ORDER, ParamBuiltinOp.INVALID);
+		
+		// Distribution Functions
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.CDF, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PNORM, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PT, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PF, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PCHISQ, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PEXP, ParamBuiltinOp.CDF);
+		
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.INVCDF, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QNORM, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QT, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QF, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QCHISQ, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QEXP, ParamBuiltinOp.INVCDF);
+	}
+	
 	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed,
 			String fileName, int blp, int bcp, int elp, int ecp){
 	
 		if (functionName == null || paramExprsPassed == null)
 			return null;
 		
-		// check if the function name is built-in function
-		//	 (assign built-in function op if function is built-in)
-		Expression.ParameterizedBuiltinFunctionOp pbifop = null;	
-		if (functionName.equals("cumulativeProbability"))
-			pbifop = Expression.ParameterizedBuiltinFunctionOp.CDF;
-		//'groupedAggregate' for backwards compatibility
-		else if (functionName.equals("aggregate") || functionName.equals("groupedAggregate"))
-			pbifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;
-		else if (functionName.equals("removeEmpty"))
-			pbifop = Expression.ParameterizedBuiltinFunctionOp.RMEMPTY;
-		else if (functionName.equals("replace"))
-			pbifop = Expression.ParameterizedBuiltinFunctionOp.REPLACE;
-		else if (functionName.equals("order"))
-			pbifop = Expression.ParameterizedBuiltinFunctionOp.ORDER;
-		else
+		Expression.ParameterizedBuiltinFunctionOp pbifop = opcodeMap.get(functionName);
+		
+		if ( pbifop == null ) 
 			return null;
 		
 		HashMap<String,Expression> varParams = new HashMap<String,Expression>();
@@ -230,24 +271,18 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break; 
 			
 		case CDF:
-			/*
-			 * Usage: p = cumulativeProbability(x, dist="chisq", df=20);
-			 */
-			
-			// CDF expects one unnamed parameter
-			// it must be renamed as "quantile" 
-			// (i.e., we must compute P(X <= x) where x is called as "quantile" )
-			
-			// check if quantile is of type SCALAR
-			if ( getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
-				raiseValidateError("Quantile to cumulativeProbability() must be a scalar value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			// Output is a scalar
-			output.setDataType(DataType.SCALAR);
-			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(0, 0);
-
+		case INVCDF:
+		case PNORM:
+		case QNORM:
+		case PT:
+		case QT:
+		case PF:
+		case QF:
+		case PCHISQ:
+		case QCHISQ:
+		case PEXP:
+		case QEXP:
+			validateDistributionFunctions(output, conditional);
 			break;
 			
 		case RMEMPTY:
@@ -363,6 +398,89 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		default: //always unconditional (because unsupported operation)
 			raiseValidateError("Unsupported parameterized function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
+		return;
+	}
+	
+	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) throws LanguageException {
+		// CDF and INVCDF expects one unnamed parameter, it must be renamed as "quantile" 
+		// (i.e., we must compute P(X <= x) where x is called as "quantile" )
+		
+		ParameterizedBuiltinFunctionOp op = this.getOpCode();
+		
+		// check if quantile is of type SCALAR
+		if ( getVarParam("target") == null || getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
+			raiseValidateError("target must be provided for distribution functions, and it must be a scalar value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
+		// Distribution specific checks
+		switch(op) {
+		case CDF:
+		case INVCDF:
+			if(getVarParam("dist") == null) {
+				raiseValidateError("For cdf() and icdf(), a distribution function must be specified (as a string).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			break;
+			
+		case QF:
+		case PF:
+			if(getVarParam("df1") == null || getVarParam("df2") == null ) {
+				raiseValidateError("Two degrees of freedom df1 and df2 must be provided for F-distribution.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			break;
+			
+		case QT:
+		case PT:
+			if(getVarParam("df") == null ) {
+				raiseValidateError("Degrees of freedom df must be provided for t-distribution.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			break;
+			
+		case QCHISQ:
+		case PCHISQ:
+			if(getVarParam("df") == null ) {
+				raiseValidateError("Degrees of freedom df must be provided for chi-squared-distribution.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			break;
+			
+			default:
+				break;
+				
+			// Not checking for QNORM, PNORM: distribution parameters mean and sd are optional with default values 0.0 and 1.0, respectively
+			// Not checking for QEXP, PEXP: distribution parameter rate is optional with a default values 1.0
+			
+			// For all cdf functions, additional parameter lowertail is optional with a default value TRUE
+		}
+		
+		// CDF and INVCDF specific checks:
+		switch(op) {
+		case INVCDF:
+		case QNORM:
+		case QF:
+		case QT:
+		case QCHISQ:
+		case QEXP:
+			if(getVarParam("lowertail") != null ) {
+				raiseValidateError("Lower tail argument is invalid while computing inverse cumulative probabilities.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			break;
+			
+		case CDF:
+		case PNORM:
+		case PF:
+		case PT:
+		case PCHISQ:
+		case PEXP:
+			// no checks yet
+			break;
+			
+			default:
+				break;
+		}
+		
+		// Output is a scalar
+		output.setDataType(DataType.SCALAR);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(0, 0);
 		return;
 	}
 

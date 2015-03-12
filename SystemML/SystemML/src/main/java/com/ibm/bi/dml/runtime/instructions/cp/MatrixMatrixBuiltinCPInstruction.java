@@ -7,19 +7,14 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.QRDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.matrix.data.LibCommonsMath;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 
 
 public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
@@ -40,13 +35,12 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+
+		String opcode = getOpcode();
         
-        String opcode = getOpcode();
-        
-        if ( opcode.equalsIgnoreCase("solve") ) {
-        	executeSolve(ec);
+        if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
+        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations((MatrixObject)ec.getVariable(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+    		ec.setMatrixOutput(output.getName(), solution);
         	return;
         }
 		
@@ -54,7 +48,10 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		String output_name = output.getName();
 		BinaryOperator bop = (BinaryOperator) _optr;
 		
-		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		
+        MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
 		
 		ec.setMatrixOutput(output_name, resultBlock);
 		
@@ -62,26 +59,4 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		ec.releaseMatrixInput(input2.getName());
 	}
 	
-	void executeSolve(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input1.getName()));
-		Array2DRowRealMatrix vectorInput = DataConverter.convertToArray2DRowRealMatrix((MatrixObject)ec.getVariable(input2.getName()));
-		
-		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
-		DecompositionSolver lusolver = ludecompose.getSolver();
-		RealMatrix solutionMatrix = lusolver.solve(vectorInput);*/
-		
-		// Setup a solver based on QR Decomposition
-		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
-		DecompositionSolver solver = qrdecompose.getSolver();
-		// Invoke solve
-		RealMatrix solutionMatrix = solver.solve(vectorInput);
-		
-		MatrixBlock solution = DataConverter.convertToMatrixBlock(solutionMatrix.getData());
-		
-		ec.setMatrixOutput(output.getName(), solution);
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
-	}
 }

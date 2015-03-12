@@ -821,7 +821,7 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN, INVERSE
 	}
 
 	// Operations that require two operands
@@ -854,7 +854,7 @@ public abstract class Hop
 	};
 
 	public enum ParamBuiltinOp {
-		INVALID, CDF, GROUPEDAGG, RMEMPTY, REPLACE
+		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE
 	};
 
 	/**
@@ -1010,6 +1010,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.CEIL, com.ibm.bi.dml.lops.Unary.OperationTypes.CEIL);
 		HopsOpOp1LopsU.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.Unary.OperationTypes.FLOOR);
 		HopsOpOp1LopsU.put(OpOp1.CUMSUM, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMSUM);
+		HopsOpOp1LopsU.put(OpOp1.INVERSE, com.ibm.bi.dml.lops.Unary.OperationTypes.INVERSE);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
@@ -1067,12 +1068,14 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.ACOS, "acos");
 		HopsOpOp12String.put(OpOp1.ATAN, "atan");
 		HopsOpOp12String.put(OpOp1.STOP, "stop");
+		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
 	}
 	
 	protected static final HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
 		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.INVCDF);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
 	}

@@ -51,6 +51,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
+import com.ibm.bi.dml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -2393,6 +2394,46 @@ public class DMLTranslator
 		}
 	}
 
+	private Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, HashMap<String,Hop> paramHops) throws HopsException {
+		
+		// Add a hop to paramHops to store distribution information. 
+		// Distribution parameter hops would have been already present in paramHops.
+		Hop distLop = null;
+		switch(op) {
+		case QNORM:
+		case PNORM:
+			distLop = new LiteralOp("normal", "normal");
+			break;
+		case QT:
+		case PT:
+			distLop = new LiteralOp("t", "t");
+			break;
+		case QF:
+		case PF:
+			distLop = new LiteralOp("f", "f");
+			break;
+		case QCHISQ:
+		case PCHISQ:
+			distLop = new LiteralOp("chisq", "chisq");
+			break;
+		case QEXP:
+		case PEXP:
+			distLop = new LiteralOp("exp", "exp");
+			break;
+			
+		case CDF:
+		case INVCDF:
+			break;
+			
+		default:
+			throw new HopsException("Invalid operation: " + op);
+		}
+		if (distLop != null)
+			paramHops.put("dist", distLop);
+		
+		return new ParameterizedBuiltinOp(name, dt, vt, ParameterizedBuiltinFunctionExpression.pbHopMap.get(op), paramHops);
+	}
+	
 	/**
 	 * Construct Hops from parse tree : Process ParameterizedBuiltinFunction Expression in an
 	 * assignment statement
@@ -2423,8 +2464,18 @@ public class DMLTranslator
 		// construct hop based on opcode
 		switch(source.getOpCode()) {
 		case CDF:
-			currBuiltinOp = new ParameterizedBuiltinOp(
-					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.CDF, paramHops);
+		case INVCDF:
+		case QNORM:
+		case QT:
+		case QF:
+		case QCHISQ:
+		case QEXP:
+		case PNORM:
+		case PT:
+		case PF:
+		case PCHISQ:
+		case PEXP:
+			currBuiltinOp = constructDfHop(target.getName(), target.getDataType(), target.getValueType(), source.getOpCode(), paramHops);
 			break;
 			
 		case GROUPEDAGG:
@@ -3067,6 +3118,13 @@ public class DMLTranslator
 			
 		case SOLVE:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
+			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
+			currBuiltinOp.setForcedExecType(ExecType.CP);
+			break;
+			
+		case INVERSE:
+			currBuiltinOp=new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+					Hop.OpOp1.INVERSE, expr);
 			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
 			currBuiltinOp.setForcedExecType(ExecType.CP);
 			break;

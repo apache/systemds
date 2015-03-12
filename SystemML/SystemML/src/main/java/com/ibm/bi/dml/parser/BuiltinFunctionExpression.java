@@ -823,6 +823,21 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(0, 0);
 			break;
 		
+		case INVERSE:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			
+			Identifier in = getFirstExpr().getOutput();
+			if(in.dimsKnown() && in.getDim1() != in.getDim2()) 
+				raiseValidateError("Input to inv() must be square matrix -- given: a " + in.getDim1() + "x" + in.getDim2() + " matrix.", conditional);
+			
+			output.setDimensions(in.getDim1(), in.getDim2());
+			output.setBlockDimensions(in.getRowsInBlock(), in.getColumnsInBlock());
+			break;
+			
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -1234,6 +1249,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.FLOOR;
 		else if (functionName.equals("median"))
 			bifop = Expression.BuiltinFunctionOp.MEDIAN;
+		else if (functionName.equals("inv"))
+			bifop = Expression.BuiltinFunctionOp.INVERSE;
+		
 		else
 			return null;
 		

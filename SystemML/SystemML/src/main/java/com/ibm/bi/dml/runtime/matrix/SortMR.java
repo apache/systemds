@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -237,7 +238,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    //setup partition file
 	    String pfname = MRJobConfiguration.setUpSortPartitionFilename(job);
 	    Path partitionFile = new Path( pfname ); 
-	    URI partitionUri = new URI( partitionFile.toString() + "#" + pfname ); 
+	    URI partitionUri = new URI( URLEncoder.encode(partitionFile.toString() )); // + "#" + pfname ); 
 	   
 	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
 	    Path outpath=new Path(output);

@@ -1864,7 +1864,7 @@ public class Dag<N extends Lop>
 						break;
 						
 					case MapAndReduce:
-						if(branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)&& !tmpNode.definesMRJob())
+						if(branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)&& !tmpNode.definesMRJob()) 
 							queueit = true;
 						code=3;
 						break;
@@ -1924,15 +1924,17 @@ public class Dag<N extends Lop>
 			}
 		}
 
-		// delete marked nodes from finishedNodes and execNodes
-		// add to queued nodes
-		for(N n : markedNodes) {
-			if ( n.usesDistributedCache() )
-				gmrMapperFootprint -= computeFootprintInMapper(n);
-			finishedNodes.remove(n);
-			execNodes.remove(n);
-			removeNodeByJobType(n, jobvec);
-			queuedNodes.add(n);
+		if ( execNodes.size() != markedNodes.size() ) {
+			// delete marked nodes from finishedNodes and execNodes
+			// add to queued nodes
+			for(N n : markedNodes) {
+				if ( n.usesDistributedCache() )
+					gmrMapperFootprint -= computeFootprintInMapper(n);
+				finishedNodes.remove(n);
+				execNodes.remove(n);
+				removeNodeByJobType(n, jobvec);
+				queuedNodes.add(n);
+			}
 		}
 		/*for (int i = 0; i < markedNodes.size(); i++) {
 			finishedNodes.remove(markedNodes.elementAt(i));
@@ -3356,9 +3358,6 @@ public class Dag<N extends Lop>
 					) {
 				// Both rn (a transient write) and its input are root nodes.
 				// Instead of creating two copies of the data, simply generate a cpvar instruction 
-				if ( !resultIndices.contains(Byte.valueOf(Integer.toString(resultIndex))) ) {
-					throw new LopsException("Unexpected error in piggybacking!");
-				}
 				NodeOutput out = setupNodeOutputs(rootNodes.get(i), ExecType.MR, cellModeOverride, true);
 				writeinst.addAll(out.getLastInstructions());
 			}

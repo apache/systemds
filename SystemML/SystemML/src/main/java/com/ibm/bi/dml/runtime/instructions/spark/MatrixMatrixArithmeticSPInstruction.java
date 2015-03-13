@@ -7,11 +7,23 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import java.util.Iterator;
+
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.PairFunction;
+
+import scala.Tuple2;
+
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -34,19 +46,81 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		// Read input matrices
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		if(input1.getDataType() == DataType.MATRIX && input2.getDataType() == DataType.MATRIX) {
+			String opcode = getOpcode();
+			if ( opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
+				|| opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
+				|| opcode.equalsIgnoreCase("^") ) { 
+				// || opcode.equalsIgnoreCase("^2") || opcode.equalsIgnoreCase("^2c-") || opcode.equalsIgnoreCase("*2")) {
+				SparkExecutionContext sec = (SparkExecutionContext)ec;
+				
+				// Get input RDDs
+				String rddVar1 = input1.getName(); 
+				String rddVar2 = input2.getName();
+				
+				MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar1);
+				MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(rddVar2);
+				
+				if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() ||  mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+					throw new DMLRuntimeException("MatrixMatrixArithmeticSPinstruction is only supported for matrices with same blocksizes "
+							+ "[(" + mc1.getRowsPerBlock() + "," + mc1.getColsPerBlock()  + "), (" + mc2.getRowsPerBlock() + "," + mc2.getColsPerBlock() + ")]");
+				}
+				
+				JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( rddVar1 );
+				JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getRDDHandleForVariable( rddVar2 );
+				
+				JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
+				
+				BinaryOperator bop = (BinaryOperator) _optr;
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = cogroupRdd.mapToPair(new RDDMatrixMatrixArithmeticFunction(bop, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+				
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
+			}
+			else {
+				throw new DMLRuntimeException("Unknown opcode in MatrixMatrixArithmeticSPInstruction: " + toString());
+			}
+		}
+		else {
+			throw new DMLRuntimeException("MatrixMatrixArithmeticSPInstruction is only applicable for matrix inputs");
+		}
+	}
+	
+	private static class RDDMatrixMatrixArithmeticFunction implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 8197406787010296291L;
+		private int brlen; 
+		private int bclen;
+		private BinaryOperator op;
 		
-		// Perform computation using input matrices, and produce the result matrix
-		BinaryOperator bop = (BinaryOperator) _optr;
-		MatrixBlock soresBlock = (MatrixBlock) (matBlock1.binaryOperations (bop, matBlock2, new MatrixBlock()));
-		
-		// Release the memory occupied by input matrices
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
-		
-		// Attach result matrix with MatrixObject associated with output_name
-		ec.setMatrixOutput(output.getName(), soresBlock);
+		public RDDMatrixMatrixArithmeticFunction(BinaryOperator op, int brlen, int bclen) {
+			this.op = op;
+			this.brlen = brlen;
+			this.bclen = bclen;
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> kv) throws Exception {
+			// MatrixBlock resultBlk = new MatrixBlock(brlen, bclen, false);
+			Iterator<MatrixBlock> iter1 = kv._2._1.iterator();
+			MatrixBlock blk1 = null;
+			if(iter1.hasNext()) {
+				blk1 = iter1.next();
+			}
+			Iterator<MatrixBlock> iter2 = kv._2._2.iterator();
+			MatrixBlock blk2 = null;
+			if(iter2.hasNext()) {
+				blk2 = iter2.next();
+			}
+			
+			if(blk1 == null || blk2 == null || iter1.hasNext() || iter2.hasNext()) {
+				throw new Exception("The iterator for RDDMatrixMatrixArithmeticFunction should be size of 1");
+			}
+			
+			MatrixBlock resultBlk = (MatrixBlock) (blk1.binaryOperations (op, blk2, new MatrixBlock()));
+			// LibMatrixBincell.bincellOp(blk1, blk2, resultBlk, op);
+			
+			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlk);
+		}
 	}
 }

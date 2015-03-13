@@ -130,7 +130,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
 		
 		//get original matrix
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )

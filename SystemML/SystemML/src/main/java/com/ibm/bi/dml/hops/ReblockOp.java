@@ -99,8 +99,8 @@ public class ReblockOp extends Hop
 			try {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.SPARK )  {
-					// throw new HopsException("constructLops for LeftIndexingOp not implemented for Spark");
-					et = ExecType.MR; // For now, all reblock will happen in MR.
+					throw new HopsException("constructLops for ReblockOp not implemented for Spark");
+					// et = ExecType.MR; // For now, all reblock will happen in MR.
 				}
 				
 				if ( et == ExecType.MR) {
@@ -209,14 +209,8 @@ public class ReblockOp extends Hop
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
-		
-		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
-			_etypeForced = ExecType.SPARK;
-			_etype = ExecType.SPARK;
-			return _etype;
-		}
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE || DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK)
+			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE or SPARK \n");
 		
 		if( _etypeForced != null & _etypeForced != ExecType.MR ) 			
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");

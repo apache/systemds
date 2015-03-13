@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
@@ -357,6 +358,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			else if( target.getOutput().getDataType() != DataType.MATRIX ){
 				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}	
+			
+			//check for unsupported parameters
+			for(String param : getVarParams().keySet())
+				if( !(param.equals("target") || param.equals("by") || param.equals("decreasing") || param.equals("index.return")) )
+					raiseValidateError("Unsupported order parameter: '"+param+"'", false);
 			
 			Expression orderby = getVarParam("by"); //[OPTIONAL] BY
 			if( orderby == null ) { //default first column, good fit for vectors

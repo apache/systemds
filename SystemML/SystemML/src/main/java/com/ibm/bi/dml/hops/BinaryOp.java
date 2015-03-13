@@ -440,7 +440,7 @@ public class BinaryOp extends Hop
 					getDataType(), getValueType());
 
 			SortKeys sort = SortKeys.constructSortByValueLop(
-					combine, SortKeys.OperationTypes.WithNoWeights,
+					combine, SortKeys.OperationTypes.WithoutWeights,
 					DataType.MATRIX, ValueType.DOUBLE, et);
 
 			combine.getOutputParameters().setDimensions(getDim1(),
@@ -474,7 +474,7 @@ public class BinaryOp extends Hop
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
 								getInput().get(0).constructLops(), 
-								SortKeys.OperationTypes.WithNoWeights, 
+								SortKeys.OperationTypes.WithoutWeights, 
 								DataType.MATRIX, ValueType.DOUBLE, et );
 			sort.getOutputParameters().setDimensions(
 					getInput().get(0).getDim1(),

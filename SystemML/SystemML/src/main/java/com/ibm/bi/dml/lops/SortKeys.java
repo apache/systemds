@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,11 +18,38 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class SortKeys extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum OperationTypes { WithWeights, WithNoWeights };
-	OperationTypes operation;
+	public enum OperationTypes { 
+		WithWeights, 
+		WithoutWeights,
+		Indexes,
+	};
+	
+	private OperationTypes operation;
+	private boolean descending = false;
+	
+	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt) {
+		super(Lop.Type.SortKeys, dt, vt);		
+		init(input, null, op, ExecType.MR);
+	}
+
+	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.SortKeys, dt, vt);		
+		init(input, null, op, et);
+	}
+	
+	public SortKeys(Lop input, boolean desc, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.SortKeys, dt, vt);		
+		init(input, null, op, et);
+		descending = desc;
+	}
+
+	public SortKeys(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.SortKeys, dt, vt);		
+		init(input1, input2, op, et);
+	}
 	
 	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
 		this.addInput(input1);
@@ -49,21 +76,7 @@ public class SortKeys extends Lop
 			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, false, false, false);
 		}
 	}
-	
-	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.SortKeys, dt, vt);		
-		init(input, null, op, ExecType.MR);
-	}
 
-	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.SortKeys, dt, vt);		
-		init(input, null, op, et);
-	}
-
-	public SortKeys(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.SortKeys, dt, vt);		
-		init(input1, input2, op, et);
-	}
 
 	@Override
 	public String toString() {
@@ -73,7 +86,7 @@ public class SortKeys extends Lop
 	@Override
 	public String getInstructions(int input_index, int output_index)
 	{
-		return getInstructions(""+input_index, ""+output_index);
+		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 	
 	@Override
@@ -87,6 +100,13 @@ public class SortKeys extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append ( this.prepOutputOperand(output));
+		
+		if( getExecType() == ExecType.MR ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( operation );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( descending );
+		}
 		
 		return sb.toString();
 	}

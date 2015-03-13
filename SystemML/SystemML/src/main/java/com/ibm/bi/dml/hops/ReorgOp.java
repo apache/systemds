@@ -14,6 +14,7 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -43,6 +44,9 @@ public class ReorgOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static boolean FORCE_MR_SORT_INDEXES = true; //FIXME
+	
 	
 	private ReOrgOp op;
 
@@ -187,27 +191,50 @@ public class ReorgOp extends Hop
 							vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp("1", 1L), 
 									HopRewriteUtils.createValueHop(input, true), by, by, false, true);
 							vinput.refreshSizeInformation();
+							HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
 							HopRewriteUtils.copyLineNumbers(this, vinput);	
 						}
 						
-						
-						//Step 2: Index vector sort //TODO generalize large vs small vector
+						//Step 2: Index vector sort 
+						Hop voutput = null;
 						if( OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
-							> OptimizerUtils.getRemoteMemBudgetReduce() ) { 
-							LOG.warn("Unsupported large orderby vector size.");
+							> OptimizerUtils.getRemoteMemBudgetMap(true) 
+							|| FORCE_MR_SORT_INDEXES ) 
+						{ 
+							//large vector, fallback to MR sort
+							//sort indexes according to given values
+							SortKeys sort = new SortKeys(
+									vinput.constructLops(), HopRewriteUtils.getBooleanValueSafe((LiteralOp)desc), 
+									SortKeys.OperationTypes.Indexes, 
+									vinput.getDataType(), vinput.getValueType(), ExecType.MR);
+				
+							sort.getOutputParameters().setDimensions(vinput.getDim1(), 1, 
+									vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
+				
+							setLineNumbers(sort);
+							
+							//note: this sortindexes includes also the shift by offsets and 
+							//final aggregate because sideways passing of offsets would
+							//not nicely fit the current instruction model
+							
+							setLops(sort);
+							voutput = this;
 						}
-						
-						ArrayList<Hop> sinputs = new ArrayList<Hop>();
-						sinputs.add(vinput);
-						sinputs.add(new LiteralOp("1",1)); //by
-						sinputs.add(desc);
-						sinputs.add(new LiteralOp("TRUE", true));
-						ReorgOp voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
-						HopRewriteUtils.copyLineNumbers(this, voutput);	
-						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
-						voutput.setLops( constructCPSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3)) );
-						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-						setLops( voutput.constructLops() );
+						else
+						{
+							//small vector, use in-memory sort
+							ArrayList<Hop> sinputs = new ArrayList<Hop>();
+							sinputs.add(vinput);
+							sinputs.add(new LiteralOp("1",1)); //by (always vector)
+							sinputs.add(desc);
+							sinputs.add(new LiteralOp("TRUE", true)); //indexreturn (always indexes)
+							voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
+							HopRewriteUtils.copyLineNumbers(this, voutput);	
+							//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
+							voutput.setLops( constructCPSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3)) );
+							voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
+							setLops( voutput.constructLops() );								
+						}
 						
 						//Step 3: Data permutation (only required for sorting data) 
 						// -- done via X' = table(seq(), IX') %*% X;
@@ -221,7 +248,7 @@ public class ReorgOp extends Hop
 							HopRewriteUtils.copyLineNumbers(this, seq);	
 							
 							//generate table
-							TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L));
+							TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
 							HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
 							table.refreshSizeInformation();
 							table.setForcedExecType(ExecType.MR); //force MR 

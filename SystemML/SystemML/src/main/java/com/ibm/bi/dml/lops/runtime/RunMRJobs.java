@@ -281,7 +281,7 @@ public class RunMRJobs
 					weightsflag = false;
 				ret = SortMR.runJob(inst, inst.getInputs()[0],  inst.getInputInfos()[0], 
 						inst.getRlens()[0], inst.getClens()[0], inst.getBrlens()[0], inst.getBclens()[0],
-						mapInst, 
+						mapInst, shuffleInst,
 						inst.getIv_numReducers(), inst.getIv_replication(),    
 						inst.getOutputs()[0], inst.getOutputInfos()[0], weightsflag );
 				break;

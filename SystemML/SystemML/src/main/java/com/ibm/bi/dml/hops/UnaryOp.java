@@ -177,7 +177,7 @@ public class UnaryOp extends Hop
 					getDataType(), getValueType());
 
 			SortKeys sort = SortKeys.constructSortByValueLop(
-					combine, SortKeys.OperationTypes.WithNoWeights,
+					combine, SortKeys.OperationTypes.WithoutWeights,
 					DataType.MATRIX, ValueType.DOUBLE, et);
 
 			combine.getOutputParameters().setDimensions(getDim1(),
@@ -211,7 +211,7 @@ public class UnaryOp extends Hop
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
 								getInput().get(0).constructLops(), 
-								SortKeys.OperationTypes.WithNoWeights, 
+								SortKeys.OperationTypes.WithoutWeights, 
 								DataType.MATRIX, ValueType.DOUBLE, et );
 			sort.getOutputParameters().setDimensions(
 					getInput().get(0).getDim1(),
@@ -255,7 +255,7 @@ public class UnaryOp extends Hop
 					input.getNnz());
 
 			SortKeys sort = SortKeys.constructSortByValueLop(combine,
-							           SortKeys.OperationTypes.WithNoWeights,
+							           SortKeys.OperationTypes.WithoutWeights,
 							           DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
 
 			// Sort dimensions are same as the first input
@@ -325,7 +325,7 @@ public class UnaryOp extends Hop
 		else {
 			SortKeys sort = SortKeys.constructSortByValueLop(
 					input.constructLops(), 
-					SortKeys.OperationTypes.WithNoWeights, 
+					SortKeys.OperationTypes.WithoutWeights, 
 					DataType.MATRIX, ValueType.DOUBLE, et );
 			sort.getOutputParameters().setDimensions(
 					input.getDim1(),

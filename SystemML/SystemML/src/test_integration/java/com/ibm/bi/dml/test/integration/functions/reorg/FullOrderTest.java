@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.slowtest.integration.functions.reorg;
+package com.ibm.bi.dml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 
@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -39,6 +40,7 @@ public class FullOrderTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1017;
+	private final static int rows2 = 2057;
 	private final static int cols1 = 7;	
 	private final static int by = 3;
 	private final static double sparsity1 = 0.7;
@@ -268,8 +270,6 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.CP);
 	}
 	
-	//TODO
-	
 	@Test
 	public void testOrderMatrixDataAscDenseMR() 
 	{
@@ -461,6 +461,200 @@ public class FullOrderTest extends AutomatedTestBase
 	{
 		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.MR);
 	}
+
+	//TODO enable all index tests as soon as sort piggybacking issue is fixed.
+	
+	@Test
+	public void testOrderMatrixDataAscDenseMR2() 
+	{
+		runOrderTest(true, InputType.DENSE, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexAscDenseMR2() 
+//	{
+//		runOrderTest(true, InputType.DENSE, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataAscSparseMR2() 
+	{
+		runOrderTest(true, InputType.SPARSE, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexAscSparseMR2() 
+//	{
+//		runOrderTest(true, InputType.SPARSE, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataAscEmptyMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexAscEmptyMR2() 
+//	{
+//		runOrderTest(true, InputType.EMPTY, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataDescDenseMR2() 
+	{
+		runOrderTest(true, InputType.DENSE, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexDescDenseMR2() 
+//	{
+//		runOrderTest(true, InputType.DENSE, true, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataDescSparseMR2() 
+	{
+		runOrderTest(true, InputType.SPARSE, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexDescSparseMR2() 
+//	{
+//		runOrderTest(true, InputType.SPARSE, true, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataDescEmptyMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexDescEmptyMR2() 
+//	{
+//		runOrderTest(true, InputType.EMPTY, true, true, true, ExecType.MR, true);
+//	}
+
+	@Test
+	public void testOrderVectorDataAscDenseMR2() 
+	{
+		runOrderTest(false, InputType.DENSE, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexAscDenseMR2() 
+//	{
+//		runOrderTest(false, InputType.DENSE, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataAscSparseMR2() 
+	{
+		runOrderTest(false, InputType.SPARSE, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexAscSparseMR2() 
+//	{
+//		runOrderTest(false, InputType.SPARSE, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataAscEmptyMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexAscEmptyMR2() 
+//	{
+//		runOrderTest(false, InputType.EMPTY, false, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataDescDenseMR2() 
+	{
+		runOrderTest(false, InputType.DENSE, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexDescDenseMR2() 
+//	{
+//		runOrderTest(false, InputType.DENSE, true, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataDescSparseMR2() 
+	{
+		runOrderTest(false, InputType.SPARSE, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexDescSparseMR2() 
+//	{
+//		runOrderTest(false, InputType.SPARSE, true, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataDescEmptyMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, false, true, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexDescEmptyMR2() 
+//	{
+//		runOrderTest(false, InputType.EMPTY, true, true, true, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataAscEmptyNoRewriteMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, false, false, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexAscEmptyNoRewriteMR2() 
+//	{
+//		runOrderTest(true, InputType.EMPTY, false, true, false, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderMatrixDataDescEmptyNoRewriteMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, false, false, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderMatrixIndexDescEmptyNoRewriteMR2() 
+//	{
+//		runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.MR, true);
+//	}
+
+	@Test
+	public void testOrderVectorDataAscEmptyNoRewriteMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, false, false, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexAscEmptyNoRewriteMR2() 
+//	{
+//		runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.MR, true);
+//	}
+	
+	@Test
+	public void testOrderVectorDataDescEmptyNoRewriteMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, false, false, ExecType.MR, true);
+	}
+	
+//	@Test
+//	public void testOrderVectorIndexDescEmptyNoRewriteMR2() 
+//	{
+//		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.MR, true);
+//	}
 	
 	//SPECIFIC REWRITE TESTS 
 	
@@ -482,7 +676,17 @@ public class FullOrderTest extends AutomatedTestBase
 	 */
 	private void runOrderTest( boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType)
 	{
-		runOrderTest(TEST_NAME1, matrix, dtype, desc, ixreturn, rewrite, instType);
+		runOrderTest(TEST_NAME1, matrix, dtype, desc, ixreturn, rewrite, instType, false);
+	}
+	
+	private void runOrderTest( String testname, boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType)
+	{
+		runOrderTest(TEST_NAME1, matrix, dtype, desc, ixreturn, rewrite, instType, false);
+	}
+	
+	private void runOrderTest( boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType, boolean forceDistSort)
+	{
+		runOrderTest(TEST_NAME1, matrix, dtype, desc, ixreturn, rewrite, instType, forceDistSort);
 	}
 	
 	/**
@@ -491,10 +695,11 @@ public class FullOrderTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runOrderTest( String testname, boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType)
+	private void runOrderTest( String testname, boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType, boolean forceDistSort)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean rewriteOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		boolean forceOpOld = ReorgOp.FORCE_MR_SORT_INDEXES;
 		
 		try
 		{
@@ -503,8 +708,9 @@ public class FullOrderTest extends AutomatedTestBase
 			//set flags
 			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
+			ReorgOp.FORCE_MR_SORT_INDEXES = forceDistSort;
 			
-			int rows = rows1;
+			int rows = matrix ? rows1 : rows2;
 			int cols = matrix ? cols1 : 1;
 			int bycol = matrix ? by : 1;
 			double sparsity = dtype==InputType.DENSE ? sparsity1 : sparsity2;
@@ -549,6 +755,7 @@ public class FullOrderTest extends AutomatedTestBase
 			//reset flags
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewriteOld;
+			ReorgOp.FORCE_MR_SORT_INDEXES = forceOpOld;
 		}
 	}
 	

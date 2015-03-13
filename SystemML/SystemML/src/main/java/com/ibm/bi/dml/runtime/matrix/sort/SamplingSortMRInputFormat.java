@@ -5,7 +5,6 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-
 package com.ibm.bi.dml.runtime.matrix.sort;
 
 import java.io.IOException;
@@ -154,7 +153,7 @@ extends SequenceFileInputFormat<K,V>
 	    //get input converter information
 		int brlen = MRJobConfiguration.getNumRowsPerBlock(conf, (byte) 0);
 		int bclen = MRJobConfiguration.getNumColumnsPerBlock(conf, (byte) 0);
-		String instruction=conf.get(SortMR.INSTRUCTION);
+		String instruction=conf.get(SortMR.COMBINE_INSTRUCTION);
 		
 	    //indicate whether the matrix value in this mapper is a matrix cell or a matrix block
 	    int partitions = conf.getNumReduceTasks();
@@ -166,6 +165,7 @@ extends SequenceFileInputFormat<K,V>
 	    int sampleStep = splits.length / samples;
 	    // take N samples from different parts of the input
 	    
+	    int totalcount = 0;
 	    for(int i=0; i < samples; ++i) {
 	    	SequenceFileRecordReader reader = 
 	    		(SequenceFileRecordReader) inFormat.getRecordReader(splits[sampleStep * i], conf, null);
@@ -179,21 +179,25 @@ extends SequenceFileInputFormat<K,V>
 	    		while(inputConverter.hasNext())
 	    		{
 	    			Pair pair=inputConverter.next();
-	    			if(instruction==null || instruction.isEmpty())
-	    			{
-	    				sampler.addValue((WritableComparable) pair.getKey());
-	    			}else
-	    			{
-	    				sampler.addValue(new DoubleWritable(((MatrixCell)pair.getValue()).getValue()));
+	    			if( pair.getKey() instanceof DoubleWritable ){
+	    				sampler.addValue(new DoubleWritable(((DoubleWritable)pair.getKey()).get()));		
 	    			}
-	    			
-		    		count++;
+	    			else if( pair.getValue() instanceof MatrixCell ) {
+	    				sampler.addValue(new DoubleWritable(((MatrixCell)pair.getValue()).getValue()));				
+	    			}
+	    			else	
+	    				throw new IOException("SamplingSortMRInputFormat unsupported key/value class: "+pair.getKey().getClass()+":"+pair.getValue().getClass());
+	    				
+	    			count++;
 	    		}
 	    		key = (WritableComparable) reader.createKey();
 	    		value = (Writable) reader.createValue();
 	    	}
+	    	totalcount += count;
 	    }
-	   // System.out.println(sampler);
+	   
+	    if( totalcount == 0 ) //empty input files
+	    	sampler.addValue(new DoubleWritable(0));
 	    
 	    FileSystem outFs = partFile.getFileSystem(conf);
 	    if (outFs.exists(partFile)) {
@@ -205,6 +209,7 @@ extends SequenceFileInputFormat<K,V>
 	    int index0=-1;
 	    int i=0;
 	    boolean lessthan0=true;
+	    
 	    for(WritableComparable splitValue: sampler.createPartitions(partitions)) {
 	    	writer.append(splitValue, nullValue);
 	    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0)

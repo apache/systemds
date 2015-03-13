@@ -8,7 +8,8 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	DiagV2MTest.class,
-	FullTransposeTest.class
+	FullTransposeTest.class,
+	FullOrderTest.class
 })
 
 

@@ -36,6 +36,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionParser;
@@ -80,6 +81,7 @@ import com.ibm.bi.dml.runtime.matrix.data.WeightedPair;
 import com.ibm.bi.dml.runtime.matrix.data.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class MRJobConfiguration 
 {
@@ -442,7 +444,8 @@ public class MRJobConfiguration
 	}
 	
 	
-	public static void setOutputInfo(JobConf job, int i, OutputInfo outputinfo, boolean sourceInBlock)
+	public static void setOutputInfo(JobConf job, int i, OutputInfo outputinfo, boolean sourceInBlock) 
+		throws DMLRuntimeException
 	{
 		Class<? extends Converter> converterClass;
 		if(sourceInBlock)
@@ -470,7 +473,7 @@ public class MRJobConfiguration
 			else if(outputinfo.outputValueClass.equals(WeightedPair.class))
 				converterClass=IdenticalConverter.class;
 			else
-				throw new RuntimeException("unsupported conversion: " + outputinfo.outputValueClass);
+				throw new DMLRuntimeException("unsupported conversion: " + outputinfo.outputValueClass);
 				// converterClass=IdenticalConverter.class; 
 		}
 		job.setClass(OUTPUT_CONVERTER_CLASS_PREFIX_CONFIG+i, converterClass, Converter.class);
@@ -1273,6 +1276,9 @@ public class MRJobConfiguration
 	{
 		JobClient client=new JobClient(job);
 		int n=client.getClusterStatus().getMaxReduceTasks();
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() )
+			n = (int)Math.max( n, YarnClusterAnalyzer.getNumCores()/2 );
 		n=Math.min(n, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS));
 		n=Math.min(n, numFromCompiler);
 		if(numReducerGroups>0)

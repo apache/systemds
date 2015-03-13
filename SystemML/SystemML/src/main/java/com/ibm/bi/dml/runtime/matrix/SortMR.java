@@ -10,9 +10,8 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,50 +19,63 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Partitioner;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.SortKeys;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import com.ibm.bi.dml.runtime.matrix.sort.CompactInputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortComparable;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortComparableDesc;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortMapper;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortReducer;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortStitchupReducer;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
+import com.ibm.bi.dml.runtime.matrix.sort.IndexSortStitchupMapper;
+import com.ibm.bi.dml.runtime.matrix.sort.ValueSortMapper;
+import com.ibm.bi.dml.runtime.matrix.sort.ValueSortReducer;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
+/**
+ * TODO fix issues sortindex mappers
+ */
 public class SortMR 
 {
 
     @SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
-  public static final String NUM_VALUES_PREFIX="num.values.in";
-  public static final String INSTRUCTION = "instruction.before.sort";
-  static final String VALUE_IS_WEIGHT="value.is.weight";
-  private static final Log LOG = LogFactory.getLog(SortMR.class.getName());
-  
+	
+    private static final Log LOG = LogFactory.getLog(SortMR.class.getName());
+    
+    public static final String NUM_VALUES_PREFIX="num.values.in";
+    public static final String COMBINE_INSTRUCTION = "combine.instruction";
+    public static final String SORT_INSTRUCTION = "sort.instruction";
+    public static final String VALUE_IS_WEIGHT="value.is.weight";
+    public static final String SORT_INDEXES_OFFSETS = "sort.indexes.offsets";
+    public static final String SORT_DECREASING = "sort.decreasing";
+    
+    
   	private SortMR() {
 		//prevent instantiation via private constructor
 	}
@@ -73,14 +85,14 @@ public class SortMR
    * A partitioner that splits text keys into roughly equal partitions
    * in a global sorted order.
    */
-  @SuppressWarnings("unchecked")
-static class TotalOrderPartitioner<K extends WritableComparable, V extends Writable> 
-  implements Partitioner<K, V>{
-   
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private static class TotalOrderPartitioner<K extends WritableComparable, V extends Writable> 
+                      implements Partitioner<K, V>
+  { 
 	private ArrayList<WritableComparable> splitPoints;
     private Class<? extends WritableComparable> keyClass;
     private Class<? extends Writable> valueClass;
- 
+    
     /**
      * Read the cut points from the given sequence file.
      * @param fs the file system
@@ -91,19 +103,23 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
      * @throws IllegalAccessException 
      * @throws InstantiationException 
      */
-    private ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, 
-                                         JobConf job) throws IOException {
+    private ArrayList<WritableComparable> readPartitions(FileSystem fs, Path p, JobConf job) 
+    	throws IOException 
+    {
     	SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);
     	ArrayList<WritableComparable> parts = new ArrayList<WritableComparable>();
-    	WritableComparable key;
-		try {
-			key = keyClass.newInstance();
+    	try 
+    	{
+			//WritableComparable key = keyClass.newInstance();
+    		DoubleWritable key = new DoubleWritable();
 			NullWritable value = NullWritable.get();
 			while (reader.next(key, value)) {
 				parts.add(key);
-				key=keyClass.newInstance();
+				//key=keyClass.newInstance();
+				key = new DoubleWritable();
 			}
-		} catch (Exception e) {
+		} 
+    	catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
 		
@@ -113,18 +129,20 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 
     public void configure(JobConf job) {
       try {
-    	  keyClass=(Class<? extends WritableComparable>) job.getOutputKeyClass();
-          valueClass=(Class<? extends Writable>) job.getOutputValueClass();
-        FileSystem fs = FileSystem.get(job);
-        Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job)); 
-        splitPoints = readPartitions(fs, partFile, job);
-     //   System.out.println("num reducers: "+job.getNumReduceTasks());
-       } catch (IOException ie) {
+    	  keyClass=(Class<? extends WritableComparable>) job.getMapOutputKeyClass();
+          valueClass=(Class<? extends Writable>) job.getMapOutputValueClass();
+          FileSystem fs = FileSystem.get(job);
+          Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job)); 
+          splitPoints = readPartitions(fs, partFile, job);
+        
+      } 
+      catch (IOException ie) {
         throw new IllegalArgumentException("can't read paritions file", ie);
       }
     }
 
     public TotalOrderPartitioner() {
+    	
     }
 
     public int getPartition(K key, V value, int numPartitions) {
@@ -135,142 +153,90 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		int i=0;
 		for( ; i<splitPoints.size(); i++)
 		{
+			//always ascending (support for ascending/descending) is
+			//controlled via IndexSortComparable/IndexSortComparableDesc
 			if(key.compareTo(splitPoints.get(i))<=0)
 				return i;
+			
 		}
 		return i;
 	}
     
   }
- 
-  static class InnerMapper<KIN extends WritableComparable, VIN extends Writable, KOUT extends WritableComparable, VOUT extends Writable> 
-  extends MapReduceBase implements Mapper<KIN, VIN, KOUT, VOUT>
-  {
-	  private int brlen;
-	private int bclen;
-	//private String instruction;
-	private CombineUnaryInstruction combineInstruction=null;
-	private Converter<KIN, VIN, KOUT, VOUT> inputConverter;
-	private IntWritable one=new IntWritable(1);
-	private DoubleWritable combinedKey=new DoubleWritable();
-	
-	public void map(KIN key, VIN value, OutputCollector<KOUT, VOUT> out,
-			Reporter reporter) throws IOException {
-		inputConverter.convert(key, value);
-		while(inputConverter.hasNext())
-		{
-			Pair pair=inputConverter.next();
-			if(combineInstruction==null)
-			{
-				//System.out.println("output: "+pair.getKey()+": "+pair.getValue());
-				out.collect((KOUT) pair.getKey(), (VOUT)pair.getValue());
-			}else
-			{
-				processCombineUnaryInstruction(pair, out);
-			}
-		}
-	} 
-	
-	private void processCombineUnaryInstruction(Pair pair, OutputCollector<KOUT, VOUT> out) 
-	throws IOException
-	{
-		combinedKey.set(((MatrixCell)pair.getValue()).getValue());
-		out.collect((KOUT)combinedKey, (VOUT)one);
-		//System.out.println("output: "+combinedKey+": "+one);
-	}
-	
-	public void configure(JobConf job)
-	{
-		//System.out.println("enter map.configuration");
-		brlen = MRJobConfiguration.getNumRowsPerBlock(job, (byte) 0);
-		bclen = MRJobConfiguration.getNumColumnsPerBlock(job, (byte) 0);
-		String str=job.get(SortMR.INSTRUCTION);
-		if(str!=null && !str.isEmpty())
-			try {
-				combineInstruction=(CombineUnaryInstruction) CombineUnaryInstruction.parseInstruction(str);
-			} catch (DMLRuntimeException e) {
-				throw new RuntimeException(e);
-			}
-		inputConverter = MRJobConfiguration.getInputConverter(job, (byte) 0);
-		inputConverter.setBlockSize(brlen, bclen);
-	}
-  }
-  
-  static class InnerReducer<K extends WritableComparable, V extends Writable> extends MapReduceBase implements Reducer<K, V, K, V>
-  {
-	  private String taskID=null;
-	  private boolean valueIsWeight=false;
-	  private long count=0;
-	
-	public void configure(JobConf job)
-	{
-		taskID=MapReduceTool.getUniqueKeyPerTask(job, false);
-		valueIsWeight=job.getBoolean(VALUE_IS_WEIGHT, false);
-	}
-
-	@Override
-	public void reduce(K key, Iterator<V> values, OutputCollector<K, V> out,
-			Reporter report) throws IOException {
-		int sum=0;
-		while(values.hasNext())
-		{
-			V value=values.next();
-			out.collect(key, value);
-			if(valueIsWeight)
-				sum+=((IntWritable)value).get();
-			else
-				sum++;
-		}
-		count+=sum;
-		report.incrCounter(NUM_VALUES_PREFIX, taskID, sum);
-	}
-  }
   
 	public static JobReturn runJob(MRJobInstruction inst, String input, InputInfo inputInfo, long rlen, long clen, 
-			int brlen, int bclen, String instructionBeforesort, int numReducers, 
+			int brlen, int bclen, String combineInst, String sortInst, int numReducers, 
 			int replication, String output, OutputInfo outputInfo, boolean valueIsWeight) 
 	  throws Exception 
 	  {
+	    boolean sortIndexes = getSortInstructionType(sortInst)==SortKeys.OperationTypes.Indexes;
+	    String tmpOutput = sortIndexes ? MRJobConfiguration.constructTempOutputFilename() : output;
+	    
 	    JobConf job = new JobConf(SortMR.class);
-	    Path inputDir = new Path(input);
-	    inputDir = inputDir.makeQualified(inputDir.getFileSystem(job));
+	    job.setJobName("SortMR");
 	    
 	    //setup partition file
 	    String pfname = MRJobConfiguration.setUpSortPartitionFilename(job);
 	    Path partitionFile = new Path( pfname ); 
-	    URI partitionUri = new URI( URLEncoder.encode(partitionFile.toString() )); // + "#" + pfname ); 
+	    URI partitionUri = new URI( partitionFile.toString() ); 
 	   
+	    //setup input/output paths
+	    Path inputDir = new Path(input);
+	    inputDir = inputDir.makeQualified(inputDir.getFileSystem(job));
 	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
-	    Path outpath=new Path(output);
-	    FileOutputFormat.setOutputPath(job, outpath);
-	    
+	    Path outpath = new Path(tmpOutput);
+	    FileOutputFormat.setOutputPath(job, outpath);	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    //detect whether this is running in local mode or not, since if local mode, the number of reducers are hard set to 1 no matter what
-	    if(job.get("mapred.job.tracker").indexOf("local")>=0)
+	    
+	    //set number of reducers (1 if local mode)
+	    if( InfrastructureAnalyzer.isLocalMode(job) )
 	    	job.setNumReduceTasks(1);
 	    else
 	    	MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
-	    job.setJobName("SortMR");
-	    job.setOutputKeyClass(outputInfo.outputKeyClass);
-	    job.setOutputValueClass(outputInfo.outputValueClass);
-	  //  job.setMapOutputValueClass(WeightedCell.class);
+	    
+	    //setup input/output format
 	    job.setInputFormat(SamplingSortMRInputFormat.class);
 	    SamplingSortMRInputFormat.setTargetKeyValueClasses(job, (Class<? extends WritableComparable>) outputInfo.outputKeyClass, outputInfo.outputValueClass);
-	    job.setOutputFormat(CompactOutputFormat.class);
-	    job.setPartitionerClass(TotalOrderPartitioner.class);
-	    job.setMapperClass(InnerMapper.class);
-	    job.setReducerClass(InnerReducer.class);
-	    if(instructionBeforesort!=null)
-	    	job.set(INSTRUCTION, instructionBeforesort);
+	    
+	    //setup instructions and meta information
+	    if(combineInst!=null&&!combineInst.trim().isEmpty())
+	    	job.set(COMBINE_INSTRUCTION, combineInst);
+	    job.set(SORT_INSTRUCTION, sortInst);
+	    job.setBoolean(VALUE_IS_WEIGHT, valueIsWeight);
+	    boolean desc = getSortInstructionDescending(sortInst);
+	    job.setBoolean(SORT_DECREASING, desc);
 	    MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
 	    MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, brlen, bclen, ConvertTarget.CELL);
 	    int partitionWith0=SamplingSortMRInputFormat.writePartitionFile(job, partitionFile);
+	    
+	    //setup mapper/reducer/partitioner/output classes
+	    if( getSortInstructionType(sortInst)==SortKeys.OperationTypes.Indexes ){
+		    MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, brlen, bclen, ConvertTarget.CELL);
+		    job.setOutputFormat(OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
+	    	job.setMapperClass(IndexSortMapper.class);
+		    job.setReducerClass(IndexSortReducer.class);
+		    job.setMapOutputKeyClass( !desc ? IndexSortComparable.class : IndexSortComparableDesc.class);
+		    job.setMapOutputValueClass(LongWritable.class);		    
+		    job.setOutputKeyClass(MatrixIndexes.class); 
+		    job.setOutputValueClass(MatrixBlock.class);   
+	    }
+	    else { //default case: SORT w/wo weights
+	    	MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, brlen, bclen, ConvertTarget.CELL);
+	    	job.setOutputFormat(CompactOutputFormat.class);
+		    job.setMapperClass(ValueSortMapper.class);
+		    job.setReducerClass(ValueSortReducer.class);	
+		    job.setOutputKeyClass(outputInfo.outputKeyClass); //double
+		    job.setOutputValueClass(outputInfo.outputValueClass); //int
+	    }
+	    job.setPartitionerClass(TotalOrderPartitioner.class);
+	    
+	    
+	    //setup distributed cache
 	    DistributedCache.addCacheFile(partitionUri, job);
 	    DistributedCache.createSymlink(job);
+	    
+	    //setup replication factor
 	    job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
-	  //  System.out.println("num reducers: "+job.getNumReduceTasks());
-	    job.setBoolean(VALUE_IS_WEIGHT, valueIsWeight);
 	    
 		MatrixCharacteristics[] s = new MatrixCharacteristics[1];
 		s[0] = new MatrixCharacteristics(rlen, clen, brlen, bclen);
@@ -282,19 +248,19 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job);
 		
-		
+		//run mr job
 	    RunningJob runjob=JobClient.runJob(job);
 		Group group=runjob.getCounters().getGroup(NUM_VALUES_PREFIX);
 		numReducers=job.getNumReduceTasks();
-
+		
+		//process final meta data
 		long[] counts=new long[numReducers];
 		long total=0;
-		for(int i=0; i<numReducers; i++)
-		{
+		for(int i=0; i<numReducers; i++) {
 			counts[i]=group.getCounter(Integer.toString(i));
 			total+=counts[i];
-		//	System.out.println("partition "+i+": "+counts[i]);
 		}
+		
 		//add missing 0s back to the results
 		long missing0s=0;
 		if(total<rlen*clen)
@@ -305,53 +271,115 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		}else
 			partitionWith0=-1;
 		
-	//	runSelect(output, "some", counts, new double[]{0.4, 0.2, 0.41, 0.7});
-	//	runSelect(output, "some", counts, 0.25, 0.75);//new double[]{0.4, 0.2, 0.45, 0.7});
-	  //  LOG.info("done");
-	    MapReduceTool.deleteFileIfExistOnHDFS( pfname );
-	    return new JobReturn(s[0], counts, partitionWith0, missing0s, runjob.isSuccessful());
-	  }
-
-  /*
-  public static void runSelect(String input, String output, long[] counts, double[] probs) throws IOException
-  {
-	  	JobConf job = new JobConf(SortMR.class);
-	    Path inputDir = new Path(input);
-	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
-	    Path outpath=new Path(output);
-	    FileOutputFormat.setOutputPath(job, outpath);
-	    
+		if( sortIndexes ) {
+			//run builtin job for shifting partially sorted blocks according to global offsets
+			//we do this in this custom form since it would not fit into the current structure
+			//of systemml to output two intermediates (partially sorted data, offsets) out of a 
+			//single SortKeys lop
+			boolean success = runjob.isSuccessful();
+			if( success ) {
+				success = runStitchupJob(tmpOutput, rlen, clen, brlen, bclen, counts, numReducers, replication, output);
+			}
+			MapReduceTool.deleteFileIfExistOnHDFS( tmpOutput );	
+			MapReduceTool.deleteFileIfExistOnHDFS( pfname );
+			return new JobReturn(s[0], OutputInfo.BinaryBlockOutputInfo, success);
+		}
+		else
+		{
+			MapReduceTool.deleteFileIfExistOnHDFS( pfname );
+		    return new JobReturn(s[0], counts, partitionWith0, missing0s, runjob.isSuccessful());
+		}
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static SortKeys.OperationTypes getSortInstructionType(String str)
+	{
+		String[] parts = str.split(Lop.OPERAND_DELIMITOR);
+		return SortKeys.OperationTypes.valueOf(parts[parts.length-2]);
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static boolean getSortInstructionDescending(String str)
+	{
+		String[] parts = str.split(Lop.OPERAND_DELIMITOR);
+		return Boolean.parseBoolean(parts[5]);
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param counts
+	 * @param numReducers
+	 * @param replication
+	 * @param output
+	 * @throws Exception
+	 */
+	private static boolean runStitchupJob(String input, long rlen, long clen, int brlen, int bclen, long[] counts,
+			int numReducers, int replication, String output) 
+	  throws Exception 
+	  {
+	    JobConf job = new JobConf(SortMR.class);
+	    job.setJobName("SortIndexesMR");
+	   
+	    //setup input/output paths
+	    Path inpath = new Path(input);
+	    Path outpath = new Path(output);
+	    FileInputFormat.setInputPaths(job, inpath);
+	    FileOutputFormat.setOutputPath(job, outpath);	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    job.setNumReduceTasks(0);
-	    job.setJobName("select");
-	    job.setOutputKeyClass(MatrixIndexes.class);
-	    job.setOutputValueClass(MatrixCell.class);
-	    PickFromCompactInputFormat.setKeyValueClasses(job, DoubleWritable.class, IntWritable.class);
-	    job.setInputFormat(PickFromCompactInputFormat.class);
-	    PickFromCompactInputFormat.setPickRecordsInEachPartFile(job, counts, probs);
-	    job.setMapperClass(IdentityMapper.class);
-	    RunningJob runjob=JobClient.runJob(job);
-  }
-  
-  public static void runSelect(String input, String output, long[] counts, double lbound, double ubound) throws IOException
-  {
-	  	JobConf job = new JobConf(SortMR.class);
-	    Path inputDir = new Path(input);
-	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
-	    Path outpath=new Path(output);
-	    FileOutputFormat.setOutputPath(job, outpath);
 	    
-	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    job.setNumReduceTasks(0);
-	    job.setJobName("select");
-	    job.setOutputKeyClass(MatrixIndexes.class);
-	    job.setOutputValueClass(MatrixCell.class);
-	    PickFromCompactInputFormat.setKeyValueClasses(job, DoubleWritable.class, IntWritable.class);
-	    job.setInputFormat(PickFromCompactInputFormat.class);
-	    PickFromCompactInputFormat.setPickRecordsInEachPartFile(job, counts, lbound, ubound);
-	    job.setMapperClass(IdentityMapper.class);
-	    RunningJob runjob=JobClient.runJob(job);
-  }
-  */
-  
+	    //set number of reducers (1 if local mode)
+	    if( InfrastructureAnalyzer.isLocalMode(job) )
+	    	job.setNumReduceTasks(1);
+	    else
+	    	MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
+	    	    
+	    //setup input/output format
+	    InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+	    OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+	    job.setInputFormat(iinfo.inputFormatClass);
+	    job.setOutputFormat(oinfo.outputFormatClass);
+	    CompactInputFormat.setKeyValueClasses(job, MatrixIndexes.class, MatrixBlock.class);
+	    
+	    //setup mapper/reducer/output classes
+	    MRJobConfiguration.setInputInfo(job, (byte)0, InputInfo.BinaryBlockInputInfo, brlen, bclen, ConvertTarget.BLOCK);
+	    job.setMapperClass(IndexSortStitchupMapper.class);
+		job.setReducerClass(IndexSortStitchupReducer.class);	
+		job.setOutputKeyClass(oinfo.outputKeyClass);
+		job.setOutputValueClass(oinfo.outputValueClass); 
+	    MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
+	    MRJobConfiguration.setMatricesDimensions(job, new byte[]{0}, new long[]{rlen}, new long[]{clen});
+	    
+	    //compute shifted prefix sum of offsets and put into configuration
+	    long[] cumsumCounts = new long[counts.length];
+	    long sum = 0;
+	    for( int i=0; i<counts.length; i++ ) {
+	    	cumsumCounts[i] = sum;
+	    	sum += counts[i];
+	    }
+	    job.set(SORT_INDEXES_OFFSETS, Arrays.toString(cumsumCounts));
+	    
+	    //setup replication factor
+	    job.setInt("dfs.replication", replication);
+	    
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job);
+		
+		//run mr job
+	    RunningJob runJob = JobClient.runJob(job);
+	    
+	    return runJob.isSuccessful();
+	}
 }

@@ -45,7 +45,7 @@ public class ReorgOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static boolean FORCE_MR_SORT_INDEXES = true; //FIXME
+	public static boolean FORCE_MR_SORT_INDEXES = false;
 	
 	
 	private ReOrgOp op;

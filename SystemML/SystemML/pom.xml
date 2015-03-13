@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
 	<name>SystemML compiler</name>
@@ -140,6 +141,7 @@
 						<!-- <addClasspath>true</addClasspath> -->
 						<!-- </manifest> -->
 						<manifestEntries>
+							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
 							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
 						</manifestEntries>
 					</archive>
@@ -231,7 +233,7 @@
 					<!-- Tests are grouped into suites, one suite per package. -->
 					<parallel>suites</parallel>
 					<threadCount>1</threadCount>
-					
+
 					<!-- 2 processes per test -->
 					<forkCount>0.5C</forkCount>
 					<reuseForks>false</reuseForks>
@@ -280,11 +282,27 @@
 									<goal>verify</goal>
 								</goals>
 								<configuration>
+									<!-- STDERR/STDOUT to individual .txt files instead of console -->
+									<redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+									<!-- Tests are grouped into suites, one suite per package. -->
+									<parallel>suites</parallel>
+									<threadCount>1</threadCount>
+
+									<!-- 2 processes per test -->
+									<forkCount>0.5C</forkCount>
+									<reuseForks>false</reuseForks>
+
+									<!-- Last argument prevents Java from popping up lots of windows 
+										on MacOS -->
+									<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
+										${integrationTestExtraJVMArgs}
+										-Djava.awt.headless=true</argLine>
 									<excludes>
 										<exclude>none</exclude>
 									</excludes>
 									<includes>
-										<include>**/slowtest/**/*Test.java</include>
+										<include>**/slowtest/**/*Suite.java</include>
 									</includes>
 								</configuration>
 							</execution>
@@ -306,7 +324,7 @@
 			<properties>
 				<!-- Integration tests won't work without native binaries -->
 				<integrationTestExtraJVMArgs>-Dhadoop.home.dir=${basedir}\src\test_integration\config\hadoop_bin_windows
-				-Djava.library.path=${basedir}\src\test_integration\config\hadoop_bin_windows\bin</integrationTestExtraJVMArgs>
+					-Djava.library.path=${basedir}\src\test_integration\config\hadoop_bin_windows\bin</integrationTestExtraJVMArgs>
 			</properties>
 		</profile>
 	</profiles>
@@ -462,9 +480,9 @@
 	<!-- <groupId>com.ibm.biginsights</groupId> -->
 
 	<properties>
-		<!--  OS-specific JVM arguments for running integration tests -->
+		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
-	
+
 		<installDir>/usr/ibm/biginsights/${BIVersion}</installDir>
 	</properties>
 </project>

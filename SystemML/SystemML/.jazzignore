@@ -41,5 +41,6 @@ core.ignore= \
 	{75ce52cf} \
 	{bin} \
 	{dependency-reduced-pom.xml} \
+	{mvn.out} \
 	{scratch_space} \
 	{target} 

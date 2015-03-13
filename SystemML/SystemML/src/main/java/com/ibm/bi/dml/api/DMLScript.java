@@ -62,6 +62,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -101,9 +102,10 @@ public class DMLScript
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
-	public static boolean ENABLE_PYTHON_PARSING = false;
+	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
+	
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -276,6 +278,10 @@ public class DMLScript
 		boolean oldvisualize = VISUALIZE; //keep old visualize	
 		ExplainType oldexplain = EXPLAIN; //keep old explain	
 		
+		// Reset global flags to avoid errors in test suite
+		ENABLE_DEBUG_MODE = false;
+		
+		boolean parsePyDML = false;
 		try
 		{
 			String fnameOptConfig = null; //optional config filename
@@ -303,8 +309,8 @@ public class DMLScript
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
-				else if( args[i].equalsIgnoreCase("-python") ) {					
-					ENABLE_PYTHON_PARSING = true;
+				else if( args[i].equalsIgnoreCase("-python") ) {
+					parsePyDML = true;
 				}
 				else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
 					namedScriptArgs = args[i].startsWith("-nvargs"); i++;
@@ -332,10 +338,10 @@ public class DMLScript
 			printInvocationInfo(args[1], fnameOptConfig, argVals);
 			if (ENABLE_DEBUG_MODE) {
 				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
-				launchDebugger(dmlScriptStr, fnameOptConfig, argVals);
+				launchDebugger(dmlScriptStr, fnameOptConfig, argVals, parsePyDML);
 			}
 			else {
-				execute(dmlScriptStr, fnameOptConfig, argVals, args);
+				execute(dmlScriptStr, fnameOptConfig, argVals, args, parsePyDML);
 			}
 			
 			ret = true;
@@ -564,7 +570,7 @@ public class DMLScript
 	 * @throws DMLException 
 	 */
 	@SuppressWarnings("unused")
-	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs )
+	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				
 		//print basic time and environment info
@@ -582,7 +588,7 @@ public class DMLScript
 		
 		//Step 3: parse dml script
 		DMLProgram prog = null;
-		if(DMLScript.ENABLE_PYTHON_PARSING) {
+		if(parsePyDML) {
 			PyDMLParserWrapper parser = new PyDMLParserWrapper();
 			prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		}
@@ -654,11 +660,11 @@ public class DMLScript
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
-	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals)
+	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{		
 		//produce debugging information (parse, compile and generate runtime program for a given DML script)
-		DMLDebuggerProgramInfo p = compileForDebug(dmlScriptStr, fnameOptConfig, argVals);
+		DMLDebuggerProgramInfo p = compileForDebug(dmlScriptStr, fnameOptConfig, argVals, parsePyDML);
 		
 		try {
 			//set execution environment
@@ -696,7 +702,7 @@ public class DMLScript
 	 */
 	//TODO: MB: remove this redundant compile and execute (or at least remove from DMLScript)
 	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
-	public static DMLDebuggerProgramInfo compileForDebug(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals )
+	public static DMLDebuggerProgramInfo compileForDebug(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
 			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
 	{					
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
@@ -706,7 +712,7 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		if(DMLScript.ENABLE_PYTHON_PARSING) {
+		if(parsePyDML) {
 			PyDMLParserWrapper parser = new PyDMLParserWrapper();
 			dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		}
@@ -815,17 +821,23 @@ public class DMLScript
 		
 		
 		/////////////////////////// execute program //////////////////////////////////////
-		Statistics.startRunTimer();		
+		Statistics.startRunTimer();
+		ExecutionContext ec = null;
 		try 
 		{  
 			initHadoopExecution( conf );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
-			ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);
+			ec = ExecutionContextFactory.createContext(rtprog);
 			rtprog.execute( ec );  
+			
 		}
 		finally //ensure cleanup/shutdown
 		{	
+			if(ec != null && ec instanceof SparkExecutionContext) {
+				((SparkExecutionContext) ec).close();
+			}
+			
 			//display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 			LOG.info(Statistics.display());

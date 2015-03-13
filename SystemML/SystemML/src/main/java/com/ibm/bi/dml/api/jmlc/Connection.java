@@ -90,10 +90,10 @@ public class Connection
 	 * @return
 	 * @throws DMLException
 	 */
-	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs ) 
+	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
 	{
-		return prepareScript(script, new HashMap<String,String>(), inputs, outputs);
+		return prepareScript(script, new HashMap<String,String>(), inputs, outputs, parsePyDML);
 	}
 	
 	/**
@@ -105,7 +105,7 @@ public class Connection
 	 * @return
 	 * @throws DMLException
 	 */
-	public PreparedScript prepareScript( String script, HashMap<String, String> args, String[] inputs, String[] outputs ) 
+	public PreparedScript prepareScript( String script, HashMap<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
 	{
 		//prepare arguments
@@ -116,7 +116,7 @@ public class Connection
 		{
 			//parsing
 			DMLProgram prog = null;
-			if(DMLScript.ENABLE_PYTHON_PARSING) {
+			if(parsePyDML) {
 				PyDMLParserWrapper parser = new PyDMLParserWrapper();
 				prog = parser.parse(null, script, args);
 			}

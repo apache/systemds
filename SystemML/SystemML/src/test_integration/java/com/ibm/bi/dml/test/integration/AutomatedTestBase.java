@@ -76,8 +76,10 @@ public abstract class AutomatedTestBase
 	/** Location under which we create local temporary directories for test cases. */
 	private static final File LOCAL_TEMP_ROOT = new File("./target/testTemp");
 	
-	
+	// Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test suite in spark mode
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	
+	
 	protected static final boolean DEBUG = false;
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;

@@ -130,7 +130,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 	 * @throws DMLException
 	 * @throws IOException
 	 */
-	private ArrayList<double[][]> execDMLScriptviaJMLC( ArrayList<double[][]> X ) 
+	private ArrayList<double[][]> execDMLScriptviaJMLC( ArrayList<double[][]> X) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -142,9 +142,12 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 				
 		try
 		{
+			// Note for Matthias: For now, JMLC pipeline only allows dml
+			boolean parsePyDML = false;
+			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"});
+			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"}, parsePyDML);
 			
 			//read model
 			String modelData = conn.readScript(SCRIPT_DIR + TEST_DIR + MODEL_FILE );

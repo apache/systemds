@@ -10,6 +10,8 @@ import org.junit.runners.Suite;
   ApplyTransformTest.class,
   ArimaTest.class,
   GNMFTest.class,
+  PyDMLGNMFTest.class,
+  PyDMLLinearRegressionTest.class,
   HITSTest.class,
   L2SVMTest.class,
   LinearLogRegTest.class,

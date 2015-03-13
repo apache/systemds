@@ -2876,9 +2876,6 @@ public class MatrixBlock extends MatrixValue implements Serializable
 						double newMaxValue = newWithCor.quickGetValue(r, 1);
 						double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						
-						System.err.printf("Row %d: currMaxValue = %e; newMaxIndex = %d; newMaxValue = %e; update = %f\n",
-								r, currMaxValue, newMaxIndex, newMaxValue, update);
-						
 						if (2.0 == update) {
 							// Return value of 2 ==> both values the same, break ties
 							// in favor of higher index.

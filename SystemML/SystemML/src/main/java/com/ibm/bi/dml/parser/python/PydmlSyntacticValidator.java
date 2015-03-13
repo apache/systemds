@@ -1413,6 +1413,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		boolean ignoreLValue = false;
 		if(ctx.targetList == null || ctx.targetList.size() == 0 || ctx.targetList.get(0).isEmpty()) {
 			helper.notifyErrorListeners("function call needs to have lvalue (Quickfix: change it to \'tmpVar = " + functionName + "(...)\')", ctx.name);
+			return;
 		}
 		String fileName = helper.getCurrentFileName();
 		int line = ctx.start.getLine();

@@ -156,8 +156,8 @@ public class BranchRemovalTest extends AutomatedTestBase
 			}
 				
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

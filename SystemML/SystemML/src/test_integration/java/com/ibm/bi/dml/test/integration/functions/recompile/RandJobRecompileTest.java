@@ -100,8 +100,8 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			int expectedNumCompiled = (estSizeEval?1:2); //rand, write
 			int expectedNumExecuted = 0;			
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

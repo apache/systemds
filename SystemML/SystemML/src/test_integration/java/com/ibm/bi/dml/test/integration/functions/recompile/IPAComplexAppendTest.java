@@ -121,8 +121,8 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			int expectedNumCompiled = (rewrites&&IPA)?2:3; //(GMR mm,) GMR append, GMR sum
 			int expectedNumExecuted = rewrites?0:1; //(GMR mm) 			
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

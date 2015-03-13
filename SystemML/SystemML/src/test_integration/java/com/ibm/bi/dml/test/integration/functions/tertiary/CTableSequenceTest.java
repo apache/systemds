@@ -208,7 +208,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			//5 instead of 4 for rewrite because we dont pull it into the map task yet.
 			//2 for CP due to reblock jobs for input and table
 			int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 5 : 6))+(withAgg ? 1 : 0);
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
 			
 		}
 		finally

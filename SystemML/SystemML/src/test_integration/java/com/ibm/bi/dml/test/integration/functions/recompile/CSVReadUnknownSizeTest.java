@@ -144,8 +144,8 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			int expectedNumCompiled = (rewrites && !splitDags) ? 2 : 3; //reblock, GMR
 			int expectedNumExecuted = splitDags ? 0 : rewrites ? 2 : 2;			
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		catch(Exception ex)
 		{

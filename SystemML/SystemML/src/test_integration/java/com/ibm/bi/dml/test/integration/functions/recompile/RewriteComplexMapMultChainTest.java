@@ -162,8 +162,8 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			int expectedNumCompiled = (et==ExecType.CP)?1:(singleCol?4:6); //mapmultchain if single column
 			int expectedNumExecuted = (et==ExecType.CP)?0:(singleCol?4:6); //mapmultchain if single column
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

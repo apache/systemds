@@ -157,8 +157,8 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			int expectedNumCompiled = (IPA) ? (TEST_NAME.equals(TEST_NAME5)?4:1) : (TEST_NAME.equals(TEST_NAME5)?5:4); //reblock, 2xGMR foo, GMR 
 			int expectedNumExecuted = 0;			
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

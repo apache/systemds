@@ -108,8 +108,8 @@ public class OuterProductTest extends AutomatedTestBase
 			int expectedNumCompiled = 4; //REBLOCK, MMRJ, GMR, GMR write
 			int expectedNumExecuted = 4; //REBLOCK, MMRJ, GMR, GMR write
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		
 		}
 		finally

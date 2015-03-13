@@ -152,8 +152,8 @@ public class MapMultChainTest extends AutomatedTestBase
 			//check compiled/executed jobs
 			int expectedNumCompiled = (sumProductRewrites)?2:4; //GMR Reblock, 2x(GMR mapmult), GMR write -> GMR Reblock, GMR mapmultchain+write
 			int expectedNumExecuted = expectedNumCompiled; 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		
 		}
 		finally

@@ -134,8 +134,8 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 			int expectedNumCompiled = ( branchRemoval && IPA && !update ) ? 0 : 1; //rand
 			int expectedNumExecuted = 0;			
 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 
 		}
 		finally
 		{

@@ -7,8 +7,7 @@
 
 package com.ibm.bi.dml.test.integration;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +16,7 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -75,11 +75,15 @@ public abstract class AutomatedTestBase
 	
 	/** Location under which we create local temporary directories for test cases. */
 	private static final File LOCAL_TEMP_ROOT = new File("./target/testTemp");
-	
-	// Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test suite in spark mode
+
+	/**
+	 * Runtime backend to use for all integration tests. Some individual tests
+	 * override this value, but the rest will use whatever is the default here.
+	 * <p>
+	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test 
+	 * suite in spark mode
+	 */
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
-	
-	
 	protected static final boolean DEBUG = false;
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
@@ -1137,6 +1141,47 @@ public abstract class AutomatedTestBase
 		for (int i = 0; i < comparisonFiles.length; i++) {
 			TestUtils.compareFilesInDifferentOrder(comparisonFiles[i], outputDirectories[i], rows, cols, epsilon);
 		}
+	}
+	
+	/**
+	 * Checks that the number of map-reduce jobs that the current test case has
+	 * compiled is equal to the expected number. Generates a JUnit error message
+	 * if the number is out of line.
+	 * 
+	 * @param expectedNumCompiled
+	 *            number of map-reduce jobs that the current test case is
+	 *            expected to compile
+	 */
+	protected void checkNumCompiledMRJobs(int expectedNumCompiled) {
+		
+		if (RUNTIME_PLATFORM.SPARK.equals(rtplatform)) {
+			// Skip MapReduce-related checks when running in Spark mode.
+			return;
+		}
+		
+		assertEquals("Unexpected number of compiled MR jobs.",
+				expectedNumCompiled, Statistics.getNoOfCompiledMRJobs());
+	}
+
+	/**
+	 * Checks that the number of map-reduce jobs that the current test case has
+	 * executed (as opposed to compiling into the execution plan) is equal to
+	 * the expected number. Generates a JUnit error message if the number is out
+	 * of line.
+	 * 
+	 * @param expectedNumExecuted
+	 *            number of map-reduce jobs that the current test case is
+	 *            expected to run
+	 */
+	protected void checkNumExecutedMRJobs(int expectedNumExecuted) {
+		
+		if (RUNTIME_PLATFORM.SPARK.equals(rtplatform)) {
+			// Skip MapReduce-related checks when running in Spark mode.
+			return;
+		}
+		
+		assertEquals("Unexpected number of executed MR jobs.",
+				expectedNumExecuted, Statistics.getNoOfExecutedMRJobs());
 	}
 
 	/**

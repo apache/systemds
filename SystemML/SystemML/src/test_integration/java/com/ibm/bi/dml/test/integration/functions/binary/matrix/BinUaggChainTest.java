@@ -115,9 +115,9 @@ public class BinUaggChainTest extends AutomatedTestBase
 			
 			//check compiled/executed jobs
 			int expectedNumCompiled = (singleBlock)?1:3; 
-			int expectedNumExecuted = (singleBlock)?1:3; 			
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectedNumCompiled, Statistics.getNoOfCompiledMRJobs()); 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedNumExecuted, Statistics.getNoOfExecutedMRJobs()); 		
+			int expectedNumExecuted = (singleBlock)?1:3; 
+			checkNumCompiledMRJobs(expectedNumCompiled); 
+			checkNumExecutedMRJobs(expectedNumExecuted); 		
 		}
 		finally
 		{

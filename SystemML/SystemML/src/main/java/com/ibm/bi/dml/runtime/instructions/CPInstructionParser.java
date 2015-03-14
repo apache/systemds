@@ -92,7 +92,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "%/%"  , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "^"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "^2"   , CPINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
-		String2CPInstructionType.put( "^2c-" , CPINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2CPInstructionType.put( "*2"   , CPINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		
 		// Boolean Instruction Opcodes 
@@ -137,6 +136,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ucumk+", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "inverse", CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "sprop", CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);

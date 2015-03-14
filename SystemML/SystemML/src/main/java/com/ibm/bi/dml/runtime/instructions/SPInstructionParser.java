@@ -65,7 +65,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special ^ case
-		String2SPInstructionType.put( "^2c-" , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special ^ case
 		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special * case
 		// Relational Instruction Opcodes 
 		String2SPInstructionType.put( "=="   , SPINSTRUCTION_TYPE.RelationalBinary);

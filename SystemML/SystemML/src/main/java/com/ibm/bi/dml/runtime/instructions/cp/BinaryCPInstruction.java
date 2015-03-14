@@ -26,7 +26,6 @@ import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.Power2;
-import com.ibm.bi.dml.runtime.functionobjects.Power2CMinus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
@@ -222,9 +221,6 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction
 		} 
 		else if ( opcode.equalsIgnoreCase("^2") ){
 			return new RightScalarOperator(Power2.getPower2FnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("^2c-") ){
-			return new RightScalarOperator(Power2CMinus.getPower2CMFnObject(), default_constant);
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);

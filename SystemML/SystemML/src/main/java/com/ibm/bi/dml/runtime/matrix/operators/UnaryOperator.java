@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,22 +13,27 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 public class UnaryOperator  extends Operator 
 {
+	private static final long serialVersionUID = 2441990876648978637L;
+
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ValueFunction fn;
 	public UnaryOperator(ValueFunction p)
 	{
-		fn=p;
+		fn = p;
+		sparseSafe = false;
+		
 		if(fn instanceof Builtin)
 		{
 			Builtin f=(Builtin)fn;
 			if(f.bFunc==Builtin.BuiltinFunctionCode.SIN || f.bFunc==Builtin.BuiltinFunctionCode.TAN 
 					|| f.bFunc==Builtin.BuiltinFunctionCode.ROUND || f.bFunc==Builtin.BuiltinFunctionCode.ABS
-					|| f.bFunc==Builtin.BuiltinFunctionCode.SQRT)
-				sparseSafe=true;
-		}else
-			sparseSafe=false;
+					|| f.bFunc==Builtin.BuiltinFunctionCode.SQRT || f.bFunc==Builtin.BuiltinFunctionCode.SPROP )
+			{
+				sparseSafe = true;
+			}
+		}
 	}
 }

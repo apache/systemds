@@ -821,7 +821,10 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN, INVERSE
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN, INVERSE,
+		//fused ML-specific operators for performance 
+		SPROP, //sample proportion: P * (1 - P)
+		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
 	}
 
 	// Operations that require two operands
@@ -829,8 +832,6 @@ public abstract class Hop
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
 		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN, INVALID,
-		//fused operators for performance 
-		POW2CM, 
 	};
 
 	// Operations that require 3 operands
@@ -989,7 +990,6 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.MIN, com.ibm.bi.dml.lops.Unary.OperationTypes.MIN);
 		HopsOpOp2LopsU.put(OpOp2.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
-		HopsOpOp2LopsU.put(OpOp2.POW2CM, com.ibm.bi.dml.lops.Unary.OperationTypes.POW2CM);
 	}
 
 	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1013,6 +1013,8 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.INVERSE, com.ibm.bi.dml.lops.Unary.OperationTypes.INVERSE);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.SPROP, com.ibm.bi.dml.lops.Unary.OperationTypes.SPROP);
+		HopsOpOp1LopsU.put(OpOp1.SIGMOID, com.ibm.bi.dml.lops.Unary.OperationTypes.SIGMOID);
 	}
 
 	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
@@ -1069,6 +1071,8 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.ATAN, "atan");
 		HopsOpOp12String.put(OpOp1.STOP, "stop");
 		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
+		HopsOpOp12String.put(OpOp1.SPROP, "sprop");
+		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
 	}
 	
 	protected static final HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
@@ -1101,7 +1105,6 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.AND, "&");
 		HopsOpOp2String.put(OpOp2.LOG, "log");
 		HopsOpOp2String.put(OpOp2.POW, "^");
-		HopsOpOp2String.put(OpOp2.POW2CM, "^2c-");
 		HopsOpOp2String.put(OpOp2.CONCAT, "concat");
 		HopsOpOp2String.put(OpOp2.INVALID, "?");
 		HopsOpOp2String.put(OpOp2.QUANTILE, "quantile");

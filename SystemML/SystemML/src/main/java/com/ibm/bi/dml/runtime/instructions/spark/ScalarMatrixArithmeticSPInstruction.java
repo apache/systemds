@@ -48,7 +48,7 @@ public class ScalarMatrixArithmeticSPInstruction extends ArithmeticBinaryCPInstr
 		String opcode = getOpcode();
 		if ( opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
 			|| opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
-			|| opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("^2") || opcode.equalsIgnoreCase("^2c-")
+			|| opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("^2")
 			|| opcode.equalsIgnoreCase("*2")) {
 			SparkExecutionContext sec = (SparkExecutionContext)ec;
 	

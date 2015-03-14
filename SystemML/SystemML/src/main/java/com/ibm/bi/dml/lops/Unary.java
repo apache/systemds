@@ -28,7 +28,9 @@ public class Unary extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, POW2CM, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, CEIL, FLOOR, CUMSUM, MR_IQM, INVERSE, NOTSUPPORTED
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, CEIL, FLOOR, CUMSUM, MR_IQM, INVERSE, 
+		SPROP, SIGMOID,
+		NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -209,9 +211,6 @@ public class Unary extends Lop
 		
 		case POW2:
 			return "^2";	
-			
-		case POW2CM:
-			return "^2c-";		
 
 		case GREATER_THAN:
 			return ">";
@@ -251,6 +250,12 @@ public class Unary extends Lop
 			
 		case MR_IQM:
 			return "mr-iqm";
+
+		case SPROP:
+			return "sprop";
+			
+		case SIGMOID:
+			return "sigmoid";
 			
 		default:
 			throw new LopsException(this.printErrorLocation() + 

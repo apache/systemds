@@ -1867,8 +1867,7 @@ public class BinaryOp extends Hop
 		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL
 		         ||op==OpOp2.MIN     ||op==OpOp2.MAX
 		         ||op==OpOp2.AND     ||op==OpOp2.OR
-		         ||op==OpOp2.LOG     ||op==OpOp2.POW
-		         ||op==OpOp2.POW2CM );
+		         ||op==OpOp2.LOG     ||op==OpOp2.POW );
 	}
 	
 	/**

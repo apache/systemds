@@ -51,7 +51,7 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 			if ( opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
 				|| opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
 				|| opcode.equalsIgnoreCase("^") ) { 
-				// || opcode.equalsIgnoreCase("^2") || opcode.equalsIgnoreCase("^2c-") || opcode.equalsIgnoreCase("*2")) {
+				// || opcode.equalsIgnoreCase("^2") || opcode.equalsIgnoreCase("*2")) {
 				SparkExecutionContext sec = (SparkExecutionContext)ec;
 				
 				// Get input RDDs

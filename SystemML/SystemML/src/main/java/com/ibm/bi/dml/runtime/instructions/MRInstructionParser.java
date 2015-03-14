@@ -117,7 +117,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "ceil" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "floor", MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "sprop", MRINSTRUCTION_TYPE.Unary);
 
+		
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
 		String2MRInstructionType.put( "pmm" , MRINSTRUCTION_TYPE.PMMJ);
@@ -144,7 +146,6 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "^2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
-		String2MRInstructionType.put( "^2c-" , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2MRInstructionType.put( "*2"   , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2MRInstructionType.put( "map+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);

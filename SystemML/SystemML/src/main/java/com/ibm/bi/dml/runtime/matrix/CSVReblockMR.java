@@ -354,7 +354,7 @@ public class CSVReblockMR
 		MatrixCharacteristics[] stats=ret.stats;
 		
 		//set up the number of reducers
-		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), (int)ret.numReducerGroups);
+		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
 		job.setNumReduceTasks( numRed );
 		
 		// Print the complete instruction

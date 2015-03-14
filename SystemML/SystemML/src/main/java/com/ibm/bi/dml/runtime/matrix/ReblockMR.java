@@ -120,7 +120,7 @@ public class ReblockMR
 		MatrixCharacteristics[] stats=ret.stats;
 		
 		//set up the number of reducers (according to output size)
-		int numRed = determineNumReducers(rlens, clens, nnz, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), (int)ret.numReducerGroups);
+		int numRed = determineNumReducers(rlens, clens, nnz, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
 		job.setNumReduceTasks(numRed);
 		
 		//setup in-memory reduce buffers budget (reblock reducer dont need much memory)
@@ -189,7 +189,7 @@ public class ReblockMR
 	 * @param numRedGroups
 	 * @return
 	 */
-	private static int determineNumReducers( long[] rlen, long[] clen, long[] nnz, int defaultNumRed, int numRedGroups )
+	private static int determineNumReducers( long[] rlen, long[] clen, long[] nnz, int defaultNumRed, long numRedGroups )
 	{
 		//init return with default value
 		int ret = defaultNumRed;
@@ -212,7 +212,7 @@ public class ReblockMR
 		ret = (int)Math.max(ret, Math.min(maxSize/blockSize, maxNumRed));
 		
 		//reduce num reducers for few result blocks
-		ret = Math.min(ret, numRedGroups);
+		ret = (int)Math.min(ret, numRedGroups);
 		
 		//ensure there is at least one reducer
 		ret = Math.max(ret, 1);

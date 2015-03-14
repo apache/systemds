@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -75,6 +76,8 @@ public class DMLYarnClient
 	public static final String JARFILE_ENV_CONST = "IBM_JAVA_COMMAND_LINE"; 
 	// environment variable to obtain default jvm arguments
 	public static final String JVMOPTS_ENV_CONST = "HADOOP_OPTS";
+	// environment variable to obtain mapred home (for robustness only)
+	public static final String MAPRED_HOME_ENV_CONST = "HADOOP_MAPRED_HOME";
 	// default of 1 core since YARN scheduler does not take the number of cores into account yet 
 	public static final int NUM_CORES = 1;  
 	// factor for compute virtual memory to request based on given max heap size
@@ -263,10 +266,14 @@ public class DMLYarnClient
 		//create working directory
 		MapReduceTool.createDirIfNotExistOnHDFS(hdfsWD, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
-		//serialize the dml config to HDFS file (ensure absolute hdfs scratch_space because user might be changed)
+		//serialize the dml config to HDFS file 
+		//NOTE: we do not modify and ship the absolute scratch space path of the current user
+		//because this might result in permission issues if the app master is run with a different user
+		//(runtime plan migration during resource reoptimizations now needs to use qualified names
+		//for shipping/reading intermediates) TODO modify resource reoptimizer on prototype integration.
 		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
 		FSDataOutputStream fout = fs.create(confPath, true);
-		_dmlConfig.makeQualifiedScratchSpacePath(); 
+		//_dmlConfig.makeQualifiedScratchSpacePath(); 
 		fout.writeBytes(_dmlConfig.serializeDMLConfig() + "\n");
 		fout.close();
 		_hdfsDMLConfig = confPath.makeQualified(fs).toString();
@@ -325,7 +332,7 @@ public class DMLYarnClient
 		}
 		
 		//give warning that we fallback to alternative jar shipping method
-		if( fname == null ) {
+		if( LOG.isDebugEnabled() && fname == null ) {
 			LOG.warn("Failed to find jar file via environment variable '"+JARFILE_ENV_CONST+"', fallback to jar packaging.");
 		}
 		
@@ -477,20 +484,34 @@ public class DMLYarnClient
 	{
 		Map<String, String> eMap = new HashMap<String, String>();
 		
-		//set app master environment
-		String classpath = null;
+		//setup default app master environment
+		StringBuilder classpath = new StringBuilder();
 		for (String value : yconf.getStrings(
 				YarnConfiguration.YARN_APPLICATION_CLASSPATH,
 				YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) 
 		{
-			if( classpath == null )
-				classpath = value.trim();
-			else
-				classpath = classpath + ":" + value.trim();
+			if( classpath.length() > 0 )
+				classpath.append(File.pathSeparator); 
+			classpath.append( value.trim() );
 		}
 		
-		eMap.put(Environment.CLASSPATH.name(), classpath);
+		//setup mapreduce environment (for robustness if not included in default environment)
+		//for example, by default HDP 2.2 did not include mapred client libraries in this configuration
+		Map<String, String> env = System.getenv();
+		if( env.containsKey(MAPRED_HOME_ENV_CONST) ){
+			String tmp = env.get(MAPRED_HOME_ENV_CONST);
+			
+			if( classpath.length() > 0 )
+				classpath.append( File.pathSeparator ); 
+			classpath.append( tmp + File.separator + "*" );
+			classpath.append( File.pathSeparator ); 
+			classpath.append( tmp + File.separator + "lib" + File.separator + "*" );
+		}
+		
+		eMap.put(Environment.CLASSPATH.name(), classpath.toString());
 		MRApps.setClasspath(eMap, yconf);
+		
+		LOG.debug("Constructed environment classpath: "+classpath.toString());
 		
 		return eMap;
 	}	

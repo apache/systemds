@@ -198,7 +198,7 @@ public class ReorgOp extends Hop
 						//Step 2: Index vector sort 
 						Hop voutput = null;
 						if( OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
-							> OptimizerUtils.getRemoteMemBudgetMap(true) 
+							> OptimizerUtils.getLocalMemBudget() 
 							|| FORCE_MR_SORT_INDEXES ) 
 						{ 
 							//large vector, fallback to MR sort

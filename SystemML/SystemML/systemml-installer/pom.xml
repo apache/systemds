@@ -83,12 +83,15 @@
 							</sources>
 						</mapping>
 					</mappings>
+				    <postinstallScriptlet>
+                      <script>rm -f ${installDir}/../../machine-learning; ln -s ${installDir} ${installDir}/../../machine-learning</script>
+                    </postinstallScriptlet>					
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
 
 	<properties>
-		<installDir>/usr/biginsights/machine-learning/${project.version}</installDir>
+		<installDir>/usr/biginsights/bigr/3.15/bigr-SystemML/${project.version}</installDir>
 	</properties>
 </project>

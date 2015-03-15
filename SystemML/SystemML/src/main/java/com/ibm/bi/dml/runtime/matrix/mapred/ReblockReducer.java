@@ -21,11 +21,9 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.AdaptivePartialBlock;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.PartialBlock;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 
 
@@ -122,38 +120,9 @@ public class ReblockReducer extends ReduceBase
 				try 
 				{
 					MatrixBlock out = (MatrixBlock)block.getValue(); //always block output
-					boolean appendOnly = out.isInSparseFormat();
 					MatrixBlock in = srcBlk.getMatrixBlock();
 					
-					//merge copy other blocks
-					if( in.isInSparseFormat() ) //SPARSE
-					{
-						SparseRowsIterator iter = in.getSparseRowsIterator();
-						while( iter.hasNext() )
-						{
-							IJV cell = iter.next();
-							if( appendOnly )
-								out.appendValue(cell.i, cell.j, cell.v);
-							else
-								out.quickSetValue(cell.i, cell.j, cell.v);
-						}
-					}
-					else //DENSE
-					{
-						for( int i=0; i<in.getNumRows(); i++ )
-							for( int j=0; j<in.getNumColumns(); j++ )
-							{
-								double val = in.getValueDenseUnsafe(i, j);
-								if( val != 0 ) {
-									if( appendOnly )
-										out.appendValue(i, j, val);
-									else
-										out.quickSetValue(i, j, val);
-								}
-							}
-					}
-					if( appendOnly )
-						out.sortSparseRows();
+					out.merge(in, false);
 					out.examSparsity();  //speedup subsequent usage
 				} 
 				catch (DMLRuntimeException e) 

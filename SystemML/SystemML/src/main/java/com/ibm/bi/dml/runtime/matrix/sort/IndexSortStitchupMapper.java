@@ -45,7 +45,8 @@ public class IndexSortStitchupMapper extends MapReduceBase
 		offset += (key.getRowIndex()-1)*_brlen;
 		
 		//SPECIAL CASE: block aligned
-		if( offset%_brlen==0 && value.getNumRows()==_brlen ) 
+		int blksize = computeOutputBlocksize(_rlen, _brlen, offset);
+		if( offset%_brlen==0 && value.getNumRows()==blksize ) 
 		{ 
 			_tmpIx.setIndexes(offset/_brlen+1, 1);
 			out.collect(_tmpIx, value);
@@ -67,7 +68,7 @@ public class IndexSortStitchupMapper extends MapReduceBase
 				out.collect(_tmpIx, _tmpBlk);		
 			
 				//output second block
-				int blksize = computeOutputBlocksize(_rlen, _brlen, offset+(_brlen-loffset));
+				blksize = computeOutputBlocksize(_rlen, _brlen, offset+(_brlen-loffset));
 				_tmpBlk.reset( blksize, 1 );
 				for( int i=(int)_brlen-loffset; i<value.getNumRows(); i++ )
 					_tmpBlk.quickSetValue(i-((int)_brlen-loffset), 0, value.quickGetValue(i, 0));
@@ -82,7 +83,6 @@ public class IndexSortStitchupMapper extends MapReduceBase
 			//single output block
 			else 
 			{	
-				int blksize = computeOutputBlocksize(_rlen, _brlen, offset);				
 				_tmpBlk.reset( blksize, 1 );
 				for( int i=0; i<value.getNumRows(); i++ )
 					_tmpBlk.quickSetValue(loffset+i, 0, value.quickGetValue(i, 0));

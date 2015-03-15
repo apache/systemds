@@ -1784,6 +1784,140 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				Arrays.fill(denseBlock, ix2, ix2+rowLen, 0);
 	}
 
+	
+	/**
+	 * Merge disjoint: merges all non-zero values of the given input into the current
+	 * matrix block. Note that this method does NOT check for overlapping entries;
+	 * it's the callers reponsibility of ensuring disjoint matrix blocks.  
+	 * 
+	 * The appendOnly parameter is only relevant for sparse target blocks; if true,
+	 * we only append values and do not sort sparse rows for each call; this is useful
+	 * whenever we merge iterators of matrix blocks into one target block.
+	 * 
+	 * @param that
+	 * @param appendOnly
+	 * @throws DMLRuntimeException 
+	 */
+	public void merge(MatrixBlock that, boolean appendOnly) 
+		throws DMLRuntimeException
+	{
+		//check for empty input source (nothing to merge)
+		if( that == null || that.isEmptyBlock(false) )
+			return;
+		
+		//check dimensions (before potentially copy to prevent implicit dimension change) 
+		//this also does a best effort check for disjoint input blocks via the number of non-zeros
+		if( rlen != that.rlen || clen != that.clen )
+			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+rlen+"x"+clen+", source="+that.rlen+"x"+that.clen+")");
+		if( (long)this.nonZeros+ that.nonZeros > (long)rlen*clen )
+			throw new DMLRuntimeException("Number of non-zeros mismatch on merge disjoint (target="+rlen+"x"+clen+", nnz target="+nonZeros+", nnz source="+that.nonZeros+")");
+		
+		//check for empty target (copy in full)
+		if( this.isEmptyBlock(false) ) {
+			this.copy(that);
+			return;
+		}
+		
+		//core matrix block merge (guaranteed non-empty source/target, nnz maintenance not required)
+		int nnz = this.nonZeros + that.nonZeros;
+		if( sparse )
+			this.mergeIntoSparse(that, appendOnly);
+		else
+			this.mergeIntoDense(that);	
+		
+		//maintain number of nonzeros
+		this.nonZeros = nnz;
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 */
+	private void mergeIntoDense(MatrixBlock that)
+	{
+		if( that.sparse ) //DENSE <- SPARSE
+		{
+			SparseRow[] b = that.sparseRows;
+			for( int i=0; i<rlen; i++ )
+				if( b[i] != null && !b[i].isEmpty() )
+				{
+					SparseRow brow = b[i];
+					int blen = brow.size();
+					int[] bix = brow.getIndexContainer();
+					double[] bval = brow.getValueContainer();
+					for( int j=0; j<blen; j++ )
+						if( bval[j] != 0 )
+							this.quickSetValue(i, bix[j], bval[j]);
+				}
+		}
+		else //DENSE <- DENSE
+		{
+			double[] a = this.denseBlock;
+			double[] b = that.denseBlock;
+			int len = rlen * clen;
+			for( int i=0; i<len; i++ )
+				a[i] = ( b[i] != 0 ) ? b[i] : a[i];
+		}
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 * @param appendOnly
+	 */
+	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly)
+	{
+		if( that.sparse ) //SPARSE <- SPARSE
+		{
+			SparseRow[] a = this.sparseRows;
+			SparseRow[] b = that.sparseRows;
+			for( int i=0; i<rlen; i++ ) 
+			{
+				if( b[i] != null && !b[i].isEmpty() )
+				{
+					if( a[i] == null || a[i].isEmpty() ) {
+						//copy entire sparse row (no sort required)
+						a[i] = new SparseRow(b[i]); 
+					}
+					else
+					{
+						boolean appended = false;
+						SparseRow brow = b[i];
+						int blen = brow.size();
+						int[] bix = brow.getIndexContainer();
+						double[] bval = brow.getValueContainer();
+						for( int j=0; j<blen; j++ ) {
+							if( bval[j] != 0 ) {
+								this.appendValue(i, bix[j], bval[j]);
+								appended = true;
+							}
+						}
+						//only sort if value appended
+						if( !appendOnly && appended )
+							this.sparseRows[i].sort();		
+					}
+				}
+			}
+		}
+		else //SPARSE <- DENSE
+		{
+			double[] b = that.denseBlock;
+			for( int i=0, bix=0; i<rlen; i++, bix+=clen )
+			{
+				boolean appended = false;
+				for( int j=0; j<clen; j++ ) {
+					if( b[bix+j] != 0 ) {
+						this.appendValue(i, j, b[bix+j]);
+						appended = true;
+					}
+				}
+				//only sort if value appended
+				if( !appendOnly && appended )
+					this.sparseRows[i].sort();
+			}
+		}
+	}
+	
 	////////
 	// Input/Output functions
 	

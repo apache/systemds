@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,7 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 public abstract class ResultMerge 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
@@ -86,37 +86,8 @@ public abstract class ResultMerge
 	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
 		throws DMLRuntimeException
 	{
-		if( in.isInSparseFormat() ) //sparse input format
-		{
-			SparseRowsIterator iter = in.getSparseRowsIterator();
-			while( iter.hasNext() ) 
-			{
-				IJV cell = iter.next();
-				if( appendOnly )
-					out.appendValue(cell.i, cell.j, cell.v);
-				else
-					out.quickSetValue(cell.i, cell.j, cell.v);
-			}
-		}
-		else //dense input format
-		{
-			//for a merge this case will seldom happen, as each input MatrixObject
-			//has at most 1/numThreads of all values in it.
-			int rows = in.getNumRows();
-			int cols = in.getNumColumns();
-			if( in.getNonZeros() > 0 )
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{
-						double value = in.getValueDenseUnsafe(i,j); //input value
-						if( value != 0  ){ 					       //for all nnz
-							if(appendOnly)
-								out.appendValue( i, j, value );
-							else
-								out.quickSetValue( i, j, value );
-						}
-					}
-		}	
+		//pass through to matrix block operations
+		out.merge(in, appendOnly);	
 	}
 
 	/**

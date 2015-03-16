@@ -164,25 +164,27 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 				if( _type == CacheType.LEFT )
 				{
 					//in-memory colblock partitioning (according to brlen of rdd)
-					int numBlocks = (int)Math.ceil((double)mb.getNumColumns()/_brlen);				
+					int lclen = mb.getNumColumns();
+					int numBlocks = (int)Math.ceil((double)lclen/_brlen);				
 					_partBlocks = new MatrixBlock[numBlocks];
 					for( int i=0; i<numBlocks; i++ )
 					{
 						MatrixBlock tmp = new MatrixBlock();
 						mb.sliceOperations(1, mb.getNumRows(), 
-								i*_brlen+1, (i+1)*_brlen,  tmp);
+								i*_brlen+1, Math.min((i+1)*_brlen, lclen),  tmp);
 						_partBlocks[i] = tmp;
 					}
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
 					//in-memory rowblock partitioning (according to bclen of rdd)
-					int numBlocks = (int)Math.ceil((double)mb.getNumRows()/_bclen);				
+					int lrlen = mb.getNumRows();
+					int numBlocks = (int)Math.ceil((double)lrlen/_bclen);				
 					_partBlocks = new MatrixBlock[numBlocks];
 					for( int i=0; i<numBlocks; i++ )
 					{
 						MatrixBlock tmp = new MatrixBlock();
-						mb.sliceOperations(i*_bclen+1, (i+1)*_bclen, 
+						mb.sliceOperations(i*_bclen+1, Math.min((i+1)*_bclen, lrlen), 
 								1, mb.getNumColumns(), tmp);
 						_partBlocks[i] = tmp;
 					}						

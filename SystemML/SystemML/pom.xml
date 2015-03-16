@@ -52,7 +52,7 @@
 				</configuration>
 			</plugin>
 			
-			<!-- 
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -66,15 +66,16 @@
 						</goals>
 						<configuration>
 							<sources>
-								<source>${basedir}/src/test_integration/java</source>
-								<source>${basedir}/src/test_long_running/java</source>
+								<!--  Test suite classes kept in a separate folder for compability
+								 	  with the Eclipse JUnit test runner. -->
+								<source>${basedir}/src/test_suites/java</source>
 							</sources>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-			-->
-
+			
+			
 			<!--plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>javacc-maven-plugin</artifactId> 
 				<version>2.6</version> <configuration> <sourceDirectory>${basedir}/src/main/java</sourceDirectory> 
 				</configuration> <executions> <execution> <id>javacc</id> <goals> <goal>javacc</goal> 

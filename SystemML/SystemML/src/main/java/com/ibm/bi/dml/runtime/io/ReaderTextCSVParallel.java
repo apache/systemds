@@ -216,9 +216,6 @@ public class ReaderTextCSVParallel extends MatrixReader {
 		RecordReader<LongWritable, Text> reader = informat.getRecordReader(
 				splits[0], job, Reporter.NULL);
 		try {
-			if (hasHeader) {
-				reader.next(key, oneLine); // ignore header
-			}
 			if (reader.next(key, oneLine)) {
 				cellStr = oneLine.toString().trim();
 				ncol = compiledDelim.split(cellStr, -1).length;

@@ -85,8 +85,9 @@ public abstract class AutomatedTestBase
 		    
 				sysPathsField.set(null, null);
 			} catch (Exception e) {
-				e.printStackTrace();
-				System.err.printf("Caught exception while attempting to override library path. Attempting to continue.");
+				// IBM Java throws an exception here, so don't print the stack trace.
+				//e.printStackTrace();
+				//System.err.printf("Caught exception while attempting to override library path. Attempting to continue.");
 			}
 		}
 	}

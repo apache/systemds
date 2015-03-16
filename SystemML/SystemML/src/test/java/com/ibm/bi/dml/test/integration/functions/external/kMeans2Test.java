@@ -26,6 +26,23 @@ public class kMeans2Test extends AutomatedTestBase
 	
 	private final static String TEST_KMEANS = "kMeans2";  // The version w/ init kCenters
 
+	/**
+	 * Main method for running one test at a time.
+	 */
+	public static void main(String[] args) {
+		long startMsec = System.currentTimeMillis();
+
+		kMeans2Test t = new kMeans2Test();
+		t.setUpBase();
+		t.setUp();
+		t.testkMeansTest();
+		t.tearDown();
+
+		long elapsedMsec = System.currentTimeMillis() - startMsec;
+		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
+
+	}
+	
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/external/";

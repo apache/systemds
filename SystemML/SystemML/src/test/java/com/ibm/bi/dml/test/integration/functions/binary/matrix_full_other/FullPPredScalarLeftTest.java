@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
@@ -27,14 +27,14 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  * ppred operations in all execution types.
  * 
  */
-public class FullPPredScalarRightTest extends AutomatedTestBase 
+public class FullPPredScalarLeftTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "PPredScalarRightTest";
-	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_NAME1 = "PPredScalarLeftTest";
+	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1072;
@@ -374,7 +374,7 @@ public class FullPPredScalarRightTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
+			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A" ,
 					                        Integer.toString(type.ordinal()),
 					                        Double.toString(constant),
 					                        HOME + OUTPUT_DIR + "B"    };
@@ -387,7 +387,7 @@ public class FullPPredScalarRightTest extends AutomatedTestBase
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 
 			writeInputMatrixWithMTD("A", A, true);
-			
+	
 			//run tests
 			runTest(true, false, null, -1); 
 			runRScript(true); 

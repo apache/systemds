@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
@@ -30,7 +30,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME1 = "PPredMatrixTest";
-	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1383;

@@ -13,9 +13,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+
+
 
 
 import org.apache.commons.io.FileUtils;
@@ -52,6 +56,42 @@ import com.ibm.bi.dml.utils.Statistics;
  */
 public abstract class AutomatedTestBase 
 {
+	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available 
+	// under $HADOOP_HOME/bin and hadoop.dll is available in the Java library
+	// path. The following static initializer sets up JVM variables so that 
+	// Hadoop can find these native binaries, assuming that any Hadoop code
+	// loads after this class and that the JVM's current working directory
+	// is the root of this project.
+	static {
+		
+		String osname = System.getProperty("os.name").toLowerCase();
+		if (osname.contains("win")) {
+			System.err.printf("AutomatedTestBase has detected a Windows OS and is overriding\n"
+					+ "hadoop.home.dir and java.library.path.\n");
+			String cwd = System.getProperty("user.dir");
+
+			System.setProperty("hadoop.home.dir", cwd + File.separator
+					+ "\\src\\test\\config\\hadoop_bin_windows");
+			System.setProperty("java.library.path", cwd + File.separator
+					+ "\\src\\test\\config\\hadoop_bin_windows\\bin");
+			
+
+		    // Need to muck around with the classloader to get it to use the new
+			// value of java.library.path.
+			try {
+				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+				sysPathsField.setAccessible(true);
+		    
+				sysPathsField.set(null, null);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.err.printf("Caught exception while attempting to override library path. Attempting to continue.");
+			}
+		}
+	}
+	// *** END HACK ***
+	
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -74,7 +114,7 @@ public abstract class AutomatedTestBase
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
 	
 	/** Location under which we create local temporary directories for test cases. */
-	private static final File LOCAL_TEMP_ROOT = new File("./target/testTemp");
+	private static final File LOCAL_TEMP_ROOT = new File("target/testTemp");
 
 	/**
 	 * Runtime backend to use for all integration tests. Some individual tests
@@ -638,25 +678,37 @@ public abstract class AutomatedTestBase
 		// Eventually all files written by the tests should go under here, but making
 		// that change will take quite a bit of effort.
 		try {
-			curLocalTempDir = new File(LOCAL_TEMP_ROOT, String.format("%s/%s",
-					testDirectory, selectedTest));
+			if (null == testDirectory) {
+				System.err
+						.printf("Warning: Test configuration did not specify a test directory.\n");
+				curLocalTempDir = new File(LOCAL_TEMP_ROOT, String.format(
+						"unknownTest/%s", selectedTest));
+			} else {
+				curLocalTempDir = new File(LOCAL_TEMP_ROOT, String.format(
+						"%s/%s", testDirectory, selectedTest));
+			}
 			
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
 
 			// Create a SystemML config file for this test case.
-			// Use the canned file under src/test_integration/config as a template
+			// Use the canned file under src/test/config as a template
 			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE,
 					"UTF-8");
+			
+			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+			// Nimble does not accept paths that use backslash as the separator character.
+			// Since some of the tests use Nimble, we use forward slash in the paths that
+			// we put into the config file.
+			String localTempForwardSlash = curLocalTempDir.getPath().replace(File.separator, "/");
 			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
-					String.format("<scratch>%s%sscratch_space</scratch>",
-							curLocalTempDir.getPath(), File.separator));
+					String.format("<scratch>%s/scratch_space</scratch>", localTempForwardSlash));
 			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>", 
-					String.format("<localtmpdir>%s%slocaltmp</localtmpdir>",
-							curLocalTempDir.getPath(), File.separator));
+					String.format("<localtmpdir>%s/localtmp</localtmpdir>", localTempForwardSlash));
 			configContents = configContents.replace("<NimbleScratch>nimbleoutput</NimbleScratch>", 
-					String.format("<NimbleScratch>%s%snimbleoutput</NimbleScratch>",
-							curLocalTempDir.getPath(), File.separator));
+					String.format("<NimbleScratch>%s/nimbleoutput</NimbleScratch>",
+							localTempForwardSlash));
+			// *** END HACK ***
 			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 			
@@ -670,6 +722,8 @@ public abstract class AutomatedTestBase
 		if (DEBUG)
 			TestUtils.clearDirectory(DEBUG_TEMP_DIR + baseDirectory + INPUT_DIR);
 	}
+	
+	
 
 	/**
 	 * <p>
@@ -702,6 +756,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * Runs an R script in the old or the new way
 	 */
+	@SuppressWarnings("unused")
 	protected void runRScript(boolean newWay) {
 	
 		String executionFile = baseDirectory + selectedTest + ".R"; 

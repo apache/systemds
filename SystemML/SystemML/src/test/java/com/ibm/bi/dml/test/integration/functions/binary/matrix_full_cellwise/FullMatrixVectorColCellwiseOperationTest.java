@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_cellwise;
 
 import java.util.HashMap;
 
@@ -29,7 +29,7 @@ public class FullMatrixVectorColCellwiseOperationTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "FullMatrixVectorColCellwiseOperation_Multiplication";
 	private final static String TEST_NAME4 = "FullMatrixVectorColCellwiseOperation_Division";
 	
-	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_DIR = "functions/binary/matrix_full_cellwise/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1101;

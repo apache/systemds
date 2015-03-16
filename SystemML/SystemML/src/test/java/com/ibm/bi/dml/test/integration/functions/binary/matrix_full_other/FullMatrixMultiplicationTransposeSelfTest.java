@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
@@ -27,7 +27,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "TransposeSelfMatrixMultiplication1";
 	private final static String TEST_NAME2 = "TransposeSelfMatrixMultiplication2";
-	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
 	private final static double eps = 1e-10;
 	
 	//for CP
@@ -234,6 +234,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	 * @param instType
 	 * @param sparse
 	 */
+	@SuppressWarnings("unused")
 	private void runTransposeSelfVectorMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols

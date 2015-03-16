@@ -168,20 +168,10 @@
 				</executions>
 			</plugin>
 
-			<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** The BigInsights 
-				Jenkins server does not allow builds to run for more than 30 minutes, so 
-				there isn't enough time to run the full test suite during the "test" phase 
-				of the Maven lifecycle. As a workaround for this problem, we put longer running 
-				tests and integration tests under src/test_integration. Unfortunately, Maven 
-				doesn't really like having integration tests in the same component as unit 
-				tests. Surefire happily compiles and runs all the tests under both src/test 
-				and src/test_integration. As far as I can tell, the best practice for this 
-				issue is to put long-running tests into a separate Maven component. Unfortunately, 
-				RTC's Maven integration doesn't deal well with multi-component projects. 
-				Hence the hack used here. The "test" phase of this component runs all the 
-				tests whose PACKAGE NAMES do not include directories called "slowtest" or 
-				"integration". The "integration-test" phase runs a copy of Failsafe that 
-				invokes tests that do not contain "test" in their package names. -->
+	<!-- The BigInsights Jenkins server does not allow builds to run for more 
+		than 30 minutes, so there isn't enough time to run the full test suite during 
+		the "test" phase of the Maven lifecycle. So we only run tests during the 
+		"integration-test" phase. To run the tests, run "mvn verify". -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -201,7 +191,7 @@
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
-						<include>**/*Test.java</include>
+						<!--  All tests are integration tests as far as Maven is concerned. -->
 					</includes>
 
 					<excludes>
@@ -262,61 +252,10 @@
 
 	</build>
 
-	<!-- Hack continues: Build profile for long-running tests -->
+	
 	<profiles>
-		<profile>
-			<id>slowtests</id>
-			<activation>
-				<property>
-					<name>slowTests</name>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-failsafe-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>failsafe-slow</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>integration-test</goal>
-									<goal>verify</goal>
-								</goals>
-								<configuration>
-									<!-- STDERR/STDOUT to individual .txt files instead of console -->
-									<redirectTestOutputToFile>true</redirectTestOutputToFile>
-
-									<!-- Tests are grouped into suites, one suite per package. -->
-									<parallel>suites</parallel>
-									<threadCount>1</threadCount>
-
-									<!-- 2 processes per test -->
-									<forkCount>0.5C</forkCount>
-									<reuseForks>false</reuseForks>
-
-									<!-- Last argument prevents Java from popping up lots of windows 
-										on MacOS -->
-									<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
-										${integrationTestExtraJVMArgs}
-										-Djava.awt.headless=true</argLine>
-									<excludes>
-										<exclude>none</exclude>
-									</excludes>
-									<includes>
-										<include>**/slowtest/**/*Suite.java</include>
-									</includes>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<!-- *** END HACK *** -->
-
-		<!-- Profile for Windows builds. -->
+	<!-- Profile for Windows builds. Not currently needed, but might be needed 
+		in the future. -->
 		<profile>
 			<id>platform-windows</id>
 			<activation>
@@ -325,9 +264,8 @@
 				</os>
 			</activation>
 			<properties>
-				<!-- Integration tests won't work without native binaries -->
-				<integrationTestExtraJVMArgs>-Dhadoop.home.dir=${basedir}\src\test\config\hadoop_bin_windows
-					-Djava.library.path=${basedir}\src\test\config\hadoop_bin_windows\bin</integrationTestExtraJVMArgs>
+				<!-- Extra JVM args for Windows go here.-->
+				<integrationTestExtraJVMArgs></integrationTestExtraJVMArgs>
 			</properties>
 		</profile>
 	</profiles>

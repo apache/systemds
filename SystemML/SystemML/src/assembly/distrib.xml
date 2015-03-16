@@ -11,7 +11,7 @@
 
 	<fileSets>
 		<fileSet>
-			<directory>${basedir}/src/test_integration/config</directory>
+			<directory>${basedir}/src/test/config</directory>
 			<includes>
 				<include>SystemML-config.xml</include>
 			</includes>

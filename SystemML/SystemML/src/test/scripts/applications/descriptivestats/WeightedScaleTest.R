@@ -71,10 +71,10 @@ SE = std.error(V, na.rm)
 cv = std_dev/mu
 
 # harmonic means (note: may generate out of memory for large sparse matrices becauses of NaNs)
-har_mu = harmonic.mean(V)
+#har_mu = harmonic.mean(V)
 
 # geometric means is not currently supported.
-geom_mu = geometric.mean(V)
+#geom_mu = geometric.mean(V)
 
 # min and max
 mn=min(V)

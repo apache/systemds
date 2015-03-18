@@ -30,7 +30,7 @@ chi_squared = sum(T);
 
 # compute p-value
 degFreedom = (nrow(F)-1)*(ncol(F)-1);
-pValue = pchisq(target=chi_squared, df=degFreedom, lowertail=FALSE);
+pValue = pchisq(target=chi_squared, df=degFreedom, lower.tail=FALSE);
 
 # Cramer's V
 R = nrow(F);

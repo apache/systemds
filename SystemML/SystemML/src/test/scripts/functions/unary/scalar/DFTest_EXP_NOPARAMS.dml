@@ -10,7 +10,7 @@
 
 q = qexp(target=$1); # default rate=1.0
 p = pexp(target=q);
-pl = pexp(target=q, lowertail=FALSE);
+pl = pexp(target=q, lower.tail=FALSE);
 
 out = matrix(0, rows=3, cols=1);
 out[1,1] = q;

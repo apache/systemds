@@ -10,7 +10,7 @@
 
 q = qf(target=$1, df1=$2, df2=$3);
 p = pf(target=q, df1=$2, df2=$3);
-pl = pf(target=q, df1=$2, df2=$3, lowertail=FALSE);
+pl = pf(target=q, df1=$2, df2=$3, lower.tail=FALSE);
 
 out = matrix(0, rows=3, cols=1);
 out[1,1] = q;

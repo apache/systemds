@@ -197,8 +197,8 @@ public class ParameterizedBuiltin extends ValueFunction
 		double val = Double.parseDouble(params.get("target"));
 		
 		boolean lowertail = true;
-		if(params.get("lowertail") != null) {
-			lowertail = Boolean.parseBoolean(params.get("lowertail"));
+		if(params.get("lower.tail") != null) {
+			lowertail = Boolean.parseBoolean(params.get("lower.tail"));
 		}
 		
 		AbstractRealDistribution distFunction = null;

@@ -10,7 +10,7 @@
 
 q = qnorm(target=$1, mean=$2);
 p = pnorm(target=q, mean=$2);
-pl = pnorm(target=q, mean=$2, lowertail=FALSE);
+pl = pnorm(target=q, mean=$2, lower.tail=FALSE);
 
 out = matrix(0, rows=3, cols=1);
 out[1,1] = q;

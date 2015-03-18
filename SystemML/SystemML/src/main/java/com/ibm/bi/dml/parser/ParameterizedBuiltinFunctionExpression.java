@@ -454,7 +454,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			// Not checking for QNORM, PNORM: distribution parameters mean and sd are optional with default values 0.0 and 1.0, respectively
 			// Not checking for QEXP, PEXP: distribution parameter rate is optional with a default values 1.0
 			
-			// For all cdf functions, additional parameter lowertail is optional with a default value TRUE
+			// For all cdf functions, additional parameter lower.tail is optional with a default value TRUE
 		}
 		
 		// CDF and INVCDF specific checks:
@@ -465,7 +465,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case QT:
 		case QCHISQ:
 		case QEXP:
-			if(getVarParam("lowertail") != null ) {
+			if(getVarParam("lower.tail") != null ) {
 				raiseValidateError("Lower tail argument is invalid while computing inverse cumulative probabilities.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			break;

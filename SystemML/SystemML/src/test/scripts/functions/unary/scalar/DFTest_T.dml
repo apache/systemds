@@ -10,7 +10,7 @@
 
 q = qt(target=$1, df=$2);
 p = pt(target=q, df=$2);
-pl = pt(target=q, df=$2, lowertail=FALSE);
+pl = pt(target=q, df=$2, lower.tail=FALSE);
 
 out = matrix(0, rows=3, cols=1);
 out[1,1] = q;

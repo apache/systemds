@@ -221,7 +221,7 @@ bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double pval, Mat
 
     # compute p-value
     degFreedom = (nrow(F)-1)*(ncol(F)-1)
-    pValue = pchisq(target=chi_squared, df=degFreedom, lowertail=FALSE)
+    pValue = pchisq(target=chi_squared, df=degFreedom, lower.tail=FALSE)
 
 
     # Assign return values
@@ -257,5 +257,5 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double pVal, Mat
 	anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1)
     anova_den = sum( (CFreqs-1)*CVars )/(W-R)
     AnovaF = anova_num/anova_den
-    pVal = pf(target=AnovaF, df1=df1, df2=df2, lowertail=FALSE)
+    pVal = pf(target=AnovaF, df1=df1, df2=df2, lower.tail=FALSE)
 }

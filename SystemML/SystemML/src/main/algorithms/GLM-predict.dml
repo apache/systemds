@@ -227,10 +227,10 @@ if (fileY != " ")
         Z_logl_pValue = 2.0 * pnorm(target = Z_logl_absneg);
     }
     if (X2_pearson == X2_pearson & df_pearson > 0) {
-        X2_pearson_pValue = pchisq(target = X2_pearson, df = df_pearson, lowertail=FALSE);
+        X2_pearson_pValue = pchisq(target = X2_pearson, df = df_pearson, lower.tail=FALSE);
     }
     if (G2_deviance == G2_deviance & df_deviance > 0) {
-        G2_deviance_pValue = pchisq(target = G2_deviance, df = df_deviance, lowertail=FALSE);
+        G2_deviance_pValue = pchisq(target = G2_deviance, df = df_deviance, lower.tail=FALSE);
     }
     
     Z_logl_scaled = Z_logl / sqrt (dispersion);
@@ -242,10 +242,10 @@ if (fileY != " ")
         Z_logl_scaled_pValue = 2.0 * pnorm(target = Z_logl_scaled_absneg);
     }
     if (X2_scaled == X2_scaled & df_pearson > 0) {
-        X2_scaled_pValue = pchisq(target = X2_scaled, df = df_pearson, lowertail=FALSE);
+        X2_scaled_pValue = pchisq(target = X2_scaled, df = df_pearson, lower.tail=FALSE);
     }
     if (G2_scaled == G2_scaled & df_deviance > 0) {
-        G2_scaled_pValue = pchisq(target = G2_scaled, df = df_deviance, lowertail=FALSE);
+        G2_scaled_pValue = pchisq(target = G2_scaled, df = df_deviance, lower.tail=FALSE);
     }
     
     avg_tot_Y = colSums (    Y    ) / sum (Y_counts);

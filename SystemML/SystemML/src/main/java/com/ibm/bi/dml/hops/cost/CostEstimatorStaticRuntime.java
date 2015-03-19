@@ -7,12 +7,18 @@
 
 package com.ibm.bi.dml.hops.cost;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.MapMult;
+import com.ibm.bi.dml.lops.MapMultChain;
+import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -25,7 +31,12 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
@@ -33,11 +44,13 @@ import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.yarn.ropt.MRJobResourceInstruction;
@@ -60,10 +73,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_NFLOP_NOOP = 10; 
 	private static final double DEFAULT_NFLOP_UNKNOWN = 1; 
 	private static final double DEFAULT_NFLOP_CP = 1; 	
+	private static final double DEFAULT_NFLOP_TEXT_IO = 350; 
 	
 	//MR job latency
-	private static final double DEFAULT_MR_LATENCY_LOCAL = 2;
-	private static final double DEFAULT_MR_LATENCY_REMOTE = 20;
+	private static final double DEFAULT_MR_JOB_LATENCY_LOCAL = 2;
+	private static final double DEFAULT_MR_JOB_LATENCY_REMOTE = 20;
+	private static final double DEFAULT_MR_TASK_LATENCY_LOCAL = 0.1;
+	private static final double DEFAULT_MR_TASK_LATENCY_REMOTE = 1.5;
 	
 	//IO READ throughput
 	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_DENSE = 200;
@@ -75,6 +91,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE = 75;
 	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE = 120;
 	private static final double DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE = 60;
+	private static final double DEFAULT_MBS_HDFSWRITE_TEXT_DENSE = 40;
+	private static final double DEFAULT_MBS_HDFSWRITE_TEXT_SPARSE = 30;
+	
 	
 	@Override
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
@@ -83,19 +102,23 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//load time into mem
 		double ltime = 0;
 		if( !vs[0]._inmem ){
-			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen );
+			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() );
 			//eviction costs
 			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (long)((vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz)) )
-				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen ));
+				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() ));
 			vs[0]._inmem = true;
 		}
 		if( !vs[1]._inmem ){
-			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen );
+			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity() );
 			//eviction costs
 			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (long)((vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz)) )
-				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen ));
+				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity()) );
 			vs[1]._inmem = true;
 		}
+		if( LOG.isDebugEnabled() && ltime!=0 ) {
+			CPInstruction cpinst = (CPInstruction)inst;
+			LOG.debug("Cost["+cpinst.getOpcode()+" - read] = "+ltime);
+		}		
 				
 		//exec time CP instruction
 		double etime = getInstTimeEstimate(inst.toString(), vs, args);
@@ -103,6 +126,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//write time caching
 		double wtime = 0;
 		//double wtime = getFSWriteTime( vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen );
+		if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).getOpcode().equals("write") )
+			wtime += getHDFSWriteTime(vs[2]._rlen, vs[2]._clen, vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
+		
+		if( LOG.isDebugEnabled() && wtime!=0 ) {
+			CPInstruction cpinst = (CPInstruction)inst;
+			LOG.debug("Cost["+cpinst.getOpcode()+" - write] = "+wtime);
+		}
 		
 		//total costs
 		double costs = ltime + etime + wtime;
@@ -153,60 +183,84 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		byte[] mapOutIx = getMapOutputIndexes(inIx, retIx, rdInst, mapInst, shfInst, aggInst, otherInst);
 		int numMap = computeNumMapTasks(vs, inIx, blocksize, maxPMap, jinst.getJobType());
 		int numPMap = Math.min(numMap, maxPMap);
+		int numEPMap = Math.max(Math.min(numMap, maxPMap/2),1); //effective map dop
 		int numRed = computeNumReduceTasks( vs, mapOutIx, jinst.getJobType() );
 		int numPRed = Math.min(numRed, maxPRed);
-		LOG.debug("Meta nmap = "+numMap+", nred = "+numRed+"; npmap = "+numPMap+", npred = "+numPRed);
-		
-		
+		int numEPRed = Math.max(Math.min(numRed, maxPRed/2),1); //effective reduce dop
+				
+		LOG.debug("Meta nmap = "+numMap+", nred = "+numRed+"; npmap = "+numPMap+", npred = "+numPRed+"; nepmap = "+numEPMap+", nepred = "+numEPRed);
+	
 		//step 0: export if inputs in mem
 		double exportCosts = 0; 
 		for( int i=0; i<jinst.getInputVars().length; i++ )
 			if( vs[i]._inmem )
 				exportCosts += getHDFSWriteTime(vs[i]._rlen, vs[i]._clen, vs[i].getSparsity());
 		
-		//step 1: MR job latency
-		double latencyCosts = 0;
-		if( localJob )
-			latencyCosts += DEFAULT_MR_LATENCY_LOCAL;
-		else
-			latencyCosts += DEFAULT_MR_LATENCY_REMOTE;
-
-		//step 2: parallel read of inputs
+		//step 1: MR job / task latency (normalization by effective dop)
+		double jobLatencyCosts = localJob ? DEFAULT_MR_JOB_LATENCY_LOCAL : DEFAULT_MR_JOB_LATENCY_REMOTE;
+		double taskLatencyCost = (numMap / numEPMap + numRed / numEPRed)
+				               * (localJob ? DEFAULT_MR_TASK_LATENCY_LOCAL : DEFAULT_MR_TASK_LATENCY_REMOTE);	
+		double latencyCosts = jobLatencyCosts + taskLatencyCost;
+		
+		//step 2: parallel read of inputs (normalization by effective dop)
 		double hdfsReadCosts = 0;
 		for( int i=0; i<jinst.getInputVars().length; i++ )
-			hdfsReadCosts += (getHDFSReadTime(vs[i]._rlen, vs[i]._clen, vs[i].getSparsity()) / numPMap); 
-				
+			hdfsReadCosts += getHDFSReadTime(vs[i]._rlen, vs[i]._clen, vs[i].getSparsity()); 
+		 hdfsReadCosts /= numEPMap;
+		
 		//step 3: parallel MR instructions
 		String[] mapperInst = new String[]{rdInst, rrInst, mapInst};
 		String[] reducerInst = new String[]{shfInst, aggInst, otherInst};	
 		
-		//map instructions
-		double mapCosts = 0;
-		double shuffleCosts = 0;
-		double reduceCosts = 0;
+		//map instructions compute/distcache read (normalization by effective dop) 
+		double mapDCReadCost = 0; //read through distributed cache
+		double mapCosts = 0; //map compute cost
+		double shuffleCosts = 0; 
+		double reduceCosts = 0; //reduce compute costs
 		
 		for( String instCat : mapperInst )
 			if( instCat != null && instCat.length()>0 ) {
 				String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
 				for( String tmp : linst ){
+					//map compute costs
 					Object[] o = extractMRInstStatistics(tmp, vs);
 					mapCosts += getInstTimeEstimate(tmp, (VarStats[])o[0], (String[])o[1]);
+					//dist cache read costs
+					int dcIndex = getDistcacheIndex(tmp);
+					if( dcIndex >= 0 ) {
+						mapDCReadCost += Math.min(getFSReadTime(vs[dcIndex]._rlen, vs[dcIndex]._clen, vs[dcIndex].getSparsity()),
+								                  getFSReadTime(DistributedCacheInput.PARTITION_SIZE, 1, 1.0)) //32MB partitions
+								         * numMap; //read in each task
+					}
 				}
 			}
-		mapCosts /= numPMap;
+		mapCosts /= numEPMap;
+		mapDCReadCost /= numEPMap;
 		
 		if( !mapOnly )
 		{
-			//shuffle costs
-			//TODO account for 1) combiner and 2) specific job types (incl parallelism) 
+			//shuffle costs (normalization by effective map/reduce dop)
 			for( int i=0; i<mapOutIx.length; i++ )
 			{
-				shuffleCosts += ( getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPMap
-				                + getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPRed
-						        + getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numPRed); 	
+				shuffleCosts += ( getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
+				                 + getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed
+						         + getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed); 	
+			
+				//correction of shuffle costs (necessary because the above shuffle does not consider the number of blocks)
+				//TODO this is a workaround - we need to address the number of map output blocks in a more systematic way
+				for( String instCat : reducerInst )
+					if( instCat != null && instCat.length()>0 ) {
+						String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
+						for( String tmp : linst ) {
+							if(InstructionUtils.getMRType(tmp)==MRINSTRUCTION_TYPE.Aggregate)
+								shuffleCosts += numMap * getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
+										      + numPMap * getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
+										      + numPMap * getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed;
+						}
+					}
 			}
 						
-			//reduce instructions
+			//reduce instructions compute (normalization by effective dop)
 			for( String instCat : reducerInst )
 				if( instCat != null && instCat.length()>0 ) {
 					String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
@@ -217,30 +271,34 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						reduceCosts += getInstTimeEstimate(tmp, (VarStats[])o[0], (String[])o[1]);
 					}
 				}
-			reduceCosts /= numPRed;
+			reduceCosts /= numEPRed;
 		}		
 		
-		//step 4: parallel write of outputs
+		//step 4: parallel write of outputs (normalization by effective dop)
 		double hdfsWriteCosts = 0;
 		for( int i=0; i<jinst.getOutputVars().length; i++ )
 		{
-			hdfsWriteCosts += getHDFSWriteTime(vs[retIx[i]]._rlen, vs[retIx[i]]._clen, vs[retIx[i]].getSparsity())
-			       / ((mapOnly)? numPMap : numPRed); 
+			hdfsWriteCosts += getHDFSWriteTime(vs[retIx[i]]._rlen, vs[retIx[i]]._clen, vs[retIx[i]].getSparsity()); 
 		}
+		hdfsWriteCosts /= ((mapOnly)? numEPMap : numEPRed);
 		
-		if( LOG.isDebugEnabled() )
-		{
+		//debug output
+		if( LOG.isDebugEnabled() ) {
 			LOG.debug("Costs Export = "+exportCosts);
 			LOG.debug("Costs Latency = "+latencyCosts);
 			LOG.debug("Costs HDFS Read = "+hdfsReadCosts);
+			LOG.debug("Costs Distcache Read = "+mapDCReadCost);
 			LOG.debug("Costs Map Exec = "+mapCosts);
 			LOG.debug("Costs Shuffle = "+shuffleCosts);
 			LOG.debug("Costs Reduce Exec = "+reduceCosts);
 			LOG.debug("Costs HDFS Write = "+hdfsWriteCosts);
 		}
 
-		return exportCosts + latencyCosts + hdfsReadCosts + mapCosts 
-		       + shuffleCosts + reduceCosts + hdfsWriteCosts;
+		//aggregate individual cost factors
+		return exportCosts + latencyCosts + 
+			   hdfsReadCosts + mapCosts + mapDCReadCost + 
+			   shuffleCosts +  
+		       reduceCosts + hdfsWriteCosts; 
 	}		
 	
 	/**
@@ -543,6 +601,31 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return Math.max(1, ret);
 	}
 
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
+	private int getDistcacheIndex(String inst)
+	{
+		ArrayList<Byte> indexes = new ArrayList<Byte>();
+		
+		if( inst.contains(MapMultChain.OPCODE) )
+			MapMultChainInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(MapMult.OPCODE) )
+			AggregateBinaryInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(PMMJ.OPCODE) )
+			PMMJMRInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(AppendM.OPCODE) )
+			AppendMInstruction.addDistCacheIndex(inst, indexes);	
+		else if( BinaryM.isOpcode(InstructionUtils.getOpCode(inst)) )
+			BinaryMInstruction.addDistCacheIndex(inst, indexes);	
+		
+		if( !indexes.isEmpty() )
+			return indexes.get(0);
+		else
+			return -1;
+	}
 	
 	
 	/////////////////////
@@ -591,8 +674,39 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		else //dense
 			ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE;
 		
-		if( LOG.isDebugEnabled() )
-			LOG.debug("Costs[export] = "+ret+"s, "+mbytes+" MB ("+dm+","+dn+","+ds+").");
+		//if( LOG.isDebugEnabled() )
+		//	LOG.debug("Costs[export] = "+ret+"s, "+mbytes+" MB ("+dm+","+dn+","+ds+").");
+		
+		
+		return ret;
+	}
+	
+	private double getHDFSWriteTime( long dm, long dn, double ds, String format )
+	{
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
+		
+		double bytes = (double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn));
+		double mbytes = bytes / (1024*1024);  		
+		
+		double ret = -1;
+		
+		if( format.equals("textcell") || format.equals("csv") )
+		{
+			if( sparse )
+				ret = mbytes / DEFAULT_MBS_HDFSWRITE_TEXT_SPARSE;
+			else //dense
+				ret = mbytes / DEFAULT_MBS_HDFSWRITE_TEXT_DENSE;	
+			ret *= 2.75; //text commonly 2x-3.5x larger than binary
+		}
+		else
+		{
+			if( sparse )
+				ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
+			else //dense
+				ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_DENSE;
+		}
+		//if( LOG.isDebugEnabled() )
+		//	LOG.debug("Costs[export] = "+ret+"s, "+mbytes+" MB ("+dm+","+dn+","+ds+").");
 		
 		
 		return ret;
@@ -880,10 +994,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 				case Variable: //opcodes: assignvar, cpvar, rmvar, rmfilevar, assignvarwithfile, attachfiletovar, valuepick, iqsize, read, write, createvar, setfilename, castAsMatrix
 					if( optype.equals("write") ){
+						boolean text = args[0].equals("textcell") || args[0].equals("csv");
+						double xwrite =  text ? DEFAULT_NFLOP_TEXT_IO : DEFAULT_NFLOP_CP;
+						
 						if( !leftSparse )
-							return d1m * d1n * DEFAULT_NFLOP_CP; 
+							return d1m * d1n * xwrite; 
 						else
-							return d1m * d1n * d1s * DEFAULT_NFLOP_CP;
+							return d1m * d1n * d1s * xwrite;
 					}
 					else if ( optype.equals("inmem-iqm") )
 						//note: assumes uniform distribution
@@ -1028,7 +1145,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case AggregateBinary: //opcodes: cpmm, rmm, mapmult
 					//note: copy from CP costs
 					if(    optype.equals("cpmm") || optype.equals("rmm") 
-						|| optype.equals("mapmult") ) //matrix mult
+						|| optype.equals(MapMult.OPCODE) ) //matrix mult
 					{
 						//reduction by factor 2 because matrix mult better than
 						//average flop count

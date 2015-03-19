@@ -216,8 +216,24 @@ public class VariableCPInstruction extends CPInstruction
 		this.formatProperties = formatProperties;
 	}
 	
+	public FileFormatProperties getFormatProperties() {
+		return formatProperties;
+	}
+	
 	public void setFormatProperties(FileFormatProperties prop) {
 		formatProperties = prop;
+	}
+	
+	public CPOperand getInput1() {
+		return input1;
+	}
+	
+	public CPOperand getInput2() {
+		return input2;
+	}
+	
+	public CPOperand getInput3() {
+		return input3;
 	}
 	
 	public String getOutputVariableName(){

@@ -53,6 +53,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -599,11 +600,19 @@ public abstract class CostEstimator
 			vs[1] = stats.get( minst.getOutput(0).getName() );
 			vs[2] = stats.get( minst.getOutput(1).getName() );
 		}
+		else if( inst instanceof VariableCPInstruction )
+		{
+			setUnknownStats(vs);
+			
+			VariableCPInstruction varinst = (VariableCPInstruction) inst;
+			if( varinst.getOpcode().equals("write") ) {
+				vs[0] = stats.get( varinst.getInput1().getName() );	
+				attr = new String[]{varinst.getInput3().getName()};
+			}	
+		}
 		else
 		{
-			vs[0] = _unknownStats;
-			vs[1] = _unknownStats;
-			vs[2] = _unknownStats;			
+			setUnknownStats(vs);		
 		}
 		
 		//maintain var status (CP output always inmem)
@@ -613,6 +622,12 @@ public abstract class CostEstimator
 		ret[1] = attr;
 		
 		return ret;
+	}
+	
+	private void setUnknownStats(VarStats[] vs) {
+		vs[0] = _unknownStats;
+		vs[1] = _unknownStats;
+		vs[2] = _unknownStats;	
 	}
 	
 	/**

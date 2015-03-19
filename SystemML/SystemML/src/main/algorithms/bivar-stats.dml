@@ -111,7 +111,7 @@ error_flag = FALSE;
 
 maxs = colMaxs(D);
 mins = colMins(D)
-maxDomainSize = -1;
+maxDomainSize = -1.0;
 for(k in 1:ncol(K1) ) {
   type = as.scalar(K1[1,k]);
   
@@ -123,7 +123,10 @@ for(k in 1:ncol(K1) ) {
   
   	colMinimum = as.scalar(mins[1,colID]);
   	if(colMinimum < 1){
-  	  debug_str = append(debug_str, "In column " + colID + " (declared with type " + type + ") minimum value is " + colMinimum)
+  	  if(type == 2)
+  	    debug_str = append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum)
+  	  else
+  	    debug_str = append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum)
   	  error_flag = TRUE;
   	}
   }
@@ -140,7 +143,10 @@ for(k in 1:ncol(K2) ) {
   
   	colMinimum = as.scalar(mins[1,colID]);
   	if(colMinimum < 1){
-  	  debug_str = append(debug_str, "In column " + colID + " (declared with type " + type + ") minimum value is " + colMinimum)
+  	  if(type == 2)
+  	    debug_str = append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum)
+  	  else 
+  	  	debug_str = append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum)
   	  error_flag = TRUE;
   	}
   }
@@ -325,11 +331,11 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain)
     Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
 
     bw_ss = sum( (CFreqs*(CMeans-my)^2) );
-    bw_df = R-1;
+    bw_df = as.double(R-1);
     bw_mean_square = bw_ss/bw_df;
 	
     within_ss = sum( (CFreqs-1)*CVars );
-    within_df = W-R;
+    within_df = as.double(W-R);
     within_mean_square = within_ss/within_df;
 	
     AnovaF = bw_mean_square/within_mean_square;

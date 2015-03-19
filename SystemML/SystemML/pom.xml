@@ -21,6 +21,38 @@
 
 	<build>
 		<plugins>
+		
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.4</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>package</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>org.apache.hadoop</groupId>
+									<artifactId>hadoop-test</artifactId>
+									<version>1.2.1</version>
+									<!-- <classifier>jar</classifier> -->
+									<type>jar</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${project.build.directory}/hadoop-test</outputDirectory>
+									<includes>**/*</includes>
+								</artifactItem>
+							</artifactItems>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		
 			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" NIMBLE INTO SYSTEMML.JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -128,6 +160,18 @@
 						<configuration>
 							<descriptors>
 								<descriptor>src/assembly/standalone.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+					<execution>
+						<id>create-inmemory-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/inmemory.xml</descriptor>
 							</descriptors>
 						</configuration>
 					</execution>
@@ -274,6 +318,7 @@
 
 
 	<dependencies>
+	
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>

@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.util;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
@@ -388,27 +389,12 @@ public class DataConverter
 			ncols = Math.max( ncols, index.getColumnIndex() );
 		}
 		
-		int rlen = (int)nrows;
-		int clen = (int)ncols;
-		int nnz = map.size();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz); 		
-		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
-		
-		// copy map values into new block
-		for (MatrixIndexes index : map.keySet()) {
-			double value  = map.get(index).doubleValue();
-			if ( value != 0 )
-			{
-				mb.quickSetValue( (int)index.getRowIndex()-1, 
-						          (int)index.getColumnIndex()-1, 
-						          value );
-			}
-		}
-		
-		return mb;
+		// convert to matrix block
+		return convertToMatrixBlock(map, (int)nrows, (int)ncols);
 	}
 	
 	/**
+	 * NOTE: this method also ensures the specified matrix dimensions
 	 * 
 	 * @param map
 	 * @return
@@ -420,14 +406,34 @@ public class DataConverter
 		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
 		
 		// copy map values into new block
-		for (MatrixIndexes index : map.keySet()) 
+		if( sparse ) //SPARSE <- cells
 		{
-			int rix = (int)index.getRowIndex();
-			int cix = (int)index.getColumnIndex();
-			double value  = map.get(index).doubleValue();
+			//append cells to sparse target (prevent shifting)
+			for( Entry<MatrixIndexes,Double> e : map.entrySet() ) 
+			{
+				MatrixIndexes index = e.getKey();
+				double value = e.getValue();
+				int rix = (int)index.getRowIndex();
+				int cix = (int)index.getColumnIndex();
+				if( value != 0 && rix<=rlen && cix<=clen )
+					mb.appendValue( rix-1, cix-1, value );
+			}
 			
-			if( value != 0 && rix<=rlen && cix<=clen )
-				mb.quickSetValue( rix-1, cix-1, value );
+			//sort sparse target representation
+			mb.sortSparseRows();
+		}
+		else  //DENSE <- cells
+		{
+			//directly insert cells into dense target 
+			for( Entry<MatrixIndexes,Double> e : map.entrySet() ) 
+			{
+				MatrixIndexes index = e.getKey();
+				double value = e.getValue();
+				int rix = (int)index.getRowIndex();
+				int cix = (int)index.getColumnIndex();
+				if( value != 0 && rix<=rlen && cix<=clen )
+					mb.quickSetValue( rix-1, cix-1, value );
+			}
 		}
 		
 		return mb;

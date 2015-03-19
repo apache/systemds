@@ -111,7 +111,7 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		if ( outputDimsKnown ) {
 			int inputRows = matBlock1.getNumRows();
 			int inputCols = matBlock1.getNumColumns();
-			boolean sparse = (inputRows*inputCols < outputDim1*outputDim2);
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(outputDim1, outputDim2, inputRows*inputCols);
 			//only create result block if dense; it is important not to aggregate on sparse result
 			//blocks because it would implicitly turn the O(N) algorithm into O(N log N). 
 			if( !sparse )

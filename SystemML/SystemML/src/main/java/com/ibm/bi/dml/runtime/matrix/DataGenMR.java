@@ -28,6 +28,7 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
@@ -62,6 +63,8 @@ public class DataGenMR
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
+	
+	private static IDSequence _seqRandInput = new IDSequence(); 
 	
 	private DataGenMR() {
 		//prevent instantiation via private constructor
@@ -137,7 +140,7 @@ public class DataGenMR
 			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
 			{
 				RandInstruction randInst = (RandInstruction) mrins;
-				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".randinput";//+random.nextInt();
+				inputs[i]=genInst.getBaseDir() + "tmp"+_seqRandInput.getNextID()+".randinput";
 				maxsparsity = Math.max(maxsparsity, randInst.getSparsity());
 				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));

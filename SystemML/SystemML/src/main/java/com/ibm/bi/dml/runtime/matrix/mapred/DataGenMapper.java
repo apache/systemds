@@ -18,7 +18,9 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
@@ -30,14 +32,14 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private MatrixIndexes indexes=new MatrixIndexes();
-	private MatrixBlock block=new MatrixBlock();
+	private MatrixIndexes[] indexes=null;
+	private MatrixBlock[] block=null;
 	
 	
 	@Override
 	//valueString has to be Text type
-	public void map(Writable key, Writable valueString, OutputCollector<Writable, Writable> out,
-			Reporter reporter) throws IOException
+	public void map(Writable key, Writable valueString, OutputCollector<Writable, Writable> out, Reporter reporter) 
+		throws IOException
 	{
 		cachedReporter=reporter;
 		
@@ -46,10 +48,11 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		//for each representative matrix, read the record and apply instructions
 		for(int i = 0; i < representativeMatrixes.size(); i++)
 		{
-			//DataGenMRInstruction genInst = dataGen_instructions.get(i);
-			if ( dataGen_instructions.get(i).getDataGenMethod() == DataGenMethod.RAND ) {
-				//	byte thisMatrix = representativeMatrixes.get(i);
-				RandInstruction randInst = (RandInstruction) dataGen_instructions.get(i);
+			DataGenMRInstruction genInst = dataGen_instructions.get(i);
+			
+			if( genInst.getDataGenMethod() == DataGenMethod.RAND ) 
+			{
+				RandInstruction randInst = (RandInstruction) genInst;
 				String[] params = valueString.toString().split(",");
 				long blockRowNumber = Long.parseLong(params[0]);
 				long blockColNumber = Long.parseLong(params[1]);
@@ -60,22 +63,27 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				double minValue = randInst.getMinValue();
 				double maxValue = randInst.getMaxValue();
 				double sparsity = randInst.getSparsity();
-				String pdf = randInst.getProbabilityDensityFunction();
+				String pdf = randInst.getProbabilityDensityFunction().toLowerCase();
 				
-				indexes.setIndexes(blockRowNumber, blockColNumber);
-				
+				//rand data generation
 				try {
-					if ( pdf.equalsIgnoreCase("normal") ) { 
-						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, Double.NaN, Double.NaN, null, seed); 
+					indexes[i].setIndexes(blockRowNumber, blockColNumber);
+					if( LibMatrixDatagen.RAND_PDF_NORMAL.equals(pdf) ) {
+						block[i].randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, Double.NaN, Double.NaN, null, seed); 
+					}
+					else if( LibMatrixDatagen.RAND_PDF_UNIFORM.equals(pdf) ) {
+						block[i].randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, minValue, maxValue, null, seed);
 					}
 					else {
-						block.randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, minValue, maxValue, null, seed);
+						throw new IOException("Unsupported rand pdf function: "+pdf);
 					}
-				} catch(DMLRuntimeException e) {
+				} 
+				catch(DMLRuntimeException e) {
 					throw new IOException(e);
 				}
 			}
-			else if ( dataGen_instructions.get(i).getDataGenMethod() == DataGenMethod.SEQ ) { 
+			else if( genInst.getDataGenMethod() == DataGenMethod.SEQ ) 
+			{ 
 				String[] params = valueString.toString().split(",");
 				long blockRowNumber = Long.parseLong(params[0]);
 				long blockColNumber = Long.parseLong(params[1]);
@@ -83,46 +91,23 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				double to=Double.parseDouble(params[3]);
 				double incr=Double.parseDouble(params[4]);
 				
+				//sequence data generation
 				try {
-					indexes.setIndexes(blockRowNumber, blockColNumber);
-					block.seqOperationsInPlace(from, to, incr);
-				} catch (DMLRuntimeException e) {
+					indexes[i].setIndexes(blockRowNumber, blockColNumber);
+					block[i].seqOperationsInPlace(from, to, incr);
+				} 
+				catch (DMLRuntimeException e) {
 					throw new IOException(e);
 				}
 			}
 			else {
-				throw new IOException("Unknown data generation instruction: " + dataGen_instructions.get(i).toString() );
+				throw new IOException("Unknown data generation instruction: " + genInst.toString() );
 			}
-			
-			
-			// TODO: statiko: check with Yuanyuan if commenting out the following code is ok.
-			//       instead, getRandomSparseMatrix() is invoked, as above.
-			
-			/*if(sparsity > MatrixBlock.SPARCITY_TURN_POINT)
-				block.reset(blockRowSize, blockColSize, false);
-			else
-				block.reset(blockRowSize, blockColSize, true);
-			
-			double currentValue;
-			random.setSeed(seed);
-			for(int r = 0; r < blockRowSize; r++)
-			{
-				for(int c = 0; c < blockColSize; c++)
-				{
-					if(random.nextDouble() > sparsity)
-						continue;
-					currentValue = random.nextDouble();//((double) random.nextInt(0, maxRandom) / (double) maxRandom);
-					currentValue = (currentValue * (maxValue - minValue) + minValue);
-					block.setValue(r, c, currentValue);
-				}
-			}*/
 			
 			//put the input in the cache
 			cachedValues.reset();
-			cachedValues.set(dataGen_instructions.get(i).output, indexes, block);
+			cachedValues.set(genInst.output, indexes[i], block[i]);
             
-			//System.out.println("generated in Rand: "+indexes +"\n"+block);
-			
 			//special operations for individual mapp type
 			specialOperationsForActualMap(i, out, reporter);
 		}
@@ -130,11 +115,17 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		reporter.incrCounter(Counters.MAP_TIME, System.currentTimeMillis() - start);
 	}
 	
+	@Override
 	public void configure(JobConf job)
 	{
 		super.configure(job);
-	//	int id=MapReduceTool.getUniqueMapperId(job, true);
-	//	System.out.println("mapper "+ MapReduceTool.getUniqueMapperId(job, true));
-	//	System.out.println(job.getNumMapTasks());
+	
+		//initialize num_inst matrix indexes and blocks for reuse
+		indexes = new MatrixIndexes[representativeMatrixes.size()];
+		block = new MatrixBlock[representativeMatrixes.size()];
+		for( int i=0; i< representativeMatrixes.size(); i++ ) {
+			indexes[i] = new MatrixIndexes();
+			block[i] = new MatrixBlock();
+		}
 	}
 }

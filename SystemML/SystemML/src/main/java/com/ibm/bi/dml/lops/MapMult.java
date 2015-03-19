@@ -20,7 +20,7 @@ public class MapMult extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final String OPCODE = "mapmult";
+	public static final String OPCODE = "mapmm";
 	
 	public enum CacheType {
 		RIGHT,
@@ -111,7 +111,7 @@ public class MapMult extends Lop
 	}
 
 	public String toString() {
-		return "Operation = MapMult";
+		return "Operation = MapMM";
 	}
 	
 	@Override

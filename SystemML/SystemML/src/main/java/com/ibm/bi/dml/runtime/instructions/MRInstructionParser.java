@@ -12,6 +12,7 @@ import java.util.HashMap;
 import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.MapMult;
+import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
@@ -123,7 +124,7 @@ public class MRInstructionParser extends InstructionParser
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
 		String2MRInstructionType.put( "pmm" , MRINSTRUCTION_TYPE.PMMJ);
-		String2MRInstructionType.put( "mapmultchain", MRINSTRUCTION_TYPE.MapMultChain);
+		String2MRInstructionType.put( MapMultChain.OPCODE, MRINSTRUCTION_TYPE.MapMultChain);
 		String2MRInstructionType.put( "binuaggchain", MRINSTRUCTION_TYPE.BinUaggChain);
 		
 		// BINARY and SCALAR Instruction Opcodes 

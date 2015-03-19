@@ -16,6 +16,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLException; 
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -81,7 +82,7 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 
 		String opcode = InstructionUtils.getOpCode(str);
 
-		if ( opcode.equalsIgnoreCase("mapmult")) {
+		if ( opcode.equalsIgnoreCase(MapMult.OPCODE)) {
 			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 			in1.split(parts[1]);
 			in2.split(parts[2]);
@@ -107,7 +108,7 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 		
-		if ( opcode.equalsIgnoreCase("mapmult")) 
+		if ( opcode.equalsIgnoreCase(MapMult.OPCODE)) 
 		{
 			String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
 			String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();

@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
@@ -32,7 +33,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
 		//matrix multiplication operators
 		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.MMCJ);
-		String2SPInstructionType.put( "mapmult",  SPINSTRUCTION_TYPE.MapMult);
+		String2SPInstructionType.put( MapMult.OPCODE,  SPINSTRUCTION_TYPE.MapMult);
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uark+"   , SPINSTRUCTION_TYPE.AggregateUnary);

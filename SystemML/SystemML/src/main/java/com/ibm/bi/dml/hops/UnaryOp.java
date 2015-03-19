@@ -90,7 +90,7 @@ public class UnaryOp extends Hop
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "u(" + _op + ")";
+		s += "u(" + _op.toString().toLowerCase() + ")";
 		// s += HopsOpOp1String.get(_op) + ")";
 		return s;
 	}

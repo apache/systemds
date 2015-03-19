@@ -113,7 +113,7 @@ public class DataGenOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		return "dg(" + _op +")";
+		return "dg(" + _op.toString().toLowerCase() +")";
 	}
 	
 	public DataGenMethod getOp() {

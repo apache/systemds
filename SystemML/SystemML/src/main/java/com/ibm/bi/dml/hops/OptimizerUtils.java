@@ -887,6 +887,7 @@ public class OptimizerUtils
 				case DIV:   ret = lret / rret; break;
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
+				case POW:   ret = Math.pow(lret, rret); break; 
 			}
 		}
 		
@@ -926,6 +927,7 @@ public class OptimizerUtils
 				case DIV:   ret = lret / rret; break;
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
+				case POW:   ret = Math.pow(lret, rret); break; 
 			}
 		}
 		

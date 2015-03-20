@@ -54,6 +54,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.IterablePredicate;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -930,6 +931,10 @@ public class Recompiler
 					Hop.resetRecompilationFlag(hops, ExecType.CP);
 					isb.updatePredicateRecompilationFlag();
 				}
+
+				//update predicate vars (potentially after constant folding, e.g., in parfor)
+				if( hops instanceof LiteralOp )
+					ipb.setPredicateResultVar(((LiteralOp)hops).getName().toLowerCase());
 			}
 		}
 	}
@@ -961,6 +966,10 @@ public class Recompiler
 					Hop.resetRecompilationFlag(hops, ExecType.CP);
 					wsb.updatePredicateRecompilationFlag();
 				}
+				
+				//update predicate vars (potentially after constant folding, e.g., in parfor)
+				if( hops instanceof LiteralOp )
+					wpb.setPredicateResultVar(((LiteralOp)hops).getName().toLowerCase());
 			}
 		}
 	}
@@ -986,6 +995,7 @@ public class Recompiler
 			Hop toHops = fsb.getToHops();
 			Hop incrHops = fsb.getIncrementHops();
 			
+			//handle recompilation flags
 			if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
 				&& resetRecompile ) 
 			{
@@ -1021,6 +1031,15 @@ public class Recompiler
 					fpb.setIncrementInstructions(tmp);
 				}
 			}
+			
+			//update predicate vars (potentially after constant folding, e.g., in parfor)
+			String[] itervars = fpb.getIterablePredicateVars();
+			if( fromHops != null && fromHops instanceof LiteralOp )
+				itervars[1] = ((LiteralOp)fromHops).getName();
+			if( toHops != null && toHops instanceof LiteralOp )
+				itervars[2] = ((LiteralOp)toHops).getName();
+			if( incrHops != null && incrHops instanceof LiteralOp )
+				itervars[3] = ((LiteralOp)incrHops).getName();	
 		}
 	}
 	

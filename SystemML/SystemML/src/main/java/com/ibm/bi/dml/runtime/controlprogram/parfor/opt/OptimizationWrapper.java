@@ -249,7 +249,8 @@ public class OptimizationWrapper
 				throw new DMLRuntimeException(ex);
 			}
 			
-			//program rewrites (e.g., branch removal) according to replaced literals
+			
+			//program rewrites (e.g., constant folding, branch removal) according to replaced literals
 			try {
 				ProgramRewriter rewriter = createProgramRewriterWithRuleSets();
 				ProgramRewriteStatus state = new ProgramRewriteStatus();

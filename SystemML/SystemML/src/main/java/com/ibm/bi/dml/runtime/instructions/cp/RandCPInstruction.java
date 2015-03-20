@@ -171,9 +171,16 @@ public class RandCPInstruction extends UnaryCPInstruction
 			
 			int rpb = Integer.parseInt(s[3]);
 			int cpb = Integer.parseInt(s[4]);
-			double minValue = Double.parseDouble(s[5]);
-			double maxValue = Double.parseDouble(s[6]);
-			double sparsity = Double.parseDouble(s[7]);
+			
+			double minValue = -1, maxValue = -1;
+	        if (!s[5].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+			   	minValue = Double.valueOf(s[5]).doubleValue();
+	        }
+	        if (!s[6].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+	        	maxValue = Double.valueOf(s[6]).doubleValue();
+	        }
+	        
+	        double sparsity = Double.parseDouble(s[7]);
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
 			

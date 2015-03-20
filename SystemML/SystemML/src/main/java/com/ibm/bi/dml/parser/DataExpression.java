@@ -202,6 +202,7 @@ public class DataExpression extends DataIdentifier
 			if (passedParamExprs.size() < 3){
 				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
 			}
+			
 			if (unnamedParamCount > 1){
 				
 				if (namedParamCount > 0)
@@ -1031,11 +1032,12 @@ public class DataExpression extends DataIdentifier
 			
 			if (dataParam != null){
 				if( dataParam instanceof DataIdentifier )
-				{
-					raiseValidateError("for matrix statement, parameter " 
-							        + RAND_DATA + " must be a matrix or a scalar literal.", conditional);
-					//addVarParam(RAND_MIN, dataParam);
-					//addVarParam(RAND_MAX, dataParam);
+				{		
+					//MB disabled validate error since we now support expressions in min/max
+					//raiseValidateError("for matrix statement, parameter " 
+					//		        + RAND_DATA + " must be a matrix or a scalar literal.", conditional);
+					addVarParam(RAND_MIN, dataParam);
+					addVarParam(RAND_MAX, dataParam);
 				}
 				else if (dataParam instanceof IntIdentifier){
 					

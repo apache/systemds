@@ -7,10 +7,19 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-/*
- * DML script to test the scalar write:
- * $1 - input scalar value
- * $2 - filename to which scalar needs to be written out
- */
-x = $1
-write(x, $2);
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+
+
+M = as.integer(args[1]);
+N = as.integer(args[2]);
+
+R = matrix(0, M, N);
+
+for (x in 1 : M) {
+    R[x,] = matrix (x, 1, N);
+}
+
+writeMM(as(R,"CsparseMatrix"), paste(args[3], "R", sep=""))
+

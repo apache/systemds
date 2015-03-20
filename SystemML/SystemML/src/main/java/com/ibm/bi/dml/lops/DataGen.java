@@ -149,19 +149,11 @@ public class DataGen extends Lop
 					.getOutputParameters().getColsInBlock());
 
 			iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
-			String minString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.RAND_MIN
-						+ " must be a literal for a Rand operation.");
+			String minString = iLop.prepScalarLabel();
 
 			iLop = _inputParams.get(DataExpression.RAND_MAX.toString());
-			String maxString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.RAND_MAX
-						+ " must be a literal for a Rand operation.");
-
+			String maxString =  iLop.prepScalarLabel();
+			
 			iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString());
 			String sparsityString = iLop.getOutputParameters().getLabel();
 			if (iLop.isVariable())
@@ -372,16 +364,10 @@ public class DataGen extends Lop
 			String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
 			
 			iLop = _inputParams.get(DataExpression.RAND_MIN.toString()); 
-			String minString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation() + "Parameter " 
-						+ DataExpression.RAND_MIN + " must be a literal for a Rand operation.");
+			String minString = iLop.prepScalarInputOperand(getExecType()); 
 			
 			iLop = _inputParams.get(DataExpression.RAND_MAX.toString()); 
-			String maxString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation() + "Parameter " 
-						+ DataExpression.RAND_MAX + " must be a literal for a Rand operation.");
+			String maxString = iLop.prepScalarInputOperand(getExecType()); 
 			
 			iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); 
 			String sparsityString = iLop.getOutputParameters().getLabel();

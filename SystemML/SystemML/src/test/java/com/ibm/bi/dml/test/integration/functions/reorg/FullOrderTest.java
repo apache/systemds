@@ -470,11 +470,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.DENSE, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexAscDenseMR2() 
-//	{
-//		runOrderTest(true, InputType.DENSE, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexAscDenseMR2() 
+	{
+		runOrderTest(true, InputType.DENSE, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataAscSparseMR2() 
@@ -482,11 +482,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.SPARSE, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexAscSparseMR2() 
-//	{
-//		runOrderTest(true, InputType.SPARSE, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexAscSparseMR2() 
+	{
+		runOrderTest(true, InputType.SPARSE, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataAscEmptyMR2() 
@@ -494,11 +494,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.EMPTY, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexAscEmptyMR2() 
-//	{
-//		runOrderTest(true, InputType.EMPTY, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexAscEmptyMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataDescDenseMR2() 
@@ -506,11 +506,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.DENSE, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexDescDenseMR2() 
-//	{
-//		runOrderTest(true, InputType.DENSE, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexDescDenseMR2() 
+	{
+		runOrderTest(true, InputType.DENSE, true, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataDescSparseMR2() 
@@ -518,11 +518,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.SPARSE, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexDescSparseMR2() 
-//	{
-//		runOrderTest(true, InputType.SPARSE, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexDescSparseMR2() 
+	{
+		runOrderTest(true, InputType.SPARSE, true, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataDescEmptyMR2() 
@@ -530,11 +530,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.EMPTY, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexDescEmptyMR2() 
-//	{
-//		runOrderTest(true, InputType.EMPTY, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexDescEmptyMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, true, true, ExecType.MR, true);
+	}
 
 	@Test
 	public void testOrderVectorDataAscDenseMR2() 
@@ -542,11 +542,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.DENSE, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexAscDenseMR2() 
-//	{
-//		runOrderTest(false, InputType.DENSE, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexAscDenseMR2() 
+	{
+		runOrderTest(false, InputType.DENSE, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataAscSparseMR2() 
@@ -554,11 +554,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.SPARSE, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexAscSparseMR2() 
-//	{
-//		runOrderTest(false, InputType.SPARSE, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexAscSparseMR2() 
+	{
+		runOrderTest(false, InputType.SPARSE, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataAscEmptyMR2() 
@@ -566,11 +566,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, false, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexAscEmptyMR2() 
-//	{
-//		runOrderTest(false, InputType.EMPTY, false, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexAscEmptyMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataDescDenseMR2() 
@@ -578,11 +578,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.DENSE, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexDescDenseMR2() 
-//	{
-//		runOrderTest(false, InputType.DENSE, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexDescDenseMR2() 
+	{
+		runOrderTest(false, InputType.DENSE, true, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataDescSparseMR2() 
@@ -590,11 +590,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.SPARSE, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexDescSparseMR2() 
-//	{
-//		runOrderTest(false, InputType.SPARSE, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexDescSparseMR2() 
+	{
+		runOrderTest(false, InputType.SPARSE, true, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataDescEmptyMR2() 
@@ -602,11 +602,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, true, false, true, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexDescEmptyMR2() 
-//	{
-//		runOrderTest(false, InputType.EMPTY, true, true, true, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexDescEmptyMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, true, true, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataAscEmptyNoRewriteMR2() 
@@ -614,11 +614,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.EMPTY, false, false, false, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexAscEmptyNoRewriteMR2() 
-//	{
-//		runOrderTest(true, InputType.EMPTY, false, true, false, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexAscEmptyNoRewriteMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, true, false, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderMatrixDataDescEmptyNoRewriteMR2() 
@@ -626,11 +626,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(true, InputType.EMPTY, true, false, false, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderMatrixIndexDescEmptyNoRewriteMR2() 
-//	{
-//		runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderMatrixIndexDescEmptyNoRewriteMR2() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.MR, true);
+	}
 
 	@Test
 	public void testOrderVectorDataAscEmptyNoRewriteMR2() 
@@ -638,11 +638,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, false, false, false, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexAscEmptyNoRewriteMR2() 
-//	{
-//		runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexAscEmptyNoRewriteMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.MR, true);
+	}
 	
 	@Test
 	public void testOrderVectorDataDescEmptyNoRewriteMR2() 
@@ -650,11 +650,11 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, true, false, false, ExecType.MR, true);
 	}
 	
-//	@Test
-//	public void testOrderVectorIndexDescEmptyNoRewriteMR2() 
-//	{
-//		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.MR, true);
-//	}
+	@Test
+	public void testOrderVectorIndexDescEmptyNoRewriteMR2() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.MR, true);
+	}
 	
 	//SPECIFIC REWRITE TESTS 
 	

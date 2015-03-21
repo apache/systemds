@@ -48,8 +48,9 @@ public class CombineTertiary extends Lop
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = true;
-		lps.addCompatibility(JobType.COMBINE);
+		this.lps.addCompatibility(JobType.COMBINE);
 		this.lps.setProperties(inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProducesIntermediateOutput(true);
 	}
 
 	public String toString() {

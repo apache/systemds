@@ -41,22 +41,22 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 public enum JobType 
 {
 	/* Add new job types to the following list */
-	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction, allowsNoOtherInstructions)
-	INVALID			(-1, "INVALID", false, false, false, false), 
-	ANY				(0, "ANY", false, false, false, false), 
-	GMR				(1, "GMR", false, false, false, false), 
-	DATAGEN			(2, "DATAGEN", false, true, false, false), 
-	REBLOCK			(3, "REBLOCK", false, false, false, false), 
-	MMCJ			(4, "MMCJ", true, false, true, false), 
-	MMRJ			(5, "MMRJ", false, false, false, false), 
-	COMBINE			(6, "COMBINE", true, false, false, true), 
-	SORT			(7, "SORT", true, false, true, true),  			// allows only "InstructionsBeforeSort" and nothing else. 
-	CM_COV			(8, "CM_COV", false, false, false, false),  	// allows only instructions in the mapper 
-	GROUPED_AGG		(9, "GROUPED_AGG", false, false, false, false), 
-	//PARTITION		(10, "PARTITION", false, false, false, true),	// MB: meta learning removed
-	DATA_PARTITION	(11, "DATAPARTITION", false, false, false, true),
-	CSV_REBLOCK		(12, "CSV_REBLOCK", false, false, false, false),
-	CSV_WRITE		(13, "CSV_WRITE", false, false, false, true);
+	// 				(id, name, 		emptyInputsAllowed, 	allowsSingleShuffleInstruction, 	allowsNoOtherInstructions)
+	INVALID			(-1, "INVALID", 		false, 			false, 								false), 
+	ANY				(0, "ANY", 				false, 			false, 								false), 
+	GMR				(1, "GMR", 				false, 			false, 								false), 
+	DATAGEN			(2, "DATAGEN", 			true, 			false, 								false), 
+	REBLOCK			(3, "REBLOCK", 			false, 			false, 								false), 
+	MMCJ			(4, "MMCJ", 			false, 			true, 								false), 
+	MMRJ			(5, "MMRJ", 			false, 			false, 								false), 
+	COMBINE			(6, "COMBINE", 			false, 			false, 								true), 
+	SORT			(7, "SORT", 			false, 			true, 								true),  		// allows only "InstructionsBeforeSort" and nothing else. 
+	CM_COV			(8, "CM_COV", 			false, 			false, 								false),  	// allows only instructions in the mapper 
+	GROUPED_AGG		(9, "GROUPED_AGG", 		false, 			false, 								false), 
+	//PARTITION		(10, "PARTITION", false, false, true),	// MB: meta learning removed
+	DATA_PARTITION	(11, "DATAPARTITION", 	false, 			false, 								true),
+	CSV_REBLOCK		(12, "CSV_REBLOCK", 	false, 			false, 								false),
+	CSV_WRITE		(13, "CSV_WRITE", 		false, 			false, 								true);
 
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
@@ -66,7 +66,6 @@ public enum JobType
 
 	private final int id;
 	private final String name;
-	private final boolean producesIntermediateOutput;
 	
 	private final boolean emptyInputsAllowed;
 	
@@ -78,10 +77,9 @@ public enum JobType
 	 */
 	private final boolean allowsNoOtherInstructions;
 	
-	JobType(int id, String name, boolean aio, boolean aei, boolean assi, boolean anoi) {
+	JobType(int id, String name, boolean aei, boolean assi, boolean anoi) {
 		this.id = id;
 		this.name = name;
-		this.producesIntermediateOutput = aio;
 		this.emptyInputsAllowed = aei;
 		this.allowsSingleShuffleInstruction = assi;
 		this.allowsNoOtherInstructions = anoi;
@@ -95,10 +93,10 @@ public enum JobType
 		return name;
 	}
 
-	public boolean producesIntermediateOutput() {
+/*	public boolean producesIntermediateOutput() {
 		return producesIntermediateOutput;
 	}
-
+*/
 	public boolean areEmptyInputsAllowed() {
 		return emptyInputsAllowed;
 	}
@@ -178,9 +176,9 @@ public enum JobType
 		if ( !allowsSingleShuffleInstruction )
 			throw new DMLRuntimeException("isCompatibleWithParentNodes() can not be invoked for a job (" + getName() + ") with allowsSingleShuffleInstruction=false.");
 		else {
-			if ( getName().equals("MMCJ") || getName().equals("SORT") )
+			if ( getName().equals("MMCJ")  )
 				return false;
-			else if ( getName().equals("MMRJ") )
+			else if ( getName().equals("MMRJ") || getName().equals("SORT") )
 				return true;
 			else 
 				throw new DMLRuntimeException("Implementation for isCompatibleWithParentNodes() is missing for a job (" + getName() + ") that allows a single shuffle instruction.");

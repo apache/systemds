@@ -30,6 +30,10 @@ public class SortKeys extends Lop
 	private OperationTypes operation;
 	private boolean descending = false;
 	
+	public OperationTypes getOpType() {
+		return operation;
+	}
+	
 	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt) {
 		super(Lop.Type.SortKeys, dt, vt);		
 		init(input, null, op, ExecType.MR);
@@ -64,6 +68,8 @@ public class SortKeys extends Lop
 			
 			lps.addCompatibility(JobType.SORT);
 			this.lps.setProperties( inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+			if(op != OperationTypes.Indexes)
+				this.lps.setProducesIntermediateOutput(true);
 		}
 		else {
 			// SortKeys can accept a optional second input only when executing in CP

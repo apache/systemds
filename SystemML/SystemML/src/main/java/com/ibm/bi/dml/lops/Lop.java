@@ -45,7 +45,7 @@ public abstract class Lop
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 
 		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary, //MR cumsum
-		SortKeys, PickValues,   
+		SortKeys, PickValues   
 	};
 
 	/**
@@ -363,6 +363,9 @@ public abstract class Lop
 		return lps.getBreaksAlignment();
 	}
 	
+	public boolean getProducesIntermediateOutput() {
+		return lps.getProducesIntermediateOutput();
+	}
 	
 	public boolean isAligner()
 	{

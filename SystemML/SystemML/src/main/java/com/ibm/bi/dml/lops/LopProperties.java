@@ -45,6 +45,7 @@ public class LopProperties
 	boolean breaksAlignment;
 	boolean isAligner;
 	boolean definesMRJob;
+	boolean producesIntermediateOutput;
 	
 	public LopProperties() {
 		ID = UniqueLopID.getNextID();
@@ -54,6 +55,7 @@ public class LopProperties
 		breaksAlignment = true;
 		isAligner = false;
 		definesMRJob = false;
+		producesIntermediateOutput = false;
 	}
 	
 	public long getID() { return ID; }
@@ -83,6 +85,10 @@ public class LopProperties
 	public boolean isAligner()
 	{
 		return isAligner;
+	}
+	
+	public boolean getProducesIntermediateOutput() {
+		return producesIntermediateOutput;
 	}
 
 	public void setExecLocation(ExecLocation el) {
@@ -120,6 +126,10 @@ public class LopProperties
 	
 	public void setAligner(boolean align) {
 		isAligner = align;
+	}
+	
+	public void setProducesIntermediateOutput(boolean pio) {
+		producesIntermediateOutput = pio;
 	}
 	
 	/*

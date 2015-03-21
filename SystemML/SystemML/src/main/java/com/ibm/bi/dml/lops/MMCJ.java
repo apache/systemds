@@ -45,6 +45,7 @@ public class MMCJ extends Lop
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.MMCJ);
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProducesIntermediateOutput(true);
 	}
 
 	@Override

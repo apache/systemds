@@ -119,9 +119,7 @@ public class Data extends Lop
 			}
 		}
 		
-		setFileFormatType(fmt);
-		
-		setLopProperties( );
+		setFileFormatAndProperties(fmt);
 	}
 
 	private void setLopProperties() {
@@ -147,7 +145,9 @@ public class Data extends Lop
 				// WRITE lops are not compatible with jobs that produce an 
 				// intermediate output, which MUST be consumed by other subsequent lops 
 				lps.removeCompatibility(JobType.MMCJ);
-				lps.removeCompatibility(JobType.SORT);
+				// If at all, SORT job can only write in BinaryBlock format
+				if(this.getDataType() == DataType.MATRIX && formatType != FileFormatTypes.BINARY)
+					lps.removeCompatibility(JobType.SORT);
 				lps.removeCompatibility(JobType.COMBINE);
 			}
 		}
@@ -171,7 +171,7 @@ public class Data extends Lop
 	 * @param type
 	 * @throws LopsException 
 	 */
-	public void setFileFormatType(FileFormatTypes type) throws LopsException 
+	public void setFileFormatAndProperties(FileFormatTypes type) throws LopsException 
 	{
 		this.formatType = type ;
 		if(type == FileFormatTypes.BINARY)
@@ -184,6 +184,7 @@ public class Data extends Lop
 			this.outParams.setFormat(Format.CSV);
 		else 
 			throw new LopsException("Unexpected format: " + type);
+		setLopProperties();
 	}
 
 	/**

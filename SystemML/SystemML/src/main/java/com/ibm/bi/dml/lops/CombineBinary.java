@@ -51,6 +51,7 @@ public class CombineBinary extends Lop
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.COMBINE);
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProducesIntermediateOutput(true);
 	}
 	
 	public String toString()

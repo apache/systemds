@@ -238,7 +238,6 @@ public class DataOp extends Hop
 			}
 			
 			//set remaining meta data
-			l.setFileFormatType(this.getFormatType());
 			l.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
 			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			

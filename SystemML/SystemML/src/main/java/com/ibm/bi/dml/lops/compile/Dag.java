@@ -34,6 +34,7 @@ import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
 import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lop;
@@ -535,6 +536,25 @@ public class Dag<N extends Lop>
 		return true;
 	}
 
+	/**
+	 * Function that determines if the two input nodes can be executed together 
+	 * in at least on job.
+	 * 
+	 * @param node1
+	 * @param node2
+	 * @return
+	 */
+	private boolean isCompatible(N node1, N node2) {
+		return( (node1.getCompatibleJobs() & node2.getCompatibleJobs()) > 0);
+	}
+	
+	/**
+	 * Function that checks if the given node executes in the job specified by jt.
+	 * 
+	 * @param node
+	 * @param jt
+	 * @return
+	 */
 	private boolean isCompatible(N node, JobType jt) {
 		return ((node.getCompatibleJobs() & jt.getBase()) > 0);
 	}
@@ -1111,13 +1131,13 @@ public class Dag<N extends Lop>
 				// data node, always add if child not queued
 				// only write nodes are kept in execnodes
 				if (node.getExecLocation() == ExecLocation.Data) {
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Adding Data -"+ node.toString());
-
-					finishedNodes.add(node);
-
 					Data dnode = (Data) node;
+					boolean dnode_queued = false;
+					
 					if ( dnode.getOperationType() == OperationTypes.READ ) {
+						if( LOG.isTraceEnabled() )
+							LOG.trace(indent + "Adding Data -"+ node.toString());
+
 						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
 						if ( node.getDataType() == DataType.SCALAR 
 								//TODO: LEO check the following condition is still needed
@@ -1134,21 +1154,34 @@ public class Dag<N extends Lop>
 						// Hence, <code>node</code> can be avoided.
 						// TODO: this case should ideally be handled in the language layer 
 						//       prior to the construction of Hops Dag 
+						N input = (N) dnode.getInputs().get(0);
 						if ( dnode.isTransient() 
-								&& dnode.getInputs().get(0).getExecLocation() == ExecLocation.Data 
-								&& ((Data)dnode.getInputs().get(0)).isTransient() 
-								&& dnode.getOutputParameters().getLabel().compareTo(
-										dnode.getInputs().get(0).getOutputParameters().getLabel()) == 0 ) {
+								&& input.getExecLocation() == ExecLocation.Data 
+								&& ((Data)input).isTransient() 
+								&& dnode.getOutputParameters().getLabel().compareTo(input.getOutputParameters().getLabel()) == 0 ) {
 							// do nothing, <code>node</code> must not processed any further.
 							;
 						}
+						else if ( execNodes.contains(input) && !isCompatible(node, input) && sendWriteLopToMR(node)) {
+							// input is in execNodes but it is not compatible with write lop. So, queue the write lop.
+							if( LOG.isTraceEnabled() )
+								LOG.trace(indent + "Queueing -" + node.toString());
+							queuedNodes.add(node);
+							dnode_queued = true;
+						}
 						else {
+							if( LOG.isTraceEnabled() )
+								LOG.trace(indent + "Adding Data -"+ node.toString());
+
 							execNodes.add(node);
 							if ( sendWriteLopToMR(node) ) {
 								addNodeByJobType(node, jobNodes, execNodes, false);
 							}
 						}
 					}
+					if (!dnode_queued)
+						finishedNodes.add(node);
+
 					continue;
 				}
 
@@ -2736,14 +2769,15 @@ public class Dag<N extends Lop>
 
 		/* Instead of following hardcoding, one must get this information from Lops */
 		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {
-			oinfo = OutputInfo.OutputInfoForSortOutput; //new OutputInfo(CompactOutputFormat.class,
-					//DoubleWritable.class, IntWritable.class);
+			if( ((SortKeys)node).getOpType() == SortKeys.OperationTypes.Indexes)
+				oinfo = OutputInfo.BinaryBlockOutputInfo;
+			else
+				oinfo = OutputInfo.OutputInfoForSortOutput; 
 		} else if (node.getType() == Type.CombineBinary) {
 			// Output format of CombineBinary (CB) depends on how the output is consumed
 			CombineBinary combine = (CombineBinary) node;
 			if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreSort ) {
-				oinfo = OutputInfo.OutputInfoForSortInput; //new OutputInfo(SequenceFileOutputFormat.class,
-						//DoubleWritable.class, IntWritable.class);
+				oinfo = OutputInfo.OutputInfoForSortInput; 
 			}
 			else if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCentralMoment 
 					  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCovUnweighted 
@@ -3236,7 +3270,7 @@ public class Dag<N extends Lop>
 		
 		/* Find the nodes that produce an output */
 		ArrayList<N> rootNodes = new ArrayList<N>();
-		getOutputNodes(execNodes, rootNodes, !jt.producesIntermediateOutput());
+		getOutputNodes(execNodes, rootNodes);
 		if( LOG.isTraceEnabled() )
 			LOG.trace("# of root nodes = " + rootNodes.size());
 		
@@ -4236,8 +4270,7 @@ public class Dag<N extends Lop>
 	 * @param rootNodes
 	 */
 
-	private void getOutputNodes(ArrayList<N> execNodes, ArrayList<N> rootNodes,
-			boolean include_intermediate) {
+	private void getOutputNodes(ArrayList<N> execNodes, ArrayList<N> rootNodes) {
 		for (int i = 0; i < execNodes.size(); i++) {
 			N node = execNodes.get(i);
 
@@ -4261,7 +4294,7 @@ public class Dag<N extends Lop>
 								.getDataType() == DataType.MATRIX)) {
 
 					if (cnt < node.getOutputs().size()) {
-						if (include_intermediate)
+						if(!node.getProducesIntermediateOutput())	
 							rootNodes.add(node);
 					} else
 						rootNodes.add(node);

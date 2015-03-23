@@ -220,8 +220,10 @@ public class AggBinaryOp extends Hop
 
 	@Override
 	public String getOpString() {
-		String s = new String("");
-		s += "ab(" + HopsAgg2String.get(outerOp) + HopsOpOp2String.get(innerOp)+")";
+		//ba - binary aggregate, for consistency with runtime 
+		String s = "ba(" + 
+				HopsAgg2String.get(outerOp) + 
+				HopsOpOp2String.get(innerOp)+")";
 		return s;
 	}
 
@@ -1180,14 +1182,15 @@ public class AggBinaryOp extends Hop
 		double m2_size = m2_rows * m2_cols;
 		double result_size = m1_rows * m2_cols;
 
-		int numReducers = OptimizerUtils.getNumReducers(false);
+		int numReducersRMM = OptimizerUtils.getNumReducers(true);
+		int numReducersCPMM = OptimizerUtils.getNumReducers(false);
 		
 		// Estimate the cost of RMM
 		// RMM phase 1
 		double rmm_shuffle = (m2_ncb*m1_size) + (m1_nrb*m2_size);
 		double rmm_io = m1_size + m2_size + result_size;
 		double rmm_nred = Math.min( m1_nrb * m2_ncb, //max used reducers 
-				                    numReducers); //available reducers
+				                    numReducersRMM); //available reducers
 		// RMM total costs
 		double rmm_costs = (rmm_shuffle + rmm_io) / rmm_nred;
 		
@@ -1195,13 +1198,13 @@ public class AggBinaryOp extends Hop
 		// CPMM phase 1
 		double cpmm_shuffle1 = m1_size + m2_size;
 		double cpmm_nred1 = Math.min( m1_ncb, //max used reducers 
-                                      numReducers); //available reducers		
+                                      numReducersCPMM); //available reducers		
 		double cpmm_io1 = m1_size + m2_size + cpmm_nred1 * result_size;
 		// CPMM phase 2
 		double cpmm_shuffle2 = cpmm_nred1 * result_size;
 		double cpmm_io2 = cpmm_nred1 * result_size + result_size;			
 		double cpmm_nred2 = Math.min( m1_nrb * m2_ncb, //max used reducers 
-                                      numReducers); //available reducers		
+                                      numReducersCPMM); //available reducers		
 		// CPMM total costs
 		double cpmm_costs =  (cpmm_shuffle1+cpmm_io1)/cpmm_nred1  //cpmm phase1
 		                    +(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2

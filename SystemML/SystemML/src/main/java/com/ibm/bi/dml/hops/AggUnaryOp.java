@@ -199,9 +199,10 @@ public class AggUnaryOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		String s = new String("");
-		s += "au(" + HopsAgg2String.get(_op)
-				+ HopsDirection2String.get(_direction) + ")";
+		//ua - unary aggregate, for consistency with runtime
+		String s = "ua(" + 
+				HopsAgg2String.get(_op) + 
+				HopsDirection2String.get(_direction) + ")";
 		return s;
 	}
 

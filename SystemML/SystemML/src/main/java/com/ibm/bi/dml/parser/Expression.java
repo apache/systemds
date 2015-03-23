@@ -395,6 +395,55 @@ public abstract class Expression
 	}
 	
 	
+	/**
+	 * Returns the matrix characteristics for scalar-scalar, scalar-matrix, matrix-scalar, matrix-matrix
+	 * operations. This method is aware of potentially unknowns and matrix-vector (col/row) operations.
+	 * 
+	 * Format: rlen, clen, brlen, bclen.
+	 * 
+	 * @param left
+	 * @param right
+	 * @return
+	 */
+	public static long[] getBinaryMatrixCharacteristics( Expression left, Expression right )
+	{
+		long[] ret = new long[]{ -1, -1, -1, -1 };
+		
+		Identifier idleft = left.getOutput();
+		Identifier idright = right.getOutput();
+		
+		if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.SCALAR ) {
+			ret[0] = 0; 
+			ret[1] = 0; 
+			ret[2] = 0; 
+			ret[3] = 0; 
+		}
+		else if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.MATRIX ) {
+			ret[0] = idright.getDim1(); 
+			ret[1] = idright.getDim2(); 
+			ret[2] = idright.getRowsInBlock(); 
+			ret[3] = idright.getColumnsInBlock();
+		}
+		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.SCALAR ) {
+			ret[0] = idleft.getDim1(); 
+			ret[1] = idleft.getDim2(); 
+			ret[2] = idleft.getRowsInBlock(); 
+			ret[3] = idleft.getColumnsInBlock();
+		}
+		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.MATRIX ) {
+			ret[0] = idleft.getDim1(); 
+			ret[1] = idleft.getDim2(); 
+			ret[2] = idleft.getRowsInBlock(); 
+			ret[3] = idleft.getColumnsInBlock();
+			if( ret[0] < 0 && idright.getDim1() > 1 ) //robustness for row vectors
+				ret[0] = idright.getDim1();
+			if( ret[1] < 0 && idright.getDim2() > 1 ) //robustness for row vectors
+				ret[1] = idright.getDim2();
+		}
+		
+		return ret;
+	}
+	
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for expressions
 	///////////////////////////////////////////////////////////////////////////

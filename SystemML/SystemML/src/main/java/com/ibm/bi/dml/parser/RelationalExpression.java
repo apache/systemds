@@ -186,40 +186,6 @@ public class RelationalExpression extends Expression
 		}
 	}
 	
-	/**
-	 * This is same as the function from BuiltinFunctionExpression which is called by ppred
-	 * 
-	 * Returns the matrix characteristics for scalar-matrix, matrix-scalar, matrix-matrix
-	 * operations. Format: rlen, clen, brlen, bclen.
-	 * 
-	 * @param left
-	 * @param right
-	 * @return
-	 */
-	private static long[] getBinaryMatrixCharacteristics( Expression left, Expression right )
-	{
-		long[] ret = new long[]{ -1, -1, -1, -1 };
-		Identifier idleft = left.getOutput();
-		Identifier idright = right.getOutput();
-		
-		//rlen known
-		if( idleft.getDim1()>0 || idright.getDim1()>0 )
-			ret[ 0 ] = Math.max(idleft.getDim1(), idright.getDim1());
-		
-		//rlen known
-		if( idleft.getDim2()>0 || idright.getDim2()>0 )
-			ret[ 1 ] = Math.max(idleft.getDim2(), idright.getDim2());
-		
-		//brlen known
-		if( idleft.getRowsInBlock()>0 || idright.getRowsInBlock()>0 )
-			ret[ 2 ] = Math.max(idleft.getRowsInBlock(), idright.getRowsInBlock());
-		
-		//bclen known
-		if( idleft.getColumnsInBlock()>0 || idright.getColumnsInBlock()>0 )
-			ret[ 3 ] = Math.max(idleft.getColumnsInBlock(), idright.getColumnsInBlock());
-		
-		return ret;
-	}
 	
 	public String toString(){
 		return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";

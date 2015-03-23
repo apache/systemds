@@ -29,7 +29,8 @@ import org.junit.runners.Suite;
 	EigenFactorizeTest.class,
 	FullCumsumTest.class,
 	LUFactorizeTest.class,
-	RemoveEmptyTest.class
+	RemoveEmptyTest.class,
+	MLUnaryBuiltinTest.class
 })
 
 

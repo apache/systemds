@@ -557,8 +557,10 @@ if(mod1_should_be_nrow != nrow(y))
 
 #exposed to user
 depth = cmdLine_depth - 1 #user counts depth from 1, but we count from 0
-if(depth <= 0)
+if(depth < 0)
 	stop("Stopping due to invalid argument: depth must be positive")
+if(depth > 30)
+	stop("Stopping due to invalid argument: maximum node id exceeds range of integer")
 
 leaf_count = cmdLine_num_leaf
 if(leaf_count < 1)

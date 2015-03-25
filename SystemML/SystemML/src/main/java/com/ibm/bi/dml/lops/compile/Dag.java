@@ -628,7 +628,7 @@ public class Dag<N extends Lop>
 
 		int numAdded = 0;
 		for ( JobType j : JobType.values() ) {
-			if ( j.getId() > 0 && hasChildNode(node, arr.get(j.getId()))) {
+			if ( j.getId() > 0 && hasDirectChildNode(node, arr.get(j.getId()))) {
 				if (isCompatible(node, j)) {
 					arr.get(j.getId()).add(node);
 					numAdded += 1;
@@ -2197,7 +2197,7 @@ public class Dag<N extends Lop>
 		
 		// if tmpNode is descendant of any queued child of node, then branch can not be piggybacked
 		for(Lop ni : node.getInputs()) {
-			if(queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
+			if(queuedNodes != null && queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
 				return false;
 		}
 		
@@ -2223,9 +2223,11 @@ public class Dag<N extends Lop>
 			double memsize = computeFootprintInMapper(tmpNode);
 			if (node.usesDistributedCache() )
 				memsize += computeFootprintInMapper(node);
-			for(N n : markedNodes) {
-				if ( n.usesDistributedCache() ) 
-					memsize += computeFootprintInMapper(n);
+			if ( markedNodes != null ) {
+				for(N n : markedNodes) {
+					if ( n.usesDistributedCache() ) 
+						memsize += computeFootprintInMapper(n);
+				}
 			}
 			if ( !checkMemoryLimits(node, memsize ) ) {
 				return false;
@@ -3270,7 +3272,7 @@ public class Dag<N extends Lop>
 		
 		/* Find the nodes that produce an output */
 		ArrayList<N> rootNodes = new ArrayList<N>();
-		getOutputNodes(execNodes, rootNodes);
+		getOutputNodes(execNodes, rootNodes, jt);
 		if( LOG.isTraceEnabled() )
 			LOG.trace("# of root nodes = " + rootNodes.size());
 		
@@ -4270,7 +4272,7 @@ public class Dag<N extends Lop>
 	 * @param rootNodes
 	 */
 
-	private void getOutputNodes(ArrayList<N> execNodes, ArrayList<N> rootNodes) {
+	private void getOutputNodes(ArrayList<N> execNodes, ArrayList<N> rootNodes, JobType jt) {
 		for (int i = 0; i < execNodes.size(); i++) {
 			N node = execNodes.get(i);
 
@@ -4286,13 +4288,18 @@ public class Dag<N extends Lop>
 					}
 				}
 
-				if (cnt != 0
-						&& cnt <= node.getOutputs().size()
-						&& !rootNodes.contains(node)
+				if (cnt > 0 //!= 0
+						//&& cnt <= node.getOutputs().size()
+						&& !rootNodes.contains(node) // not already a rootnode
 						&& !(node.getExecLocation() == ExecLocation.Data
 								&& ((Data) node).getOperationType() == OperationTypes.READ && ((Data) node)
-								.getDataType() == DataType.MATRIX)) {
+								.getDataType() == DataType.MATRIX)  // Not a matrix Data READ 
+					) {
+					
 
+					if ( jt.allowsSingleShuffleInstruction() && node.getExecLocation() != ExecLocation.MapAndReduce)
+						continue;
+					
 					if (cnt < node.getOutputs().size()) {
 						if(!node.getProducesIntermediateOutput())	
 							rootNodes.add(node);
@@ -4410,6 +4417,17 @@ public class Dag<N extends Lop>
 			//System.out.println("CALLING DFS "+root);
 			dagDFS((N)root.getOutputs().get(i), marked);
 		}
+	}
+	
+	private boolean hasDirectChildNode(N node, ArrayList<N> childNodes) {
+		if ( childNodes.isEmpty() ) 
+			return false;
+		
+		for(int i=0; i < childNodes.size(); i++) {
+			if ( childNodes.get(i).getOutputs().contains(node))
+				return true;
+		}
+		return false;
 	}
 	
 	private boolean hasChildNode(N node, ArrayList<N> childNodes, ExecLocation type) {

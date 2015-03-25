@@ -81,7 +81,7 @@ if(cmdLine_normalization_maps != " "){
 
 #write(attrinfo, "binning/attrinfo.mtx", format="csv")
 
-cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
+cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),7])
 new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
 log = matrix(0, rows=ncol(X), cols=2)
 parfor(i in 1:ncol(X), check=0){

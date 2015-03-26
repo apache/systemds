@@ -103,7 +103,7 @@ public class LibMatrixDatagen
 		long nnz = (long) Math.ceil (nrow * (ncol*sparsity));
 		//System.out.println("Number of blocks = " + numBlocks + "; NNZ = " + nnz);
 
-		if ( numBlocks >= Integer.MAX_VALUE ) {
+		if ( numBlocks > Integer.MAX_VALUE ) {
 			throw new DMLRuntimeException("A random matrix of size [" + nrow + "," + ncol + "] can not be created. Number of blocks (" +  numBlocks + ") exceeds the maximum integer size. Try to increase the block size.");
 		}
 		

@@ -209,8 +209,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		flushBuffer();
 		
 		//write matrix block-wise to underlying stream
+		//(increase i in awareness of len to prevent int overflow)
 		int blen = _bufflen/8;
-		for( int i=0; i<len; i+=blen )
+		for( int i=0; i<len; i+=Math.min(len-i, blen) )
 		{
 			//write values of current block
 			int lblen = Math.min(len-i, blen);

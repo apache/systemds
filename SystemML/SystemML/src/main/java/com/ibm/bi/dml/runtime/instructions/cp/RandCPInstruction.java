@@ -219,7 +219,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 		MatrixBlock soresBlock = null;
 		
 		//check valid for integer dimensions (we cannot even represent empty blocks with larger dimensions)
-		if( rows >= Integer.MAX_VALUE || cols >= Integer.MAX_VALUE )
+		if( rows > Integer.MAX_VALUE || cols > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("RandCPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
 		
 		//process specific datagen operator

@@ -456,10 +456,10 @@ public class OptimizerRuleBased extends Optimizer
 			switch( dpf )
 			{
 				case COLUMN_WISE:
-					mem = mo.getNumRows() * 8; 
+					mem = OptimizerUtils.estimateSize(mo.getNumRows(), 1); 
 					break;
 				case ROW_WISE:
-					mem = mo.getNumColumns() * 8;
+					mem = OptimizerUtils.estimateSize(1, mo.getNumColumns());
 					break;
 				case BLOCK_WISE_M_N:
 					mem = Integer.MAX_VALUE; //TODO
@@ -691,37 +691,100 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				//check memory budget
 				MatrixObject mo = (MatrixObject)vars.get(base.getName());
-				if( mo.getNnz() != 0 ) //0 or -1 valid because result var known during opt
+				if( mo.getNnz() != 0 ) //-1 valid because result var known during opt
 					ret = false;
+		
+				//Note: for memory estimation the common case is sparse since remote_mr and individual tasks;
+				//and in the dense case, we would not benefit from result partitioning
+				boolean sparse = MatrixBlock.evalSparseFormatInMemory(base.getDim1(), base.getDim2(),base.getDim1());
 				
-				double memTask1 = -1;
-				int taskN = -1;
-				switch(dpf) { //check tasksize = 1
-					case 1:
-						memTask1 = base.getDim2()*8;
-						taskN = (int) (_rm / memTask1); 
-						break;
-					case 2:
-						memTask1 = base.getDim1()*Math.min(SparseRow.initialCapacity, base.getDim2())*8;
-						taskN = (int) (_rm / (base.getDim1()*8));
-						break;
-					case 3:
-						memTask1 = Math.min(SparseRow.initialCapacity, base.getDim2())*8;
-						taskN = (int) (_rm / memTask1);
-						break;	
-				}
+				if( sparse ) 
+				{
+					//custom memory estimatation in order to account for structural properties
+					//e.g., for rowwise we know that we only pay one sparserow overhead per task
+					double memSparseBlock = estimateSizeSparseRowBlock(base.getDim1());
+					double memSparseRow1 = estimateSizeSparseRow(base.getDim2(), base.getDim2());
+					double memSparseRowMin = estimateSizeSparseRowMin(base.getDim2());
+					
+					double memTask1 = -1;
+					int taskN = -1;
+					switch(dpf) { 
+						case 1: //rowwise
+							//sparse block and one sparse row per task
+							memTask1 = memSparseBlock + memSparseRow1;
+							taskN = (int) ((_rm-memSparseBlock) / memSparseRow1); 
+							break;
+						case 2: //colwise
+							//sparse block, sparse row per row but shared over tasks
+							memTask1 = memSparseBlock + memSparseRowMin * base.getDim1();
+							taskN = estimateNumTasksSparseCol(_rm-memSparseBlock, base.getDim1());
+							break;
+						case 3: //cellwise
+							//sparse block and one minimal sparse row per task
+							memTask1 = memSparseBlock + memSparseRowMin;
+							taskN = (int) ((_rm-memSparseBlock) / memSparseRowMin); 
+							break;	
+					}
 
-				if( memTask1>_rm )
+					if( memTask1>_rm || memTask1<0 )
+						ret = false;
+					else
+						n.addParam(ParamType.TASK_SIZE, String.valueOf(taskN));
+				}
+				else 
+				{ 
+					//dense (no result partitioning possible)
 					ret = false;
-				else
-					n.addParam(ParamType.TASK_SIZE, String.valueOf(taskN));
+				}
 			}
 		}
-				
-		//if(ret)
-		//	System.out.println("isResultPartitioning: "+base.getName()+" - "+ret);
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param rows
+	 * @return
+	 */
+	private double estimateSizeSparseRowBlock( long rows ) {
+		//see MatrixBlock.estimateSizeSparseInMemory
+		return 44 + rows * 8;
+	}
+	
+	/**
+	 * 
+	 * @param cols
+	 * @param nnz
+	 * @return
+	 */
+	private double estimateSizeSparseRow( long cols, long nnz ) {
+		//see MatrixBlock.estimateSizeSparseInMemory
+		long cnnz = Math.max(SparseRow.initialCapacity, Math.max(cols, nnz));
+		return ( 116 + 12 * cnnz ); //sparse row
+	}
+	
+	/**
+	 * 
+	 * @param cols
+	 * @return
+	 */
+	private double estimateSizeSparseRowMin( long cols ) {
+		//see MatrixBlock.estimateSizeSparseInMemory
+		long cnnz = Math.min(SparseRow.initialCapacity, cols);
+		return ( 116 + 12 * cnnz ); //sparse row
+	}
+	
+	/**
+	 * 
+	 * @param budget
+	 * @param rows
+	 * @return
+	 */
+	private int estimateNumTasksSparseCol( double budget, long rows ) {
+		//see MatrixBlock.estimateSizeSparseInMemory
+		double lbudget = budget - rows * 116;
+		return (int) Math.floor( lbudget / 12 );
 	}
 	
 	/**

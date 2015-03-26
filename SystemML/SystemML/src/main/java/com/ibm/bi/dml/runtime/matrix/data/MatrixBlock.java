@@ -361,7 +361,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		long limit = (long)rlen * clen;
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
-		if( limit >= Integer.MAX_VALUE ) {
+		if( limit > Integer.MAX_VALUE ) {
 			throw new DMLRuntimeException("Dense in-memory matrix block exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
 					                      "Please, reduce the JVM heapsize to execute this in MR.");
 		}
@@ -2452,7 +2452,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		long cnnz = Math.max(SparseRow.initialCapacity, (long)Math.ceil(sparsity*ncols));
 		long rlen = Math.min(nrows, (long) Math.ceil(sparsity*nrows*ncols));
 		size += rlen * ( 116 + 12 * cnnz ); //sparse row
-		size += (nrows-rlen) * 8; //empty rows
+		size += nrows * 8; //empty rows
 		
 		//OLD ESTIMATE: 
 		//int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));

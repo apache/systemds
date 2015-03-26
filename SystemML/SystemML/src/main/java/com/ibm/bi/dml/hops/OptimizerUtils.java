@@ -213,8 +213,9 @@ public class OptimizerUtils
 		O0_LOCAL_STATIC, 
 		O1_LOCAL_MEMORY_MIN,
 		O2_LOCAL_MEMORY_DEFAULT,
-		O3_GLOBAL_TIME_MEMORY,
-		O4_DEBUG_MODE,
+		O3_LOCAL_RESOURCE_TIME_MEMORY,
+		O4_GLOBAL_TIME_MEMORY,
+		O5_DEBUG_MODE,
 	};
 		
 	public static OptimizationLevel getOptLevel() {
@@ -237,14 +238,14 @@ public class OptimizerUtils
 	public static void setOptimizationLevel( int optlevel ) 
 		throws DMLRuntimeException
 	{
-		if( optlevel < 0 || optlevel > 4 )
-			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-4).");
+		if( optlevel < 0 || optlevel > 5 )
+			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
 	
 		// This overrides any optimization level that is present in the configuration file.
 		// Why ? This simplifies the calling logic: User doesnot have to maintain two config file or worse
 		// edit config file everytime he/she is trying to call the debugger.
 		if(DMLScript.ENABLE_DEBUG_MODE) {
-			optlevel = 4;
+			optlevel = 5;
 		}
 		
 		switch( optlevel )
@@ -273,13 +274,18 @@ public class OptimizerUtils
 			case 2:
 				_optLevel = OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
 				break;
-			// opt level 3: global, time- and memory-based (all advanced rewrites)
+			// opt level 3: resource optimization, time- and memory-based (2 w/ resource optimizat)
 			case 3:
-				_optLevel = OptimizationLevel.O3_GLOBAL_TIME_MEMORY;
+				_optLevel = OptimizationLevel.O3_LOCAL_RESOURCE_TIME_MEMORY;
+			break;
+							
+			// opt level 3: global, time- and memory-based (all advanced rewrites)
+			case 4:
+				_optLevel = OptimizationLevel.O4_GLOBAL_TIME_MEMORY;
 				break;
 			// opt level 4: debug mode (no interfering rewrites)
-			case 4:				
-				_optLevel = OptimizationLevel.O4_DEBUG_MODE;
+			case 5:				
+				_optLevel = OptimizationLevel.O5_DEBUG_MODE;
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;

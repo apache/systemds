@@ -12,7 +12,7 @@ The source code for this program is not published or otherwise divested of its t
    <!-- hdfs tmp working directory--> 
    <scratch>scratch_space</scratch> 
 
-   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3, default: 2 -->
+   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
    <optlevel>2</optlevel>  
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->

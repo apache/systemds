@@ -16,6 +16,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -40,6 +42,7 @@ public class DMLYarnClientProxy
 	
 	private static final Log LOG = LogFactory.getLog(DMLYarnClientProxy.class);
 
+	//flags to enabled resource optimizer / debugging (this does not disable external configurations)
 	protected static boolean RESOURCE_OPTIMIZER = false;
 	protected static boolean LDEBUG = false;
 	
@@ -73,7 +76,11 @@ public class DMLYarnClientProxy
 			//	RESOURCE_OPTIMIZER = true;
 			
 			//optimize resources (and update configuration)
-			if( RESOURCE_OPTIMIZER ){
+			if( DMLAppMasterUtils.isResourceOptimizerEnabled() )
+			{
+				LOG.warn("Optimization level '" + OptimizationLevel.O3_LOCAL_RESOURCE_TIME_MEMORY + "' " +
+						"is still in experimental state and not intended for production use.");
+				
 				YarnClusterConfig cc = YarnClusterAnalyzer.getClusterConfig();
 				DMLAppMasterUtils.setupRemoteParallelTasks( cc );
 				ArrayList<ProgramBlock> pb = DMLAppMasterUtils.getRuntimeProgramBlocks(rtprog);

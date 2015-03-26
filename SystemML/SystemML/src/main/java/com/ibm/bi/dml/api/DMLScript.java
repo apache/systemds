@@ -789,9 +789,9 @@ public class DMLScript
 		}
 
 		//optional global data flow optimization
-		if(OptimizerUtils.isOptLevel(OptimizationLevel.O3_GLOBAL_TIME_MEMORY) ) 
+		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
 		{
-			LOG.warn("Optimization level '" + OptimizationLevel.O3_GLOBAL_TIME_MEMORY + "' " +
+			LOG.warn("Optimization level '" + OptimizationLevel.O4_GLOBAL_TIME_MEMORY + "' " +
 					"is still in experimental state and not intended for production use.");
 			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
 		}

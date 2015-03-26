@@ -18,6 +18,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -58,13 +59,18 @@ public class DMLAppMasterUtils
 	/**
 	 * 
 	 * @param conf
+	 * @throws DMLRuntimeException 
 	 */
-	public static void setupConfigRemoteMaxMemory(DMLConfig conf)
+	public static void setupConfigRemoteMaxMemory(DMLConfig conf) 
+		throws DMLRuntimeException
 	{
 		//set remote max memory (if in yarn appmaster context)
 		if( DMLScript.isActiveAM() ){
 			
-			if( DMLYarnClientProxy.RESOURCE_OPTIMIZER )
+			//set optimization level (for awareness of resource optimization)
+			OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
+	 		
+			if( isResourceOptimizerEnabled() )
 			{
 				//handle optimized memory (mr memory budget per program block)
 				//ensure cluster has been analyzed
@@ -104,7 +110,7 @@ public class DMLAppMasterUtils
 	public static void setupProgramMappingRemoteMaxMemory(Program prog) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
-		if( DMLScript.isActiveAM() && DMLYarnClientProxy.RESOURCE_OPTIMIZER )
+		if( DMLScript.isActiveAM() && isResourceOptimizerEnabled() )
 		{
 			ArrayList<ProgramBlock> pbProg = getRuntimeProgramBlocks( prog ); 
 			ArrayList<ProgramBlock> B = ResourceOptimizer.compileProgram( pbProg, _rc );
@@ -122,7 +128,7 @@ public class DMLAppMasterUtils
 	 */
 	public static void setupProgramBlockRemoteMaxMemory(ProgramBlock pb)
 	{
-		if( DMLScript.isActiveAM() && DMLYarnClientProxy.RESOURCE_OPTIMIZER )
+		if( DMLScript.isActiveAM() && isResourceOptimizerEnabled() )
 		{
 			if( _rcMap != null && _rcMap.containsKey(pb) ){ 
 				//set max map and reduce memory (to be used by the compiler)
@@ -146,7 +152,7 @@ public class DMLAppMasterUtils
 			int memMB = -1;
 			
 			//obtain the current configuation (optimized or user-specified)
-			if( DMLYarnClientProxy.RESOURCE_OPTIMIZER )
+			if( isResourceOptimizerEnabled() )
 				memMB = (int)(InfrastructureAnalyzer.getRemoteMaxMemoryMap() / (1024*1024));
 			else
 				memMB = conf.getIntValue(DMLConfig.YARN_MAPREDUCEMEM);
@@ -164,6 +170,16 @@ public class DMLAppMasterUtils
 				job.set( "mapreduce.reduce.memory.mb", String.valueOf((int)(memMB*1.5)) );
 			}
 		}
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isResourceOptimizerEnabled()
+	{
+		return ( DMLYarnClientProxy.RESOURCE_OPTIMIZER
+				|| OptimizerUtils.isOptLevel(OptimizationLevel.O3_LOCAL_RESOURCE_TIME_MEMORY) );
 	}
 	
 

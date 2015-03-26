@@ -118,7 +118,7 @@ public class RemoteParForUtils
 			Data dat = vars.get( rvar );
 			
 			//export output variable to HDFS (see RunMRJobs)
-			if ( dat.getDataType() == DataType.MATRIX ) 
+			if ( dat != null && dat.getDataType() == DataType.MATRIX ) 
 			{
 				MatrixObject mo = (MatrixObject) dat;
 				if( mo.isDirty() )

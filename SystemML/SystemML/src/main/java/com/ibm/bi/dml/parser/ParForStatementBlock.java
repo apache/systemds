@@ -362,7 +362,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		//if successful, prepare result variables (all distinct vars in all candidates)
 		//a) add own candidates
 		for( Candidate var : C )
-			addToResultVariablesNoDup( var._var );
+			if( check || var._dat.getDataType()!=DataType.SCALAR )
+				addToResultVariablesNoDup( var._var );
 		//b) get and add child result vars (if required)
 		ArrayList<String> tmp = new ArrayList<String>();
 		rConsolidateResultVars(pfs.getBody(), tmp);

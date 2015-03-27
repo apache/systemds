@@ -15,7 +15,6 @@ import java.io.OutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.runtime.io.jdk8.FloatingDecimal;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class IOUtilFunctions 
@@ -93,7 +92,8 @@ public class IOUtilFunctions
 	 */
 	public static double parseDoubleParallel( String str ) 
 	{
-		return FloatingDecimal.parseDouble(str);
+		//return FloatingDecimal.parseDouble(str);
+		return Double.parseDouble(str);
 	}
 
 }

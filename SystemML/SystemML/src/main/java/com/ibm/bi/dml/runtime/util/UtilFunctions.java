@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.runtime.util;
 
-import com.ibm.bi.dml.runtime.io.jdk8.FloatingDecimal;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 
 public class UtilFunctions 
@@ -103,7 +102,8 @@ public class UtilFunctions
 	 */
 	public static double parseToDouble(String str)
 	{
-		return FloatingDecimal.parseDouble(str);
+		//return FloatingDecimal.parseDouble(str);
+    	return Double.parseDouble(str);
 	}
 	
 	public static int parseToInt( String str )

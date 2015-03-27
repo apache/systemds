@@ -156,7 +156,7 @@ public class OptimizerUtils
 	 * Enables parallel read of all text formats (textcell, csv, mm). 
 	 * 
 	 */
-	public static boolean PARALLEL_READ_TEXTFORMATS = true;
+	public static boolean PARALLEL_READ_TEXTFORMATS = false;
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel

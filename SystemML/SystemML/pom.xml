@@ -269,6 +269,10 @@
 					</execution>
 				</executions>
 				<configuration>
+				
+					<!-- Hack Alert: Added to force Jenkins to skip the tests. To run mvn install with tests, use -DskipTests=false -->
+					<skipTests>true</skipTests>
+				
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 

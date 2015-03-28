@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>system-ml</artifactId>
 	<name>SystemML compiler</name>
@@ -7,15 +6,15 @@
 
 
 	<scm>
-		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.9/jazz:${RTC_WORKSPACE}</url>
+		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.9/jazz:${RTC_WORKSPACE}</connection>
+		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-3.9/jazz:${RTC_WORKSPACE}</developerConnection>
 	</scm>
 
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
 		<artifactId>systemml-reactor</artifactId>
-		<version>3.9-SNAPSHOT</version>
+		<version>3.9</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -318,7 +317,7 @@
 			</activation>
 			<properties>
 				<!-- Extra JVM args for Windows go here.-->
-				<integrationTestExtraJVMArgs></integrationTestExtraJVMArgs>
+				<integrationTestExtraJVMArgs />
 			</properties>
 		</profile>
 	</profiles>

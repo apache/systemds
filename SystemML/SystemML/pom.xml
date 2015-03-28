@@ -223,7 +223,7 @@
 				<configuration>
 					
 					<!-- Hack Alert: Added to force Jenkins to skip the tests. To run mvn install with tests, use -DskipTests=false -->
-					<skipTests>true</skipTests>
+					<skipTests>${skipTests}</skipTests>
 				
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -270,7 +270,7 @@
 				<configuration>
 				
 					<!-- Hack Alert: Added to force Jenkins to skip the tests. To run mvn install with tests, use -DskipTests=false -->
-					<skipTests>true</skipTests>
+					<skipTests>${skipTests}</skipTests>
 				
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -478,5 +478,9 @@
 		<integrationTestExtraJVMArgs />
 
 		<installDir>/usr/ibm/biginsights/${BIVersion}</installDir>
+		
+		 
+    	<skipTests>true</skipTests>
+
 	</properties>
 </project>

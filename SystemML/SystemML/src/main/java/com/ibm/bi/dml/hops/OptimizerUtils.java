@@ -497,6 +497,8 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * Determines if valid matrix size to be represented in CP data structures. Note that
+	 * sparsity needs to be specified as rows*cols if unknown. 
 	 * 
 	 * @param rows
 	 * @param cols
@@ -505,16 +507,26 @@ public class OptimizerUtils
 	 */
 	public static boolean isValidCPMatrixSize( long rows, long cols, double sparsity )
 	{
-		//the current CP runtime implementation has a limitation of 16GB for
-		//dense matrices because we use a linearized array (bounded to int in java)
 		boolean ret = true;
 		
+		//the current CP runtime implementation has several limitations:
+		//1) for dense: 16GB because we use a linearized array (bounded to int in java)
+		//2) for sparse: 2G nnz because (1) nnz maintained as int, (2) potential changes 
+		//   to dense, and (3) sparse row arrays also of max int size (worst case in case of skew)  
 		long nnz = (long)(sparsity * rows * cols);
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, nnz);
 		
-		if( !sparse )
+		if( sparse ) //SPARSE
+		{
+			//check max nnz
+			ret = (nnz <= Integer.MAX_VALUE);
+		}
+		else //DENSE
+		{
+			//check number of matrix cell
 			ret = ((rows * cols) <= MAX_NUMCELLS_CP_DENSE);
-		
+		}
+			
 		return ret;
 	}
 	

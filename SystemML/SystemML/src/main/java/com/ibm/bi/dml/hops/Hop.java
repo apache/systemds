@@ -213,11 +213,9 @@ public abstract class Hop
 				invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
 			
 			//Step 2: check valid output and input sizes for cp (<16GB for DENSE)
-			if( _outputMemEstimate >= OptimizerUtils.estimateSize(_dim1, _dim2)-1 ) //not sparse
-				invalid |= !OptimizerUtils.isValidCPMatrixSize(_dim1, _dim2, OptimizerUtils.getSparsity(_dim1, _dim2, _nnz));
+			invalid |= !OptimizerUtils.isValidCPMatrixSize(_dim1, _dim2, OptimizerUtils.getSparsity(_dim1, _dim2, _nnz));
 			for( Hop in : getInput() )
-				if( in._outputMemEstimate >= OptimizerUtils.estimateSize(in._dim1, in._dim2)-1 ) //not sparse
-					invalid |= !OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz));
+				invalid |= !OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz));
 			
 			//force exec type mr if necessary
 			if( invalid ) 

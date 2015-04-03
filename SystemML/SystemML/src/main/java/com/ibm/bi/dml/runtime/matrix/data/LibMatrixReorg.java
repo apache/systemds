@@ -772,12 +772,11 @@ public class LibMatrixReorg
 		int clen = in.clen;
 		
 		//reshape empty block
-		if( in.sparseRows == null )
+		if( in.isEmptyBlock(false) )
 			return;
 		
 		//allocate block if necessary
-		if(out.sparseRows==null)
-			out.sparseRows=new SparseRow[rows];
+		out.allocateSparseRowsBlock(false);
 		int estnnz = in.nonZeros/rows;
 		
 		//sparse reshape
@@ -811,7 +810,10 @@ public class LibMatrixReorg
 			else //GENERAL CASE: MATRIX->MATRIX
 			{
 				//note: cache-friendly on a but not c; append-only
-				for( int i=0, cix=0; i<rlen; i++, cix+=clen ) 
+				//long cix because total cells in sparse can be larger than int
+				long cix = 0;
+				
+				for( int i=0; i<rlen; i++ ) 
 				{
 					SparseRow arow = aRows[i];
 					if( arow!=null && !arow.isEmpty() ){
@@ -820,13 +822,15 @@ public class LibMatrixReorg
 						double[] avals = arow.getValueContainer();	
 						for( int j=0; j<alen; j++ )
 						{
-							int ci = (cix+aix[j])/cols;
-							int cj = (cix+aix[j])%cols;       
+							int ci = (int)((cix+aix[j])/cols);
+							int cj = (int)((cix+aix[j])%cols);       
 							if( cRows[ci] == null )
 								cRows[ci] = new SparseRow(estnnz, cols);
 							cRows[ci].append(cj, avals[j]);
 						}
 					}	
+					
+					cix += clen;
 				}
 			}
 		}	
@@ -866,9 +870,10 @@ public class LibMatrixReorg
 						double[] avals = arow.getValueContainer();	
 						for( int j=0; j<alen; j++ )
 						{
-							int tmpix = aix[j]*rlen+i;
-							int ci = tmpix%rows;
-							int cj = tmpix/rows;       
+							//long tmpix because total cells in sparse can be larger than int
+							long tmpix = (long)aix[j]*rlen+i;
+							int ci = (int)(tmpix%rows);
+							int cj = (int)(tmpix/rows);       
 							if( cRows[ci] == null )
 								cRows[ci] = new SparseRow(estnnz, cols);
 							cRows[ci].append(cj, avals[j]);

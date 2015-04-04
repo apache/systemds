@@ -1091,20 +1091,26 @@ public class LibMatrixReorg
 			{
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
 				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, Math.min(cols1,col_offset+bclen1)-1, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-				
+
+				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+					throw new RuntimeException("Invalid computed first index: "+first.toString());
+				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+					throw new RuntimeException("Invalid computed last index: "+last.toString());
 				
 				//add first row block
 				ret.add(first);
+				
 				//add blocks in between first and last
-				for( int k1=(int)first.getRowIndex(); k1<=last.getRowIndex(); k1++ )
-					for( int k2=1; k2<=ncblk2; k2++ )
-					{
-						if( (k1==first.getRowIndex() && k2<=first.getColumnIndex()) || 
-							(k1==last.getRowIndex() && k2>=last.getColumnIndex() ) ){
-							continue;
-						}
+				for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ )
+				{
+					long k2_start = ((k1==first.getRowIndex()) ? first.getColumnIndex()+1 : 1);
+					long k2_end = ((k1==last.getRowIndex()) ? last.getColumnIndex()-1 : ncblk2);
+					
+					for( long k2=k2_start; k2<=k2_end; k2++ ) {
 						ret.add(new MatrixIndexes(k1,k2));
 					}
+				}
+				
 				//add last row block
 				ret.add(last);
 				
@@ -1115,31 +1121,29 @@ public class LibMatrixReorg
 			{
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
 				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), Math.min(rows1,row_offset+brlen1)-1, j, rows1, cols1, rows2, cols2, brlen2, bclen2, rowwise);
-				
-				if( first.getColumnIndex()==0 )
-					throw new RuntimeException(first.toString());
-				if( last.getColumnIndex()==0 )
-					throw new RuntimeException(last.toString());
+
+				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+					throw new RuntimeException("Invalid computed first index: "+first.toString());
+				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+					throw new RuntimeException("Invalid computed last index: "+last.toString());
 				
 				//add first row block
 				ret.add(first);
 				//add blocks in between first and last
-				for( int k1=(int)first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ )
-					for( int k2=1; k2<=nrblk2; k2++ )
-					{
-						if( (k1==first.getColumnIndex() && k2<=first.getRowIndex()) || 
-							(k1==last.getColumnIndex() && k2>=last.getRowIndex() ) ){
-							continue;
-						}
+				for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ )
+				{
+					long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
+					long k2_end = ((k1==last.getColumnIndex()) ? last.getRowIndex()-1 : nrblk2);
+					
+					for( long k2=k2_start; k2<=k2_end; k2++ ) {
 						ret.add(new MatrixIndexes(k1,k2));
 					}
+				}
+				
 				//add last row block
 				ret.add(last);
-				
 			}
 		}
-		
-		//System.out.println("created result block ix: "+ret.size());
 		
 		return ret;
 	}
@@ -1189,8 +1193,8 @@ public class LibMatrixReorg
 				block = new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
 			
 			//System.out.println("create block ("+bi+","+bj+"): "+lbrlen+" "+lbclen);
-			//if( lbrlen<1 || lbclen<1 )
-			//	throw new RuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
+			if( lbrlen<1 || lbclen<1 )
+				throw new RuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
 			
 			ret.put(ix, block);
 		}
@@ -1217,6 +1221,9 @@ public class LibMatrixReorg
             long rows1, long cols1, 
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
     {
+		if( in.isEmptyBlock(false) )
+			return;
+		
 		int rlen = in.rlen;
 		int clen = in.clen;
 		double[] a = in.denseBlock;
@@ -1267,6 +1274,9 @@ public class LibMatrixReorg
             long rows1, long cols1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
     {
+		if( in.isEmptyBlock(false) )
+			return;
+		
 		int rlen = in.rlen;
 		SparseRow[] aRows = in.sparseRows;
 		
@@ -1319,28 +1329,22 @@ public class LibMatrixReorg
 			            long rows1, long cols1, long rows2, long cols2, int brlen2, int bclen2, boolean rowwise )
 	{
 		long ci, cj, tempc;
-		int bci, bcj;
+		long bci, bcj;
 		
 		if( rowwise ) {
 			tempc = ai*cols1+aj;
 			ci = tempc/cols2;
 			cj = tempc%cols2;
-			bci = (int) ci/brlen2 + 1;
-			bcj = (int) cj/bclen2 + 1;
+			bci = ci/brlen2 + 1;
+			bcj = cj/bclen2 + 1;
 		}
 		else { //colwise
 			tempc = ai+rows1*aj;
 			ci = tempc%rows2;
 			cj = tempc/rows2;
-			bci = (int) ci/brlen2 + 1;
-			bcj = (int) cj/bclen2 + 1;			
+			bci = ci/brlen2 + 1;
+			bcj = cj/bclen2 + 1;			
 		}
-		
-		//System.out.println("result block ix "+bci+" "+bcj);
-		//if( bci<1 || bcj<1 )
-		//	throw new RuntimeException("Computed block indexes ("+ai+","+aj+" -> "+bci+","+bcj+") are invalid!");
-		//if( bci>Math.ceil(((double)rows2)/brlen2) || bcj>Math.ceil(((double)cols2)/bclen2) )
-		//	throw new RuntimeException("Computed block indexes ("+ai+","+aj+" -> "+bci+","+bcj+") are invalid!");
 		
 		ixout.setIndexes(bci, bcj);	
 		return ixout;

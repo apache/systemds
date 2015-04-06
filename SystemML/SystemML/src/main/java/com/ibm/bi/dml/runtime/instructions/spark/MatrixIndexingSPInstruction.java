@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -146,6 +147,11 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				ec.releaseMatrixInput(input1.getName());
 			}	
 			
+			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
+//			if(!mcOut.dimsKnown()) {
+//				throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
+//			}
+			
 			ec.setMatrixOutput(output.getName(), resultBlock);
 		}
 		//left indexing
@@ -170,6 +176,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			}
 			
 			ec.releaseMatrixInput(input1.getName());
+//			if(!mcOut.dimsKnown()) {
+//			throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
+//		}
+
 			ec.setMatrixOutput(output.getName(), resultBlock, inplace);
 		}
 		else

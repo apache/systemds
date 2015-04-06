@@ -13,6 +13,7 @@ import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 
 
 /**
@@ -37,7 +38,7 @@ public class ReBlock extends Lop
 	private Long _rows_per_block;
 	private Long _cols_per_block;
 
-	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks)
+	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks, ExecType et) throws LopsException
 	{
 		super(Lop.Type.ReBlock, dt, vt);		
 		this.addInput(input);
@@ -54,9 +55,18 @@ public class ReBlock extends Lop
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = true;
-		
 		lps.addCompatibility(JobType.REBLOCK);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		
+		if(et == ExecType.MR) {
+			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else if(et == ExecType.SPARK) {
+			this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			throw new LopsException("Incorrect execution type for Reblock:" + et);
+		}
+		
 	}
 
 	@Override
@@ -90,6 +100,37 @@ public class ReBlock extends Lop
 		sb.append(_outputEmptyBlocks);
 		
 		return sb.toString();
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
+		if(getExecType() != ExecType.SPARK) {
+			throw new LopsException("The method getInstructions(String,String) for Reblock should be called only for Spark execution type");
+		}
+		
+		if (this.getInputs().size() == 1) {
+			
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( "rblk" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _rows_per_block );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _cols_per_block );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append(_outputEmptyBlocks);
+			
+			return sb.toString();
+
+		} else {
+			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
+					+ this.getInputs().size() + ") for Reblock operation");
+		}
 	}
 	
 	// This function is replicated in Dag.java

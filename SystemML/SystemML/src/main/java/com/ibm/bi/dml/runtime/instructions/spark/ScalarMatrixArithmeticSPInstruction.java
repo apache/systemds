@@ -67,6 +67,16 @@ public class ScalarMatrixArithmeticSPInstruction extends ArithmeticBinaryCPInstr
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDScalarMatrixArithmeticFunction(sc_op, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
 			
 			//put output RDD handle into symbol table
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown()) {
+				if(!mc.dimsKnown()) {
+					throw new DMLRuntimeException("The output dimensions are not specified for ScalarMatrixArithmeticSPInstruction");
+				}
+				else {
+					// TODO: Setting recompile off will cause this loop to be  
+					sec.getMatrixCharacteristics(output.getName()).set(mc);
+				}
+			}
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else {

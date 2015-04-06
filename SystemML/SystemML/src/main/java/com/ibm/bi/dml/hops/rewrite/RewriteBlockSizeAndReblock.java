@@ -64,7 +64,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				rule_BlockSizeAndReblock(hi, GLOBAL_BLOCKSIZE);
 		}
 
-		boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK);
+		// boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK);
+		boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
 		
 		if (hop instanceof DataOp) 
 		{

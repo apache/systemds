@@ -127,6 +127,19 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 			}
 			
 			//put output RDD handle into symbol table
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+			if(!mcOut.dimsKnown()) { 
+				if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
+					throw new DMLRuntimeException("The output dimensions are not specified for MapMultSPInstruction");
+				else if(mc1.getCols() != mc2.getRows())
+					throw new DMLRuntimeException("Incompatible dimensions for MapMultSPInstruction");
+				else {
+					mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				}
+			}
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else 

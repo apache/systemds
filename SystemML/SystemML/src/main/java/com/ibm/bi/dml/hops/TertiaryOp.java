@@ -619,7 +619,7 @@ public class TertiaryOp extends Hop
 			}
 			
 			// construct and set reblock lop as current root lop
-			constructAndSetReblockLopIfRequired();
+			constructAndSetReblockLopIfRequired(et);
 		}
 	}
 	

@@ -23,6 +23,7 @@ import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -237,7 +238,7 @@ public abstract class Hop
 	 * 
 	 * @throws HopsException
 	 */
-	public void constructAndSetReblockLopIfRequired() 
+	public void constructAndSetReblockLopIfRequired(ExecType et) 
 		throws HopsException
 	{
 		//add reblock lop to output if required
@@ -245,8 +246,13 @@ public abstract class Hop
 		{
 			Lop input = getLops();
 		
-			ReBlock reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
-					                       getDataType(), getValueType(), _outputEmptyBlocks);
+			ReBlock reblock;
+			try {
+				reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
+						                       getDataType(), getValueType(), _outputEmptyBlocks, et);
+			} catch (LopsException e) {
+				throw new HopsException(e.getMessage());
+			}
 		
 			reblock.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());

@@ -29,7 +29,7 @@ public class CSVReBlock extends Lop
 	Long rows_per_block;
 	Long cols_per_block;
 
-	public CSVReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt) throws LopsException 
+	public CSVReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt, ExecType et) throws LopsException 
 	{
 		super(Lop.Type.CSVReBlock, dt, vt);		
 		this.addInput(input);
@@ -46,7 +46,16 @@ public class CSVReBlock extends Lop
 		boolean definesMRJob = true;
 		
 		lps.addCompatibility(JobType.CSV_REBLOCK);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		
+		if(et == ExecType.MR) {
+			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else if(et == ExecType.SPARK) {
+			this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			throw new LopsException("Incorrect execution type for CSVReblock:" + et);
+		}
 	}
 
 	@Override
@@ -108,6 +117,69 @@ public class CSVReBlock extends Lop
 		sb.append( ((Data)fillValueLop).getDoubleValue() );
 		
 		return sb.toString();
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
+		if(getExecType() != ExecType.SPARK) {
+			throw new LopsException("The method getInstructions(String,String) for CSVReblock should be called only for Spark execution type");
+		}
+		
+		if (this.getInputs().size() == 1) {
+			
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( "csvrblk" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( rows_per_block );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( cols_per_block );
+			sb.append( OPERAND_DELIMITOR );
+			
+			Lop input = getInputs().get(0);
+			
+			Lop headerLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+			Lop delimLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_DELIMITER);
+			Lop fillLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL); 
+			Lop fillValueLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
+			
+			if (headerLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
+						+ " must be a literal for a seq operation.");
+			if (delimLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + DataExpression.DELIM_DELIMITER
+						+ " must be a literal for a seq operation.");
+			if (fillLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + DataExpression.DELIM_FILL
+						+ " must be a literal for a seq operation.");
+			if (fillValueLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + DataExpression.DELIM_FILL_VALUE
+						+ " must be a literal for a seq operation.");
+
+			sb.append( ((Data)headerLop).getBooleanValue() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( ((Data)delimLop).getStringValue() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( ((Data)fillLop).getBooleanValue() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( ((Data)fillValueLop).getDoubleValue() );
+			
+			
+			return sb.toString();
+
+		} else {
+			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
+					+ this.getInputs().size() + ") for CSVReblock operation");
+		}
 	}
  
 }

@@ -57,6 +57,14 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDScalarMatrixRelationalFunction(sc_op, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
 			
 			//put output RDD handle into symbol table
+			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown()) {
+				if(!mc.dimsKnown())
+					throw new DMLRuntimeException("The output dimensions are not specified for ScalarMatrixRelationalSPInstruction");
+				else
+					sec.getMatrixCharacteristics(output.getName()).set(mc);
+			}
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else {

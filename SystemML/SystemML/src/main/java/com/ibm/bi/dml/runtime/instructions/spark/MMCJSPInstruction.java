@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
@@ -104,6 +105,21 @@ public class MMCJSPInstruction extends BinarySPInstruction {
 			//release inputs/outputs
 			ec.releaseMatrixInput(input1.getName());
 			ec.releaseMatrixInput(input2.getName());
+			
+			// Checking the dimensionality
+			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
+			MatrixCharacteristics mc1 = ec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mc2 = ec.getMatrixCharacteristics(input2.getName());
+			if(!mcOut.dimsKnown()) { 
+				if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
+					throw new DMLRuntimeException("The output dimensions are not specified for MMCJSPInstruction");
+				else if(mc1.getCols() != mc2.getRows())
+					throw new DMLRuntimeException("Incompatible dimensions for MMCJSPInstruction");
+				else {
+					mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				}
+			}
+
 			ec.setMatrixOutput(output_name, soresBlock);
 			
 		} 

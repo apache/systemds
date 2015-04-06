@@ -91,6 +91,10 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		}
 		
 		//put output handle in symbol table
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions are not specified for AggregateUnarySPInstruction");
+		}
 		sec.setRDDHandleForVariable(output.getName(), out);	
 	}
 

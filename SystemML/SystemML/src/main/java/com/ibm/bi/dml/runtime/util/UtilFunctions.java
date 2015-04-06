@@ -55,7 +55,7 @@ public class UtilFunctions
 	/**
 	 * 
 	 * @param matrixSize
-	 * @param cellIndex
+	 * @param cellIndex block index 
 	 * @param blockSize
 	 * @return
 	 */

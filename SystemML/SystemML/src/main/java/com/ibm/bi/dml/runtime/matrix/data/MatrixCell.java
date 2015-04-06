@@ -11,10 +11,12 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -33,8 +35,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 
 @SuppressWarnings("rawtypes")
-public class MatrixCell extends MatrixValue implements WritableComparable
+public class MatrixCell extends MatrixValue implements WritableComparable, Serializable
 {
+	private static final long serialVersionUID = -7755996717411912578L;
+
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -44,8 +48,57 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 	public MatrixCell(MatrixCell that)
 	{
 		this.value=that.value;
+		this.rowIndex = that.rowIndex;
+		this.colIndex = that.colIndex;
 	}
 	
+	// ---------------------------------------
+	// Added for Reblock 
+	protected long rowIndex;
+	protected long colIndex;
+	public MatrixCell(long row, long col, double value) {
+		rowIndex = row;
+		colIndex = col;
+		this.value = value;
+	}
+	public long getRowIndex() {
+		return rowIndex;
+	}
+
+	public void setRowIndex(long rowIndex) {
+		this.rowIndex = rowIndex;
+	}
+
+	public long getColIndex() {
+		return colIndex;
+	}
+
+	public void setColIndex(long colIndex) {
+		this.colIndex = colIndex;
+	}
+	public void writeObject(java.io.ObjectOutputStream out) throws IOException {
+		// default deserialization
+		out.defaultWriteObject();
+		out.writeLong(rowIndex);
+		out.writeLong(colIndex);
+		out.writeDouble(getValue());
+	}
+	
+	public String toString() {
+		return "{" + rowIndex +  "," + colIndex + "," + Double.toString(getValue()) + "}";
+	}
+	
+	public void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+		// default deserialization
+	    in.defaultReadObject();
+		rowIndex = in.readLong();
+		colIndex = in.readLong();
+		setValue(in.readDouble());
+	}
+	// ---------------------------------------
+	
+	
+
 	public MatrixCell()
 	{
 		value=0;
@@ -169,10 +222,10 @@ public class MatrixCell extends MatrixValue implements WritableComparable
 		out.writeDouble(value);
 	}
 
-	public String toString()
-	{
-		return Double.toString(value);
-	}
+//	public String toString()
+//	{
+//		return Double.toString(value);
+//	}
 
 	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixValue value1,

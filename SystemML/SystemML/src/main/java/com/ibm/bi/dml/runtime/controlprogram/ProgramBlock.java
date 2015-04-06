@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLScalarAssignInstruction;
@@ -150,7 +151,7 @@ public class ProgramBlock
 			
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
 				&& _sb != null 
 				&& _sb.requiresRecompilation() )
 				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
@@ -191,7 +192,7 @@ public class ProgramBlock
 		try {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
 				&& requiresRecompile )
 				//&& Recompiler.requiresRecompilation(hops)         )
 			{

@@ -14,9 +14,11 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
@@ -74,6 +76,10 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( ">"    , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "<="   , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( ">="   , SPINSTRUCTION_TYPE.RelationalBinary);
+		
+		// REBLOCK Instruction Opcodes 
+		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
+		String2SPInstructionType.put( "csvrblk", SPINSTRUCTION_TYPE.CSVReblock);
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -97,6 +103,7 @@ public class SPInstructionParser extends InstructionParser {
 		
 		switch(sptype) 
 		{
+			// Matrix multiplication
 			case MMCJ:
 				return MMCJSPInstruction.parseInstruction(str);
 			case MapMult:
@@ -113,6 +120,12 @@ public class SPInstructionParser extends InstructionParser {
 				return ArithmeticBinarySPInstruction.parseInstruction(str);
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);
+				
+			// Reblock instructions	
+			case Reblock:
+				return ReblockSPInstruction.parseInstruction(str);
+			case CSVReblock:
+				return CSVReblockSPInstruction.parseInstruction(str);
 			
 			case INVALID:
 			default:

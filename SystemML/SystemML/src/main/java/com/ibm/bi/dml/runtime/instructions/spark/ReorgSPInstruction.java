@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -73,6 +74,14 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDTransposeFunction());
 			
 			//store output rdd handle
+			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown()) {
+				if(!mc1.dimsKnown())
+					throw new DMLRuntimeException("The output dimensions are not specified for ReorgSPInstruction");
+				else
+					sec.getMatrixCharacteristics(output.getName()).set(mc1.getCols(), mc1.getRows(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
+			}
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else

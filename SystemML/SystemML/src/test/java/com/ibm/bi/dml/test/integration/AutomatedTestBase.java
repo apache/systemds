@@ -125,6 +125,13 @@ public abstract class AutomatedTestBase
 	 * suite in spark mode
 	 */
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	static {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) {
+			// Use local configuration for running integration tests
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+	}
+	
 	protected static final boolean DEBUG = false;
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;

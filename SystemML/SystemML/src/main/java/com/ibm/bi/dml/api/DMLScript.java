@@ -366,6 +366,12 @@ public class DMLScript
 		return ret;
 	}
 	
+	public static boolean isRecompilationRequiredForGivenExecutionType() {
+		// Why is this commented ? To check if recompiler hides any potential issues with SPInstruction
+		// return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID || DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK;
+		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
+	}
+	
 	///////////////////////////////
 	// private internal utils (argument parsing)
 	////////

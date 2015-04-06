@@ -220,7 +220,7 @@ public class OptimizationWrapper
 		
 		//recompile parfor body 
 		if(   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-		   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+		   && DMLScript.isRecompilationRequiredForGivenExecutionType() )
 		{
 			ForStatement fs = (ForStatement) sb.getStatement(0);
 			

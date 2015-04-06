@@ -319,7 +319,7 @@ public class WhileStatementBlock extends StatementBlock
 		throws HopsException
 	{
 		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			                           && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+			                           && DMLScript.isRecompilationRequiredForGivenExecutionType()	
 			                           && Recompiler.requiresRecompilation(getPredicateHops());
 	}
 	

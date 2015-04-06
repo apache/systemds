@@ -411,7 +411,7 @@ public class ForStatementBlock extends StatementBlock
 		throws HopsException
 	{
 		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-            && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	 )
+            && DMLScript.isRecompilationRequiredForGivenExecutionType()	 )
 		{
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());

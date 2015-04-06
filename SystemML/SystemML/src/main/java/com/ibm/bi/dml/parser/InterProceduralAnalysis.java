@@ -153,7 +153,7 @@ public class InterProceduralAnalysis
 		}
 		
 		//step 4: flag functions with loops for 'recompile-on-entry'
-		if( FLAG_FUNCTION_RECOMPILE_ONCE && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ){
+		if( FLAG_FUNCTION_RECOMPILE_ONCE && DMLScript.isRecompilationRequiredForGivenExecutionType()){
 			flagFunctionsForRecompileOnce( dmlp );
 		}
 	}

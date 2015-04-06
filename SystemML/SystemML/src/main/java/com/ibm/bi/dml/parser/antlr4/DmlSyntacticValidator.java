@@ -690,20 +690,26 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitImportStatement(ImportStatementContext ctx) {
 		String filePath = ctx.filePath.getText();
 		String namespace = DMLProgram.DEFAULT_NAMESPACE;
-		if(ctx.namespace != null && ctx.namespace.getText() != null && ctx.namespace.getText().isEmpty()) { 
+		if(ctx.namespace != null && ctx.namespace.getText() != null && !ctx.namespace.getText().isEmpty()) { 
 			namespace = ctx.namespace.getText();
+		}
+		
+		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
+				filePath.startsWith("'") && filePath.endsWith("'")) {	
+			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
 		if(DMLParserWrapper.currentPath != null) {
 			filePath = DMLParserWrapper.currentPath + File.separator + filePath;
 		}
 		
-		File importedFile = new File(filePath);
-		if(!importedFile.exists()) {
-			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
-			return;
-		}
-		else {
+		
+//		File importedFile = new File(filePath);
+//		if(!importedFile.exists()) {
+//			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
+//			return;
+//		}
+//		else {
 			DMLProgram prog = null;
 			try {
 				prog = (new DMLParserWrapper()).doParse(filePath, null);
@@ -724,7 +730,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
 				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
 			}
-		}
+//		}
 	}
 	
 	@Override
@@ -1341,7 +1347,13 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
 		PathStatement stmt = new PathStatement(ctx.pathValue.getText());
-		DMLParserWrapper.currentPath = ctx.pathValue.getText() + File.separator;
+		String filePath = ctx.pathValue.getText();
+		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
+				filePath.startsWith("'") && filePath.endsWith("'")) {	
+			filePath = filePath.substring(1, filePath.length()-1);
+		}
+		
+		DMLParserWrapper.currentPath = filePath + File.separator;
 		ctx.info.stmt = stmt;
 	}
 	

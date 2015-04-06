@@ -8,14 +8,13 @@
 package com.ibm.bi.dml.parser.python;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -26,11 +25,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
@@ -43,6 +42,7 @@ import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
+import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.parser.python.PydmlParser.FunctionStatementContext;
 import com.ibm.bi.dml.parser.python.PydmlParser.PmlprogramContext;
 import com.ibm.bi.dml.parser.python.PydmlParser.StatementContext;
@@ -146,20 +146,24 @@ public class PyDMLParserWrapper {
 		
 		ANTLRInputStream in;
 		try {
-			if(dmlScript != null) {
-				InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
-				in = new ANTLRInputStream(stream);
+			if(dmlScript == null) {
+				dmlScript = DMLParserWrapper.readDMLScript(fileName);
 			}
-			else {
-				if(!(new File(fileName)).exists()) {
-					throw new ParseException("ERROR: Cannot open file:" + fileName);
-				}
-				in = new ANTLRInputStream(new FileInputStream(fileName));
-			}
+			
+			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
+			in = new org.antlr.v4.runtime.ANTLRInputStream(stream);
+//			else {
+//				if(!(new File(fileName)).exists()) {
+//					throw new ParseException("ERROR: Cannot open file:" + fileName);
+//				}
+//				in = new ANTLRInputStream(new FileInputStream(fileName));
+//			}
 		} catch (FileNotFoundException e) {
 			throw new ParseException("ERROR: Cannot find file:" + fileName);
 		} catch (IOException e) {
 			throw new ParseException("ERROR: Cannot open file:" + fileName);
+		} catch (LanguageException e) {
+			throw new ParseException("ERROR: " + e.getMessage());
 		}
 
 		PmlprogramContext ast = null;
@@ -270,29 +274,30 @@ public class PyDMLParserWrapper {
 				if(stmtCtx.info.namespaces != null) {
 					// Add the DMLProgram entries into current program
 					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
-						// Don't add DMLProgram into the current program, just add function statements
-						// dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
-						// Add function statements to current dml program
-						DMLProgram importedPgm = entry.getValue();
-
-						try {
-							for(FunctionStatementBlock importedFnBlk : importedPgm.getFunctionStatementBlocks()) {
-								if(importedFnBlk.getStatements() != null && importedFnBlk.getStatements().size() == 1) {
-									String functionName = ((FunctionStatement)importedFnBlk.getStatement(0)).getName();
-									dmlPgm.addFunctionStatementBlock(entry.getKey(), functionName, importedFnBlk);
-								}
-								else {
-									LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " incorrect number of functions in the imported function block .... strange");
-									return null;
-								}
-							}
-							if(importedPgm.getStatementBlocks() != null && importedPgm.getStatementBlocks().size() > 0) {
-								LOG.warn("Only the functions can be imported from the namespace " + entry.getKey());
-							}
-						} catch (LanguageException e) {
-							LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot import functions from the file in the import statement");
-							return null;
-						}
+						dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
+//						// Don't add DMLProgram into the current program, just add function statements
+//						// dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
+//						// Add function statements to current dml program
+//						DMLProgram importedPgm = entry.getValue();
+//
+//						try {
+//							for(FunctionStatementBlock importedFnBlk : importedPgm.getFunctionStatementBlocks()) {
+//								if(importedFnBlk.getStatements() != null && importedFnBlk.getStatements().size() == 1) {
+//									String functionName = ((FunctionStatement)importedFnBlk.getStatement(0)).getName();
+//									dmlPgm.addFunctionStatementBlock(entry.getKey(), functionName, importedFnBlk);
+//								}
+//								else {
+//									LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " incorrect number of functions in the imported function block .... strange");
+//									return null;
+//								}
+//							}
+//							if(importedPgm.getStatementBlocks() != null && importedPgm.getStatementBlocks().size() > 0) {
+//								LOG.warn("Only the functions can be imported from the namespace " + entry.getKey());
+//							}
+//						} catch (LanguageException e) {
+//							LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot import functions from the file in the import statement");
+//							return null;
+//						}
 					}
 				}
 				else {

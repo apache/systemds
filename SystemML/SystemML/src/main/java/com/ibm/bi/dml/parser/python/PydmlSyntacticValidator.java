@@ -57,6 +57,7 @@ import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.parser.antlr4.ExpressionInfo;
 import com.ibm.bi.dml.parser.antlr4.StatementInfo;
 import com.ibm.bi.dml.parser.python.PydmlParser.AddSubExpressionContext;
@@ -751,20 +752,25 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	public void exitImportStatement(ImportStatementContext ctx) {
 		String filePath = ctx.filePath.getText();
 		String namespace = DMLProgram.DEFAULT_NAMESPACE;
-		if(ctx.namespace != null && ctx.namespace.getText() != null && ctx.namespace.getText().isEmpty()) { 
+		if(ctx.namespace != null && ctx.namespace.getText() != null && !ctx.namespace.getText().isEmpty()) { 
 			namespace = ctx.namespace.getText();
 		}
-		
-		if(PyDMLParserWrapper.currentPath != null) {
-			filePath = PyDMLParserWrapper.currentPath + File.separator + filePath;
+
+		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
+				filePath.startsWith("'") && filePath.endsWith("'")) {	
+			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		File importedFile = new File(filePath);
-		if(!importedFile.exists()) {
-			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
-			return;
+		if(DMLParserWrapper.currentPath != null) {
+			filePath = DMLParserWrapper.currentPath + File.separator + filePath;
 		}
-		else {
+		
+//		File importedFile = new File(filePath);
+//		if(!importedFile.exists()) {
+//			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
+//			return;
+//		}
+//		else {
 			DMLProgram prog = null;
 			try {
 				prog = (new PyDMLParserWrapper()).doParse(filePath, null);
@@ -785,7 +791,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
 				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
 			}
-		}
+//		}
 	}
 	
 	@Override
@@ -1929,7 +1935,12 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
 		PathStatement stmt = new PathStatement(ctx.pathValue.getText());
-		PyDMLParserWrapper.currentPath = ctx.pathValue.getText() + File.separator;
+		String filePath = ctx.pathValue.getText();
+		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
+				filePath.startsWith("'") && filePath.endsWith("'")) {	
+			filePath = filePath.substring(1, filePath.length()-1);
+		}
+		PyDMLParserWrapper.currentPath = filePath + File.separator;
 		ctx.info.stmt = stmt;
 	}
 	

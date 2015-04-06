@@ -21,6 +21,26 @@
 	<build>
 		<plugins>
 		
+		<plugin>  
+		   <groupId>org.codehaus.mojo</groupId>  
+		   <artifactId>exec-maven-plugin</artifactId>  
+		   <version>1.1.1</version>  
+		   <executions>  
+		    <execution>  
+		     <phase>pre-integration-test</phase>  
+		     <goals>  
+		      <goal>java</goal>  
+		     </goals>  
+		     <configuration>  
+		      <mainClass>com.ibm.bi.dml.utils.InstallDependencyForIntegrationTests</mainClass>	
+				<arguments>  
+       				<argument>${skipTests}</argument>
+       			</arguments>
+		     </configuration>  
+		    </execution>  
+		   </executions>  
+		  </plugin>
+		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>

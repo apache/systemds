@@ -998,7 +998,7 @@ public class DMLScript
 		
 		//analyze hadoop configuration
 		JobConf job = ConfigurationManager.getCachedJobConf();
-		String jobTracker     = job.get("mapred.job.tracker", "local");
+		boolean localMode     = InfrastructureAnalyzer.isLocalMode(job);
 		String taskController = job.get("mapred.task.tracker.task-controller", "org.apache.hadoop.mapred.DefaultTaskController");
 		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
 		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS,"null"); //note: job.get("dfs.permissions.supergroup",null);
@@ -1006,13 +1006,13 @@ public class DMLScript
 
 		//determine security states
 		boolean flagDiffUser = !(   taskController.equals("org.apache.hadoop.mapred.LinuxTaskController") //runs map/reduce tasks as the current user
-							     || jobTracker.equals("local")  // run in the same JVM anyway
+							     || localMode  // run in the same JVM anyway
 							     || groupNames.contains( ttGroupName) ); //user in task tracker group 
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		
 		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
-				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
+				        + "mapred.job.tracker = " + job.get("mapred.job.tracker") + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
 				        + "fs.default.name = " + ((fsURI!=null)?fsURI.getScheme():"null") + ", " + MRConfigurationNames.DFS_PERMISSIONS+" = " + perm );
 
 		//print warning if permission issues possible
@@ -1053,7 +1053,7 @@ public class DMLScript
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
 		JobConf job = new JobConf();
-		if( MRJobConfiguration.isLocalJobTracker(job) ) {
+		if( InfrastructureAnalyzer.isLocalMode(job) ) {
 			try 
 			{
 				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 

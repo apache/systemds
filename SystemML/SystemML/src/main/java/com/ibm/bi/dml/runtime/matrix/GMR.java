@@ -30,6 +30,7 @@ import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -348,7 +349,7 @@ public class GMR
 			MRJobConfiguration.setupDistCacheInputs(job, indexString.toString(), pathString.toString(), pathList);
 			
 			//clean in-memory cache (prevent job interference in local mode)
-			if( MRJobConfiguration.isLocalJobTracker(job) )
+			if( InfrastructureAnalyzer.isLocalMode(job) )
 				MRBaseForCommonInstructions.resetDistCache();
 		}
 	}

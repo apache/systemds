@@ -392,26 +392,6 @@ public class YarnClusterAnalyzer
 		return _remoteMRSortMem;		
 	}
 	
-	public static boolean isLocalMode()
-	{
-		if( _remoteJVMMaxMemMap == -1 )
-			analyzeYarnCluster(true);
-		
-		return _localJT;		
-	}
-	
-	public static boolean isLocalMode(JobConf job)
-	{
-		if( _remoteJVMMaxMemMap == -1 )
-		{
-			//analyze if local mode
-			String jobTracker = job.get("mapred.job.tracker", "local");
-			_localJT = jobTracker.equals("local");
-		}
-		
-		return _localJT;		
-	}
-	
 	///////
 	//methods for obtaining constraints or respective defaults
 	
@@ -702,10 +682,6 @@ public class YarnClusterAnalyzer
 				_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts3); 
 			else
 				_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
-			
-			//analyze if local mode
-			String jobTracker = conf.get("mapred.job.tracker", "local");
-			_localJT = jobTracker.equals("local");
 			
 			//HDFS blocksize
 			String blocksize = conf.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");

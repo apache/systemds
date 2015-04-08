@@ -244,11 +244,8 @@ public class InfrastructureAnalyzer
 	
 	public static boolean isLocalMode(JobConf job)
 	{
-		if( _remoteJVMMaxMemMap == -1 )
-		{
-			//analyze if local mode
-			String jobTracker = job.get("mapred.job.tracker", "local");
-			_localJT = jobTracker.equals("local");
+		if( _remoteJVMMaxMemMap == -1 ) {
+			_localJT = analyzeLocalMode(job);
 		}
 		
 		return _localJT;		
@@ -474,10 +471,6 @@ public class InfrastructureAnalyzer
 				else
 					_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
 				
-				//analyze if local mode
-				String jobTracker = job.get("mapred.job.tracker", "local");
-				_localJT = jobTracker.equals("local");
-				
 				//HDFS blocksize
 				String blocksize = job.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
 				_blocksize = Long.parseLong(blocksize);
@@ -485,11 +478,28 @@ public class InfrastructureAnalyzer
 				//is yarn enabled
 				String framework = job.get("mapreduce.framework.name");
 				_yarnEnabled = (framework!=null && framework.equals("yarn"));
+				
+				//analyze if local mode (internally requires yarn_enabled)
+				_localJT = analyzeLocalMode(job);
 			}		
 		} 
 		catch (IOException e) 
 		{
 			throw new RuntimeException("Unable to analyze infrastructure.",e);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param job
+	 * @return
+	 */
+	private static boolean analyzeLocalMode(JobConf job)
+	{
+		//analyze if local mode (if yarn enabled, we always assume cluster mode
+		//in order to workaround configuration issues on >=Hadoop 2.6)
+		String jobTracker = job.get("mapred.job.tracker", "local");
+		return "local".equals(jobTracker)
+			   & !isYarnEnabled();
 	}
 }

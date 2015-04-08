@@ -373,7 +373,7 @@ public class MRJobConfiguration
 	 */
 	public static void setUniqueWorkingDir( JobConf job )
 	{
-		if( isLocalJobTracker(job) )
+		if( InfrastructureAnalyzer.isLocalMode(job) )
 		{
 			StringBuilder tmp = new StringBuilder();
 			tmp.append( Lop.FILE_SEPARATOR );
@@ -415,12 +415,6 @@ public class MRJobConfiguration
 	public static String getStagingWorkingDirPrefix(JobConf job)
 	{
 		return job.get("mapreduce.jobtracker.staging.root.dir");
-	}
-	
-	public static boolean isLocalJobTracker(JobConf job)
-	{
-		String jobTracker = job.get("mapred.job.tracker", "local");
-		return jobTracker.equals("local");
 	}
 	
 	/**

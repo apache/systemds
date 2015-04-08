@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.v2.util.MRApps;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
@@ -47,6 +48,7 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -78,6 +80,7 @@ public class DMLYarnClient
 	public static final String JVMOPTS_ENV_CONST = "HADOOP_OPTS";
 	// environment variable to obtain mapred home (for robustness only)
 	public static final String MAPRED_HOME_ENV_CONST = "HADOOP_MAPRED_HOME";
+	public static final String HADOOP_HOME_ENV_CONST = "HADOOP_HOME";
 	// default of 1 core since YARN scheduler does not take the number of cores into account yet 
 	public static final int NUM_CORES = 1;  
 	// factor for compute virtual memory to request based on given max heap size
@@ -495,17 +498,26 @@ public class DMLYarnClient
 			classpath.append( value.trim() );
 		}
 		
-		//setup mapreduce environment (for robustness if not included in default environment)
+		//setup mapreduce appmaster environment (for robustness if not included in default environment)
 		//for example, by default HDP 2.2 did not include mapred client libraries in this configuration
+		//note: we cannot use mapreduce.application.classpath because it refers to HDFS and $PWD that needs to be setup 		
 		Map<String, String> env = System.getenv();
-		if( env.containsKey(MAPRED_HOME_ENV_CONST) ){
-			String tmp = env.get(MAPRED_HOME_ENV_CONST);
-			
+		String mapred_home = null;
+		//get mapred home via alternative environment variables
+		if( env.containsKey(MAPRED_HOME_ENV_CONST) ) {
+			mapred_home = env.get(MAPRED_HOME_ENV_CONST);
+		} 
+		else if ( env.containsKey(HADOOP_HOME_ENV_CONST) ){
+			String tmp = env.get(HADOOP_HOME_ENV_CONST);
+			mapred_home = tmp + File.separator + ".." + File.separator + "hadoop-mapreduce";
+		}
+		//concatenate mapred home libs to classpath
+		if( mapred_home != null ) {
 			if( classpath.length() > 0 )
 				classpath.append( File.pathSeparator ); 
-			classpath.append( tmp + File.separator + "*" );
+			classpath.append( mapred_home + File.separator + "*" );
 			classpath.append( File.pathSeparator ); 
-			classpath.append( tmp + File.separator + "lib" + File.separator + "*" );
+			classpath.append( mapred_home + File.separator + "lib" + File.separator + "*" );
 		}
 		
 		eMap.put(Environment.CLASSPATH.name(), classpath.toString());

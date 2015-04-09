@@ -34,8 +34,12 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.SortKeys;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -288,6 +292,28 @@ public class SortMR
 		{
 			MapReduceTool.deleteFileIfExistOnHDFS( pfname );
 		    return new JobReturn(s[0], counts, partitionWith0, missing0s, runjob.isSuccessful());
+		}
+	}
+	
+
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static MRInstruction parseSortInstruction(String str) 
+		throws DMLRuntimeException 
+	{
+		SortKeys.OperationTypes otype = SortMR.getSortInstructionType(str);
+		if( otype != SortKeys.OperationTypes.Indexes )
+			return (MRInstruction) UnaryInstruction.parseInstruction(str);
+		else {
+			InstructionUtils.checkNumFields ( str, 4 );
+			String[] sparts = InstructionUtils.getInstructionParts ( str );
+			byte in = Byte.parseByte(sparts[1]);
+			byte out = Byte.parseByte(sparts[2]);
+			return new UnaryInstruction(null, in, out, str);
 		}
 	}
 	

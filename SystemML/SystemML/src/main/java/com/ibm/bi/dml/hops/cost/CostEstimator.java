@@ -53,7 +53,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
-import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -83,8 +82,12 @@ public abstract class CostEstimator
 	{
 		double costs = 0;
 
+		//obtain stats from symboltable (e.g., during recompile)
+		maintainVariableStatistics(vars, stats);
+						
+		//get cost estimate
 		for( ProgramBlock pb : rtprog.getProgramBlocks() )
-			costs += rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), true);
+			costs += rGetTimeEstimate(pb, stats, new HashSet<String>(), true);
 		
 		return costs;
 	}
@@ -101,7 +104,11 @@ public abstract class CostEstimator
 	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		return rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), recursive);
+		//obtain stats from symboltable (e.g., during recompile)
+		maintainVariableStatistics(vars, stats);
+				
+		//get cost estimate
+		return rGetTimeEstimate(pb, stats, new HashSet<String>(), recursive);
 	}
 	
 		
@@ -124,7 +131,12 @@ public abstract class CostEstimator
 		ArrayList<Instruction> linst = Recompiler.recompileHopsDag(null, hops, vars, null, false, 0);
 		ProgramBlock pb = new ProgramBlock(null);
 		pb.setInstructions(linst);
-		costs = rGetTimeEstimate(pb, vars, stats, new HashSet<String>(), true);
+		
+		//obtain stats from symboltable (e.g., during recompile)
+		maintainVariableStatistics(vars, stats);
+		
+		//get cost estimate
+		costs = rGetTimeEstimate(pb, stats, new HashSet<String>(), true);
 		
 		return costs;
 	}
@@ -138,7 +150,7 @@ public abstract class CostEstimator
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private double rGetTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
+	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		double ret = 0;
@@ -148,7 +160,7 @@ public abstract class CostEstimator
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
 			if( recursive )
 				for (ProgramBlock pb2 : tmp.getChildBlocks())
-					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			ret *= DEFAULT_NUMITER;
 		}
 		else if (pb instanceof IfProgramBlock)
@@ -156,10 +168,10 @@ public abstract class CostEstimator
 			IfProgramBlock tmp = (IfProgramBlock)pb;
 			if( recursive ) {
 				for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
-					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 				if( tmp.getChildBlocksElseBody()!=null )
 					for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
-						ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+						ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 						ret /= 2; //weighted sum	
 					}
 			}
@@ -169,9 +181,9 @@ public abstract class CostEstimator
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
 			if( recursive )
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
-					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			
-			ret *= getNumIterations(vars, stats, tmp.getIterablePredicateVars());			
+			ret *= getNumIterations(stats, tmp.getIterablePredicateVars());			
 		}		
 		else if ( pb instanceof FunctionProgramBlock 
 				  && !(pb instanceof ExternalFunctionProgramBlock)) //see generic
@@ -179,13 +191,10 @@ public abstract class CostEstimator
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
 			if( recursive )
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
-					ret += rGetTimeEstimate(pb2, vars, stats, memoFunc, recursive);
+					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 		}
 		else 
 		{	
-			//obtain stats from symboltable (e.g., during recompile)
-			maintainVariableStatistics(vars, stats);
-			
 			ArrayList<Instruction> tmp = pb.getInstructions();
 			
 			for( Instruction inst : tmp )
@@ -193,7 +202,7 @@ public abstract class CostEstimator
 				if( inst instanceof CPInstruction ) //CP
 				{
 					//obtain stats from createvar, cpvar, rmvar, rand
-					maintainCPInstVariableStatistics(inst, stats);
+					maintainCPInstVariableStatistics((CPInstruction)inst, stats);
 					
 					//extract statistics (instruction-specific)
 					Object[] o = extractCPInstStatistics(inst, stats);
@@ -220,7 +229,7 @@ public abstract class CostEstimator
 							Program prog = pb.getProgram();
 							FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
 							                            finst.getNamespace(), finst.getFunctionName());
-							ret += rGetTimeEstimate(fpb, vars, stats, memoFunc, recursive);
+							ret += rGetTimeEstimate(fpb, stats, memoFunc, recursive);
 							memoFunc.remove(fkey);
 							
 							if(LOG.isDebugEnabled())
@@ -299,12 +308,13 @@ public abstract class CostEstimator
 	 * @param inst
 	 * @param stats
 	 */
-	private void maintainCPInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats )
+	private void maintainCPInstVariableStatistics( CPInstruction inst, HashMap<String, VarStats> stats )
 	{
-		String[] parts = InstructionUtils.getInstructionParts(inst.toString());
-		String optype = parts[0];
-		
-		if( inst instanceof VariableCPInstruction ){		
+		if( inst instanceof VariableCPInstruction )
+		{
+			String optype = inst.getOpcode();
+			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
+			
 			if( optype.equals("createvar") ) {
 				if( parts.length<10 )
 					return;
@@ -606,7 +616,9 @@ public abstract class CostEstimator
 			
 			VariableCPInstruction varinst = (VariableCPInstruction) inst;
 			if( varinst.getOpcode().equals("write") ) {
-				vs[0] = stats.get( varinst.getInput1().getName() );	
+				//special handling write of matrix objects (non existing if scalar)
+				if( stats.containsKey( varinst.getInput1().getName() ) )
+					vs[0] = stats.get( varinst.getInput1().getName() );	
 				attr = new String[]{varinst.getInput3().getName()};
 			}	
 		}
@@ -703,7 +715,7 @@ public abstract class CostEstimator
 	 * @param pred
 	 * @return
 	 */
-	private int getNumIterations(LocalVariableMap vars, HashMap<String,VarStats> stats, String[] pred)
+	private int getNumIterations(HashMap<String,VarStats> stats, String[] pred)
 	{
 		int N = DEFAULT_NUMITER;
 		if( pred != null && pred[1]!=null && pred[2]!=null && pred[3]!=null )

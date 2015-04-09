@@ -53,6 +53,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.matrix.SortMR;
 
 
 public class MRInstructionParser extends InstructionParser 
@@ -339,7 +340,7 @@ public class MRInstructionParser extends InstructionParser
 			return (MRInstruction) MatrixReshapeMRInstruction.parseInstruction(str);	
 		
 		case Sort: //workaround for dummy MR sort instruction
-			return (MRInstruction)UnaryInstruction.parseInstruction(str);
+			return SortMR.parseSortInstruction(str);
 		
 		case CSVReblock:
 			return (MRInstruction)CSVReblockInstruction.parseInstruction(str);

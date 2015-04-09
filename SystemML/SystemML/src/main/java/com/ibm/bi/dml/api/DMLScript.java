@@ -822,7 +822,7 @@ public class DMLScript
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
 				
-		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
+		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);
 		
 		

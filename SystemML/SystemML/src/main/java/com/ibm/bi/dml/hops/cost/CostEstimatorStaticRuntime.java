@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
@@ -33,6 +34,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
@@ -78,7 +80,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	//MR job latency
 	private static final double DEFAULT_MR_JOB_LATENCY_LOCAL = 2;
 	private static final double DEFAULT_MR_JOB_LATENCY_REMOTE = 20;
-	private static final double DEFAULT_MR_TASK_LATENCY_LOCAL = 0.1;
+	private static final double DEFAULT_MR_TASK_LATENCY_LOCAL = 0.001;
 	private static final double DEFAULT_MR_TASK_LATENCY_REMOTE = 1.5;
 	
 	//IO READ throughput
@@ -99,6 +101,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		CPInstruction cpinst = (CPInstruction)inst;
+		
 		//load time into mem
 		double ltime = 0;
 		if( !vs[0]._inmem ){
@@ -116,12 +120,12 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			vs[1]._inmem = true;
 		}
 		if( LOG.isDebugEnabled() && ltime!=0 ) {
-			CPInstruction cpinst = (CPInstruction)inst;
 			LOG.debug("Cost["+cpinst.getOpcode()+" - read] = "+ltime);
 		}		
 				
 		//exec time CP instruction
-		double etime = getInstTimeEstimate(inst.toString(), vs, args);
+		String opcode = (cpinst instanceof FunctionCallCPInstruction) ? InstructionUtils.getOpCode(cpinst.toString()) : cpinst.getOpcode();
+		double etime = getInstTimeEstimate(opcode, vs, args, ExecType.CP);
 		
 		//write time caching
 		double wtime = 0;
@@ -130,7 +134,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			wtime += getHDFSWriteTime(vs[2]._rlen, vs[2]._clen, vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
 		
 		if( LOG.isDebugEnabled() && wtime!=0 ) {
-			CPInstruction cpinst = (CPInstruction)inst;
 			LOG.debug("Cost["+cpinst.getOpcode()+" - write] = "+wtime);
 		}
 		
@@ -154,7 +157,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		boolean localJob = InfrastructureAnalyzer.isLocalMode();
 		int maxPMap = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 	
 		int maxPRed = Math.min( InfrastructureAnalyzer.getRemoteParallelReduceTasks(),
-				        Integer.parseInt(ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REDUCERS)) );
+				        ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS) );
 		double blocksize = ((double)InfrastructureAnalyzer.getHDFSBlockSize())/(1024*1024);
 		
 		//correction max number of mappers/reducers on yarn clusters
@@ -224,7 +227,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				for( String tmp : linst ){
 					//map compute costs
 					Object[] o = extractMRInstStatistics(tmp, vs);
-					mapCosts += getInstTimeEstimate(tmp, (VarStats[])o[0], (String[])o[1]);
+					String opcode = InstructionUtils.getOpCode(tmp);
+					mapCosts += getInstTimeEstimate(opcode, (VarStats[])o[0], (String[])o[1], ExecType.MR);
 					//dist cache read costs
 					int dcIndex = getDistcacheIndex(tmp);
 					if( dcIndex >= 0 ) {
@@ -268,7 +272,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						Object[] o = extractMRInstStatistics(tmp, vs);
 						if(InstructionUtils.getMRType(tmp)==MRINSTRUCTION_TYPE.Aggregate)
 							o[1] = new String[]{String.valueOf(numMap)};
-						reduceCosts += getInstTimeEstimate(tmp, (VarStats[])o[0], (String[])o[1]);
+						String opcode = InstructionUtils.getOpCode(tmp);
+						reduceCosts += getInstTimeEstimate(opcode, (VarStats[])o[0], (String[])o[1], ExecType.MR);
 					}
 				}
 			reduceCosts /= numEPRed;
@@ -591,11 +596,28 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		//TODO for jobtype==JobType.MMCJ common dim
 
-		for( int i=0; i<mapOutIx.length; i++ )
+		switch( jobtype )
 		{
-			int lret =  (int) Math.ceil((double)vs[mapOutIx[i]]._rlen/vs[mapOutIx[i]]._brlen)
-			           *(int) Math.ceil((double)vs[mapOutIx[i]]._clen/vs[mapOutIx[i]]._bclen);
-			ret = Math.max(lret, ret);
+			case REBLOCK:
+			case CSV_REBLOCK: {
+				for( int i=0; i<mapOutIx.length; i++ )
+				{
+					int lret =  (int) Math.ceil((double)vs[mapOutIx[i]]._rlen/vs[mapOutIx[i]]._brlen)
+					           *(int) Math.ceil((double)vs[mapOutIx[i]]._clen/vs[mapOutIx[i]]._bclen);
+					ret = Math.max(lret, ret);
+				}		
+				break;
+			}
+			
+			default: {
+				for( int i=0; i<mapOutIx.length; i++ )
+				{
+					int lret =  (int) Math.ceil((double)vs[mapOutIx[i]]._rlen/DMLTranslator.DMLBlockSize)
+					           *(int) Math.ceil((double)vs[mapOutIx[i]]._clen/DMLTranslator.DMLBlockSize);
+					ret = Math.max(lret, ret);
+				}
+				break;
+			}
 		}
 		
 		return Math.max(1, ret);
@@ -769,12 +791,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private double getInstTimeEstimate(String instStr, VarStats[] vs, String[] args) 
+	private double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		String[] parts = instStr.split(Instruction.OPERAND_DELIM);
-		boolean inMR = (ExecType.valueOf( parts[0] ) == ExecType.MR);
-		String opcode = parts[1];
+		boolean inMR = (et == ExecType.MR);
 		return getInstTimeEstimate(opcode, inMR,  
 				                   vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen, 
 						           vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen, 

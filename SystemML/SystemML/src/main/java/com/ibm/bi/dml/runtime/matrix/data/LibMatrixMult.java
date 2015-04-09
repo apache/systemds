@@ -287,21 +287,36 @@ public class LibMatrixMult
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
-			for( int i=0, aix=0, cix=0; i < m; i++, cix+=n ) 
-				for(int k = 0; k < cd; k++, aix++ ) 
+			final int blocksizeI = 32; //256KB c block (typical L2 size per core), 32KB a block 
+			final int blocksizeK = 32; 
+			//note: in contrast to dense-dense, no blocking over j (would require maintaining blocksizeK indexes, counter-productive on skew)
+			
+			SparseRow[] b = m2.sparseRows;
+			
+			//blocked execution
+			for( int bi = 0; bi < m; bi+=blocksizeI )
+				for( int bk = 0, bimin = Math.min(m, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
 				{
-					double val = a[aix];
-					if( val != 0 )
-					{
-						SparseRow brow = m2.sparseRows[ k ];
-						if( brow != null && !brow.isEmpty() ) 
+					int bklen = Math.min(cd, bk+blocksizeK)-bk;
+					
+					//core sub block matrix multiplication
+		    		for( int i = bi; i < bimin; i++) 
+		    		{
+		    			int aixi = i * cd + bk; //start index on a
+		    			int cixj = i * n + 0; //scan index on c
+		    			
+		    			for( int k = 0; k < bklen; k++ )
 						{
-							int blen = brow.size();
-							int[] bix = brow.getIndexContainer();
-							double[] bvals = brow.getValueContainer();								
-							vectMultiplyAdd(val, bvals, c, bix, cix, blen);
+							double val = a[aixi+k];
+							SparseRow brow = b[ bk+k ];
+							if( val != 0 && brow != null && !brow.isEmpty() ) {
+								int blen = brow.size();
+								int[] bix = brow.getIndexContainer();
+								double[] bvals = brow.getValueContainer();								
+								vectMultiplyAdd(val, bvals, c, bix, cixj, blen);
+							}
 						}
-					}
+		    		}
 				}	
 		}
 		else
@@ -1438,6 +1453,7 @@ public class LibMatrixMult
 			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
 		}
 	}
+	
 	
 	
 	/**

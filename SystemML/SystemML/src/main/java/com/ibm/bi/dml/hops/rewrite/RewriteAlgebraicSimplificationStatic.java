@@ -128,7 +128,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyBinaryToUnaryOperation(hi);             //e.g., X*X -> X^2 (pow2)
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
-			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X)
+			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X), 1/(1+exp(-X)) -> sigmoid(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
@@ -656,6 +656,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * 
 	 * X*(1-X) -> sprop(X)
 	 * (1-X)*X -> sprop(X)
+	 * 1/(1+exp(-X)) -> sigmoid(X)
 	 * 
 	 * @param hi
 	 * @throws HopsException 
@@ -669,6 +670,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
 			
+			//sample proportion (sprop) operator
 			if( bop.getOp() == OpOp2.MULT && left.getDataType()==DataType.MATRIX && right.getDataType()==DataType.MATRIX )
 			{
 				//by definition, either left or right or none applies. 
@@ -703,7 +705,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						
 						hi = unary;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation1");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sprop1");
 					}
 				}				
 				if( right instanceof BinaryOp ) //X*(1-X)
@@ -733,11 +735,61 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						
 						hi = unary;
 						
-						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation2");
+						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sprop2");
 					}
 				}
 			}
-			
+			//sigmoid operator
+			else if( bop.getOp() == OpOp2.DIV && left.getDataType()==DataType.SCALAR && right.getDataType()==DataType.MATRIX
+					 && left instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left)==1 && right instanceof BinaryOp)
+			{
+				//note: if there are multiple consumers on the intermediate,
+				//we follow the heuristic that redundant computation is more beneficial, 
+				//i.e., we still fuse but leave the intermediate for the other consumers  
+				
+				BinaryOp bop2 = (BinaryOp)right;
+				Hop left2 = bop2.getInput().get(0);
+				Hop right2 = bop2.getInput().get(1);
+				
+				if(    bop2.getOp() == OpOp2.PLUS && left2.getDataType()==DataType.SCALAR && right2.getDataType()==DataType.MATRIX
+				    && left2 instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left2)==1 && right2 instanceof UnaryOp)
+				{
+					UnaryOp uop = (UnaryOp) right2;
+					Hop uopin = uop.getInput().get(0);
+					
+					if( uop.getOp()==OpOp1.EXP && uopin instanceof BinaryOp && ((BinaryOp)uopin).getOp()==OpOp2.MINUS ) 
+					{
+						BinaryOp bop3 = (BinaryOp) uopin;
+						Hop left3 = bop3.getInput().get(0);
+						Hop right3 = bop3.getInput().get(1);
+						
+						if( left3 instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left3)==0 )
+						{
+							UnaryOp unary = new UnaryOp(bop.getName(), bop.getDataType(), bop.getValueType(), OpOp1.SIGMOID, right3);
+							HopRewriteUtils.setOutputBlocksizes(unary, bop.getRowsInBlock(), bop.getColsInBlock());
+							HopRewriteUtils.copyLineNumbers(bop, unary);
+							unary.refreshSizeInformation();
+							
+							HopRewriteUtils.removeChildReferenceByPos(parent, bop, pos);
+							HopRewriteUtils.addChildReference(parent, unary, pos);
+							
+							//cleanup if only consumer of intermediate
+							if( bop.getParent().isEmpty() )
+								HopRewriteUtils.removeAllChildReferences(bop);	
+							if( bop2.getParent().isEmpty() )
+								HopRewriteUtils.removeAllChildReferences(bop2);	
+							if( uop.getParent().isEmpty() )
+								HopRewriteUtils.removeAllChildReferences(uop);	
+							if( bop3.getParent().isEmpty() )
+								HopRewriteUtils.removeAllChildReferences(bop3);	
+							
+							hi = unary;
+							
+							LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sigmoid1");
+						}	
+					}
+				}		
+			}
 		}
 		
 		return hi;

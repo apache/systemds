@@ -313,7 +313,7 @@ public class Builtin extends ValueFunction
 			return in * (1 - in); 
 
 		case SIGMOID:
-			//sigmoid: 1/(1+exp(x))
+			//sigmoid: 1/(1+exp(-x))
 			return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in)) ; 
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);

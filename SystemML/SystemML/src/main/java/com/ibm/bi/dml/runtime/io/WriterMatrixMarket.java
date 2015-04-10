@@ -151,7 +151,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	public void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
+	public static void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		  Configuration conf = new Configuration();

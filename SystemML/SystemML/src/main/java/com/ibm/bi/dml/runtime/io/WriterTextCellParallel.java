@@ -8,7 +8,6 @@
 package com.ibm.bi.dml.runtime.io;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -16,29 +15,19 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.io.ReaderTextCellParallel.CellBuffer;
-import com.ibm.bi.dml.runtime.io.ReaderTextCellParallel.ReadTask;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class WriterTextCellParallel extends MatrixWriter
@@ -51,6 +40,11 @@ public class WriterTextCellParallel extends MatrixWriter
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		//validity check block dimensions
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
+			throw new IOException("Matrix block dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
+		}
+		
 		//prepare file access
 		JobConf job = new JobConf();
 		Path path = new Path( fname );
@@ -77,29 +71,21 @@ public class WriterTextCellParallel extends MatrixWriter
 	private static void writeTextCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen )
 		throws IOException
 	{
-		boolean sparse = src.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		//estimate output size and number of output blocks (min 1)
+		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), src.getNonZeros(), 
+				              OutputInfo.TextCellOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
+		numPartFiles = Math.max(numPartFiles, 1);
 		
-    	int rows = src.getNumRows();
-		int cols = src.getNumColumns();
-
-		int _numThreads = OptimizerUtils.getParallelTextReadParallelism();
-		int numPartFiles = (int) ((src.getExactSizeOnDisk()) / (fs.getFileStatus(path).getBlockSize()));
-		
-		if (numPartFiles == 0) {  // if data is less than DFS BlockSize
-			numPartFiles = 1;
-		}
-		
+		//determine degree of parallelism
+		int _numThreads = OptimizerUtils.getParallelTextWriteParallelism();
 		_numThreads = Math.min(_numThreads, numPartFiles);
-		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 		
+		//create thread pool
+		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
 
 		try 
 		{
 			if (_numThreads > 1) {
-				fs.close();
-				MapReduceTool.deleteFileIfExistOnHDFS(path.toString());
 				MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 			}
 			
@@ -115,10 +101,10 @@ public class WriterTextCellParallel extends MatrixWriter
 				}
 				if (_numThreads > 1) {
 					Path newPath = new Path(path, String.format("0-m-%05d",i));
-					t = new WriteTask(newPath, job, src, rowStart, offset, clen);
+					t = new WriteTask(newPath, job, src, rowStart, offset);
 				}
 				else {
-					t = new WriteTask(path, job, src, rowStart, offset, clen);
+					t = new WriteTask(path, job, src, rowStart, offset);
 				}
 				
 				tasks.add(t);
@@ -133,12 +119,12 @@ public class WriterTextCellParallel extends MatrixWriter
 			//early error notify in case not all tasks successful
 			for(WriteTask rt : tasks) {
 				if( !rt.getReturnCode() ) {
-					throw new IOException("Read task for text input failed: " + rt.getErrMsg());
+					throw new IOException("Parallel write task failed: " + rt.getErrMsg());
 				}
 			}
 		} 
 		catch (Exception e) {
-			throw new IOException("Threadpool issue, while parallel write.", e);
+			throw new IOException("Parallel write of text output failed.", e);
 		}
 	}
 
@@ -147,34 +133,24 @@ public class WriterTextCellParallel extends MatrixWriter
 	 * 
 	 * 
 	 */
-	public static class WriteTask implements Callable<Object> 
+	private static class WriteTask implements Callable<Object> 
 	{
-		private boolean _sparse = false;
 		private JobConf _job = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
-		private long _rlen = -1;
 		private long _rowStart = -1;
-		private long _clen = -1;
-		private BufferedWriter _bw = null;
-		private StringBuilder _sb = null;
-		boolean _entriesWritten = false;
+		private long _rowNum = -1;
 
-//		private boolean _matrixMarket = false;
-		
 		private boolean _rc = true;
 		private String _errMsg = null;
 		
-		public WriteTask(Path path, JobConf job, MatrixBlock src, long rowStart, long rlen, long clen)
+		public WriteTask(Path path, JobConf job, MatrixBlock src, long rowStart, long rowNum)
 		{
-			_sparse = src.isInSparseFormat();
 			_path = path;
 			_job = job;
 			_src = src;
 			_rowStart = rowStart;
-			_rlen = rlen;
-			_clen = clen;
-//			_matrixMarket = matrixMarket;
+			_rowNum = rowNum;
 		}
 
 		public boolean getReturnCode() {
@@ -188,41 +164,40 @@ public class WriterTextCellParallel extends MatrixWriter
 		@Override
 		public Object call() throws Exception 
 		{
-			_entriesWritten = false;
+			boolean entriesWritten = false;
 			FileSystem fs = FileSystem.get(_job);
-
-
-	    	int rows = _src.getNumRows();
+			BufferedWriter bw = null;
+			
 			int cols = _src.getNumColumns();
 
 			try
 			{
 				//for obj reuse and preventing repeated buffer re-allocations
-				_sb = new StringBuilder();
-		        _bw = new BufferedWriter(new OutputStreamWriter(fs.create(_path,true)));
+				StringBuilder sb = new StringBuilder();
+		        bw = new BufferedWriter(new OutputStreamWriter(fs.create(_path,true)));
 				
-				if( _sparse ) //SPARSE
+				if( _src.isInSparseFormat() ) //SPARSE
 				{			   
-					SparseRowsIterator iter = new SparseRowsIterator((int)_rowStart, _src.getSparseRows());
-
+					SparseRowsIterator iter = _src.getSparseRowsIterator((int)_rowStart, (int)_rowNum);
+					
 					while( iter.hasNext() )
 					{
 						IJV cell = iter.next();
 
-						_sb.append(cell.i+1);
-						_sb.append(' ');
-						_sb.append(cell.j+1);
-						_sb.append(' ');
-						_sb.append(cell.v);
-						_sb.append('\n');
-						_bw.write( _sb.toString() );
-						_sb.setLength(0); 
-						_entriesWritten = true;
+						sb.append(cell.i+1);
+						sb.append(' ');
+						sb.append(cell.j+1);
+						sb.append(' ');
+						sb.append(cell.v);
+						sb.append('\n');
+						bw.write( sb.toString() );
+						sb.setLength(0); 
+						entriesWritten = true;
 					}
 				}
 				else //DENSE
 				{
-					for( int i=(int)_rowStart; i<(_rowStart+_rlen); i++ )
+					for( int i=(int)_rowStart; i<(_rowStart+_rowNum); i++ )
 					{
 						String rowIndex = Integer.toString(i+1);					
 						for( int j=0; j<cols; j++ )
@@ -230,15 +205,15 @@ public class WriterTextCellParallel extends MatrixWriter
 							double lvalue = _src.getValueDenseUnsafe(i, j);
 							if( lvalue != 0 ) //for nnz
 							{
-								_sb.append(rowIndex);
-								_sb.append(' ');
-								_sb.append( j+1 );
-								_sb.append(' ');
-								_sb.append( lvalue );
-								_sb.append('\n');
-								_bw.write( _sb.toString() );
-								_sb.setLength(0); 
-								_entriesWritten = true;
+								sb.append(rowIndex);
+								sb.append(' ');
+								sb.append( j+1 );
+								sb.append(' ');
+								sb.append( lvalue );
+								sb.append('\n');
+								bw.write( sb.toString() );
+								sb.setLength(0); 
+								entriesWritten = true;
 							}
 							
 						}
@@ -246,9 +221,8 @@ public class WriterTextCellParallel extends MatrixWriter
 				}
 				
 				//handle empty result
-				if ( !_entriesWritten ) {
-			        _bw = new BufferedWriter(new OutputStreamWriter(fs.create(_path,true)));
-					_bw.write("1 1 0\n");
+				if ( !entriesWritten ) {
+			        bw.write("1 1 0\n");
 				}
 			}
 			catch(Exception ex)
@@ -260,7 +234,7 @@ public class WriterTextCellParallel extends MatrixWriter
 			}
 			finally
 			{
-				IOUtilFunctions.closeSilently(_bw);
+				IOUtilFunctions.closeSilently(bw);
 			}
 			
 			return null;

@@ -38,6 +38,11 @@ public class WriterTextCSV extends MatrixWriter
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	//blocksize for string concatenation in order to prevent write OOM 
+	//(can be set to very large value to disable blocking)
+	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
+	
+	
 	private CSVFileFormatProperties _props = null;
 	
 	public WriterTextCSV( CSVFileFormatProperties props )
@@ -79,10 +84,6 @@ public class WriterTextCSV extends MatrixWriter
     	int rows = src.getNumRows();
 		int cols = src.getNumColumns();
 
-		//blocksize for string concatenation in order to prevent write OOM 
-		//(can be set to very large value to disable blocking)
-		final int blockSizeJ = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
-		
 		//bound check per block
 		if( rows > rlen || cols > clen ) {
 			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
@@ -107,9 +108,9 @@ public class WriterTextCSV extends MatrixWriter
 			if( csvProperties.hasHeader() ) 
 			{
 				//write row chunk-wise to prevent OOM on large number of columns
-				for( int bj=0; bj<clen; bj+=blockSizeJ )
+				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
 				{
-					for( int j=bj; j < Math.min(clen,bj+blockSizeJ); j++) 
+					for( int j=bj; j < Math.min(clen,bj+BLOCKSIZE_J); j++) 
 					{
 						sb.append("C"+ (j+1));
 						if ( j < clen-1 )
@@ -150,7 +151,7 @@ public class WriterTextCSV extends MatrixWriter
 								sb.append(delim);
 							
 								//flush buffered string
-					            if( j2%blockSizeJ==0 ){
+					            if( j2%BLOCKSIZE_J==0 ){
 									br.write( sb.toString() );
 						            sb.setLength(0);
 					            }
@@ -164,7 +165,7 @@ public class WriterTextCSV extends MatrixWriter
 				            sb.setLength(0);
 				            
 				            //flush buffered string
-				            if( jix%blockSizeJ==0 ){
+				            if( jix%BLOCKSIZE_J==0 ){
 								br.write( sb.toString() );
 					            sb.setLength(0);
 				            }
@@ -175,9 +176,9 @@ public class WriterTextCSV extends MatrixWriter
 					
 					// Output empty fields at the end of the row.
 					// In case of an empty row, output (clen-1) empty fields
-					for( int bj=prev_jix+1; bj<clen; bj+=blockSizeJ )
+					for( int bj=prev_jix+1; bj<clen; bj+=BLOCKSIZE_J )
 					{
-						for( int j = bj; j < Math.min(clen,bj+blockSizeJ); j++) {
+						for( int j = bj; j < Math.min(clen,bj+BLOCKSIZE_J); j++) {
 							if( !csvsparse )
 								sb.append('0');
 							if( j < clen-1 )
@@ -197,9 +198,9 @@ public class WriterTextCSV extends MatrixWriter
 				for( int i=0; i<rlen; i++ ) 
 				{
 					//write row chunk-wise to prevent OOM on large number of columns
-					for( int bj=0; bj<clen; bj+=blockSizeJ )
+					for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
 					{
-						for( int j=bj; j<Math.min(clen,bj+blockSizeJ); j++ )
+						for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ )
 						{
 							double lvalue = src.getValueDenseUnsafe(i, j);
 							if( lvalue != 0 ) //for nnz
@@ -322,7 +323,7 @@ public class WriterTextCSV extends MatrixWriter
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	public void addHeaderToCSV(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
+	public static void addHeaderToCSV(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
 			throws IOException 
 	{
 		

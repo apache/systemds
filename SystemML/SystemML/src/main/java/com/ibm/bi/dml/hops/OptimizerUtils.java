@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
@@ -153,18 +154,21 @@ public class OptimizerUtils
 	
 	
 	/**
-	 * Enables parallel read of all text formats (textcell, csv, mm). 
+	 * Enables parallel read/write of all text formats (textcell, csv, mm). 
 	 * 
 	 */
 	public static boolean PARALLEL_READ_TEXTFORMATS = false;
+	public static boolean PARALLEL_WRITE_TEXTFORMATS = true;
+	
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel
-	 * text read out of the available degree of parallelism. Set it to 1.0
+	 * text read/write out of the available degree of parallelism. Set it to 1.0
 	 * to get a number of threads equal the number of virtual cores.
 	 * 
 	 */
 	public static final double PARALLEL_READ_PARALLELISM_MULTIPLIER = 1.0;
+	public static final double PARALLEL_WRITE_PARALLELISM_MULTIPLIER = 1.0;
 	
 	
 	//////////////////////
@@ -400,6 +404,25 @@ public class OptimizerUtils
 		return (int) Math.round(dop);
 	}
 	
+	/**
+	 * Returns the degree of parallelism used for parallel text write. 
+	 * This is computed as the number of virtual cores scales by the 
+	 * PARALLEL_WRITE_PARALLELISM_MULTIPLIER. If PARALLEL_WRITE_TEXTFORMATS
+	 * is disabled, this method returns 1.
+	 * 
+	 * @return
+	 */
+	public static int getParallelTextWriteParallelism()
+	{
+		if( !PARALLEL_WRITE_TEXTFORMATS )
+			return 1; // sequential execution
+			
+		//compute degree of parallelism for parallel text read
+		double dop = InfrastructureAnalyzer.getLocalParallelism()
+				     * PARALLEL_WRITE_PARALLELISM_MULTIPLIER;
+		return (int) Math.round(dop);
+	}
+	
 	
 	////////////////////////
 	// Memory Estimates   //
@@ -479,6 +502,18 @@ public class OptimizerUtils
 		long allocatedCells = (long)Math.pow(2, Math.ceil(Math.log(numCells)/Math.log(2)) );
 		long rowSize = basicSize +  allocatedCells * cellSize;
 		return rowSize;
+	}
+	
+	public static long estimateSizeTextOutput( long rows, long cols, long nnz, OutputInfo oinfo )
+	{
+		long bsize = MatrixBlock.estimateSizeOnDisk(rows, cols, nnz);
+		if( oinfo == OutputInfo.TextCellOutputInfo || oinfo == OutputInfo.MatrixMarketOutputInfo )
+			return bsize * 3;
+		else if( oinfo == OutputInfo.CSVOutputInfo )
+			return bsize * 2;
+		
+		//unknown output info
+		return bsize;
 	}
 	
 	/**

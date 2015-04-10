@@ -29,12 +29,26 @@ public class SparseRowsIterator implements Iterator<IJV>
 	private double[] values = null;
 	private boolean nothingLeft = false;
 	private IJV retijv = new IJV();
-	
-	public SparseRowsIterator(int nrows, SparseRow[] mtx)
+
+	//allow initialization from package or subclasses
+	protected SparseRowsIterator(int nrows, SparseRow[] mtx)
 	{
 		rlen=nrows;
 		sparseRows=mtx;
 		curRow=0;
+		
+		if(sparseRows==null)
+			nothingLeft=true;
+		else
+			findNextNonZeroRow();
+	}
+	
+	//allow initialization from package or subclasses
+	protected SparseRowsIterator(int currow, int nrows, SparseRow[] mtx)
+	{
+		rlen=nrows;
+		sparseRows=mtx;
+		curRow=currow;
 		
 		if(sparseRows==null)
 			nothingLeft=true;

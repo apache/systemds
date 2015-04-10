@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.io;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
@@ -48,15 +49,24 @@ public class MatrixWriterFactory
 		MatrixWriter writer = null;
 		
 		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			writer = new WriterTextCell();
+			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+				writer = new WriterTextCellParallel();
+			else
+				writer = new WriterTextCell();
 		}
 		else if( oinfo == OutputInfo.MatrixMarketOutputInfo ) {
-			writer = new WriterMatrixMarket();
+			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+				writer = new WriterMatrixMarketParallel();
+			else
+				writer = new WriterMatrixMarket();
 		}
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			writer = new WriterTextCSV((CSVFileFormatProperties)props);
+			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+				writer = new WriterTextCSVParallel((CSVFileFormatProperties)props);
+			else
+				writer = new WriterTextCSV((CSVFileFormatProperties)props);
 		}
 		else if( oinfo == OutputInfo.BinaryCellOutputInfo ) {
 			writer = new WriterBinaryCell();

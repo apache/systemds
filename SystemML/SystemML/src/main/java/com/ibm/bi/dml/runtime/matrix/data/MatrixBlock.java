@@ -585,6 +585,15 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		return new SparseRowsIterator(rlen, sparseRows);
 	}
 	
+	public SparseRowsIterator getSparseRowsIterator(int rowStart, int rowNum)
+	{
+		//check for valid format, should have been checked from outside
+		if( !sparse )
+			throw new RuntimeException("getSparseCellInterator should not be called for dense format");
+		
+		return new SparseRowsIterator(rowStart, rowStart+rowNum, sparseRows);
+	}
+	
 	@Override
 	public void getCellValues(Collection<Double> ret) 
 	{

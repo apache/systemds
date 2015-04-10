@@ -899,8 +899,7 @@ public class VariableCPInstruction extends CPInstruction
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					WriterTextCSV writer = (WriterTextCSV) MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo, -1, formatProperties);
-					writer.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.getRows(), mc.getCols());
+					WriterTextCSV.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.getRows(), mc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(fname, outFmt, formatProperties);
@@ -937,8 +936,7 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					WriterMatrixMarket writer = (WriterMatrixMarket) MatrixWriterFactory.createMatrixWriter(OutputInfo.MatrixMarketOutputInfo);
-					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
+					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}

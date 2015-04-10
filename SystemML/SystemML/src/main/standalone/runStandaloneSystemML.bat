@@ -5,11 +5,10 @@ IF "%~1" == "-help" GOTO Msg
 IF "%~1" == "-h" GOTO Msg
 
 setLocal EnableDelayedExpansion
-et CLASSPATH="
-for /R ./lib %%a in (*.jar) do (
-  set CLASSPATH=!CLASSPATH!;%%a
-)
-set CLASSPATH=!CLASSPATH!"
+
+SET HADOOP_HOME=%CD%/lib/hadoop
+
+set CLASSPATH=./lib/*
 echo !CLASSPATH!
  
 java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% com.ibm.bi.dml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %2

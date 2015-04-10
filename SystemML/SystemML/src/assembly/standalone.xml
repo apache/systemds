@@ -13,6 +13,8 @@
 
 	<includeBaseDirectory>false</includeBaseDirectory>
 
+
+
 	<fileSets>
 		<fileSet>
 			<directory>${basedir}</directory>
@@ -84,6 +86,14 @@
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
 		
+		<fileSet>
+			<directory>${basedir}/src/test/config/hadoop_bin_windows/bin</directory>
+			<includes>
+				<include>*.*</include>
+			</includes>
+			<outputDirectory>./lib/hadoop/bin</outputDirectory>
+		</fileSet>
+		
 		<!--  Make scripts executable. -->
 		<fileSet>
 			<directory>${basedir}/src/main/standalone</directory>
@@ -107,15 +117,46 @@
 	-->
 	
 	<!--  Include all the libraries needed to run in standalone mode. -->
+	
 	<dependencySets>
+	
 		<dependencySet>
 			<includes>
-				<include>*:*</include>
+				<include>*:JSON4J*</include>
+				<include>*:nimble-*</include>
+				<include>*:antlr*</include>
+			</includes>
+			<outputDirectory>./lib</outputDirectory>
+			<scope>compile</scope>
+		</dependencySet>
+	
+		<dependencySet>
+			<includes>
+				<include>*:avro*</include>
+				<include>*:commons-math3*</include>
+				<include>*:log4j*</include>
+				<include>*:opencsv*</include>
+				<include>*:hadoop-auth*</include>
+				<include>*:hadoop-client*</include>
+				<include>*:hadoop-common*</include>
+				<include>*:hadoop-hdfs*</include>
+				<include>*:hadoop-mapreduce-client*</include>
+				<include>*:hadoop-yarn*</include>
+				<include>*:commons-configuration*</include>
+				<include>*:commons-lang</include>
+				<include>*:commons-logging*</include>
+				<include>*:commons-httpclient*</include>
+				<include>*:commons-cli*</include>
+				<include>*:commons-collections*</include>
+				<include>*:jackson-core-asl*</include>
+				<include>*:jackson-mapper-asl*</include>
+				<include>*:slf4j-api*</include>
+				<include>*:slf4j-log4j*</include>
+				<include>*:system-ml*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
 			<scope>provided</scope>
 		</dependencySet>
 	</dependencySets>
-	
 
 </assembly>

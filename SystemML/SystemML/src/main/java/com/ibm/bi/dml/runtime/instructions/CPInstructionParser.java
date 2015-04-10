@@ -137,6 +137,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "inverse", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sprop", CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "sigmoid", CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);

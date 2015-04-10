@@ -120,7 +120,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "ceil" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "floor", MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "sprop", MRINSTRUCTION_TYPE.Unary);
-
+		String2MRInstructionType.put( "sigmoid", MRINSTRUCTION_TYPE.Unary);
 		
 		// Specific UNARY Instruction Opcodes
 		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);

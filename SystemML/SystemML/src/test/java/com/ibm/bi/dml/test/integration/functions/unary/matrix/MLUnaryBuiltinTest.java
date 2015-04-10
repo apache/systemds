@@ -103,7 +103,7 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, true, ExecType.MR);
 	}
-/*
+
 	@Test
 	public void testSigmoidVectorDenseCP() 
 	{
@@ -151,7 +151,7 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.MR);
 	}
-*/	
+
 	
 	
 	/**

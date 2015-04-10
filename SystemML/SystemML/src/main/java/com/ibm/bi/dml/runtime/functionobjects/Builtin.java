@@ -44,7 +44,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE, SPROP };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE, SPROP, SIGMOID };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -79,6 +79,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "ucumk+" , BuiltinFunctionCode.CUMSUM);
 		String2BuiltinFunctionCode.put( "inverse", BuiltinFunctionCode.INVERSE);
 		String2BuiltinFunctionCode.put( "sprop",   BuiltinFunctionCode.SPROP);
+		String2BuiltinFunctionCode.put( "sigmoid",   BuiltinFunctionCode.SIGMOID);
 	}
 	
 	// We should create one object for every builtin function that we support
@@ -86,7 +87,7 @@ public class Builtin extends ValueFunction
 	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
-	private static Builtin inverseObj=null, cumsumObj=null, stopObj = null, spropObj = null;
+	private static Builtin inverseObj=null, cumsumObj=null, stopObj = null, spropObj = null, sigmoidObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
@@ -212,6 +213,11 @@ public class Builtin extends ValueFunction
 				spropObj = new Builtin(BuiltinFunctionCode.SPROP);
 			return spropObj;
 			
+		case SIGMOID:
+			if ( sigmoidObj == null )
+				sigmoidObj = new Builtin(BuiltinFunctionCode.SIGMOID);
+			return sigmoidObj;
+			
 		default:
 			// Unknown code --> return null
 			return null;
@@ -250,6 +256,7 @@ public class Builtin extends ValueFunction
 		case CUMSUM:
 		case INVERSE:
 		case SPROP:	
+		case SIGMOID:
 			return (_arity == 1);
 		
 		case LOG:
@@ -305,6 +312,9 @@ public class Builtin extends ValueFunction
 			//sample proportion: P*(1-P)
 			return in * (1 - in); 
 
+		case SIGMOID:
+			//sigmoid: 1/(1+exp(x))
+			return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in)) ; 
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}

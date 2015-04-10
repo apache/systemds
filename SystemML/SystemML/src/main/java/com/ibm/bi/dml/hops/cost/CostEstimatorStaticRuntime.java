@@ -972,7 +972,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						return d3m * d3n;
 
 					
-				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sqrt, plogp, print, round, sprop
+				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sqrt, plogp, print, round, sprop, sigmoid
 					if( optype.equals("print") ) //scalar only
 						return 1;
 					else
@@ -982,7 +982,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						else if( optype.equals("round") ) xbu = 4;
 						
 						if( optype.equals("sin") || optype.equals("tan") || optype.equals("round")
-							|| optype.equals("abs") || optype.equals("sqrt") || optype.equals("sprop")  ) //sparse-safe
+							|| optype.equals("abs") || optype.equals("sqrt") || optype.equals("sprop")
+							|| optype.equals("sigmoid") ) //sparse-safe
 						{
 							if( leftSparse ) //sparse
 								return xbu * d1m * d1n * d1s;	

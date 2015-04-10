@@ -30,7 +30,8 @@ public class UnaryOperator  extends Operator
 			Builtin f=(Builtin)fn;
 			if(f.bFunc==Builtin.BuiltinFunctionCode.SIN || f.bFunc==Builtin.BuiltinFunctionCode.TAN 
 					|| f.bFunc==Builtin.BuiltinFunctionCode.ROUND || f.bFunc==Builtin.BuiltinFunctionCode.ABS
-					|| f.bFunc==Builtin.BuiltinFunctionCode.SQRT || f.bFunc==Builtin.BuiltinFunctionCode.SPROP )
+					|| f.bFunc==Builtin.BuiltinFunctionCode.SQRT || f.bFunc==Builtin.BuiltinFunctionCode.SPROP
+					|| f.bFunc==Builtin.BuiltinFunctionCode.SIGMOID )
 			{
 				sparseSafe = true;
 			}

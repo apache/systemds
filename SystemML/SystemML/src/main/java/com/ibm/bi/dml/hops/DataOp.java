@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -32,7 +33,7 @@ public class DataOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
 	private DataOpTypes _dataop;
 	private String _fileName = null;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
@@ -82,6 +83,22 @@ public class DataOp extends Hop
 		_fileName = fname;
 
 		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
+			setFormatType(FileFormatTypes.BINARY);
+	}
+	
+	// CHECKPOINT operation
+	// This constructor does not support any expression in parameters
+	public DataOp(String l, DataType dt, ValueType vt, Hop in,
+			LiteralOp level, DataOpTypes dop, String fname) {
+		super(Kind.DataOp, l, dt, vt);
+		_dataop = dop;
+		getInput().add(0, in);
+		getInput().add(1, level);
+		in.getParent().add(this);
+		level.getParent().add(this);
+		_fileName = fname;
+
+		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT || dop == DataOpTypes.CHECKPOINT )
 			setFormatType(FileFormatTypes.BINARY);
 	}
 	
@@ -179,7 +196,7 @@ public class DataOp extends Hop
 			throws HopsException, LopsException 
 	{	
 		if (getLops() == null) {
-			Data l = null;
+			Lop l = null;
 
 			ExecType et = optFindExecType();
 			
@@ -210,12 +227,16 @@ public class DataOp extends Hop
 					 */
 					isTransient = true;
 					break;
+				
+				case CHECKPOINT:
+					isTransient = true;
+					break;
 					
 				default:
 					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
 			
-			// Cretae the lop
+			// Create the lop
 			switch(_dataop) 
 			{
 				case TRANSIENTREAD:
@@ -226,13 +247,19 @@ public class DataOp extends Hop
 				case PERSISTENTWRITE:
 				case TRANSIENTWRITE:
 				case FUNCTIONOUTPUT:
-					l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
-					
+					Data tmp = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
 					// TODO: should we set the exec type for transient write ?
 					if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
-						l.setExecType(et);
+						tmp.setExecType(et);
+				
+					l = tmp;
 					break;
 			
+				case CHECKPOINT:
+					String strlevel = ((LiteralOp)getInput().get(1)).getStringValue();
+					l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, et);
+					break;
+					
 				default:
 					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
@@ -542,7 +569,7 @@ public class DataOp extends Hop
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
-		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
+		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE || _dataop == DataOpTypes.CHECKPOINT )
 		{
 			checkAndSetForcedPlatform();
 

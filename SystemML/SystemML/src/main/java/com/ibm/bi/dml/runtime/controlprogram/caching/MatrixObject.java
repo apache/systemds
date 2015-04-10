@@ -99,8 +99,9 @@ public class MatrixObject extends CacheableData
 	private boolean _pinnedFlag = false; //flag if in-place update TODO maybe rename to updateInPlace
 	
 	//spark-specific handles
-	//TODO we need to extend the notion of dirty variables to 
-	//dirty in CP memory vs pending RDD operations
+	//note: we currently use generic types for rdds and broadcast in order to work in
+	//environments that do not necessarily have spark libraries available
+	//TODO we need to extend the notion of dirty variables to dirty in CP memory vs pending RDD operations
 	private Object _rddHandle = null; //RDD handle
 	private Object _bcHandle = null; //Broadcast handle
 	

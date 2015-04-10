@@ -45,7 +45,8 @@ public abstract class Lop
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 
 		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary, //MR cumsum
-		SortKeys, PickValues   
+		SortKeys, PickValues,
+		Checkpoint, 										//Spark persist into storage level
 	};
 
 	/**

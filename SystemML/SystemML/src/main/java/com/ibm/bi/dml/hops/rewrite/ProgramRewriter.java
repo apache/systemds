@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -97,6 +99,7 @@ public class ProgramRewriter
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               );
+ 			_sbRuleSet.add( new RewriteInjectSparkCheckpointing()                );
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

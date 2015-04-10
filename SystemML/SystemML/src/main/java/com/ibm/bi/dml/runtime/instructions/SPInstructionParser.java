@@ -9,12 +9,14 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
@@ -80,6 +82,10 @@ public class SPInstructionParser extends InstructionParser {
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
 		String2SPInstructionType.put( "csvrblk", SPINSTRUCTION_TYPE.CSVReblock);
+	
+		// Spark-specific instructions
+		String2SPInstructionType.put( Checkpoint.OPCODE, SPINSTRUCTION_TYPE.Checkpoint);
+			
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -127,6 +133,9 @@ public class SPInstructionParser extends InstructionParser {
 			case CSVReblock:
 				return CSVReblockSPInstruction.parseInstruction(str);
 			
+			case Checkpoint:
+				return CheckpointSPInstruction.parseInstruction(str);
+				
 			case INVALID:
 			default:
 				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );

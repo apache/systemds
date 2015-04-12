@@ -231,7 +231,7 @@ public class ReorgOp extends Hop
 							voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
 							HopRewriteUtils.copyLineNumbers(this, voutput);	
 							//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
-							voutput.setLops( constructCPSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3)) );
+							voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP) );
 							voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
 							setLops( voutput.constructLops() );								
 						}
@@ -268,9 +268,9 @@ public class ReorgOp extends Hop
 							HopRewriteUtils.removeChildReference(table, input);		
 						}
 					}
-					else //CP
+					else //CP or Spark
 					{
-						Lop transform1 = constructCPSortLop(input, by, desc, ixret);
+						Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et);
 						setOutputDimensions(transform1);
 						setLineNumbers(transform1);
 						
@@ -287,11 +287,11 @@ public class ReorgOp extends Hop
 		return getLops();
 	}
 
-	private static Lop constructCPSortLop( Hop input, Hop by, Hop desc, Hop ixret ) 
+	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et ) 
 		throws HopsException, LopsException
 	{
 		Transform transform1 = new Transform( input.constructLops(), HopsTransf2Lops.get(ReOrgOp.SORT), 
-				     input.getDataType(), input.getValueType(), ExecType.CP);
+				     input.getDataType(), input.getValueType(), et);
 		
 		for( Hop c : new Hop[]{by,desc,ixret} ) {
 			Lop ltmp = c.constructLops();

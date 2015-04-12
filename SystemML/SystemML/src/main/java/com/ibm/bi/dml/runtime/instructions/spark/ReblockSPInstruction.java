@@ -184,7 +184,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 		int index = 0;
 		for(long row = 1; row <=  Math.ceil((double)numRows / blockRowLength); row++) {
-			for(long col = 1; col <=  Math.ceil(numColumns / blockColLength); col++) {
+			for(long col = 1; col <=  Math.ceil((double)numColumns / blockColLength); col++) {
 				boolean matrixBlockExists = false;
 				if(nonEmptyIndexes.size() > index) {
 					matrixBlockExists = (nonEmptyIndexes.get(index).getRowIndex() == row) && (nonEmptyIndexes.get(index).getColumnIndex() == col);

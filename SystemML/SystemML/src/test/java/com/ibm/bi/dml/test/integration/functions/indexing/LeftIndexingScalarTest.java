@@ -48,6 +48,13 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testLeftIndexingScalarSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runLeftIndexingTest(ExecType.SPARK);
+	}
+	
+	@Test
 	public void testLeftIndexingScalarMR() 
 	{
 		runLeftIndexingTest(ExecType.MR);
@@ -57,7 +64,12 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
 	
 		try
 		{
@@ -65,7 +77,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  HOME + INPUT_DIR + "A" , 
+			programArgs = new String[]{"-explain" , "-args",  HOME + INPUT_DIR + "A" , 
 							               		Long.toString(rows), 
 							               		Long.toString(cols),
 							               		HOME + OUTPUT_DIR + "A"};

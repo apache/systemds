@@ -10,6 +10,7 @@ package com.ibm.bi.dml.test.integration.functions.unary.matrix;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
@@ -50,145 +51,228 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	@Test
 	public void testRemoveEmptyRowsDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", false, false );
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", false, true );
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.CP, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", false, false );
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", false, true );
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.CP, true );
+	}
+	@Test
+	public void testRemoveEmptyRowsDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, true );
 	}
 
 	@Test
 	public void testRemoveEmptyRowsDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", true, false );
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", true, true );
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.MR, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", true, false );
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", true, true );
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.MR, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsMultipleDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", false, false );
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsMultipleSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", false, true );
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.CP, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsMultipleDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", false, false );
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsMultipleSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", false, true );
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.CP, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsMultipleDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsMultipleSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, true );
 	}
 
 	@Test
 	public void testRemoveEmptyRowsMultipleDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", true, false );
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsMultipleSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", true, true );
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.MR, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsMultipleDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", true, false );
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsMultipleSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", true, true );
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.MR, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsDiagDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", false, false );
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsDiagSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", false, true );
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.CP, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDiagDenseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", false, false );
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.CP, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDiagSparseCP() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", false, true );
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.CP, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsDiagDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsDiagSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDiagDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDiagSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, true );
 	}
 
 	@Test
 	public void testRemoveEmptyRowsDiagDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", true, false );
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyRowsDiagSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", true, true );
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.MR, true );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDiagDenseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", true, false );
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.MR, false );
 	}
 	
 	@Test
 	public void testRemoveEmptyColsDiagSparseMR() 
 	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", true, true );
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.MR, true );
 	}
 	
 	/**
@@ -198,11 +282,15 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	 * @param mr
 	 * @param sparse
 	 */
-	private void runTestRemoveEmpty( String testname, String margin, boolean mr, boolean sparse )
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if( mr )
-			rtplatform = RUNTIME_PLATFORM.HADOOP; //force filebased access
+		if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;  //force filebased access
+	    }
 
 		try
 		{

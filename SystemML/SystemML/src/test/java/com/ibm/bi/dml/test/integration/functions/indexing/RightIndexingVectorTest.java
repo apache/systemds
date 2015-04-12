@@ -49,6 +49,13 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRightIndexingSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runRightIndexingTest(ExecType.SPARK);
+	}
+	
+	@Test
 	public void testRightIndexingMR() 
 	{
 		runRightIndexingTest(ExecType.MR);
@@ -61,8 +68,13 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-			
+		    if(et == ExecType.SPARK) {
+		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    }
+		    else {
+		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    }
+		    
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
 	        

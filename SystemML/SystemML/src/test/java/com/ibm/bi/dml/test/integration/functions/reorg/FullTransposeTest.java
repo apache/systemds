@@ -91,6 +91,21 @@ public class FullTransposeTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testTransposeRowVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+ 			runTransposeTest(OpType.ROW_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTransposeColVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+ 			runTransposeTest(OpType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	/// -----------------------
+	@Test
 	public void testTransposeMatrixDenseMR() 
 	{
 		runTransposeTest(OpType.MATRIX, false, ExecType.MR);
@@ -138,8 +153,13 @@ public class FullTransposeTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
+		
 		try
 		{
 			String TEST_NAME = TEST_NAME1;

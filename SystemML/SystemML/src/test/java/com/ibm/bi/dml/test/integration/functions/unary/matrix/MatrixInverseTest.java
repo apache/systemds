@@ -64,6 +64,13 @@ public class MatrixInverseTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testInverseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runTestMatrixInverse( RUNTIME_PLATFORM.SPARK );
+	}
+	
+	@Test
 	public void testInverseMR() 
 	{
 		runTestMatrixInverse( RUNTIME_PLATFORM.HADOOP );

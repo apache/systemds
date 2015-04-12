@@ -238,6 +238,36 @@ public class MatrixReshapeTest extends AutomatedTestBase
 	{
 		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, true, ExecType.CP );
 	}
+
+	//SPARK exec type
+	
+	@Test
+	public void testReshapeMMRowDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+ 	 	 runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, true, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testReshapeMMRowSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+ 	 	 runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, true, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testReshapeMMColDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+ 	 	 runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testReshapeMMColSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+ 	 	 runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, true, ExecType.SPARK );
+	}
 	
 	//MR exec type
 	
@@ -315,8 +345,12 @@ public class MatrixReshapeTest extends AutomatedTestBase
 		double sparsity = sparse ? sparsitySparse : sparsityDense;
 
 		//handle runtime
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-			
+		if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
 		//register test configuration
 		String TEST_NAME = (rowwise)?TEST_NAME1:TEST_NAME2;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

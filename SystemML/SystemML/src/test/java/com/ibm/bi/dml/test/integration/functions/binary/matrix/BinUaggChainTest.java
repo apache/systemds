@@ -71,6 +71,38 @@ public class BinUaggChainTest extends AutomatedTestBase
 		runBinUaggTest(TEST_NAME1, false, true, ExecType.MR);
 	}
 	
+	// -------------------------
+	
+	@Test
+	public void testBinUaggChainColSingleDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+			 runBinUaggTest(TEST_NAME1, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinUaggChainColSingleSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+			 runBinUaggTest(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinUaggChainColMultiDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+			 runBinUaggTest(TEST_NAME1, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinUaggChainColMultiSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
+			 runBinUaggTest(TEST_NAME1, false, true, ExecType.SPARK);
+	}
+	
+	// ----------------------
+	
 
 
 	/**
@@ -83,7 +115,12 @@ public class BinUaggChainTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
 
 		try
 		{

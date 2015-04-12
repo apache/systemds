@@ -92,6 +92,12 @@ public class DiagV2MTest extends AutomatedTestBase
 	@Test
 	public void testDiagV2MCP() {
 		commonReorgTest(RUNTIME_PLATFORM.SINGLE_NODE);
-	}   
+	}
+	
+	@Test
+	public void testDiagV2MSP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			commonReorgTest(RUNTIME_PLATFORM.SPARK);
+	}
 }
 

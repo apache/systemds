@@ -230,6 +230,226 @@ public class RoundTest extends AutomatedTestBase
 		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
 	}
 	
+	// -----------------------------------------------------------------------------
+	
+	@Test
+	public void testRound1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testRound2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testRound3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testRound4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testRound5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testRound6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testFloor1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testFloor2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testFloor3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testFloor4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testFloor5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testFloor6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testCeil1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testCeil2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testCeil3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testCeil4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testCeil5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testCeil6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testRoundMR1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testRoundMR2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testRoundMR3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testRoundMR4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testRoundMR5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testRoundMR6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testFloorMR1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testFloorMR2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testFloorMR3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testFloorMR4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testFloorMR5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testFloorMR6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+	}
+	
+	@Test
+	public void testCeilMR1_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+	}
+	
+	@Test
+	public void testCeilMR2_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+	}
+	
+	@Test
+	public void testCeilMR3_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+	}
+	
+	@Test
+	public void testCeilMR4_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+	}
+	
+	@Test
+	public void testCeilMR5_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+	}
+	
+	@Test
+	public void testCeilMR6_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+	}
+	
+	// -----------------------------------------------------------------------------
+	
 	private void runTest(RUNTIME_PLATFORM rt, TEST_TYPE test, int rows, int cols, double sparsity) {
 		RUNTIME_PLATFORM rtOld = rtplatform;
 		rtplatform = rt;

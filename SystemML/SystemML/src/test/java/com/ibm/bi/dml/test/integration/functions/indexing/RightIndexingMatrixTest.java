@@ -53,6 +53,13 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRightIndexingDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runRightIndexingTest(ExecType.SPARK, false);
+	}
+	
+	@Test
 	public void testRightIndexingDenseMR() 
 	{
 		runRightIndexingTest(ExecType.MR, false);
@@ -62,6 +69,13 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	public void testRightIndexingSparseCP() 
 	{
 		runRightIndexingTest(ExecType.CP, true);
+	}
+	
+	@Test
+	public void testRightIndexingSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runRightIndexingTest(ExecType.SPARK, true);
 	}
 	
 	@Test
@@ -82,8 +96,13 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-			
+		    if(et == ExecType.SPARK) {
+		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    }
+		    else {
+		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    }
+		    
 		    double sparsity = sparse ? sparsity2 : sparsity1;
 		    
 	        config.addVariable("rows", rows);

@@ -103,6 +103,35 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, true, ExecType.MR);
 	}
+	
+	@Test
+	public void testSampleProportionVectorDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSampleProportionVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSampleProportionMatrixDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSampleProportionMatrixSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, true, ExecType.SPARK);
+	}
+	
 
 	@Test
 	public void testSigmoidVectorDenseCP() 
@@ -126,6 +155,34 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	public void testSigmoidMatrixSparseCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testSigmoidVectorDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidMatrixDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidMatrixSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
@@ -164,8 +221,12 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+	    	rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
 		try
 		{
 			int rows = rowsMatrix;

@@ -92,7 +92,59 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		//should not apply diag_mm rewrite
 		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.CP, true);
 	}
+	
+	// --------------------------------------------------------
 
+	@Test
+	public void testDiagMMDenseDenseSP() 
+	{
+		//should apply diag_mm rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testDiagMMDenseDenseTransposeSP() 
+	{
+		//should apply diag_mm / t_t rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testDiagMVDenseDenseSP() 
+	{
+		//should not apply diag_mm rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseSP() 
+	{
+		//should apply diag_mm rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testDiagMMSparseSparseTransposeSP() 
+	{
+		//should apply diag_mm / t_t rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testDiagMVSparseSparseSP() 
+	{
+		//should not apply diag_mm rewrite
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
+			runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.SPARK, true);
+	}
+	
+	// --------------------------------------------------------
+	
 	@Test
 	public void testDiagMMDenseDenseMR() 
 	{
@@ -216,8 +268,13 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
+		
 		String TEST_NAME = rightTranspose ? TEST_NAME2 : TEST_NAME1;
 		boolean oldFlagSimplify = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

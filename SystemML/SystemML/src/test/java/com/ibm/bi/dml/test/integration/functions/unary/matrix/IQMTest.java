@@ -194,6 +194,30 @@ public class IQMTest extends AutomatedTestBase
 		runTest(RUNTIME_PLATFORM.HADOOP, 4, true);
 	}
 	
+	@Test
+	public void testIQM1wt_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, 1, true);
+	}
+	
+	@Test
+	public void testIQM2wt_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, 2, true);
+	}
+	
+	@Test
+	public void testIQM3wt_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, 3, true);
+	}
+	
+	@Test
+	public void testIQM4wt_SP() {
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTest(RUNTIME_PLATFORM.SPARK, 4, true);
+	}
+	
 	
 	private void runTest(RUNTIME_PLATFORM rt, int datasetIndex, boolean isWeighted ) {
 		RUNTIME_PLATFORM rtOld = rtplatform;

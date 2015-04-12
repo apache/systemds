@@ -54,6 +54,20 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testIndexingDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runIndexingTest(false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testIndexingSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runIndexingTest(true, ExecType.SPARK);
+	}
+	
+	@Test
 	public void testIndexingDenseHybrid() 
 	{
 		runIndexingTest(false, null);
@@ -89,8 +103,14 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    rtplatform = (et==null) ? RUNTIME_PLATFORM.HYBRID : 
-		    	         (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    
+		    if(et == ExecType.SPARK) {
+		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    }
+		    else {
+		    	rtplatform = (et==null) ? RUNTIME_PLATFORM.HYBRID : 
+		    	         	(et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    }
 			
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);

@@ -54,6 +54,66 @@ public class FullCumsumTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
+	// -----------------------------------------------------------------
+	
+	@Test
+	public void testCumsumColVectorDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumsumRowVectorDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumsumRowVectorDenseNoRewritesSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCumsumMatrixDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumsumColVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumsumRowVectorSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumsumRowVectorSparseNoRewritesSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCumsumMatrixSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
+	}
+	
+	
+	// -----------------------------------------------------------------
 	
 	@Test
 	public void testCumsumColVectorDenseCP() 
@@ -167,7 +227,12 @@ public class FullCumsumTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		if(instType == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+	    	rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
 		
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

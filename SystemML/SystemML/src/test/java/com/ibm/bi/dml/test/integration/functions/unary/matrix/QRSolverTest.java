@@ -85,6 +85,13 @@ public class QRSolverTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testQRSolveSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			runTestQRSolve( RUNTIME_PLATFORM.SPARK );
+	}
+	
+	@Test
 	public void testQRSolveMR() 
 	{
 		runTestQRSolve( RUNTIME_PLATFORM.HADOOP );

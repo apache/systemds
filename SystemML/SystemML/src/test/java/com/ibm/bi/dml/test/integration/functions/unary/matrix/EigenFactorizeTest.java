@@ -48,6 +48,13 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testEigenFactorizeDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SPARK );
+	}
+	
+	@Test
 	public void testEigenFactorizeDenseMR() 
 	{
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
@@ -63,6 +70,13 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	public void testLargeEigenFactorizeDenseCP() 
 	{
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
+	}
+	
+	@Test
+	public void testLargeEigenFactorizeDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SPARK );
 	}
 	
 	@Test

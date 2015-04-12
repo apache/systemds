@@ -57,6 +57,20 @@ public class MinusTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMinusDenseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestMinus( false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testMinusSparseSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+		runTestMinus( true, ExecType.SPARK );
+	}
+	
+	@Test
 	public void testMinusDenseMR() 
 	{
 		runTestMinus( false, ExecType.MR );
@@ -73,6 +87,12 @@ public class MinusTest extends AutomatedTestBase
 	{		
 		//handle rows and cols
 		RUNTIME_PLATFORM platformOld = rtplatform;
+		if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+		else {
+	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+	    }
 	
 		try
 		{

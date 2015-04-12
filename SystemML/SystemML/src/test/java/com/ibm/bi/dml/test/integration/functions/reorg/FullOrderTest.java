@@ -271,6 +271,43 @@ public class FullOrderTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testOrderMatrixIndexDescEmptyNoRewriteSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			 runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testOrderVectorDataAscEmptyNoRewriteSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			 runOrderTest(false, InputType.EMPTY, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexAscEmptyNoRewriteSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			 runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataDescEmptyNoRewriteSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+			 runOrderTest(false, InputType.EMPTY, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexDescEmptyNoRewriteSP() 
+	{
+		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+				 runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.SPARK);
+	}
+	
+	// ----------------------------
+	
+	@Test
 	public void testOrderMatrixDataAscDenseMR() 
 	{
 		runOrderTest(true, InputType.DENSE, false, false, true, ExecType.MR);
@@ -706,7 +743,13 @@ public class FullOrderTest extends AutomatedTestBase
 			String TEST_NAME = testname;
 		
 			//set flags
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			if(instType == ExecType.SPARK) {
+		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    }
+		    else {
+				rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		    }
+			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
 			ReorgOp.FORCE_MR_SORT_INDEXES = forceDistSort;
 			

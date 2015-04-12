@@ -117,56 +117,56 @@ public class BinaryOp extends Hop
 			switch(op) {
 				case IQM: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLops not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLops not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsIQM(et);
 					break;
 				}
 				case CENTRALMOMENT: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLops not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLops not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsCentralMoment(et);
 					break;
 				}	
 				case COVARIANCE: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsCovariance(et);
 					break;
 				}
 				case QUANTILE:
 				case INTERQUANTILE: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLops not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLops not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsQuantile(et);
 					break;
 				}
 				case MEDIAN: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLops not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLops not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsMedian(et);
 					break;
 				}
 				case APPEND: {
 					ExecType et = optFindExecType();
-					if ( et == ExecType.SPARK )  {
-						// throw new HopsException("constructLops not implemented for Spark");
-						et = ExecType.CP;
-					}
+//					if ( et == ExecType.SPARK )  {
+//						// throw new HopsException("constructLops not implemented for Spark");
+//						et = ExecType.CP;
+//					}
 					constructLopsAppend(et);
 					break;
 				}

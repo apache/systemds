@@ -7,16 +7,24 @@
 
 package com.ibm.bi.dml.runtime.instructions;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.BuiltinBinarySPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
@@ -25,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.spark.SortSPInstruction;
 
 
 public class SPInstructionParser extends InstructionParser {
@@ -61,7 +70,12 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "uaktrace", SPINSTRUCTION_TYPE.AggregateUnary);
 
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
+		
 		String2SPInstructionType.put( "r'"   	    , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rdiag"   	    , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rsort"   	    , SPINSTRUCTION_TYPE.Reorg);
+		
 		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "-"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "*"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -82,10 +96,37 @@ public class SPInstructionParser extends InstructionParser {
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
 		String2SPInstructionType.put( "csvrblk", SPINSTRUCTION_TYPE.CSVReblock);
-	
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPINSTRUCTION_TYPE.Checkpoint);
-			
+				
+		// Builtin Instruction Opcodes 
+		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
+
+		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		String2SPInstructionType.put( "solve"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		
+		String2SPInstructionType.put( "exp"   , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "abs"   , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sin"   , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "cos"   , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "tan"   , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "asin"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "acos"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "atan"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sqrt"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "plogp" , SPINSTRUCTION_TYPE.BuiltinUnary);
+		// String2SPInstructionType.put( "print" , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ucumk+", SPINSTRUCTION_TYPE.BuiltinUnary);
+		// String2SPInstructionType.put( "stop"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "inverse", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
+		
+		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
+		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -107,6 +148,7 @@ public class SPInstructionParser extends InstructionParser {
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		
+		String [] parts = null;
 		switch(sptype) 
 		{
 			// Matrix multiplication
@@ -132,10 +174,41 @@ public class SPInstructionParser extends InstructionParser {
 				return ReblockSPInstruction.parseInstruction(str);
 			case CSVReblock:
 				return CSVReblockSPInstruction.parseInstruction(str);
-			
-			case Checkpoint:
-				return CheckpointSPInstruction.parseInstruction(str);
 				
+			case Builtin: 
+				parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if ( parts[0].equals("log") ) {
+					if ( parts.length == 3 ) {
+						// B=log(A), y=log(x)
+						return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
+					} else if ( parts.length == 4 ) {
+						// B=log(A,10), y=log(x,10)
+						return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
+					}
+				}
+				else {
+					throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
+				}
+				
+			case BuiltinBinary:
+				return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
+				
+			case BuiltinUnary:
+				parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if ( parts[0].equals("ucumk+") || parts[0].equals("inverse") || parts[0].equals("sprop")) {
+					// For now, ucumk+, inverse, sprop are not implemented
+					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
+				}
+				else {
+					return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
+				}
+				
+			case Sort: 
+				return (SPInstruction) SortSPInstruction.parseInstruction(str);
+				
+			case Variable:
+				return (CPInstruction) VariableCPInstruction.parseInstruction(str);
+			
 			case INVALID:
 			default:
 				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );

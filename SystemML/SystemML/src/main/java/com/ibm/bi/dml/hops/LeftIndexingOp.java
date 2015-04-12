@@ -85,10 +85,6 @@ public class LeftIndexingOp  extends Hop
 		if (getLops() == null) {
 			try {
 				ExecType et = optFindExecType();
-				if ( et == ExecType.SPARK )  {
-					// throw new HopsException("constructLops for LeftIndexingOp not implemented for Spark");
-					et = ExecType.CP;
-				}
 				
 				if(et == ExecType.MR) {
 					

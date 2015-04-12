@@ -132,7 +132,7 @@ statement returns [ StatementInfo info ]
 } :
     // ------------------------------------------
     // ImportStatement
-    'source' OPEN_PAREN filePath = STRING CLOSE_PAREN  ('as' namespace=ID)?  NEWLINE      # ImportStatement
+    'source' OPEN_PAREN filePath = STRING CLOSE_PAREN  'as' namespace=ID  NEWLINE      # ImportStatement
     | 'setwd'  OPEN_PAREN pathValue = STRING CLOSE_PAREN NEWLINE                     # PathStatement
     // ------------------------------------------
     // AssignmentStatement

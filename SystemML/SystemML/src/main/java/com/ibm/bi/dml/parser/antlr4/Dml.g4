@@ -24,7 +24,7 @@ statement returns [ StatementInfo info ]
 } :
     // ------------------------------------------
     // ImportStatement
-    'source' '(' filePath = STRING ')'  ('as' namespace=ID)? ';'*       # ImportStatement
+    'source' '(' filePath = STRING ')'  'as' namespace=ID ';'*       # ImportStatement
     | 'setwd'  '(' pathValue = STRING ')' ';'*                          # PathStatement
     // ------------------------------------------
     // Treat function call as AssignmentStatement or MultiAssignmentStatement

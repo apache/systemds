@@ -423,8 +423,8 @@ public class ResourceOptimizer
 					long maxMemPerNode = (long)YarnClusterAnalyzer.getMaxAllocationBytes();
 					long nNodes = YarnClusterAnalyzer.getNumNodes();
 					long totalMem = nNodes * maxMemPerNode;
-					long maxMRTasks =   ((long)(totalMem - (cp*DMLYarnClient.MEM_FACTOR))) 
-							          / ((long)(mr*DMLYarnClient.MEM_FACTOR));
+					long maxMRTasks =   (long)(totalMem - DMLYarnClient.computeMemoryAllocation(cp)) 
+							          / (long)DMLYarnClient.computeMemoryAllocation(mr);
 					newlinst.setMaxMRTasks( maxMRTasks );
 					
 					//write enhanced instruction back

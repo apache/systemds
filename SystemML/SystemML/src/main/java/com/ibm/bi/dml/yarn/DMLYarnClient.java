@@ -14,7 +14,6 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,7 +23,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.v2.util.MRApps;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
@@ -48,7 +46,6 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -84,7 +81,9 @@ public class DMLYarnClient
 	// default of 1 core since YARN scheduler does not take the number of cores into account yet 
 	public static final int NUM_CORES = 1;  
 	// factor for compute virtual memory to request based on given max heap size
+	// (if the absolute overhead is larger than a threshold, we use this threshold as a constant overhead)
 	public static final double MEM_FACTOR = 1.5; 
+	public static final int MAX_MEM_OVERHEAD = 2*1024; //2GB
 	// default application state report (in milliseconds)
 	public static final int APP_STATE_INTERVAL = 200;
 	// default application master name
@@ -177,10 +176,11 @@ public class DMLYarnClient
 
 			// Set up resource type requirements for ApplicationMaster
 			int memHeap = _dmlConfig.getIntValue(DMLConfig.YARN_APPMASTERMEM);
+			int memAlloc = (int) computeMemoryAllocation(memHeap);
 			Resource capability = Records.newRecord(Resource.class);
-			capability.setMemory( (int)(memHeap*MEM_FACTOR) );
+			capability.setMemory( memAlloc );
 			capability.setVirtualCores( NUM_CORES );
-			LOG.debug("Requested application resources: memory="+((int)(memHeap*MEM_FACTOR))+", vcores="+NUM_CORES);
+			LOG.debug("Requested application resources: memory="+memAlloc+", vcores="+NUM_CORES);
 
 			// Finally, set-up ApplicationSubmissionContext for the application
 			String qname = _dmlConfig.getTextValue(DMLConfig.YARN_APPQUEUE);
@@ -558,6 +558,23 @@ public class DMLYarnClient
 		catch(Exception ex) {
 			LOG.error("Failed to read stop message from HDFS file: "+msgPath, ex);
 		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param heapsize
+	 * @return
+	 */
+	public static long computeMemoryAllocation( long heapsize )
+	{
+		long ret = heapsize;
+		
+		if( heapsize * MEM_FACTOR - heapsize < MAX_MEM_OVERHEAD )
+			ret = (long) (heapsize * MEM_FACTOR);
+		else
+			ret = heapsize + MAX_MEM_OVERHEAD;
 		
 		return ret;
 	}

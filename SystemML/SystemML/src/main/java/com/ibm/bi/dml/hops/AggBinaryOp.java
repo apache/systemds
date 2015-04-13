@@ -144,10 +144,19 @@ public class AggBinaryOp extends Hop
 			{
 				MMultMethod method = optFindMMultMethodSpark ( 
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
-						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock());
+						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), mmtsj);
 			
 				switch( method )
 				{
+					case TSMM:
+						Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
+						MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), et, mmtsj);
+						setOutputDimensions(tsmm);
+						setLineNumbers(tsmm);
+						setLops(tsmm);
+						
+						break;
+						
 					case MAPMM_L:
 					case MAPMM_R:
 						// If number of columns is smaller than block size then explicit aggregation is not required.
@@ -1217,12 +1226,21 @@ public class AggBinaryOp extends Hop
 	}
 
 	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb ) 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj ) 
 	{	
 		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
 		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
+
+		// Step 1: check TSMM
+		// If transpose self pattern and result is single block:
+		// use specialized TSMM method (always better than generic jobs)
+		if(    ( mmtsj == MMTSJType.LEFT && m2_cols>=0 && m2_cols <= m2_cpb )
+			|| ( mmtsj == MMTSJType.RIGHT && m1_rows>=0 && m1_rows <= m1_rpb ) )
+		{
+			return MMultMethod.TSMM;
+		}
 		
-		// Step 1: check MapMult
+		// Step 2: check MapMult
 		// If the size of one input is small, choose a method that uses broadcast variables
 		// (currently we only apply this if a single output block)
 		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
@@ -1240,7 +1258,7 @@ public class AggBinaryOp extends Hop
 				return MMultMethod.MAPMM_R;
 		}
 		
-		// Step 2: fallback strategy MMCJ
+		// Step 3: fallback strategy MMCJ
 		return MMultMethod.CPMM;
 	}
 	

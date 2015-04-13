@@ -7,14 +7,9 @@
 
 package com.ibm.bi.dml.runtime.instructions;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Checkpoint;
-import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
@@ -25,14 +20,16 @@ import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.MMCJSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.MapMultSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.spark.TsmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SortSPInstruction;
 
 
@@ -45,8 +42,10 @@ public class SPInstructionParser extends InstructionParser {
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
 		//matrix multiplication operators
-		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.MMCJ);
-		String2SPInstructionType.put( MapMult.OPCODE,  SPINSTRUCTION_TYPE.MapMult);
+		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.CPMM);
+		String2SPInstructionType.put( "mapmm"   , SPINSTRUCTION_TYPE.MAPMM);
+		String2SPInstructionType.put( "tsmm"    , SPINSTRUCTION_TYPE.TSMM);
+		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uark+"   , SPINSTRUCTION_TYPE.AggregateUnary);
@@ -96,12 +95,13 @@ public class SPInstructionParser extends InstructionParser {
 		// REBLOCK Instruction Opcodes 
 		String2SPInstructionType.put( "rblk"   , SPINSTRUCTION_TYPE.Reblock);
 		String2SPInstructionType.put( "csvrblk", SPINSTRUCTION_TYPE.CSVReblock);
+	
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPINSTRUCTION_TYPE.Checkpoint);
-				
+		
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
-
+		
 		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "solve"  , SPINSTRUCTION_TYPE.BuiltinBinary);
@@ -152,10 +152,12 @@ public class SPInstructionParser extends InstructionParser {
 		switch(sptype) 
 		{
 			// Matrix multiplication
-			case MMCJ:
-				return MMCJSPInstruction.parseInstruction(str);
-			case MapMult:
-				return MapMultSPInstruction.parseInstruction(str);
+			case CPMM:
+				return CpmmSPInstruction.parseInstruction(str);
+			case MAPMM:
+				return MapmmSPInstruction.parseInstruction(str);
+			case TSMM:
+				return TsmmSPInstruction.parseInstruction(str);
 				
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);
@@ -174,7 +176,7 @@ public class SPInstructionParser extends InstructionParser {
 				return ReblockSPInstruction.parseInstruction(str);
 			case CSVReblock:
 				return CSVReblockSPInstruction.parseInstruction(str);
-				
+			
 			case Builtin: 
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				if ( parts[0].equals("log") ) {
@@ -208,7 +210,10 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case Variable:
 				return (CPInstruction) VariableCPInstruction.parseInstruction(str);
-			
+				
+			case Checkpoint:
+				return CheckpointSPInstruction.parseInstruction(str);
+				
 			case INVALID:
 			default:
 				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );

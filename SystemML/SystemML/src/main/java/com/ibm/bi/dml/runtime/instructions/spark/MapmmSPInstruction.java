@@ -48,7 +48,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
  * TODO: we need to reason about multiple broadcast variables for chains of mapmults (sum of operations until cleanup) 
  * 
  */
-public class MapMultSPInstruction extends BinarySPInstruction {
+public class MapmmSPInstruction extends BinarySPInstruction {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -57,11 +57,11 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 	private boolean _outputEmpty = true;
 	private boolean _aggregate = true;
 	
-	public MapMultSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
+	public MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
 			                    boolean outputEmpty, boolean aggregate, String opcode, String istr )
 	{
 		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MapMult;
+		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 		
 		_type = type;
 		_outputEmpty = outputEmpty;
@@ -74,7 +74,7 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MapMultSPInstruction parseInstruction( String str ) 
+	public static MapmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -93,10 +93,10 @@ public class MapMultSPInstruction extends BinarySPInstruction {
 			
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new MapMultSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggregate, opcode, str);
+			return new MapmmSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggregate, opcode, str);
 		} 
 		else {
-			throw new DMLRuntimeException("MapMultSPInstruction.parseInstruction():: Unknown opcode " + opcode);
+			throw new DMLRuntimeException("MapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
 		
 	}

@@ -24,22 +24,22 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
-public class MMCJSPInstruction extends BinarySPInstruction {
+public class CpmmSPInstruction extends BinarySPInstruction {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public MMCJSPInstruction(Operator op, 
+	public CpmmSPInstruction(Operator op, 
 										CPOperand in1, 
 										CPOperand in2, 
 										CPOperand out, 
 										String opcode,
 										String istr ){
 		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MMCJ;
+		_sptype = SPINSTRUCTION_TYPE.CPMM;
 	}
 	
-	public MMCJSPInstruction(Operator op, 
+	public CpmmSPInstruction(Operator op, 
 			CPOperand in1, 
 			CPOperand in2, 
 			CPOperand in3, 
@@ -47,10 +47,10 @@ public class MMCJSPInstruction extends BinarySPInstruction {
 			String opcode,
 			String istr ){
 		super(op, in1, in2, in3, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.MMCJ;
+		_sptype = SPINSTRUCTION_TYPE.CPMM;
 	}
 
-	public static MMCJSPInstruction parseInstruction( String str ) 
+	public static CpmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -63,7 +63,7 @@ public class MMCJSPInstruction extends BinarySPInstruction {
 			parseBinaryInstruction(str, in1, in2, out);
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new MMCJSPInstruction(aggbin, in1, in2, out, opcode, str);
+			return new CpmmSPInstruction(aggbin, in1, in2, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("cov")) {
 			COVOperator cov = new COVOperator(COV.getCOMFnObject());
@@ -71,12 +71,12 @@ public class MMCJSPInstruction extends BinarySPInstruction {
 			if ( parts.length == 4 ) {
 				// CP.cov.mVar0.mVar1.mVar2
 				parseBinaryInstruction(str, in1, in2, out);
-				return new MMCJSPInstruction(cov, in1, in2, out, opcode, str);
+				return new CpmmSPInstruction(cov, in1, in2, out, opcode, str);
 			} else if ( parts.length == 5 ) {
 				// CP.cov.mVar0.mVar1.mVar2.mVar3
 				in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseBinaryInstruction(str, in1, in2, in3, out);
-				return new MMCJSPInstruction(cov, in1, in2, in3, out, opcode, str);
+				return new CpmmSPInstruction(cov, in1, in2, in3, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);

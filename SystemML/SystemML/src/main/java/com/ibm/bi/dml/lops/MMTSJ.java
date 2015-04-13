@@ -45,18 +45,17 @@ public class MMTSJ extends Lop
 		ExecLocation el = (et == ExecType.MR) ? ExecLocation.Map : ExecLocation.ControlProgram;
 		
 		lps.addCompatibility(JobType.GMR);
-		//lps.addCompatibility(JobType.MMTSJ);
 		lps.setProperties( inputs, et, el, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
 	public String toString() {
-	
 		return "Operation = MMTSJ";
 	}
 
-	//TODO CP inst
-	
+	/**
+	 * MR instruction generation.
+	 */
 	@Override
 	public String getInstructions(int input_index1, int output_index)
 	{
@@ -74,6 +73,10 @@ public class MMTSJ extends Lop
 		return sb.toString();
 	}
 
+	/**
+	 * CP and Spark instruction generation.
+	 */
+	@Override
 	public String getInstructions(String input_index1, String output_index) throws LopsException
 	{	
 		StringBuilder sb = new StringBuilder();

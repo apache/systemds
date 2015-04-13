@@ -163,7 +163,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//correction max number of mappers/reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() ) {
 			maxPMap = (int)Math.max( maxPMap, YarnClusterAnalyzer.getNumCores() );
-			maxPRed = (int)Math.max( maxPRed, YarnClusterAnalyzer.getNumCores()/2 );
+			//artificially reduced by factor 2, in order to prefer map-side processing even if smaller degree of parallelism
+			maxPRed = (int)Math.max( maxPRed, YarnClusterAnalyzer.getNumCores()/2 /2 );
 		}
 				
 		//yarn-specific: take degree of parallelism into account
@@ -201,7 +202,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		//step 1: MR job / task latency (normalization by effective dop)
 		double jobLatencyCosts = localJob ? DEFAULT_MR_JOB_LATENCY_LOCAL : DEFAULT_MR_JOB_LATENCY_REMOTE;
-		double taskLatencyCost = (numMap / numEPMap + numRed / numEPRed)
+		double taskLatencyCost = (numMap / numEPMap + numEPRed)
 				               * (localJob ? DEFAULT_MR_TASK_LATENCY_LOCAL : DEFAULT_MR_TASK_LATENCY_REMOTE);	
 		double latencyCosts = jobLatencyCosts + taskLatencyCost;
 		
@@ -247,7 +248,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			for( int i=0; i<mapOutIx.length; i++ )
 			{
 				shuffleCosts += ( getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPMap
-				                 + getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed
+				                 + getFSWriteTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity())*4 / numEPRed
 						         + getFSReadTime(vs[mapOutIx[i]]._rlen, vs[mapOutIx[i]]._clen, vs[mapOutIx[i]].getSparsity()) / numEPRed); 	
 			
 				//correction of shuffle costs (necessary because the above shuffle does not consider the number of blocks)
@@ -298,7 +299,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			LOG.debug("Costs Reduce Exec = "+reduceCosts);
 			LOG.debug("Costs HDFS Write = "+hdfsWriteCosts);
 		}
-
+	
 		//aggregate individual cost factors
 		return exportCosts + latencyCosts + 
 			   hdfsReadCosts + mapCosts + mapDCReadCost + 

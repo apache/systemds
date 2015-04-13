@@ -26,12 +26,14 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.lib.CombineSequenceFileInputFormat;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -1083,9 +1085,22 @@ public class MRJobConfiguration
 		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, distCacheOnly, setConverter, target);
 	}
 	
+	/**
+	 * 
+	 * @param job
+	 * @param inputIndexes
+	 * @param inputs
+	 * @param inputInfos
+	 * @param brlens
+	 * @param bclens
+	 * @param distCacheOnly
+	 * @param setConverter
+	 * @param target
+	 * @throws Exception
+	 */
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			int[] brlens, int[] bclens, boolean[] distCacheOnly, boolean setConverter, ConvertTarget target) 
-	throws Exception
+		throws Exception
 	{
 		if(inputs.length!=inputInfos.length)
 			throw new Exception("number of inputs and inputInfos does not match");
@@ -1094,13 +1109,35 @@ public class MRJobConfiguration
 		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
 		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, inputIndexes);
 		
-		if(setConverter)
-		{
+		//set up converter infos (converter determined implicitly)
+		if(setConverter) {
 			for(int i=0; i<inputs.length; i++)
 				setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
 		}
 		
-		//remove redundant input files
+		boolean combineInputFormat = false;
+		if( OptimizerUtils.ALLOW_COMBINE_FILE_INPUT_FORMAT ) 
+		{
+			//determine total input sizes
+			double totalInputSize = 0;
+			for(int i=0; i<inputs.length; i++)
+				totalInputSize += MapReduceTool.getFilesizeOnHDFS(new Path(inputs[i]));
+				
+			//set max split size (default blocksize) to 2x blocksize if sort buffer large enough 
+			//and degree of parallelism not hurt
+			//(the sort buffer size is relevant for pass-through of, potentially modified, inputs to the reducers)
+			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
+			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
+			long newSplitSize = sizeHDFSBlk * 2;
+			double spillPercent = job.getDouble("mapreduce.map.sort.spill.percent", 1.0);
+			int numPMap = OptimizerUtils.getNumMappers();
+			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize ) {
+				job.setLong("mapreduce.input.fileinputformat.split.maxsize", newSplitSize);	
+				combineInputFormat = true;
+			}
+		}
+		
+		//add inputs to jobs input (incl input format configuration)
 		ArrayList<Path> paths=new ArrayList<Path>();
 		for(int i=0; i<inputs.length; i++)
 		{
@@ -1114,11 +1151,13 @@ public class MRJobConfiguration
 				continue;
 			}
 			
-			//add input to job inputs
-			MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
+			//add input to job inputs (for binaryblock we use CombineSequenceFileInputFormat to reduce task latency)
+			if( combineInputFormat && inputInfos[i] == InputInfo.BinaryBlockInputInfo )
+				MultipleInputs.addInputPath(job, p, CombineSequenceFileInputFormat.class);
+			else
+				MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
 			paths.add(p);
 		}
-		
 	}
 	
 	/**

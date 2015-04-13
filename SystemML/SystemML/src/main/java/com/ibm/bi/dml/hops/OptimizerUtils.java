@@ -169,6 +169,15 @@ public class OptimizerUtils
 	 */
 	public static final double PARALLEL_READ_PARALLELISM_MULTIPLIER = 1.0;
 	public static final double PARALLEL_WRITE_PARALLELISM_MULTIPLIER = 1.0;
+
+	/**
+	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 
+	 * if sort buffer size large enough and parallelism not hurt. This solves to issues: 
+	 * (1) it combines small files (depending on producers), and (2) it reduces task
+	 * latency of large jobs with many tasks by factor 2.
+	 * 
+	 */
+	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 	
 	
 	//////////////////////
@@ -381,6 +390,21 @@ public class OptimizerUtils
 			if( InfrastructureAnalyzer.isYarnEnabled() )
 				ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores()/2 );
 		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static int getNumMappers()
+	{
+		int ret = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() )
+			ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores() );
 		
 		return ret;
 	}

@@ -17,6 +17,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.lib.CombineSequenceFileInputFormat;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
@@ -59,8 +60,9 @@ public class InputInfo
 			 LongWritable.class, Text.class);
 	public static final InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
-	public static final InputInfo BinaryBlockInputInfo=new InputInfo(SequenceFileInputFormat.class, 
-			MatrixIndexes.class, MatrixBlock.class);
+	public static final InputInfo BinaryBlockInputInfo=new InputInfo(
+			//for jobs like GMR, we use CombineSequenceFileInputFormat (which requires to specify the maxsplitsize, hence not included here)
+			SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class); 
 	
 	// Format that denotes the input of a SORT job
 	public static final InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 

@@ -89,6 +89,7 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     ); 
 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
+			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
 			//add statment block rewrite rules
  			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )			
@@ -99,7 +100,7 @@ public class ProgramRewriter
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               );
- 			_sbRuleSet.add( new RewriteInjectSparkCheckpointing()                );
+ 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing()            );
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

@@ -33,7 +33,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  * TODO (2) implement injection for multiple consumers (local and global).
  * 
  */
-public class RewriteInjectSparkCheckpointing extends StatementBlockRewriteRule
+public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRule
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -45,7 +45,8 @@ public class RewriteInjectSparkCheckpointing extends StatementBlockRewriteRule
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 		
-		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK ) {
+		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK && DMLScript.rtplatform != RUNTIME_PLATFORM.HYBRID_SPARK ) 
+		{
 			ret.add(sb); // nothing to do here
 			return ret; //return original statement block
 		}
@@ -80,10 +81,12 @@ public class RewriteInjectSparkCheckpointing extends StatementBlockRewriteRule
 				{
 					DataIdentifier dat = read.getVariable(var);
 					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.TRANSIENTREAD, 
-							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getRowsInBlock(), dat.getColumnsInBlock(), dat.getNnz());
+							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), dat.getRowsInBlock(), dat.getColumnsInBlock());
 					DataOp chkpoint = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, 
 							            new LiteralOp(null,Checkpoint.getDefaultStorageLevelString()), DataOpTypes.CHECKPOINT, null);				
+					HopRewriteUtils.setOutputParameters(chkpoint, dat.getDim1(), dat.getDim2(), dat.getRowsInBlock(), dat.getColumnsInBlock(), dat.getNnz());
 					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, chkpoint, DataOpTypes.TRANSIENTWRITE, null);
+					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), dat.getRowsInBlock(), dat.getColumnsInBlock(), dat.getNnz());
 					hops.add(twrite);
 					livein.addVariable(var, read.getVariable(var));
 					liveout.addVariable(var, read.getVariable(var));

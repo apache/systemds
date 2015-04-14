@@ -4,18 +4,17 @@
 	<name>SystemML compiler</name>
 
 
-
 	<scm>
-<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
-<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
-<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
-	</scm>
+  		<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+  		<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+  		<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
+  </scm>
 
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
 		<artifactId>systemml-reactor</artifactId>
-		<version>4.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
+		<version>4.1-SNAPSHOT</version>
 	</parent>
 
 	<build>

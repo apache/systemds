@@ -71,8 +71,7 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		} 
 		else {
 			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
-		
+		}		
 	}
 	
 	@Override
@@ -87,14 +86,19 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 			//get input
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
 			
-			//execute tsmm instruction
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-					in.mapToPair( new RDDTSMMFunction(_type) )
-			          .reduceByKey( new RDDTSMMAggregateSumFunction() );
+			//NOTE: reduce formulation without values() gave (in future spark versions, we need to check if still required):			
+			// Exception in thread "Driver" scala.MatchError: java.lang.NoSuchMethodError: org/apache/spark/api/java/JavaPairRDD.reduce(Lorg/apache/spark/api/java/function/Function2;)Lscala/Tuple2; (of class java.lang.NoSuchMethodError)
+	        //    at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:432)
+
+			//execute tsmm instruction (always produce exactly one output block)
+			//(this formalation with values() requires --conf spark.driver.maxResultSize=0)
+			MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
+					            .values()
+			                    .reduce( new RDDTSMMAggregateSumFunction() );
 			
-			//put output RDD handle into symbol table
+			//put output block into symbol table
 			updateOutputMatrixCharacteristics(sec);
-			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.setMatrixOutput(output.getName(), out);
 		}
 		else 
 		{
@@ -156,7 +160,7 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		{
 			//create correction block (on demand)
 			if( _corr == null ){
-				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), true);
+				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
 			}
 			
 			//copy one input to output

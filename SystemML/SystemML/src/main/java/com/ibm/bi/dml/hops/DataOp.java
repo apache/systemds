@@ -257,7 +257,7 @@ public class DataOp extends Hop
 			
 				case CHECKPOINT:
 					String strlevel = ((LiteralOp)getInput().get(1)).getStringValue();
-					l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, et);
+					l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, ExecType.SPARK);
 					break;
 					
 				default:

@@ -367,8 +367,11 @@ public class AggBinaryOp extends Hop
 			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
+			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) 
+				&& (_etype==ExecType.MR || _etype==ExecType.SPARK) )
+			{
 				setRequiresRecompile();			
+			}
 		}
 		
 		return _etype;
@@ -1247,6 +1250,7 @@ public class AggBinaryOp extends Hop
 		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0 && m1_rows<=m1_rpb)
 			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0 && m2_cols<=m2_cpb) ) 
 		{

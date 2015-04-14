@@ -49,6 +49,7 @@ public class ExecutionContextFactory
 				break;
 				
 			case SPARK:
+			case HYBRID_SPARK:
 				ec = new SparkExecutionContext(allocateVars, prog);
 				break;
 				

@@ -91,6 +91,7 @@ public class DMLScript
 		HADOOP, 	    // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
+		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
 		NZ,             // execute matrix operations on NZ SQL backend
 		SPARK			// execute matrix operations in Spark
 	};
@@ -128,7 +129,7 @@ public class DMLScript
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
-			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid])\n"
+			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
 			//undocumented feature in beta 08/2014 release
 			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
@@ -369,7 +370,7 @@ public class DMLScript
 	public static boolean isRecompilationRequiredForGivenExecutionType() {
 		// Why is this commented ? To check if recompiler hides any potential issues with SPInstruction
 		// return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID || DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK;
-		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
+		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK;
 	}
 	
 	///////////////////////////////
@@ -530,6 +531,8 @@ public class DMLScript
 			lrtplatform = RUNTIME_PLATFORM.NZ;
 		else if ( platform.equalsIgnoreCase("spark"))
 			lrtplatform = RUNTIME_PLATFORM.SPARK;
+		else if ( platform.equalsIgnoreCase("hybrid_spark"))
+			lrtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		else 
 			System.err.println("ERROR: Unknown runtime platform: " + platform);
 		
@@ -637,6 +640,7 @@ public class DMLScript
 			case SINGLE_NODE:
 			case HYBRID:
 			case SPARK:
+			case HYBRID_SPARK:
 				executeHadoop(dmlt, prog, conf, dmlScriptStr, allArgs);
 				break;
 			case NZ:

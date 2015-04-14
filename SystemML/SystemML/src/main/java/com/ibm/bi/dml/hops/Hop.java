@@ -218,8 +218,12 @@ public abstract class Hop
 				invalid |= !OptimizerUtils.isValidCPMatrixSize(in._dim1, in._dim2, OptimizerUtils.getSparsity(in._dim1, in._dim2, in._nnz));
 			
 			//force exec type mr if necessary
-			if( invalid ) 
-				_etype = ExecType.MR;
+			if( invalid ) { 
+				if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+					_etype = ExecType.MR;
+				else if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+					_etype = ExecType.SPARK;
+			}
 		}
 	}
 	
@@ -575,7 +579,11 @@ public abstract class Hop
 			et = ExecType.CP;
 		}
 		else {
-			et = ExecType.MR;
+			if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID )
+				et = ExecType.MR;
+			else if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK )
+				et = ExecType.SPARK;
+			
 			c = '*';
 		}
 

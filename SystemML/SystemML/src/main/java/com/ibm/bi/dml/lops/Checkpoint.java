@@ -35,6 +35,7 @@ public class Checkpoint extends Lop
 	public static final String OPCODE = "chkpoint"; 
 	
 	private static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
+	
 	public static final String STORAGE_LEVEL = "storage.level"; 
 
 	private StorageLevel _storageLevel;
@@ -89,7 +90,7 @@ public class Checkpoint extends Lop
 	{
 		//valid execution type
 		if(getExecType() != ExecType.SPARK) {
-			throw new LopsException("The method getInstructions(String,String) for Checkpoint should be called only for Spark execution type.");
+			throw new LopsException("Wrong execution type for Checkpoint.getInstructions (expected: SPARK, found: "+getExecType()+").");
 		}
 		
 		StringBuilder sb = new StringBuilder();

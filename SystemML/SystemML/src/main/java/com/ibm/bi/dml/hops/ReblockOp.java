@@ -205,7 +205,7 @@ public class ReblockOp extends Hop
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK ) {
 			_etype = ExecType.SPARK;
 			return _etype;
 		}

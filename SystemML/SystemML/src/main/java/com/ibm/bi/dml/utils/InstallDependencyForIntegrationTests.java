@@ -7,7 +7,13 @@
 package com.ibm.bi.dml.utils;
 
 import static org.junit.Assert.fail;
-import com.ibm.bi.dml.test.utils.TestUtils;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+//import com.ibm.bi.dml.test.utils.TestUtils;
 
 /**
  * This class will be used to setup dependency on Eclipse environment as well as on Jenkins server
@@ -49,7 +55,7 @@ public class InstallDependencyForIntegrationTests {
 			executionFile = executionFile.replace('/', '\\');
 		}
 		if ( !newWay )	
-			TestUtils.printRScript(executionFile);
+			printRScript(executionFile); // TestUtils.printRScript(executionFile);
 		
 		try {
 			long t0 = System.nanoTime();
@@ -102,6 +108,31 @@ public class InstallDependencyForIntegrationTests {
 				errorMessage.append("\n>" + ste);
 			}
 			fail(errorMessage.toString());
+		}
+	}
+	
+	/**
+	 * <p>
+	 * Prints out an R script.
+	 * </p>
+	 * 
+	 * @param dmlScriptfile
+	 *            filename of RL script
+	 */
+	public static void printRScript(String dmlScriptFile) {
+		try {
+			System.out.println("Running script: " + dmlScriptFile + "\n");
+			System.out.println("******************* R script *******************");
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
+			String content;
+			while ((content = in.readLine()) != null) {
+				System.out.println(content);
+			}
+			in.close();
+			System.out.println("**************************************************\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to print R script: " + e.getMessage());
 		}
 	}
 }

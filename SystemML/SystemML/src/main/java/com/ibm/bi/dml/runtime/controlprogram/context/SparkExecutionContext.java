@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.spark.fix.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -141,6 +142,7 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			//parallelize hdfs-resident file
 			rdd = _spctx.hadoopFile( mo.getFileName(), SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class);
+			rdd = rdd.mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
 			
 			//keep rdd handle for future operations on it
 			mo.setRDDHandle(rdd);

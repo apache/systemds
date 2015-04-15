@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,6 +19,7 @@ import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.AggOp;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.Direction;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
@@ -29,6 +31,7 @@ import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
@@ -132,6 +135,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryCumSum(hop, hi, i);         //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
+			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,max=1)) -> rand(rows=1,max=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
@@ -398,6 +402,50 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				LOG.debug("Applied removeUnnecessaryOuterProduct2");
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop fuseDatagenAndReorgOperation(Hop parent, Hop hi, int pos)
+	{
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE  //transpose
+			&& hi.getInput().get(0) instanceof DataGenOp                       //datagen
+			&& hi.getInput().get(0).getParent().size()==1 )                    //transpose only consumer
+		{
+			DataGenOp dop = (DataGenOp)hi.getInput().get(0);
+			if(    (dop.getOp() == DataGenMethod.RAND || dop.getOp() == DataGenMethod.SINIT) 
+				&& (dop.getDim1()==1 || dop.getDim2()==1 )) 
+			{
+				//relink all parents and dataop (remove transpose)
+				HopRewriteUtils.removeAllChildReferences(hi);
+				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+				for( int i=0; i<parents.size(); i++ ) {
+					Hop lparent = parents.get(i);
+					int ppos = HopRewriteUtils.getChildReferencePos(lparent, hi);
+					HopRewriteUtils.removeChildReferenceByPos(lparent, hi, ppos);
+					HopRewriteUtils.addChildReference(lparent, dop, pos);	
+				}
+				
+				//flip rows/cols attributes in datagen
+				HashMap<String, Integer> rparams = dop.getParamIndexMap();
+				int pos1 = rparams.get(DataExpression.RAND_ROWS);
+				int pos2 = rparams.get(DataExpression.RAND_COLS);
+				rparams.put(DataExpression.RAND_ROWS, pos2);
+				rparams.put(DataExpression.RAND_COLS, pos1);
+				dop.refreshSizeInformation();
+				
+				hi = dop;
+				
+				LOG.debug("Applied fuseDatagenReorgOperation.");
+			}	
 		}
 		
 		return hi;

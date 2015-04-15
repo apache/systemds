@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
+	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
+	
+fmt = ifdef($fmt, "text");
+num_bins = ifdef($bins, 3); # 50
+depth = ifdef($depth, 10);
+num_trees = ifdef($trees, 2); # 10
+num_feature_samples = ifdef($feature_samples, 3); # 100
+num_samples = ifdef($samples, 10);
+
+num_classes = 7;
+bin_size = 7;
+
+X = rand (rows = 10, cols = 5, min = 0, max = 10);
+Y = floor (rand (rows = 10, cols = 1, min = 1, max = 3.999999999999));
+
+num_rows = nrow (X);
+num_features = ncol (X);
+
+count_thresholds = matrix (0, rows = 1, cols = num_features)
+thresholds = matrix (0, rows = num_bins + 1, cols = num_features)
+parfor(i1 in 1:num_features) { # this parfor works fine!
+      col = order (target = X[,i1], by = 1, decreasing = FALSE);
+      [col_bins, num_bins_defined] = binning (col, bin_size, num_bins);
+      count_thresholds[,i1] = num_bins_defined;
+      thresholds[,i1] = col_bins;	
+}
+
+
+max_num_bins = max (count_thresholds);
+X_ext_left = matrix (0, rows = num_rows, cols = num_features * num_classes * max_num_bins);
+X_ext_right = matrix (0, rows = num_rows, cols = num_features * num_classes * max_num_bins);
+parfor (i2 in 1:num_features) { # The following parfors need check=0!
+	parfor (i3 in 1:num_rows) {
+		count_threshold = count_thresholds[,i2];
+		for (i4 in 0:(as.scalar(count_threshold) - 1)) {
+			cur_threshold = as.scalar(count_threshold) - i4;
+			offset_feature = (i2 - 1) * max_num_bins * num_classes;
+			offset_bin = (cur_threshold - 1) * num_classes;
+			if (as.scalar(X[i3,i2]) < as.scalar(thresholds[cur_threshold, i2])) {
+				X_ext_left[i3, (offset_feature + offset_bin + as.scalar(Y[i3,1]))] = 1;
+			} else {
+				X_ext_right[i3, (offset_feature + offset_bin + as.scalar(Y[i3,1]))] = 1;
+			}
+		}
+	}
+}
+

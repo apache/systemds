@@ -1539,7 +1539,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			else
 			{
 				//NOTE: we could mark sb for deferred validation and evaluate on execute (see ParForProgramBlock)
-				LOG.debug("PARFOR: Warning - matrix dimensionality unknown, cannot scale linear functions.");				
+				LOG.debug("PARFOR: Warning - matrix dimensionality of '"+idat._name+"' unknown, cannot scale linear functions.");				
 			}
 		}
 		catch(Exception ex)
@@ -1881,12 +1881,18 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( l instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) l);		
-				ret.addConstant(((IntIdentifier) r).getValue());
+				if( r instanceof IntIdentifier )
+					ret.addConstant(((IntIdentifier) r).getValue());
+				else 
+					return null;
 			}
 			else if (r instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) r);	
-				ret.addConstant(((IntIdentifier) l).getValue());
+				if( l instanceof IntIdentifier )
+					ret.addConstant(((IntIdentifier) l).getValue());
+				else
+					return null;
 			}
 			else // atomic case
 			{

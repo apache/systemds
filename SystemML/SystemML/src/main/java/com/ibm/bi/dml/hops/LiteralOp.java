@@ -131,25 +131,28 @@ public class LiteralOp extends Hop
 
 	@Override
 	public String getOpString() {
-		String val = "";
+		String val = null;
 		switch (getValueType()) {
-		case DOUBLE:
-			val = Double.toString(value_double);
-			break;
-		case BOOLEAN:
-			val = Boolean.toString(value_boolean);
-			break;
-		case STRING:
-			val = value_string;
-			break;
-		case INT:
-			val = Long.toString(value_long);
-			break;
+			case DOUBLE:
+				val = Double.toString(value_double);
+				break;
+			case BOOLEAN:
+				val = Boolean.toString(value_boolean);
+				break;
+			case STRING:
+				val = value_string;
+				break;
+			case INT:
+				val = Long.toString(value_long);
+				break;
+			default:
+				val = "";
 		}
 		return "LiteralOp " + val;
 	}
 	
-	private SQLLopProperties getProperties()
+	private SQLLopProperties getProperties() 
+		throws HopsException
 	{
 		SQLLopProperties prop = new SQLLopProperties();
 		prop.setJoinType(JOINTYPE.NONE);
@@ -157,18 +160,20 @@ public class LiteralOp extends Hop
 		
 		String val = null;
 		switch (getValueType()) {
-		case DOUBLE:
-			val = Double.toString(value_double);
-			break;
-		case BOOLEAN:
-			val = Boolean.toString(value_boolean);
-			break;
-		case STRING:
-			val = value_string;
-			break;
-		case INT:
-			val = Long.toString(value_long);
-			break;
+			case DOUBLE:
+				val = Double.toString(value_double);
+				break;
+			case BOOLEAN:
+				val = Boolean.toString(value_boolean);
+				break;
+			case STRING:
+				val = value_string;
+				break;
+			case INT:
+				val = Long.toString(value_long);
+				break;
+			default:
+				throw new HopsException("Invalid value type: "+getValueType());
 		}
 		
 		prop.setOpString(val);
@@ -208,8 +213,8 @@ public class LiteralOp extends Hop
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		double ret = 0;
-		switch(this.getValueType()) 
-		{
+		
+		switch( getValueType() ) {
 			case INT:
 				ret = OptimizerUtils.INT_SIZE; break;
 			case DOUBLE:
@@ -220,6 +225,8 @@ public class LiteralOp extends Hop
 				ret = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
 			case OBJECT:
 				ret = OptimizerUtils.DEFAULT_SIZE; break;
+			default:
+				ret = 0;
 		}
 		
 		return ret;
@@ -256,24 +263,31 @@ public class LiteralOp extends Hop
 		//do nothing; it is a scalar
 	}
 	
-	public long getLongValue() throws HopsException {
-		if ( getValueType() == ValueType.INT ) {
-			return value_long;
+	public long getLongValue() throws HopsException 
+	{
+		switch( getValueType() ) {
+			case INT:		
+				return value_long;
+			case DOUBLE:	
+				return UtilFunctions.toLong(value_double);
+			case STRING:
+				return Long.parseLong(value_string);	
+			default:
+				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Long.");
 		}
-		else if ( getValueType() == ValueType.DOUBLE ) 
-			return UtilFunctions.toLong(value_double);
-		else
-			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Long.");
 	}
 	
 	public double getDoubleValue() throws HopsException {
-		if ( getValueType() == ValueType.INT ) {
-			return value_long;
+		switch( getValueType() ) {
+			case INT:		
+				return value_long;
+			case DOUBLE:	
+				return value_double;
+			case STRING:
+				return Double.parseDouble(value_string);
+			default:
+				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
 		}
-		else if ( getValueType() == ValueType.DOUBLE ) 
-			return value_double;
-		else
-			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
 	}
 	
 	public boolean getBooleanValue() throws HopsException {

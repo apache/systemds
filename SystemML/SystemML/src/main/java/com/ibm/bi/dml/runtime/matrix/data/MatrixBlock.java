@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -4359,77 +4358,53 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			throw new DMLRuntimeException("Invalid weight dimensions (" + wts.getNumRows() + "x" + wts.getNumColumns() + ") to sort operation.");
 		}
 		
-		// Copy the input elements into a temporary array for sorting
+		// prepare result, currently always dense
 		// #rows in temp matrix = 1 + #nnz in the input ( 1 is for the "zero" value)
 		int dim1 = 1+this.getNonZeros();
-		// First column is data and second column is weights
-		double[][] tdw = new double[dim1][2]; 
+		if(result==null)
+			result=new MatrixBlock(dim1, 2, false);
+		else
+			result.reset(dim1, 2, false);
 		
+		// Copy the input elements into a temporary array for sorting
+		// First column is data and second column is weights
+		// (since the inputs are vectors, they are likely dense - hence quickget is sufficient)
+		MatrixBlock tdw = new MatrixBlock(dim1, 2, false);
 		double d, w, zero_wt=0;
-		if ( wtflag ) {
-			for ( int r=0, ind=1; r < getNumRows(); r++ ) {
-				d = quickGetValue(r,0);
-				w = wts.quickGetValue(r,0);
+		int ind = 1;
+		if( wtflag ) // w/ weights
+		{
+			for ( int i=0; i<rlen; i++ ) {
+				d = quickGetValue(i,0);
+				w = wts.quickGetValue(i,0);
 				if ( d != 0 ) {
-					tdw[ind][0] = d;
-					tdw[ind][1] = w;
+					tdw.quickSetValue(ind, 0, d);
+					tdw.quickSetValue(ind, 1, w);
 					ind++;
 				}
 				else
 					zero_wt += w;
 			}
-			tdw[0][0] = 0.0;
-			tdw[0][1] = zero_wt;
 		} 
-		else {
-			tdw[0][0] = 0.0;
-			tdw[0][1] = getNumRows() - getNonZeros(); // number of zeros in the input data
-			
-			int ind = 1;
-			if(sparse) {
-				if(sparseRows!=null) {
-					for(int r=0; r<Math.min(rlen, sparseRows.length); r++) {
-						if(sparseRows[r]==null) 
-							continue;
-						double[] values=sparseRows[r].getValueContainer();
-						for(int i=0; i<sparseRows[r].size(); i++) {
-							tdw[ind][0] = values[i];
-							tdw[ind][1] = 1;
-							ind++;
-						}
-					}
-				}
-			}
-			else {
-				if(denseBlock!=null) {
-					int limit=rlen*clen;
-					for(int i=0; i<limit; i++) {
-						// copy only non-zero values
-						if ( denseBlock[i] != 0.0 ) {
-							tdw[ind][0] = denseBlock[i];
-							tdw[ind][1] = 1;
-							ind++;
-						}
-					}
+		else //w/o weights
+		{
+			zero_wt = getNumRows() - getNonZeros();
+			for( int i=0; i<rlen; i++ ) {
+				d = quickGetValue(i,0);
+				if( d != 0 ){
+					tdw.quickSetValue(ind, 0, d);
+					tdw.quickSetValue(ind, 1, 1);
+					ind++;
 				}
 			}
 		}
+		tdw.quickSetValue(0, 0, 0.0);
+		tdw.quickSetValue(0, 1, zero_wt); //num zeros in input
 		
-		// Sort td and tw based on values inside td (ascending sort)
-		Arrays.sort(tdw, new Comparator<double[]>(){
-			@Override
-			public int compare(double[] arg0, double[] arg1) {
-				return (arg0[0] < arg1[0] ? -1 : (arg0[0] == arg1[0] ? 0 : 1));
-			}} 
-		);
-		
-		// Copy the output from sort into "result"
-		// result is always dense (currently)
-		if(result==null)
-			result=new MatrixBlock(dim1, 2, false);
-		else
-			result.reset(dim1, 2, false);
-		((MatrixBlock) result).init(tdw, dim1, 2);
+		// Sort td and tw based on values inside td (ascending sort), incl copy into result
+		SortIndex sfn = SortIndex.getSortIndexFnObject(1, false, false);
+		ReorgOperator rop = new ReorgOperator(sfn);
+		LibMatrixReorg.reorg(tdw, (MatrixBlock)result, rop);
 		
 		return result;
 	}

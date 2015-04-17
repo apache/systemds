@@ -12,6 +12,7 @@ import java.util.HashMap;
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
@@ -193,12 +194,16 @@ public class SPInstructionParser extends InstructionParser {
 				}
 				
 			case BuiltinBinary:
+				parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if ( parts[0].equals("solve") ) {
+					return (CPInstruction) BuiltinBinaryCPInstruction.parseInstruction(str);
+				}
 				return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
 				
 			case BuiltinUnary:
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("ucumk+") || parts[0].equals("inverse") || parts[0].equals("sprop")) {
-					// For now, ucumk+, inverse, sprop are not implemented
+				if ( parts[0].equals("ucumk+") || parts[0].equals("inverse") ) {
+					// For now, ucumk+, inverse are not implemented
 					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
 				}
 				else {

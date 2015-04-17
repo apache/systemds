@@ -261,7 +261,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				//configure rmEmpty to directly output selection vector
 				//(only applied if dynamic recompilation enabled)
 				
-				if( DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP )	
+				if( DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK  )	
 					pbhop.setOutputPermutationMatrix(true);
 				for( Hop p : hop.getParent() )
 					((AggBinaryOp)p).setHasLeftPMInput(true);		

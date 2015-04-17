@@ -72,7 +72,7 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
 			MatrixBlock resultBlock = null;
-			// TODO:
+			// Cannot execute LibCommonsMath in Spark
 //			if(LibCommonsMath.isSupportedUnaryOperation(opcode)) {
 //				resultBlock = LibCommonsMath.unaryOperations((MatrixObject) kv._2, opcode);
 //			}

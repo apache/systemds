@@ -84,20 +84,35 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			throws DMLRuntimeException, DMLUnsupportedOperationException {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
+
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
 		if ( opcode.equalsIgnoreCase("rblk")) {
 			MatrixObject mo = sec.getMatrixObject(input1.getName());
+			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
 			MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
+			
+			if(iimd == null) {
+				throw new DMLRuntimeException("Error: Metadata not found");
+			}
 			
 			if(iimd.getInputInfo() != InputInfo.TextCellInputInfo && iimd.getInputInfo()!=InputInfo.MatrixMarketInputInfo ) {
 				if(iimd.getInputInfo() == InputInfo.CSVInputInfo) {
 					throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
 				}
 				else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) {
+					// TODO:
 					throw new DMLRuntimeException("BinaryCellInputInfo is not implemented for ReblockSPInstruction");
 				}
 				else {
+					/// HACK ALERT: Workaround for MLContext 
+					if(mc.getRowsPerBlock() == mcOut.getRowsPerBlock() && mc.getColsPerBlock() == mcOut.getColsPerBlock()) {
+						sec.setRDDHandleForVariable(output.getName(), (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle());
+						return;
+					}
+					
+					// TODO:
 					throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
 				}
 			}
@@ -155,7 +170,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			
 			//put output RDD handle into symbol table
 			// TODO: Handle inputs with unknown sizes
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			if(!mcOut.dimsKnown()) {
 				throw new DMLRuntimeException("TODO: Handle reblock with unknown sizes");
 			}

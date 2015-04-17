@@ -128,6 +128,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyBinaryToUnaryOperation(hi);             //e.g., X*X -> X^2 (pow2)
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
+ 			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
 			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X), 1/(1+exp(-X)) -> sigmoid(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));    
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
@@ -646,6 +647,34 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifyUnaryAggReorgOperation( Hop parent, Hop hi, int pos )
+	{
+		if(   hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  //full uagg
+		   && hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
+		{
+			ReorgOp rop = (ReorgOp)hi.getInput().get(0);
+			if(   (rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE)         //valid reorg
+				&& rop.getParent().size()==1 )                                //uagg only reorg consumer
+			{
+				Hop input = rop.getInput().get(0);
+				HopRewriteUtils.removeAllChildReferences(hi);
+				HopRewriteUtils.removeAllChildReferences(rop);
+				HopRewriteUtils.addChildReference(hi, input);
+				
+				LOG.debug("Applied simplifyUnaryAggReorgOperation");
+			}
 		}
 		
 		return hi;

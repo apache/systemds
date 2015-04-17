@@ -19,6 +19,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -66,17 +67,24 @@ public class SparkExecutionContext extends ExecutionContext
 			else {
 				//create a default spark context (master, appname, etc refer to system properties
 				//as given in the spark configuration or during spark-submit)
-				if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
-					// For now set 4 cores for integration testing :)
-					SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("My local integration test app");
-					// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
-					// conf.set("spark.driver.allowMultipleContexts", "true");
-					conf.set("spark.ui.enabled", "false");
-					// conf.set("spark.ui.port", "69389"); // some random port
-					_spctx = new JavaSparkContext(conf);
+				if(MLContext._sc != null) {
+					// This is when DML is called through spark shell
+					// Will clean the passing of static variables later as this involves minimal change to DMLScript
+					_spctx = new JavaSparkContext(MLContext._sc);
 				}
 				else {
-					_spctx = new JavaSparkContext();
+					if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
+						// For now set 4 cores for integration testing :)
+						SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("My local integration test app");
+						// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
+						// conf.set("spark.driver.allowMultipleContexts", "true");
+						conf.set("spark.ui.enabled", "false");
+						// conf.set("spark.ui.port", "69389"); // some random port
+						_spctx = new JavaSparkContext(conf);
+					}
+					else {
+						_spctx = new JavaSparkContext();
+					}
 				}
 				_singletonSpctx = _spctx;
 			}

@@ -244,11 +244,14 @@ public class InfrastructureAnalyzer
 	
 	public static boolean isLocalMode(JobConf job)
 	{
-		if( _remoteJVMMaxMemMap == -1 ) {
-			_localJT = analyzeLocalMode(job);
-		}
+		// Due to a bug in HDP related to fetching the "mode" of execution within mappers,
+		// we explicitly probe the relevant properties instead of relying on results from 
+		// analyzeHadoopCluster().
+		String jobTracker = job.get("mapred.job.tracker", "local");
+		String framework = job.get("mapreduce.framework.name", "local");
+		boolean isYarnEnabled = (framework!=null && framework.equals("yarn"));
 		
-		return _localJT;		
+		return ("local".equals(jobTracker) & !isYarnEnabled);
 	}
 	
 	///////

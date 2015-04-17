@@ -857,9 +857,9 @@ public class TertiaryOp extends Hop
 			}
 		}
 		else if ( _op == OpOp3.QUANTILE ) {
-			// buffer (=2*input_size) and output (=input_size) for SORT operation
+			// buffer (=2*input_size) and output (=2*input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
-			ret = getInput().get(0).getMemEstimate() * 3;  
+			ret = getInput().get(0).getMemEstimate() * 4;  
 		}
 		
 		return ret;

@@ -12,24 +12,15 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-
 
 /**
  * 
@@ -41,10 +32,6 @@ public class MapMultChainInstruction extends MRInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ChainType _chainType = null;
-	
-	private AggregateBinaryOperator _abOp = null;
-	private ReorgOperator _rOp = null;
-	private BinaryOperator _bOp = null;
 	
 	private byte _input1 = -1;
 	private byte _input2 = -1;
@@ -69,8 +56,6 @@ public class MapMultChainInstruction extends MRInstruction
 		_input2 = in2;
 		_input3 = -1;
 		
-		initOperatorsForReuse();
-		
 		mrtype = MRINSTRUCTION_TYPE.MapMultChain;
 		instString = istr;
 	}
@@ -94,8 +79,6 @@ public class MapMultChainInstruction extends MRInstruction
 		_input1 = in1;
 		_input2 = in2;
 		_input3 = in3;
-		
-		initOperatorsForReuse();
 		
 		mrtype = MRINSTRUCTION_TYPE.MapMultChain;
 		instString = istr;
@@ -253,21 +236,6 @@ public class MapMultChainInstruction extends MRInstruction
 			}
 	}
 
-	/**
-	 * 
-	 */
-	private void initOperatorsForReuse()
-	{
-		//matrix mult operator
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		_abOp = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-		
-		//reorg operator
-		_rOp = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-		
-		//binary cellwise multiply
-		_bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
-	}
 	
 	/**
 	 * Chain implementation for r = (t(X)%*%(X%*%v))
@@ -284,26 +252,12 @@ public class MapMultChainInstruction extends MRInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
-		IndexedMatrixValue v = dcInput2.getDataBlock(1, 1);
+		MatrixBlock Xi = (MatrixBlock)inVal;
+		MatrixBlock v = (MatrixBlock) dcInput2.getDataBlock(1, 1).getValue();
 		
-		//matrix-vector matrix mult: tmp1=(X%*%v)
-		MatrixIndexes tmp1Ix = new MatrixIndexes();
-		MatrixBlock tmp1Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp);
-		
-		//matrix transpose: tmp2 = t(tmp1)
-		MatrixIndexes tmp2Ix = new MatrixIndexes(1, inIx.getRowIndex());
-		MatrixBlock tmp2Val = new MatrixBlock(tmp1Val.getNumColumns(), tmp1Val.getNumRows(), tmp1Val.isInSparseFormat());
-		tmp2Val = (MatrixBlock) tmp1Val.reorgOperations(_rOp, tmp2Val, 0, 0, -1);
-		
-		//vector-matrix matrix mult: tmp3 =(tmp2%*%X)
-		MatrixIndexes tmp3Ix = new MatrixIndexes();
-		MatrixBlock tmp3Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp);
-		
-		//matrix transpose: r = t(tmp3) 
-		outIx.setIndexes(tmp3Ix.getColumnIndex(), tmp3Ix.getRowIndex());
-		tmp3Val.reorgOperations(_rOp, outVal, 0, 0, -1);
+		//process core block operation
+		Xi.chainMatrixMultOperations(v, null, (MatrixBlock) outVal, ChainType.XtXv);
+		outIx.setIndexes(1, 1);
 	}
 	
 	/**
@@ -321,31 +275,13 @@ public class MapMultChainInstruction extends MRInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
-		IndexedMatrixValue v = dcInput2.getDataBlock(1, 1);
-		
 		DistributedCacheInput dcInput3 = MRBaseForCommonInstructions.dcValues.get(_input3); //w
-		IndexedMatrixValue w = dcInput3.getDataBlock((int)inIx.getRowIndex(), 1);
+		MatrixBlock Xi = (MatrixBlock) inVal;
+		MatrixBlock v = (MatrixBlock) dcInput2.getDataBlock(1, 1).getValue();
+		MatrixBlock w = (MatrixBlock) dcInput3.getDataBlock((int)inIx.getRowIndex(), 1).getValue();
 		
-		//matrix-vector matrix mult: tmp1=(X%*%v)
-		MatrixIndexes tmp1Ix = new MatrixIndexes();
-		MatrixBlock tmp1Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(inIx, inVal, v.getIndexes(), v.getValue(), tmp1Ix, tmp1Val, _abOp);
-		
-		//vector-vector cell-wise multiply: tmp1=(tmp1*w), in-place  
-		tmp1Val.binaryOperationsInPlace(_bOp, w.getValue());
-		
-		//matrix transpose: tmp2 = t(tmp1)
-		MatrixIndexes tmp2Ix = new MatrixIndexes(1, inIx.getRowIndex());
-		MatrixBlock tmp2Val = new MatrixBlock(tmp1Val.getNumColumns(), tmp1Val.getNumRows(), tmp1Val.isInSparseFormat());
-		tmp2Val = (MatrixBlock) tmp1Val.reorgOperations(_rOp, tmp2Val, 0, 0, -1);
-		
-		//vector-matrix matrix mult: tmp3 =(tmp2%*%X)
-		MatrixIndexes tmp3Ix = new MatrixIndexes();
-		MatrixBlock tmp3Val = new MatrixBlock();
-		OperationsOnMatrixValues.performAggregateBinary(tmp2Ix, tmp2Val, inIx, inVal, tmp3Ix, tmp3Val, _abOp);
-		
-		//matrix transpose: r = t(tmp3) 
-		outIx.setIndexes(tmp3Ix.getColumnIndex(), tmp3Ix.getRowIndex());
-		tmp3Val.reorgOperations(_rOp, outVal, 0, 0, -1);
+		//process core block operation
+		Xi.chainMatrixMultOperations(v, w, (MatrixBlock) outVal, ChainType.XtwXv);
+		outIx.setIndexes(1, 1);
 	}
 }

@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DataPartitionCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.MMChainCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
@@ -196,6 +197,7 @@ public class CPInstructionParser extends InstructionParser
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
 		String2CPInstructionType.put( "pmm"   , CPINSTRUCTION_TYPE.PMMJ);
+		String2CPInstructionType.put( "mmchain"   , CPINSTRUCTION_TYPE.MMChain);
 		
 		String2CPInstructionType.put( "qr",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPINSTRUCTION_TYPE.MultiReturnBuiltin);
@@ -321,6 +323,8 @@ public class CPInstructionParser extends InstructionParser
 			return (CPInstruction) MMTSJCPInstruction.parseInstruction(str);
 		case PMMJ:
 			return (CPInstruction) PMMJCPInstruction.parseInstruction(str);
+		case MMChain:
+			return (CPInstruction) MMChainCPInstruction.parseInstruction(str);
 		
 		case Partition:
 			return (CPInstruction) DataPartitionCPInstruction.parseInstruction(str);	

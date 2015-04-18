@@ -24,6 +24,7 @@ import org.apache.hadoop.io.DataInputBuffer;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
+import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -3291,11 +3292,48 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	{
 		//check for transpose type
 		if( !(tstype == MMTSJType.LEFT || tstype == MMTSJType.RIGHT) )
-			throw new DMLRuntimeException("Invalid MMTSJ type '"+tstype+"'.");
+			throw new DMLRuntimeException("Invalid MMTSJ type '"+tstype.toString()+"'.");
 		
 		//compute matrix mult
 		boolean leftTranspose = ( tstype == MMTSJType.LEFT );
 		LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param v
+	 * @param w
+	 * @param out
+	 * @param ctype
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 	
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//check for transpose type
+		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv) )
+			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
+		
+		//check for matching dimensions
+		if( this.getNumColumns() != v.getNumRows() )
+			throw new DMLRuntimeException("Dimensions mismatch on mmchain operation ("+this.getNumColumns()+" != "+v.getNumRows()+")");
+		if( v!=null && v.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid input vector (column vector expected, but ncol="+v.getNumColumns()+")");
+		if( w!=null && w.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid weight vector (column vector expected, but ncol="+w.getNumColumns()+")");
+		
+		//prepare result
+		if( out != null )
+			out.reset(clen, 1, false);
+		else 
+			out = new MatrixBlock(clen, 1, false);
+		
+		//compute matrix mult
+		LibMatrixMult.matrixMultChain(this, v, w, out, ctype);
 		
 		return out;
 	}

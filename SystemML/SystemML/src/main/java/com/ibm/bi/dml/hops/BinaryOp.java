@@ -1544,6 +1544,8 @@ public class BinaryOp extends Hop
 				ret = agg1;
 				break;
 			}	
+			default:
+				throw new HopsException("Invalid MR append method: "+am);
 		}
 		
 		return ret;

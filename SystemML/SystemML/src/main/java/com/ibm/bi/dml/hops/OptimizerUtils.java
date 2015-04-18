@@ -682,31 +682,36 @@ public class OptimizerUtils
 		}
 		else
 		{
-			switch(op) {
-			
-			case PLUS:
-			case MINUS:
-				// result[i,j] != 0 iff A[i,j] !=0 || B[i,j] != 0
-				// worst case estimate = sp1+sp2
-				return (1 - (1-sp1)*(1-sp2)); 
-			
-			case MULT:
-				// result[i,j] != 0 iff A[i,j] !=0 && B[i,j] != 0
-				// worst case estimate = min(sp1,sp2)
-				return sp1 * sp2;  
-				
-			case DIV:
-				return 1.0; // worst case estimate
-				
-			case LESS: 
-			case LESSEQUAL:
-			case GREATER:
-			case GREATEREQUAL:
-			case EQUAL: 
-			case NOTEQUAL:
-				return 1.0; // purely data-dependent operations, and hence worse-case estimate
-				
-			//MIN, MAX, AND, OR, LOG, POW
+			switch(op) {			
+				case PLUS:
+				case MINUS:
+					// result[i,j] != 0 iff A[i,j] !=0 || B[i,j] != 0
+					// worst case estimate = sp1+sp2
+					ret = (1 - (1-sp1)*(1-sp2)); 
+					break;
+					
+				case MULT:
+					// result[i,j] != 0 iff A[i,j] !=0 && B[i,j] != 0
+					// worst case estimate = min(sp1,sp2)
+					ret = sp1 * sp2;  
+					break;
+					
+				case DIV:
+					ret = 1.0; // worst case estimate
+					break;
+					
+				case LESS: 
+				case LESSEQUAL:
+				case GREATER:
+				case GREATEREQUAL:
+				case EQUAL: 
+				case NOTEQUAL:
+					ret = 1.0; // purely data-dependent operations, and hence worse-case estimate
+					break;
+					
+				//MIN, MAX, AND, OR, LOG, POW
+				default:
+					ret = 1.0;
 			}
 		}
 		
@@ -881,6 +886,7 @@ public class OptimizerUtils
 					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
 					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
 					case CAST_AS_DOUBLE: ret = lval; break;
+					default: ret = Double.MAX_VALUE;
 				}
 			}
 		}
@@ -925,6 +931,7 @@ public class OptimizerUtils
 					case CAST_AS_BOOLEAN: ret = (lval!=0)? 1 : 0; break;
 					case CAST_AS_INT: ret = UtilFunctions.toLong(lval); break;
 					case CAST_AS_DOUBLE: ret = lval; break;
+					default: ret = Double.MAX_VALUE;
 				}
 			}
 		}
@@ -965,6 +972,7 @@ public class OptimizerUtils
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
 				case POW:   ret = Math.pow(lret, rret); break; 
+				default: ret = Double.MAX_VALUE;
 			}
 		}
 		
@@ -1005,6 +1013,7 @@ public class OptimizerUtils
 				case MIN:   ret = Math.min(lret, rret); break;
 				case MAX:   ret = Math.max(lret, rret); break;
 				case POW:   ret = Math.pow(lret, rret); break; 
+				default: ret = Double.MAX_VALUE;
 			}
 		}
 		

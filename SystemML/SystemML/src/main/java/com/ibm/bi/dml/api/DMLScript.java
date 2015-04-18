@@ -578,7 +578,6 @@ public class DMLScript
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
-	@SuppressWarnings("unused")
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{				
@@ -624,7 +623,7 @@ public class DMLScript
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
 			dmlt.printHops(prog);
-			dmlt.resetHopsDAGVisitStatus(prog);
+			DMLTranslator.resetHopsDAGVisitStatus(prog);
 		}
 		
 		if( VISUALIZE ) { // HOPs before rewrite

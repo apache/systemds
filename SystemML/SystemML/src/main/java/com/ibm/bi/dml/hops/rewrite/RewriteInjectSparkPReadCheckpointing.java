@@ -12,15 +12,12 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.lops.Checkpoint;
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
@@ -61,6 +58,12 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		return root;
 	}
 
+	/**
+	 * 
+	 * @param hop
+	 * @throws HopsException
+	 */
+	@SuppressWarnings("unchecked")
 	private void rInjectCheckpointAfterPRead( Hop hop ) 
 		throws HopsException 
 	{

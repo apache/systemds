@@ -414,6 +414,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	private Hop fuseDatagenAndReorgOperation(Hop parent, Hop hi, int pos)
 	{
 		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE  //transpose
@@ -1073,6 +1074,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	private Hop pushdownBinaryOperationOnDiag(Hop parent, Hop hi, int pos) 
 	{
 		//diag(X)*7 --> diag(X*7) in order to (1) reduce required memory for b(*) and
@@ -1288,6 +1290,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						else if( HopRewriteUtils.isEmpty(right) ) //empty and size known
 							hnew = left;
 					}
+					default:
+						hnew = null;
 				}
 				
 				if( hnew != null )

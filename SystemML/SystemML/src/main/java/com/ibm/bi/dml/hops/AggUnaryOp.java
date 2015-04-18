@@ -379,6 +379,9 @@ public class AggUnaryOp extends Hop
 				//worst-case correction LASTCOLUMN 
 				val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
 				break;
+			default:
+				//no intermediate memory consumption
+				val = 0;				
 		}
 		
 		return val;

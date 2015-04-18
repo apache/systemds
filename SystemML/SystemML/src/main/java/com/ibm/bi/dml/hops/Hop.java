@@ -1518,6 +1518,7 @@ public abstract class Hop
 						case PLUS:	ret = lret + rret; break;
 						case MULT:  ret = lret * rret; break;
 						case MAX:   ret = Math.max(lret, rret); break;
+						default:    ret = Long.MAX_VALUE;
 					}
 				}
 			}

@@ -498,7 +498,7 @@ public class DataOp extends Hop
 		
 		if ( getDataType() == DataType.SCALAR ) 
 		{
-			switch(this.getValueType()) 
+			switch( getValueType() ) 
 			{
 				case INT:
 					ret = OptimizerUtils.INT_SIZE; break;
@@ -511,6 +511,8 @@ public class DataOp extends Hop
 					ret = 100 * OptimizerUtils.CHAR_SIZE; break;
 				case OBJECT:
 					ret = OptimizerUtils.DEFAULT_SIZE; break;
+				default:
+					ret = 0;
 			}
 		}
 		else //MATRIX 

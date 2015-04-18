@@ -702,6 +702,7 @@ public class ParameterizedBuiltinOp extends Hop
 		switch( _op )
 		{
 			case CDF:
+			case INVCDF:	
 				//do nothing; CDF is a scalar
 				break;
 			
@@ -730,6 +731,10 @@ public class ParameterizedBuiltinOp extends Hop
 					setNnz( target2.getNnz() );
 				
 				break;	
+				
+			default:
+				//do nothing
+				break;
 		}
 	}
 	

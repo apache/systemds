@@ -101,6 +101,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	 * @param hop
 	 * @throws HopsException 
 	 */
+	@SuppressWarnings("unused")
 	private void vectorizeRightIndexing( Hop hop )
 		throws HopsException
 	{
@@ -195,6 +196,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	 * @param hop
 	 * @throws HopsException
 	 */
+	@SuppressWarnings("unchecked")
 	private void vectorizeLeftIndexing( Hop hop )
 		throws HopsException
 	{

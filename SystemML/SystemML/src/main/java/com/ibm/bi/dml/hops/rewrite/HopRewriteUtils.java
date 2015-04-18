@@ -27,6 +27,7 @@ import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
@@ -147,6 +148,8 @@ public class HopRewriteUtils
 				case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
 				case INT:	  return op.getLongValue();
 				case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+				default:
+					throw new RuntimeException("Invalid int value: "+op.getValueType());
 			}
 		}
 		catch(Exception ex){
@@ -174,6 +177,8 @@ public class HopRewriteUtils
 				case INT:	  ret = new IntObject(op.getLongValue()); break;
 				case BOOLEAN: ret = new BooleanObject(op.getBooleanValue()); break;
 				case STRING:  ret = new StringObject(op.getStringValue()); break;
+				default:
+					throw new DMLRuntimeException("Invalid scalar object value type: "+op.getValueType());
 			}
 		}
 		catch(Exception ex)

@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -94,7 +95,7 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 			//(this formalation with values() requires --conf spark.driver.maxResultSize=0)
 			MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
 					            .values()
-			                    .reduce( new RDDTSMMAggregateSumFunction() );
+			                    .reduce( new AggregateSumSingleBlockFunction() );
 			
 			//put output block into symbol table
 			updateOutputMatrixCharacteristics(sec);
@@ -138,38 +139,4 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		}
 	}
 	
-	/**
-	 *
-	 */
-	public static class RDDTSMMAggregateSumFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
-	{
-		private static final long serialVersionUID = 704959820141782708L;
-		
-		private AggregateOperator _op = null;
-		private MatrixBlock _corr = null;
-		
-		public RDDTSMMAggregateSumFunction()
-		{
-			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
-			_corr = null;
-		}
-		
-		@Override
-		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
-			throws Exception 
-		{
-			//create correction block (on demand)
-			if( _corr == null ){
-				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
-			}
-			
-			//copy one input to output
-			MatrixBlock out = new MatrixBlock(arg0);
-			
-			//aggregate other input
-			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
-			
-			return out;
-		}
-	}
 }

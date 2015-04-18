@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
@@ -28,6 +29,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -224,5 +226,29 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	protected void updateOutputMatrixCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) { 
+			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
+			else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
+				throw new DMLRuntimeException("Incompatible block sizes for BinarySPInstruction.");
+			else if(mc1.getCols() != mc2.getRows())
+				throw new DMLRuntimeException("Incompatible dimensions for BinarySPInstruction");
+			else {
+				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			}
+		}	
 	}
 }

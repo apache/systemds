@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
@@ -45,6 +46,7 @@ public class SPInstructionParser extends InstructionParser {
 		//matrix multiplication operators
 		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.CPMM);
 		String2SPInstructionType.put( "mapmm"   , SPINSTRUCTION_TYPE.MAPMM);
+		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
 		String2SPInstructionType.put( "tsmm"    , SPINSTRUCTION_TYPE.TSMM);
 		
 		//unary aggregate operators
@@ -157,6 +159,8 @@ public class SPInstructionParser extends InstructionParser {
 				return CpmmSPInstruction.parseInstruction(str);
 			case MAPMM:
 				return MapmmSPInstruction.parseInstruction(str);
+			case MAPMMCHAIN:
+				return MapmmChainSPInstruction.parseInstruction(str);
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
 				

@@ -69,12 +69,12 @@ public class AggBinaryOp extends Hop
 	public enum MMultMethod { 
 		CPMM,     //cross-product matrix multiplication (mr)
 		RMM,      //replication matrix multiplication (mr)
-		MAPMM_L,  //map-side matrix-matrix multiplication using distributed cache (mr)
-		MAPMM_R,  //map-side matrix-matrix multiplication using distributed cache (mr)
-		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (mr)
+		MAPMM_L,  //map-side matrix-matrix multiplication using distributed cache (mr/sp)
+		MAPMM_R,  //map-side matrix-matrix multiplication using distributed cache (mr/sp)
+		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (cp/mr/sp)
 		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr/cp)
-		TSMM,     //transpose-self matrix multiplication (mr/cp)
-		CP        //in-memory matrix multiplication (cp)
+		TSMM,     //transpose-self matrix multiplication (cp/mr/sp)
+		MM        //in-memory matrix multiplication (cp)
 	};
 	
 	//hints set by previous to operator selection
@@ -121,103 +121,97 @@ public class AggBinaryOp extends Hop
 			Hop input1 = getInput().get(0);
 			Hop input2 = getInput().get(1);
 			
-			//matrix mult operation selection part 1 (CP vs MR)
+			//matrix mult operation selection part 1 (CP vs MR vs Spark)
 			ExecType et = optFindExecType();
-			MMTSJType mmtsj = checkTransposeSelf();
-		
-			if ( et == ExecType.CP ) 
+			
+			//matrix mult operation selection part 2 (specific pattern)
+			MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
+			ChainType chain = checkMapMultChain(); //determine mmchain pattern
+			
+			if( et == ExecType.CP ) 
 			{
-				if( mmtsj != MMTSJType.NONE ) { //CP TSMM
-					constructLopsCP_TSMM( mmtsj );
+				//matrix mult operation selection part 3 (CP type)
+				MMultMethod method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
+						                 input2.getDim1(), input2.getDim2(), mmtsj, chain, _hasLeftPMInput );
+				
+				//dispatch CP lops construction 
+				switch( method ){
+					case TSMM: 
+						constructCPLopsTSMM( mmtsj );
+						break;
+					case MAPMM_CHAIN:
+						constructCPLopsMMChain( chain );
+						break;
+					case PMM:
+						constructCPLopsPMM();
+						break;
+					case MM:
+						constructCPLopsMM();
+						break;
+					default:
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing CP lops.");
 				}
-				else if( _hasLeftPMInput && input1.getDim2()==1 
-						&& input2.getDim1()!=1 ) //CP PMM
-				{
-					constructLopsCP_PMM();
-				}
-				else { //CP MM
-					constructLopsCP_MM();
-				}
-					
 			}
-			else if ( et == ExecType.SPARK ) 
+			else if( et == ExecType.SPARK ) 
 			{
+				//matrix mult operation selection part 3 (SPARK type)
 				MMultMethod method = optFindMMultMethodSpark ( 
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
-						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), mmtsj);
+						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), mmtsj, chain);
 			
+				// TODO: Implement left transpose rewrite of CP_MM
+				
+				//dispatch SPARK lops construction 
 				switch( method )
 				{
 					case TSMM:
-						Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
-						MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), et, mmtsj);
-						setOutputDimensions(tsmm);
-						setLineNumbers(tsmm);
-						setLops(tsmm);
-						
+						constructSparkLopsTSMM( mmtsj );
 						break;
-						
 					case MAPMM_L:
 					case MAPMM_R:
-						// If number of columns is smaller than block size then explicit aggregation is not required.
-						// i.e., entire matrix multiplication can be performed in the mappers.
-						boolean needAgg = requiresAggregation(method); 
-						_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-						
-						//core matrix mult
-						MapMult mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-								                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
-								                _outputEmptyBlocks, needAgg);
-						setOutputDimensions(mapmult);
-						setLineNumbers(mapmult);
-						setLops(mapmult);
-						
+						constructSparkLopsMapMM( method );
 						break;
-						
+					case MAPMM_CHAIN:
+						constructSparkLopsMapMMChain( chain );
+						break;
 					case CPMM:	
-						// SPARK_INTEGRATION: MMCJ
-						// TODO: Implement tsmm, pmm, and left transpose rewrite of CP_MM
-						Lop matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-													 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), optFindExecType());
-						matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-						setLineNumbers( matmultCP );
-						setLops(matmultCP);
-						
+						constructSparkLopsCPMM();
 						break;
+					default:
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing SPARK lops.");	
 				}
 			}
-			else if ( et == ExecType.MR ) 
+			else if( et == ExecType.MR ) 
 			{
-				//matrix mult operation selection part 2 (MR type)
-				ChainType chain = checkMapMultChain();
+				//matrix mult operation selection part 3 (MR type)
 				MMultMethod method = optFindMMultMethodMR ( 
 							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
 							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(),
 							mmtsj, chain, _hasLeftPMInput);
 			
-				//dispatch lops construction
+				//dispatch MR lops construction
 				switch( method ) {
 					case MAPMM_L:
 					case MAPMM_R: 	
-						constructLopsMR_MapMM(method); break;
-					
+						constructMRLopsMapMM(method); 
+						break;
 					case MAPMM_CHAIN:	
-						constructLopsMR_MapMMChain( chain ); break;		
-					
+						constructMRLopsMapMMChain( chain ); 
+						break;
 					case CPMM:
-						constructLopsMR_CPMM(); break;					
-					
+						constructMRLopsCPMM(); 
+						break;
 					case RMM:			
-						constructLopsMR_RMM(); break;
-						
+						constructMRLopsRMM();
+						break;
 					case TSMM:
-						constructLopsMR_TSMM( mmtsj ); break;
-					
+						constructMRLopsTSMM( mmtsj ); 
+						break;
 					case PMM:
-						constructLopsMR_PMM(); break;
-						
+						constructMRLopsPMM(); 
+						break;						
 					default:
-						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing lops.");
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing MR lops.");
 				}
 			}
 		} 
@@ -449,25 +443,9 @@ public class AggBinaryOp extends Hop
 		return chainType;
 	}
 	
-	/**
-	 * 
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
-	private void constructLopsCP_MM() 
-		throws HopsException, LopsException
-	{
-		Lop matmultCP = null;
-		if( isLeftTransposeRewriteApplicable(true, false) )
-			matmultCP = constructCPLopWithLeftTransposeRewrite();
-		else
-			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);
-		
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers( matmultCP );
-		setLops(matmultCP);
-	}
+	//////////////////////////
+	// CP Lops generation
+	/////////////////////////
 	
 	/**
 	 * 
@@ -475,7 +453,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsCP_TSMM( MMTSJType mmtsj ) 
+	private void constructCPLopsTSMM( MMTSJType mmtsj ) 
 		throws HopsException, LopsException
 	{
 		Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
@@ -487,6 +465,32 @@ public class AggBinaryOp extends Hop
 	}
 	
 	/**
+	 * 
+	 * @param chain
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructCPLopsMMChain( ChainType chain ) 
+		throws LopsException, HopsException
+	{
+		MapMultChain mapmmchain = null;
+		if( chain == ChainType.XtXv ) {
+			Hop hX = getInput().get(0).getInput().get(0);
+			Hop hv = getInput().get(1).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.CP);
+		}
+		else { //if( chainType == ChainType.XtwXv )
+			Hop hX = getInput().get(0).getInput().get(0);
+			Hop hw = getInput().get(1).getInput().get(0);
+			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), getDataType(), getValueType(), ExecType.CP);
+		}
+		setOutputDimensions(mapmmchain);
+		setLineNumbers(mapmmchain);
+		setLops(mapmmchain);
+	}
+	
+	/**
 	 * NOTE: exists for consistency since removeEmtpy might be scheduled to MR
 	 * but matrix mult on small output might be scheduled to CP. Hence, we 
 	 * need to handle directly passed selection vectors in CP as well.
@@ -494,7 +498,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsCP_PMM() 
+	private void constructCPLopsPMM() 
 		throws HopsException, LopsException
 	{
 		Hop pmInput = getInput().get(0);
@@ -514,6 +518,144 @@ public class AggBinaryOp extends Hop
 		
 		HopRewriteUtils.removeChildReference(pmInput, nrow);
 	}
+
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructCPLopsMM() 
+		throws HopsException, LopsException
+	{
+		Lop matmultCP = null;
+		if( isLeftTransposeRewriteApplicable(true, false) )
+			matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
+		else
+			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);
+		
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers( matmultCP );
+		setLops(matmultCP);
+	}
+
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructCPLopsMMWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix mult
+		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);	
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mult);
+		
+		//result transpose (dimensions set outside)
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		
+		return out;
+	}
+	
+	//////////////////////////
+	// Spark Lops generation
+	/////////////////////////
+
+	/**
+	 * 
+	 * @param mmtsj
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsTSMM(MMTSJType mmtsj) 
+		throws HopsException, LopsException
+	{
+		Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
+		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.SPARK, mmtsj);
+		setOutputDimensions(tsmm);
+		setLineNumbers(tsmm);
+		setLops(tsmm);
+	}
+	
+	/**
+	 * 
+	 * @param method
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructSparkLopsMapMM(MMultMethod method) 
+		throws LopsException, HopsException
+	{
+		// If number of columns is smaller than block size then explicit aggregation is not required.
+		// i.e., entire matrix multiplication can be performed in the mappers.
+		boolean needAgg = requiresAggregation(method); 
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		
+		//core matrix mult
+		MapMult mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+				                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
+				                _outputEmptyBlocks, needAgg);
+		setOutputDimensions(mapmult);
+		setLineNumbers(mapmult);
+		setLops(mapmult);	
+	}
+	
+	/**
+	 * 
+	 * @param chain
+	 * @throws HopsException 
+	 * @throws LopsException 
+	 */
+	private void constructSparkLopsMapMMChain(ChainType chain) 
+		throws LopsException, HopsException
+	{
+		MapMultChain mapmmchain = null;
+		if( chain == ChainType.XtXv ) {
+			Hop hX = getInput().get(0).getInput().get(0);
+			Hop hv = getInput().get(1).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		}
+		else { //if( chainType == ChainType.XtwXv )
+			Hop hX = getInput().get(0).getInput().get(0);
+			Hop hw = getInput().get(1).getInput().get(0);
+			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		}
+		setOutputDimensions(mapmmchain);
+		setLineNumbers(mapmmchain);
+		setLops(mapmmchain);
+	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsCPMM() 
+		throws HopsException, LopsException
+	{
+		Lop matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.SPARK);
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers( matmultCP );
+		setLops(matmultCP);
+	}
+	
+	
+	//////////////////////////
+	// MR Lops generation
+	/////////////////////////
+
 	
 	/**
 	 * 
@@ -521,7 +663,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_MapMM(MMultMethod method) 
+	private void constructMRLopsMapMM(MMultMethod method) 
 		throws HopsException, LopsException
 	{
 		if( method == MMultMethod.MAPMM_R && isLeftTransposeRewriteApplicable(false, true) )
@@ -592,7 +734,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_MapMMChain( ChainType chainType ) 
+	private void constructMRLopsMapMMChain( ChainType chainType ) 
 		throws HopsException, LopsException
 	{
 		Lop mapmult = null; 
@@ -604,7 +746,7 @@ public class AggBinaryOp extends Hop
 			Hop hv = getInput().get(1).getInput().get(1);
 			
 			//core matrix mult
-			mapmult = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType());
+			mapmult = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.MR);
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
@@ -627,7 +769,7 @@ public class AggBinaryOp extends Hop
 				w = hw.constructLops();
 			
 			//core matrix mult
-			mapmult = new MapMultChain( X, v, w, getDataType(), getValueType());
+			mapmult = new MapMultChain( X, v, w, getDataType(), getValueType(), ExecType.MR);
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
@@ -648,7 +790,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_CPMM() 
+	private void constructMRLopsCPMM() 
 		throws HopsException, LopsException
 	{
 		if( isLeftTransposeRewriteApplicable(false, false) )
@@ -682,7 +824,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_RMM() 
+	private void constructMRLopsRMM() 
 		throws HopsException, LopsException
 	{
 		MMRJ rmm = new MMRJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
@@ -699,7 +841,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_TSMM(MMTSJType mmtsj) 
+	private void constructMRLopsTSMM(MMTSJType mmtsj) 
 		throws HopsException, LopsException
 	{
 		Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
@@ -721,7 +863,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsMR_PMM() 
+	private void constructMRLopsPMM() 
 		throws HopsException, LopsException
 	{
 		//PMM has two potential modes (a) w/ full permutation matrix input, and 
@@ -867,34 +1009,6 @@ public class AggBinaryOp extends Hop
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
-	private Lop constructCPLopWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
-	{
-		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
-		Hop Y = getInput().get(1);
-		
-		//right vector transpose
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
-		setLineNumbers(tY);
-		
-		//matrix mult
-		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);	
-		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(mult);
-		
-		//result transpose (dimensions set outside)
-		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		
-		return out;
 	}
 	
 	/**
@@ -1228,8 +1342,50 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.RMM;
 	}
 
+	/**
+	 * 
+	 * @param m1_rows
+	 * @param m1_cols
+	 * @param m2_rows
+	 * @param m2_cols
+	 * @param mmtsj
+	 * @param chainType
+	 * @return
+	 */
+	private static MMultMethod optFindMMultMethodCP( long m1_rows, long m1_cols, long m2_rows, long m2_cols, MMTSJType mmtsj, ChainType chainType, boolean leftPM ) 
+	{	
+		//step 1: check for TSMM pattern
+		if( mmtsj != MMTSJType.NONE )
+			return MMultMethod.TSMM;
+		
+		//step 2: check for MMChain pattern
+		if( chainType != ChainType.NONE && OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && m2_cols==1 )
+			return MMultMethod.MAPMM_CHAIN;
+		
+		//step 3: check for PMM
+		if( leftPM && m1_cols==1 && m2_rows!=1 )
+			return MMultMethod.PMM;
+		
+		//step 4: general purpose MM
+		return MMultMethod.MM; 
+	}
+	
+	/**
+	 * 
+	 * @param m1_rows
+	 * @param m1_cols
+	 * @param m1_rpb
+	 * @param m1_cpb
+	 * @param m2_rows
+	 * @param m2_cols
+	 * @param m2_rpb
+	 * @param m2_cpb
+	 * @param mmtsj
+	 * @param chainType
+	 * @return
+	 */
 	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj ) 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType ) 
 	{	
 		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
 		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
@@ -1243,7 +1399,31 @@ public class AggBinaryOp extends Hop
 			return MMultMethod.TSMM;
 		}
 		
-		// Step 2: check MapMult
+		// Step 2: check MapMMChain
+		// If mapmultchain pattern and result is a single block:
+		// use specialized mapmult method
+		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES )
+		{
+			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
+			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
+			if( chainType!=ChainType.NONE && m1_rows>=0 && m1_rows<= m1_rpb
+				&& m2_cols>=0 && m2_cols<=m2_cpb )
+			{
+				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
+					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudget )
+				{
+					return MMultMethod.MAPMM_CHAIN;
+				}
+				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
+					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols ) 
+					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudget )
+				{
+					return MMultMethod.MAPMM_CHAIN;
+				}
+			}
+		}		
+		
+		// Step 3: check MapMM
 		// If the size of one input is small, choose a method that uses broadcast variables
 		// (currently we only apply this if a single output block)
 		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
@@ -1262,7 +1442,7 @@ public class AggBinaryOp extends Hop
 				return MMultMethod.MAPMM_R;
 		}
 		
-		// Step 3: fallback strategy MMCJ
+		// Step 4: fallback strategy MMCJ
 		return MMultMethod.CPMM;
 	}
 	

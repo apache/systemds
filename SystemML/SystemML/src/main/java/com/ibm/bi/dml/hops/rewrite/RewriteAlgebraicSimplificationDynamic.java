@@ -1289,6 +1289,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						}
 						else if( HopRewriteUtils.isEmpty(right) ) //empty and size known
 							hnew = left;
+						break;
 					}
 					default:
 						hnew = null;

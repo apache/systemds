@@ -602,19 +602,60 @@ public class AggBinaryOp extends Hop
 	private void constructSparkLopsMapMM(MMultMethod method) 
 		throws LopsException, HopsException
 	{
-		// If number of columns is smaller than block size then explicit aggregation is not required.
-		// i.e., entire matrix multiplication can be performed in the mappers.
-		boolean needAgg = requiresAggregation(method); 
-		SparkAggType aggtype = getSparkMMAggregationType(needAgg);
-		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-		
-		//core matrix mult
-		MapMult mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
-				                _outputEmptyBlocks, aggtype);
+		Lop mapmult = null;
+		if( isLeftTransposeRewriteApplicable(false, false) ) 
+		{
+			mapmult = constructSparkLopsMapMMWithLeftTransposeRewrite();
+		}
+		else
+		{
+			// If number of columns is smaller than block size then explicit aggregation is not required.
+			// i.e., entire matrix multiplication can be performed in the mappers.
+			boolean needAgg = requiresAggregation(method); 
+			SparkAggType aggtype = getSparkMMAggregationType(needAgg);
+			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+			
+			//core matrix mult
+			mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+					                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
+					                _outputEmptyBlocks, aggtype);	
+		}
 		setOutputDimensions(mapmult);
 		setLineNumbers(mapmult);
 		setLops(mapmult);	
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructSparkLopsMapMMWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix mult spark
+		boolean needAgg = requiresAggregation(MMultMethod.MAPMM_R); 
+		SparkAggType aggtype = getSparkMMAggregationType(needAgg);
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		
+		Lop mult = new MapMult( tY, X.constructLops(), getDataType(), getValueType(), 
+				      false, false, _outputEmptyBlocks, aggtype);	
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mult);
+		
+		//result transpose (dimensions set outside)
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		
+		return out;
 	}
 	
 	/**
@@ -734,6 +775,71 @@ public class AggBinaryOp extends Hop
 			}
 		}	
 	} 
+	
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructMapMultMRLopWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose CP
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix mult
+		
+		// If number of columns is smaller than block size then explicit aggregation is not required.
+		// i.e., entire matrix multiplication can be performed in the mappers.
+		boolean needAgg = ( X.getDim1() <= 0 || X.getDim1() > X.getRowsInBlock() ); 
+		boolean needPart = requiresPartitioning(MMultMethod.MAPMM_R, true); //R disregarding transpose rewrite
+		
+		//pre partitioning
+		Lop dcinput = null;
+		if( needPart ) {
+			ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(Y.getDim2(), Y.getDim1(), OptimizerUtils.getSparsity(Y.getDim2(), Y.getDim1(), Y.getNnz())) 
+					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+			dcinput = new DataPartition(tY, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
+			dcinput.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+			setLineNumbers(dcinput);
+		}
+		else
+			dcinput = tY;
+		
+		MapMult mapmult = new MapMult(dcinput, X.constructLops(), getDataType(), getValueType(), false, needPart, false);
+		mapmult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mapmult);
+		
+		//post aggregation 
+		Lop mult = null;
+		if( needAgg ) {
+			Group grp = new Group(mapmult, Group.OperationTypes.Sort, getDataType(), getValueType());
+			grp.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setLineNumbers(grp);
+			
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setLineNumbers(agg1);
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+			mult = agg1;
+		}
+		else
+			mult = mapmult;
+		
+		//result transpose CP 
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		
+		return out;
+	}
+
 	
 	/**
 	 * 
@@ -1016,69 +1122,6 @@ public class AggBinaryOp extends Hop
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
-	private Lop constructMapMultMRLopWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
-	{
-		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
-		Hop Y = getInput().get(1);
-		
-		//right vector transpose CP
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
-		setLineNumbers(tY);
-		
-		//matrix mult
-		
-		// If number of columns is smaller than block size then explicit aggregation is not required.
-		// i.e., entire matrix multiplication can be performed in the mappers.
-		boolean needAgg = ( X.getDim1() <= 0 || X.getDim1() > X.getRowsInBlock() ); 
-		boolean needPart = requiresPartitioning(MMultMethod.MAPMM_R, true); //R disregarding transpose rewrite
-		
-		//pre partitioning
-		Lop dcinput = null;
-		if( needPart ) {
-			ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(Y.getDim2(), Y.getDim1(), OptimizerUtils.getSparsity(Y.getDim2(), Y.getDim1(), Y.getNnz())) 
-					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
-			dcinput = new DataPartition(tY, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
-			dcinput.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
-			setLineNumbers(dcinput);
-		}
-		else
-			dcinput = tY;
-		
-		MapMult mapmult = new MapMult(dcinput, X.constructLops(), getDataType(), getValueType(), false, needPart, false);
-		mapmult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(mapmult);
-		
-		//post aggregation 
-		Lop mult = null;
-		if( needAgg ) {
-			Group grp = new Group(mapmult, Group.OperationTypes.Sort, getDataType(), getValueType());
-			grp.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(grp);
-			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(agg1);
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-			mult = agg1;
-		}
-		else
-			mult = mapmult;
-		
-		//result transpose CP 
-		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		
-		return out;
 	}
 
 	/**

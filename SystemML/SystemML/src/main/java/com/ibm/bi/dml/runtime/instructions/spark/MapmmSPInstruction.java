@@ -9,28 +9,27 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLException; 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -42,30 +41,30 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 /**
  * TODO: pre-filter and post-filter of empty blocks (if applicable) via rdd.filter()
  * TODO: generalized mapmult for multiple output blocks per input block
- * TODO: improved correction handling on aggregation (correction over entire key iterator)
  * TODO: destroy (cleanup) of broadcast variables; we cannot clean them up right away, because no computation
  *       has been triggered yet 
  * TODO: we need to reason about multiple broadcast variables for chains of mapmults (sum of operations until cleanup) 
  * 
  */
-public class MapmmSPInstruction extends BinarySPInstruction {
+public class MapmmSPInstruction extends BinarySPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private CacheType _type = null;
 	private boolean _outputEmpty = true;
-	private boolean _aggregate = true;
+	private SparkAggType _aggtype;
 	
 	public MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
-			                    boolean outputEmpty, boolean aggregate, String opcode, String istr )
+			                    boolean outputEmpty, SparkAggType aggtype, String opcode, String istr )
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 		
 		_type = type;
 		_outputEmpty = outputEmpty;
-		_aggregate = aggregate;
+		_aggtype = aggtype;
 	}
 
 	/**
@@ -89,11 +88,11 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 			out.split(parts[3]);
 			CacheType type = CacheType.valueOf(parts[4]);
 			boolean outputEmpty = Boolean.parseBoolean(parts[5]);
-			boolean aggregate = Boolean.parseBoolean(parts[6]);
+			SparkAggType aggtype = SparkAggType.valueOf(parts[6]);
 			
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new MapmmSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggregate, opcode, str);
+			return new MapmmSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);
 		} 
 		else {
 			throw new DMLRuntimeException("MapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -121,26 +120,24 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 			//execute mapmult instruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDMapMMFunction(_type, in2, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
 			
-			//perform aggregation if necessary
-			if( _aggregate ) {
-				out = out.reduceByKey( new AggregateSumFunction() );
+			//perform aggregation if necessary and put output into symbol table
+			if( _aggtype == SparkAggType.SINGLE_BLOCK )
+			{
+				MatrixBlock out2 = out.values()
+						              .reduce(new AggregateSumSingleBlockFunction());
+				sec.setMatrixOutput(output.getName(), out2);
+			}
+			else //MULTI_BLOCK or NONE
+			{
+				if( _aggtype == SparkAggType.MULTI_BLOCK )
+					out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
+				
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
 			}
 			
-			//put output RDD handle into symbol table
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-			if(!mcOut.dimsKnown()) { 
-				if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
-					throw new DMLRuntimeException("The output dimensions are not specified for MapMultSPInstruction");
-				else if(mc1.getCols() != mc2.getRows())
-					throw new DMLRuntimeException("Incompatible dimensions for MapMultSPInstruction");
-				else {
-					mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				}
-			}
-			
-			sec.setRDDHandleForVariable(output.getName(), out);
+			//update output statistics if not inferred
+			updateOutputMatrixCharacteristics(sec);
 		}
 		else 
 		{
@@ -249,34 +246,4 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		}
 	}
 	
-	/**
-	 *
-	 */
-	public static class AggregateSumFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
-	{
-		private static final long serialVersionUID = -3672377410407066396L;
-	
-		private AggregateOperator _op = null;
-		private MatrixBlock _corr = null;
-		
-		public AggregateSumFunction()
-		{
-			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
-			_corr = new MatrixBlock();
-		}
-		
-		@Override
-		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
-			throws Exception 
-		{
-			//copy one input to output
-			MatrixBlock out = new MatrixBlock(arg0);
-			
-			//aggregate other input
-			_corr.reset(out.getNumRows(), out.getNumColumns());
-			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
-			
-			return out;
-		}
-	}
 }

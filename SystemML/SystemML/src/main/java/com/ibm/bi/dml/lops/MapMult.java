@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -37,7 +38,7 @@ public class MapMult extends Lop
 	private boolean _outputEmptyBlocks = true;
 	
 	//optional attribute for spark exec type
-	private boolean _aggregate = true;
+	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 	
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication for MR
@@ -85,7 +86,7 @@ public class MapMult extends Lop
 	 * @param et
 	 * @throws LopsException
 	 */
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks, boolean aggregate) 
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks, SparkAggType aggtype) 
 		throws LopsException 
 	{
 		super(Lop.Type.MapMult, dt, vt);		
@@ -100,7 +101,7 @@ public class MapMult extends Lop
 		else
 			_cacheType = partitioned ? CacheType.LEFT_PART : CacheType.LEFT;
 		_outputEmptyBlocks = emptyBlocks;
-		_aggregate = aggregate;
+		_aggtype = aggtype;
 		
 		//setup MR parameters 
 		boolean breaksAlignment = false;
@@ -173,7 +174,7 @@ public class MapMult extends Lop
 		sb.append(_outputEmptyBlocks);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		
-		sb.append(_aggregate);
+		sb.append(_aggtype.toString());
 		
 		return sb.toString();
 	}

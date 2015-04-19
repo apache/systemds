@@ -77,6 +77,12 @@ public class AggBinaryOp extends Hop
 		MM        //in-memory matrix multiplication (cp)
 	};
 	
+	public enum SparkAggType{
+		NONE,
+		SINGLE_BLOCK,
+		MULTI_BLOCK,
+	}
+	
 	//hints set by previous to operator selection
 	private boolean _hasLeftPMInput = false; //left input is permutation matrix
 	
@@ -599,12 +605,13 @@ public class AggBinaryOp extends Hop
 		// If number of columns is smaller than block size then explicit aggregation is not required.
 		// i.e., entire matrix multiplication can be performed in the mappers.
 		boolean needAgg = requiresAggregation(method); 
+		SparkAggType aggtype = getSparkMMAggregationType(needAgg);
 		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 		
 		//core matrix mult
 		MapMult mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
 				                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
-				                _outputEmptyBlocks, needAgg);
+				                _outputEmptyBlocks, aggtype);
 		setOutputDimensions(mapmult);
 		setLineNumbers(mapmult);
 		setLops(mapmult);	
@@ -1113,6 +1120,22 @@ public class AggBinaryOp extends Hop
 		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		
 		return out;
+	}
+	
+	/**
+	 * 
+	 * @param agg
+	 * @return
+	 */
+	private SparkAggType getSparkMMAggregationType( boolean agg )
+	{
+		if( !agg )
+			return SparkAggType.NONE;
+		
+		if( dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
+			return SparkAggType.SINGLE_BLOCK;
+		else
+			return SparkAggType.MULTI_BLOCK;
 	}
 	
 	/**

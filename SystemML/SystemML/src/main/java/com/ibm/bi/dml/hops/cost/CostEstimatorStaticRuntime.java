@@ -892,6 +892,14 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 					return 0;
 				
+				case MMChain:
+					//reduction by factor 2 because matrix mult better than average flop count
+					//(mmchain essentially two matrix-vector muliplications)
+					if( !leftSparse  )
+						return (2+2) * (d1m * d1n) /2;
+					else 
+						return (2+2) * (d1m * d1n * d1s) /2;
+					
 				case AggregateTertiary: //opcodes: tak+*
 					return 6 * d1m * d1n; //2*1(*) + 4 (k+)
 					

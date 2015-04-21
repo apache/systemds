@@ -100,7 +100,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
 					break;
 				default:
-					throw new HopsException("Invalid persistent dataop type: "+dotype);
+					//do nothing
 			}
 		}
 		

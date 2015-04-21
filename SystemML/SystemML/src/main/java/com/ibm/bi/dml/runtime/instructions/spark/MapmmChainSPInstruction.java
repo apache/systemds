@@ -14,40 +14,28 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.DMLException; 
-import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.MapMult.CacheType;
+import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 /**
  * 
  */
-public class MapmmChainSPInstruction extends SPInstruction {
+public class MapmmChainSPInstruction extends SPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -139,28 +127,20 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		String opcode = getOpcode();
 		
-		if ( opcode.equalsIgnoreCase(MapMultChain.OPCODE)) 
-		{
-			//get rdd and broadcast inputs
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getRDDHandleForVariable( _input1.getName() );
-			Broadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
-			Broadcast<MatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
-			
-			//execute mapmmchain (guaranteed to have single output block)
-			MatrixCharacteristics mc = sec.getMatrixCharacteristics(_output.getName());
-			MatrixBlock out = inX.mapToPair(new RDDMapMMChainFunction(_chainType, inV, inW, mc.getRowsPerBlock(), mc.getColsPerBlock()))
-						         .values()
-						         .reduce(new AggregateSumSingleBlockFunction());
-			
-			//put output block into symbol table
-			sec.setMatrixOutput(_output.getName(), out);
-		}
-		else 
-		{
-			throw new DMLRuntimeException("Unknown opcode in instruction: " + toString());
-		}
+		//get rdd and broadcast inputs
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getRDDHandleForVariable( _input1.getName() );
+		Broadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
+		Broadcast<MatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
+		
+		//execute mapmmchain (guaranteed to have single output block)
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(_output.getName());
+		MatrixBlock out = inX.mapToPair(new RDDMapMMChainFunction(_chainType, inV, inW, mc.getRowsPerBlock(), mc.getColsPerBlock()))
+					         .values()
+					         .reduce(new AggregateSumSingleBlockFunction());
+		
+		//put output block into symbol table (no lineage because single block)
+		sec.setMatrixOutput(_output.getName(), out);
 	}
 	
 	/**
@@ -172,7 +152,6 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private ChainType _type = null;
-		private int _brlen = -1;
 		private int _bclen = -1;
 		
 		private MatrixBlock _mV = null;
@@ -181,7 +160,6 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		public RDDMapMMChainFunction( ChainType type, Broadcast<MatrixBlock> bV, Broadcast<MatrixBlock> bW, int brlen, int bclen )
 		{
 			_type = type;
-			_brlen = brlen;
 			_bclen = bclen;
 			
 			//get first broadcast vector (always single block)
@@ -219,13 +197,17 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		{
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
+			int rowIx = (int) ixIn.getRowIndex();
 
 			MatrixIndexes ixOut = new MatrixIndexes(1,1);
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//core mapmmchain operation
-			blkIn.chainMatrixMultOperations(_mV, null, blkOut, _type);
-			
+			if( _type == ChainType.XtXv )
+				blkIn.chainMatrixMultOperations(_mV, null, blkOut, _type);
+			else if ( _type == ChainType.XtwXv )
+				blkIn.chainMatrixMultOperations(_mV, _mW[rowIx], blkOut, _type);
+				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
 		}

@@ -66,6 +66,7 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 			}
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), rddVar);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode in Instruction: " + toString());

@@ -60,6 +60,7 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 				
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 				BinaryOperator bop = (BinaryOperator) _optr;
+				boolean isBroadcastRHSVar = true;
 				
 				if(mc1.getRows() == mc2.getRows() && mc1.getCols() == mc2.getCols()) {
 					// Matrix-matrix operation
@@ -67,6 +68,7 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 					JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getRDDHandleForVariable( rddVar2 );
 					JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
 					out = cogroupRdd.mapToPair(new RDDMatrixMatrixRelationalFunction(bop));
+					isBroadcastRHSVar = false;
 				}
 				else {
 					// Matrix-column vector operation
@@ -80,7 +82,6 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 					
 					String rddVar = rddVar1; 
 					String bcastVar = rddVar2;
-					boolean isBroadcastRHSVar = true;
 					MatrixCharacteristics rddMC = mc1;
 					if(isRowVectorOperation) {
 						if(mc1.getCols() == 1) {
@@ -109,6 +110,11 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 						sec.getMatrixCharacteristics(output.getName()).set(mc1);
 				}
 				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), rddVar1);
+				if( isBroadcastRHSVar )
+					sec.addLineageBroadcast(output.getName(), rddVar2);
+				else
+					sec.addLineageRDD(output.getName(), rddVar2);
 			}
 			else {
 				throw new DMLRuntimeException("Unknown opcode in MatrixMatrixRelationalSPInstruction: " + toString());

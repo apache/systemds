@@ -57,7 +57,10 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("The output dimensions are not specified for MatrixBuiltinSPInstruction");
 		}
+		
+		//set output RDD
 		sec.setRDDHandleForVariable(output.getName(), out);	
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 	
 	public static class RDDMatrixBuiltinUnaryOp implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> {

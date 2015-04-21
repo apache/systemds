@@ -20,6 +20,8 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -99,11 +101,10 @@ public class MatrixObject extends CacheableData
 	private boolean _pinnedFlag = false; //flag if in-place update TODO maybe rename to updateInPlace
 	
 	//spark-specific handles
-	//note: we currently use generic types for rdds and broadcast in order to work in
-	//environments that do not necessarily have spark libraries available
-	//TODO we need to extend the notion of dirty variables to dirty in CP memory vs pending RDD operations
-	private Object _rddHandle = null; //RDD handle
-	private Object _bcHandle = null; //Broadcast handle
+	//note: we use the abstraction of LineageObjects for two reasons: (1) to keep track of cleanup
+	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
+	private RDDObject _rddHandle = null; //RDD handle
+	private BroadcastObject _bcHandle = null; //Broadcast handle
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -342,22 +343,22 @@ public class MatrixObject extends CacheableData
 		return str.toString();
 	}
 	
-	public Object getRDDHandle()
+	public RDDObject getRDDHandle()
 	{
 		return _rddHandle;
 	}
 	
-	public void setRDDHandle( Object rdd )
+	public void setRDDHandle( RDDObject rdd )
 	{
 		_rddHandle = rdd;
 	}
 	
-	public Object getBroadcastHandle()
+	public BroadcastObject getBroadcastHandle()
 	{
 		return _bcHandle;
 	}
 	
-	public void setBroadcastHandle( Object bc )
+	public void setBroadcastHandle( BroadcastObject bc )
 	{
 		_bcHandle = bc;
 	}
@@ -957,6 +958,8 @@ public class MatrixObject extends CacheableData
 						rows = mc.getRows();
 						cols = bclen;
 						break;
+					default:
+						throw new CacheException("Unsupported partition format: "+_partitionFormat);
 				}
 				
 				

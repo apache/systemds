@@ -146,6 +146,9 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("TODO: Handle csvreblock with unknown sizes");
 			}
 			sec.setRDDHandleForVariable(output.getName(), blocksRDD);
+			
+			//directly delete internal broadcast variables
+			sec.cleanupBroadcastVariable(offsetsBroadcast);
 		} else {
 			throw new DMLRuntimeException(
 					"In CSVReblockSPInstruction,  Unknown opcode in Instruction: "

@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -106,7 +107,7 @@ public class MLContext {
 		// TODO: Take care of dimensions
 		MatrixCharacteristics mc = new MatrixCharacteristics(-1, -1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
-		mo.setRDDHandle(rdd);
+		mo.setRDDHandle(new RDDObject(rdd));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 	}

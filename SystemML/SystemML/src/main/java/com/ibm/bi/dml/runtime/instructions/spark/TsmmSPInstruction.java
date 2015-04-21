@@ -9,27 +9,22 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 /**
@@ -80,31 +75,23 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		String opcode = getOpcode();
 		
-		if ( "tsmm".equals(opcode) )
-		{
-			//get input
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
-			
-			//NOTE: reduce formulation without values() gave (in future spark versions, we need to check if still required):			
-			// Exception in thread "Driver" scala.MatchError: java.lang.NoSuchMethodError: org/apache/spark/api/java/JavaPairRDD.reduce(Lorg/apache/spark/api/java/function/Function2;)Lscala/Tuple2; (of class java.lang.NoSuchMethodError)
-	        //    at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:432)
+		//get input
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
+		
+		//NOTE: reduce formulation without values() gave (in future spark versions, we need to check if still required):			
+		// Exception in thread "Driver" scala.MatchError: java.lang.NoSuchMethodError: org/apache/spark/api/java/JavaPairRDD.reduce(Lorg/apache/spark/api/java/function/Function2;)Lscala/Tuple2; (of class java.lang.NoSuchMethodError)
+        //    at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:432)
 
-			//execute tsmm instruction (always produce exactly one output block)
-			//(this formalation with values() requires --conf spark.driver.maxResultSize=0)
-			MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
-					            .values()
-			                    .reduce( new AggregateSumSingleBlockFunction() );
-			
-			//put output block into symbol table
-			updateOutputMatrixCharacteristics(sec);
-			sec.setMatrixOutput(output.getName(), out);
-		}
-		else 
-		{
-			throw new DMLRuntimeException("Unknown opcode: " + toString());
-		}
+		//execute tsmm instruction (always produce exactly one output block)
+		//(this formalation with values() requires --conf spark.driver.maxResultSize=0)
+		MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
+				            .values()
+		                    .reduce( new AggregateSumSingleBlockFunction() );
+		
+		//put output block into symbol table (no lineage because single block)
+		updateOutputMatrixCharacteristics(sec);
+		sec.setMatrixOutput(output.getName(), out);
 	}
 	
 	/**

@@ -8,17 +8,14 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.hamcrest.core.IsCollectionContaining;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -26,7 +23,6 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
@@ -74,6 +70,7 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 				
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 				BinaryOperator bop = (BinaryOperator) _optr;
+				boolean isBroadcastRHSVar = true;
 				
 				if(mc1.getRows() == mc2.getRows() && mc1.getCols() == mc2.getCols()) {
 					// Matrix-matrix operation
@@ -81,6 +78,7 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 					JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getRDDHandleForVariable( rddVar2 );
 					JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
 					out = cogroupRdd.mapToPair(new RDDMatrixMatrixArithmeticFunction(bop));
+					isBroadcastRHSVar = false;
 				}
 				else {
 					// Matrix-column vector operation
@@ -94,7 +92,6 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 					
 					String rddVar = rddVar1; 
 					String bcastVar = rddVar2;
-					boolean isBroadcastRHSVar = true;
 					MatrixCharacteristics rddMC = mc1;
 					if(isRowVectorOperation) {
 						if(mc1.getCols() == 1) {
@@ -124,6 +121,11 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 				}
 				
 				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), rddVar1);
+				if( isBroadcastRHSVar )
+					sec.addLineageBroadcast(output.getName(), rddVar2);
+				else
+					sec.addLineageRDD(output.getName(), rddVar2);
 			}
 			else {
 				throw new DMLRuntimeException("Unknown opcode in MatrixMatrixArithmeticSPInstruction: " + toString());

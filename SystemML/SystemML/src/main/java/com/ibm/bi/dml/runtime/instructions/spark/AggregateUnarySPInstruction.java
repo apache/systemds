@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
- * 
+ * TODO different aggregation types (single block / multi block via reduce/reducebykey)
  * 
  */
 public class AggregateUnarySPInstruction extends UnarySPInstruction
@@ -77,12 +77,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
 		
 		//execute unary aggregate
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
 		boolean dropCorrection = !_aggregate;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in.mapToPair(
 				new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock(), dropCorrection));		
 		if( _aggregate ) {
 			out = out.reduceByKey(new RDDAggFunction(auop.aggOp));
@@ -96,6 +96,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			throw new DMLRuntimeException("The output dimensions are not specified for AggregateUnarySPInstruction");
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);	
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
 	private static class RDDUAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

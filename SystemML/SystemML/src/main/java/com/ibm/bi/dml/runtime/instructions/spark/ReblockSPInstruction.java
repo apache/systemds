@@ -108,7 +108,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				else {
 					/// HACK ALERT: Workaround for MLContext 
 					if(mc.getRowsPerBlock() == mcOut.getRowsPerBlock() && mc.getColsPerBlock() == mcOut.getColsPerBlock()) {
-						sec.setRDDHandleForVariable(output.getName(), (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle());
+						sec.setRDDHandleForVariable(output.getName(), mo.getRDDHandle().getRDD() );
 						return;
 					}
 					

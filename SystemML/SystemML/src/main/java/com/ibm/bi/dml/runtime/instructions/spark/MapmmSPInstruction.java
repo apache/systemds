@@ -53,7 +53,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private CacheType _type = null;
-	private boolean _outputEmpty = true;
+	//private boolean _outputEmpty = true;
 	private SparkAggType _aggtype;
 	
 	public MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
@@ -63,7 +63,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 		
 		_type = type;
-		_outputEmpty = outputEmpty;
+		//_outputEmpty = outputEmpty;
 		_aggtype = aggtype;
 	}
 
@@ -105,44 +105,39 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		String opcode = getOpcode();
 		
-		if ( opcode.equalsIgnoreCase(MapMult.OPCODE)) 
+		String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
+		String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
+		
+		//get inputs
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( rddVar );
+		Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
+		
+		//execute mapmult instruction
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDMapMMFunction(_type, in2, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
+		
+		//perform aggregation if necessary and put output into symbol table
+		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
-			String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();
-			MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
-			
-			//get inputs
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( rddVar );
-			Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
-			
-			//execute mapmult instruction
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDMapMMFunction(_type, in2, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
-			
-			//perform aggregation if necessary and put output into symbol table
-			if( _aggtype == SparkAggType.SINGLE_BLOCK )
-			{
-				MatrixBlock out2 = out.values()
-						              .reduce(new AggregateSumSingleBlockFunction());
-				sec.setMatrixOutput(output.getName(), out2);
-			}
-			else //MULTI_BLOCK or NONE
-			{
-				if( _aggtype == SparkAggType.MULTI_BLOCK )
-					out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
-				
-				//put output RDD handle into symbol table
-				sec.setRDDHandleForVariable(output.getName(), out);
-			}
-			
-			//update output statistics if not inferred
-			updateOutputMatrixCharacteristics(sec);
+			MatrixBlock out2 = out.values()
+					              .reduce(new AggregateSumSingleBlockFunction());
+			//put output block into symbol table (no lineage because single block)
+			sec.setMatrixOutput(output.getName(), out2);
 		}
-		else 
+		else //MULTI_BLOCK or NONE
 		{
-			throw new DMLRuntimeException("Unknown opcode in Instruction: " + toString());
+			if( _aggtype == SparkAggType.MULTI_BLOCK )
+				out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
+			
+			//put output RDD handle into symbol table
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), rddVar);
+			sec.addLineageBroadcast(output.getName(), bcastVar);
 		}
+		
+		//update output statistics if not inferred
+		updateOutputMatrixCharacteristics(sec);
 	}
 	
 	/**

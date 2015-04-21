@@ -74,7 +74,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			
 		//set output rdd
 		sec.setRDDHandleForVariable(output.getName(), out);
-		
+		sec.addLineageRDD(output.getName(), input1.getName());
 		updateOutputMatrixCharacteristics( sec );
 	}
 }

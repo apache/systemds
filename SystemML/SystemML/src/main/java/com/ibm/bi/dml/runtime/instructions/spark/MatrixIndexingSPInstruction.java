@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -35,7 +34,6 @@ import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.Index
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -172,12 +170,13 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				.mapToPair(new MergeMiniBlocks(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
-			
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( input1.getName() );
+			Broadcast<MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 
@@ -201,7 +200,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				}
 				
 				// TODO: This assumes that RHS matrix is small.
-				Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() ); 
+				in2 = sec.getBroadcastForVariable( input2.getName() ); 
 				out = in1.mapToPair(new LeftIndexBroadcastMatrix(in2, rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(),
 						mcLeft.getRows(), mcLeft.getCols(), mcRight.getRows(), mcRight.getCols()));
 			}
@@ -221,6 +220,9 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			}
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+			if( in2 != null)
+				sec.addLineageBroadcast(output.getName(), input2.getName());
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		

@@ -73,6 +73,7 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 			throw new DMLRuntimeException("The output dimensions are not specified for MatrixScalarBuiltinSPInstruction");
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), mat.getName());
 	}
 	
 	public static class RDDMatrixScalarBuiltinUnaryOp implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> {

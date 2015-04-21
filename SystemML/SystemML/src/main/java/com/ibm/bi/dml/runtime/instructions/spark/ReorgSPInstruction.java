@@ -114,6 +114,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else
 		{

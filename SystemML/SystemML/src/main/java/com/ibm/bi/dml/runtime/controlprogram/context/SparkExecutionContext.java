@@ -15,6 +15,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
@@ -25,10 +26,14 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -37,6 +42,8 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
+	
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static long _memExecutors = -1;
 	private static double _memRatioData = -1;
@@ -132,7 +139,7 @@ public class SparkExecutionContext extends ExecutionContext
 		//CASE 1: rdd already existing 
 		if( mo.getRDDHandle()!=null )
 		{
-			rdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle();
+			rdd = mo.getRDDHandle().getRDD();
 		}
 		//CASE 2: dirty in memory data
 		else if( mo.isDirty() )
@@ -143,7 +150,8 @@ public class SparkExecutionContext extends ExecutionContext
 			mo.release(); //unpin matrix
 			
 			//keep rdd handle for future operations on it
-			mo.setRDDHandle(rdd);
+			RDDObject rddhandle = new RDDObject(rdd);
+			mo.setRDDHandle(rddhandle);
 		}
 		//CASE 3: non-dirty (file exists on HDFS)
 		else
@@ -153,7 +161,8 @@ public class SparkExecutionContext extends ExecutionContext
 			rdd = rdd.mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
 			
 			//keep rdd handle for future operations on it
-			mo.setRDDHandle(rdd);
+			RDDObject rddhandle = new RDDObject(rdd);
+			mo.setRDDHandle(rddhandle);
 		}
 		
 		return rdd;
@@ -178,14 +187,16 @@ public class SparkExecutionContext extends ExecutionContext
 		Broadcast<MatrixBlock> bret = null;
 		if( mo.getBroadcastHandle()!=null ) 
 		{
-			//reuse existing bradcast handle
-			bret = (Broadcast<MatrixBlock>) mo.getBroadcastHandle();
+			//reuse existing broadcast handle
+			bret = mo.getBroadcastHandle().getBroadcast();
 		}
 		else 
 		{
 			//read data into memory (no matter where it comes from)
 			MatrixBlock mb = mo.acquireRead();
 			bret = _spctx.broadcast(mb);
+			BroadcastObject bchandle = new BroadcastObject(bret);
+			mo.setBroadcastHandle(bchandle);
 			mo.release();
 		}
 		
@@ -207,8 +218,8 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		MatrixObject mo = getMatrixObject(varname);
-		
-		mo.setRDDHandle( rdd );
+		RDDObject rddhandle = new RDDObject(rdd);
+		mo.setRDDHandle( rddhandle );
 	}
 	
 	/**
@@ -270,11 +281,12 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	@SuppressWarnings("unchecked")
 	public static MatrixBlock toMatrixBlock(Object rdd, int rlen, int clen, int brlen, int bclen) 
 		throws DMLRuntimeException
 	{
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) rdd;
+		RDDObject rddo = (RDDObject)rdd;		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = rddo.getRDD();
+		
 		return toMatrixBlock(lrdd, rlen, clen, brlen, bclen);
 	}
 	
@@ -325,7 +337,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static void writeRDDtoHDFS( Object rdd, String path, OutputInfo oinfo )
 	{
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>)rdd;
+		RDDObject rddo = (RDDObject) rdd;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = rddo.getRDD();
+		
 		lrdd.saveAsHadoopFile(path, 
 				oinfo.outputKeyClass, 
 				oinfo.outputValueClass, 
@@ -376,4 +390,134 @@ public class SparkExecutionContext extends ExecutionContext
 		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
 	}
+
+	///////////////////////////////////////////
+	// Cleanup of RDDs and Broadcast variables
+	///////
+	
+	/**
+	 * Adds a child rdd object to the lineage of a parent rdd.
+	 * 
+	 * @param varParent
+	 * @param varChild
+	 * @throws DMLRuntimeException
+	 */
+	public void addLineageRDD(String varParent, String varChild) 
+		throws DMLRuntimeException 
+	{
+		RDDObject parent = getMatrixObject(varParent).getRDDHandle();
+		RDDObject child = getMatrixObject(varChild).getRDDHandle();
+		
+		parent.addLineageChild( child );
+	}
+	
+	/**
+	 * Adds a child broadcast object to the lineage of a parent rdd.
+	 * 
+	 * @param varParent
+	 * @param varChild
+	 * @throws DMLRuntimeException
+	 */
+	public void addLineageBroadcast(String varParent, String varChild) 
+		throws DMLRuntimeException 
+	{
+		RDDObject parent = getMatrixObject(varParent).getRDDHandle();
+		BroadcastObject child = getMatrixObject(varChild).getBroadcastHandle();
+		
+		parent.addLineageChild( child );
+	}
+	
+	@Override
+	public void cleanupMatrixObject( MatrixObject mo ) 
+		throws DMLRuntimeException
+	{
+		//NOTE: this method overwrites the default behavior of cleanupMatrixObject
+		//and hence is transparently used by rmvar instructions and other users. The
+		//core difference is the lineage-based cleanup of RDD and broadcast variables.
+		
+		try
+		{
+			if ( mo.isCleanupEnabled() ) 
+			{
+				//compute ref count only if matrix cleanup actually necessary
+				if ( !getVariables().hasReferences(mo) ) 
+				{
+					//clean cached data	
+					mo.clearData(); 
+					
+					//clean hdfs data
+					if( mo.isFileExists() ) {
+						String fpath = mo.getFileName();
+						if (fpath != null) {
+							MapReduceTool.deleteFileIfExistOnHDFS(fpath);
+							MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
+						}
+					}
+					
+					//cleanup RDD and broadcast variables (recursive)
+					if( mo.getRDDHandle()!=null ) {
+						rCleanupLineageObject(mo.getRDDHandle());
+					}	
+					if( mo.getBroadcastHandle()!=null ) {
+						rCleanupLineageObject(mo.getBroadcastHandle());
+					}
+				}
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
+	}
+	
+	private void rCleanupLineageObject(LineageObject lob)
+	{		
+		//abort recursive cleanup if still consumers
+		if( lob.getNumReferences() > 0 )
+			return;
+			
+		//cleanup current lineage object (from driver/executors)
+		if( lob instanceof RDDObject )
+			cleanupRDDVariable(((RDDObject)lob).getRDD());
+		else if( lob instanceof BroadcastObject )
+			cleanupBroadcastVariable(((BroadcastObject)lob).getBroadcast());
+	
+		//recursively process lineage childs
+		for( LineageObject c : lob.getLineageChilds() ){
+			c.decrementNumReferences();
+			rCleanupLineageObject(c);
+		}
+	}
+	
+	/**
+	 * This call destroys a broadcast variable at all executors and the driver.
+	 * Hence, it is intended to be used on rmvar only. Depending on the
+	 * ASYNCHRONOUS_VAR_DESTROY configuration, this is asynchronous or not.
+	 * 
+	 * 
+	 * @param inV
+	 */
+	public void cleanupBroadcastVariable(Broadcast<?> bvar) 
+	{
+		//in comparison to 'unpersist' (which would only delete the broadcast from the executors),
+		//this call also deletes related data from the driver.
+		if( bvar.isValid() ) {
+			bvar.destroy( ASYNCHRONOUS_VAR_DESTROY );
+		}
+	}
+	
+	/**
+	 * This call removes an rdd variable from executor memory and disk if required.
+	 * Hence, it is intended to be used on rmvar only. Depending on the
+	 * ASYNCHRONOUS_VAR_DESTROY configuration, this is asynchronous or not.
+	 * 
+	 * @param rvar
+	 */
+	public void cleanupRDDVariable(JavaPairRDD<?,?> rvar) 
+	{
+		if( rvar.getStorageLevel()!=StorageLevel.NONE() ) {
+			rvar.unpersist( ASYNCHRONOUS_VAR_DESTROY );
+		}
+	}
+	
 }

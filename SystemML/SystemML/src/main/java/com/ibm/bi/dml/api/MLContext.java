@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -99,11 +100,14 @@ public class MLContext {
 	}
 	
 	
-	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd) throws DMLRuntimeException {
+	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1) throws DMLRuntimeException {
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
+		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = rdd1.mapToPair( new CopyBlockFunction() );
+		
 		// TODO: Take care of dimensions
 		MatrixCharacteristics mc = new MatrixCharacteristics(-1, -1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));

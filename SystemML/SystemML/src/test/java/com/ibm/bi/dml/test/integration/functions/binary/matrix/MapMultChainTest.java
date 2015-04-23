@@ -9,17 +9,19 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 public class MapMultChainTest extends AutomatedTestBase 
 {
@@ -143,7 +145,6 @@ public class MapMultChainTest extends AutomatedTestBase
 		runMapMultChainTest(TEST_NAME2, true, true, ExecType.MR);
 	}
 	
-	/*
 	@Test
 	public void testMapMultChainNoRewriteDenseSpark() 
 	{
@@ -191,7 +192,6 @@ public class MapMultChainTest extends AutomatedTestBase
 	{
 		runMapMultChainTest(TEST_NAME2, true, true, ExecType.SPARK);
 	}
-	*/
 
 	/**
 	 * 
@@ -206,9 +206,13 @@ public class MapMultChainTest extends AutomatedTestBase
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		//rewrite
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = sumProductRewrites;
@@ -221,7 +225,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "X",
+			programArgs = new String[]{"-stats","-args", HOME + INPUT_DIR + "X",
 					                            HOME + INPUT_DIR + "v",
 					                            HOME + INPUT_DIR + "w",
 					                            HOME + OUTPUT_DIR + "R"};
@@ -258,11 +262,17 @@ public class MapMultChainTest extends AutomatedTestBase
 			}
 			checkNumCompiledMRJobs(expectedNumCompiled); 
 			checkNumExecutedMRJobs(expectedNumExecuted); 
-		
+			
+			//check compiled mmchain instructions (cp/spark)
+			if( instType != ExecType.MR ){
+				String opcode = (instType==ExecType.CP)?MapMultChain.OPCODE_CP:MapMultChain.OPCODE;
+				Assert.assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+			}
 		}
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
 		}
 	}

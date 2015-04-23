@@ -670,8 +670,9 @@ public abstract class Hop
 
 	public static void resetVisitStatus( ArrayList<Hop> hops )
 	{
-		for( Hop hopRoot : hops )
-			hopRoot.resetVisitStatus();
+		if( hops != null )
+			for( Hop hopRoot : hops )
+				hopRoot.resetVisitStatus();
 	}
 	
 	public void resetVisitStatus() {

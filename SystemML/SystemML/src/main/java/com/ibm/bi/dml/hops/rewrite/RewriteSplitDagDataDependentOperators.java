@@ -69,6 +69,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		//collect all unknown csv reads hops
 		ArrayList<Hop> cand = new ArrayList<Hop>();
 		collectDataDependentOperators( sb.get_hops(), cand );
+		Hop.resetVisitStatus(sb.get_hops());
 		
 		//split hop dag on demand
 		if( !cand.isEmpty() )
@@ -113,9 +114,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						
 						//replace data-dependent operator with transient read
 						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
-						for( int i=0; i<parents.size(); i++ )
-						{
-							Hop parent = parents.get(i);
+						for( Hop parent : parents ) {
 							if( !candChilds.contains(parent) ) //anomaly filter
 							{
 								if( parent != twrite ) {
@@ -142,12 +141,10 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						HopRewriteUtils.copyLineNumbers(c, tread);
 						
 						//replace data-dependent operator with transient read
-						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
-						for( int i=0; i<parents.size(); i++ )
-						{
-							Hop parent = parents.get(i);
+						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());						
+						for( Hop parent : parents ) {
 							if( !candChilds.contains(parent) ) //anomaly filter
-							{	
+							{
 								int pos = HopRewriteUtils.getChildReferencePos(parent, c);
 								HopRewriteUtils.removeChildReferenceByPos(parent, c, pos);
 								HopRewriteUtils.addChildReference(parent, tread, pos);
@@ -172,9 +169,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
 					sb.liveIn().addVariable(varname, new DataIdentifier(diVar));
 				}
-				
+		
 				//ensure disjoint operators across DAGs (prevent replicated operations)
-				handleReplicatedOperators( sb1hops, sb.get_hops() );
+				handleReplicatedOperators( sb1hops, sb.get_hops(), sb1.liveOut(), sb.liveIn() );
 				
 				//deep copy new dag (in order to prevent any dangling references)
 				sb1.set_hops(Recompiler.deepCopyHopsDag(sb1hops));
@@ -334,8 +331,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	 * 
 	 * @param rootsSB1
 	 * @param rootsSB2
+	 * @param candChilds 
+	 * @param cand 
+	 * @param sb2in 
+	 * @param sb1out 
 	 */
-	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2 )
+	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2, VariableSet sb1out, VariableSet sb2in )
 	{
 		//step 1: create probe set SB1
 		HashSet<Hop> probeSet = new HashSet<Hop>();
@@ -353,14 +354,15 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		for( Pair<Hop,Hop> p : candSet ) 
 		{
 			String varname = _varnamePredix + _seq.getNextID();
+			
 			Hop hop = p.getKey();
 			Hop c = p.getValue();
-			
+
 			DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(), DataOpTypes.TRANSIENTREAD, 
 					null, c.getDim1(), c.getDim2(), c.getNnz(), c.getRowsInBlock(), c.getColsInBlock());
 			tread.setVisited(VisitStatus.DONE);
 			HopRewriteUtils.copyLineNumbers(c, tread);
-			
+
 			DataOp twrite = new DataOp(varname, c.getDataType(), c.getValueType(), c, DataOpTypes.TRANSIENTWRITE, null);
 			twrite.setVisited(VisitStatus.DONE);
 			twrite.setOutputParams(c.getDim1(), c.getDim2(), c.getNnz(), c.getRowsInBlock(), c.getColsInBlock());
@@ -370,6 +372,16 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			int pos = HopRewriteUtils.getChildReferencePos(hop, c);
 			HopRewriteUtils.removeChildReferenceByPos(hop, c, pos);
 			HopRewriteUtils.addChildReference(hop, tread, pos);			
+		
+			//update live in and out of new statement block (for piggybacking)
+			DataIdentifier diVar = new DataIdentifier(varname);
+			diVar.setDimensions(c.getDim1(), c.getDim2());
+			diVar.setBlockDimensions(c.getRowsInBlock(), c.getColsInBlock());
+			diVar.setDataType(c.getDataType());
+			diVar.setValueType(c.getValueType());
+			sb1out.addVariable(varname, new DataIdentifier(diVar));
+			sb2in.addVariable(varname, new DataIdentifier(diVar));
+			
 			rootsSB1.add(twrite);
 		}
 	}
@@ -378,22 +390,25 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	 * 
 	 * @param hop
 	 * @param probeSet
+	 * @param candChilds 
+	 * @param cand 
 	 */
 	private void rAddHopsToProbeSet( Hop hop, HashSet<Hop> probeSet )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 		
+		//prevent cuts for no-ops
 		if( !(   (hop instanceof DataOp && !((DataOp)hop).isPersistentReadWrite() )
 			   || hop instanceof LiteralOp) )
 		{
 			probeSet.add(hop);
 		}
-		
+			
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
 				rAddHopsToProbeSet(c, probeSet);
-		
+	
 		hop.setVisited(VisitStatus.DONE);	
 	}
 	
@@ -427,16 +442,26 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		hop.setVisited(VisitStatus.DONE);	
 	}
 	
+	/**
+	 * 
+	 * @param cand
+	 * @param candChilds
+	 */
 	private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )
 	{
-		if( cand == null )
-			return;
-		
 		Hop.resetVisitStatus(cand);
-		for( Hop root : cand )
-			rCollectCandidateChildOperators(root, cand, candChilds, false);
+		if( cand != null )
+			for( Hop root : cand )
+				rCollectCandidateChildOperators(root, cand, candChilds, false);
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @param cand
+	 * @param candChilds
+	 * @param collect
+	 */
 	private void rCollectCandidateChildOperators( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
 	{
 		if( hop.getVisited() == VisitStatus.DONE )

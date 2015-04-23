@@ -42,7 +42,8 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		
 		if( roots == null )
 			return null;
-		
+
+		//top-level hops never modified
 		for( Hop h : roots ) 
 			rInjectCheckpointAfterPRead(h);
 		
@@ -54,7 +55,6 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		throws HopsException
 	{
 		//not applicable to predicates (we do not allow persistent reads there)
-		
 		return root;
 	}
 
@@ -63,7 +63,6 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 	 * @param hop
 	 * @throws HopsException
 	 */
-	@SuppressWarnings("unchecked")
 	private void rInjectCheckpointAfterPRead( Hop hop ) 
 		throws HopsException 
 	{
@@ -73,29 +72,31 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(    (hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD)
 			|| (hop instanceof ReblockOp) )
 		{
-			ArrayList<Hop> parents = (ArrayList<Hop>) hop.getParent().clone();
-			
-			//remove parent references
-			for( int i=0; i<parents.size(); i++ )
-				HopRewriteUtils.removeChildReferenceByPos(parents.get(i), hop, i);
+			//get parents (before linking checkpoint as new parent)
+			ArrayList<Hop> parents = new ArrayList<Hop>(hop.getParent());
 			
 			//create checkpoint operator
 			DataOp chkpoint = new DataOp(hop.getName(), DataType.MATRIX, ValueType.DOUBLE, hop, 
 		            new LiteralOp(null,Checkpoint.getDefaultStorageLevelString()), DataOpTypes.CHECKPOINT, null);				
 			HopRewriteUtils.setOutputParameters(chkpoint, hop.getDim1(), hop.getDim2(), hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
 
-			//rewire parent references
-			for( int i=0; i<parents.size(); i++ )
-				HopRewriteUtils.addChildReference(parents.get(i), chkpoint, i);
+			//relink parent references
+			for( Hop parent : parents ) {
+				int pos = HopRewriteUtils.getChildReferencePos(parent, hop);
+				HopRewriteUtils.removeChildReferenceByPos(parent, hop, pos);
+				HopRewriteUtils.addChildReference(parent, chkpoint, pos);
+			}
 				
 			//note: we do not recursively process childs here in order to prevent unnecessary checkpoints
 		}
 		else
 		{
 			//process childs
-			if( hop.getInput() != null )
-				for( Hop c : hop.getInput() )
-					rInjectCheckpointAfterPRead( c );
+			if( hop.getInput() != null ) {
+				//process all childs (prevent concurrent modification by index access)
+				for( int i=0; i<hop.getInput().size(); i++ )
+					rInjectCheckpointAfterPRead( hop.getInput().get(i) );
+			}
 		}
 		
 		hop.setVisited(Hop.VisitStatus.DONE);

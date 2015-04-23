@@ -232,7 +232,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				} else {
 					if (chain.get(i - 1).getDim2() != chain.get(i).getDim1()) {
 						throw new HopsException(hop.printErrorLocation() +
-								"Hops::optimizeMMChain() : Matrix Dimension Mismatch");
+								"Hops::optimizeMMChain() : Matrix Dimension Mismatch: "+chain.get(i - 1).getDim2()+" != "+chain.get(i).getDim1());
 					}
 				}
 				dimsArray[i + 1] = chain.get(i).getDim2();

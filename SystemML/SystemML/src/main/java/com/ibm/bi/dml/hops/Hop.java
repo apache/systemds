@@ -1180,6 +1180,7 @@ public abstract class Hop
 		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
+		HopsData2String.put(DataOpTypes.CHECKPOINT, "chkpt");
 	}
 	
 	public static boolean isFunction(OpOp2 op)

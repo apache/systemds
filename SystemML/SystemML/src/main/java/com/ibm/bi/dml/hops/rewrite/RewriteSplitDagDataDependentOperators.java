@@ -114,7 +114,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						
 						//replace data-dependent operator with transient read
 						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());
-						for( Hop parent : parents ) {
+						for( int i=0; i<parents.size(); i++ ) {
+							//prevent concurrent modification by index access
+							Hop parent = parents.get(i);
 							if( !candChilds.contains(parent) ) //anomaly filter
 							{
 								if( parent != twrite ) {
@@ -142,7 +144,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						
 						//replace data-dependent operator with transient read
 						ArrayList<Hop> parents = new ArrayList<Hop>(c.getParent());						
-						for( Hop parent : parents ) {
+						for( int i=0; i<parents.size(); i++ ) {
+							//prevent concurrent modification by index access
+							Hop parent = parents.get(i);
 							if( !candChilds.contains(parent) ) //anomaly filter
 							{
 								int pos = HopRewriteUtils.getChildReferencePos(parent, c);

@@ -197,7 +197,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		{
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
-			int rowIx = (int) ixIn.getRowIndex();
+			int rowIx = (int) ixIn.getRowIndex()-1;
 
 			MatrixIndexes ixOut = new MatrixIndexes(1,1);
 			MatrixBlock blkOut = new MatrixBlock();

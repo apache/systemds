@@ -138,17 +138,19 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 		if(indexes.getRowIndex()<=0 || indexes.getColumnIndex()<=0 
 		|| indexes.getRowIndex()>rbounds[rep] || indexes.getColumnIndex()>cbounds[rep]){
 			
-			throw new IOException("key: "+indexes+" is out of range: [1, "+rbounds[rep]+"] and [1, "+cbounds[rep]+"]!");
+			throw new IOException("key: "+indexes+" is out of range: [1, "+rbounds[rep]+"] and [1, "+cbounds[rep]+"] (tag="+rep+")!");
 		}
 		
 		if(indexes.getRowIndex()==rbounds[rep] && value.getNumRows()>lastblockrlens[rep])
 		{
-			throw new IOException("boundary block with "+value.getNumRows()+" rows exceeds the size "+lastblockrlens[rep]);
+			throw new IOException("boundary block with "+value.getNumRows()+" rows exceeds the size "+lastblockrlens[rep]+" "
+					+ "(tag="+rep+", ix="+indexes+", "+value.getNumRows()+"x"+value.getNumColumns()+")");
 		}
 		
 		if(indexes.getColumnIndex()==cbounds[rep] && value.getNumColumns()>lastblockclens[rep])
 		{
-			throw new IOException("boundary block with "+value.getNumColumns()+" columns exceeds the size "+lastblockclens[rep]);
+			throw new IOException("boundary block with "+value.getNumColumns()+" columns exceeds the size "+lastblockclens[rep]+" "
+					+ "(tag="+rep+", ix="+indexes+", "+value.getNumRows()+"x"+value.getNumColumns()+")");
 		}
 	}
 

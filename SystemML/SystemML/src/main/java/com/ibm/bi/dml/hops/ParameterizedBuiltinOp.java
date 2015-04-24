@@ -714,11 +714,17 @@ public class ParameterizedBuiltinOp extends Hop
 			case RMEMPTY: 
 				//one output dimension dim1 or dim2 is completely data dependent 
 				Hop target = getInput().get(_paramIndexMap.get("target"));
-				String margin = getInput().get(_paramIndexMap.get("margin")).toString();
-				if( margin.equals("rows") )
-					setDim2( target.getDim2() );
-				else if (margin.equals("cols"))
-					setDim1( target.getDim1() );
+				Hop margin = getInput().get(_paramIndexMap.get("margin"));
+				if( margin instanceof LiteralOp ) {
+					try {
+						LiteralOp lmargin = (LiteralOp)margin;
+						if( "rows".equals(lmargin.getStringValue()) )
+							setDim2( target.getDim2() );
+						else if( "cols".equals(lmargin.getStringValue()) )
+							setDim1( target.getDim1() );
+					}
+					catch(HopsException ex){} //ignore silently
+				}
 				setNnz( target.getNnz() );
 				break;
 			

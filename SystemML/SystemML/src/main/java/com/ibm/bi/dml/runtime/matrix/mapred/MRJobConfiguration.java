@@ -1115,6 +1115,24 @@ public class MRJobConfiguration
 				setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
 		}
 		
+		//remove redundant inputs and pure broadcast variables
+		ArrayList<Path> lpaths = new ArrayList<Path>();
+		ArrayList<InputInfo> liinfos = new ArrayList<InputInfo>();
+		for(int i=0; i<inputs.length; i++)
+		{
+			Path p = new Path(inputs[i]);
+			
+			//check and skip redundant inputs
+			if(   lpaths.contains(p) //path already included
+			   || distCacheOnly[i] ) //input only required in dist cache
+			{
+				continue;
+			}
+			
+			lpaths.add(p);
+			liinfos.add(inputInfos[i]);
+		}
+		
 		boolean combineInputFormat = false;
 		if( OptimizerUtils.ALLOW_COMBINE_FILE_INPUT_FORMAT ) 
 		{
@@ -1123,40 +1141,29 @@ public class MRJobConfiguration
 			for(int i=0; i<inputs.length; i++)
 				totalInputSize += MapReduceTool.getFilesizeOnHDFS(new Path(inputs[i]));
 				
-			//set max split size (default blocksize) to 2x blocksize if sort buffer large enough 
-			//and degree of parallelism not hurt
+			//set max split size (default blocksize) to 2x blocksize if (1) sort buffer large enough, 
+			//(2) degree of parallelism not hurt, and only a single input (except broadcasts)
 			//(the sort buffer size is relevant for pass-through of, potentially modified, inputs to the reducers)
+			//(the single input constraint stems from internal runtime assumptions used to relate meta data to inputs)
 			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
 			long newSplitSize = sizeHDFSBlk * 2;
 			double spillPercent = job.getDouble("mapreduce.map.sort.spill.percent", 1.0);
 			int numPMap = OptimizerUtils.getNumMappers();
-			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize ) {
+			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
 				job.setLong("mapreduce.input.fileinputformat.split.maxsize", newSplitSize);	
 				combineInputFormat = true;
 			}
 		}
 		
 		//add inputs to jobs input (incl input format configuration)
-		ArrayList<Path> paths=new ArrayList<Path>();
-		for(int i=0; i<inputs.length; i++)
+		for(int i=0; i<lpaths.size(); i++)
 		{
-			String name=inputs[i];
-			Path p=new Path(name);
-			
-			//check redundant inputs
-			if(   paths.contains(p) //path already included
-			   || distCacheOnly[i] ) //input only required in dist cache
-			{
-				continue;
-			}
-			
 			//add input to job inputs (for binaryblock we use CombineSequenceFileInputFormat to reduce task latency)
-			if( combineInputFormat && inputInfos[i] == InputInfo.BinaryBlockInputInfo )
-				MultipleInputs.addInputPath(job, p, CombineSequenceFileInputFormat.class);
+			if( combineInputFormat && liinfos.get(i) == InputInfo.BinaryBlockInputInfo )
+				MultipleInputs.addInputPath(job, lpaths.get(i), CombineSequenceFileInputFormat.class);
 			else
-				MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
-			paths.add(p);
+				MultipleInputs.addInputPath(job, lpaths.get(i), liinfos.get(i).inputFormatClass);
 		}
 	}
 	

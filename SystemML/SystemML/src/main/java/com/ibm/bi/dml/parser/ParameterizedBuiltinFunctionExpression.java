@@ -8,7 +8,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
@@ -222,13 +221,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			
 			
 			if (getVarParam(Statement.GAGG_FN) == null){
-				raiseValidateError("must define function name (fname=<function name>) for groupedAggregate()", conditional);
+				raiseValidateError("must define function name (fn=<function name>) for aggregate()", conditional);
 			}
 			
 			Expression functParam = getVarParam(Statement.GAGG_FN);
 			
-			if (functParam instanceof Identifier){
-			
+			if (functParam instanceof Identifier)
+			{
 				// standardize to lowercase and dequote fname
 				String fnameStr = getVarParam(Statement.GAGG_FN).toString();
 				
@@ -250,17 +249,21 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				}
 			}
 			
+			Expression ngroupsParam = getVarParam(Statement.GAGG_NUM_GROUPS);
 			long outputDim1 = -1, outputDim2 = -1;
-			Identifier numGroups = (Identifier) getVarParam(Statement.GAGG_NUM_GROUPS);
-			if ( numGroups != null && numGroups instanceof ConstIdentifier) {
-				long ngroups = ((ConstIdentifier)numGroups).getLongValue();
-				if ( colwise == 1 ) {
-					outputDim1 = ngroups;
-					outputDim2 = 1;
-				}
-				else if ( colwise == 0 ) {
-					outputDim1 = 1;
-					outputDim2 = ngroups;
+			if( ngroupsParam != null && ngroupsParam instanceof Identifier ) 
+			{
+				Identifier numGroups = (Identifier) ngroupsParam;
+				if ( numGroups != null && numGroups instanceof ConstIdentifier) {
+					long ngroups = ((ConstIdentifier)numGroups).getLongValue();
+					if ( colwise == 1 ) {
+						outputDim1 = ngroups;
+						outputDim2 = 1;
+					}
+					else if ( colwise == 0 ) {
+						outputDim1 = 1;
+						outputDim2 = ngroups;
+					}
 				}
 			}
 			

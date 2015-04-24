@@ -4886,7 +4886,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					double[] avals = target.sparseRows[0].getValueContainer();	
 					for( int j=0; j<len; j++ ) //for each nnz
 					{
-						int g = (int) this.quickGetValue(aix[j], 0);						
+						int g = (int) this.quickGetValue(aix[j], 0);		
+						if ( g > numGroups )
+							continue;
 						if ( weights != null )
 							w = weights.quickGetValue(aix[j],0);
 						aggop.increOp.fn.execute(buffer[g-1], avals[j]*w);						
@@ -4900,7 +4902,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					double d = target.denseBlock[ i ];
 					if( d != 0 ) //sparse-safe
 					{
-						int g = (int) this.quickGetValue(i, 0);						
+						int g = (int) this.quickGetValue(i, 0);		
+						if ( g > numGroups )
+							continue;
 						if ( weights != null )
 							w = weights.quickGetValue(i,0);
 						// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
@@ -4916,7 +4920,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				double d = target.quickGetValue(i,0);
 				if( d != 0 ) //sparse-safe
 				{
-					int g = (int) this.quickGetValue(i, 0);						
+					int g = (int) this.quickGetValue(i, 0);		
+					if ( g > numGroups )
+						continue;
 					if ( weights != null )
 						w = weights.quickGetValue(i,0);
 					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]

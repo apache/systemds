@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.utils.Explain;
 
 /**
  * GENERAL 'GDF GRAPH' STRUCTURE, by MB:
@@ -47,6 +48,8 @@ public class GraphBuilder
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final boolean IGNORE_UNBOUND_UPDATED_VARS = true;
 	
 	/**
 	 * 
@@ -101,10 +104,10 @@ public class GraphBuilder
 			//process childs blocks
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
 				constructGDFGraph(pbc, lroots);
-			HashMap<String,GDFNode> outputs = constructLoopOutputNodes(wpb, wsb, lroots);
+			HashMap<String,GDFNode> outputs = constructLoopOutputNodes(wsb, lroots);
 			GDFLoopNode lnode = new GDFLoopNode(wpb, pred, inputs, outputs );
 			//construct crossblock nodes
-			constructLoopOutputCrossBlockNodes(lnode, outputs, roots, wpb);
+			constructLoopOutputCrossBlockNodes(wsb, lnode, outputs, roots, wpb);
 		}	
 		else if (pb instanceof IfProgramBlock)
 		{
@@ -137,10 +140,10 @@ public class GraphBuilder
 			//process childs blocks
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				constructGDFGraph(pbc, lroots);
-			HashMap<String,GDFNode> outputs = constructLoopOutputNodes(fpb, fsb, lroots);
+			HashMap<String,GDFNode> outputs = constructLoopOutputNodes(fsb, lroots);
 			GDFLoopNode lnode = new GDFLoopNode(fpb, pred, inputs, outputs );
 			//construct crossblock nodes
-			constructLoopOutputCrossBlockNodes(lnode, outputs, roots, fpb);
+			constructLoopOutputCrossBlockNodes(fsb, lnode, outputs, roots, fpb);
 		}
 		else //last-level program block
 		{
@@ -154,7 +157,9 @@ public class GraphBuilder
 				{
 					//recursively construct GDF graph for hop dag root
 					GDFNode root = constructGDFGraph(hop, pb, lmemo, roots);
-	
+					if( root == null )
+						throw new HopsException( "GDFGraphBuilder: failed to constuct dag root for: "+Explain.explain(hop) );
+					
 					//create cross block nodes for all transient writes
 					if( hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTWRITE )
 						root = new GDFCrossBlockNode(hop, pb, root, hop.getName());
@@ -192,6 +197,15 @@ public class GraphBuilder
 		
 		//add current hop
 		GDFNode gnode = new GDFNode(hop, pb, inputs);
+				
+		//add GDF node of updated variables to global roots (necessary for loops, where updated local
+		//variables might never be bound to their logical variables names
+		if( !IGNORE_UNBOUND_UPDATED_VARS ) {
+			//NOTE: currently disabled because unnecessary, if no transientwrite by definition included in other transientwrite
+			if( pb.getStatementBlock()!=null && pb.getStatementBlock().variablesUpdated().containsVariable(hop.getName()) ) {
+				roots.put(hop.getName(), gnode);
+			}
+		}
 		
 		//memoize current node
 		lmemo.put(hop.getHopID(), gnode);
@@ -216,6 +230,7 @@ public class GraphBuilder
 		inputs.add(from);
 		inputs.add(to);
 		inputs.add(incr);
+		//TODO for predicates 
 		GDFNode pred = new GDFNode(null, fpb, inputs );
 		
 		return pred;
@@ -238,7 +253,7 @@ public class GraphBuilder
 			if( fsb.liveIn().containsVariable(var) ) {
 				GDFNode node = roots.get(var);
 				if( node == null )
-					throw new DMLRuntimeException("Non-existing input node for variable: "+var);
+					throw new DMLRuntimeException("GDFGraphBuilder: Non-existing input node for variable: "+var);
 				ret.put(var, node);
 			}
 		}
@@ -246,13 +261,25 @@ public class GraphBuilder
 		return ret;
 	}
 	
-	private static HashMap<String, GDFNode> constructLoopOutputNodes( ProgramBlock fpb, StatementBlock fsb, HashMap<String, GDFNode> roots )
+	private static HashMap<String, GDFNode> constructLoopOutputNodes( StatementBlock fsb, HashMap<String, GDFNode> roots ) 
+		throws HopsException
 	{
 		HashMap<String, GDFNode> ret = new HashMap<String, GDFNode>();
 		
 		Set<String> outvars = fsb.variablesUpdated().getVariableNames();
-		for( String var : outvars ) {
+		for( String var : outvars ) 
+		{
 			GDFNode node = roots.get(var);
+			
+			//handle non-existing nodes
+			if( node == null ) {
+				if( !IGNORE_UNBOUND_UPDATED_VARS )
+					throw new HopsException( "GDFGraphBuilder: failed to constuct loop output for variable: "+var );	
+				else
+					continue; //skip unbound updated variables	
+			}
+			
+			//add existing node to loop outputs 
 			ret.put(var, node);
 		}
 		
@@ -287,20 +314,26 @@ public class GraphBuilder
 	
 	/**
 	 * 
+	 * @param sb
 	 * @param loop
 	 * @param loutputs
 	 * @param roots
 	 * @param pb
 	 */
-	private static void constructLoopOutputCrossBlockNodes(GDFLoopNode loop, HashMap<String, GDFNode> loutputs, HashMap<String, GDFNode> roots, ProgramBlock pb)
+	private static void constructLoopOutputCrossBlockNodes(StatementBlock sb, GDFLoopNode loop, HashMap<String, GDFNode> loutputs, HashMap<String, GDFNode> roots, ProgramBlock pb)
 	{
-		for( Entry<String,GDFNode> e : loutputs.entrySet() ){
-			GDFCrossBlockNode node = null;
-			if( roots.containsKey(e.getKey()) )
-				node = new GDFCrossBlockNode(null, pb, roots.get(e.getKey()), loop, e.getKey()); //MERGE
-			else
-				node = new GDFCrossBlockNode(null, pb, loop, e.getKey()); //PLAIN
-			roots.put(e.getKey(), node);
+		//iterate over all output (updated) variables
+		for( Entry<String,GDFNode> e : loutputs.entrySet() ) 
+		{
+			//create crossblocknode, if updated variable is also in liveout
+			if( sb.liveOut().containsVariable(e.getKey()) ) {
+				GDFCrossBlockNode node = null;
+				if( roots.containsKey(e.getKey()) )
+					node = new GDFCrossBlockNode(null, pb, roots.get(e.getKey()), loop, e.getKey()); //MERGE
+				else
+					node = new GDFCrossBlockNode(null, pb, loop, e.getKey()); //PLAIN
+				roots.put(e.getKey(), node);
+			}
 		}
 	}
 }

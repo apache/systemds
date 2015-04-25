@@ -77,7 +77,7 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
 		
 		//NOTE: reduce formulation without values() gave (in future spark versions, we need to check if still required):			
 		// Exception in thread "Driver" scala.MatchError: java.lang.NoSuchMethodError: org/apache/spark/api/java/JavaPairRDD.reduce(Lorg/apache/spark/api/java/function/Function2;)Lscala/Tuple2; (of class java.lang.NoSuchMethodError)

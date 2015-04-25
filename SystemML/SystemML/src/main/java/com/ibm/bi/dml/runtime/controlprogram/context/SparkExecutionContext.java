@@ -10,7 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram.context;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -29,9 +30,13 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -110,14 +115,25 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 	
+	
+	/**
+	 * Spark instructions should call this for all matrix inputs except broadcast
+	 * variables.
+	 * 
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDDHandleForVariable( String varname ) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
+	}
+	
 	/**
 	 * This call returns an RDD handle for a given variable name. This includes 
 	 * the creation of RDDs for in-memory or binary-block HDFS data. 
 	 * 
-	 * Spark instructions should call this for all matrix inputs except broadcast
-	 * variables. 
-	 * 
-	 * TODO for reblock we should directly rely on the filename 
 	 * 
 	 * @param varname
 	 * @return
@@ -125,7 +141,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getRDDHandleForVariable( String varname ) 
+	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		MatrixObject mo = getMatrixObject(varname);
@@ -135,10 +151,12 @@ public class SparkExecutionContext extends ExecutionContext
 		//always available and hence only store generic references in 
 		//matrix object while all the logic is in the SparkExecContext
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = null;
+		JavaPairRDD<?,?> rdd = null;
 		//CASE 1: rdd already existing 
 		if( mo.getRDDHandle()!=null )
 		{
+			// TODO: Currently unchecked handling as it ignores inputInfo
+			// This is ok since this method is only supposed to be called only by Reblock which performs appropriate casting
 			rdd = mo.getRDDHandle().getRDD();
 		}
 		//CASE 2: dirty in memory data
@@ -156,9 +174,23 @@ public class SparkExecutionContext extends ExecutionContext
 		//CASE 3: non-dirty (file exists on HDFS)
 		else
 		{
-			//parallelize hdfs-resident file
-			rdd = _spctx.hadoopFile( mo.getFileName(), SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class);
-			rdd = rdd.mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
+			// parallelize hdfs-resident file
+			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
+			if(inputInfo == InputInfo.BinaryBlockInputInfo) {
+				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
+			}
+			else if(inputInfo == InputInfo.TextCellInputInfo || inputInfo == InputInfo.CSVInputInfo || inputInfo == InputInfo.MatrixMarketInputInfo) {
+				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<LongWritable, Text>)rdd).mapToPair( new CopyTextInputFunction() ); //cp is workaround for read bug
+			}
+			else if(inputInfo == InputInfo.BinaryCellInputInfo) {
+				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixCell>)rdd).mapToPair( new CopyBinaryCellFunction() ); //cp is workaround for read bug
+			}
+			else {
+				throw new DMLRuntimeException("Incorrect input format in getRDDHandleForVariable");
+			}
 			
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd);
@@ -285,7 +317,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		RDDObject rddo = (RDDObject)rdd;		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = rddo.getRDD();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rddo.getRDD();
 		
 		return toMatrixBlock(lrdd, rlen, clen, brlen, bclen);
 	}
@@ -338,7 +370,7 @@ public class SparkExecutionContext extends ExecutionContext
 	public static void writeRDDtoHDFS( Object rdd, String path, OutputInfo oinfo )
 	{
 		RDDObject rddo = (RDDObject) rdd;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = rddo.getRDD();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rddo.getRDD();
 		
 		lrdd.saveAsHadoopFile(path, 
 				oinfo.outputKeyClass, 

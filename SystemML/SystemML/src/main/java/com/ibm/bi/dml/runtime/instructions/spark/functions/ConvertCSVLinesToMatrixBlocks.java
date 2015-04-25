@@ -1,17 +1,11 @@
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.broadcast.Broadcast;
-
 import scala.Tuple2;
 
-import com.google.common.base.Splitter;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
@@ -20,16 +14,19 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 	private static final long serialVersionUID = -2045829891472792200L;
 	
 	private int brlen; private int bclen;
+	private long rlen; private long clen; 
 	private String delim;
 	private boolean fill;
 	private double missingValue;
 	private boolean hasHeader; 
 	
-	private Broadcast<HashMap<Integer, Long>> lineMap;
-	public ConvertCSVLinesToMatrixBlocks(Broadcast<HashMap<Integer, Long>> offsetsBroadcast, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double missingValue) {
+	private HashMap<Integer, Long> lineMap;
+	public ConvertCSVLinesToMatrixBlocks(HashMap<Integer, Long> offsetsBroadcast, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double missingValue) {
 		this.lineMap = offsetsBroadcast;
 		this.brlen = brlen;
 		this.bclen = bclen;
+		this.rlen = rlen;
+		this.clen = clen;
 		this.hasHeader = hasHeader;
 		this.delim = delim;
 		this.fill = fill;
@@ -37,10 +34,10 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 	}
 
 	@Override
-	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Integer partNo, final Iterator<String> lines) throws Exception {
+	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(final Integer partNo, final Iterator<String> lines) throws Exception {
 		
 		// Look up the offset of the first line.
-		final long firstLineNum = lineMap.value().get(partNo);
+		final long firstLineNum = lineMap.get(partNo);
 		
 		// Generate an iterator object that walks through the lines of the partition,
         // generating chunks on demand
@@ -63,11 +60,30 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 			public boolean hasNext() {
 				return (lines.hasNext() || (null != curLine));
 			}
+			
+			private double getValue(String entry) {
+				if(entry.compareTo("") == 0) {
+            		if(fill) {
+            			return missingValue;
+            		}
+            		else {
+            			// throw new Exception("Missing value in the line:" + curLine);
+            			return Double.NaN;
+            		}
+            	}
+            	else {
+            		return Double.parseDouble(entry);
+            	}
+			}
 
 			@Override
 			public Tuple2<MatrixIndexes, MatrixBlock> next() {
 				// Read and parse the next line if we have no line buffered.
 	            if (null == curLine) {
+	            	if(partNo == 0 && curLineNum == 0 && hasHeader) {
+	            		lines.next(); // skip the header
+	            	}
+	            	
 	              curLine = lines.next();
 	              curCharOffset = 0;
 	              curCellOffset = 0;
@@ -82,17 +98,16 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 	            MatrixBlock curChunk = new MatrixBlock(brlen, bclen, true);
 	            int colOffsetWithinChunk = 0;
 	            
-	            // TODO: Take care of missing values and simplify this logic using Guava Splitter
 	            while (null != curLine && curCellOffset < (blockColIx + 1) * bclen) {
-	                int nextCommaOffset = curLine.indexOf(',', curCharOffset);
+	                int nextCommaOffset = curLine.indexOf(delim, curCharOffset);
 	                double curCellVal = 0.0;
 	                if (-1 == nextCommaOffset) {
 	                  // End of line
-	                  curCellVal = Double.parseDouble(curLine.substring(curCharOffset));
+	                  curCellVal = getValue(curLine.substring(curCharOffset).trim());
 	                  curCharOffset = -1;
 	                  curLine = null;
 	                } else {
-	                  curCellVal = Double.parseDouble(curLine.substring(curCharOffset, nextCommaOffset));
+	                  curCellVal = getValue(curLine.substring(curCharOffset, nextCommaOffset).trim());
 	                  curCharOffset = nextCommaOffset + 1;
 	                }
 
@@ -110,10 +125,7 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 			}
 
 			@Override
-			public void remove() {
-				// TODO:
-				// throw new Exception("Cannot remove entries from the iterator in CSVReblockSPInstruction");
-			}
+			public void remove() { }
 
 			
 		};

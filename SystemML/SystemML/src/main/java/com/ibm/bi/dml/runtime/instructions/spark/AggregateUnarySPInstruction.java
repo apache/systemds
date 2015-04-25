@@ -77,7 +77,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
 		
 		//execute unary aggregate
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;

@@ -104,9 +104,9 @@ public abstract class UnarySPInstruction extends ComputationSPInstruction
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		if(!mcOut.dimsKnown()) {
 			if(!mc1.dimsKnown())
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input.");
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
 			else
-				sec.getMatrixCharacteristics(output.getName()).set(mc1.getCols(), mc1.getRows(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
+				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
 		}
 	}
 }

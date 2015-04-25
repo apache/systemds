@@ -7,8 +7,9 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -21,7 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.data.TextToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
-public class ConvertTextLineToBinaryCellFunction implements Function<String, Tuple2<MatrixIndexes, MatrixCell>> {
+public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<LongWritable, Text>, MatrixIndexes, MatrixCell> {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -34,14 +35,14 @@ public class ConvertTextLineToBinaryCellFunction implements Function<String, Tup
 		this.brlen = brlen;
 		this.bclen = bclen;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public Tuple2<MatrixIndexes, MatrixCell> call(String line) throws Exception {
+	public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<LongWritable, Text> arg0) throws Exception {
 		@SuppressWarnings("rawtypes")
 		Converter converter = new TextToBinaryCellConverter();
 		converter.setBlockSize(brlen, bclen);
-		converter.convert(null, new Text(line));
+		converter.convert(null, arg0._2);
 		
 		Pair<MatrixIndexes, MatrixValue> retVal = null;
 		if(converter.hasNext()) {
@@ -57,7 +58,7 @@ public class ConvertTextLineToBinaryCellFunction implements Function<String, Tup
 			long colIndexInBlock = UtilFunctions.cellInBlockCalculation(retVal.getKey().getColumnIndex(), bclen);
 			// Perform sanity check
 			if(blockRowIndex <= 0 || blockColIndex <= 0 || rowIndexInBlock < 0 || colIndexInBlock < 0) {
-				throw new Exception("Error computing indexes for the line:" + line);
+				throw new Exception("Error computing indexes for the line:" + arg0._2.toString());
 			}
 			// ------------------------------------------------------------------------------------------
 			

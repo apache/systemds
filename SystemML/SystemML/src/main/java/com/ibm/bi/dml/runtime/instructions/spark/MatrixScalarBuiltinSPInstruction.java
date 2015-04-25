@@ -65,7 +65,7 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 		ScalarObject constant = (ScalarObject) sec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( mat.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( mat.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDMatrixScalarBuiltinUnaryOp( (ScalarOperator)_optr, constant.getDoubleValue()));
 		
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());

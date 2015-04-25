@@ -129,7 +129,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd and broadcast inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getRDDHandleForVariable( _input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryBlockedRDDHandleForVariable( _input1.getName() );
 		Broadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
 		Broadcast<MatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
 		

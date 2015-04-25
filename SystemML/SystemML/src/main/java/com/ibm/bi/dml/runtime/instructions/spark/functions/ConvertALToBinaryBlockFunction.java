@@ -57,6 +57,9 @@ public class ConvertALToBinaryBlockFunction implements PairFunction<Tuple2<Matri
 		for (MatrixCell cell : cells) {
 			double value  =  cell.getValue();
 			if ( value != 0 ) {
+				if(cell.getRowIndex() < 0 || cell.getColIndex() < 0) {
+					throw new Exception("Incorrect value for the cell:" + cell.toString());
+				}
 				// This function works for both sparse and dense blocks
 				mb.appendValue(	(int)cell.getRowIndex(), 
 						        (int)cell.getColIndex()

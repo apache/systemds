@@ -161,7 +161,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				}
 			}
 			
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out 
 				= in1
 				.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
@@ -175,7 +175,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
 			Broadcast<MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());

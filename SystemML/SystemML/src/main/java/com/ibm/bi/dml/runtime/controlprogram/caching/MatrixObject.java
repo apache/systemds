@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -105,6 +106,8 @@ public class MatrixObject extends CacheableData
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
+	private RDDProperties _rddProperties = null;
+	
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -120,6 +123,14 @@ public class MatrixObject extends CacheableData
 	 */
 	FileFormatProperties _formatProperties = null;
 	
+	public RDDProperties getRddProperties() {
+		return _rddProperties;
+	}
+
+	public void setRddProperties(RDDProperties _rddProperties) {
+		this._rddProperties = _rddProperties;
+	}
+
 	/**
 	 * Constructor that takes only the HDFS filename.
 	 */

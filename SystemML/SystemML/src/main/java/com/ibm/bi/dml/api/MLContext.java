@@ -13,8 +13,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.rdd.RDD;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
@@ -42,8 +48,12 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction.RDDDropCorrectionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -51,6 +61,8 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.utils.Explain;
+
+
 
 /**
  * This is initial mockup API for Spark integration. Typical usage is as follows:
@@ -99,8 +111,69 @@ public class MLContext {
 		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 	}
 	
+	public void registerInput(String varName, JavaRDD<String> rdd, String format, boolean hasHeader, String delim, boolean fill, double missingValue) throws DMLRuntimeException {
+		RDDProperties properties = new RDDProperties();
+		properties.setHasHeader(hasHeader);
+		properties.setDelim(delim);
+		properties.setDelim(delim);
+		properties.setMissingValue(missingValue);
+		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, -1, -1, properties);
+	}
 	
-	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1) throws DMLRuntimeException {
+	public void registerInput(String varName, JavaRDD<String> rdd, String format) throws DMLRuntimeException {
+		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, -1, -1, null);
+	}
+	
+	public void registerInput(String varName, JavaRDD<String> rdd, String format, long rlen, long clen) throws DMLRuntimeException {
+		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, null);
+	}
+	
+	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd) throws DMLRuntimeException {
+		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), -1, -1);
+	}
+	
+	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd, long rlen, long clen) throws DMLRuntimeException {
+		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), rlen, clen);
+	}
+		
+	// =============================================================================================
+	
+	// Register input for csv/text format
+	public void registerInput(String varName, JavaPairRDD<LongWritable, Text> rdd1, String format, long rlen, long clen, RDDProperties properties) throws DMLRuntimeException {
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+		
+		MatrixObject mo = null;
+		if(format.compareTo("csv") == 0) {
+			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
+		}
+		else if(format.compareTo("text") == 0) {
+//			if(rlen <= 0 || clen <= 0) {
+//				throw new DMLRuntimeException("The number of rows or columns for text format should be greater than 0");
+//			}
+			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
+		}
+		else {
+			throw new DMLRuntimeException("Incorrect format in registerInput: " + format);
+		}
+		
+		JavaPairRDD<LongWritable, Text> rdd = rdd1.mapToPair(new CopyTextInputFunction());
+		RDDObject rddObject = new RDDObject(rdd);
+		if(properties != null) {
+			mo.setRddProperties(properties);
+		}
+		mo.setRDDHandle(new RDDObject(rdd));
+		_variables.put(varName, mo);
+		_inVarnames.add(varName);
+	}
+	
+	
+	// Register input for binary format
+	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, long rlen, long clen) throws DMLRuntimeException {
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
@@ -108,13 +181,15 @@ public class MLContext {
 		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = rdd1.mapToPair( new CopyBlockFunction() );
 		
-		// TODO: Take care of dimensions
-		MatrixCharacteristics mc = new MatrixCharacteristics(-1, -1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.setRDDHandle(new RDDObject(rdd));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 	}
+	
+	
+	// =============================================================================================
 	
 	public void registerOutput(String varName) throws DMLRuntimeException {
 		if(_outVarnames == null)
@@ -183,37 +258,6 @@ public class MLContext {
 		}
 	}
 	
-//	private void createTmpHDFSDir() throws IOException {
-//		// Uncomment after adding tmp file
-////		if(tmpHDFSDir == null) {
-////			Random rand = new Random();
-////			tmpHDFSDir = "systemml_tmp_" + rand.nextLong() + "_" + rand.nextLong() + "_" + rand.nextLong();
-////			FileSystem hdfs = null; 
-////			hdfs = FileSystem.get(new Configuration());
-////			hdfs.mkdirs(new Path(tmpHDFSDir));
-////		}
-//	}
-//	
-//	/**
-//	 * @param localFilePath
-//	 * @return hdfsFilePath
-//	 * @throws IOException
-//	 */
-//	private String putFileIntoTmpHDFSDir(String localFilePath) throws IOException {
-//		throw new IOException("Writing to HDFS not implemented");
-//	}
-//	
-//	private void deleteTmpHDFSDir() throws IOException {
-//		// Uncomment after adding tmp file
-////		if(tmpHDFSDir != null) {
-////			FileSystem hdfs = FileSystem.get(new Configuration());
-////			if(hdfs.exists(new Path(tmpHDFSDir)))
-////				hdfs.delete(new Path(tmpHDFSDir), true);
-////			hdfs.close();
-////		}
-//	}
-	
-	
 	/**
 	 * Execute DML script by passing named arguments
 	 * @param dmlScriptFilePath the dml script can be in local filesystem or in HDFS
@@ -232,15 +276,17 @@ public class MLContext {
 		return runDMLScript(dmlScriptFilePath, args, true);
 	}
 	
+	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
+		return execute(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)));
+	}
+	
 	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		String [] args = new String[namedArgs.size()];
 		this.parsePyDML = parsePyDML;
-		int i = 0;
-		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			args[i] = entry.getKey() + "=" + entry.getValue();
-			i++;
-		}
-		return runDMLScript(dmlScriptFilePath, args, true);
+		return execute(dmlScriptFilePath, namedArgs);
+	}
+	
+	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
+		return execute(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), parsePyDML);
 	}
 	
 	/**
@@ -292,11 +338,11 @@ public class MLContext {
 		DMLProgram prog = null;
 		if(parsePyDML) {
 			PyDMLParserWrapper parser = new PyDMLParserWrapper();
-			prog = parser.parse(null, dmlScriptStr, argVals);
+			prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
 		}
 		else {
 			DMLParserWrapper parser = new DMLParserWrapper();
-			prog = parser.parse(null, dmlScriptStr, argVals);
+			prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
 		}
 		
 		//language validate
@@ -310,14 +356,12 @@ public class MLContext {
 		
 		String[] inputs = null; String[] outputs = null;
 		if(_inVarnames != null) {
-			System.out.println(_inVarnames.getClass().getName());
 			inputs = _inVarnames.toArray(new String[0]);
 		}
 		else {
 			inputs = new String[0];
 		}
 		if(_outVarnames != null) {
-			System.out.println(_outVarnames.getClass().getName());
 			outputs = _outVarnames.toArray(new String[0]);
 		}
 		else {
@@ -352,7 +396,7 @@ public class MLContext {
 				if(retVal == null) {
 					retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
 				}
-				retVal.put(ovar, ((SparkExecutionContext) ec).getRDDHandleForVariable(ovar));
+				retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockedRDDHandleForVariable(ovar));
 			}
 			else {
 				throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");

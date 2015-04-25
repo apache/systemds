@@ -44,7 +44,7 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 	
 			// Get input RDD
 			String rddVar 	= 	(input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getRDDHandleForVariable( rddVar );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( rddVar );
 			
 			// Get operator and scalar
 			CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;

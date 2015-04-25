@@ -43,7 +43,7 @@ public class Plan
 		_costs = p._costs;
 		
 		if( p._childs != null && !p._childs.isEmpty() )
-			_childs = (ArrayList<Plan>) p._childs.clone();
+			_childs = new ArrayList<Plan>(p._childs);
 		else
 			_childs = new ArrayList<Plan>();
 	}

@@ -9,6 +9,10 @@ package com.ibm.bi.dml.hops.globalopt;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFCrossBlockNode;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+
 public class PlanSet 
 {
 	@SuppressWarnings("unused")
@@ -52,26 +56,6 @@ public class PlanSet
 		
 		return _plans.isEmpty();	
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public Plan getPlanWithMinCosts()
-	{
-		//init global optimal plan and costs
-		double optCosts = Double.MAX_VALUE;
-		Plan optPlan = null;
-		
-		//compare costs of all plans
-		for( Plan p : _plans )
-			if( p.getCosts() < optCosts ) {
-				optCosts = p.getCosts();
-				optPlan = p;
-			}
-		
-		return optPlan;
-	}
 
 	/**
 	 * 
@@ -103,6 +87,59 @@ public class PlanSet
 		
 		return new PlanSet(Pnew);
 	}
+
+	/**
+	 * 
+	 * @param node
+	 * @return
+	 */
+	public PlanSet selectChild( GDFNode node )
+	{
+		String varname = (node.getNodeType()==NodeType.HOP_NODE) ? node.getHop().getName() :
+			            ((GDFCrossBlockNode)node).getName();
+		
+		ArrayList<Plan> Pnew = new ArrayList<Plan>();  
+		for( Plan p : _plans )
+			if( p.getNode().getHop().getName().equals(varname) )
+				Pnew.add( p );
+		
+		return new PlanSet(Pnew);
+	}
+	
+	/**
+	 * 
+	 * @param ps
+	 * @return
+	 */
+	public PlanSet union( PlanSet ps )
+	{
+		ArrayList<Plan> Pnew = new ArrayList<Plan>(_plans);  
+		for( Plan p : ps._plans )
+			Pnew.add( p );
+		
+		return new PlanSet(Pnew);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Plan getPlanWithMinCosts()
+	{
+		//init global optimal plan and costs
+		double optCosts = Double.MAX_VALUE;
+		Plan optPlan = null;
+		
+		//compare costs of all plans
+		for( Plan p : _plans )
+			if( p.getCosts() < optCosts ) {
+				optCosts = p.getCosts();
+				optPlan = p;
+			}
+		
+		return optPlan;
+	}
+	
 	
 	@Override
 	public String toString()

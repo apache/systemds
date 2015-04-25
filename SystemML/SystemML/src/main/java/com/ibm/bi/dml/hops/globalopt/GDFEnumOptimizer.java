@@ -22,6 +22,7 @@ import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFLoopNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
@@ -47,6 +48,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  * TODO partial runtime plan generation
  * TODO partial runtime plan costing  
  * 
+ * FIXME: hash for interesting properties
  */
 public class GDFEnumOptimizer extends GlobalOptimizer
 {
@@ -148,7 +150,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			return memo.getEntry(node);
 		
 		//enumerate node plans
-		PlanSet P = enumNodePlans( node );
+		PlanSet P = enumNodePlans( node, memo, maxCosts );
 		//System.out.println("Plans after enumNodePlan:\n"+P.toString());
 		
 		//combine local node plan with optimal child plans
@@ -156,6 +158,10 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		{
 			//recursive optimization
 			PlanSet Pc = enumOpt( c, memo, maxCosts );
+			if( c instanceof GDFLoopNode )
+				Pc = Pc.selectChild( node );
+			
+			//combine parent-child plans
 			P = P.crossProductChild(Pc);
 			_enumeratedPlans += P.size();			
 			
@@ -175,9 +181,13 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	/**
 	 * 
 	 * @param node
+	 * @param memo 
 	 * @return
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
-	private static PlanSet enumNodePlans( GDFNode node )
+	private static PlanSet enumNodePlans( GDFNode node, MemoStructure memo, double maxCosts ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Plan> plans = new ArrayList<Plan>();
 		
@@ -185,7 +195,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		// CASE 1: core hop enumeration (other than persistent/transient read/write) 
 		if( node.getNodeType() == NodeType.HOP_NODE && !(node.getHop() instanceof DataOp ) ) 
 		{
-			//create cp plan, if allowed (note: most interesting proeprties are irrelevant for CP)
+			//create cp plan, if allowed (note: most interesting properties are irrelevant for CP)
 			if( node.getHop().getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
 				RewriteConfig rccp = new RewriteConfig(ExecType.CP, -1, FileFormatTypes.BINARY);
 				InterestingProperties ipscp = rccp.deriveInterestingProperties();
@@ -232,7 +242,35 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		//ENUMERATE LOOP PLANS
 		else if( node.getNodeType() == NodeType.LOOP_NODE )
 		{
-			//TODO
+			//TODO consistency checks inputs and outputs (updated vars)
+			
+			GDFLoopNode lnode = (GDFLoopNode) node;
+			
+			//step 0: recursive call optimize on inputs
+			//no additional pruning (validity, optimality) required
+			for( GDFNode in : lnode.getLoopInputs().values() )
+				enumOpt(in, memo, maxCosts);
+			
+			//step 1: enumerate loop plan, incl partitioning/checkpoints/reblock for inputs
+			RewriteConfig rc = new RewriteConfig(ExecType.CP, -1, null);
+			InterestingProperties ips = rc.deriveInterestingProperties();
+			Plan lplan = new Plan(node, ips, rc, null);
+			plans.add( lplan );
+			
+			//step 2: recursive call optimize on predicate
+			//(predicate might be null if single variable)
+			if( lnode.getLoopPredicate() != null )
+				enumOpt(lnode.getLoopPredicate(), memo, maxCosts);
+			
+			//step 3: recursive call optimize on outputs
+			//(return union of all output plans, later selected by output var)
+			PlanSet Pout = new PlanSet();
+			for( GDFNode out : lnode.getLoopOutputs().values() )
+				Pout = Pout.union( enumOpt(out, memo, maxCosts) );
+			plans.addAll(Pout.getPlans());
+			
+			//note: global pruning later done when returning to enumOpt
+			//for the entire loop node			
 		}
 		//CREATE DUMMY CROSSBLOCK PLAN
 		else if( node.getNodeType() == NodeType.CROSS_BLOCK_NODE )
@@ -300,7 +338,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		}
 		
 		//build and probe for optimal plans (hash-groupby on IPC, min costs) 
-		HashMap<Integer, Plan> probeMap = new HashMap<Integer, Plan>();
+		HashMap<InterestingProperties, Plan> probeMap = new HashMap<InterestingProperties, Plan>();
 		for( Plan p : plans.getPlans() )
 		{
 			//max cost pruning filter (branch-and-bound)
@@ -309,7 +347,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			}
 			
 			//plan cost per IPS pruning filter (allow smaller or equal costs)
-			Plan best = probeMap.get(p.getInterestingProperties().hashCode());
+			Plan best = probeMap.get(p.getInterestingProperties());
 			if( best!=null && p.getCosts() > best.getCosts() ) {
 				continue;
 			}
@@ -321,7 +359,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			}
 				
 			//add plan as best per IPS
-			probeMap.put(p.getInterestingProperties().hashCode(), p);
+			probeMap.put(p.getInterestingProperties(), p);
 			
 		}
 		

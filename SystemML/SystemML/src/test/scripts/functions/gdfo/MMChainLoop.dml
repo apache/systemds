@@ -1,0 +1,24 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+X = read($1);
+v = read($2);
+maxiter = $3;
+
+i = 0;
+while(i < maxiter) {
+	v = t(X) %*% (X %*% v);
+	i = i + 1;
+}
+
+write(v, $4);
+
+
+
+

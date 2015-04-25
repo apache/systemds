@@ -95,9 +95,9 @@ public class InterestingProperties
 		//relies on google's guava library 
 		return Objects.hashCode(
 				   _blocksize, 
-				   (_format!=null)?_format.ordinal():0,
-				   (_location!=null)?_location.ordinal():0,
-				   (_pformat!=null)?_pformat.ordinal():0,
+				   (_format!=null)?_format.ordinal():-1,
+				   (_location!=null)?_location.ordinal():-1,
+				   (_pformat!=null)?_pformat.ordinal():-1,
 				   _replication,
 				   _emptyblocks
 			   );

@@ -70,24 +70,17 @@ public class GDFCrossBlockNode extends GDFNode
 		_cbtype = CrossBlockNodeType.MERGE;
 		_name = name;
 	}
-	
-	
-	public String explain(int level) 
+
+	public String getName()
 	{
-		StringBuilder sb = new StringBuilder();
+		return _name;
+	}
+	
+	@Override
+	public String explain(String deps) 
+	{
+		String ldeps = (deps!=null) ? deps : "";
 		
-		//create level indentation
-		for( int i=0; i<level*2; i++ )
-			sb.append("-");
-		
-		//current node details
-		sb.append(" CBNode ["+_name+", "+_cbtype.toString().toLowerCase()+"]\n");
-		
-		//recursively explain childs
-		for( GDFNode c : _inputs ) {
-			sb.append(c.explain(level+1));
-		}
-		
-		return sb.toString();
+		return "CBNode "+ldeps+" ["+_name+", "+_cbtype.toString().toLowerCase()+"]";
 	}
 }

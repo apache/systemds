@@ -19,8 +19,8 @@ public class GDFLoopNode extends GDFNode
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private GDFNode _predicate = null; 
-	private HashMap<String,GDFNode> _linputs = null;
-	private HashMap<String,GDFNode> _loutputs = null;
+	private HashMap<String,GDFNode> _linputs = null; //all read variables
+	private HashMap<String,GDFNode> _loutputs = null; //all updated variables, not necessarily liveout
 	
 	public GDFLoopNode( ProgramBlock pb, GDFNode predicate, HashMap<String, GDFNode> inputs, HashMap<String,GDFNode> outputs )
 	{
@@ -31,25 +31,27 @@ public class GDFLoopNode extends GDFNode
 		_loutputs = outputs;
 	}
 	
-	public String explain(int level) 
+	public HashMap<String, GDFNode> getLoopInputs()
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		//create level indentation
-		for( int i=0; i<level*2; i++ )
-			sb.append("-");
-		
+		return _linputs;
+	}
+	
+	public HashMap<String, GDFNode> getLoopOutputs()
+	{
+		return _loutputs;
+	}
+	
+	public GDFNode getLoopPredicate()
+	{
+		return _predicate;
+	}
+	
+	@Override
+	public String explain(String deps) 
+	{
+		String ldeps = (deps!=null) ? deps : "";
+	
 		//current node details
-		sb.append(" LoopNode ["+_linputs.keySet().toString()+","+_loutputs.keySet().toString()+"]\n");
-		
-		//recursively explain childs
-		if( _predicate != null )
-			sb.append(_predicate.explain(level+1));	
-		for( GDFNode c : _linputs.values() ) {
-			sb.append(c.explain(level+1));
-		}
-		
-		
-		return sb.toString();
+		return "LoopNode "+ldeps+" ["+_linputs.keySet().toString()+","+_loutputs.keySet().toString()+"]";
 	}
 }

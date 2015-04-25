@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import com.ibm.bi.dml.utils.Explain;
 
 /**
  * Main entry point for Global Data Flow Optimization. It is intended to be invoked after 
@@ -76,11 +77,9 @@ public class GlobalOptimizerWrapper
 		
 		//create global data flow graph
 		GDFGraph graph = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
-		/*if( LOG.isDebugEnabled() ) {
-			ArrayList<GDFNode> nodes = graph.getGraphRootNodes();
-			for( GDFNode node : nodes )
-				LOG.debug( node+":\n"+node.explain(1) );
-		}*/
+		if( LOG.isDebugEnabled() ) {
+			LOG.debug("EXPLAIN GDFGraph:\n" + Explain.explainGDFNodes(graph.getGraphRootNodes(),1));
+		}
 		
 		//core global data flow optimization 
 		graph = optimizer.optimize(graph);

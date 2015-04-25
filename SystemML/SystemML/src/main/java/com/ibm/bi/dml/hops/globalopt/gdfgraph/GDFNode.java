@@ -10,9 +10,12 @@ package com.ibm.bi.dml.hops.globalopt.gdfgraph;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.AggUnaryOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.Direction;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.ReorgOp;
@@ -116,10 +119,20 @@ public class GDFNode
 	 */
 	public boolean requiresMREnumeration()
 	{
-		boolean ret = _hop.getDataType() == DataType.MATRIX;
-		
+		//general rule: MR generation required if at least one matrix input/output
+		boolean ret = (_hop.getDataType() == DataType.MATRIX);		
 		for( Hop c : _hop.getInput() )
 			ret |= (c.getDataType() == DataType.MATRIX);
+		
+		//special cases of CP-only operators
+		if( _hop instanceof UnaryOp && ((UnaryOp)_hop).getOp()==OpOp1.CAST_AS_SCALAR ) //as.scalar
+			ret = false;
+		if( _hop instanceof DataGenOp && ((DataGenOp)_hop).getOp()==DataGenMethod.SINIT ) //matrix(str, )
+			ret = false;
+		if( _hop instanceof UnaryOp && ((UnaryOp)_hop).getOp()==OpOp1.NROW ) //nrow - meta data only
+			ret = false;
+		if( _hop instanceof UnaryOp && ((UnaryOp)_hop).getOp()==OpOp1.NCOL ) //ncol - meta data only
+			ret = false;
 		
 		return ret;
 	}
@@ -140,28 +153,17 @@ public class GDFNode
 	
 	/**
 	 * 
-	 * @param level
+	 * @param deps
 	 * @return
 	 */
-	public String explain(int level) 
+	public String explain(String deps) 
 	{
-		StringBuilder sb = new StringBuilder();
+		String ldeps = (deps!=null) ? deps : "";
 		
-		//create level indentation
-		for( int i=0; i<level*2; i++ )
-			sb.append("-");
-		
-		//current node details
+		//node details
 		if( _hop!=null )
-			sb.append(" Node ["+_hop.getHopID()+", "+_hop.getOpString()+"]\n");
+			return "Node "+ldeps+" ["+_hop.getHopID()+", "+_hop.getOpString()+"]";
 		else
-			sb.append(" Node [null]\n");
-		
-		//recursively explain childs
-		for( GDFNode c : _inputs ) {
-			sb.append(c.explain(level+1));
-		}
-		
-		return sb.toString();
+			return "Node "+ldeps+" [null]";
 	}
 }

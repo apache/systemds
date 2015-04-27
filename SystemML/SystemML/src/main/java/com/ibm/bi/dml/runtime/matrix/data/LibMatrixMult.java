@@ -177,17 +177,91 @@ public class LibMatrixMult
 	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{		
+		//check inputs / outputs (after that mV and mW guaranteed to be dense)
+		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
+			return;
+
 		//Timing time = new Timing(true);
+				
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
 		
+		//core matrix mult chain computation
 		if( mX.sparse )
-			matrixMultChainSparse(mX, mV, mW, ret, ct);
+			matrixMultChainSparse(mX, mV, mW, ret, ct, 0, mX.rlen);
 		else
-			matrixMultChainDense(mX, mV, mW, ret, ct);
-			
+			matrixMultChainDense(mX, mV, mW, ret, ct, 0, mX.rlen);
+		
+		//post-processing
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		
 		//System.out.println("MMChain "+ct.toString()+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
 		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
-	
+
+	/**
+	 * Performs a parallel matrix multiplication chain operation of type t(X)%*%(X%*%v) or t(X)%*%(w*(X%*%v)).
+	 * The parameter k (k>=1) determines the max parallelism k' with k'=min(k, vcores, m1.rlen).
+	 * 
+	 * NOTE: This multi-threaded mmchain operation has additional memory requirements of k*ncol(X)*8bytes 
+	 * for partial aggregation. Current max memory: 256KB; otherwise redirectly to sequential execution.
+	 * 
+	 * @param mX
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param ct
+	 * @param k
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int k) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{		
+		//check inputs / outputs (after that mV and mW guaranteed to be dense)
+		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
+			return;
+
+		//check too high additional memory requirements (fallback to sequential)
+		if( mV.rlen * 8 * k > 256*1024 ) { //256KB
+			matrixMultChain(mX, mV, mW, ret, ct);
+			return;
+		}
+		
+		//Timing time = new Timing(true);
+				
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
+		
+		//core matrix mult chain computation
+		//(currently: always parallelization over number of rows)
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<MatrixMultChainTask> tasks = new ArrayList<MatrixMultChainTask>();
+			int blklen = (int)(Math.ceil((double)mX.rlen/k));
+			blklen += (blklen%24 != 0)?24-blklen%24:0;
+			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
+				tasks.add(new MatrixMultChainTask(mX, mV, mW, ret, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
+			pool.invokeAll(tasks);	
+			pool.shutdown();
+			//aggregate partial results
+			for( MatrixMultChainTask task : tasks )
+				vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, mX.clen);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//post-processing
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		
+		//System.out.println("MMChain "+ct.toString()+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
+		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+	}
 
 	/**
 	 * 
@@ -362,7 +436,6 @@ public class LibMatrixMult
 	{	
 		double[] a = m1.denseBlock;
 		double[] c = ret.denseBlock;
-		//int m = m1.rlen;
 		int n = m2.clen;
 		int cd = m1.clen;
 	
@@ -540,7 +613,6 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{	
 		double[] c = ret.denseBlock;
-		//int m = m1.rlen;
 		int n = m2.clen;
 		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
@@ -707,34 +779,23 @@ public class LibMatrixMult
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private static void matrixMultChainDense(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+	private static void matrixMultChainDense(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
-		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
-			return;
-		
-		ret.sparse = false;
-		ret.allocateDenseBlock();
-		
 		double[] a = mX.denseBlock;
 		double[] b = mV.denseBlock;
 		double[] w = (mW!=null) ? mW.denseBlock : null;
 		double[] c = ret.denseBlock;
-		final int m = mX.rlen; //rows in X
 		final int cd = mX.clen; //features in X
 		boolean weights = (ct == ChainType.XtwXv);
-		
-		Arrays.fill(c, 0, c.length, 0);
 
 		//temporary array for cache blocking
 		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
-		final int blocksize = 24; //constraint: factor of 4
+		final int blocksize = 24; // constraint: factor of 4
 		double[] tmp = new double[blocksize];
 			
 		//blockwise mmchain computation
-		final int bn = m - m % blocksize;
-		for( int bi=0; bi < bn; bi+=blocksize ) 
+		final int bn = ru - ru % blocksize; //rl blocksize aligned
+		for( int bi=rl; bi < bn; bi+=blocksize ) 
 		{
 			//compute 1st matrix-vector for row block
 			for( int j=0, aix=bi*cd; j < blocksize; j++, aix+=cd)
@@ -750,14 +811,11 @@ public class LibMatrixMult
 		}
 		
 		//compute rest (not aligned to blocksize)
-		for( int i=bn, aix=i*cd; i < m; i++, aix+=cd ) {
+		for( int i=bn, aix=i*cd; i < ru; i++, aix+=cd ) {
 			double val = dotProduct(a, b, aix, 0, cd);
 			val *= (weights) ? w[i] : 1; 
 			vectMultiplyAdd(val, a, c, aix, 0, cd);				
 		}
-		
-		ret.recomputeNonZeros();
-		ret.examSparsity();
 	}
 	
 	/**
@@ -767,27 +825,18 @@ public class LibMatrixMult
 	 * @param mW
 	 * @param ret
 	 * @param ct
+	 * @param rl
+	 * @param ru
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private static void matrixMultChainSparse(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+	private static void matrixMultChainSparse(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
-		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
-			return;
-		
-		ret.sparse = false;
-		ret.allocateDenseBlock();
-		
 		SparseRow[] a = mX.sparseRows;
 		double[] b = mV.denseBlock;
 		double[] w = (mW!=null) ? mW.denseBlock : null;
 		double[] c = ret.denseBlock;
-		final int m = mX.rlen;
 		boolean weights = (ct == ChainType.XtwXv);
-		
-		Arrays.fill(c, 0, c.length, 0);
 		
 		//temporary array for cache blocking
 		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
@@ -795,10 +844,10 @@ public class LibMatrixMult
 		double[] tmp = new double[blocksize];
 		
 		//blockwise mmchain computation
-		for( int bi=0; bi < m; bi+=blocksize ) 
+		for( int bi=rl; bi < ru; bi+=blocksize ) 
 		{
 			//reset row block intermediate
-			int tmplen = Math.min(blocksize, m-bi);
+			int tmplen = Math.min(blocksize, ru-bi);
 
 			//compute 1st matrix-vector for row block
 			for( int j=0; j < tmplen; j++) {
@@ -826,9 +875,6 @@ public class LibMatrixMult
 				}
 			}
 		}
-		
-		ret.recomputeNonZeros();
-		ret.examSparsity();
 	}
 	
 	/**
@@ -1707,6 +1753,14 @@ public class LibMatrixMult
 		}
 	}
 
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
 	private static void vectMultiply( double[] a, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;
@@ -1729,6 +1783,39 @@ public class LibMatrixMult
 			c[ ci+5 ] *= a[ ai+5 ];
 			c[ ci+6 ] *= a[ ai+6 ];
 			c[ ci+7 ] *= a[ ai+7 ];
+		}
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, ai++, ci++)
+			c[ ci ] += a[ ai ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) 
+		{
+			//read 64B cachelines of a and c
+			//compute c' = c * a
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += a[ ai+0 ];
+			c[ ci+1 ] += a[ ai+1 ];
+			c[ ci+2 ] += a[ ai+2 ];
+			c[ ci+3 ] += a[ ai+3 ];
+			c[ ci+4 ] += a[ ai+4 ];
+			c[ ci+5 ] += a[ ai+5 ];
+			c[ ci+6 ] += a[ ai+6 ];
+			c[ ci+7 ] += a[ ai+7 ];
 		}
 	}
 	
@@ -1801,7 +1888,10 @@ public class LibMatrixMult
 		
 		return knnz;
 	}
-	
+
+	/////////////////////////////////////////////////////////
+	// Task Implementations for Multi-Threaded Operations  //
+	/////////////////////////////////////////////////////////
 	
 	private static class MatrixMultTask implements Callable<Object> 
 	{
@@ -1835,6 +1925,47 @@ public class LibMatrixMult
 				matrixMultDenseSparse(_m1, _m2, _ret, _rl, _ru);
 			
 			return null;
+		}
+	}
+	
+	private static class MatrixMultChainTask implements Callable<Object> 
+	{
+		private MatrixBlock _m1  = null;
+		private MatrixBlock _m2  = null;
+		private MatrixBlock _m3  = null;
+		private MatrixBlock _ret = null;
+		private ChainType _ct = null;
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected MatrixMultChainTask( MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru ) 
+			throws DMLRuntimeException
+		{
+			_m1 = mX;
+			_m2 = mV;
+			_m3 = mW;
+			_ct = ct;
+			_rl = rl;
+			_ru = ru;
+			
+			//allocate local result for partial aggregation
+			_ret = new MatrixBlock(ret.rlen, ret.clen, false);
+			_ret.allocateDenseBlock();
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			if( _m1.sparse )
+				matrixMultChainSparse(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+			else
+				matrixMultChainDense(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+			
+			return null;
+		}
+		
+		public MatrixBlock getResult() {
+			return _ret;
 		}
 	}
 }

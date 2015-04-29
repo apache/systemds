@@ -28,23 +28,32 @@ public class MMRJ extends Lop
 	 * @param op
 	 */
 
-	public MMRJ(Lop input1, Lop input2, DataType dt, ValueType vt) 
+	public MMRJ(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
+		//handle inputs and outputs
 		super(Lop.Type.MMRJ, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		/*
-		 * This lop can be executed only in RMM job.
-		 */
-		
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		lps.addCompatibility(JobType.MMRJ);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		//set basic lop properties based on exec type
+		if( et == ExecType.MR )
+		{
+			boolean breaksAlignment = true;
+			boolean aligner = false;
+			boolean definesMRJob = true;
+			lps.addCompatibility(JobType.MMRJ);
+			this.lps.setProperties( inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else //if( et == ExecType.SPARK )
+		{
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -70,4 +79,20 @@ public class MMRJ extends Lop
 		return sb.toString();
 	}
 
+	@Override
+	public String getInstructions(String input1, String input2, String output)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( "rmm" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(0).prepInputOperand(input1));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(input2));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( this.prepOutputOperand(output));
+		
+		return sb.toString();
+	}
 }

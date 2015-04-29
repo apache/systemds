@@ -1961,6 +1961,10 @@ public class LibMatrixMult
 			else
 				matrixMultChainDense(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
 			
+			//NOTE: we dont do global aggregation from concurrent tasks in order
+			//to prevent synchronization (sequential aggregation led to better 
+			//performance after JIT)
+			
 			return null;
 		}
 		

@@ -183,6 +183,9 @@ public class AggBinaryOp extends Hop
 					case CPMM:	
 						constructSparkLopsCPMM();
 						break;
+					case RMM:	
+						constructSparkLopsRMM();
+						break;
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing SPARK lops.");	
 				}
@@ -699,6 +702,21 @@ public class AggBinaryOp extends Hop
 		setLops(matmultCP);
 	}
 	
+	/**
+	 * 
+	 * @param chain
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructSparkLopsRMM() 
+		throws LopsException, HopsException
+	{
+		Lop rmm = new MMRJ(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+				          getDataType(), getValueType(), ExecType.SPARK);
+		setOutputDimensions(rmm);
+		setLineNumbers( rmm );
+		setLops(rmm);
+	}
 	
 	//////////////////////////
 	// MR Lops generation
@@ -941,10 +959,10 @@ public class AggBinaryOp extends Hop
 		throws HopsException, LopsException
 	{
 		MMRJ rmm = new MMRJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				            getDataType(), getValueType());
-		rmm.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(rmm);
+				            getDataType(), getValueType(), ExecType.MR);
 		
+		setOutputDimensions(rmm);
+		setLineNumbers(rmm);
 		setLops(rmm);
 	} 
 	
@@ -1456,6 +1474,10 @@ public class AggBinaryOp extends Hop
 		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
 		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
 
+		// Step 0: check for forced mmultmethod
+		if( FORCED_MMULT_METHOD !=null )
+			return FORCED_MMULT_METHOD;
+		
 		// Step 1: check TSMM
 		// If transpose self pattern and result is single block:
 		// use specialized TSMM method (always better than generic jobs)
@@ -1508,8 +1530,12 @@ public class AggBinaryOp extends Hop
 				return MMultMethod.MAPMM_R;
 		}
 		
+		//TODO CPMM vs RMM decision 
+		//currently always RMM because CPMM pure CP right now
+		return MMultMethod.RMM;
+		
 		// Step 4: fallback strategy MMCJ
-		return MMultMethod.CPMM;
+		//return MMultMethod.CPMM;
 	}
 	
 	@Override

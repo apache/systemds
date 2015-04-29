@@ -11,6 +11,7 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
@@ -21,12 +22,14 @@ import org.apache.hadoop.mapred.Partitioner;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
-public class TripleIndexes implements WritableComparable<TripleIndexes>
+public class TripleIndexes implements WritableComparable<TripleIndexes>, Serializable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final long serialVersionUID = -4514135024726916288L;
+
 	private long first=-1;
 	private long second=-1;
 	private long third=-1;

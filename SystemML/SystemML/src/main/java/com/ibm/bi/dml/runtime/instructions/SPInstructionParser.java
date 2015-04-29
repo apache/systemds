@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.RmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.spark.TsmmSPInstruction;
@@ -48,6 +49,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "mapmm"   , SPINSTRUCTION_TYPE.MAPMM);
 		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
 		String2SPInstructionType.put( "tsmm"    , SPINSTRUCTION_TYPE.TSMM);
+		String2SPInstructionType.put( "rmm"    , SPINSTRUCTION_TYPE.RMM);
 		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
@@ -163,6 +165,9 @@ public class SPInstructionParser extends InstructionParser {
 				return MapmmChainSPInstruction.parseInstruction(str);
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
+			case RMM:
+				return RmmSPInstruction.parseInstruction(str);
+				
 				
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);

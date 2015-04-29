@@ -42,6 +42,7 @@ public class LibMatrixReorg
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	public static final boolean SHALLOW_DENSE_VECTOR_TRANSPOSE = true;
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
 	private enum ReorgType {
@@ -424,9 +425,21 @@ public class LibMatrixReorg
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
 		
-		//allocate output arrays (if required)
+		//set basic meta data
 		out.sparse = false;
-		out.allocateDenseBlock();
+		out.nonZeros = in.nonZeros;
+		
+		//shallow dense vector transpose (w/o result allocation)
+		if( SHALLOW_DENSE_VECTOR_TRANSPOSE && (m==1 || n==1) ) {
+			//since the physical representation of dense vectors is always the same,
+			//we don't need to create a copy, given our copy on write semantics.
+			//however, note that with update in-place this would be an invalid optimization
+			out.denseBlock = in.denseBlock;
+			return;
+		}
+		
+		//allocate output arrays (if required)
+		out.allocateDenseBlock(false);
 		
 		double[] a = in.getDenseArray();
 		double[] c = out.getDenseArray();
@@ -456,8 +469,6 @@ public class LibMatrixReorg
 					}
 				}
 		}
-		
-		out.nonZeros = in.nonZeros;
 	}
 	
 	/**

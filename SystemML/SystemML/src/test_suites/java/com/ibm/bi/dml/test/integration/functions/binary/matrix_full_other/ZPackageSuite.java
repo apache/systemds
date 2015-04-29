@@ -16,8 +16,8 @@ import org.junit.runners.Suite;
 	FullPowerTest.class,
 	FullPPredMatrixTest.class,
 	FullPPredScalarLeftTest.class,
-	FullPPredScalarRightTest.class
-
+	FullPPredScalarRightTest.class,
+	FullDistributedMatrixMultiplicationTest.class
 })
 
 

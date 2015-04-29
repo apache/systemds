@@ -8,7 +8,9 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	GDFOLinregCG.class,
-	GDFOLinregDS.class
+	GDFOLinregDS.class,
+	GDFOMMChainLoop.class,
+	HashInterestingPropertiesTest.class
 })
 
 

@@ -8,9 +8,11 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 
 import java.util.HashMap;
 import java.util.StringTokenizer;
@@ -113,7 +115,23 @@ public class LocalVariableMap implements Cloneable
 				return true;
 		return false;
 	}
-	
+
+	/**
+	 * 
+	 * @param bo
+	 * @return
+	 */
+	public boolean hasReferences( LineageObject bo )
+	{
+		for( Data tmpdat : localMap.values() ) 
+			if ( tmpdat instanceof MatrixObject ) {
+				MatrixObject mo = (MatrixObject)tmpdat; 
+				if( mo.getBroadcastHandle()==bo || mo.getRDDHandle()==bo )
+					return true;
+			}
+		return false;
+	}
+		
 	/**
 	 * 
 	 * @param d

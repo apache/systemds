@@ -508,6 +508,10 @@ public class SparkExecutionContext extends ExecutionContext
 		if( lob.getNumReferences() > 0 )
 			return;
 			
+		//abort if still reachable through symbol table
+		if( getVariables().hasReferences(lob) )
+			return;
+		
 		//cleanup current lineage object (from driver/executors)
 		if( lob instanceof RDDObject )
 			cleanupRDDVariable(((RDDObject)lob).getRDD());
@@ -551,5 +555,4 @@ public class SparkExecutionContext extends ExecutionContext
 			rvar.unpersist( ASYNCHRONOUS_VAR_DESTROY );
 		}
 	}
-	
 }

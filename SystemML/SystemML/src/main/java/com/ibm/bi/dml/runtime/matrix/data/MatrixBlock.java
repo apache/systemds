@@ -3311,7 +3311,23 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 	
+	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 	
+	{
+		return chainMatrixMultOperations(v, w, out, ctype, 1);
+	}
+	
+	/**
+	 * 
+	 * @param v
+	 * @param w
+	 * @param out
+	 * @param ctype
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//check for transpose type
@@ -3333,7 +3349,10 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			out = new MatrixBlock(clen, 1, false);
 		
 		//compute matrix mult
-		LibMatrixMult.matrixMultChain(this, v, w, out, ctype);
+		if( k > 1 )
+			LibMatrixMult.matrixMultChain(this, v, w, out, ctype, k);
+		else
+			LibMatrixMult.matrixMultChain(this, v, w, out, ctype);
 		
 		return out;
 	}
@@ -4655,13 +4674,17 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		//check input types and dimensions
+		//check input types, dimensions, configuration
 		MatrixBlock m1 = checkType(m1Value);
 		MatrixBlock m2 = checkType(m2Value);
 		MatrixBlock ret = checkType(result);
-		if(m1.clen!=m2.rlen)
+		if( m1.clen != m2.rlen ) {
 			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+").");
-
+		}
+		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {
+			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
+		}
+			
 		//setup meta data (dimensions, sparsity)
 		int rl = m1.rlen;
 		int cl = m2.clen;
@@ -4674,12 +4697,10 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
 		
 		//compute matrix multiplication (only supported binary aggregate operation)
-		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus ) {
+		if( op.getNumThreads() > 1 )
+			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());
+		else
 			LibMatrixMult.matrixMult(m1, m2, ret);
-		}
-		else {
-			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
-		}
 		
 		return ret;
 	}

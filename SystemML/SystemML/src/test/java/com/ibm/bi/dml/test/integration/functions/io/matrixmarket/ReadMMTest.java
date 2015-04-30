@@ -83,12 +83,12 @@ public class ReadMMTest extends AutomatedTestBase
 	private void runMMTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) {
 		
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		boolean oldpar = OptimizerUtils.PARALLEL_READ_TEXTFORMATS;
+		boolean oldpar = OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS;
 		
 		try
 		{
 			rtplatform = platform;
-			OptimizerUtils.PARALLEL_READ_TEXTFORMATS = parallel;
+			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
@@ -116,7 +116,7 @@ public class ReadMMTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldPlatform;
-			OptimizerUtils.PARALLEL_READ_TEXTFORMATS = oldpar;
+			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = oldpar;
 		}
 	}
 	

@@ -30,6 +30,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
@@ -85,6 +86,7 @@ public class AggBinaryOp extends Hop
 	
 	//hints set by previous to operator selection
 	private boolean _hasLeftPMInput = false; //left input is permutation matrix
+	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	private AggBinaryOp() {
 		//default constructor for clone
@@ -106,6 +108,10 @@ public class AggBinaryOp extends Hop
 	
 	public void setHasLeftPMInput(boolean flag) {
 		_hasLeftPMInput = flag;
+	}
+	
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
 	}
 	
 	/**
@@ -494,6 +500,12 @@ public class AggBinaryOp extends Hop
 			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
 			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), getDataType(), getValueType(), ExecType.CP);
 		}
+		
+		//set degree of parallelism
+		int k = getConstrainedNumThreads();
+		mapmmchain.setNumThreads( k );
+		
+		//set basic lop properties
 		setOutputDimensions(mapmmchain);
 		setLineNumbers(mapmmchain);
 		setLops(mapmmchain);
@@ -535,15 +547,18 @@ public class AggBinaryOp extends Hop
 	 */
 	private void constructCPLopsMM() 
 		throws HopsException, LopsException
-	{
+	{	
 		Lop matmultCP = null;
-		if( isLeftTransposeRewriteApplicable(true, false) )
+		if( isLeftTransposeRewriteApplicable(true, false) ) {
 			matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
-		else
+		}
+		else { 
+			int k = getConstrainedNumThreads();
 			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
+		}
 		
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setOutputDimensions(matmultCP);
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}
@@ -566,7 +581,8 @@ public class AggBinaryOp extends Hop
 		setLineNumbers(tY);
 		
 		//matrix mult
-		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP);	
+		int k = getConstrainedNumThreads();
+		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);	
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
 		
@@ -1258,6 +1274,26 @@ public class AggBinaryOp extends Hop
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	private int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+		
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+			
+		return ret;
+	}
+	
 	
 	/**
 	 * Estimates the memory footprint of MapMult operation depending on which input is put into distributed cache.
@@ -1939,6 +1975,7 @@ public class AggBinaryOp extends Hop
 		ret.innerOp = innerOp;
 		ret.outerOp = outerOp;		
 		ret._hasLeftPMInput = _hasLeftPMInput;
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -1954,6 +1991,7 @@ public class AggBinaryOp extends Hop
 				&& outerOp == that2.outerOp
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1)
-				&& _hasLeftPMInput == that2._hasLeftPMInput);
+				&& _hasLeftPMInput == that2._hasLeftPMInput
+				&& _maxNumThreads == that2._maxNumThreads);
 	}
 }

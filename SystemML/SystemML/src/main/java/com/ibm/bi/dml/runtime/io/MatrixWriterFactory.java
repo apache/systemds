@@ -49,13 +49,13 @@ public class MatrixWriterFactory
 		MatrixWriter writer = null;
 		
 		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
 				writer = new WriterTextCellParallel();
 			else
 				writer = new WriterTextCell();
 		}
 		else if( oinfo == OutputInfo.MatrixMarketOutputInfo ) {
-			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
 				writer = new WriterMatrixMarketParallel();
 			else
 				writer = new WriterMatrixMarket();
@@ -63,7 +63,7 @@ public class MatrixWriterFactory
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			if( OptimizerUtils.PARALLEL_WRITE_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
 				writer = new WriterTextCSVParallel((CSVFileFormatProperties)props);
 			else
 				writer = new WriterTextCSV((CSVFileFormatProperties)props);

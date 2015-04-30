@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.integration.functions.io;
 
 import java.io.IOException;
@@ -198,11 +205,11 @@ public class SeqParReadTest extends AutomatedTestBase {
 	
 	private void runReadTypeFormatSparsitySizeTest(boolean parallel, OutputInfo fmt, boolean dense, boolean big ) {
 		
-		boolean oldpar = OptimizerUtils.PARALLEL_READ_TEXTFORMATS;
+		boolean oldpar = OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS;
 
 		try
 		{
-			OptimizerUtils.PARALLEL_READ_TEXTFORMATS = parallel;
+			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
@@ -239,7 +246,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 		finally
 		{
-			OptimizerUtils.PARALLEL_READ_TEXTFORMATS = oldpar;		
+			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = oldpar;		
 		}
 	}
 	

@@ -56,17 +56,23 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction
 		CPOperand in3 = null;
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
-		if ( opcode.equalsIgnoreCase("ba+*")) {
-			parseBinaryInstruction(str, in1, in2, out);
+		if ( opcode.equalsIgnoreCase("ba+*")) 
+		{
+			InstructionUtils.checkNumFields( parts, 4 );
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			out.split(parts[3]);
+			int k = Integer.parseInt(parts[4]);
+			
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
 			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("cov")) {
 			COVOperator cov = new COVOperator(COV.getCOMFnObject());
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			if ( parts.length == 4 ) {
 				// CP.cov.mVar0.mVar1.mVar2
 				parseBinaryInstruction(str, in1, in2, out);

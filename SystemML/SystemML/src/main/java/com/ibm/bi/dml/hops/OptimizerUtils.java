@@ -157,8 +157,8 @@ public class OptimizerUtils
 	 * Enables parallel read/write of all text formats (textcell, csv, mm). 
 	 * 
 	 */
-	public static boolean PARALLEL_READ_TEXTFORMATS = false;
-	public static boolean PARALLEL_WRITE_TEXTFORMATS = true;
+	public static boolean PARALLEL_CP_READ_TEXTFORMATS = false;
+	public static boolean PARALLEL_CP_WRITE_TEXTFORMATS = true;
 	
 	
 	/**
@@ -167,9 +167,17 @@ public class OptimizerUtils
 	 * to get a number of threads equal the number of virtual cores.
 	 * 
 	 */
-	public static final double PARALLEL_READ_PARALLELISM_MULTIPLIER = 1.0;
-	public static final double PARALLEL_WRITE_PARALLELISM_MULTIPLIER = 1.0;
+	public static final double PARALLEL_CP_READ_PARALLELISM_MULTIPLIER = 1.0;
+	public static final double PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER = 1.0;
 
+	/**
+	 * Enables multi-threaded matrix multiply for mm, mmchain, and tsmm.
+	 * 
+	 * TODO to be enabled, currently disabled because parallel mmchain shows 
+	 * numerical stability issues on GLM.
+	 */
+	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = false;
+	
 	/**
 	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 
 	 * if sort buffer size large enough and parallelism not hurt. This solves to issues: 
@@ -419,12 +427,12 @@ public class OptimizerUtils
 	 */
 	public static int getParallelTextReadParallelism()
 	{
-		if( !PARALLEL_READ_TEXTFORMATS )
+		if( !PARALLEL_CP_READ_TEXTFORMATS )
 			return 1; // sequential execution
 			
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
-				     * PARALLEL_READ_PARALLELISM_MULTIPLIER;
+				     * PARALLEL_CP_READ_PARALLELISM_MULTIPLIER;
 		return (int) Math.round(dop);
 	}
 	
@@ -438,12 +446,12 @@ public class OptimizerUtils
 	 */
 	public static int getParallelTextWriteParallelism()
 	{
-		if( !PARALLEL_WRITE_TEXTFORMATS )
+		if( !PARALLEL_CP_WRITE_TEXTFORMATS )
 			return 1; // sequential execution
 			
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
-				     * PARALLEL_WRITE_PARALLELISM_MULTIPLIER;
+				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;
 		return (int) Math.round(dop);
 	}
 	

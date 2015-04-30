@@ -29,12 +29,14 @@ public class MMChainCPInstruction extends UnaryCPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ChainType _type = null;
+	private int _numThreads = -1;
 	
-	public MMChainCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, ChainType type, String opcode, String istr)
+	public MMChainCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, ChainType type, int k, String opcode, String istr)
 	{
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MMChain;
 		_type = type;
+		_numThreads = k;
 	}
 	
 	/**
@@ -54,27 +56,29 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 		String opcode = InstructionUtils.getOpCode(str);
 		
 		//check number of fields (2/3 inputs, output, type)
-		InstructionUtils.checkNumFields ( str, 4, 5 );
+		InstructionUtils.checkNumFields ( str, 5, 6 );
 		
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		
-		if( parts.length==5 )
+		if( parts.length==6 )
 		{
 			out.split(parts[3]);
 			ChainType type = ChainType.valueOf(parts[4]);
+			int k = Integer.parseInt(parts[5]);
 			
-			return new MMChainCPInstruction(null, in1, in2, null, out, type, opcode, str);
+			return new MMChainCPInstruction(null, in1, in2, null, out, type, k, opcode, str);
 		}
-		else //parts.length==6
+		else //parts.length==7
 		{
 			in3.split(parts[3]);
 			out.split(parts[4]);
 			ChainType type = ChainType.valueOf(parts[5]);
-		
-			return new MMChainCPInstruction(null, in1, in2, in3, out, type, opcode, str);
+			int k = Integer.parseInt(parts[6]);
+			
+			return new MMChainCPInstruction(null, in1, in2, in3, out, type, k, opcode, str);
 		}
 	}
 	
@@ -88,7 +92,7 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 		MatrixBlock w = (_type==ChainType.XtwXv) ? ec.getMatrixInput(input3.getName()) : null;
 
 		//execute mmchain operation 
-		 MatrixBlock out = (MatrixBlock) X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type);
+		 MatrixBlock out = (MatrixBlock) X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
 				
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), out);

@@ -74,7 +74,7 @@ public class Connection
 		//setup basic parameters for embedded execution
 		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		OptimizerUtils.PARALLEL_READ_TEXTFORMATS = false;
+		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
 		CacheableData.disableCaching();
 		
 		//create default configuration

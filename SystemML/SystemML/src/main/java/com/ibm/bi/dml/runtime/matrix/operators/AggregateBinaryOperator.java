@@ -25,11 +25,21 @@ public class AggregateBinaryOperator extends Operator implements Serializable
 
 	public ValueFunction binaryFn;
 	public AggregateOperator aggOp;
+	private int k; //num threads
 	
 	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer)
 	{
-		binaryFn=inner;
-		aggOp=outer;
+		//default degree of parallelism is 1 
+		//(for example in MR/Spark because we parallelize over the number of blocks)
+		this( inner, outer, 1 );
+	}
+	
+	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer, int numThreads)
+	{
+		binaryFn = inner;
+		aggOp = outer;
+		k = numThreads;
+		
 		//so far, we only support matrix multiplication, and it is sparseSafe
 		if(binaryFn instanceof Multiply && aggOp.increOp.fn instanceof Plus)
 			sparseSafe=true;
@@ -37,4 +47,7 @@ public class AggregateBinaryOperator extends Operator implements Serializable
 			sparseSafe=false;
 	}
 	
+	public int getNumThreads() {
+		return k;
+	}
 }

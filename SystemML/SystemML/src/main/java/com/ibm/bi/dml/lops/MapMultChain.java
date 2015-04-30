@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.lops.Binary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -30,6 +31,7 @@ public class MapMultChain extends Lop
 	}
 	
 	private ChainType _chainType = null;
+	private int _numThreads = 1;
 	
 	/**
 	 * Constructor to setup a map mult chain without weights
@@ -102,6 +104,10 @@ public class MapMultChain extends Lop
 			lps.addCompatibility(JobType.INVALID);
 			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
+	}
+
+	public void setNumThreads(int k) {
+		_numThreads = k;
 	}
 	
 	public String toString() {
@@ -189,6 +195,12 @@ public class MapMultChain extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_chainType);
 		
+		//append degree of parallelism for matrix multiplications
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
+		
 		return sb.toString();
 	}
 	
@@ -220,6 +232,12 @@ public class MapMultChain extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_chainType);
+		
+		//append degree of parallelism for matrix multiplications
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		
 		return sb.toString();
 	}

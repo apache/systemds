@@ -35,14 +35,14 @@ public class MatrixReaderFactory
 		
 		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo )
 		{
-			if( OptimizerUtils.PARALLEL_READ_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
 				reader = new ReaderTextCellParallel( iinfo );
 			else
 				reader = new ReaderTextCell( iinfo );	
 		}
 		else if( iinfo == InputInfo.CSVInputInfo )
 		{
-			if( OptimizerUtils.PARALLEL_READ_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
 				reader = new ReaderTextCSVParallel(new CSVFileFormatProperties());
 			else
 				reader = new ReaderTextCSV(new CSVFileFormatProperties());
@@ -76,13 +76,13 @@ public class MatrixReaderFactory
 		InputInfo iinfo = props.inputInfo;
 
 		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
-			if( OptimizerUtils.PARALLEL_READ_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
 				reader = new ReaderTextCellParallel( iinfo );
 			else
 				reader = new ReaderTextCell( iinfo );
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
-			if( OptimizerUtils.PARALLEL_READ_TEXTFORMATS )
+			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
 				reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
 			else
 				reader = new ReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());

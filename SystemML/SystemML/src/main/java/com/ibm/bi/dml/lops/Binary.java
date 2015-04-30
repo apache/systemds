@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,33 +21,32 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class Binary extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
-		MAX, MIN, POW, SOLVE, NOTSUPPORTED};	
-	OperationTypes operation;
-	
+		MAX, MIN, POW, SOLVE, NOTSUPPORTED
+	};	
 
+	private OperationTypes operation;
+	private int numThreads = -1;
 	
 	/**
 	 * Constructor to perform a binary operation.
 	 * @param input
 	 * @param op
 	 */
-
 	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.Binary, dt, vt);
-		init(input1, input2, op, dt, vt, et);
-		
+		this(input1, input2, op, dt, vt, et, 1);
 	}
 	
-	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.Binary, dt, vt);	
-		init(input1, input2, op, dt, vt, ExecType.MR);
+	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
+		super(Lop.Type.Binary, dt, vt);
+		init(input1, input2, op, dt, vt, et);	
+		numThreads = k;
 	}
 	
 	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
@@ -168,6 +167,12 @@ public class Binary extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( this.prepOutputOperand(output));
+		
+		//append degree of parallelism for matrix multiplications
+		if( operation == OperationTypes.MATMULT && getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( numThreads );
+		}	
 		
 		return sb.toString();
 	}

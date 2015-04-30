@@ -81,7 +81,7 @@ public class LibMatrixMult
 		
 		//Timing time = new Timing(true);
 		
-		//pre-processing
+		//pre-processing: output allocation
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
@@ -98,7 +98,7 @@ public class LibMatrixMult
 		else
 			matrixMultDenseSparse(m1, m2, ret, 0, m1.rlen);
 		
-		//post-processing
+		//post-processing: nnz/representation
 		if( !ret.sparse )
 			ret.recomputeNonZeros();
 		ret.examSparsity();
@@ -131,10 +131,13 @@ public class LibMatrixMult
 		
 		//Timing time = new Timing(true);
 		
-		//pre-processing
+		//pre-processing: output allocation (in contrast to single-threaded,
+		//we need to allocate sparse as well in order to prevent synchronization)
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
+		else
+			ret.allocateSparseRowsBlock();
 		
 		//core multi-threaded matrix mult computation
 		//(currently: always parallelization over number of rows)
@@ -151,12 +154,12 @@ public class LibMatrixMult
 			throw new DMLRuntimeException(ex);
 		}
 		
-		//post-processing
-		if( !ret.sparse )
-			ret.recomputeNonZeros();
+		//post-processing: nnz/representation (in contrast to single-threaded,
+		//we need to recompute nnz for sparse as well in order to prevent synchronization)
+		ret.recomputeNonZeros();
 		ret.examSparsity();
 		
-		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
+		//System.out.println("MM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
 	
@@ -259,7 +262,7 @@ public class LibMatrixMult
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 		
-		//System.out.println("MMChain "+ct.toString()+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
+		//System.out.println("MMChain "+ct.toString()+" k="+k+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
 		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
@@ -811,7 +814,7 @@ public class LibMatrixMult
 		}
 		
 		//compute rest (not aligned to blocksize)
-		for( int i=bn, aix=i*cd; i < ru; i++, aix+=cd ) {
+		for( int i=bn, aix=bn*cd; i < ru; i++, aix+=cd ) {
 			double val = dotProduct(a, b, aix, 0, cd);
 			val *= (weights) ? w[i] : 1; 
 			vectMultiplyAdd(val, a, c, aix, 0, cd);				

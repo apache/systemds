@@ -1050,6 +1050,8 @@ public class ParForProgramBlock extends ForProgramBlock
 							case INT:     dataObj = new IntObject(var,-1);        break;
 							case DOUBLE:  dataObj = new DoubleObject(var,-1d);    break;
 							case STRING:  dataObj = new StringObject(var,"-1");   break;
+							default:
+								throw new DMLRuntimeException("Value type not supported: "+valuetype);
 						}
 						break;
 					case MATRIX:
@@ -1059,7 +1061,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					case UNKNOWN:
 						break;
 					default:
-						throw new DMLRuntimeException("Datatype not supported: "+datatype);
+						throw new DMLRuntimeException("Data type not supported: "+datatype);
 				}
 				
 				if( dataObj != null )

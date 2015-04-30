@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -32,6 +33,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.compile.RecompileStatus;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -1328,8 +1330,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param kMax
 	 * @param mMax  (per node)
 	 * @param nested
+	 * @throws DMLRuntimeException 
 	 */
 	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
+		throws DMLRuntimeException 
 	{
 		ExecType type = n.getExecType();
 		long id = n.getID();
@@ -1398,11 +1402,15 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @param par
+	 * @throws DMLRuntimeException 
 	 */
 	protected void rAssignRemainingParallelism(OptNode n, int par) 
+		throws DMLRuntimeException
 	{		
 		ArrayList<OptNode> childs = n.getChilds();
-		if( childs != null )
+		if( childs != null ) 
+		{
+			boolean recompileSB = false;
 			for( OptNode c : childs )
 			{
 				if( par == 1 )
@@ -1418,9 +1426,36 @@ public class OptimizerRuleBased extends Optimizer
 					pfpb.setDegreeOfParallelism(tmpK);
 					rAssignRemainingParallelism(c,(int)Math.ceil(((double)(par-tmpK+1))/tmpK));
 				}
+				else if( c.getNodeType() == NodeType.HOP )
+				{
+					//set degree of parallelism for multi-threaded leaf nodes
+					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
+					if(    OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
+						&& h instanceof AggBinaryOp  )
+					{ 
+						AggBinaryOp ba = (AggBinaryOp) h;
+						ba.setMaxNumThreads(par); //set max constraint in hop
+						c.setK(par); //set optnode k (for explain)
+						//need to recompile SB, if changed constraint
+						recompileSB = true;
+					}
+				}
 				else
 					rAssignRemainingParallelism(c, par);
 			}
+			
+			//recompile statement block if required
+			if( recompileSB ) {
+				try {
+					//guaranteed to be a last-level block (see hop change)
+					ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+					Recompiler.rRecompileProgramBlock(pb, new LocalVariableMap(), new RecompileStatus(), 0, false);
+				}
+				catch(Exception ex){
+					throw new DMLRuntimeException(ex);
+				}
+			}
+		}
 	}
 
 	

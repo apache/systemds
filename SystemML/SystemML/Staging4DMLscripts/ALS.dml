@@ -1,0 +1,277 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#  
+# THIS SCRIPT COMPUTES AN APPROXIMATE FACTORIZATIONOF A LOW-RANK MATRIX V INTO TWO MATRICES L AND R 
+# USING ALTERNATING-LEAST-SQUARES (ALS) ALGORITHM 
+# MATRICES L AND R ARE COMPUTED BY MINIMIZING A LOSS FUNCTION (WITH REGULARIZATION)
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# V       String   ---      Location to read the input matrix V to be factorized
+# L       String   ---      Location to write the factor matrix L
+# R       String   ---      Location to write the factor matrix R
+# rank    Int      10       Rank of the factorization
+# reg     String   "l2"	    Regularization: 
+#						    "l2" = L2 regularization;
+#                           "wl2" = weighted L2 regularization
+# lambda  Double   0.0      Regularization parameter, no regularization if 0.0
+# maxi    Int      50       Maximum number of iterations
+# check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating L and R once
+# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
+# 							if the decrease in loss in any two consecutive iterations falls below this threshold; 
+#							if check is FALSE thr is ignored
+# fmt     String   "text"   The output format of the factor matrices L and R, such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix L and Matrix R
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R
+#     				                 rank=10 reg="wl2" lambda=0.0001 fmt=csv
+
+fileV      = $V;
+fileL	   = $L;
+fileR      = $R;
+# Default values of some parameters
+r          = ifdef ($rank, 10);	      # $rank=10;
+reg		   = ifdef ($reg, "l2")       # $reg="l2";
+lambda	   = ifdef ($lambda, 0);  	  # $lambda=0.0;
+max_iter   = ifdef ($maxi, 50);       # $maxi=50;
+check      = ifdef ($check, FALSE);	  # $check=FALSE;
+thr        = ifdef ($thr, 0.0001);    # $thr=0.0001;
+fmtO       = ifdef ($fmt, "text");    # $fmt="text";
+
+V = read (fileV);
+
+# check the input matrix V, if some rows or columns contain only zeros remove them from V  
+n_non_empty_rows = rowSums (ppred (V, 0, "!="));
+ind_empty_rows = ppred (n_non_empty_rows, 0, "==");
+n_empty_rows = sum (ind_empty_rows);
+if (n_empty_rows > 0) {
+	print ("Matrix V contains empty rows! These rows will be removed.");
+	V = removeEmpty (target = V, margin = "rows");
+}
+m = nrow (V);
+
+n_non_empty_cols = colSums (ppred (V, 0, "!="));
+ind_empty_cols = ppred (n_non_empty_cols, 0, "==");
+n_empty_cols = sum (ind_empty_cols);
+if (n_empty_cols > 0) {
+	print ("Matrix V contains empty columns! These columns will be removed.");
+	V = removeEmpty (target = V, margin = "cols");
+}
+n = ncol (V);
+
+# initialize L and R randomly 
+V_nonzero_ind = ppred (V, 0, "!=")
+global_sum = sum (V);
+nnz = sum (V_nonzero_ind);
+global_mean = global_sum / nnz;
+# print ("global mean " + global_mean + " nnz " + nnz);
+# center V around its mean
+V = V - (global_mean * V_nonzero_ind);
+ 
+L = rand (rows = m, cols = r, min = -0.5, max = 0.5);
+R = rand (rows = r, cols = n, min = -0.5, max = 0.5);
+
+
+Lt = t(L);
+Rt = t(R);
+Vt = t(V);
+lambda_I = diag(matrix(lambda, rows = r, cols = 1));
+
+	
+converged = FALSE;
+if (lambda == 0) {
+
+	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS");
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_init = sum ((V - LR_nonzero)^2);
+		print ("-----	Initial train loss: " + loss_init + " -----");
+	}
+
+	it = 0;
+	while ((it < max_iter) & (!converged)) {
+		it = it + 1;
+		# keep R fixed and update L
+		parfor (i in 1:m) {
+			R_nonzero_ind = V_nonzero_ind[i,];
+			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
+			Rt_nonzero = t(R_nonzero);			
+			A1 = (R_nonzero %*% Rt_nonzero); # coefficient matrix
+			Lt[,i] = solve (A1, R %*% Vt[,i]);
+			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
+		}
+		L = t(Lt);
+	
+		# keep L fixed and update R
+		parfor (j in 1:n) {
+			L_nonzero_ind = V_nonzero_ind[,j];
+			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+			Lt_nonzero = t (L_nonzero);
+			A2 = (Lt_nonzero %*% L_nonzero); # coefficient matrix
+			R[,j] = solve (A2, Lt %*% V[,j]);
+			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
+		}
+		Rt = t(R);
+		
+		if (check) {
+			LR_nonzero = V_nonzero_ind * (L %*% R);
+			loss_cur = sum ((V - LR_nonzero)^2); 
+			print ("Train loss at iteration " + it + ": " + loss_cur);
+			loss_dec = (loss_init - loss_cur) / loss_init;
+			if (loss_dec >= 0 & loss_dec < thr) {
+				print ("----- ALS converged after " + it + " iterations!");
+				converged = TRUE;
+			}
+			loss_init = loss_cur;
+		}
+	}
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_final = sum ((V - LR_nonzero)^2); 
+		print ("-----	Final train loss: " + loss_final + " -----");
+	}
+} else if (reg == "l2") {
+
+	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 REGULARIZATION");
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_data = sum ((V - LR_nonzero)^2);
+		loss_model = lambda * (sum (L^2) + sum (R^2));
+		loss_init = loss_data + loss_model 
+		# print ("-----	Initial train loss: " + loss_init + " data " + loss_data + " model " + loss_model + " -----");
+		print ("-----	Initial train loss: " + loss_init + " -----");
+	}
+
+	it = 0;
+	while ((it < max_iter) & (!converged)) {
+		it = it + 1;
+		# keep R fixed and update L
+		parfor (i in 1:m) {
+			R_nonzero_ind = V_nonzero_ind[i,];
+			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
+			Rt_nonzero = t(R_nonzero);
+			A1 = ((R_nonzero %*% Rt_nonzero) + lambda_I); # coefficient matrix
+			Lt[,i] = solve (A1, R %*% Vt[,i]);
+			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);	
+		}
+		L = t(Lt);
+		
+		# keep L fixed and update R
+		parfor (j in 1:n) {
+			L_nonzero_ind = V_nonzero_ind[,j];
+			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+			Lt_nonzero = t (L_nonzero);
+			A2 = ((Lt_nonzero %*% L_nonzero) + lambda_I); # coefficient matrix
+			R[,j] = solve (A2, Lt %*% V[,j]);
+			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
+		}
+		Rt = t(R);
+
+		if (check) {
+			LR_nonzero = V_nonzero_ind * (L %*% R);
+			loss_data = sum ((V - LR_nonzero)^2);
+			loss_model = lambda * (sum (L^2) + sum (R^2));
+			loss_cur =  loss_data + loss_model; 
+			# print ("Train loss at iteration (R) " + it + ": " + loss_cur + " data " + loss_data + " model " + loss_model);
+			print ("Train loss at iteration " + it + ": " + loss_cur);
+			loss_dec = (loss_init - loss_cur) / loss_init;
+			if (loss_dec >= 0 & loss_dec < thr) {
+				print ("----- ALS converged after " + it + " iterations!");
+				converged = TRUE;
+			}
+			loss_init = loss_cur;
+		}
+	}
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_data = sum ((V - LR_nonzero)^2);
+		loss_model = lambda * (sum (L^2) + sum (R^2));
+		loss_final = loss_data + loss_model;
+		# print ("-----	Final train loss: " + loss_final + " data " + loss_data + " model " + loss_model + " -----");
+		print ("-----	Final train loss: " + loss_final + " -----");
+	}
+} else if (reg == "wl2") {
+
+	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 REGULARIZATION");
+	row_nonzeros = rowSums(V_nonzero_ind);
+	col_nonzeros = colSums(V_nonzero_ind);
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_data = sum ((V - LR_nonzero)^2);
+		loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+		loss_init =  loss_data + loss_model;
+		# print ("-----	Initial train loss: " + loss_init + " data " + loss_data + " model " + loss_model + " -----");
+		print ("-----	Initial train loss: " + loss_init + " -----");
+	}
+	
+	it = 0;
+	while ((it < max_iter) & (!converged)) {
+		it = it + 1;
+		# keep R fixed and update L
+		parfor (i in 1:m) {
+			R_nonzero_ind = V_nonzero_ind[i,];
+			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
+			Rt_nonzero = t(R_nonzero);
+			A1 = ((R_nonzero %*% Rt_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I)); # coefficient matrix
+			Lt[,i] = solve (A1, R %*% Vt[,i]);
+			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
+		}
+		L = t(Lt);
+	
+		# keep L fixed and update R
+		parfor (j in 1:n) {
+			L_nonzero_ind = V_nonzero_ind[,j];
+			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+			Lt_nonzero = t (L_nonzero);
+			A2 = ((Lt_nonzero %*% L_nonzero) + (as.scalar(col_nonzeros[1,j]) * lambda_I)); # coefficient matrix
+			R[,j] = solve (A2, Lt %*% V[,j]);
+			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
+		}
+		Rt = t(R);
+
+		if (check) {
+			LR_nonzero = V_nonzero_ind * (L %*% R);
+			loss_data = sum ((V - LR_nonzero)^2);
+			loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+			loss_cur =  loss_data + loss_model; 
+			# print ("Train loss at iteration (R) " + it + ": " + loss_cur + " data " + loss_data + " model " + loss_model);
+			print ("Train loss at iteration " + it + ": " + loss_cur);
+			loss_dec = (loss_init - loss_cur) / loss_init;
+			if (loss_dec >= 0 & loss_dec < thr) {
+				print ("----- ALS converged after " + it + " iterations!");
+				converged = TRUE;
+			}
+			loss_init = loss_cur;
+		}
+	}
+	if (check) {
+		LR_nonzero = V_nonzero_ind * (L %*% R);
+		loss_data = sum ((V - LR_nonzero)^2);
+		loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+		loss_final =  loss_data + loss_model
+		# print ("-----	Final train loss: " + loss_final + " data " + loss_data + " model " + loss_model + " -----");
+		print ("-----	Final train loss: " + loss_final + " -----");
+	}
+} else {
+	stop ("wrong regularization! " + reg);
+}
+
+
+if (!converged) {
+	print ("Max iteration achieved but not converged!");
+} else {
+	write (L, fileL, fmtO);
+	write (R, fileR, fmtO);
+}
+
+

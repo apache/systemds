@@ -53,6 +53,7 @@ public class SparkExecutionContext extends ExecutionContext
 	private static long _memExecutors = -1;
 	private static double _memRatioData = -1;
 	private static double _memRatioShuffle = -1;
+	private static long _defaultPar = -1; //vcores 
 	
 	// TODO: This needs to be debugged further. For now getting around the problem with Singleton
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
@@ -400,6 +401,14 @@ public class SparkExecutionContext extends ExecutionContext
 		return membudget;
 	}
 	
+	public static long getDefaultParallelism()
+	{
+		if( _defaultPar < 0 )
+			analyzeSparkConfiguation();
+		
+		return _defaultPar;
+	}
+	
 	/**
 	 * 
 	 */
@@ -421,6 +430,10 @@ public class SparkExecutionContext extends ExecutionContext
 		//get data and shuffle memory ratios (defaults not specified in job conf)
 		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
+		
+		//get default parallelism
+		//TODO on Spark 1.2, the default parallelism is not set (but spark.executor.instances, no info on cores)
+		_defaultPar = sconf.getLong("spark.default.parallelism", 144); 
 	}
 
 	///////////////////////////////////////////

@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
@@ -174,7 +175,9 @@ public class OptimizerUtils
 	 * Enables multi-threaded matrix multiply for mm, mmchain, and tsmm.
 	 * 
 	 * TODO to be enabled, currently disabled because parallel mmchain shows 
-	 * numerical stability issues on GLM.
+	 * numerical stability issues on GLM (in detail, several aspects contribute here
+	 * e.g., by disabling rewrites like -1*x->-x or dotproductsum it also runs fine 
+	 * in parallel; otherwise local aggregation leads to crossing the error threshold).
 	 */
 	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = false;
 	
@@ -415,6 +418,15 @@ public class OptimizerUtils
 			ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores() );
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isSparkExecutionMode() {
+		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK);
 	}
 	
 	/**

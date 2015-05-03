@@ -22,6 +22,7 @@ import java.util.HashMap;
 
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -29,6 +30,7 @@ import org.junit.Before;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -126,7 +128,7 @@ public abstract class AutomatedTestBase
 	 */
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	static {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) {
+		if( OptimizerUtils.isSparkExecutionMode() ) {
 			// Use local configuration for running integration tests
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
@@ -1224,7 +1226,7 @@ public abstract class AutomatedTestBase
 	 */
 	protected void checkNumCompiledMRJobs(int expectedNumCompiled) {
 		
-		if (RUNTIME_PLATFORM.SPARK.equals(rtplatform)) {
+		if( OptimizerUtils.isSparkExecutionMode() ) {
 			// Skip MapReduce-related checks when running in Spark mode.
 			return;
 		}
@@ -1245,7 +1247,7 @@ public abstract class AutomatedTestBase
 	 */
 	protected void checkNumExecutedMRJobs(int expectedNumExecuted) {
 		
-		if (RUNTIME_PLATFORM.SPARK.equals(rtplatform)) {
+		if( OptimizerUtils.isSparkExecutionMode() ) {
 			// Skip MapReduce-related checks when running in Spark mode.
 			return;
 		}

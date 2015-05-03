@@ -257,7 +257,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			int expectedNumCompiled = (sumProductRewrites)?2:4; //GMR Reblock, 2x(GMR mapmult), GMR write -> GMR Reblock, GMR mapmultchain+write
 			int expectedNumExecuted = expectedNumCompiled;
 			if( instType != ExecType.MR ) {
-				expectedNumCompiled = 1; //REBLOCK
+				expectedNumCompiled = (instType==ExecType.SPARK)?0:1; //REBLOCK in CP
 				expectedNumExecuted = 0;
 			}
 			checkNumCompiledMRJobs(expectedNumCompiled); 

@@ -19,7 +19,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
@@ -57,6 +56,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
@@ -190,7 +190,7 @@ public class OptimizerRuleBased extends Optimizer
 		_cost = est;
 		
 		//debug and warnings output
-		LOG.debug(getOptMode()+" OPT: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")." );
+		LOG.debug(getOptMode()+" OPT: Optimize w/ max_mem="+toMB(_lm)+"/"+toMB(_rm)+"/"+toMB(_rm2)+", max_k="+_lk+"/"+_rk+"/"+_rk2+")." );
 		if( _rnk<=0 || _rk<=0 )
 			LOG.warn(getOptMode()+" OPT: Optimize for inactive cluster (num_nodes="+_rnk+", num_map_slots="+_rk+")." );
 		
@@ -217,7 +217,7 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
 		
 		//exec-type-specific rewrites
-		if( pn.getExecType() == ExecType.MR )
+		if( pn.getExecType() == ExecType.MR || pn.getExecType()==ExecType.SPARK )
 		{
 			if( flagRecompMR ){
 				//rewrite 4: set operations exec type
@@ -316,6 +316,15 @@ public class OptimizerRuleBased extends Optimizer
 			long tmprk = YarnClusterAnalyzer.getNumCores();
 			_rk = (int) Math.max( _rk, tmprk );
 			_rk2 = (int) Math.max( _rk2, tmprk/2 );
+		}
+		
+		//correction of max parallelism and memory if spark runtime enabled because
+		//spark limits the available parallelism by its own executor configuration
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			_rk = (int) SparkExecutionContext.getDefaultParallelism();
+			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
+			_rm = SparkExecutionContext.getBroadcastMemoryBudget();
+			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget();
 		}
 	}
 	
@@ -466,6 +475,9 @@ public class OptimizerRuleBased extends Optimizer
 				case BLOCK_WISE_M_N:
 					mem = Integer.MAX_VALUE; //TODO
 					break;
+					
+				default:
+					//do nothing
 			}	
 		}
 		
@@ -519,6 +531,9 @@ public class OptimizerRuleBased extends Optimizer
 			case ROW_BLOCK_WISE:
 				mem = OptimizerUtils.estimateSizeExactSparsity(brlen, mo.getNumColumns(), sparsity);
 				break;
+				
+			default:
+				//do nothing	
 		}
 		
 		if( mem < OptimizerUtils.getLocalMemBudget() )
@@ -877,6 +892,8 @@ public class OptimizerRuleBased extends Optimizer
 		boolean isCPOnly = n.isCPOnly();
 		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
 		
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
 		//deciding on the execution strategy
 		if(    (isCPOnly && M <= _rm )   //Required: all instruction can be be executed in CP
 			|| (isCPOnlyPossible && M2 <= _rm) )  //Required: cp inst fit into remote JVM mem 
@@ -887,28 +904,28 @@ public class OptimizerRuleBased extends Optimizer
 			//MR if local par cannot be exploited due to mem constraints (this implies that we work on large data)
 			if( cpk < _lk && cpk < _N && cpk < _rk )
 			{
-				n.setExecType( ExecType.MR ); //remote parfor
+				n.setExecType( REMOTE ); //remote parfor
 			}
 			//MR if problem is large enough and remote parallelism is larger than local   
 			else if( _lk < _N && _lk < _rk && isLargeProblem(n, M0) )
 			{
-				n.setExecType( ExecType.MR ); //remote parfor
+				n.setExecType( REMOTE ); //remote parfor
 			}
 			//MR if MR operations in local, but CP only in remote (less overall MR jobs)
 			else if( (!isCPOnly) && isCPOnlyPossible )
 			{
-				n.setExecType( ExecType.MR ); //remote parfor
+				n.setExecType( REMOTE ); //remote parfor
 			}
 			//MR if necessary for LIX rewrite (LIX true iff cp only and rm valid)
 			else if( flagLIX ) 
 			{
-				n.setExecType( ExecType.MR );  //remote parfor
+				n.setExecType( REMOTE );  //remote parfor
 			}
 			//MR if remote data partitioning, because data will be distributed on all nodes 
 			else if( n.getParam(ParamType.DATA_PARTITIONER)!=null && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
 					 && !InfrastructureAnalyzer.isLocalMode())
 			{
-				n.setExecType( ExecType.MR );  //remote parfor
+				n.setExecType( REMOTE );  //remote parfor
 			}
 			//otherwise CP
 			else 
@@ -925,11 +942,12 @@ public class OptimizerRuleBased extends Optimizer
 		long id = n.getID();
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 		                             .getAbstractPlanMapping().getMappedProg(id)[1];
-		PExecMode mode = (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
+		
+		PExecMode mode = n.getExecType().toParForExecMode();
 		pfpb.setExecMode( mode );	
 		
 		//decide if recompilation according to remote mem budget necessary
-		boolean requiresRecompile = (mode == PExecMode.REMOTE_MR && !isCPOnly );
+		boolean requiresRecompile = ((mode == PExecMode.REMOTE_MR || mode == PExecMode.REMOTE_SPARK) && !isCPOnly );
 		
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set execution strategy' - result="+mode+" (recompile="+requiresRecompile+")" );
@@ -961,10 +979,11 @@ public class OptimizerRuleBased extends Optimizer
 		ExecType et = n.getExecType();
 		boolean ret = ( et == ExecType.CP);		
 		
-		if( n.isLeaf() && et == ExecType.MR )
+		if( n.isLeaf() && (et == ExecType.MR || et == ExecType.SPARK) )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
-			if( h.getForcedExecType()!=LopProperties.ExecType.MR ) //e.g., -exec=hadoop
+			if(    h.getForcedExecType()!=LopProperties.ExecType.MR  //e.g., -exec=hadoop
+				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK) 
 			{
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
 				if( mem <= memBudget )
@@ -1121,6 +1140,8 @@ public class OptimizerRuleBased extends Optimizer
 					if( h.getInput().get(3) instanceof DataOp )
 						indexAccess = h.getInput().get(3).getName();
 					break;
+				default:
+					//do nothing
 			}
 			
 			if( indexAccess != null && indexAccess.equals(iterVarname) )
@@ -1225,7 +1246,7 @@ public class OptimizerRuleBased extends Optimizer
         							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		//decide on the replication factor 
-		if( n.getExecType()==ExecType.MR )		
+		if( n.getExecType()==ExecType.MR || n.getExecType()==ExecType.SPARK )		
 		{
 			apply = true;
 			
@@ -1362,7 +1383,7 @@ public class OptimizerRuleBased extends Optimizer
 			n.setK(tmpK);	
 			rAssignRemainingParallelism( n,(int)Math.ceil(((double)(kMax-tmpK+1))/tmpK) ); //1 if tmpK=kMax, otherwise larger
 		}
-		else // ExecType.MR
+		else // ExecType.MR/ExecType.SPARK
 		{
 			int kMax = -1;
 			if( flagNested )
@@ -1404,6 +1425,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param par
 	 * @throws DMLRuntimeException 
 	 */
+	@SuppressWarnings("unused")
 	protected void rAssignRemainingParallelism(OptNode n, int par) 
 		throws DMLRuntimeException
 	{		
@@ -1645,6 +1667,9 @@ public class OptimizerRuleBased extends Optimizer
 					if( h.getInput().get(3) instanceof DataOp )
 						indexAccess = h.getInput().get(3).getName();
 					break;
+					
+				default:
+					//do nothing
 			}
 			
 			ret &= (   (inMatrix!=null && inMatrix.equals(varName)) 
@@ -2276,7 +2301,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( n.getNodeType() == NodeType.PARFOR )
 			{
 				rewriteSetResultMerge(n, vars, inLocal);
-				if( n.getExecType()==ExecType.MR )
+				if( n.getExecType()==ExecType.MR || n.getExecType()==ExecType.SPARK )
 					inLocal = false;
 			}
 			else if( n.getChilds()!=null )  

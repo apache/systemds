@@ -42,16 +42,29 @@ public class OptNode
 		HOP
 	}
 	
-	public enum ExecType{ 
+	public enum ExecType { 
 		CP,
-		MR;
+		MR,
+		SPARK;
 		
-		public LopProperties.ExecType toLopsExecType(){
-			return (this == CP)? LopProperties.ExecType.CP : LopProperties.ExecType.MR;
+		public LopProperties.ExecType toLopsExecType() {
+			switch( this ) {
+				case CP: 	return LopProperties.ExecType.CP;
+				case MR: 	return LopProperties.ExecType.MR;
+				case SPARK: return LopProperties.ExecType.SPARK;
+			}
+			
+			return null;
 		}
 		
-		public ParForProgramBlock.PExecMode toParForExecMode(){
-			return (this == CP)? ParForProgramBlock.PExecMode.LOCAL : ParForProgramBlock.PExecMode.REMOTE_MR;
+		public ParForProgramBlock.PExecMode toParForExecMode() {
+			switch( this ) {
+				case CP: 	return ParForProgramBlock.PExecMode.LOCAL;
+				case MR: 	return ParForProgramBlock.PExecMode.REMOTE_MR;
+				case SPARK: return ParForProgramBlock.PExecMode.REMOTE_SPARK;
+			}
+			
+			return null;
 		}
 	}
 	
@@ -600,6 +613,8 @@ public class OptNode
 					sb.append(", recursive");
 				break;
 			}	
+			default:
+				//do nothing
 		}
 		sb.append("\n");
 		

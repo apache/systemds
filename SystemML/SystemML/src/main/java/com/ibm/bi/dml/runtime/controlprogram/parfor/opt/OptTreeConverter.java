@@ -245,6 +245,12 @@ public class OptTreeConverter
 				case REMOTE_MR_DP:
 					node.setExecType(ExecType.MR);
 					break;
+				case REMOTE_SPARK:
+				case REMOTE_SPARK_DP:
+					node.setExecType(ExecType.SPARK);
+					break;	
+				default:
+					node.setExecType(null);
 			}
 			
 			if( !topLevel )
@@ -471,6 +477,10 @@ public class OptTreeConverter
 				case REMOTE_MR_DP:
 					node.setExecType(ExecType.MR);
 					break;
+				case REMOTE_SPARK:
+				case REMOTE_SPARK_DP:
+					node.setExecType(ExecType.SPARK);
+					break;		
 				case UNSPECIFIED:
 					node.setExecType(null);
 			}

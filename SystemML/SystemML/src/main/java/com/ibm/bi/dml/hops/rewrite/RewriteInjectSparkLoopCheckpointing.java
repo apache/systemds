@@ -9,16 +9,16 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
@@ -45,7 +45,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
 		
-		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK && DMLScript.rtplatform != RUNTIME_PLATFORM.HYBRID_SPARK ) 
+		if( !OptimizerUtils.isSparkExecutionMode() ) 
 		{
 			ret.add(sb); // nothing to do here
 			return ret; //return original statement block
@@ -58,7 +58,11 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 		
 		//TODO keep meta data at symbol table level about 
 		
-		if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock ) //incl parfor
+		//apply rewrite for while and for (the decision for parfor loops is deferred until parfor
+		//optimization because otherwise we would prevent remote parfor)
+		//TODO this needs a more detailed treatment, which will be introduced with the generalization of reblockop/dataop 
+		if( (   sb instanceof WhileStatementBlock 
+			 || sb instanceof ForStatementBlock && !(sb instanceof ParForStatementBlock)) ) 
 		{
 			//step 1: determine checkpointing candidates
 			ArrayList<String> candidates = new ArrayList<String>(); 

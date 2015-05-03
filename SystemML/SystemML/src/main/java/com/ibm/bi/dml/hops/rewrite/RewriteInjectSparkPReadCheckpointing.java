@@ -9,11 +9,10 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.ReblockOp;
@@ -37,7 +36,7 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
 		throws HopsException
 	{
-		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK && DMLScript.rtplatform != RUNTIME_PLATFORM.HYBRID_SPARK ) 
+		if(  !OptimizerUtils.isSparkExecutionMode()  ) 
 			return roots;
 		
 		if( roots == null )

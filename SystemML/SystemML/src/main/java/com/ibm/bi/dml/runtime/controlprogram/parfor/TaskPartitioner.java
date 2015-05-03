@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.util.Collection;
+import java.util.List;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
@@ -53,7 +53,7 @@ public abstract class TaskPartitioner
 	 * 
 	 * @return
 	 */
-	public abstract Collection<Task> createTasks()
+	public abstract List<Task> createTasks()
 		throws DMLRuntimeException;
 	
 	/**

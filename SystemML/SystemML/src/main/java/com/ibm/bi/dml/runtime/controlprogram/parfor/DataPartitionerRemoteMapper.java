@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -39,7 +39,7 @@ public class DataPartitionerRemoteMapper
 	implements Mapper<Writable, Writable, Writable, Writable>
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private DataPartitionerMapper _mapper = null;
@@ -189,6 +189,8 @@ public class DataPartitionerRemoteMapper
 						longKey.set( (col-1)/_n+1 );
 						col = (col-1)%_n+1;
 						break;	
+					default:
+						//do nothing
 				}
 
 				key2.setIndexes(row, col);	
@@ -259,7 +261,9 @@ public class DataPartitionerRemoteMapper
 					case COLUMN_BLOCK_WISE_N:
 						longKey.set( (col-1)/_n+1 );
 						col = (col-1)%_n+1; 
-						break;	
+						break;
+					default:
+						//do nothing
 				}
 				key2.setIndexes(row, col);	
 				pairValue.indexes = key2;
@@ -385,6 +389,8 @@ public class DataPartitionerRemoteMapper
 						_pair.block = value2;
 						out.collect(_longKey, _pair);
 						break;	
+					default:
+						//do nothing
 				}
 			} 
 			catch (Exception e) 
@@ -642,6 +648,8 @@ public class DataPartitionerRemoteMapper
 									}	
 								}
 						break;
+					default:
+						//do nothing
 				}
 			} 
 			catch (Exception e) 
@@ -672,6 +680,8 @@ public class DataPartitionerRemoteMapper
 					case ROW_BLOCK_WISE:     numPartitions = (int)Math.ceil(_rlen/(double)_brlen); break;
 					case COLUMN_WISE:        numPartitions = _clen; break;
 					case COLUMN_BLOCK_WISE:  numPartitions = (int)Math.ceil(_clen/(double)_bclen); break;
+					default:
+						//do nothing
 				}
 				
 				long len = (long)Math.ceil((double)numPartitions/numMap);

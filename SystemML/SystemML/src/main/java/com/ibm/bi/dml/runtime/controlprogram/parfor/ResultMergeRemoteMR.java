@@ -171,6 +171,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings({ "unused", "deprecation" })
 	protected void executeMerge(String fname, String fnameNew, String[] srcFnames, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{

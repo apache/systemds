@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import java.io.Serializable;
+
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -14,21 +16,28 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 
 
-public abstract class Data 
+public abstract class Data implements Serializable 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = 9176228330268046168L;
+
 	protected DataType dataType;
 	protected ValueType valueType;
 	
-	public abstract String getDebugName();
+	public Data() {
+		//default constructor for serialize
+	}
 	
 	protected Data(DataType dt, ValueType vt) {
 		dataType = dt;
 		valueType = vt;
 	}
+	
+
+	public abstract String getDebugName();
 	
 	public DataType getDataType() {
 		return dataType;

@@ -7,7 +7,9 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
+import java.io.Serializable;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
@@ -20,11 +22,13 @@ import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
  * NOTE: (Extension possibility: group of statements) 
  * 
  */
-public class Task 
+public class Task implements Serializable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final long serialVersionUID = 2815832451487164284L;
 	
 	public enum TaskType {
 		RANGE, 
@@ -36,6 +40,10 @@ public class Task
 	
 	private TaskType           	  _type;
 	private LinkedList<IntObject> _iterations; //each iteration is specified as an ordered set of index values
+	
+	public Task() {
+		//default constructor for serialize
+	}
 	
 	public Task( TaskType type )
 	{
@@ -55,7 +63,7 @@ public class Task
 		_iterations.addLast( indexVal );
 	}
 	
-	public LinkedList<IntObject> getIterations()
+	public List<IntObject> getIterations()
 	{
 		return _iterations;
 	}
@@ -217,89 +225,4 @@ public class Task
 		
 		return newTask;
 	}
-	
-	/*
-	@Deprecated
-	public byte[] toBinary()
-	{
-		// type (1B), strlen_varname (1B), varname (strlen(varname)B ), len (4B), all vals (4B each)
-		String varName = _iterations.getFirst().getName();
-		int strlen = varName.length(); 
-		int len = 2 + 8*strlen + 4 + 4*size();
-
-		//init and type
-		byte[] ret = new byte[len];
-		ret[0] = (byte)_type.ordinal();
-		
-		//var name
-		ret[1] = (byte)strlen;
-		char[] tmp = varName.toCharArray();
-		int i=-1;
-		for( i=2; i<2+tmp.length; i++ )
-			ret[i]=(byte)tmp[i-2];
-			
-		//len
-		int len2 = size();
-        ret[i++]=(byte)(len2 >>> 24);
-        ret[i++]=(byte)(len2 >>> 16);
-        ret[i++]=(byte)(len2 >>> 8);
-        ret[i++]=(byte) len2;
-		
-		//all iterations
-		for( IntObject o : _iterations )
-		{
-			int val = o.getIntValue();
-	        ret[i++]=(byte)(val >>> 24);
-	        ret[i++]=(byte)(val >>> 16);
-	        ret[i++]=(byte)(val >>> 8);
-	        ret[i++]=(byte) val;
-		}
-		
-		//ensure there are no \0, 
-		//for( int k=0; k<ret.length; k++ )
-		//	ret[k] = (byte) (ret[k] + 1); //note: reverted during parsing
-			
-		return ret;
-	}
-	*/
-	
-	/*
-	@Deprecated
-	public static Task parseBinary( byte[] btask )
-	{
-		//initial preparation (see toBinary)
-		//for( int k=0; k<btask.length; k++ )
-		//	btask[k] = (byte) (btask[k] - 1); 
-		
-		int type = btask[0];
-		
-		int strlen = btask[1];
-		Task lTask = new Task( Task.TaskType.values()[type] );
-		String varName = null;
-		
-		//varname
-		byte[] tmp1 = new byte[strlen];
-		int i;
-		for( i=2; i<2+tmp1.length; i++ )
-			tmp1[i-2]=btask[i];
-		varName = new String(tmp1);
-		
-		//len
-		int len = (btask[i++]<<24) + 
-		         ((btask[i++]&0xFF)<<16) + 
-		         ((btask[i++]&0xFF)<<8) + 
-		          (btask[i++]&0xFF);
-		
-		for( int j=0; j<len; j++ )
-		{
-			int val = (btask[i++]<<24) + 
-			         ((btask[i++]&0xFF)<<16) + 
-			         ((btask[i++]&0xFF)<<8) + 
-			          (btask[i++]&0xFF);
-			IntObject o = new IntObject(varName,val);
-			lTask.addIteration( o );
-		}
-			
-		return lTask;
-	}*/
 }

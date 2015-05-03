@@ -7,8 +7,8 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -35,7 +35,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 	}
 
 	@Override
-	public Collection<Task> createTasks() 
+	public List<Task> createTasks() 
 		throws DMLRuntimeException 
 	{
 		LinkedList<Task> tasks = new LinkedList<Task>();

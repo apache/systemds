@@ -8,7 +8,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -147,8 +147,6 @@ public abstract class ParWorker
 			case RANGE:
 				executeRangeTask( task );
 				break;		
-			//default: //MB: due to enum types this can never happen
-			//	throw new DMLRuntimeException("Undefined task type: '"+task.getType()+"'.");
 		}
 	}	
 		
@@ -217,11 +215,11 @@ public abstract class ParWorker
 		}
 		
 		//core execution
-		LinkedList<IntObject> tmp = task.getIterations();
+		List<IntObject> tmp = task.getIterations();
 		String lVarName = tmp.get(0).getName();
-		long lFrom       = tmp.get(0).getLongValue();
-		long lTo         = tmp.get(1).getLongValue();
-		long lIncr       = tmp.get(2).getLongValue();
+		long lFrom      = tmp.get(0).getLongValue();
+		long lTo        = tmp.get(1).getLongValue();
+		long lIncr      = tmp.get(2).getLongValue();
 		
 		for( long i=lFrom; i<=lTo; i+=lIncr )
 		{

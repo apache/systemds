@@ -95,6 +95,7 @@ public class RemoteParForUtils
 	}	
 	
 	/**
+	 * For remote MR parfor workers.
 	 * 
 	 * @param workerID
 	 * @param vars
@@ -148,6 +149,47 @@ public class RemoteParForUtils
 			}	
 		}
 	}
+	
+	/**
+	 * For remote Spark parfor workers. This is a simplified version compared to MR.
+	 * 
+	 * @param workerID
+	 * @param vars
+	 * @param resultVars
+	 * @param rvarFnames
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 */
+	public static ArrayList<String> exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<String> resultVars) 
+		throws DMLRuntimeException, IOException
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+		
+		//foreach result variables probe if export necessary
+		for( String rvar : resultVars )
+		{
+			Data dat = vars.get( rvar );
+			
+			//export output variable to HDFS (see RunMRJobs)
+			if ( dat != null && dat.getDataType() == DataType.MATRIX ) 
+			{
+				MatrixObject mo = (MatrixObject) dat;
+				if( mo.isDirty() )
+				{
+					//export result var (iff actually modified in parfor)
+					mo.exportData(); 
+					
+					
+					//pass output vars (scalars by value, matrix by ref) to result
+					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
+					ret.add( ProgramConverter.serializeDataObject(rvar, mo) );
+				}
+			}	
+		}
+		
+		return ret;
+	}
+		
 	
 	/**
 	 * Cleanup all temporary files created by this SystemML process

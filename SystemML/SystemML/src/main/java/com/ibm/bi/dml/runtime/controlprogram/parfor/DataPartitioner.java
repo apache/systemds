@@ -221,6 +221,8 @@ public abstract class DataPartitioner
 				//default dense because single column alwyas below SKINNY_MATRIX_TURN_POINT
 				tmp = new MatrixBlock( (int)rows, 1, false );
 				break;
+			default:
+				//do nothing
 		}
 		
 		return tmp;

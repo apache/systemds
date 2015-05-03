@@ -66,7 +66,6 @@ public class ResultMergeRemoteReducer
 	{
 		InputInfo ii = MRJobConfiguration.getResultMergeInputInfo(job);
 		String compareFname = MRJobConfiguration.getResultMergeInfoCompareFilename(job);
-		String stagingDir = MRJobConfiguration.getResultMergeStagingDir(job);
 		
 		//determine compare required
 		boolean requiresCompare = false;
@@ -78,7 +77,7 @@ public class ResultMergeRemoteReducer
 		else if( ii == InputInfo.BinaryCellInputInfo )
 			_reducer = new ResultMergeReducerBinaryCell(requiresCompare);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_reducer = new ResultMergeReducerBinaryBlock(requiresCompare, stagingDir);
+			_reducer = new ResultMergeReducerBinaryBlock(requiresCompare);
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
@@ -272,12 +271,10 @@ public class ResultMergeRemoteReducer
 	private static class ResultMergeReducerBinaryBlock extends ResultMerge implements ResultMergeReducer
 	{
 		private boolean _requiresCompare;
-		private String _stagingDir;
 		
-		public ResultMergeReducerBinaryBlock(boolean requiresCompare, String stagingDir)
+		public ResultMergeReducerBinaryBlock(boolean requiresCompare)
 		{
 			_requiresCompare = requiresCompare;
-			_stagingDir = stagingDir;
 		}
 		
 		@Override

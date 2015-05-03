@@ -137,6 +137,8 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			    case COLUMN_BLOCK_WISE: reducerGroups = (clen/bclen)+((clen%bclen==0)?0:1); break;
 			    case ROW_BLOCK_WISE_N: reducerGroups = (rlen/_n)+((rlen%_n==0)?0:1); break;
 			    case COLUMN_BLOCK_WISE_N: reducerGroups = (clen/_n)+((clen%_n==0)?0:1); break;
+			    default:
+					//do nothing
 		    }
 		    job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 

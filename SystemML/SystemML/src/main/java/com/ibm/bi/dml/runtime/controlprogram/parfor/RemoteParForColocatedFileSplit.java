@@ -45,6 +45,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 	 * Required because hadoop explicitly accesses this private constructor
 	 * via reflection (since private not inherited from FileSplit).
 	 */
+	@SuppressWarnings("unused")
 	private RemoteParForColocatedFileSplit()
 	{
 		super( null, -1, -1, new String[]{} );	

@@ -627,6 +627,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					key = (c.getCol()-1)/bclen+1;
 					c.setCol((c.getCol()-1)%bclen+1);
 					break;
+				default:
+					//do nothing
 			}
 			
 			if( !sortedBuffer.containsKey(key) )

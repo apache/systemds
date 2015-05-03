@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -49,6 +50,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteDPParForMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForMR;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForSpark;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
@@ -106,15 +108,17 @@ public class ParForProgramBlock extends ForProgramBlock
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// execution modes
-	public enum PExecMode{
+	public enum PExecMode {
 		LOCAL,      //local (master) multi-core execution mode
 		REMOTE_MR,	//remote (MR cluster) execution mode
 		REMOTE_MR_DP,	//remote (MR cluster) execution mode, fused with data partitioning
+		REMOTE_SPARK,	//remote (Spark cluster) execution mode
+		REMOTE_SPARK_DP,//remote (Spark cluster) execution mode, fused with data partitioning
 		UNSPECIFIED
 	}
 
 	// task partitioner
-	public enum PTaskPartitioner{
+	public enum PTaskPartitioner {
 		FIXED,      //fixed-sized task partitioner, uses tasksize 
 		NAIVE,      //naive task partitioner (tasksize=1)
 		STATIC,     //static task partitioner (numIterations/numThreads)
@@ -553,13 +557,21 @@ public class ParForProgramBlock extends ForProgramBlock
 					break;
 					
 				case REMOTE_MR: // create parworkers as MR tasks (one job per parfor)
-					executeRemoteParFor(ec, iterVar, from, to, incr);
+					executeRemoteMRParFor(ec, iterVar, from, to, incr);
 					break;
 				
 				case REMOTE_MR_DP: // create parworkers as MR tasks (one job per parfor)
-					executeRemoteParForDP(ec, iterVar, from, to, incr);
+					executeRemoteMRParForDP(ec, iterVar, from, to, incr);
 					break;
-					
+				
+				case REMOTE_SPARK: // create parworkers as Spark tasks (one job per parfor)
+					executeRemoteSparkParFor(ec, iterVar, from, to, incr);
+					break;
+				
+				case REMOTE_SPARK_DP: // create parworkers as Spark tasks (one job per parfor)
+					throw new DMLUnsupportedOperationException("Not implemented yet.");
+					//break;
+				
 				default:
 					throw new DMLRuntimeException("Undefined execution mode: '"+_execMode+"'.");
 			}	
@@ -686,7 +698,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 			else
 			{
-				Collection<Task> tasks = partitioner.createTasks();
+				List<Task> tasks = partitioner.createTasks();
 				numCreatedTasks = tasks.size();
 				
 				// put tasks into queue
@@ -760,7 +772,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException 
 	 */
-	private void executeRemoteParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
+	private void executeRemoteMRParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
 		/* Step 0) check and recompile MR inst
@@ -809,9 +821,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		else
 		{
 			//sequentially create tasks and write to disk
-			Collection<Task> tasks = partitioner.createTasks();
-			numCreatedTasks        = tasks.size();
-		    taskFile               = writeTasksToFile( taskFile, tasks, maxDigits );				
+			List<Task> tasks = partitioner.createTasks();
+			numCreatedTasks  = tasks.size();
+		    taskFile         = writeTasksToFile( taskFile, tasks, maxDigits );				
 		}
 				
 		if( _monitor )
@@ -859,7 +871,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private void executeRemoteParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
+	private void executeRemoteMRParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
 		/* Step 0) check and recompile MR inst
@@ -922,6 +934,79 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( flagForced ) //see step 0
 			releaseForcedRecompile(0);
 		inputMatrix.unsetPartitioned();
+		
+		if( _monitor ) 
+		{
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+		}			
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @param itervar
+	 * @param from
+	 * @param to
+	 * @param incr
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		Timing time = ( _monitor ? new Timing(true) : null );
+		
+		// Step 0) check and compile to CP (if forced remote parfor)
+//TODO forced cp compilation for spark execution		
+//		boolean flagForced = false;
+//		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE || (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) )
+//		{
+//			//tid = 0  because replaced in remote parworker
+//			flagForced = checkMRAndRecompileToCP(0); 
+//		}
+			
+		// Step 1) init parallel workers (serialize PBs)
+		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
+		//        cannot reuse serialized string, since variables are serialized as well.
+		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
+		String program = ProgramConverter.serializeParForBody( body );
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
+		
+		// Step 2) create tasks 
+		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
+		long numIterations = partitioner.getNumIterations();
+		
+		//sequentially create tasks as input to parfor job
+		List<Task> tasks = partitioner.createTasks();
+		long numCreatedTasks = tasks.size();
+				
+		if( _monitor )
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
+		
+		//write matrices to HDFS 
+		exportMatricesToHDFS(ec);
+				
+		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
+		//MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
+		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program, tasks, ec, _enableCPCaching, _numThreads);
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
+			
+			
+		// Step 4) collecting results from each parallel worker
+		int numExecutedTasks = (int)numCreatedTasks; //TODO ret.getNumExecutedTasks();
+		int numExecutedIterations = (int)numIterations; //TODO ret.getNumExecutedIterations();
+		
+		//consolidate results into global symbol table
+		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations , numExecutedTasks, 
+				                    ret.getVariables() );
+//		if( flagForced ) //see step 0
+//			releaseForcedRecompile(0);
 		
 		if( _monitor ) 
 		{
@@ -1387,7 +1472,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private String writeTasksToFile(String fname, Collection<Task> tasks, int maxDigits)
+	private String writeTasksToFile(String fname, List<Task> tasks, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;

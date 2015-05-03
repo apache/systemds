@@ -35,6 +35,6 @@ public abstract class GlobalOptimizer
 	 * @throws LopsException
 	 * @throws  
 	 */
-	public abstract GDFGraph optimize( GDFGraph gdfgraph )
+	public abstract GDFGraph optimize( GDFGraph gdfgraph, Summary summary )
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException;
 }

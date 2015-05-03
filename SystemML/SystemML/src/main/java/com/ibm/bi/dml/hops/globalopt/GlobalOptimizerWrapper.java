@@ -76,16 +76,20 @@ public class GlobalOptimizerWrapper
 		GlobalOptimizer optimizer = createGlobalOptimizer( OPTIM );
 		
 		//create global data flow graph
-		GDFGraph graph = GraphBuilder.constructGlobalDataFlowGraph(rtprog);
+		Summary summary = new Summary();
+		GDFGraph graph = GraphBuilder.constructGlobalDataFlowGraph(rtprog, summary);
 		if( LOG.isDebugEnabled() ) {
 			LOG.debug("EXPLAIN GDFGraph:\n" + Explain.explainGDFNodes(graph.getGraphRootNodes(),1));
 		}
 		
 		//core global data flow optimization 
-		graph = optimizer.optimize(graph);
+		graph = optimizer.optimize(graph, summary);
 		
 		//get the final runtime program
 		rtprog = graph.getRuntimeProgram();
+		
+		//print global optimizer summary
+		LOG.info( summary );
 		
 		LOG.debug("Finished global data flow optimization in " + time.stop() + " ms.");
 		return rtprog;

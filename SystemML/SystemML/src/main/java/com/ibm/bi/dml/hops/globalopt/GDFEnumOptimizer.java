@@ -74,6 +74,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	private static long _prunedSuboptimalPlans = 0;
 	private static long _compiledPlans = 0;
 	private static long _costedPlans = 0;
+	private static long _planMismatches = 0;
 
 	
 	public GDFEnumOptimizer( ) 
@@ -83,7 +84,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	}
 
 	@Override
-	public GDFGraph optimize(GDFGraph gdfgraph) 
+	public GDFGraph optimize(GDFGraph gdfgraph, Summary summary) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException 
 	{
 		Timing time = new Timing(true);
@@ -106,11 +107,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			Plan optPlan = ps.getPlanWithMinCosts();
 			rootPlans.add( optPlan );
 		}
+		long enumPlanMismatch = getPlanMismatches();
 		
 		//check for final containment of independent roots and pick optimal
 		HashMap<Long, Plan> memo = new HashMap<Long,Plan>();
+		resetPlanMismatches();
 		for( Plan p : rootPlans )
 			rSetRuntimePlanConfig(p, memo);
+		long finalPlanMismatch = getPlanMismatches();
 		
 		//generate final runtime plan (w/ optimal config)
 		Recompiler.recompileProgramBlockHierarchy(prog.getProgramBlocks(), new LocalVariableMap(), 0, false);
@@ -118,16 +122,17 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		ec = ExecutionContextFactory.createContext(prog);
 		double optCosts = CostEstimationWrapper.getTimeEstimate(prog, ec);
 		
-		//print optimization summary
-		LOG.info("Optimization summary:");
-		LOG.info("-- costs of initial plan:  "+initCosts);
-		LOG.info("-- costs of optimal plan:  "+optCosts);
-		LOG.info("-- # enumerated plans:     "+_enumeratedPlans);
-		LOG.info("-- # pruned invalid plans: "+_prunedInvalidPlans);
-		LOG.info("-- # pruned subopt plans:  "+_prunedSuboptimalPlans);
-		LOG.info("-- # of program compiles:  "+_compiledPlans);
-		LOG.info("-- # of program costings:  "+_costedPlans);
-		LOG.info("-- optimization time:      "+String.format("%.3f", (double)time.stop()/1000)+" sec.");
+		//maintain optimization summary statistics
+		summary.setCostsInitial( initCosts );
+		summary.setCostsOptimal( optCosts );
+		summary.setNumEnumPlans( _enumeratedPlans );
+		summary.setNumPrunedInvalidPlans( _prunedInvalidPlans );
+		summary.setNumPrunedSuboptPlans( _prunedSuboptimalPlans );
+		summary.setNumCompiledPlans( _compiledPlans );
+		summary.setNumCostedPlans( _costedPlans );
+		summary.setNumEnumPlanMismatch( enumPlanMismatch );
+		summary.setNumFinalPlanMismatch( finalPlanMismatch );
+		summary.setTimeOptim( time.stop() );
 		
 		return gdfgraph;
 	}
@@ -456,6 +461,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				LOG.warn("Configuration mismatch on shared node ("+p.getNode().getHop().getHopID()+"). Falling back to heuristic 'FIRST'.");
 				LOG.warn(p.getInterestingProperties().toString());
 				LOG.warn(memo.get(p.getNode().getID()).getInterestingProperties());
+				_planMismatches++;
 				return;
 			}
 		}
@@ -497,5 +503,13 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		
 		//memoization (mark as processed)
 		memo.put(p.getNode().getID(), p);
+	}
+	
+	private static long getPlanMismatches(){
+		return _planMismatches;
+	}
+	
+	private static void resetPlanMismatches(){
+		_planMismatches = 0;
 	}
 }

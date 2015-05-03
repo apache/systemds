@@ -15,6 +15,7 @@ import java.util.Set;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.globalopt.Summary;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
@@ -27,6 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.utils.Explain;
 
 /**
@@ -58,11 +60,12 @@ public class GraphBuilder
 	 * @throws DMLRuntimeException
 	 * @throws HopsException 
 	 */
-	public static GDFGraph constructGlobalDataFlowGraph( Program prog )
+	public static GDFGraph constructGlobalDataFlowGraph( Program prog, Summary summary )
 		throws DMLRuntimeException, HopsException
 	{
-		HashMap<String, GDFNode> roots = new HashMap<String, GDFNode>();
+		Timing time = new Timing(true);
 		
+		HashMap<String, GDFNode> roots = new HashMap<String, GDFNode>();		
 		for( ProgramBlock pb : prog.getProgramBlocks() )
 			constructGDFGraph( pb, roots );
 		
@@ -75,6 +78,7 @@ public class GraphBuilder
 		//create GDF graph
 		GDFGraph graph = new GDFGraph(prog, ret);
 		
+		summary.setTimeGDFGraph(time.stop());		
 		return graph;
 	}
 	

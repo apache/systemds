@@ -297,6 +297,8 @@ public class ProgramBlock
 				case INT:	  ret = new IntObject(ret.getName(),ret.getLongValue()); break;
 				case DOUBLE:  ret = new DoubleObject(ret.getName(),ret.getDoubleValue()); break;
 				case STRING:  ret = new StringObject(ret.getName(),ret.getStringValue()); break;
+				default:
+					//do nothing
 			}
 			
 		return ret;

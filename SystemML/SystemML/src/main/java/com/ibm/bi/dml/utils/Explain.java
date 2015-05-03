@@ -144,6 +144,8 @@ public class Explain
 			case RUNTIME:  
 			case RECOMPILE_RUNTIME: 
 				return explain(rtprog);
+			case NONE:
+				//do nothing
 		}
 		
 		return null;

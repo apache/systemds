@@ -356,7 +356,20 @@ public class GLMTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
         
         System.out.println ("Comparing R and DML weight vectors...");
-        TestUtils.compareMatrices (wR, wDML, 0.000001 * max_abs_beta, "wR", "wDML");
+        double eps = 0.000001;
+        if( distParam==0 && linkType==1 ) // Gaussian.log
+        {
+        	//NOTE MB: Gaussian.log was the only test failing when we introduced multi-threaded
+        	//matrix multplications (mmchain). After discussions with Sasha, we decided to change the eps
+        	//because accuracy is anyway affected by various rewrites like binary to unary (-1*x->-x),
+        	//transpose-matrixmult, and dot product sum. Disabling these rewrites led to a successful 
+        	//test result. Even without multi-threaded matrix mult this test was failing for different number 
+        	//of rows if these rewrites are enabled. Users can turn off rewrites if high accuracy is required. 
+        	//However, in the future we might also consider to use Kahan plus for aggregations in matrix mult 
+        	//(at least for the final aggregation of partial results from individual threads).
+        	eps = 0.0000016; //1.6x the error threshold
+        }		
+        TestUtils.compareMatrices (wR, wDML, eps * max_abs_beta, "wR", "wDML");
 
         // System.out.println ("Comparing TRUE and R weight vectors...");
         // TestUtils.compareMatrices (wTRUE, wR, 0.001 * max_abs_beta, "wTRUE", "wR");

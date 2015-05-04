@@ -42,7 +42,7 @@ import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.TertiaryOp;
+import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.Lop;
@@ -2798,7 +2798,7 @@ public class DMLTranslator
 				// example: x = mean(Y,W);
 				// stable weighted mean is implemented by using centralMoment with order = 0
 				Hop orderHop = new LiteralOp(Integer.toString(0), 0);
-				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp3.CENTRALMOMENT, expr, expr2, orderHop);
 			}
 			break;
@@ -2892,11 +2892,11 @@ public class DMLTranslator
 				weightHop.setColsInBlock(0);
 				
 				if ( numTableArgs == 2 )
-					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
 				else {
 					Hop outDim1 = processExpression(source._args[2], null, hops);
 					Hop outDim2 = processExpression(source._args[3], null, hops);
-					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop, outDim1, outDim2);
 				}
 				break;
 				
@@ -2904,11 +2904,11 @@ public class DMLTranslator
 			case 5:
 				// example DML statement: F = ctable(A,B,W) or F = ctable(A,B,W,10,15) 
 				if (numTableArgs == 3) 
-					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3);
 				else {
 					Hop outDim1 = processExpression(source._args[3], null, hops);
 					Hop outDim2 = processExpression(source._args[4], null, hops);
-					currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2);
+					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, expr3, outDim1, outDim2);
 				}
 				break;
 				
@@ -3044,7 +3044,7 @@ public class DMLTranslator
 						Hop.OpOp2.CENTRALMOMENT, expr, expr2);
 			}
 			else {
-				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp3.CENTRALMOMENT, expr, expr2,expr3);
 			}
 			break;
@@ -3055,7 +3055,7 @@ public class DMLTranslator
 						Hop.OpOp2.COVARIANCE, expr, expr2);
 			}
 			else {
-				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp3.COVARIANCE, expr, expr2,expr3);
 			}
 			break;
@@ -3066,7 +3066,7 @@ public class DMLTranslator
 						Hop.OpOp2.QUANTILE, expr, expr2);
 			}
 			else {
-				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp3.QUANTILE, expr, expr2,expr3);
 			}
 			break;
@@ -3077,7 +3077,7 @@ public class DMLTranslator
 						Hop.OpOp2.INTERQUANTILE, expr, expr2);
 			}
 			else {
-				currBuiltinOp=new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 					Hop.OpOp3.INTERQUANTILE, expr, expr2,expr3);
 			}
 			break;	

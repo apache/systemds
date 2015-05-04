@@ -48,7 +48,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -400,9 +400,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				if( vs[2] == null ) //scalar output
 					vs[2] = _scalarStats;
 			}
-			else if( mrinst instanceof TertiaryInstruction )
+			else if( mrinst instanceof TernaryInstruction )
 			{
-				TertiaryInstruction tinst = (TertiaryInstruction) mrinst;
+				TernaryInstruction tinst = (TernaryInstruction) mrinst;
 				vs[0] = stats[ tinst.input1 ];
 				vs[1] = stats[ tinst.input2 ];
 				vs[2] = stats[ tinst.input3 ];
@@ -900,7 +900,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else 
 						return (2+2) * (d1m * d1n * d1s) /2;
 					
-				case AggregateTertiary: //opcodes: tak+*
+				case AggregateTernary: //opcodes: tak+*
 					return 6 * d1m * d1n; //2*1(*) + 4 (k+)
 					
 				case AggregateUnary: //opcodes: uak+, uark+, uack+, uamean, uarmean, uacmean, 
@@ -950,7 +950,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else
 						return d3m*d3n;
 					
-				case Tertiary: //opcodes: ctable
+				case Ternary: //opcodes: ctable
 					if( optype.equals("ctable") ){
 						if( leftSparse )
 							return d1m * d1n * d1s; //add
@@ -1212,7 +1212,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return   d1m * d1n * d1s
 					       + d2m * d2n * d2s;
 					
-				case CombineTertiary: //opcodes: combinetertiary
+				case CombineTernary: //opcodes: combinetertiary
 					return   d1m * d1n * d1s
 				           + d2m * d2n * d2s
 				           + d3m * d3n * d3s;
@@ -1222,7 +1222,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//note: covers scalar, matrix, matrix-scalar
 					return d3m * d3n;
 					
-				case Tertiary: //opcodes: ctabletransform, ctabletransformscalarweight, ctabletransformhistogram, ctabletransformweightedhistogram
+				case Ternary: //opcodes: ctabletransform, ctabletransformscalarweight, ctabletransformhistogram, ctabletransformweightedhistogram
 					//note: copy from cp
 					if( leftSparse )
 						return d1m * d1n * d1s; //add

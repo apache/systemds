@@ -12,7 +12,7 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.TertiaryOp;
+import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -99,10 +99,10 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		boolean rewriteOld = TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
+		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
 		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewrite;
+		TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewrite;
 		
 		double sparsity = sparse ? sparsity2: sparsity1;
 		
@@ -137,7 +137,7 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
-			TertiaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
+			TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
 		}
 	}
 }

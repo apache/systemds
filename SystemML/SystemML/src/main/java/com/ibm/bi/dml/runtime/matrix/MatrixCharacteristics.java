@@ -22,7 +22,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
@@ -41,7 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
@@ -292,8 +292,8 @@ public class MatrixCharacteristics
 			BinaryMRInstructionBase realIns=(BinaryMRInstructionBase)ins;
 			dimOut.set(dims.get(realIns.input1));
 		}
-		else if (ins instanceof CombineTertiaryInstruction ) {
-			TertiaryInstruction realIns=(TertiaryInstruction)ins;
+		else if (ins instanceof CombineTernaryInstruction ) {
+			TernaryInstruction realIns=(TernaryInstruction)ins;
 			dimOut.set(dims.get(realIns.input1));
 		}
 		else if (ins instanceof CombineUnaryInstruction ) {
@@ -312,8 +312,8 @@ public class MatrixCharacteristics
 			long ncol=ixrange.colEnd-ixrange.colStart+1;
 			dimOut.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
-		else if (ins instanceof TertiaryInstruction) {
-			TertiaryInstruction realIns = (TertiaryInstruction)ins;
+		else if (ins instanceof TernaryInstruction) {
+			TernaryInstruction realIns = (TernaryInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input1);
 			dimOut.set(realIns.getOutputDim1(), realIns.getOutputDim2(), in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}

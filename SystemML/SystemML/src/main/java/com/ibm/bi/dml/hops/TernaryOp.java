@@ -12,13 +12,13 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.CentralMoment;
 import com.ibm.bi.dml.lops.CoVariance;
 import com.ibm.bi.dml.lops.CombineBinary;
-import com.ibm.bi.dml.lops.CombineTertiary;
+import com.ibm.bi.dml.lops.CombineTernary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.lops.Tertiary;
+import com.ibm.bi.dml.lops.Ternary;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -50,10 +50,12 @@ import com.ibm.bi.dml.sql.sqllops.SQLUnion.UNIONTYPE;
  * 	quantile (A, 0.5)
  * 	quantile (A, s)
  * 	interquantile (A, s)
- *
+ * 
+ * Note: this hop should be called AggTernaryOp in consistency with AggUnaryOp and AggBinaryOp;
+ * however, since there does not exist a real TernaryOp yet - we can leave it as is for now. 
  */
 
-public class TertiaryOp extends Hop 
+public class TernaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -69,13 +71,13 @@ public class TertiaryOp extends Hop
 	private boolean _disjointInputs = false;
 	
 	
-	private TertiaryOp() {
+	private TernaryOp() {
 		//default constructor for clone
 	}
 	
-	public TertiaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
+	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3) {
-		super(Hop.Kind.TertiaryOp, l, dt, vt);
+		super(Hop.Kind.TernaryOp, l, dt, vt);
 		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -87,9 +89,9 @@ public class TertiaryOp extends Hop
 	
 	// Constructor the case where TertiaryOp (table, in particular) has
 	// output dimensions
-	public TertiaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
+	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5) {
-		super(Hop.Kind.TertiaryOp, l, dt, vt);
+		super(Hop.Kind.TernaryOp, l, dt, vt);
 		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -139,12 +141,12 @@ public class TertiaryOp extends Hop
 						break;
 						
 					default:
-						throw new HopsException(this.printErrorLocation() + "Unknown TertiaryOp (" + _op + ") while constructing Lops \n");
+						throw new HopsException(this.printErrorLocation() + "Unknown TernaryOp (" + _op + ") while constructing Lops \n");
 
 				}
 			} 
 			catch(LopsException e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 			}
 		}
 	
@@ -225,9 +227,9 @@ public class TertiaryOp extends Hop
 		}
 		if ( et == ExecType.MR ) {
 			// combineTertiary -> CoVariance -> CastAsScalar
-			CombineTertiary combine = CombineTertiary
+			CombineTernary combine = CombineTernary
 					.constructCombineLop(
-							CombineTertiary.OperationTypes.PreCovWeighted,
+							CombineTernary.OperationTypes.PreCovWeighted,
 							getInput().get(0).constructLops(),
 							getInput().get(1).constructLops(),
 							getInput().get(2).constructLops(),
@@ -379,7 +381,7 @@ public class TertiaryOp extends Hop
 		DataType dt1 = getInput().get(0).getDataType(); 
 		DataType dt2 = getInput().get(1).getDataType(); 
 		DataType dt3 = getInput().get(2).getDataType(); 
- 		Tertiary.OperationTypes tertiaryOpOrig = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+		Ternary.OperationTypes tertiaryOpOrig = Ternary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
  		
 		// Compute lops for all inputs
 		Lop[] inputLops = new Lop[getInput().size()];
@@ -396,7 +398,7 @@ public class TertiaryOp extends Hop
 		if ( et == ExecType.CP ) 
 		{	
 			//for CP we support only ctable expand left
-			Tertiary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
 			boolean ignoreZeros = false;
 			
 			if( isMatrixIgnoreZeroRewriteApplicable() ) { 
@@ -405,7 +407,7 @@ public class TertiaryOp extends Hop
 				inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
 			}
 			
-			Tertiary tertiary = new Tertiary(inputLops, tertiaryOp, getDataType(), getValueType(), ignoreZeros, et);
+			Ternary tertiary = new Ternary(inputLops, tertiaryOp, getDataType(), getValueType(), ignoreZeros, et);
 			
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -419,7 +421,7 @@ public class TertiaryOp extends Hop
 		else //MR
 		{
 			//for MR we support both ctable expand left and right
-			Tertiary.OperationTypes tertiaryOp = isSequenceRewriteApplicable() ? Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
+			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable() ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
 			
 			Group group1 = null, group2 = null, group3 = null, group4 = null;
 			group1 = new Group(inputLops[0], Group.OperationTypes.Sort, getDataType(), getValueType());
@@ -428,7 +430,7 @@ public class TertiaryOp extends Hop
 			
 			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			Tertiary tertiary = null;
+			Ternary tertiary = null;
 			// create "group" lops for MATRIX inputs
 			switch (tertiaryOp) 
 			{
@@ -453,13 +455,13 @@ public class TertiaryOp extends Hop
 					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3 )
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {group1, group2, group3},
 								tertiaryOp,
 								getDataType(), getValueType(), et);	
 					else 
 						// output dimensions are given
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
 								tertiaryOp,
 								getDataType(), getValueType(), et);	
@@ -477,12 +479,12 @@ public class TertiaryOp extends Hop
 					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3)
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {group1,group2,inputLops[2]},
 								tertiaryOp,
 								getDataType(), getValueType(), et);
 					else
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
 								tertiaryOp,
 								getDataType(), getValueType(), et);
@@ -503,7 +505,7 @@ public class TertiaryOp extends Hop
 					//TODO remove group, whenever we push it into the map task
 					
 					if (inputLops.length == 3)
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {					
 										group, //matrix
 										getInput().get(2).constructLops(), //weight
@@ -512,7 +514,7 @@ public class TertiaryOp extends Hop
 								tertiaryOp,
 								getDataType(), getValueType(), et);
 					else
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {					
 										group,//getInput().get(1).constructLops(), //matrix
 										getInput().get(2).constructLops(), //weight
@@ -528,7 +530,7 @@ public class TertiaryOp extends Hop
 				case CTABLE_TRANSFORM_HISTOGRAM:
 					// F=ctable(A,1) or F = ctable(A,1,1)
 					if ( inputLops.length == 3 )
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {
 										group1, 
 										getInput().get(1).constructLops(),
@@ -537,7 +539,7 @@ public class TertiaryOp extends Hop
 								tertiaryOp,
 								getDataType(), getValueType(), et);
 					else
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {
 										group1, 
 										getInput().get(1).constructLops(),
@@ -561,7 +563,7 @@ public class TertiaryOp extends Hop
 					group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					if ( inputLops.length == 3)
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {
 										group1,
 										getInput().get(1).constructLops(),
@@ -569,7 +571,7 @@ public class TertiaryOp extends Hop
 								tertiaryOp,
 								getDataType(), getValueType(), et);
 					else
-						tertiary = new Tertiary(
+						tertiary = new Ternary(
 								new Lop[] {
 										group1,
 										getInput().get(1).constructLops(),
@@ -580,7 +582,7 @@ public class TertiaryOp extends Hop
 					break;
 				
 				default:
-					throw new HopsException("Invalid tertiary operator type: "+_op);
+					throw new HopsException("Invalid ternary operator type: "+_op);
 			}
 
 			// output dimensions are not known at compilation time
@@ -989,9 +991,9 @@ public class TertiaryOp extends Hop
 								setDim2( input2._dim1 );
 						}
 						//for ctable_histogram also one dimension is known
-						Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(
+						Ternary.OperationTypes tertiaryOp = Ternary.findCtableOperationByInputDataTypes(
 																input1.getDataType(), input2.getDataType(), input3.getDataType());
-						if(  tertiaryOp==Tertiary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
+						if(  tertiaryOp==Ternary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
 							&& input2 instanceof LiteralOp )
 						{
 							setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input2) );
@@ -1023,7 +1025,7 @@ public class TertiaryOp extends Hop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		TertiaryOp ret = new TertiaryOp();	
+		TernaryOp ret = new TernaryOp();	
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -1039,10 +1041,10 @@ public class TertiaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.TertiaryOp )
+		if( that._kind!=Kind.TernaryOp )
 			return false;
 		
-		TertiaryOp that2 = (TertiaryOp)that;
+		TernaryOp that2 = (TernaryOp)that;
 		
 		//compare basic inputs and weights (always existing)
 		boolean ret = (_op == that2._op

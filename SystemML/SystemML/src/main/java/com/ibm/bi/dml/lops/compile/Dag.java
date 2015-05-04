@@ -1612,7 +1612,7 @@ public class Dag<N extends Lop>
 								node.getInputs().get(1).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					} 
-					else if (node.getInputs().size() == 3 || node.getType() == Type.Tertiary) {
+					else if (node.getInputs().size() == 3 || node.getType() == Type.Ternary) {
 						inst_string = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(),
 								node.getInputs().get(1).getOutputParameters().getLabel(),
@@ -2786,7 +2786,7 @@ public class Dag<N extends Lop>
 					  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
 				oinfo = OutputInfo.WeightedPairOutputInfo;
 			}
-		} else if ( node.getType() == Type.CombineTertiary) {
+		} else if ( node.getType() == Type.CombineTernary) {
 			oinfo = OutputInfo.WeightedPairOutputInfo;
 		} else if (node.getType() == Type.CentralMoment
 				|| node.getType() == Type.CoVariance )  
@@ -3721,7 +3721,7 @@ public class Dag<N extends Lop>
 				break;
 
 			/* Lop types that take three inputs */
-			case CombineTertiary:
+			case CombineTernary:
 				shuffleInstructions.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), inputIndices.get(2), output_index));
 				if(DMLScript.ENABLE_DEBUG_MODE) {
@@ -3807,11 +3807,11 @@ public class Dag<N extends Lop>
 				}
 
 				return output_index;
-			} else if (inputIndices.size() == 3 || node.getType() == Type.Tertiary) {
+			} else if (inputIndices.size() == 3 || node.getType() == Type.Ternary) {
 				int output_index = start_index[0];
 				start_index[0]++;
 
-				if (node.getType() == Type.Tertiary ) {
+				if (node.getType() == Type.Ternary ) {
 					//Tertiary.OperationTypes op = ((Tertiary<?, ?, ?, ?>) node).getOperationType();
 					//if ( op == Tertiary.OperationTypes.CTABLE_TRANSFORM ) {
 					
@@ -4238,7 +4238,7 @@ public class Dag<N extends Lop>
 						  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
 					nodeInputInfo = InputInfo.WeightedPairInputInfo;
 				}
-			} else if ( node.getType() == Type.CombineTertiary ) {
+			} else if ( node.getType() == Type.CombineTernary ) {
 				nodeInputInfo = InputInfo.WeightedPairInputInfo;
 			}
 

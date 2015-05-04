@@ -4715,7 +4715,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	public ScalarObject aggregateTertiaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, AggregateBinaryOperator op) 
+	public ScalarObject aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, AggregateBinaryOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//check input dimensions and operators
@@ -5212,7 +5212,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, double scalarThat,
+	public void ternaryOperations(Operator op, double scalarThat,
 			MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
@@ -5252,7 +5252,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * (w)  from scalar_input3 (scalarThat2)
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, double scalarThat,
+	public void ternaryOperations(Operator op, double scalarThat,
 			double scalarThat2, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
@@ -5288,7 +5288,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * 
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
+	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
 			boolean left, int brlen, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
@@ -5335,7 +5335,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * we can also use a sparse-safe implementation
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue thatVal, double scalarThat2, boolean ignoreZeros,
+	public void ternaryOperations(Operator op, MatrixValue thatVal, double scalarThat2, boolean ignoreZeros,
 			     HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
@@ -5406,7 +5406,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 */
-	public void tertiaryOperations(Operator op, MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock)
+	public void ternaryOperations(Operator op, MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		MatrixBlock that = checkType(thatMatrix);
@@ -5438,11 +5438,12 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 */
 	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
-		{
-			tertiaryOperations(op, thatVal, that2Val, ctableResult, null);
-		}
+	{
+		ternaryOperations(op, thatVal, that2Val, ctableResult, null);
+	}
 		
-	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+	@Override
+	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
 		MatrixBlock that = checkType(thatVal);

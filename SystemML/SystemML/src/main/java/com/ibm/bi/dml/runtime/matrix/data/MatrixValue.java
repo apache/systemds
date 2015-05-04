@@ -148,24 +148,24 @@ public abstract class MatrixValue implements WritableComparable
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where all three inputs are matrices
-	public abstract void tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ternaryOperations(Operator op, MatrixValue that, MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
-	public abstract void tertiaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ternaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
-	public abstract void tertiaryOperations(Operator op, double scalar_that, double scalar_that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ternaryOperations(Operator op, double scalar_that, double scalar_that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
-	public abstract void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ternaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 		
 	
 	// tertiary where first and third inputs are matrices and second is a scalar
-	public abstract void tertiaryOperations(Operator op, double scalarThat, MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 

@@ -15,7 +15,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.AggregateBinaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.AggregateTertiaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.AppendCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
@@ -39,7 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ReorgCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.SortCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.StringInitCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.TertiaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.TernaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
@@ -58,7 +58,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 
 		String2CPInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
-		String2CPInstructionType.put( "tak+*"   	, CPINSTRUCTION_TYPE.AggregateTertiary);
+		String2CPInstructionType.put( "tak+*"   	, CPINSTRUCTION_TYPE.AggregateTernary);
 		
 		String2CPInstructionType.put( "uak+"   	, CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uark+"   , CPINSTRUCTION_TYPE.AggregateUnary);
@@ -180,8 +180,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SEQ_OPCODE  , CPINSTRUCTION_TYPE.Rand);
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPINSTRUCTION_TYPE.StringInit);
 		
-		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Tertiary);
-		String2CPInstructionType.put( "ctableexpand", CPINSTRUCTION_TYPE.Tertiary);
+		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Ternary);
+		String2CPInstructionType.put( "ctableexpand", CPINSTRUCTION_TYPE.Ternary);
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
@@ -237,14 +237,14 @@ public class CPInstructionParser extends InstructionParser
 		case AggregateBinary:
 			return (CPInstruction) AggregateBinaryCPInstruction.parseInstruction(str);
 
-		case AggregateTertiary:
-			return (CPInstruction) AggregateTertiaryCPInstruction.parseInstruction(str);
+		case AggregateTernary:
+			return (CPInstruction) AggregateTernaryCPInstruction.parseInstruction(str);
 			
 		case ArithmeticBinary:
 			return (CPInstruction) ArithmeticBinaryCPInstruction.parseInstruction(str);
 		
-		case Tertiary:
-			return (CPInstruction) TertiaryCPInstruction.parseInstruction(str);
+		case Ternary:
+			return (CPInstruction) TernaryCPInstruction.parseInstruction(str);
 		
 		case BooleanBinary:
 			return (CPInstruction) BooleanBinaryCPInstruction.parseInstruction(str);

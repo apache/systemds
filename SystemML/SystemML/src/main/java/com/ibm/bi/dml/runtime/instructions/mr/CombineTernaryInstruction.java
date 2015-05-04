@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.mr;
 
-import com.ibm.bi.dml.lops.Tertiary.OperationTypes;
+import com.ibm.bi.dml.lops.Ternary.OperationTypes;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -17,16 +17,16 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 
-public class CombineTertiaryInstruction extends TertiaryInstruction
+public class CombineTernaryInstruction extends TernaryInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CombineTertiaryInstruction(OperationTypes op, byte in1, byte in2,
+	public CombineTernaryInstruction(OperationTypes op, byte in1, byte in2,
 			byte in3, byte out, String istr) {
 		super(op, in1, in2, in3, out, -1, -1, istr);
-		mrtype = MRINSTRUCTION_TYPE.CombineTertiary;
+		mrtype = MRINSTRUCTION_TYPE.CombineTernary;
 	}
 
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
@@ -43,8 +43,8 @@ public class CombineTertiaryInstruction extends TertiaryInstruction
 		in3 = Byte.parseByte(parts[3]);
 		out = Byte.parseByte(parts[4]);
 		
-		if ( opcode.equalsIgnoreCase("combinetertiary") ) {
-			return new CombineTertiaryInstruction(null, in1, in2, in3, out, str);
+		if ( opcode.equalsIgnoreCase("combineternary") ) {
+			return new CombineTernaryInstruction(null, in1, in2, in3, out, str);
 		} 
 		return null;
 	}
@@ -54,6 +54,6 @@ public class CombineTertiaryInstruction extends TertiaryInstruction
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		throw new DMLRuntimeException("CombineTertiaryInstruction.processInstruction should never be called!");
+		throw new DMLRuntimeException("CombineTernaryInstruction.processInstruction should never be called!");
 	}
 }

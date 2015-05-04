@@ -148,7 +148,7 @@ public enum JobType
 		case GroupedAgg:	return JobType.GROUPED_AGG;
 		
 		case CombineBinary: 			
-		case CombineTertiary: 			
+		case CombineTernary: 			
 							return JobType.COMBINE;
 		
 		case DataPartition:	return JobType.DATA_PARTITION;

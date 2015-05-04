@@ -422,7 +422,7 @@ public class ParameterizedBuiltinOp extends Hop
 				
 				//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
 				//note: weights always the input (even if isPPredInput) because input also includes 0s
-				TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
+				TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
 				HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
 				table.refreshSizeInformation();
 				table.setForcedExecType(ExecType.MR); //force MR 

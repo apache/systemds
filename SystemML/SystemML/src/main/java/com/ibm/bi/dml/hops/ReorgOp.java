@@ -248,7 +248,7 @@ public class ReorgOp extends Hop
 							HopRewriteUtils.copyLineNumbers(this, seq);	
 							
 							//generate table
-							TertiaryOp table = new TertiaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
+							TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
 							HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
 							table.refreshSizeInformation();
 							table.setForcedExecType(ExecType.MR); //force MR 

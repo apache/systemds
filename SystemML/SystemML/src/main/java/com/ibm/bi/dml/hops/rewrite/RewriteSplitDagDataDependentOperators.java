@@ -25,7 +25,7 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.TertiaryOp;
+import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -239,8 +239,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		if(    hop instanceof ParameterizedBuiltinOp 
 			&& ((ParameterizedBuiltinOp) hop).getOp()==ParamBuiltinOp.RMEMPTY 
 			&& !noSplitRequired
-			&& !(hop.getParent().size()==1 && hop.getParent().get(0) instanceof TertiaryOp 
-			     && ((TertiaryOp)hop.getParent().get(0)).isMatrixIgnoreZeroRewriteApplicable()))
+			&& !(hop.getParent().size()==1 && hop.getParent().get(0) instanceof TernaryOp 
+			     && ((TernaryOp)hop.getParent().get(0)).isMatrixIgnoreZeroRewriteApplicable()))
 		{
 			ParameterizedBuiltinOp pbhop = (ParameterizedBuiltinOp)hop;
 			cand.add(pbhop);
@@ -270,8 +270,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		}
 		
 		//#2 ctable with unknown dims
-	    if(    hop instanceof TertiaryOp 
-			&& ((TertiaryOp) hop).getOp()==OpOp3.CTABLE 
+	    if(    hop instanceof TernaryOp 
+			&& ((TernaryOp) hop).getOp()==OpOp3.CTABLE 
 			&& hop.getInput().size() < 4 //dims not provided
 			&& !noSplitRequired )
 		{

@@ -84,50 +84,50 @@ public class OperationsOnMatrixValues
 		valueIn.sliceOperations(outlist, range, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
 	}
 	
-	// ------------- Tertiary Operations -------------
+	// ------------- Ternary Operations -------------
 	// tertiary where all three inputs are matrices
-	public static void performTertiary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock, Operator op ) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, valueIn2, valueIn3, ctableResult, ctableResultBlock);
+		valueIn1.ternaryOperations(op, valueIn2, valueIn3, ctableResult, ctableResultBlock);
 	}
 	
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
-	public static void performTertiary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
+	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			double scalarIn3, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock, Operator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, valueIn2, scalarIn3, false, ctableResult, ctableResultBlock);
+		valueIn1.ternaryOperations(op, valueIn2, scalarIn3, false, ctableResult, ctableResultBlock);
 	}
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
-	public static void performTertiary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			double scalarIn3, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock, Operator op ) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, scalarIn2, scalarIn3, ctableResult, ctableResultBlock);
+		valueIn1.ternaryOperations(op, scalarIn2, scalarIn3, ctableResult, ctableResultBlock);
 	}
 	
 	// tertiary where first input is a matrix, and second is scalars (double)
-	public static void performTertiary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
+	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
 			int brlen, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock, Operator op ) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, indexesIn1, scalarIn2, left, brlen, ctableResult, ctableResultBlock);
+		valueIn1.ternaryOperations(op, indexesIn1, scalarIn2, left, brlen, ctableResult, ctableResultBlock);
 	}
 	
 	// tertiary where first and third inputs are matrices, and second is a scalars (double)
-	public static void performTertiary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
+	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock, Operator op ) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operation on the cells inside the value
-		valueIn1.tertiaryOperations(op, scalarIn2, valueIn3, ctableResult, ctableResultBlock);
+		valueIn1.ternaryOperations(op, scalarIn2, valueIn3, ctableResult, ctableResultBlock);
 	}
 	// -----------------------------------------------------
 	

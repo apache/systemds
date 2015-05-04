@@ -27,7 +27,7 @@ public abstract class SPInstruction extends Instruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	// public enum SPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTertiary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, PMMJ, MatrixReshape, Partition, StringInit }; 
+	// public enum SPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, Ternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, PMMJ, MatrixReshape, Partition, StringInit }; 
 	public enum SPINSTRUCTION_TYPE { 
 		MAPMM, MAPMMCHAIN, TSMM, CPMM, RMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, Reblock, CSVReblock, Builtin, BuiltinUnary, BuiltinBinary, Sort, Variable, Checkpoint,

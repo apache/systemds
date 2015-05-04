@@ -292,7 +292,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue that,
+	public void ternaryOperations(Operator op, MatrixValue that,
 			MatrixValue that2,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -301,7 +301,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue that,
+	public void ternaryOperations(Operator op, MatrixValue that,
 			double scalarThat2, boolean ignoreZeros,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -309,7 +309,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void tertiaryOperations(Operator op, double scalarThat,
+	public void ternaryOperations(Operator op, double scalarThat,
 			double scalarThat2,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -317,14 +317,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 	
 	@Override
-	public void tertiaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
+	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
-	public void tertiaryOperations(Operator op, double scalarThat,
+	public void ternaryOperations(Operator op, double scalarThat,
 			MatrixValue that2,
 			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {

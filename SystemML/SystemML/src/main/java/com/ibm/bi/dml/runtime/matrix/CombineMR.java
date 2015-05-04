@@ -25,7 +25,7 @@ import org.apache.hadoop.mapred.RunningJob;
 
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -128,15 +128,15 @@ public class CombineMR
 			{
 				if(ins instanceof CombineBinaryInstruction)
 					processBinaryCombineInstruction((CombineBinaryInstruction)ins, reporter);
-				else if(ins instanceof CombineTertiaryInstruction)
-					processTertiaryCombineInstruction((CombineTertiaryInstruction)ins, reporter);
+				else if(ins instanceof CombineTernaryInstruction)
+					processTernaryCombineInstruction((CombineTernaryInstruction)ins, reporter);
 				else
 					throw new IOException("unsupported instruction: "+ins);
 			}
 		}
 
-		private void processTertiaryCombineInstruction(
-				CombineTertiaryInstruction ins, Reporter reporter) throws IOException{
+		private void processTernaryCombineInstruction(
+				CombineTernaryInstruction ins, Reporter reporter) throws IOException{
 			IndexedMatrixValue in1=cachedValues.getFirst(ins.input1);
 			IndexedMatrixValue in2=cachedValues.getFirst(ins.input2);
 			IndexedMatrixValue in3=cachedValues.getFirst(ins.input3);

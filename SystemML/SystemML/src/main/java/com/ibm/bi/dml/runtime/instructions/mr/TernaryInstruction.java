@@ -9,8 +9,8 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.lops.Tertiary;
-import com.ibm.bi.dml.lops.Tertiary.OperationTypes;
+import com.ibm.bi.dml.lops.Ternary;
+import com.ibm.bi.dml.lops.Ternary.OperationTypes;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 
-public class TertiaryInstruction extends MRInstruction 
+public class TernaryInstruction extends MRInstruction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -48,10 +48,10 @@ public class TertiaryInstruction extends MRInstruction
 	 * @param out
 	 * @param istr
 	 */
-	public TertiaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
+	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
 		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Tertiary;
+		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
 		input1 = in1;
 		scalar_input2 = scalar_in2;
@@ -71,10 +71,10 @@ public class TertiaryInstruction extends MRInstruction
 	 * @param out
 	 * @param istr
 	 */
-	public TertiaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
+	public TernaryInstruction(OperationTypes op, byte in1, byte in2, double scalar_in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
 		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Tertiary;
+		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
 		input1 = in1;
 		input2 = in2;
@@ -94,10 +94,10 @@ public class TertiaryInstruction extends MRInstruction
 	 * @param out
 	 * @param istr
 	 */
-	public TertiaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
+	public TernaryInstruction(OperationTypes op, byte in1, double scalar_in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
 		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Tertiary;
+		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
 		input1 = in1;
 		scalar_input2 = scalar_in2;
@@ -117,10 +117,10 @@ public class TertiaryInstruction extends MRInstruction
 	 * @param out
 	 * @param istr
 	 */
-	public TertiaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
+	public TernaryInstruction(OperationTypes op, byte in1, byte in2, byte in3, byte out, long outputDim1, long outputDim2, String istr)
 	{
 		super(null, out);
-		mrtype = MRINSTRUCTION_TYPE.Tertiary;
+		mrtype = MRINSTRUCTION_TYPE.Ternary;
 		_op = op;
 		input1 = in1;
 		input2 = in2;
@@ -169,37 +169,37 @@ public class TertiaryInstruction extends MRInstruction
 		long outputDim2 = (long) Double.parseDouble(parts[5]);
 		out = Byte.parseByte(parts[6]);
 		
-		OperationTypes op = Tertiary.getOperationType(opcode);
+		OperationTypes op = Ternary.getOperationType(opcode);
 		
 		switch( op )
 		{
 			case CTABLE_TRANSFORM: {
 				in2 = Byte.parseByte(parts[2]);
 				in3 = Byte.parseByte(parts[3]);
-				return new TertiaryInstruction(op, in1, in2, in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(op, in1, in2, in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_SCALAR_WEIGHT: {
 				in2 = Byte.parseByte(parts[2]);
 				double scalar_in3 = Double.parseDouble(parts[3]);
-				return new TertiaryInstruction(op, in1, in2, scalar_in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(op, in1, in2, scalar_in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_EXPAND_SCALAR_WEIGHT: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				double type = Double.parseDouble(parts[3]); //used as type (1 left, 0 right)
-				return new TertiaryInstruction(op, in1, scalar_in2, type, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(op, in1, scalar_in2, type, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_HISTOGRAM: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				double scalar_in3 = Double.parseDouble(parts[3]);
-				return new TertiaryInstruction(op, in1, scalar_in2, scalar_in3, out, outputDim1, outputDim2, str);
+				return new TernaryInstruction(op, in1, scalar_in2, scalar_in3, out, outputDim1, outputDim2, str);
 			}
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
 				double scalar_in2 = Double.parseDouble(parts[2]);
 				in3 = Byte.parseByte(parts[3]);
-				return new TertiaryInstruction(op, in1, scalar_in2, in3, out, outputDim1, outputDim2, str);	
+				return new TernaryInstruction(op, in1, scalar_in2, in3, out, outputDim1, outputDim2, str);	
 			}
 			default:
-				throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + op);	
+				throw new DMLRuntimeException("Unrecognized opcode in Ternary Instruction: " + op);	
 		}
 	}
 	
@@ -246,7 +246,7 @@ public class TertiaryInstruction extends MRInstruction
 				in3 = cachedValues.getFirst(input3);
 				if(in1==null || in2==null || in3 == null )
 					return;	
-				OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
+				OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
 						                                 in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);
 				break;
 			}
@@ -255,7 +255,7 @@ public class TertiaryInstruction extends MRInstruction
 				in2 = cachedValues.getFirst(input2);
 				if(in1==null || in2==null )
 					return;
-				OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
+				OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), 
 						                                 scalar_input3, ctableResult, ctableResultBlock, optr);
 				break;
 			}
@@ -263,7 +263,7 @@ public class TertiaryInstruction extends MRInstruction
 				// 2nd and 3rd input is a scalar
 				if(in1==null )
 					return;
-				OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), scalar_input2, (scalar_input3==1), 
+				OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, (scalar_input3==1), 
 						                                 blockRowFactor, ctableResult, ctableResultBlock, optr);
 				break;
 			}
@@ -271,7 +271,7 @@ public class TertiaryInstruction extends MRInstruction
 				// 2nd and 3rd inputs are scalars
 				if(in1==null )
 					return;	
-				OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), scalar_input2, scalar_input3, ctableResult, ctableResultBlock, optr);
+				OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, scalar_input3, ctableResult, ctableResultBlock, optr);
 				break;
 			}
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
@@ -279,7 +279,7 @@ public class TertiaryInstruction extends MRInstruction
 				in3 = cachedValues.getFirst(input3);
 				if(in1==null || in3==null)
 					return;
-				OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), scalar_input2, 
+				OperationsOnMatrixValues.performTernary(in1.getIndexes(), in1.getValue(), scalar_input2, 
 						                                 in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);		
 				break;
 			}

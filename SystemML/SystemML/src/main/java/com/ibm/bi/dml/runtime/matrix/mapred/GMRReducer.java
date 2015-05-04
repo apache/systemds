@@ -19,7 +19,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.mr.AppendRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -73,10 +73,10 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		{		
 			for(MRInstruction ins: mixed_instructions)
 			{
-				if(ins instanceof TertiaryInstruction)
+				if(ins instanceof TernaryInstruction)
 				{  
-					MatrixCharacteristics dim = dimensions.get(((TertiaryInstruction) ins).input1);
-					((TertiaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), _buff.getBlockBuffer(), dim.getRowsPerBlock(), dim.getColsPerBlock());
+					MatrixCharacteristics dim = dimensions.get(((TernaryInstruction) ins).input1);
+					((TernaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), _buff.getBlockBuffer(), dim.getRowsPerBlock(), dim.getColsPerBlock());
 					if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
 						_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
 				}
@@ -136,10 +136,10 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		super.configure(job);
 		
 		//init ctable buffer (if required, after super init)
-		if( containsTertiaryInstruction() ){
-			_buff = new GMRCtableBuffer(collectFinalMultipleOutputs, dimsKnownForTertiaryInstructions());
+		if( containsTernaryInstruction() ){
+			_buff = new GMRCtableBuffer(collectFinalMultipleOutputs, dimsKnownForTernaryInstructions());
 			_buff.setMetadataReferences(resultIndexes, resultsNonZeros, resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
-			prepareMatrixCharacteristicsTertiaryInstruction(job); //put matrix characteristics in dimensions map
+			prepareMatrixCharacteristicsTernaryInstruction(job); //put matrix characteristics in dimensions map
 		}
 		
 		try {
@@ -156,7 +156,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	public void close()throws IOException
 	{
 		//flush ctable buffer (if required)
-		if( containsTertiaryInstruction() )
+		if( containsTernaryInstruction() )
 			_buff.flushBuffer(cachedReporter);
 					
 		super.close();		

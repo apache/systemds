@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CumsumOffsetInstruction;
@@ -49,7 +49,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
@@ -181,16 +181,16 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "csvrblk", MRINSTRUCTION_TYPE.CSVReblock);
 		
 		// Tertiary Reorg Instruction Opcodes 
-		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Tertiary);
-		String2MRInstructionType.put( "ctabletransformscalarweight", MRINSTRUCTION_TYPE.Tertiary);
-		String2MRInstructionType.put( "ctableexpandscalarweight", MRINSTRUCTION_TYPE.Tertiary);
-		String2MRInstructionType.put( "ctabletransformhistogram", MRINSTRUCTION_TYPE.Tertiary);
-		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Tertiary);
+		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Ternary);
+		String2MRInstructionType.put( "ctabletransformscalarweight", MRINSTRUCTION_TYPE.Ternary);
+		String2MRInstructionType.put( "ctableexpandscalarweight", MRINSTRUCTION_TYPE.Ternary);
+		String2MRInstructionType.put( "ctabletransformhistogram", MRINSTRUCTION_TYPE.Ternary);
+		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Ternary);
 		
 		// Combine Instruction Opcodes
 		String2MRInstructionType.put( "combinebinary" , MRINSTRUCTION_TYPE.CombineBinary);
 		String2MRInstructionType.put( "combineunary"  , MRINSTRUCTION_TYPE.CombineUnary);
-		String2MRInstructionType.put( "combinetertiary" , MRINSTRUCTION_TYPE.CombineTertiary);
+		String2MRInstructionType.put( "combineternary" , MRINSTRUCTION_TYPE.CombineTernary);
 		
 		// PickByCount Instruction Opcodes
 		String2MRInstructionType.put( "valuepick"  , MRINSTRUCTION_TYPE.PickByCount);  // for quantile()
@@ -276,8 +276,8 @@ public class MRInstructionParser extends InstructionParser
 		case AggregateUnary:
 			return (MRInstruction) AggregateUnaryInstruction.parseInstruction(str);
 			
-		case Tertiary: 
-			return (MRInstruction) TertiaryInstruction.parseInstruction(str);
+		case Ternary: 
+			return (MRInstruction) TernaryInstruction.parseInstruction(str);
 		
 		case Rand:
 			return (MRInstruction) RandInstruction.parseInstruction(str);
@@ -312,8 +312,8 @@ public class MRInstructionParser extends InstructionParser
 		case BinUaggChain:
 			return (MRInstruction) BinUaggChainInstruction.parseInstruction(str);
 			
-		case CombineTertiary:
-			return (MRInstruction) CombineTertiaryInstruction.parseInstruction(str);
+		case CombineTernary:
+			return (MRInstruction) CombineTernaryInstruction.parseInstruction(str);
 			
 		case CombineBinary:
 			return (MRInstruction) CombineBinaryInstruction.parseInstruction(str);
@@ -514,8 +514,8 @@ public class MRInstructionParser extends InstructionParser
 				MRINSTRUCTION_TYPE type = InstructionUtils.getMRType(strlist[i]);
 				if(type==MRINSTRUCTION_TYPE.CombineBinary)
 					inst[i] = (CombineBinaryInstruction) CombineBinaryInstruction.parseInstruction( strlist[i] );
-				else if(type==MRINSTRUCTION_TYPE.CombineTertiary)
-					inst[i] = (CombineTertiaryInstruction)CombineTertiaryInstruction.parseInstruction(strlist[i]);
+				else if(type==MRINSTRUCTION_TYPE.CombineTernary)
+					inst[i] = (CombineTernaryInstruction)CombineTernaryInstruction.parseInstruction(strlist[i]);
 				else
 					throw new DMLRuntimeException("unknown combine instruction: "+strlist[i]);
 			}

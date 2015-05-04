@@ -13,7 +13,7 @@ import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
-import com.ibm.bi.dml.lops.TertiaryAggregate;
+import com.ibm.bi.dml.lops.TernaryAggregate;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -97,8 +97,8 @@ public class AggUnaryOp extends Hop
 			if ( et == ExecType.CP ) 
 			{
 				Lop agg1 = null;
-				if( isTertiaryAggregateRewriteApplicable() ) {
-					agg1 = constructLopsTertiaryAggregateRewrite();
+				if( isTernaryAggregateRewriteApplicable() ) {
+					agg1 = constructLopsTernaryAggregateRewrite();
 				}
 				else { //general case
 					agg1 = new PartialAggregate(input.constructLops(), 
@@ -461,7 +461,7 @@ public class AggUnaryOp extends Hop
 	 * 
 	 * @return
 	 */
-	private boolean isTertiaryAggregateRewriteApplicable() 
+	private boolean isTernaryAggregateRewriteApplicable() 
 	{
 		boolean ret = false;
 		
@@ -501,7 +501,7 @@ public class AggUnaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop constructLopsTertiaryAggregateRewrite() 
+	private Lop constructLopsTernaryAggregateRewrite() 
 		throws HopsException, LopsException
 	{
 		Hop input1 = getInput().get(0);
@@ -527,11 +527,11 @@ public class AggUnaryOp extends Hop
 		}
 		else 
 		{
-			throw new HopsException("Failed to apply tertiary-aggregate hop-lop rewrite - missing binaryop.");
+			throw new HopsException("Failed to apply ternary-aggregate hop-lop rewrite - missing binaryop.");
 		}
 
-		//create new tertiary aggregate operator 
-		ret = new TertiaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE);
+		//create new ternary aggregate operator 
+		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE);
 		
 		return ret;
 	}

@@ -20,13 +20,13 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
-public class AggregateTertiaryCPInstruction extends ComputationCPInstruction
+public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public AggregateTertiaryCPInstruction(Operator op, 
+	public AggregateTernaryCPInstruction(Operator op, 
 										CPOperand in1, 
 										CPOperand in2,
 										CPOperand in3,
@@ -34,10 +34,10 @@ public class AggregateTertiaryCPInstruction extends ComputationCPInstruction
 										String opcode,
 										String istr ){
 		super(op, in1, in2, in3, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.AggregateTertiary;
+		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
 	}
 
-	public static AggregateTertiaryCPInstruction parseInstruction( String str ) 
+	public static AggregateTernaryCPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -58,7 +58,7 @@ public class AggregateTertiaryCPInstruction extends ComputationCPInstruction
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject());
 			AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			
-			return new AggregateTertiaryCPInstruction(op, in1, in2, in3, out, opcode, str);
+			return new AggregateTernaryCPInstruction(op, in1, in2, in3, out, opcode, str);
 		} 
 		else {
 			throw new DMLRuntimeException("AggregateTertiaryInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -79,7 +79,7 @@ public class AggregateTertiaryCPInstruction extends ComputationCPInstruction
 		if ( opcode.equalsIgnoreCase("tak+*")) {
 			
 			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-			ScalarObject ret = matBlock1.aggregateTertiaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
+			ScalarObject ret = matBlock1.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
 			
 			//release inputs/outputs
 			ec.releaseMatrixInput(input1.getName());

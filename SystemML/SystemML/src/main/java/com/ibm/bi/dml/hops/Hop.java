@@ -49,7 +49,7 @@ public abstract class Hop
 		AggBinaryOp, 
 		UnaryOp, 
 		BinaryOp, 
-		TertiaryOp,
+		TernaryOp,
 		ReorgOp, 
 		ReblockOp,
 		DataOp, 

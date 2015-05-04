@@ -23,7 +23,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.TertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -398,19 +398,19 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	 * 
 	 * @return
 	 */
-	protected boolean containsTertiaryInstruction()
+	protected boolean containsTernaryInstruction()
 	{
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TertiaryInstruction )
+				if( inst instanceof TernaryInstruction )
 					return true;
 		return false;
 	}
 	
-	protected boolean dimsKnownForTertiaryInstructions() {
+	protected boolean dimsKnownForTernaryInstructions() {
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TertiaryInstruction && !((TertiaryInstruction)inst).knownOutputDims() )
+				if( inst instanceof TernaryInstruction && !((TernaryInstruction)inst).knownOutputDims() )
 					return false;
 		return true;
 	}
@@ -419,13 +419,13 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	 * 
 	 * @param job
 	 */
-	protected void prepareMatrixCharacteristicsTertiaryInstruction(JobConf job)
+	protected void prepareMatrixCharacteristicsTernaryInstruction(JobConf job)
 	{
 		if( mixed_instructions != null )
 			for(MRInstruction inst : mixed_instructions)
-				if( inst instanceof TertiaryInstruction )
+				if( inst instanceof TernaryInstruction )
 				{
-					TertiaryInstruction tinst = (TertiaryInstruction) inst;
+					TernaryInstruction tinst = (TernaryInstruction) inst;
 					if( tinst.input1!=-1 )
 						dimensions.put(tinst.input1, MRJobConfiguration.getMatrixCharacteristicsForInput(job, tinst.input1));					
 					//extend as required, currently only ctableexpand needs blocksizes

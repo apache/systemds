@@ -17,7 +17,7 @@ import com.ibm.bi.dml.parser.Expression.*;
  * 
  * 
  */
-public class TertiaryAggregate extends Lop 
+public class TernaryAggregate extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -33,9 +33,9 @@ public class TertiaryAggregate extends Lop
 	 * @param input - input lop
 	 * @param op - operation type
 	 */
-	public TertiaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt ) 
 	{
-		super(Lop.Type.TertiaryAggregate, dt, vt);
+		super(Lop.Type.TernaryAggregate, dt, vt);
 		
 		//_aggOp = aggOp;	
 		//_binOp = binOp;

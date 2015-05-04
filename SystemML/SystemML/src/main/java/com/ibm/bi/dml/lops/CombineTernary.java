@@ -20,7 +20,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  * Lop to represent an combine operation -- used ONLY in the context of sort.
  */
 
-public class CombineTertiary extends Lop 
+public class CombineTernary extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
@@ -32,8 +32,8 @@ public class CombineTertiary extends Lop
 
 	OperationTypes operation;
 
-	public CombineTertiary( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
-		super(Lop.Type.CombineTertiary, dt, vt);
+	public CombineTernary( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
+		super(Lop.Type.CombineTernary, dt, vt);
 		operation = op;
 		this.addInput(input1);
 		this.addInput(input2);
@@ -54,7 +54,7 @@ public class CombineTertiary extends Lop
 	}
 
 	public String toString() {
-		return "combinetertiary";
+		return "combineternary";
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class CombineTertiary extends Lop
 		return operation;
 	}
 
-	public static CombineTertiary constructCombineLop( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
+	public static CombineTernary constructCombineLop( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
 
 		HashSet<Lop> set1 = new HashSet<Lop>();
 		set1.addAll(input1.getOutputs());
@@ -98,14 +98,14 @@ public class CombineTertiary extends Lop
 		set1.retainAll(input3.getOutputs());
 		
 		for (Lop lop : set1) {
-			if (lop.type == Lop.Type.CombineTertiary) {
-				CombineTertiary combine = (CombineTertiary) lop;
+			if (lop.type == Lop.Type.CombineTernary) {
+				CombineTernary combine = (CombineTernary) lop;
 				if (combine.operation == op)
-					return (CombineTertiary) lop;
+					return (CombineTernary) lop;
 			}
 		}
 
-		CombineTertiary comn = new CombineTertiary(op, input1, input2, input3, dt, vt);
+		CombineTernary comn = new CombineTernary(op, input1, input2, input3, dt, vt);
 		comn.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
 		return comn;
 	}

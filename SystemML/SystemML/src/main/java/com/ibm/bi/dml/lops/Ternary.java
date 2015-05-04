@@ -20,7 +20,7 @@ import com.ibm.bi.dml.parser.Expression.*;
  * Currently, this lop is used only in case of CTABLE functionality.
  */
 
-public class Tertiary extends Lop 
+public class Ternary extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -39,12 +39,12 @@ public class Tertiary extends Lop
 	OperationTypes operation;
 	
 
-	public Tertiary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public Ternary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		this(inputLops, op, dt, vt, false, et);
 	}
 	
-	public Tertiary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
-		super(Lop.Type.Tertiary, dt, vt);
+	public Ternary(Lop[] inputLops, OperationTypes op, DataType dt, ValueType vt, boolean ignoreZeros, ExecType et) {
+		super(Lop.Type.Ternary, dt, vt);
 		init(inputLops, op, et);
 		_ignoreZeros = ignoreZeros;
 	}
@@ -124,7 +124,7 @@ public class Tertiary extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		if( operation != Tertiary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+		if( operation != Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
 			sb.append( "ctable" );
 		else
 			sb.append( "ctableexpand" );
@@ -347,7 +347,7 @@ public class Tertiary extends Lop
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: return "ctabletransformweightedhistogram";
 		
 			default:
-				throw new UnsupportedOperationException("Tertiary operation code is not defined: " + type);
+				throw new UnsupportedOperationException("Ternary operation code is not defined: " + type);
 		}
 	}
 	

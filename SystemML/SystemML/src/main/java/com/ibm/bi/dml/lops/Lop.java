@@ -33,13 +33,13 @@ public abstract class Lop
 		Data, DataGen, 										//CP/MR read/write/datagen 
 		ReBlock, CSVReBlock,								//MR reblock operations
 		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
-		UnaryCP, UNARY, BinaryCP, Binary, Tertiary,         //CP/MR unary/binary/tertiary
+		UnaryCP, UNARY, BinaryCP, Binary, Ternary,          //CP/MR unary/binary/ternary
 		RangeReIndex, LeftIndex, ZeroOut,                   //CP/MR indexing 
 		Aggregate, PartialAggregate, BinUaggChain,  	    //CP/MR aggregation
-		TertiaryAggregate,                                  //CP tertiary-binary aggregates
+		TernaryAggregate,                                   //CP ternary-binary aggregates
 		Grouping, 											//MR grouping
 		Append,                                             //CP/MR append (column append)
-		CombineUnary, CombineBinary, CombineTertiary,       //MR combine (stitch together)
+		CombineUnary, CombineBinary, CombineTernary,        //MR combine (stitch together)
 		CentralMoment, CoVariance, GroupedAgg,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)

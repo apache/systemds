@@ -19,6 +19,8 @@ import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
+import com.ibm.bi.dml.hops.Hop.OpOp4;
+import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
@@ -136,6 +138,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
+			hi = simplifyWeightedSquaredLoss(hop, hi, i);        //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -241,7 +244,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
 
-					LOG.debug("Applied removeUnnecessaryBinaryOperation1");
+					LOG.debug("Applied removeUnnecessaryBinaryOperation1 (line "+bop.getBeginLine()+")");
 				}
 			}
 			//X-0 -> X 
@@ -254,7 +257,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
 
-					LOG.debug("Applied removeUnnecessaryBinaryOperation2");
+					LOG.debug("Applied removeUnnecessaryBinaryOperation2 (line "+bop.getBeginLine()+")");
 				}
 			}
 			//1*X -> X
@@ -267,7 +270,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, right, pos);
 					hi = right;
 
-					LOG.debug("Applied removeUnnecessaryBinaryOperation3");
+					LOG.debug("Applied removeUnnecessaryBinaryOperation3 (line "+bop.getBeginLine()+")");
 				}
 			}
 			//-1*X -> -X
@@ -283,7 +286,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(bop, new LiteralOp("0",0), 0);
 					hi = bop;
 
-					LOG.debug("Applied removeUnnecessaryBinaryOperation4");
+					LOG.debug("Applied removeUnnecessaryBinaryOperation4 (line "+bop.getBeginLine()+")");
 				}
 			}
 			//X*-1 -> -X (see comment above)
@@ -297,7 +300,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(bop, new LiteralOp("0",0), 0);
 					hi = bop;
 					
-					LOG.debug("Applied removeUnnecessaryBinaryOperation5");
+					LOG.debug("Applied removeUnnecessaryBinaryOperation5 (line "+bop.getBeginLine()+")");
 				}
 			}
 		}
@@ -1077,6 +1080,156 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(hi, gh, ix1);
 					
 					LOG.debug("Applied simplifyGroupedAggregateCount");	
+				}
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * Searches for weighted squared loss expressions and replaces them with a quaternary operator. 
+	 * Currently, this search includes the following three patterns:
+	 * 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+	 * 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+	 * 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+	 * 
+	 * NOTE: We include transpose into the pattern because during runtime we need to compute
+	 * U%*% t(V) pointwise; having V and not t(V) at hand allows for a cache-friendly implementation
+	 * without additional memory requirements for internal transpose.
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop simplifyWeightedSquaredLoss(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//NOTE: there might be also a general simplification without custom operator
+		//via (X-UVt)^2 -> X^2 - 2X*UVt + UVt^2
+		Hop hnew = null;
+		
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM      //all patterns rooted by sum()
+			&& hi.getInput().get(0) instanceof BinaryOp ) //all patterns subrooted by binary op
+		{
+			BinaryOp bop = (BinaryOp) hi.getInput().get(0);
+			boolean appliedPattern = false;
+			
+			//Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+			if( bop.getOp()==OpOp2.MULT && bop.getInput().get(1) instanceof BinaryOp	
+				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
+				&& ((BinaryOp)bop.getInput().get(1)).getOp()==OpOp2.POW 
+				&& bop.getInput().get(1).getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1).getInput().get(1))==2 )
+			{
+				Hop W = bop.getInput().get(0);
+				Hop tmp = bop.getInput().get(1).getInput().get(0); //(X - U %*% t(V))
+				
+				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MINUS
+					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
+					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
+					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1).getInput().get(1)) )
+				{
+					Hop X = tmp.getInput().get(0); 
+					Hop U = tmp.getInput().get(1).getInput().get(0);
+					Hop V = tmp.getInput().get(1).getInput().get(1).getInput().get(0);
+	
+					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+							  OpOp4.WSLOSS, X, U, V, W, true);
+					HopRewriteUtils.setOutputParametersForScalar(hnew);
+
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedSquaredLoss1 (line "+hi.getBeginLine()+")");	
+				}
+			}
+			
+			//Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+			if( !appliedPattern
+			    && bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
+				&& bop.getInput().get(0) instanceof BinaryOp	
+				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
+				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS )
+			{
+				Hop X = bop.getInput().get(0).getInput().get(0);
+				Hop tmp = bop.getInput().get(0).getInput().get(1); //(W * (U %*% t(V)))
+				
+				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MULT
+					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
+					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
+					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1).getInput().get(1)) )
+				{
+					Hop W = tmp.getInput().get(0); 
+					Hop U = tmp.getInput().get(1).getInput().get(0);
+					Hop V = tmp.getInput().get(1).getInput().get(1).getInput().get(0);
+	
+					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+							  OpOp4.WSLOSS, X, U, V, W, false);
+					HopRewriteUtils.setOutputParametersForScalar(hnew);
+
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedSquaredLoss2 (line "+hi.getBeginLine()+")");	
+				}
+			}
+			
+			//Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+			if( !appliedPattern
+				&& bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
+				&& bop.getInput().get(0) instanceof BinaryOp	
+				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
+				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS )
+			{
+				Hop X = bop.getInput().get(0).getInput().get(0);
+				Hop tmp = bop.getInput().get(0).getInput().get(1); //(U %*% t(V))
+				
+				if(    tmp instanceof AggBinaryOp //ba gurantees matrices
+					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1)) ) 
+				{					
+					Hop W = new LiteralOp("1", 1); //no weighting 
+					Hop U = tmp.getInput().get(0);
+					Hop V = tmp.getInput().get(1).getInput().get(0);
+	
+					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+							  OpOp4.WSLOSS, X, U, V, W, false);
+					HopRewriteUtils.setOutputParametersForScalar(hnew);
+
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedSquaredLoss3 (line "+hi.getBeginLine()+")");	
+				}
+			}			
+		}
+		
+		//relink new hop into original position
+		if( hnew != null ) {
+			HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+			HopRewriteUtils.addChildReference(parent, hnew, pos);
+			hi = hnew;
+		}
+		
+		
+		if( hi instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hi).getOp()==ParamBuiltinOp.GROUPEDAGG  ) //aggregate
+		{
+			ParameterizedBuiltinOp phi = (ParameterizedBuiltinOp)hi;
+			
+			if( phi.isCountFunction() ) //aggregate(fn="count")
+			{
+				HashMap<String, Integer> params = phi.getParamIndexMap();
+				int ix1 = params.get(Statement.GAGG_TARGET);
+				int ix2 = params.get(Statement.GAGG_GROUPS);
+				
+				//check for unnecessary memory consumption for "count"
+				if( ix1 != ix2 && phi.getInput().get(ix1)!=phi.getInput().get(ix2) ) 
+				{
+					Hop th = phi.getInput().get(ix1);
+					Hop gh = phi.getInput().get(ix2);
+					
+					HopRewriteUtils.removeChildReference(hi, th);
+					HopRewriteUtils.addChildReference(hi, gh, ix1);
+					
 				}
 			}
 		}

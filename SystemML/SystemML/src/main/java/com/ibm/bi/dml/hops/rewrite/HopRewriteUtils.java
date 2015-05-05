@@ -18,8 +18,10 @@ import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.parser.DataExpression;
@@ -483,6 +485,15 @@ public class HopRewriteUtils
 		hop.setNnz( nnz );
 	}
 	
+	public static void setOutputParametersForScalar( Hop hop )
+	{
+		hop.setDim1( 0 );
+		hop.setDim2( 0 );
+		hop.setRowsInBlock( -1 );
+		hop.setColsInBlock( -1 );
+		hop.setNnz( -1 );
+	}
+	
 	public static void refreshOutputParameters( Hop hnew, Hop hold )
 	{
 		hnew.setDim1( hold.getDim1() );
@@ -547,6 +558,16 @@ public class HopRewriteUtils
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isTransposeOperation(Hop hop)
+	{
+		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
 	}
 	
 	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )

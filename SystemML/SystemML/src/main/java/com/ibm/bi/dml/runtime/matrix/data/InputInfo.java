@@ -17,7 +17,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.hadoop.mapred.lib.CombineSequenceFileInputFormat;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MetaData;

@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
@@ -125,15 +127,6 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract void getCellValues(Map<Double, Integer> ret);
 
-/*	public abstract void sparseScalarOperationsInPlace(ScalarOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
-
-	public abstract void denseScalarOperationsInPlace(ScalarOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
-
-	public abstract void sparseUnaryOperationsInPlace(UnaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
-*/	
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
@@ -162,11 +155,13 @@ public abstract class MatrixValue implements WritableComparable
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public abstract void ternaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
-		
-	
+
 	// tertiary where first and third inputs are matrices and second is a scalar
 	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
+
+	public abstract MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt)
+		throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int brlen, int bclen, MatrixIndexes indexesIn) throws DMLUnsupportedOperationException, DMLRuntimeException;

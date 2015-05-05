@@ -50,6 +50,7 @@ public abstract class Hop
 		UnaryOp, 
 		BinaryOp, 
 		TernaryOp,
+		QuaternaryOp,
 		ReorgOp, 
 		ReblockOp,
 		DataOp, 
@@ -850,6 +851,13 @@ public abstract class Hop
 	public enum OpOp3 {
 		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
 	};
+	
+	// Operations that require 4 operands
+	public enum OpOp4 {
+		WSLOSS, INVALID 
+	};
+	
+	
 	public enum AggOp {
 		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX, MININDEX
 	};
@@ -1141,6 +1149,12 @@ public abstract class Hop
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
 		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "cm");
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
+	}
+	
+	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;
+	static {
+		HopsOpOp4String = new HashMap<Hop.OpOp4, String>();
+		HopsOpOp4String.put(OpOp4.WSLOSS, "wsloss");
 	}
 
 	protected static final HashMap<Hop.Direction, String> HopsDirection2String;

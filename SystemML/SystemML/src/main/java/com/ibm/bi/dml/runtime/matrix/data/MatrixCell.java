@@ -19,6 +19,7 @@ import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.CTable;
@@ -483,6 +484,13 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		else 
 			ctable.execute(this.value, scalarThat, c3.value, false, ctableResultBlock);
 
+	}
+	
+	@Override
+	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt)
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		throw new DMLRuntimeException("operation not supported fro MatrixCell");
 	}
 
 	@Override

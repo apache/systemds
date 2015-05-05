@@ -34,6 +34,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.PMMJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.QuaternaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ReorgCPInstruction;
@@ -204,7 +205,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
-		
+	
+		String2CPInstructionType.put( "wsloss", CPINSTRUCTION_TYPE.Quaternary);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -245,6 +247,9 @@ public class CPInstructionParser extends InstructionParser
 		
 		case Ternary:
 			return (CPInstruction) TernaryCPInstruction.parseInstruction(str);
+		
+		case Quaternary:
+			return (CPInstruction) QuaternaryCPInstruction.parseInstruction(str);
 		
 		case BooleanBinary:
 			return (CPInstruction) BooleanBinaryCPInstruction.parseInstruction(str);

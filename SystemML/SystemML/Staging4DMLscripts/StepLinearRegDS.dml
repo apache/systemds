@@ -1,0 +1,368 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#
+# THIS SCRIPT CHOOSES A LINEAR MODEL IN A STEPWISE ALGIRITHM USING AIC
+# EACH LINEAR REGRESSION USES A DIRECT SOLVER FOR (X^T X) beta = X^T y
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME    TYPE    DEFAULT    MEANING
+# --------------------------------------------------------------------------------------------
+# X       String   	---      Location (on HDFS) to read the matrix X of feature vectors
+# Y       String   	---      Location (on HDFS) to read the 1-column matrix Y of response values
+# B       String   	---      Location to store estimated regression parameters (the betas)
+# O       String   	" "      Location to write the printed statistics; by default is standard output
+# S       String    ---      Location to write the selected features ordered as computed by the algorithm
+# icpt    Int        0       Intercept presence, shifting and rescaling the columns of X:
+#                            0 = no intercept, no shifting, no rescaling;
+#                            1 = add intercept, but neither shift nor rescale X;
+#                            2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# thr     Double    0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
+#                            no further features are being checked and the algorithm stops 
+# dir     String  "forward"  The mode of stepwise search; start from one feature and iteratively add 
+#							 features until AIC improves. Currently only forward selection is implemented 
+# fmt     String   "text"    Matrix output format for B (the betas) only, usually "text" or "csv"
+# --------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
+#         OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
+# icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
+# icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+# icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+#                        Col.2: betas for shifted/rescaled X and intercept
+#
+# In addition, in the last run of linear regression some statistics are provided in CSV format, one comma-separated
+# name-value pair per each line, as follows:
+#
+# NAME                  MEANING
+# -------------------------------------------------------------------------------------
+# AVG_TOT_Y             Average of the response value Y
+# STDEV_TOT_Y           Standard Deviation of the response value Y
+# AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
+# STDEV_RES_Y           Standard Deviation of the residual Y - pred(Y|X)
+# DISPERSION            GLM-style dispersion, i.e. residual sum of squares / # deg. fr.
+# PLAIN_R2              Plain R^2 of residual with bias included vs. total average
+# ADJUSTED_R2           Adjusted R^2 of residual with bias included vs. total average
+# PLAIN_R2_NOBIAS       Plain R^2 of residual with bias subtracted vs. total average
+# ADJUSTED_R2_NOBIAS    Adjusted R^2 of residual with bias subtracted vs. total average
+# PLAIN_R2_VS_0         * Plain R^2 of residual with bias included vs. zero constant
+# ADJUSTED_R2_VS_0      * Adjusted R^2 of residual with bias included vs. zero constant
+# -------------------------------------------------------------------------------------
+# * The last two statistics are only printed if there is no intercept (icpt=0)
+# If the best AIC is achieved without any features the matrix of selected features contains 0.  
+# Moreover, in this case no further statistics will be produced  
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
+#     O=OUTPUT_DIR/Out S=OUTPUT_DIR/Selected icpt=2 thr=0.01 dir=forward fmt=csv
+
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fileS = $S;
+dir = ifdef ($dir, "forward"); 
+intercept_status = ifdef ($icpt, 0);   
+thr = ifdef ($thr, 0.01);  
+
+print ("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
+print ("Reading X and Y...");
+X_orig = read (fileX);
+y = read (fileY);
+
+n = nrow (X_orig);
+m_orig = ncol (X_orig);
+
+# BEGIN STEPWISE LINEAR REGRESSION
+
+if (dir == "forward") {  
+	
+	continue = TRUE;
+	columns_fixed = matrix (0, rows = 1, cols = m_orig);
+	columns_fixed_ordered = matrix (0, rows = 1, cols = 1);
+	
+	# X_global stores the best model found at each step 
+	X_global = matrix (0, rows = n, cols = 1);
+	
+	if (intercept_status == 1 | intercept_status == 2) {
+		beta = mean (y);
+		AIC_best = 2 + n * log(sum((beta - y)^2) / n);
+	} else {
+		beta = 0;
+		AIC_best = n * log(sum(y^2) / n);
+	}
+	AICs = matrix (AIC_best, rows = 1, cols = m_orig);
+	print ("Best AIC without any features: " + AIC_best);
+	
+	# First pass to examine single features
+	parfor (i in 1:m_orig) { 	
+		[AIC_1] = linear_regression (X_orig[,i], y, m_orig, columns_fixed_ordered, " ");					
+		AICs[1,i] = AIC_1;
+	}
+
+	# Determine the best AIC 
+	column_best = 0;	
+	for (k in 1:m_orig) {
+		AIC_cur = as.scalar (AICs[1,k]);
+		if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) ) {
+			column_best = k;
+			AIC_best = as.scalar(AICs[1,k]);
+		}
+	}
+	
+	if (column_best == 0) {
+		print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+		S = matrix (0, rows=1, cols=1);
+		B = matrix (beta, rows=1, cols=1);
+		write (S, fileS, format="text");
+		write (B, fileB, format="text");
+		stop ("");
+	}
+	print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);	
+	columns_fixed[1,column_best] = 1;
+	columns_fixed_ordered[1,1] = column_best;
+	X_global = X_orig[,column_best];		
+		
+	while (continue) {
+		# Subsequent passes over the features
+		parfor (i in 1:m_orig) { 
+			if (as.scalar(columns_fixed[1,i]) == 0) {	
+			
+				# Construct the feature matrix
+				X = append (X_global, X_orig[,i]);
+				
+				[AIC_2] = linear_regression (X, y, m_orig, columns_fixed_ordered, " ");
+				AICs[1,i] = AIC_2;
+			}	
+		}
+	
+		# Determine the best AIC
+		for (k in 1:m_orig) {
+			AIC_cur = as.scalar (AICs[1,k]);
+			if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) & (as.scalar(columns_fixed[1,k]) == 0) ) {
+				column_best = k;
+				AIC_best = as.scalar(AICs[1,k]);
+			}
+		}
+				
+		# Append best found features (i.e., columns) to X_global
+		if (as.scalar(columns_fixed[1,column_best]) == 0) { # new best feature found
+			print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+			columns_fixed[1,column_best] = 1;
+			columns_fixed_ordered = append (columns_fixed_ordered, as.matrix(column_best));
+			if (ncol(columns_fixed_ordered) == m_orig) { # all features examined
+				X_global = append (X_global, X_orig[,column_best]);
+				continue = FALSE;
+			} else {
+				X_global = append (X_global, X_orig[,column_best]);
+			}
+		} else {
+			continue = FALSE;
+		}
+	}
+	
+	# run linear regression with selected set of features
+	print ("Running linear regression with selected features...");
+	[AIC] = linear_regression (X_global, y, m_orig, columns_fixed_ordered, fileB); 
+	
+} else {
+	print ("Currently only forward direction is implemented!");
+	stop("");
+} 
+
+
+/*
+* Computes linear regression using a direct solver for (X^T X) beta = X^T y.
+* It also outputs the AIC of the computed model.  
+*/
+linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig, Matrix[Double] Selected, String fileB) return (Double AIC) {
+		
+	intercept_status = ifdef ($icpt, 0); 		
+	n = nrow (X);	
+	m = ncol (X);
+	
+	# Introduce the intercept, shift and rescale the columns of X if needed
+	if (intercept_status == 1 | intercept_status == 2) { # add the intercept column
+		ones_n = matrix (1, rows = n, cols = 1);
+		X = append (X, ones_n);
+		m = m - 1;
+	}
+	m_ext = ncol(X);
+	
+	if (intercept_status == 2) { # scale-&-shift X columns to mean 0, variance 1
+							     # Important assumption: X [, m_ext] = ones_n
+		avg_X_cols = t(colSums(X)) / n;
+		var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
+		is_unsafe = ppred (var_X_cols, 0.0, "<=");
+		scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
+		scale_X [m_ext, 1] = 1;
+		shift_X = - avg_X_cols * scale_X;
+		shift_X [m_ext, 1] = 0;
+	} else {
+		scale_X = matrix (1, rows = m_ext, cols = 1);
+		shift_X = matrix (0, rows = m_ext, cols = 1);
+	}
+
+	# BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
+
+	A = t(X) %*% X;
+	b = t(X) %*% y;
+	if (intercept_status == 2) {
+		A = t(diag (scale_X) %*% A + shift_X %*% A [m_ext, ]);
+		A =   diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+		b =   diag (scale_X) %*% b + shift_X %*% b [m_ext, ];
+	}
+
+	beta_unscaled = solve (A, b);
+	
+	# END THE DIRECT SOLVE ALGORITHM
+
+	if (intercept_status == 2) {
+		beta = scale_X * beta_unscaled;
+		beta [m_ext, ] = beta [m_ext, ] + t(shift_X) %*% beta_unscaled;
+	} else {
+		beta = beta_unscaled;
+	}
+	
+	# COMPUTE AIC
+	y_residual = y - X %*% beta;
+	ss_res = sum (y_residual ^ 2);
+	eq_deg_of_freedom = m_ext;
+	AIC = (2 * eq_deg_of_freedom) + n * log (ss_res / n);
+	
+	if (fileB != " ") {
+	
+		fileO = ifdef ($O, " ");
+		fileS = $S;
+		fmt  = ifdef ($fmt, "text");
+		
+		print ("Computing the statistics...");
+		avg_tot = sum (y) / n;
+		ss_tot = sum (y ^ 2);
+		ss_avg_tot = ss_tot - n * avg_tot ^ 2;
+		var_tot = ss_avg_tot / (n - 1);
+#		y_residual = y - X %*% beta;
+		avg_res = sum (y_residual) / n;
+#		ss_res = sum (y_residual ^ 2);
+		ss_avg_res = ss_res - n * avg_res ^ 2;
+
+		plain_R2 = 1 - ss_res / ss_avg_tot;
+		if (n > m_ext) {
+			dispersion  = ss_res / (n - m_ext);
+			adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
+		} else {
+			dispersion  = 0.0 / 0.0;
+			adjusted_R2 = 0.0 / 0.0;
+		}
+
+		plain_R2_nobias = 1 - ss_avg_res / ss_avg_tot;
+		deg_freedom = n - m - 1;
+		if (deg_freedom > 0) {
+			var_res = ss_avg_res / deg_freedom;
+			adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
+		} else {
+			var_res = 0.0 / 0.0;
+			adjusted_R2_nobias = 0.0 / 0.0;
+			print ("Warning: zero or negative number of degrees of freedom.");
+		}
+
+		plain_R2_vs_0 = 1 - ss_res / ss_tot;
+		if (n > m) {
+			adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
+		} else {
+			adjusted_R2_vs_0 = 0.0 / 0.0;
+		}
+
+		str = "AVG_TOT_Y," + avg_tot;                                    #  Average of the response value Y
+		str = append (str, "STDEV_TOT_Y," + sqrt (var_tot));             #  Standard Deviation of the response value Y
+		str = append (str, "AVG_RES_Y," + avg_res);                      #  Average of the residual Y - pred(Y|X), i.e. residual bias
+		str = append (str, "STDEV_RES_Y," + sqrt (var_res));             #  Standard Deviation of the residual Y - pred(Y|X)
+		str = append (str, "DISPERSION," + dispersion);                  #  GLM-style dispersion, i.e. residual sum of squares / # d.f.
+		str = append (str, "PLAIN_R2," + plain_R2);                      #  Plain R^2 of residual with bias included vs. total average
+		str = append (str, "ADJUSTED_R2," + adjusted_R2);                #  Adjusted R^2 of residual with bias included vs. total average
+		str = append (str, "PLAIN_R2_NOBIAS," + plain_R2_nobias);        #  Plain R^2 of residual with bias subtracted vs. total average
+		str = append (str, "ADJUSTED_R2_NOBIAS," + adjusted_R2_nobias);  #  Adjusted R^2 of residual with bias subtracted vs. total average
+		if (intercept_status == 0) {
+			str = append (str, "PLAIN_R2_VS_0," + plain_R2_vs_0);        #  Plain R^2 of residual with bias included vs. zero constant
+			str = append (str, "ADJUSTED_R2_VS_0," + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
+		}
+
+		if (fileO != " ") {
+			write (str, fileO);
+		} else {
+			print (str);
+		}
+
+		# Prepare the output matrix
+		print ("Writing the output matrix...");
+		if (intercept_status == 2) {
+			beta_out = append (beta, beta_unscaled);
+		} else {
+			beta_out = beta;
+		}
+		
+		# Output which features give the best AIC and are being used for linear regression 
+		write (Selected, fileS, format=fmt);
+		
+		no_selected = ncol (Selected);
+		max_selected = max (Selected);
+		last = max_selected + 1;	
+		
+		if (intercept_status != 0) {
+		
+			Selected_ext = append (Selected, as.matrix (last));			
+			P1 = table (seq (1, ncol (Selected_ext)), t(Selected_ext)); 
+
+			if (intercept_status == 2) {
+			
+				P1_beta = P1 * beta;
+				P2_beta = colSums (P1_beta);
+				P1_beta_unscaled = P1 * beta_unscaled;
+				P2_beta_unscaled = colSums(P1_beta_unscaled);
+				
+				if (max_selected < m_orig) {
+					P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					P2_beta_unscaled = append (P2_beta_unscaled, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					
+					P2_beta[1, m_orig+1] = P2_beta[1, max_selected + 1]; 
+					P2_beta[1, max_selected + 1] = 0;
+				
+					P2_beta_unscaled[1, m_orig+1] = P2_beta_unscaled[1, max_selected + 1]; 
+					P2_beta_unscaled[1, max_selected + 1] = 0;
+				}
+				beta_out = append (t(P2_beta), t(P2_beta_unscaled));
+				
+			} else {
+			
+				P1_beta = P1 * beta;
+				P2_beta = colSums (P1_beta);
+				
+				if (max_selected < m_orig) {
+					P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+					P2_beta[1, m_orig+1] = P2_beta[1, max_selected + 1] ; 
+					P2_beta[1, max_selected + 1] = 0;
+				}
+				beta_out = t(P2_beta);
+				
+			}
+		} else {
+		
+			P1 = table (seq (1, no_selected), t(Selected)); 
+			P1_beta = P1 * beta;
+			P2_beta = colSums (P1_beta);	
+
+			if (max_selected < m_orig) {
+				P2_beta = append (P2_beta, matrix (0, rows=1, cols=(m_orig - max_selected)));
+			}		
+
+			beta_out = t(P2_beta);	
+		}
+		
+		write ( beta_out, fileB, format=fmt );		
+	}
+}
+

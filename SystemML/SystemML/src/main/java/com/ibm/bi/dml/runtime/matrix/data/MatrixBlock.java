@@ -5497,95 +5497,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		
 		//prepare intermediates and output
 		R.reset(1, 1, false);
-		
-		//check for empty result
-		if( wt==WeightsType.POST && W.isEmptyBlock(false) )
-			return R;
-		
-		//TODO: This implementation is a candidate for creating a tuned, cache-concious implementation
-		//in LibMatrixMult. However, the challenges is 4 inputs in potentially dense/sparse representations
-		//in combination with 3 different patterns. The potential benefit lies in preventing explicit slice
-		//operations and direct access to low level primitives.
-		
-		final int m = X.rlen;
-		final int n = X.clen; 
-		final int cd = U.clen;
-		double wsloss = 0; 
-		
-		//TODO take transpose into pattern (for better cache behavior)
-		
-		// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
-		if( wt==WeightsType.POST )
-		{
-			// approach: iterate over W, point-wise in order to exploit sparsity
-			if( W.sparse ) //SPARSE
-			{
-				SparseRow[] wrows = W.sparseRows;
-				
-				for( int i=0; i<m; i++ )
-					if( wrows[i] != null && !wrows[i].isEmpty() ){
-						int wlen = wrows[i].size();
-						int[] wix = wrows[i].getIndexContainer();
-						double[] wval = wrows[i].getValueContainer();
-						for( int k=0; k<wlen; k++ ) {
-							double xi = X.quickGetValue(i, wix[k]);
-							double uvij = 0;
-							for( int k2=0; k2<cd; k2++ )
-								uvij += U.quickGetValue(i, k2) * V.quickGetValue(wix[k], k2);
-							wsloss += Math.pow(wval[k]*(xi-uvij), 2);
-						}
-					}	
-			}
-			else //DENSE
-			{
-				double[] w = W.denseBlock;
-				
-				for( int i=0, wix=0; i<m; i++, wix+=n )
-					for( int j=0; j<n; j++)
-					{
-						double wij = w[wix+j];
-						if( wij != 0 ) {
-							double xij = X.quickGetValue(i, j);
-							double uvij = 0;
-							for( int k=0; k<cd; k++ )
-								uvij += U.quickGetValue(i, k) * V.quickGetValue(j, k);
-							wsloss += Math.pow(wij*(xij-uvij), 2);
-						}
-					}	
-			}
-		}
-		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
-		else if( wt==WeightsType.PRE )
-		{
-			// approach: iterate over all cells of X maybe sparse and dense
-			for( int i=0; i<m; i++ )
-				for( int j=0; j<n; j++)
-				{
-					double xij = X.quickGetValue(i, j);
-					double wij = W.quickGetValue(i, j);
-					double uvij = 0;
-					if( wij != 0 )
-						for( int k=0; k<cd; k++ )
-							uvij += U.quickGetValue(i, k) * V.quickGetValue(j, k);
-					wsloss += Math.pow(xij-wij*uvij, 2);
-				}
-		}
-		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
-		else if( wt==WeightsType.NONE )
-		{
-			// approach: iterate over all cells of X and 
-			for( int i=0; i<m; i++ )
-				for( int j=0; j<n; j++)
-				{
-					double xij = X.quickGetValue(i, j);
-					double uvij = 0;
-					for( int k=0; k<cd; k++ )
-						uvij += U.quickGetValue(i, k) * V.quickGetValue(j, k);
-					wsloss += Math.pow(xij-uvij, 2);
-				}
-		}
 	
-		R.quickSetValue(0, 0, wsloss);
+		//core block computation
+		LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt);
 		
 		return R;
 	}

@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
+import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -266,6 +267,36 @@ public class LibMatrixMult
 		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param wt
+	 */
+	public static void matrixMultWSLoss(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt) 
+	{
+		//check for empty result
+		if( wt==WeightsType.POST && mW.isEmptyBlock(false) )
+			return;
+				
+		//Timing time = new Timing(true);
+	
+		if( !mX.sparse && !mU.sparse && !mV.sparse && (mW==null || !mW.sparse) 
+			&& !mX.isEmptyBlock() && !mU.isEmptyBlock() && !mV.isEmptyBlock() && (mW==null || !mW.isEmptyBlock()))
+			matrixMultWSLossDense(mX, mU, mV, mW, ret, wt);
+		else if( mX.sparse && !mU.sparse && !mV.sparse && (mW==null || mW.sparse)
+				&& !mX.isEmptyBlock() && !mU.isEmptyBlock() && !mV.isEmptyBlock() && (mW==null || !mW.isEmptyBlock()))
+			matrixMultWSLossSparseDense(mX, mU, mV, mW, ret, wt);
+		else
+			matrixMultWSLossGeneric(mX, mU, mV, mW, ret, wt);
+		
+		//System.out.println("MMWSLoss "+ct.toString()+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
+		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+	}
+	
 	/**
 	 * 
 	 * @param m1
@@ -878,6 +909,249 @@ public class LibMatrixMult
 				}
 			}
 		}
+	}
+	
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param wt
+	 */
+	private static void matrixMultWSLossDense(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt)
+	{
+		final int m = mX.rlen;
+		final int n = mX.clen; 
+		final int cd = mU.clen;
+		double[] x = mX.denseBlock;
+		double[] u = mU.denseBlock;
+		double[] v = mV.denseBlock;
+		double[] w = (mW!=null)? mW.denseBlock : null;
+		double wsloss = 0; 
+		
+		// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+		if( wt==WeightsType.POST )
+		{
+			for( int i=0, ix=0, uix=0; i<m; i++, uix+=cd )
+				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
+					double wij = w[ix];
+					if( wij != 0 ) {
+						double uvij = dotProduct(u, v, uix, vix, cd);
+						wsloss += (wij*(x[ix]-uvij))*(wij*(x[ix]-uvij)); //^2
+					}
+				}	
+		}
+		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+		else if( wt==WeightsType.PRE )
+		{
+			// approach: iterate over all cells of X maybe sparse and dense
+			for( int i=0, ix=0, uix=0; i<m; i++, uix+=cd )
+				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
+					double wij = w[ix];
+					double uvij = 0;
+					if( wij != 0 )
+						uvij = dotProduct(u, v, uix, vix, cd);
+					wsloss += (x[ix]-wij*uvij)*(x[ix]-wij*uvij); //^2
+				}
+		}
+		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+		else if( wt==WeightsType.NONE )
+		{
+			// approach: iterate over all cells of X and 
+			for( int i=0, ix=0, uix=0; i<m; i++, uix+=cd )
+				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
+					double uvij = dotProduct(u, v, uix, vix, cd);
+					wsloss += (x[ix]-uvij)*(x[ix]-uvij); //^2
+				}
+		}
+		
+		ret.quickSetValue(0, 0, wsloss);
+	}
+	
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param wt
+	 */
+	private static void matrixMultWSLossSparseDense(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt)
+	{
+		//common case of sparse matrix/weights and dense factors
+		
+		final int m = mX.rlen;
+		final int n = mX.clen; 
+		final int cd = mU.clen;
+		SparseRow[] x = mX.sparseRows;
+		SparseRow[] w = (mW!=null)? mW.sparseRows : null;
+		double[] u = mU.denseBlock;
+		double[] v = mV.denseBlock;
+		double wsloss = 0; 
+		
+		// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+		if( wt==WeightsType.POST )
+		{
+			// approach: iterate over W, point-wise in order to exploit sparsity
+			for( int i=0, uix=0; i<m; i++, uix+=cd )
+				if( w[i] != null && !w[i].isEmpty() ) {
+					int wlen = w[i].size();
+					int[] wix = w[i].getIndexContainer();
+					double[] wval = w[i].getValueContainer();
+					for( int k=0; k<wlen; k++ ) {
+						double xi = mX.quickGetValue(i, wix[k]);
+						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
+						wsloss += (wval[k]*(xi-uvij))*(wval[k]*(xi-uvij));
+					}
+				}	
+		}
+		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+		else if( wt==WeightsType.PRE )
+		{
+			// approach: iterate over all cells of X maybe sparse and dense
+			// (note: tuning similar to pattern 3 possible but more complex)
+			for( int i=0, uix=0; i<m; i++, uix+=cd )
+				for( int j=0, vix=0; j<n; j++, vix+=cd)
+				{
+					double xij = mX.quickGetValue(i, j);
+					double wij = mW.quickGetValue(i, j);
+					double uvij = 0;
+					if( wij != 0 )
+						uvij = dotProduct(u, v, uix, vix, cd);
+					wsloss += (xij-wij*uvij)*(xij-wij*uvij);
+				}
+		}
+		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+		else if( wt==WeightsType.NONE )
+		{
+			// approach: iterate over all cells of X and 
+			for( int i=0, uix=0; i<m; i++, uix+=cd ) 
+			{
+				if( x[i]==null || x[i].isEmpty() ) { //empty row
+					for( int j=0, vix=0; j<n; j++, vix+=cd) {
+						double uvij = dotProduct(u, v, uix, vix, cd);
+						wsloss += (-uvij)*(-uvij);
+					}
+				}
+				else { //non-empty row
+					int xlen = x[i].size();
+					int[] xix = x[i].getIndexContainer();
+					double[] xval = x[i].getValueContainer();
+					int last = -1;
+					for( int k=0; k<xlen; k++ ) {
+						//process last nnz til current nnz
+						for( int k2=last+1; k2<xix[k]; k2++ ){
+							double uvij = dotProduct(u, v, uix, k2*cd, cd);
+							wsloss += (-uvij)*(-uvij);							
+						}
+						//process current nnz
+						double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
+						wsloss += (xval[k]-uvij)*(xval[k]-uvij);
+						last = xix[k];
+					}
+					//process last nnz til end of row
+					for( int k2=last+1; k2<n; k2++ ) { 
+						double uvij = dotProduct(u, v, uix, k2*cd, cd);
+						wsloss += (-uvij)*(-uvij);							
+					}
+				}
+			}
+		}
+		
+		ret.quickSetValue(0, 0, wsloss);
+	}
+	
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param wt
+	 */
+	private static void matrixMultWSLossGeneric(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt)
+	{
+		final int m = mX.rlen;
+		final int n = mX.clen; 
+		final int cd = mU.clen;
+		double wsloss = 0; 
+		
+		// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+		if( wt==WeightsType.POST )
+		{
+			// approach: iterate over W, point-wise in order to exploit sparsity
+			if( mW.sparse ) //SPARSE
+			{
+				SparseRow[] wrows = mW.sparseRows;
+				
+				for( int i=0; i<m; i++ )
+					if( wrows[i] != null && !wrows[i].isEmpty() ){
+						int wlen = wrows[i].size();
+						int[] wix = wrows[i].getIndexContainer();
+						double[] wval = wrows[i].getValueContainer();
+						for( int k=0; k<wlen; k++ ) {
+							double xi = mX.quickGetValue(i, wix[k]);
+							double uvij = 0;
+							for( int k2=0; k2<cd; k2++ )
+								uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(wix[k], k2);
+							wsloss += (wval[k]*(xi-uvij))*(wval[k]*(xi-uvij));
+						}
+					}	
+			}
+			else //DENSE
+			{
+				double[] w = mW.denseBlock;
+				
+				for( int i=0, wix=0; i<m; i++, wix+=n )
+					for( int j=0; j<n; j++)
+					{
+						double wij = w[wix+j];
+						if( wij != 0 ) {
+							double xij = mX.quickGetValue(i, j);
+							double uvij = 0;
+							for( int k=0; k<cd; k++ )
+								uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
+							wsloss += (wij*(xij-uvij))*(wij*(xij-uvij));
+						}
+					}	
+			}
+		}
+		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+		else if( wt==WeightsType.PRE )
+		{
+			// approach: iterate over all cells of X maybe sparse and dense
+			for( int i=0; i<m; i++ )
+				for( int j=0; j<n; j++)
+				{
+					double xij = mX.quickGetValue(i, j);
+					double wij = mW.quickGetValue(i, j);
+					double uvij = 0;
+					if( wij != 0 )
+						for( int k=0; k<cd; k++ )
+							uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
+					wsloss += (xij-wij*uvij)*(xij-wij*uvij);
+				}
+		}
+		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+		else if( wt==WeightsType.NONE )
+		{
+			// approach: iterate over all cells of X and 
+			for( int i=0; i<m; i++ )
+				for( int j=0; j<n; j++)
+				{
+					double xij = mX.quickGetValue(i, j);
+					double uvij = 0;
+					for( int k=0; k<cd; k++ )
+						uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
+					wsloss += (xij-uvij)*(xij-uvij);
+				}
+		}
+		
+		ret.quickSetValue(0, 0, wsloss);
 	}
 	
 	/**

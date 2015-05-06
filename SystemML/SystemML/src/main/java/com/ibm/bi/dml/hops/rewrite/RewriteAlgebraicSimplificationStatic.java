@@ -1130,13 +1130,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MINUS
 					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
-					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
-					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1).getInput().get(1)) )
+					&& tmp.getInput().get(1) instanceof AggBinaryOp ) //ba gurantees matrices
 				{
 					Hop X = tmp.getInput().get(0); 
 					Hop U = tmp.getInput().get(1).getInput().get(0);
-					Hop V = tmp.getInput().get(1).getInput().get(1).getInput().get(0);
-	
+					Hop V = tmp.getInput().get(1).getInput().get(1);
+					
+					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
+						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
+						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
+						V.refreshSizeInformation(); 
+					}
+					else 
+						V = V.getInput().get(0);
+					
 					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
 							  OpOp4.WSLOSS, X, U, V, W, true);
 					HopRewriteUtils.setOutputParametersForScalar(hnew);
@@ -1159,13 +1166,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MULT
 					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
-					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
-					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1).getInput().get(1)) )
+					&& tmp.getInput().get(1) instanceof AggBinaryOp )  //ba gurantees matrices
 				{
 					Hop W = tmp.getInput().get(0); 
 					Hop U = tmp.getInput().get(1).getInput().get(0);
-					Hop V = tmp.getInput().get(1).getInput().get(1).getInput().get(0);
-	
+					Hop V = tmp.getInput().get(1).getInput().get(1);
+					
+					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
+						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
+						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
+						V.refreshSizeInformation(); 
+					}
+					else 
+						V = V.getInput().get(0);
+					
 					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
 							  OpOp4.WSLOSS, X, U, V, W, false);
 					HopRewriteUtils.setOutputParametersForScalar(hnew);
@@ -1186,13 +1200,21 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop X = bop.getInput().get(0).getInput().get(0);
 				Hop tmp = bop.getInput().get(0).getInput().get(1); //(U %*% t(V))
 				
-				if(    tmp instanceof AggBinaryOp //ba gurantees matrices
-					&& HopRewriteUtils.isTransposeOperation(tmp.getInput().get(1)) ) 
+				if( tmp instanceof AggBinaryOp ) //ba gurantees matrices
 				{					
 					Hop W = new LiteralOp("1", 1); //no weighting 
 					Hop U = tmp.getInput().get(0);
-					Hop V = tmp.getInput().get(1).getInput().get(0);
+					Hop V = tmp.getInput().get(1);
 	
+					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
+						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
+						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
+						V.refreshSizeInformation(); 
+					}
+					else 
+						V = V.getInput().get(0);
+					
+					
 					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
 							  OpOp4.WSLOSS, X, U, V, W, false);
 					HopRewriteUtils.setOutputParametersForScalar(hnew);

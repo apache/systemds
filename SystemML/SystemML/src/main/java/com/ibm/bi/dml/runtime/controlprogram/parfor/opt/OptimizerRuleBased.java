@@ -1425,7 +1425,6 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param par
 	 * @throws DMLRuntimeException 
 	 */
-	@SuppressWarnings("unused")
 	protected void rAssignRemainingParallelism(OptNode n, int par) 
 		throws DMLRuntimeException
 	{		
@@ -1435,9 +1434,10 @@ public class OptimizerRuleBased extends Optimizer
 			boolean recompileSB = false;
 			for( OptNode c : childs )
 			{
-				if( par == 1 )
-					c.setSerialParFor();
-				else if( c.getNodeType() == NodeType.PARFOR )
+				//NOTE: we cannot shortcut with c.setSerialParFor() on par=1 because
+				//this would miss to recompile multi-threaded hop operations
+				
+				if( c.getNodeType() == NodeType.PARFOR )
 				{
 					int tmpN = Integer.parseInt(c.getParam(ParamType.NUM_ITERATIONS));
 					int tmpK = (tmpN<par)? tmpN : par;

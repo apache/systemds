@@ -179,7 +179,7 @@ public class OptimizerUtils
 	 * e.g., by disabling rewrites like -1*x->-x or dotproductsum it also runs fine 
 	 * in parallel; otherwise local aggregation leads to crossing the error threshold).
 	 */
-	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = false;
+	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = true;
 	
 	/**
 	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 

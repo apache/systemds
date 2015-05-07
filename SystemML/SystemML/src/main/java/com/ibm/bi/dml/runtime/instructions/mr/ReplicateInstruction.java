@@ -92,62 +92,45 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 				
 				if( _repCols ) //replicate columns
 				{
-					if( inIx.getColumnIndex()>1 || inVal.getNumColumns()>1) //pass-through
-					{
-						//pass through of index/value (unnecessary rep); decision based on
-						//if not column vector (MV binary cell operations only support col vectors)
-						out.set(inIx, inVal);
+					//compute num additional replicates based on num column blocks lhs matrix
+					//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
+					if( blockColFactor<=1 ) //blocksize should be 1000 or similar
+						LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
+					long numRep = (long)Math.ceil((double)_lenM / blockColFactor) - 1; 
+					
+					//replicate block (number of replicates is potentially unbounded, however,
+					//because the vector is not modified we can passed the original data and
+					//hence the memory overhead is very small)
+					for( long i=0; i<numRep; i++ ){
+						IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
+						MatrixIndexes repIX= repV.getIndexes();
+						repIX.setIndexes(inIx.getRowIndex(), 2+i);
+						repV.set(repIX, inVal);
 					}
-					else
-					{
-						//compute num additional replicates based on num column blocks lhs matrix
-						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
-						if( blockColFactor<=1 ) //blocksize should be 1000 or similar
-							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
-						long numRep = (long)Math.ceil((double)_lenM / blockColFactor) - 1; 
-						
-						//replicate block (number of replicates is potentially unbounded, however,
-						//because the vector is not modified we can passed the original data and
-						//hence the memory overhead is very small)
-						for( long i=0; i<numRep; i++ ){
-							IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
-							MatrixIndexes repIX= repV.getIndexes();
-							repIX.setIndexes(inIx.getRowIndex(), 2+i);
-							repV.set(repIX, inVal);
-						}
-						
-						//output original block
-						out.set(inIx, inVal);	
-					}
+					
+					//output original block
+					out.set(inIx, inVal);	
 				}
 				else //replicate rows
 				{
-					if( inIx.getRowIndex()>1 || inVal.getNumRows()>1) //pass-through
-					{
-						//pass through of index/value (unnecessary rep); 
-						out.set(inIx, inVal);
+					//compute num additional replicates based on num column blocks lhs matrix
+					//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
+					if( blockRowFactor<=1 ) //blocksize should be 1000 or similar
+						LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
+					long numRep = (long)Math.ceil((double)_lenM / blockRowFactor) - 1; 
+					
+					//replicate block (number of replicates is potentially unbounded, however,
+					//because the vector is not modified we can passed the original data and
+					//hence the memory overhead is very small)
+					for( long i=0; i<numRep; i++ ){
+						IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
+						MatrixIndexes repIX= repV.getIndexes();
+						repIX.setIndexes(2+i, inIx.getColumnIndex());
+						repV.set(repIX, inVal);
 					}
-					else
-					{
-						//compute num additional replicates based on num column blocks lhs matrix
-						//(e.g., M is Nx2700, blocksize=1000 -> numRep 2 because original block passed to index 1)
-						if( blockRowFactor<=1 ) //blocksize should be 1000 or similar
-							LOG.warn("Block size of input matrix is: brlen="+blockRowFactor+", bclen="+blockColFactor+".");
-						long numRep = (long)Math.ceil((double)_lenM / blockRowFactor) - 1; 
-						
-						//replicate block (number of replicates is potentially unbounded, however,
-						//because the vector is not modified we can passed the original data and
-						//hence the memory overhead is very small)
-						for( long i=0; i<numRep; i++ ){
-							IndexedMatrixValue repV = cachedValues.holdPlace(output, valueClass);
-							MatrixIndexes repIX= repV.getIndexes();
-							repIX.setIndexes(2+i, inIx.getColumnIndex());
-							repV.set(repIX, inVal);
-						}
-						
-						//output original block
-						out.set(inIx, inVal);	
-					}
+					
+					//output original block
+					out.set(inIx, inVal);	
 				}
 				
 				//put the output value in the cache

@@ -1684,38 +1684,6 @@ public class BinaryOp extends Hop
 				||(left.getDim2() > 1 && right.getDim2()==1 && left.getDim2()>=left.getColsInBlock() ) //col MV and more than 1 block
 				||(left.getDim1() > 1 && right.getDim1()==1 && left.getDim1()>=left.getRowsInBlock() )); //row MV and more than 1 block
 	}
-	
-	/**
-	 * 
-	 * @param inputPos
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
-	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
-		throws HopsException, LopsException
-	{
-		Lop offset = null;
-		
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && hop.dimsKnown() )
-		{
-			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
-			// a literal in order to increase the piggybacking potential. This is safe because append 
-			// is always marked for recompilation and hence, we have propagated the exact dimensions.
-			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(repCols ? hop.getDim2() : hop.getDim1()));
-		}
-		else
-		{
-			offset = new UnaryCP(hop.constructLops(), 
-					      repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
-					      DataType.SCALAR, ValueType.INT);
-		}
-		
-		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-		offset.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
-		
-		return offset;
-	}
 
 	
 	/**

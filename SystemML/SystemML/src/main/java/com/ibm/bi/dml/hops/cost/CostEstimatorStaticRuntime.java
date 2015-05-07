@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -647,6 +648,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		else if( BinaryM.isOpcode(InstructionUtils.getOpCode(inst)) )
 			BinaryMInstruction.addDistCacheIndex(inst, indexes);	
 		else if( inst.contains(WeightedSquaredLoss.OPCODE) )
+			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(WeightedSquaredLossR.OPCODE) )
 			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
 		
 		if( !indexes.isEmpty() )

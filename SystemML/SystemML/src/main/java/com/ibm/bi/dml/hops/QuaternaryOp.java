@@ -12,11 +12,14 @@ import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.RepMat;
+import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -33,6 +36,9 @@ public class QuaternaryOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	//config influencing mr operator selection (for testing purposes only) 
+	public static boolean FORCE_REP_WSLOSS = false;
 	
 	private OpOp4 _op = null;
 	private boolean _postWeights = false;
@@ -157,16 +163,21 @@ public class QuaternaryOp extends Hop
 	private void constructMRLopsWeightedSquaredLoss(WeightsType wtype) 
 		throws HopsException, LopsException
 	{
+		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
+		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
+		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
 		Hop V = getInput().get(2);
 		Hop W = getInput().get(3);
 		
-		//MR operator selection
+		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
 		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		if( isMapWsloss ) //broadcast
+		
+		if( !FORCE_REP_WSLOSS && isMapWsloss ) //broadcast
 		{
 			//partitioning of U
 			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -186,6 +197,7 @@ public class QuaternaryOp extends Hop
 				setLineNumbers(lV);	
 			}
 			
+			//map-side wsloss always with broadcast
 			Lop wsloss = new WeightedSquaredLoss( 
 					X.constructLops(), lU, lV, W.constructLops(), 
 					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
@@ -208,7 +220,96 @@ public class QuaternaryOp extends Hop
 		}
 		else //general case
 		{
-			throw new RuntimeException("not implemented yet!");
+			//MR operator selection part 2
+			boolean cacheU = !FORCE_REP_WSLOSS && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
+			boolean cacheV = !FORCE_REP_WSLOSS && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
+					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
+			
+			Group grpX = new Group(X.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), -1);
+			setLineNumbers(grpX);
+			
+			Lop grpW = W.constructLops();
+			if( grpW.getDataType()==DataType.MATRIX ) {
+				grpW = new Group(W.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+				grpW.getOutputParameters().setDimensions(W.getDim1(), W.getDim2(), W.getRowsInBlock(), W.getColsInBlock(), -1);
+				setLineNumbers(grpW);
+			}
+			
+			Lop lU = null;
+			if( cacheU ) {
+				//partitioning of U for read through distributed cache
+				boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
+				lU = U.constructLops();
+				if( needPartU ){ //requires partitioning
+					lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+					lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
+					setLineNumbers(lU);	
+				}
+			}
+			else {
+				//replication of U for shuffle to target block
+				Lop offset = createOffsetLop(V, false); //ncol of t(V) -> nrow of V determines num replicates
+				lU = new RepMat(U.constructLops(), offset, true, V.getDataType(), V.getValueType());
+				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), 
+						U.getRowsInBlock(), U.getColsInBlock(), U.getNnz());
+				setLineNumbers(lU);
+				
+				Group grpU = new Group(lU, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+				grpU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), U.getRowsInBlock(), U.getColsInBlock(), -1);
+				setLineNumbers(grpU);
+				lU = grpU;
+			}
+			
+			Lop lV = null;
+			if( cacheV ) {
+				//partitioning of V for read through distributed cache
+				boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
+				lV = V.constructLops();
+				if( needPartV ){ //requires partitioning
+					lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+					lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
+					setLineNumbers(lV);	
+				}
+			}
+			else {
+				//replication of t(V) for shuffle to target block
+				Transform ltV = new Transform( V.constructLops(), HopsTransf2Lops.get(ReOrgOp.TRANSPOSE), getDataType(), getValueType(), ExecType.MR);
+				ltV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), 
+						V.getColsInBlock(), V.getRowsInBlock(), V.getNnz());
+				setLineNumbers(ltV);
+				
+				Lop offset = createOffsetLop(U, false); //nrow of U determines num replicates
+				lV = new RepMat(ltV, offset, false, V.getDataType(), V.getValueType());
+				lV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), 
+						V.getColsInBlock(), V.getRowsInBlock(), V.getNnz());
+				setLineNumbers(lV);
+				
+				Group grpV = new Group(lV, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+				grpV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), V.getColsInBlock(), V.getRowsInBlock(), -1);
+				setLineNumbers(grpV);
+				lV = grpV;
+			}
+			
+			//reduce-side wsloss w/ or without broadcast
+			Lop wsloss = new WeightedSquaredLossR( 
+					grpX, lU, lV, grpW, DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
+			wsloss.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(wsloss);
+			
+			Group grp = new Group(wsloss, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+			grp.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(grp);
+			
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
+			agg1.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(agg1);
+			
+			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
+			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			setLineNumbers(unary1);
+			setLops(unary1);
 		}
 	}
 	

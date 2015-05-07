@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -166,7 +167,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.CP);
 	}
 
-
 	@Test
 	public void testSquaredLossDensePostWeightsRewritesMR() 
 	{
@@ -203,8 +203,44 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
 	}
 
+	//the following 4 tests force the replication based mr operator because
+	//otherwise we would always choose broadcasts for this small input data
 	
+	@Test
+	public void testSquaredLossSparsePostWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.MR);
+	}
 	
+	@Test
+	public void testSquaredLossSparsePreWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDensePostWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDensePreWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.MR);
+	}
+	
+	/**
+	 * 
+	 * @param testname
+	 * @param sparse
+	 * @param rewrites
+	 * @param instType
+	 */
+	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, ExecType instType)
+	{
+		runMLUnaryBuiltinTest(testname, sparse, rewrites, false, instType);
+	}
 	
 	/**
 	 * 
@@ -212,16 +248,18 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, ExecType instType)
+	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
 	{
 		//keep old flags
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		boolean forceOld = QuaternaryOp.FORCE_REP_WSLOSS;
 		
 		//set test-specific flags
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 	    OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-		
+		QuaternaryOp.FORCE_REP_WSLOSS = rep;
+	    
 		try
 		{
 			double sparsity = (sparse) ? spSparse : spDense;
@@ -271,6 +309,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		{
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
+			QuaternaryOp.FORCE_REP_WSLOSS = forceOld;
 		}
 	}	
 }

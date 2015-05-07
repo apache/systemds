@@ -17,9 +17,11 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -263,6 +265,38 @@ public abstract class Hop
 		
 			setLops(reblock);
 		}
+	}
+
+	/**
+	 * 
+	 * @param inputPos
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
+		throws HopsException, LopsException
+	{
+		Lop offset = null;
+		
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && hop.dimsKnown() )
+		{
+			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
+			// a literal in order to increase the piggybacking potential. This is safe because append 
+			// is always marked for recompilation and hence, we have propagated the exact dimensions.
+			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(repCols ? hop.getDim2() : hop.getDim1()));
+		}
+		else
+		{
+			offset = new UnaryCP(hop.constructLops(), 
+					      repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
+					      DataType.SCALAR, ValueType.INT);
+		}
+		
+		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		offset.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
+		
+		return offset;
 	}
 	
 	public void setOutputEmptyBlocks(boolean flag)

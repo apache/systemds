@@ -520,7 +520,7 @@ public class ParameterizedBuiltinOp extends Hop
 					             || ((rlen>brlen || rlen<=0) && !rmRows);
 			
 			if( requiresRep ) {
-				Lop pos = BinaryOp.createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
+				Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
 				loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
 				loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
 				setLineNumbers(loffset);

@@ -13,6 +13,8 @@ import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
+import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
@@ -189,7 +191,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Ternary);
 		
 		// Quaternary Instruction Opcodes
-		String2MRInstructionType.put( "mapwsloss", MRINSTRUCTION_TYPE.Quaternary);
+		String2MRInstructionType.put( WeightedSquaredLoss.OPCODE,  MRINSTRUCTION_TYPE.Quaternary);
+		String2MRInstructionType.put( WeightedSquaredLossR.OPCODE, MRINSTRUCTION_TYPE.Quaternary);
+		
 		
 		// Combine Instruction Opcodes
 		String2MRInstructionType.put( "combinebinary" , MRINSTRUCTION_TYPE.CombineBinary);

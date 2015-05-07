@@ -12,12 +12,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AppendGInstruction;
@@ -274,5 +279,51 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		dcValues.clear();
 	}
 
-	
+	/**
+	 * 
+	 * @param job
+	 * @throws IOException
+	 */
+	protected void setupDistCacheFiles(JobConf job) 
+		throws IOException 
+	{
+		
+		if ( MRJobConfiguration.getDistCacheInputIndices(job) == null )
+			return;
+		
+		//boolean isJobLocal = false;
+		isJobLocal = InfrastructureAnalyzer.isLocalMode(job);
+		
+		String[] inputIndices = MRJobConfiguration.getInputPaths(job);
+		String[] dcIndices = MRJobConfiguration.getDistCacheInputIndices(job).split(Instruction.INSTRUCTION_DELIM);
+		Path[] dcFiles = DistributedCache.getLocalCacheFiles(job);
+		PDataPartitionFormat[] inputPartitionFormats = MRJobConfiguration.getInputPartitionFormats(job);
+		
+		DistributedCacheInput[] dcInputs = new DistributedCacheInput[dcIndices.length];
+		for(int i=0; i < dcIndices.length; i++) {
+        	byte inputIndex = Byte.parseByte(dcIndices[i]);
+        	
+        	//load if not already present (jvm reuse)
+        	if( !dcValues.containsKey(inputIndex) )
+        	{
+				// When the job is in local mode, files can be read from HDFS directly -- use 
+				// input paths as opposed to "local" paths prepared by DistributedCache. 
+	        	Path p = null;
+				if(isJobLocal)
+					p = new Path(inputIndices[ Byte.parseByte(dcIndices[i]) ]);
+				else
+					p = dcFiles[i];
+				
+				dcInputs[i] = new DistributedCacheInput(
+									p, 
+									MRJobConfiguration.getNumRows(job, inputIndex), //rlens[inputIndex],
+									MRJobConfiguration.getNumColumns(job, inputIndex), //clens[inputIndex],
+									MRJobConfiguration.getNumRowsPerBlock(job, inputIndex), //brlens[inputIndex],
+									MRJobConfiguration.getNumColumnsPerBlock(job, inputIndex), //bclens[inputIndex],
+									inputPartitionFormats[inputIndex]
+								);
+	        	dcValues.put(inputIndex, dcInputs[i]);
+        	}
+		}	
+	}
 }

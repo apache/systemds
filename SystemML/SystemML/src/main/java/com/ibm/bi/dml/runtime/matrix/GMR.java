@@ -29,6 +29,7 @@ import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -179,7 +180,7 @@ public class GMR
 			}
 		}
 		
-		setupDistributedCache(job, instructionsInMapper, realinputs, realrlens, realclens);
+		setupDistributedCache(job, instructionsInMapper, otherInstructionsInReducer, realinputs, realrlens, realclens);
 
 		//set up the input files and their format information
 		boolean[] distCacheOnly = getDistCacheOnlyInputs(realIndexes, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer);
@@ -311,14 +312,22 @@ public class GMR
 	 * @param rlens
 	 * @param clens
 	 */
-	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) 
+	private static void setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
 	{
-		if(    instructionsInMapper != null && !instructionsInMapper.trim().isEmpty() 
-			&& InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) 
+		//concatenate mapper and reducer instructions
+		String allInsts = (instMap!=null && !instMap.trim().isEmpty() ) ? instMap : null;
+		if( allInsts != null && instRed!=null && !instRed.trim().isEmpty() )
+			allInsts = allInsts + Instruction.INSTRUCTION_DELIM + instRed;
+		else
+			allInsts = instRed;
+		
+		//setup distributed cache inputs (at least one)
+		if(    allInsts != null && !allInsts.trim().isEmpty() 
+			&& InstructionUtils.isDistributedCacheUsed(allInsts) ) 
 		{
 			//get all indexes of distributed cache inputs
 			ArrayList<Byte> indexList = new ArrayList<Byte>();
-			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
+			String[] inst = allInsts.split(Instruction.INSTRUCTION_DELIM);
 			for( String tmp : inst ){
 				if( tmp.contains(MapMultChain.OPCODE) )
 					MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
@@ -331,6 +340,8 @@ public class GMR
 				else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
 					BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
 				else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
+					QuaternaryInstruction.addDistCacheIndex(tmp, indexList);	
+				else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
 					QuaternaryInstruction.addDistCacheIndex(tmp, indexList);	
 			}
 			
@@ -399,6 +410,8 @@ public class GMR
 						else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
 							lcache = BinaryMInstruction.isDistCacheOnlyIndex(tmp, index);	
 						else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
+							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
 							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);

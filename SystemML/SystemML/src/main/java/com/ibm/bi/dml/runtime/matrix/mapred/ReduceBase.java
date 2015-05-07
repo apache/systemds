@@ -124,6 +124,15 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			throw new RuntimeException(e);
 		}		
 		
+		//load data from distributed cache (if required, reuse if jvm_reuse)
+		try {
+			setupDistCacheFiles(job);
+		}
+		catch(IOException ex)
+		{
+			throw new RuntimeException(ex);
+		}
+		
 		//reorganize the aggregate instructions, so that they are all associatied with each input
 		if(agg_insts!=null)
 		{

@@ -316,10 +316,10 @@ public class GMR
 	{
 		//concatenate mapper and reducer instructions
 		String allInsts = (instMap!=null && !instMap.trim().isEmpty() ) ? instMap : null;
-		if( allInsts != null && instRed!=null && !instRed.trim().isEmpty() )
-			allInsts = allInsts + Instruction.INSTRUCTION_DELIM + instRed;
-		else
+		if( allInsts==null )
 			allInsts = instRed;
+		else if( instRed!=null && !instRed.trim().isEmpty() )
+			allInsts = allInsts + Instruction.INSTRUCTION_DELIM + instRed;
 		
 		//setup distributed cache inputs (at least one)
 		if(    allInsts != null && !allInsts.trim().isEmpty() 

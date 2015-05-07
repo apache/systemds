@@ -1165,7 +1165,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
 				&& bop.getInput().get(0) instanceof BinaryOp	
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
-				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS )
+				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS
+				&& bop.getInput().get(0).getInput().get(0).getDataType()==DataType.MATRIX)
 			{
 				Hop X = bop.getInput().get(0).getInput().get(0);
 				Hop tmp = bop.getInput().get(0).getInput().get(1); //(W * (U %*% t(V)))
@@ -1202,7 +1203,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
 				&& bop.getInput().get(0) instanceof BinaryOp	
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
-				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS )
+				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS
+				&& bop.getInput().get(0).getInput().get(0).getDataType()==DataType.MATRIX)
 			{
 				Hop X = bop.getInput().get(0).getInput().get(0);
 				Hop tmp = bop.getInput().get(0).getInput().get(1); //(U %*% t(V))

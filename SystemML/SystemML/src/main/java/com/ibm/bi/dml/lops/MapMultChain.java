@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.lops;
 
-import com.ibm.bi.dml.lops.Binary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;

@@ -13,7 +13,6 @@ import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 
 
 /**

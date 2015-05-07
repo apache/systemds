@@ -32,6 +32,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
@@ -233,6 +234,13 @@ public class MatrixCharacteristics
 			MatrixCharacteristics mc1 = dims.get(realIns.getInput1());
 			MatrixCharacteristics mc2 = dims.get(realIns.getInput2());
 			dimOut.set(mc1.numColumns, mc2.numColumns, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
+		}
+		else if(ins instanceof QuaternaryInstruction)
+		{
+			//output size independent of chain type
+			QuaternaryInstruction realIns=(QuaternaryInstruction)ins;
+			MatrixCharacteristics mc1 = dims.get(realIns.getInput1());
+			dimOut.set(1, 1, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
 		}
 		else if(ins instanceof ReblockInstruction)
 		{

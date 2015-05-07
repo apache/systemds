@@ -21,8 +21,9 @@ public class WeightedSquaredLoss extends Lop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	public static final String OPCODE = "wsloss";
+
+	public static final String OPCODE = "mapwsloss";
+	public static final String OPCODE_CP = "wsloss";
 
 	public enum WeightsType {
 		POST, 
@@ -58,7 +59,6 @@ public class WeightedSquaredLoss extends Lop
 	{
 		if( et == ExecType.MR )
 		{
-			/*
 			//setup MR parameters 
 			boolean breaksAlignment = true;
 			boolean aligner = false;
@@ -66,8 +66,6 @@ public class WeightedSquaredLoss extends Lop
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
 			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-			*/
-			//TODO
 		}
 		else //Spark/CP
 		{
@@ -85,15 +83,13 @@ public class WeightedSquaredLoss extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index)
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index)
 	{
-		/*
-		//MR instruction XtXv
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
 		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(OPCODE);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -103,28 +99,29 @@ public class WeightedSquaredLoss extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(2).prepInputOperand(input_index3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(3).prepInputOperand(input_index4));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( this.prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_chainType);
+		sb.append(_weightsType);
 		
 		return sb.toString();
-		*/
-		
-		//TODO impl
-		return null;
 	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output)
 	{
-		//Spark instruction XtwXv
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
+		sb.append(OPCODE_CP);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -145,5 +142,23 @@ public class WeightedSquaredLoss extends Lop
 		sb.append(_weightsType);
 		
 		return sb.toString();
+	}
+	
+	@Override
+	public boolean usesDistributedCache() 
+	{
+		if( getExecType()==ExecType.MR )
+			return true;
+		else
+			return false;
+	}
+	
+	@Override
+	public int[] distributedCacheInputIndex() 
+	{
+		if( getExecType()==ExecType.MR )
+			return new int[]{2,3};
+		else
+			return new int[]{-1};
 	}
 }

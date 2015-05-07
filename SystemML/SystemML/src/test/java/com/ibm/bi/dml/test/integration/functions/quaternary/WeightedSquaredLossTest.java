@@ -92,7 +92,43 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.CP);
 	}
 	
-	//TODO rewrites
+	@Test
+	public void testSquaredLossDensePostWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDensePreWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDenseNoWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePreWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparseNoWeightsNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.MR);
+	}
+	
+	//with rewrites
 	
 	@Test
 	public void testSquaredLossDensePostWeightsRewritesCP() 
@@ -129,10 +165,44 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.CP);
 	}
-	
-	//TODO MR 
 
+
+	@Test
+	public void testSquaredLossDensePostWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.MR);
+	}
 	
+	@Test
+	public void testSquaredLossDensePreWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDenseNoWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePreWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparseNoWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
+	}
+
 	
 	
 	
@@ -162,7 +232,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "hops",
+			programArgs = new String[]{"-stats", "-explain", "runtime",
 					                   "-args", 
 					                        HOME + INPUT_DIR + "X",
 					                        HOME + INPUT_DIR + "U",
@@ -195,7 +265,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			
 			//check statistics for right operator in cp
 			if( instType == ExecType.CP && rewrites )
-				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE));
+				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE_CP));
 		}
 		finally
 		{

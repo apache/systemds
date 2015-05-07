@@ -7,13 +7,21 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.DataPartition;
+import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 /** 
@@ -149,12 +157,59 @@ public class QuaternaryOp extends Hop
 	private void constructMRLopsWeightedSquaredLoss(WeightsType wtype) 
 		throws HopsException, LopsException
 	{
-		/*Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
-				                 getDataType(), getValueType(), ExecType.CP, mmtsj);
-	
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers( matmultCP );
-		setLops(matmultCP);*/
+		Hop X = getInput().get(0);
+		Hop U = getInput().get(1);
+		Hop V = getInput().get(2);
+		Hop W = getInput().get(3);
+		
+		//MR operator selection
+		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
+		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
+		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
+		if( isMapWsloss ) //broadcast
+		{
+			//partitioning of U
+			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
+			Lop lU = U.constructLops();
+			if( needPartU ){ //requires partitioning
+				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
+				setLineNumbers(lU);	
+			}
+			
+			//partitioning of V
+			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
+			Lop lV = V.constructLops();
+			if( needPartV ){ //requires partitioning
+				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
+				setLineNumbers(lV);	
+			}
+			
+			Lop wsloss = new WeightedSquaredLoss( 
+					X.constructLops(), lU, lV, W.constructLops(), 
+					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
+			wsloss.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(wsloss);
+			
+			Group grp = new Group(wsloss, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
+			grp.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(grp);
+			
+			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
+			agg1.getOutputParameters().setDimensions(1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+			setLineNumbers(agg1);
+			
+			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
+			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			setLineNumbers(unary1);
+			setLops(unary1);
+		}
+		else //general case
+		{
+			throw new RuntimeException("not implemented yet!");
+		}
 	}
 	
 	/**

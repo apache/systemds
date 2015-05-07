@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ParameterizedBuiltinMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
@@ -180,12 +181,15 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);
 		String2MRInstructionType.put( "csvrblk", MRINSTRUCTION_TYPE.CSVReblock);
 		
-		// Tertiary Reorg Instruction Opcodes 
+		// Ternary Reorg Instruction Opcodes 
 		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Ternary);
 		String2MRInstructionType.put( "ctabletransformscalarweight", MRINSTRUCTION_TYPE.Ternary);
 		String2MRInstructionType.put( "ctableexpandscalarweight", MRINSTRUCTION_TYPE.Ternary);
 		String2MRInstructionType.put( "ctabletransformhistogram", MRINSTRUCTION_TYPE.Ternary);
 		String2MRInstructionType.put( "ctabletransformweightedhistogram", MRINSTRUCTION_TYPE.Ternary);
+		
+		// Quaternary Instruction Opcodes
+		String2MRInstructionType.put( "mapwsloss", MRINSTRUCTION_TYPE.Quaternary);
 		
 		// Combine Instruction Opcodes
 		String2MRInstructionType.put( "combinebinary" , MRINSTRUCTION_TYPE.CombineBinary);
@@ -279,6 +283,9 @@ public class MRInstructionParser extends InstructionParser
 		case Ternary: 
 			return (MRInstruction) TernaryInstruction.parseInstruction(str);
 		
+		case Quaternary: 
+			return (MRInstruction) QuaternaryInstruction.parseInstruction(str);
+			
 		case Rand:
 			return (MRInstruction) RandInstruction.parseInstruction(str);
 			

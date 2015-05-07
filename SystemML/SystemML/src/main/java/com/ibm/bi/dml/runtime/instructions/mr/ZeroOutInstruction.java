@@ -43,22 +43,6 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase
 		indexRange=rng;
 	}
 	
-	private static long parseStartBoundary(String str)
-	{
-		if(!str.isEmpty())
-			return Long.parseLong(str);
-		else
-			return 1;
-	}
-	
-	private static long parseEndBoundary(String str)
-	{
-		if(!str.isEmpty())
-			return Long.parseLong(str);
-		else
-			return Long.MAX_VALUE;
-	}
-	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 6 );

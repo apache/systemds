@@ -28,6 +28,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -40,6 +41,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -328,6 +330,8 @@ public class GMR
 					AppendMInstruction.addDistCacheIndex(tmp, indexList);		
 				else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
 					BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
+				else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
+					QuaternaryInstruction.addDistCacheIndex(tmp, indexList);	
 			}
 			
 			//construct index and path strings
@@ -394,6 +398,8 @@ public class GMR
 							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);	
 						else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
 							lcache = BinaryMInstruction.isDistCacheOnlyIndex(tmp, index);	
+						else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
+							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);
 					}

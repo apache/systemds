@@ -21,6 +21,7 @@ import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
+import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -35,6 +36,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.QuaternaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
@@ -48,6 +50,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
@@ -643,6 +646,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			AppendMInstruction.addDistCacheIndex(inst, indexes);	
 		else if( BinaryM.isOpcode(InstructionUtils.getOpCode(inst)) )
 			BinaryMInstruction.addDistCacheIndex(inst, indexes);	
+		else if( inst.contains(WeightedSquaredLoss.OPCODE) )
+			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
 		
 		if( !indexes.isEmpty() )
 			return indexes.get(0);

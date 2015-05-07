@@ -527,6 +527,12 @@ public class HopRewriteUtils
 				&& hop1.getDim2() == hop2.getDim2());
 	}
 	
+	public static boolean isSingleBlock( Hop hop, boolean cols )
+	{
+		return cols ? (hop.getDim2()>0 && hop.getDim2()<=hop.getColsInBlock())
+				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
+	}
+	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
 		throws HopsException
 	{

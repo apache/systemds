@@ -1098,6 +1098,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * U%*% t(V) pointwise; having V and not t(V) at hand allows for a cache-friendly implementation
 	 * without additional memory requirements for internal transpose.
 	 * 
+	 * This rewrite is conceptually a static rewrite; however, the current MR runtime only supports
+	 * U/V factors of rank up to the blocksize (1000). We enforce this contraint here during the general
+	 * rewrite because this is an uncommon case. Also, the intention is to remove this constaint as soon
+	 * as we generalized the runtime or hop/lop compilation. 
+	 * 
 	 * @param parent
 	 * @param hi
 	 * @param pos
@@ -1123,14 +1128,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
 				&& ((BinaryOp)bop.getInput().get(1)).getOp()==OpOp2.POW 
 				&& bop.getInput().get(1).getInput().get(1) instanceof LiteralOp
-				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1).getInput().get(1))==2 )
+				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1).getInput().get(1))==2)
 			{
 				Hop W = bop.getInput().get(0);
 				Hop tmp = bop.getInput().get(1).getInput().get(0); //(X - U %*% t(V))
 				
 				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MINUS
 					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
-					&& tmp.getInput().get(1) instanceof AggBinaryOp ) //ba gurantees matrices
+					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
+					&& HopRewriteUtils.isSingleBlock(tmp.getInput().get(1).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
 				{
 					Hop X = tmp.getInput().get(0); 
 					Hop U = tmp.getInput().get(1).getInput().get(0);
@@ -1166,7 +1172,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MULT
 					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
-					&& tmp.getInput().get(1) instanceof AggBinaryOp )  //ba gurantees matrices
+					&& tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
+					&& HopRewriteUtils.isSingleBlock(tmp.getInput().get(1).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
 				{
 					Hop W = tmp.getInput().get(0); 
 					Hop U = tmp.getInput().get(1).getInput().get(0);
@@ -1200,7 +1207,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop X = bop.getInput().get(0).getInput().get(0);
 				Hop tmp = bop.getInput().get(0).getInput().get(1); //(U %*% t(V))
 				
-				if( tmp instanceof AggBinaryOp ) //ba gurantees matrices
+				if( tmp instanceof AggBinaryOp //ba gurantees matrices
+					&& HopRewriteUtils.isSingleBlock(tmp.getInput().get(0),true) )	//BLOCKSIZE CONSTRAINT
 				{					
 					Hop W = new LiteralOp("1", 1); //no weighting 
 					Hop U = tmp.getInput().get(0);

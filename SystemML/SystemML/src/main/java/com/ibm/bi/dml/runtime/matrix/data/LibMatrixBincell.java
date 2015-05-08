@@ -467,17 +467,8 @@ public class LibMatrixBincell
 					
 				if( isMultiply && v2==1 ) //ROW COPY
 				{
-					if( ret.sparse && arow != null && !arow.isEmpty() ) {
-						ret.getSparseRows()[i] = new SparseRow(arow);
-						ret.nonZeros += arow.size();
-					}
-					else if( !ret.sparse ) {
-						int alen = arow.size();
-						int[] aix = arow.getIndexContainer();
-						double[] avals = arow.getValueContainer();
-						for( int j=0; j<alen; j++ )
-							ret.quickSetValue(i, aix[j], avals[j]);
-					}
+					if( arow != null && !arow.isEmpty()  )
+						ret.appendRow(i, arow);
 				}
 				else //GENERAL CASE
 				{

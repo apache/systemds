@@ -4990,70 +4990,64 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private MatrixBlock removeEmptyRows(MatrixBlock ret) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
-		//scan block and determine empty rows
-		int rlen2 = 0;
-		boolean[] flags = new boolean[ rlen ]; 
-		if( sparse ) 
+		final int m = rlen;
+		final int n = clen;
+		
+		//Step 1: scan block and determine non-empty rows
+		boolean[] flags = new boolean[ m ]; //false
+		int rlen2 = 0; 
+		if( sparse ) //SPARSE 
 		{
-			for ( int i=0; i < sparseRows.length; i++ ) {
-				if ( sparseRows[i] != null && !sparseRows[i].isEmpty() )
-				{
-					flags[i] = false;
+			SparseRow[] a = sparseRows;
+			
+			for ( int i=0; i < m; i++ )
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					flags[i] = true;
 					rlen2++;
 				}
-				else
-					flags[i] = true;
-			}
 		}
-		else 
+		else //DENSE
 		{
-			for(int i=0; i<rlen; i++) {
-				flags[i] = true;
-				int index = i*clen;
-				for(int j=0; j<clen; j++)
-					if( denseBlock[index++] != 0 )
+			double[] a = denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++, aix+=n) {
+				for(int j=0; j<n; j++)
+					if( a[aix+j] != 0 )
 					{
-						flags[i] = false;
+						flags[i] = true;
 						rlen2++;
-						break; //early abort for current row
+						//early abort for current row
+						break; 
 					}
 			}
 		}
 
-		//reset result and copy rows
+		//Step 2: reset result and copy rows
 		rlen2 = Math.max(rlen2, 1); //ensure valid output
-		ret.reset(rlen2, clen, sparse);
-		int rindex = 0;
-		for( int i=0; i<rlen; i++ )
-			if( !flags[i] )
-			{
-				//copy row to result
-				if(sparse)
-				{
-					ret.appendRow(rindex, sparseRows[i]);
-				}
-				else
-				{
-					ret.allocateDenseBlock(false);
-					
-					int index1 = i*clen;
-					int index2 = rindex*clen;
-					for(int j=0; j<clen; j++)
-					{
-						if( denseBlock[index1] != 0 )
-						{
-							ret.denseBlock[index2] = denseBlock[index1];
-							ret.nonZeros++;
-						}
-						index1++;
-						index2++;
-					}
-				}
-				rindex++;
-			}
+		ret.reset(rlen2, n, sparse);
 		
+		if( sparse ) //SPARSE
+		{
+			for( int i=0, cix=0; i<m; i++ )
+				if( flags[i] )
+					ret.appendRow(cix++, sparseRows[i]);
+		}
+		else //DENSE
+		{
+			ret.allocateDenseBlock();
+			double[] a = denseBlock;
+			double[] c = ret.denseBlock;
+			
+			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+				if( flags[i] )
+				{
+					System.arraycopy(a, aix, c, cix, n);
+					cix += n; //target index
+				}
+		}
 		
 		//check sparsity
+		ret.nonZeros = this.nonZeros;
 		ret.examSparsity();
 		
 		return ret;
@@ -5069,43 +5063,60 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private MatrixBlock removeEmptyColumns(MatrixBlock ret) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		//scan block and determine empty cols
-		int clen2 = 0;
-		boolean[] flags = new boolean[ clen ]; 
+		final int m = rlen;
+		final int n = clen;
 		
-		for(int j=0; j<clen; j++) {
-			flags[j] = true;
-			for(int i=0; i<rlen; i++) {
-				double value = quickGetValue(i, j);
-				if( value != 0 )
-				{
-					flags[j] = false;
-					clen2++;
-					break; //early abort for current col
+		//Step 1: scan block and determine non-empty columns 
+		//(we optimized for cache-friendly behavior and hence don't do early abort)
+		boolean[] flags = new boolean[ n ]; //false 
+		
+		if( sparse ) //SPARSE 
+		{
+			SparseRow[] a = sparseRows;
+			
+			for( int i=0; i<m; i++ ) 
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					for( int j=0; j<alen; j++ )
+						flags[ aix[j] ] = true;
 				}
-			}
 		}
-
-		//reset result and copy rows
-		clen2 = Math.max(clen2, 1); //ensure valid output
-		ret.reset(rlen, clen2, sparse);
+		else //DENSE
+		{
+			double[] a = denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						flags[j] = true; 	
+		}
 		
-		int cindex = 0;
-		for( int j=0; j<clen; j++ )
-			if( !flags[j] )
+		//Step 2: determine number of columns
+		int clen2 = 0;
+		for( int j=0; j<n; j++ )
+			clen2 += flags[j] ? 1 : 0;
+		
+		//Step 3: reset result and copy cols
+		//(this step has additional optimization potential)
+		clen2 = Math.max(clen2, 1); //ensure valid output
+		ret.reset(m, clen2, sparse);
+			
+		for( int j=0, cix=0; j<n; j++ )
+			if( flags[j] )
 			{
 				//copy col to result
-				for( int i=0; i<rlen; i++ )
+				for( int i=0; i<m; i++ )
 				{
 					double value = quickGetValue(i, j);
 					if( value != 0 )
-						ret.quickSetValue(i, cindex, value);
+						ret.appendValue(i, cix, value);
 				}
-				
-				cindex++;
+				cix++;
 			}
 		
 		//check sparsity
+		ret.nonZeros = this.nonZeros;
 		ret.examSparsity();
 		
 		return ret;

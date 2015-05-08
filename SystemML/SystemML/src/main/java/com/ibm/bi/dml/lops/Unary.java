@@ -29,7 +29,7 @@ public class Unary extends Lop
 	
 	public enum OperationTypes {
 		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, CEIL, FLOOR, CUMSUM, MR_IQM, INVERSE, 
-		SPROP, SIGMOID,
+		SPROP, SIGMOID, SUBTRACT_NZ,
 		NOTSUPPORTED
 	};
 
@@ -185,6 +185,9 @@ public class Unary extends Lop
 		case SUBTRACT:
 			return "-";
 
+		case SUBTRACT_NZ:
+			return "-nz";
+				
 		case SUBTRACTRIGHT:
 			return "s-r";
 

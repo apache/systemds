@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
@@ -80,7 +81,10 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		} 
 		else if ( opcode.equalsIgnoreCase("-") ) {
 			return new ScalarInstruction(new RightScalarOperator(Minus.getMinusFnObject(), cst), in, out, str);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("-nz") ) {
+			return new ScalarInstruction(new RightScalarOperator(MinusNz.getMinusNzFnObject(), cst), in, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("s-r") ) {
 			return new ScalarInstruction(new LeftScalarOperator(Minus.getMinusFnObject(), cst), in, out, str);
 		} 

@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Equals;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
@@ -24,6 +25,8 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 public class ScalarOperator  extends Operator 
 {
+	private static final long serialVersionUID = 4547253761093455869L;
+
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -40,7 +43,7 @@ public class ScalarOperator  extends Operator
 		//note: additional functionobjects might qualify according to constant
 		if(   fn instanceof Multiply || fn instanceof Multiply2 
 		   || fn instanceof Power || fn instanceof Power2 
-		   || fn instanceof And  ) 
+		   || fn instanceof And || fn instanceof MinusNz  ) 
 		{
 			sparseSafe=true;
 		}
@@ -64,7 +67,7 @@ public class ScalarOperator  extends Operator
 		//note: there would be even more potential if we take left/right op into account
 		if(    fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power || fn instanceof Power2 
-			|| fn instanceof And
+			|| fn instanceof And || fn instanceof MinusNz
 			||(fn instanceof GreaterThan && _constant==0) 
 			||(fn instanceof LessThan && _constant==0)
 			||(fn instanceof NotEquals && _constant==0)

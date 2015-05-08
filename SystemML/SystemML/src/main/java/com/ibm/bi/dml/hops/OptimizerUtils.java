@@ -692,10 +692,11 @@ public class OptimizerUtils
 				case DIV:
 				case MODULUS:
 				case POW:
+				case MINUS_NZ:
 					ret = sp1; break; 
 				//case EQUAL: //doesnt work on worstcase estimates, but on 
 				//	ret = 1-Math.abs(sp1-sp2); break;	
-				
+	
 				default:
 					ret = 1.0;
 			}
@@ -983,7 +984,7 @@ public class OptimizerUtils
 		//note: positive and negative values might be valid subexpressions
 		if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
 		{
-			switch( broot.op )
+			switch( broot.getOp() )
 			{
 				case PLUS:	ret = lret + rret; break;
 				case MINUS:	ret = lret - rret; break;
@@ -1024,7 +1025,7 @@ public class OptimizerUtils
 		//note: positive and negative values might be valid subexpressions
 		if( lret!=Double.MAX_VALUE && rret!=Double.MAX_VALUE ) //if known
 		{
-			switch( broot.op )
+			switch( broot.getOp() )
 			{
 				case PLUS:	ret = lret + rret; break;
 				case MINUS:	ret = lret - rret; break;

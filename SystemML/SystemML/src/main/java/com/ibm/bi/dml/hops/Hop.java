@@ -879,6 +879,8 @@ public abstract class Hop
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
 		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN, INVALID,
+		//fused ML-specific operators for performance
+		MINUS_NZ //sparse-safe minus: X-(mean*ppred(X,0,!=))
 	};
 
 	// Operations that require 3 operands
@@ -1044,6 +1046,7 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.MIN, com.ibm.bi.dml.lops.Unary.OperationTypes.MIN);
 		HopsOpOp2LopsU.put(OpOp2.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
+		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, com.ibm.bi.dml.lops.Unary.OperationTypes.SUBTRACT_NZ);
 	}
 
 	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1563,7 +1566,7 @@ public abstract class Hop
 				//note: positive and negative values might be valid subexpressions
 				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
 				{
-					switch( broot.op )
+					switch( broot.getOp() )
 					{
 						case PLUS:	ret = lret + rret; break;
 						case MULT:  ret = lret * rret; break;

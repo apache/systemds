@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
@@ -153,7 +154,11 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Minus.getMinusFnObject(), default_constant);
 			else return new RightScalarOperator(Minus.getMinusFnObject(), default_constant);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("-nz") ) {
+			//no support for left scalar yet
+			return new RightScalarOperator(MinusNz.getMinusNzFnObject(), default_constant);
+		}
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Divide.getDivideFnObject(), default_constant);

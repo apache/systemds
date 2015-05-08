@@ -298,12 +298,23 @@ public class LiteralOp extends Hop
 			throw new HopsException("Can not coerce an object of type " + getValueType() + " into Boolean.");
 	}
 	
-	public String getStringValue() throws HopsException {
-		if ( getValueType() == ValueType.STRING ) {
-			return value_string;
+	public String getStringValue() 
+	{
+		switch( getValueType() ) {
+			case BOOLEAN:
+				return String.valueOf(value_boolean);
+			case INT:		
+				return String.valueOf(value_long);
+			case DOUBLE:	
+				return String.valueOf(value_double);
+			case STRING:
+				return value_string;
+			case OBJECT:
+			case UNKNOWN:	
+				//do nothing (return null)
 		}
-		else
-			throw new HopsException("Can not coerce an object of type " + getValueType() + " into String.");
+		
+		return null;
 	}
 	
 	@Override

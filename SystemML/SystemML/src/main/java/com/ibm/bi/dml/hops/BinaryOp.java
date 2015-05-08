@@ -66,7 +66,7 @@ public class BinaryOp extends Hop
 	//we use the full remote memory budget (but reduced by sort buffer), 
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 	
-	Hop.OpOp2 op;
+	private Hop.OpOp2 op;
 
 	private enum AppendMethod { 
 		CP_APPEND, //in-memory general case append

@@ -72,15 +72,15 @@ public class WriterBinaryCell extends MatrixWriter
 		int rows = src.getNumRows(); 
 		int cols = src.getNumColumns();
         
-		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
-			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		
 		try
 		{
+			//bound check per block
+			if( rows > rlen || cols > clen )
+			{
+				throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
+						              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+			}
+		
 			if( sparse ) //SPARSE
 			{
 				

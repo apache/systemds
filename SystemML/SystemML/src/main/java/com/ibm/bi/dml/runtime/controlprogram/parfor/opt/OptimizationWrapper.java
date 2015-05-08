@@ -19,7 +19,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteRule;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriteStatus;
@@ -196,6 +195,7 @@ public class OptimizationWrapper
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws  
 	 */
+	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{

@@ -94,16 +94,16 @@ public class WriterBinaryBlock extends MatrixWriter
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		}
 		
-		// 2) bound check for src block
-		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
-		{
-			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		
-		//3) reblock and write
 		try
 		{
+			// 2) bound check for src block
+			if( src.getNumRows() > rlen || src.getNumColumns() > clen )
+			{
+				throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
+						              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+			}
+		
+			//3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
 			if( rlen <= brlen && clen <= bclen ) //opt for single block
@@ -190,16 +190,16 @@ public class WriterBinaryBlock extends MatrixWriter
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		}
 		
-		// 2) bound check for src block
-		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
-		{
-			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		
-		//3) reblock and write
 		try
 		{
+			// 2) bound check for src block
+			if( src.getNumRows() > rlen || src.getNumColumns() > clen )
+			{
+				throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
+						              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+			}
+		
+			//3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
 			if( rlen <= brlen && clen <= bclen ) //opt for single block

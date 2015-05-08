@@ -37,7 +37,6 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.QuaternaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
@@ -1236,6 +1235,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						return d1m * d1n * d1s; //add
 					else 
 						return d1m * d1n;
+			
+				case Quaternary:
+					//TODO pattern specific and all 4 inputs requires
+					return d1m * d1n * d1s *4;
 					
 				case Reblock: //opcodes: rblk
 					return DEFAULT_NFLOP_CP * ((leftSparse)? d1m*d1n*d1s : d1m*d1n); 

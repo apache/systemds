@@ -54,7 +54,6 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.IterablePredicate;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -414,6 +413,102 @@ public class Recompiler
 
 	/**
 	 * 
+	 * @param sb
+	 * @param hops
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static ArrayList<Instruction> recompileHopsDagInstructions( StatementBlock sb, ArrayList<Hop> hops ) 
+		throws HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException 
+	{
+		ArrayList<Instruction> newInst = null;
+
+		//need for synchronization as we do temp changes in shared hops/lops
+		//however, we create deep copies for most dags to allow for concurrent recompile
+		synchronized( hops ) 
+		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+	
+			// clear existing lops
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
+				rClearLops( hopRoot );
+			
+			// construct lops			
+			Dag<Lop> dag = new Dag<Lop>();
+			for( Hop hopRoot : hops ){
+				Lop lops = hopRoot.constructLops();
+				lops.addToDag(dag);	
+			}		
+			
+			// generate runtime instructions (incl piggybacking)
+			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());	
+		}
+		
+		// explain recompiled hops / instructions
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ){
+			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
+		    Explain.explainHops(hops, 1));
+		}
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME ){
+			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" + 
+		    Explain.explain(newInst, 1));
+		}
+	
+		return newInst;
+	}
+
+	/**
+	 * 
+	 * @param hops
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static ArrayList<Instruction> recompileHopsDagInstructions( Hop hops ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<Instruction> newInst = null;
+
+		//need for synchronization as we do temp changes in shared hops/lops
+		synchronized( hops ) 
+		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " MB");
+
+			// clear existing lops
+			hops.resetVisitStatus();
+			rClearLops( hops );	
+
+			// construct lops			
+			Dag<Lop> dag = new Dag<Lop>();
+			Lop lops = hops.constructLops();
+			lops.addToDag(dag);		
+			
+			// generate runtime instructions (incl piggybacking)
+			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
+		}
+
+		// explain recompiled instructions
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS )
+			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(newInst,1));
+		
+		return newInst;
+	}
+
+	
+	/**
+	 * 
 	 * @param pbs
 	 * @param vars
 	 * @param tid
@@ -461,6 +556,60 @@ public class Recompiler
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException("Unable to recompile program block hierarchy to CP.", ex);
+		}
+	}
+	
+	/**
+	 * This method does NO full program block recompile (no stats update, no rewrites, no recursion) but
+	 * only regenerates lops and instructions. The primary use case is recompilation after are hop configuration 
+	 * changes which allows to preserve statistics (e.g., propagated worst case stats from other program blocks)
+	 * and better performance for recompiling individual program blocks.  
+	 * 
+	 * @param pb
+	 * @throws IOException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 * @throws LopsException 
+	 * @throws HopsException 
+	 */
+	public static void recompileProgramBlockInstructions(ProgramBlock pb) 
+		throws HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException
+	{
+		if( pb instanceof WhileProgramBlock )
+		{
+			//recompile while predicate instructions
+			WhileProgramBlock wpb = (WhileProgramBlock)pb;
+			WhileStatementBlock wsb = (WhileStatementBlock) pb.getStatementBlock();
+			if( wsb!=null && wsb.getPredicateHops()!=null )
+				wpb.setPredicate(recompileHopsDagInstructions(wsb.getPredicateHops()));
+		}
+		else if( pb instanceof IfProgramBlock )
+		{
+			//recompile if predicate instructions
+			IfProgramBlock ipb = (IfProgramBlock)pb;
+			IfStatementBlock isb = (IfStatementBlock) pb.getStatementBlock();
+			if( isb!=null && isb.getPredicateHops()!=null )
+				ipb.setPredicate(recompileHopsDagInstructions(isb.getPredicateHops()));
+		}
+		else if( pb instanceof ForProgramBlock )
+		{
+			//recompile for/parfor predicate instructions
+			ForProgramBlock fpb = (ForProgramBlock)pb;
+			ForStatementBlock fsb = (ForStatementBlock) pb.getStatementBlock();
+			if( fsb!=null && fsb.getFromHops()!=null )
+				fpb.setFromInstructions(recompileHopsDagInstructions(fsb.getFromHops()));
+			if( fsb!=null && fsb.getToHops()!=null )
+				fpb.setToInstructions(recompileHopsDagInstructions(fsb.getToHops()));
+			if( fsb!=null && fsb.getIncrementHops()!=null )
+				fpb.setIncrementInstructions(recompileHopsDagInstructions(fsb.getIncrementHops()));
+		}
+		else
+		{
+			//recompile last-level program block instructions
+			StatementBlock sb = pb.getStatementBlock();
+			if( sb!=null && sb.get_hops()!=null ) {
+				pb.setInstructions(recompileHopsDagInstructions(sb, sb.get_hops()));
+			}
 		}
 	}
 	
@@ -643,7 +792,7 @@ public class Recompiler
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	public static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
@@ -1496,7 +1645,8 @@ public class Recompiler
 							case BOOLEAN:
 								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
 								break;
-							//otherwise: do nothing
+							default:	
+								//otherwise: do nothing
 						}
 						
 						//replace on demand 
@@ -1528,7 +1678,8 @@ public class Recompiler
 							case CAST_AS_BOOLEAN:
 								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
 								break;
-							//otherwise: do nothing
+							default:	
+								//otherwise: do nothing
 						}
 						
 						//replace on demand 

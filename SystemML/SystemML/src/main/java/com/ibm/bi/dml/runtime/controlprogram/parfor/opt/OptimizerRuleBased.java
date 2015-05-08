@@ -32,7 +32,6 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.compile.RecompileStatus;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -1471,7 +1470,7 @@ public class OptimizerRuleBased extends Optimizer
 				try {
 					//guaranteed to be a last-level block (see hop change)
 					ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID())[1];
-					Recompiler.rRecompileProgramBlock(pb, new LocalVariableMap(), new RecompileStatus(), 0, false);
+					Recompiler.recompileProgramBlockInstructions(pb);
 				}
 				catch(Exception ex){
 					throw new DMLRuntimeException(ex);

@@ -153,6 +153,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
+			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -1467,6 +1468,53 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.removeAllChildReferences( hi2 );
 			
 			LOG.debug("Applied simplifySumMatrixMult.");	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop simplifyNnzComputation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known		
+		if(    hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM  //sum
+			&& ((AggUnaryOp)hi).getDirection() == Direction.RowCol	            //full aggregate
+			&& hi.getInput().get(0) instanceof BinaryOp 
+			&& ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.NOTEQUAL )
+		{
+			Hop ppred = hi.getInput().get(0);
+			Hop X = null;
+			if(    ppred.getInput().get(0) instanceof LiteralOp 
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)ppred.getInput().get(0))==0 )
+			{
+				X = ppred.getInput().get(1);
+			}
+			else if(   ppred.getInput().get(1) instanceof LiteralOp 
+					&& HopRewriteUtils.getDoubleValue((LiteralOp)ppred.getInput().get(1))==0 )
+			{
+				X = ppred.getInput().get(0);
+			}
+		
+			//apply rewrite if known nnz 
+			if( X.getNnz() > 0 ){
+				Hop hnew = new LiteralOp(String.valueOf(X.getNnz()), X.getNnz());
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, hnew, pos);
+				
+				if( hi.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences( hi );
+				
+				hi = hnew;
+				LOG.debug("Applied simplifyNnzComputation.");	
+			}
 		}
 		
 		return hi;

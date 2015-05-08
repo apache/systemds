@@ -588,7 +588,22 @@ public class ParameterizedBuiltinOp extends Hop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		return 0;
+		double ret = 0;
+		
+		if( _op == ParamBuiltinOp.RMEMPTY ){ 
+			Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
+			if(    marginHop instanceof LiteralOp 
+				&& "cols".equals(((LiteralOp)marginHop).getStringValue()) )
+			{
+				//removeEmpty(.., margin="cols"), this operation has additional memory
+				//requirements for intermediate data structures in order to make this
+				//a cache-friendly operation.
+				ret = OptimizerUtils.INT_SIZE * dim2;
+				
+			}
+		}
+		
+		return ret;
 	}
 	
 	@Override
@@ -716,14 +731,11 @@ public class ParameterizedBuiltinOp extends Hop
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				Hop margin = getInput().get(_paramIndexMap.get("margin"));
 				if( margin instanceof LiteralOp ) {
-					try {
-						LiteralOp lmargin = (LiteralOp)margin;
-						if( "rows".equals(lmargin.getStringValue()) )
-							setDim2( target.getDim2() );
-						else if( "cols".equals(lmargin.getStringValue()) )
-							setDim1( target.getDim1() );
-					}
-					catch(HopsException ex){} //ignore silently
+					LiteralOp lmargin = (LiteralOp)margin;
+					if( "rows".equals(lmargin.getStringValue()) )
+						setDim2( target.getDim2() );
+					else if( "cols".equals(lmargin.getStringValue()) )
+						setDim1( target.getDim1() );
 				}
 				setNnz( target.getNnz() );
 				break;

@@ -5023,11 +5023,14 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		}
 
 		//Step 2: reset result and copy rows
+		//dense stays dense, sparse might be dense/sparse
 		rlen2 = Math.max(rlen2, 1); //ensure valid output
-		ret.reset(rlen2, n, sparse);
+		boolean sp = evalSparseFormatInMemory(rlen2, n, nonZeros);
+		ret.reset(rlen2, n, sp);
 		
 		if( sparse ) //SPARSE
 		{
+			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
 				if( flags[i] )
 					ret.appendRow(cix++, sparseRows[i]);
@@ -5097,23 +5100,43 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		for( int j=0; j<n; j++ )
 			clen2 += flags[j] ? 1 : 0;
 		
-		//Step 3: reset result and copy cols
-		//(this step has additional optimization potential)
-		clen2 = Math.max(clen2, 1); //ensure valid output
-		ret.reset(m, clen2, sparse);
-			
-		for( int j=0, cix=0; j<n; j++ )
+		//Step 3: create mapping of flags to target indexes
+		int[] cix = new int[n];
+		for( int j=0, pos=0; j<n; j++ )
 			if( flags[j] )
-			{
-				//copy col to result
-				for( int i=0; i<m; i++ )
-				{
-					double value = quickGetValue(i, j);
-					if( value != 0 )
-						ret.appendValue(i, cix, value);
+				cix[j] = pos++;	
+		
+		//Step 3: reset result and copy cols
+		//dense stays dense, sparse might be dense/sparse
+		clen2 = Math.max(clen2, 1); //ensure valid output
+		boolean sp = evalSparseFormatInMemory(m, clen2, nonZeros);
+		ret.reset(m, clen2, sp);
+			
+		if( sparse ) //SPARSE 
+		{
+			//note: output dense or sparse
+			SparseRow[] a = sparseRows;
+			
+			for( int i=0; i<m; i++ ) 
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();
+					for( int j=0; j<alen; j++ )
+						ret.appendValue(i, cix[aix[j]], avals[j]);
 				}
-				cix++;
-			}
+		}
+		else //DENSE
+		{
+			ret.allocateDenseBlock();
+			double[] a = denseBlock;
+			double[] c = ret.denseBlock;
+			
+			for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						 c[ lcix+cix[j] ] = a[aix];	
+		}
 		
 		//check sparsity
 		ret.nonZeros = this.nonZeros;

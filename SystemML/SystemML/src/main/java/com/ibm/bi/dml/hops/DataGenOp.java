@@ -255,15 +255,24 @@ public class DataGenOp extends Hop
 		else if ( _op == DataGenMethod.SEQ )
 		{
 			Hop from = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
+			Hop to = getInput().get(_paramIndexMap.get(Statement.SEQ_TO));
 			Hop incr = getInput().get(_paramIndexMap.get(Statement.SEQ_INCR)); 
 			//in order to ensure correctness we also need to know from and incr
 			//here, we check for the common case of seq(1,x), i.e. from=1, incr=1
-			if(    from instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)from)==1
-				&& incr instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)incr)==1 )
+			if(    from instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)from)==1
+				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==1 )
 			{
-				long to = computeDimParameterInformation(getInput().get(_paramIndexMap.get(Statement.SEQ_TO)), memo);
-				if( to > 0 )	
-					return new long[]{ to, 1, -1 };
+				long toVal = computeDimParameterInformation(getInput().get(_paramIndexMap.get(Statement.SEQ_TO)), memo);
+				if( toVal > 0 )	
+					return new long[]{ toVal, 1, -1 };
+			}
+			//here, we check for the common case of seq(x,1,-1), i.e. from=x, to=1 incr=-1
+			if(    to instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)to)==1
+				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==-1 )
+			{
+				long fromVal = computeDimParameterInformation(getInput().get(_paramIndexMap.get(Statement.SEQ_FROM)), memo);
+				if( fromVal > 0 )	
+					return new long[]{ fromVal, 1, -1 };
 			}
 		}
 		

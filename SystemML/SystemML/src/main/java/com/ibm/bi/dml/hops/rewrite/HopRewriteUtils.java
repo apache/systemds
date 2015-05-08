@@ -121,6 +121,31 @@ public class HopRewriteUtils
 	 * 
 	 * @param op
 	 * @return
+	 */
+	public static double getDoubleValueSafe( LiteralOp op )
+	{
+		try
+		{
+			switch( op.getValueType() )
+			{
+				case DOUBLE:  return op.getDoubleValue(); 
+				case INT:	  return op.getLongValue();
+				case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+				
+				default: throw new HopsException("Invalid double value: "+op.getValueType());
+			}
+		}
+		catch(Exception ex){
+			//silently ignore error
+		}
+		
+		return Double.MAX_VALUE;
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
 	 * @throws HopsException
 	 */
 	public static long getIntValue( LiteralOp op )
@@ -158,7 +183,7 @@ public class HopRewriteUtils
 			//silently ignore error
 		}
 		
-		return -1;
+		return Long.MAX_VALUE;
 	}
 	
 	/**

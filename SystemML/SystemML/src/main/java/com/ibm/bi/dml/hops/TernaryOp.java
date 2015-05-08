@@ -493,7 +493,7 @@ public class TernaryOp extends Hop
 			
 				case CTABLE_EXPAND_SCALAR_WEIGHT:
 					// F=ctable(seq(1,N),A) or F = ctable(seq,A,1)
-					int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0
+					int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0 (index of input data)
 					
 					Group group = new Group(
 							getInput().get(left).constructLops(),

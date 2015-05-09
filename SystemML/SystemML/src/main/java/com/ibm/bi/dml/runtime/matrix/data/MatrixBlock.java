@@ -3556,22 +3556,31 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private void sliceSparse(int rl, int ru, int cl, int cu, MatrixBlock dest) 
 		throws DMLRuntimeException
 	{
-		if ( sparseRows == null ) 
+		//check for early abort
+		if( isEmptyBlock(false) ) 
 			return;
 		
-		if( cl==cu ) //specific case: column vector (always dense)
+		if( cl==cu ) //COLUMN VECTOR 
 		{
+			//note: always dense dest
 			dest.allocateDenseBlock();
-			double val;
-			for( int i=rl, ix=0; i<=ru; i++, ix++ )
-				if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
-					if( (val = sparseRows[i].get(cl)) != 0 )
-					{
-						dest.denseBlock[ix] = val;
+			for( int i=rl; i<=ru; i++ ) {
+				SparseRow arow = sparseRows[i];
+				if( arow != null && !arow.isEmpty() ) {
+					double val = arow.get(cl);
+					if( val != 0 ) {
+						dest.denseBlock[i-rl] = val;
 						dest.nonZeros++;
 					}
+				}
+			}
 		}
-		else //general case (sparse and dense)
+		else if( rl==ru && cl==1 && cu==clen ) //ROW VECTOR 
+		{
+			//note: always sparse dest, but also works for dense
+			dest.appendRow(rl, sparseRows[rl]);
+		}
+		else //general case (sparse/dense deset)
 		{
 			for(int i=rl; i <= ru; i++) 
 				if(sparseRows[i] != null && !sparseRows[i].isEmpty()) 

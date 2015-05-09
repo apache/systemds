@@ -615,7 +615,7 @@ public class LibMatrixBincell
 						for( int j=0; j<blen; j++ ) {
 							double v1 = m1.quickGetValue(i, bix[j]);
 							double v = op.fn.execute( v1, bvals[j] );
-							ret.appendValue(i, j, v);					
+							ret.appendValue(i, bix[j], v);					
 						}
 					}
 				}

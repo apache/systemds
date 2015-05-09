@@ -99,10 +99,6 @@ public class ReorgOp extends Hop
 		if (getLops() == null) {
 			
 			ExecType et = optFindExecType();
-			if ( et == ExecType.SPARK && op!=ReOrgOp.TRANSPOSE )  {
-				// throw new HopsException("constructLops not implemented for Spark");
-				et = ExecType.CP;
-			}
 			
 			switch( op )
 			{

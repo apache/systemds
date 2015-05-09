@@ -598,14 +598,39 @@ public class LibMatrixBincell
 		}
 		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
 		{
-			for( int i=0; i<rlen; i++ )
-				for( int j=0; j<clen; j++ )
+			//if the right hand side row vector is sparse we have to exploit that;
+			//otherwise, both sparse access (binary search) and asymtotic behavior
+			//in the number of cells become major bottlenecks
+			if( m2.sparse && isMultiply ) //SPARSE *
+			{
+				//note: sparse block guaranteed to be allocated (otherwise early about)
+				SparseRow brow = m2.sparseRows[0];
+				if( brow != null && !brow.isEmpty() ) 
 				{
-					double v1 = m1.quickGetValue(i, j);
-					double v2 = m2.quickGetValue(0, j); //replicated vector value
-					double v = op.fn.execute( v1, v2 );
-					ret.appendValue(i, j, v);		
+					int blen = brow.size();
+					int[] bix = brow.getIndexContainer();
+					double[] bvals = brow.getValueContainer();
+					for( int i=0; i<rlen; i++ ) {
+						//for each row iterate only over non-zeros elements in rhs
+						for( int j=0; j<blen; j++ ) {
+							double v1 = m1.quickGetValue(i, bix[j]);
+							double v = op.fn.execute( v1, bvals[j] );
+							ret.appendValue(i, j, v);					
+						}
+					}
 				}
+			}
+			else //GENERAL CASE
+			{
+				for( int i=0; i<rlen; i++ )
+					for( int j=0; j<clen; j++ )
+					{
+						double v1 = m1.quickGetValue(i, j);
+						double v2 = m2.quickGetValue(0, j); //replicated vector value
+						double v = op.fn.execute( v1, v2 );
+						ret.appendValue(i, j, v);		
+					}
+			}
 		}
 			
 		//no need to recomputeNonZeros since maintained in append value

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -51,7 +52,9 @@ public class MatrixObject extends CacheableData
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = 6374712373206495637L;
+
 	/**
 	 * Cache for actual data, evicted by garbage collector.
 	 */
@@ -1392,8 +1395,10 @@ public class MatrixObject extends CacheableData
 					                                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
-					(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) {
+			// note: this is only required if singlenode (due to binarycell default) 
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
+				(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) 
+			{
 				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication, formatProperties);
 			}
 			else {
@@ -1435,8 +1440,10 @@ public class MatrixObject extends CacheableData
 				MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
 				
 				// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
-				if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
-						(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) {
+				// note: this is only required if singlenode (due to binarycell default) 
+				if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
+					(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) 
+				{
 					mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
 				}
 				MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo, formatProperties);

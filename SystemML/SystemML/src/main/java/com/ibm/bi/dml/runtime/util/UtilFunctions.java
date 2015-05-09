@@ -54,14 +54,14 @@ public class UtilFunctions
 	
 	/**
 	 * 
-	 * @param matrixSize
-	 * @param cellIndex block index 
+	 * @param len
+	 * @param blockIndex
 	 * @param blockSize
 	 * @return
 	 */
-	public static int computeBlockSize( long len, long cellIndex, long blockSize )
+	public static int computeBlockSize( long len, long blockIndex, long blockSize )
 	{
-		long remain = len - (cellIndex-1)*blockSize;
+		long remain = len - (blockIndex-1)*blockSize;
 		return (int)Math.min(blockSize, remain);
 	}
 	

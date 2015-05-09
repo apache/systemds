@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
  * Remote resultmerge mapper implementation that does the preprocessing
@@ -38,16 +39,17 @@ public class ResultMergeRemoteMapper
 	
 	private ResultMergeMapper _mapper;
 	
-	
 	public void map(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
 	{
+		//tag and pass-through matrix values 
 		_mapper.processKeyValue(key, value, out, reporter);	
 	}
 
 	public void configure(JobConf job)
 	{
 		InputInfo ii = MRJobConfiguration.getResultMergeInputInfo(job);
+		long[] tmp = MRJobConfiguration.getResultMergeMatrixCharacteristics( job );
 		String compareFname = MRJobConfiguration.getResultMergeInfoCompareFilename(job);
 		String currentFname = job.get("map.input.file");
 		
@@ -63,7 +65,7 @@ public class ResultMergeRemoteMapper
 		else if( ii == InputInfo.BinaryCellInputInfo )
 			_mapper = new ResultMergeMapperBinaryCell(tag);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_mapper = new ResultMergeMapperBinaryBlock(tag);
+			_mapper = new ResultMergeMapperBinaryBlock(tag, tmp[0], tmp[1], tmp[2], tmp[3]);
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
@@ -77,7 +79,7 @@ public class ResultMergeRemoteMapper
 		//do nothing
 	}
 	
-	private abstract class ResultMergeMapper
+	private static abstract class ResultMergeMapper
 	{
 		protected byte _tag = 0;
 		
@@ -90,7 +92,7 @@ public class ResultMergeRemoteMapper
 			throws IOException;	
 	}
 	
-	protected class ResultMergeMapperTextCell extends ResultMergeMapper
+	protected static class ResultMergeMapperTextCell extends ResultMergeMapper
 	{
 		private MatrixIndexes _objKey;
 		private MatrixCell _objValueHelp;
@@ -125,7 +127,7 @@ public class ResultMergeRemoteMapper
 		}	
 	}
 	
-	protected class ResultMergeMapperBinaryCell extends ResultMergeMapper
+	protected static class ResultMergeMapperBinaryCell extends ResultMergeMapper
 	{
 		private TaggedMatrixCell _objValue;
 		
@@ -145,26 +147,45 @@ public class ResultMergeRemoteMapper
 		}	
 	}
 	
-	protected class ResultMergeMapperBinaryBlock extends ResultMergeMapper
+	protected static class ResultMergeMapperBinaryBlock extends ResultMergeMapper
 	{
 		private ResultMergeTaggedMatrixIndexes _objKey;
 		private TaggedMatrixBlock _objValue;
+		private long _rlen = -1;
+		private long _clen = -1;
+		private long _brlen = -1;
+		private long _bclen = -1;
 		
-		protected ResultMergeMapperBinaryBlock(byte tag)
+		protected ResultMergeMapperBinaryBlock(byte tag, long rlen, long clen, long brlen, long bclen)
 		{
 			super(tag);
 			_objKey = new ResultMergeTaggedMatrixIndexes();
 			_objValue = new TaggedMatrixBlock();
 			_objKey.setTag( _tag );
 			_objValue.setTag( _tag );
+			
+			_rlen = rlen;
+			_clen = clen;
+			_brlen = brlen;
+			_bclen = bclen;
 		}
 
 		@Override
 		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter)
 				throws IOException 
 		{
-			_objKey.getIndexes().setIndexes((MatrixIndexes)key);
-			_objValue.setBaseObject((MatrixBlock)value);
+			MatrixIndexes inkey = (MatrixIndexes)key;
+			MatrixBlock inval = (MatrixBlock)value;
+			
+			//check valid block sizes
+			if( inval.getNumRows() != UtilFunctions.computeBlockSize(_rlen, inkey.getRowIndex(), _brlen) )
+				throw new IOException("Invalid number of rows for block "+inkey+": "+inval.getNumRows());
+			if( inval.getNumColumns() != UtilFunctions.computeBlockSize(_clen, inkey.getColumnIndex(), _bclen) )
+				throw new IOException("Invalid number of columns for block "+inkey+": "+inval.getNumColumns());
+			
+			//pass-through matrix blocks
+			_objKey.getIndexes().setIndexes( inkey );
+			_objValue.setBaseObject( inval );
 			out.collect(_objKey, _objValue);
 		}	
 	}

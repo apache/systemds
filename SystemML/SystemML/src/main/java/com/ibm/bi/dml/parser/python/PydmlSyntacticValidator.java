@@ -114,7 +114,15 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private PydmlSyntacticValidatorHelper helper = new PydmlSyntacticValidatorHelper();
+	private PydmlSyntacticValidatorHelper helper = null;
+	private String currentPath = null;
+	private HashMap<String,String> argVals = null;
+	
+	public PydmlSyntacticValidator(PydmlSyntacticValidatorHelper helper, String currentPath, HashMap<String,String> argVals) {
+		this.helper = helper;
+		this.currentPath = currentPath;
+		this.argVals = argVals;
+	}
 	
 	// Functions we have to implement but don't really need it
 	@Override
@@ -223,7 +231,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	public void exitEveryRule(ParserRuleContext arg0) {}
 	// --------------------------------------------------------------------
 	private void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
-		expr.setFilename(PydmlSyntacticErrorListener.currentFileName.peek());
+		expr.setFilename(helper.getCurrentFileName());
 		expr.setBeginLine(ctx.start.getLine());
 		expr.setBeginColumn(ctx.start.getCharPositionInLine());
 		expr.setEndLine(ctx.stop.getLine());
@@ -231,7 +239,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	}
 	
 	private void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
-		stmt.setFilename(PydmlSyntacticErrorListener.currentFileName.peek());
+		stmt.setFilename(helper.getCurrentFileName());
 		stmt.setBeginLine(ctx.start.getLine());
 		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
 		stmt.setEndLine(ctx.stop.getLine());
@@ -455,7 +463,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 //		}
 //		int linePosition = ctx.start.getLine();
 //		int charPosition = ctx.start.getCharPositionInLine();
-//		ctx.info.expr = new BooleanIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+//		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 //		setFileLineColumn(ctx.info.expr, ctx);
 //	}
 
@@ -465,7 +473,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			double val = Double.parseDouble(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new DoubleIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new DoubleIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -480,7 +488,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			long val = Long.parseLong(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new IntIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new IntIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -506,7 +514,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new StringIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new StringIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -544,7 +552,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		((BinaryExpression)retVal).setLeft(expr);
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
-		((BinaryExpression)retVal).setRight(new DoubleIdentifier(1.0, PydmlSyntacticErrorListener.currentFileName.peek(), line, col, line, col));
+		((BinaryExpression)retVal).setRight(new DoubleIdentifier(1.0, helper.getCurrentFileName(), line, col, line, col));
 		setFileLineColumn(retVal, ctx);
 		return retVal;
 		
@@ -646,12 +654,12 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		int charPosition = start.getCharPositionInLine();
 		try {
 			long val = Long.parseLong(varValue);
-			return new IntIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			return new IntIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		}
 		catch(Exception e) {
 			try {
 				double val = Double.parseDouble(varValue);
-				return new DoubleIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+				return new DoubleIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 			}
 			catch(Exception e1) {
 				try {
@@ -660,7 +668,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 						if(varValue.compareTo("True") == 0) {
 							val = true;
 						}
-						return new BooleanIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+						return new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 					}
 					else {
 						String val = "";
@@ -677,7 +685,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 //									helper.notifyErrorListeners("something wrong while parsing string ... strange", start);
 //									return null;
 						}
-						return new StringIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+						return new StringIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 					}
 				}
 				catch(Exception e3) {
@@ -696,7 +704,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		}
 		
 		String varValue = null;
-		for(Map.Entry<String, String> arg : PyDMLParserWrapper.argVals.entrySet()) {
+		for(Map.Entry<String, String> arg : this.argVals.entrySet()) {
 			if(arg.getKey().trim().compareTo(varName) == 0) {
 				if(varValue != null) {
 					helper.notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
@@ -761,8 +769,8 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		if(DMLParserWrapper.currentPath != null) {
-			filePath = DMLParserWrapper.currentPath + File.separator + filePath;
+		if(this.currentPath != null) {
+			filePath = this.currentPath + File.separator + filePath;
 		}
 		
 //		File importedFile = new File(filePath);
@@ -773,7 +781,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 //		else {
 			DMLProgram prog = null;
 			try {
-				prog = (new PyDMLParserWrapper()).doParse(filePath, null);
+				prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
 			} catch (ParseException e) {
 				helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 				return;
@@ -1940,7 +1948,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 				filePath.startsWith("'") && filePath.endsWith("'")) {	
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
-		PyDMLParserWrapper.currentPath = filePath + File.separator;
+		this.currentPath = filePath + File.separator;
 		ctx.info.stmt = stmt;
 	}
 	
@@ -2070,7 +2078,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		boolean val = false;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -2080,7 +2088,7 @@ public class PydmlSyntacticValidator implements PydmlListener {
 		boolean val = true;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, PydmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	

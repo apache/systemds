@@ -15,22 +15,29 @@ import org.antlr.v4.runtime.Token;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.FunctionCallAssignmentStatementContext;
 import com.ibm.bi.dml.parser.antlr4.DmlParser.ParameterizedExpressionContext;
+import com.ibm.bi.dml.parser.antlr4.DmlSyntacticErrorListener.CustomDmlErrorListener;
 
 public class DmlSyntacticValidatorHelper {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private CustomDmlErrorListener _errorListener = null;
+	
+	public DmlSyntacticValidatorHelper(CustomDmlErrorListener errorListener) {
+		this._errorListener = errorListener;
+	}
+	
 	public void notifyErrorListeners(String message, int line, int charPositionInLine) {
-		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(line, charPositionInLine, message);
+		this._errorListener.validationError(line, charPositionInLine, message);
 	}
 	
 	public void notifyErrorListeners(String message, Token op) {
-		DMLParserWrapper.ERROR_LISTENER_INSTANCE.validationError(op.getLine(), op.getCharPositionInLine(), message);
+		this._errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
 	
 	public String getCurrentFileName() {
-		return DmlSyntacticErrorListener.currentFileName.peek();
+		return _errorListener.peekFileName();
 	}
 	
 //	public static void setInfoForArithmeticOp(com.ibm.bi.dml.parser.Expression current, 

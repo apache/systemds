@@ -59,10 +59,6 @@ public class PyDMLParserWrapper {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 			"US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	public static CustomDmlErrorListener ERROR_LISTENER_INSTANCE = new CustomDmlErrorListener();
-
-	public static String currentPath = null; 
-	public static HashMap<String,String> argVals = null; 
 
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
@@ -98,17 +94,6 @@ public class PyDMLParserWrapper {
 	}
 
 	/**
-	 * This is needed because unit test is invoked in single jvm.
-	 */
-	private void cleanUpState() {
-		ERROR_LISTENER_INSTANCE = new CustomDmlErrorListener();
-		currentPath = null;
-		argVals = null;
-		PydmlSyntacticErrorListener.atleastOneError = false;
-		PydmlSyntacticErrorListener.currentFileName = new Stack<String>();
-	}
-
-	/**
 	 * Parses the passed file with command line parameters. You can either pass both (local file) or just dmlScript (hdfs) or just file name (import command)
 	 * @param fileName either full path or null --> only used for better error handling
 	 * @param dmlScript required
@@ -125,9 +110,7 @@ public class PyDMLParserWrapper {
 		
 		// Set the pipeline required for ANTLR parsing
 		PyDMLParserWrapper parser = new PyDMLParserWrapper();
-		PyDMLParserWrapper.argVals = argVals;
-		prog = parser.doParse(fileName, dmlScript);
-		parser.cleanUpState();
+		prog = parser.doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
 			throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
@@ -141,7 +124,7 @@ public class PyDMLParserWrapper {
 	 * @param fileName
 	 * @return null if atleast one error
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
@@ -167,6 +150,7 @@ public class PyDMLParserWrapper {
 		}
 
 		PmlprogramContext ast = null;
+		CustomDmlErrorListener errorListener = new CustomDmlErrorListener();
 		
 		try {
 			PydmlLexer lexer = new PydmlLexer(in);
@@ -189,13 +173,13 @@ public class PyDMLParserWrapper {
 					tokens.reset();
 					antlr4Parser.reset();
 					if(fileName != null) {
-						PydmlSyntacticErrorListener.currentFileName.push(fileName);
+						errorListener.pushCurrentFileName(fileName);
 					}
 					else {
-						PydmlSyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
+						errorListener.pushCurrentFileName("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
-					antlr4Parser.addErrorListener(ERROR_LISTENER_INSTANCE);
+					antlr4Parser.addErrorListener(errorListener);
 					antlr4Parser.setErrorHandler(new DefaultErrorStrategy());
 					antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.LL);
 					ast = antlr4Parser.pmlprogram();
@@ -204,8 +188,8 @@ public class PyDMLParserWrapper {
 			else {
 				// Set our custom error listener
 				antlr4Parser.removeErrorListeners();
-				antlr4Parser.addErrorListener(ERROR_LISTENER_INSTANCE);
-				PydmlSyntacticErrorListener.currentFileName.push(fileName);
+				antlr4Parser.addErrorListener(errorListener);
+				errorListener.pushCurrentFileName(fileName);
 	
 				// Now do the parsing
 				ast = antlr4Parser.pmlprogram();
@@ -222,10 +206,11 @@ public class PyDMLParserWrapper {
 			ParseTree tree = ast;
 			// And also do syntactic validation
 			ParseTreeWalker walker = new ParseTreeWalker();
-			PydmlSyntacticValidator validator = new PydmlSyntacticValidator();
+			PydmlSyntacticValidatorHelper helper = new PydmlSyntacticValidatorHelper(errorListener);
+			PydmlSyntacticValidator validator = new PydmlSyntacticValidator(helper, fileName, argVals);
 			walker.walk(validator, tree);
-			PydmlSyntacticErrorListener.currentFileName.pop();
-			if(PydmlSyntacticErrorListener.atleastOneError) {
+			errorListener.popFileName();
+			if(errorListener.isAtleastOneError()) {
 				return null;
 			}
 			dmlPgm = createDMLProgram(ast);

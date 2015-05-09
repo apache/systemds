@@ -22,15 +22,29 @@ public class DmlSyntacticErrorListener {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static boolean atleastOneError = false;
-	public static Stack<String> currentFileName = new Stack<String>();
+	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	public static class CustomDmlErrorListener extends BaseErrorListener {
 		
+		private boolean atleastOneError = false;
+		private Stack<String> currentFileName = new Stack<String>();
+		
+		public void pushCurrentFileName(String currentFilePath) {
+			currentFileName.push(currentFilePath);
+		}
+		
+		public String peekFileName() {
+			return currentFileName.peek();
+		}
+		
+		public String popFileName() {
+			return currentFileName.pop();
+		}
+		
 		public void validationError(int line, int charPositionInLine, String msg) {
 			try {
-				atleastOneError = true;
+				setAtleastOneError(true);
 				// Print error messages with file name
 				if(currentFileName == null || currentFileName.empty()) {
 					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
@@ -67,7 +81,7 @@ public class DmlSyntacticErrorListener {
 				String msg, RecognitionException e)
 		{	
 			try {
-				atleastOneError = true;
+				setAtleastOneError(true);
 				// Print error messages with file name
 				if(currentFileName == null || currentFileName.empty())
 					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
@@ -79,6 +93,14 @@ public class DmlSyntacticErrorListener {
 			catch(Exception e1) {
 				LOG.error("ERROR: while customizing error message:" + e1);
 			}
+		}
+
+		public boolean isAtleastOneError() {
+			return atleastOneError;
+		}
+
+		public void setAtleastOneError(boolean atleastOneError) {
+			this.atleastOneError = atleastOneError;
 		}
 	}
 }

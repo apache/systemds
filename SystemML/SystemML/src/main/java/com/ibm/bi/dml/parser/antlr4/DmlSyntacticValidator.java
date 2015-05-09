@@ -18,6 +18,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.Optimizer;
 import com.ibm.bi.dml.parser.ConditionalPredicate;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -111,7 +113,15 @@ public class DmlSyntacticValidator implements DmlListener {
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
-	private DmlSyntacticValidatorHelper helper = new DmlSyntacticValidatorHelper();
+	private DmlSyntacticValidatorHelper helper = null;
+	private String currentPath = null;
+	private HashMap<String,String> argVals = null;
+	
+	public DmlSyntacticValidator(DmlSyntacticValidatorHelper helper, String currentPath, HashMap<String,String> argVals) {
+		this.helper = helper;
+		this.currentPath = currentPath;
+		this.argVals = argVals;
+	}
 	
 	// Functions we have to implement but don't really need it
 	@Override
@@ -218,7 +228,8 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitEveryRule(ParserRuleContext arg0) {}
 	// --------------------------------------------------------------------
 	private void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
-		expr.setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+		// expr.setFilename(helper.getCurrentFileName());
+		expr.setFilename(currentPath);
 		expr.setBeginLine(ctx.start.getLine());
 		expr.setBeginColumn(ctx.start.getCharPositionInLine());
 		expr.setEndLine(ctx.stop.getLine());
@@ -226,7 +237,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
-		stmt.setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+		stmt.setFilename(helper.getCurrentFileName());
 		stmt.setBeginLine(ctx.start.getLine());
 		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
 		stmt.setEndLine(ctx.stop.getLine());
@@ -406,7 +417,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //		}
 //		int linePosition = ctx.start.getLine();
 //		int charPosition = ctx.start.getCharPositionInLine();
-//		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+//		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 //		setFileLineColumn(ctx.info.expr, ctx);
 //	}
 
@@ -416,7 +427,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			double val = Double.parseDouble(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new DoubleIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -431,7 +442,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			long val = Long.parseLong(ctx.getText());
 			int linePosition = ctx.start.getLine();
 			int charPosition = ctx.start.getCharPositionInLine();
-			ctx.info.expr = new IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+			ctx.info.expr = new IntIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
@@ -457,7 +468,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new StringIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -584,12 +595,12 @@ public class DmlSyntacticValidator implements DmlListener {
 				int charPosition = start.getCharPositionInLine();
 				try {
 					long val = Long.parseLong(varValue);
-					return new IntIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+					return new IntIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 				}
 				catch(Exception e) {
 					try {
 						double val = Double.parseDouble(varValue);
-						return new DoubleIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+						return new DoubleIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 					}
 					catch(Exception e1) {
 						try {
@@ -598,7 +609,7 @@ public class DmlSyntacticValidator implements DmlListener {
 								if(varValue.compareTo("TRUE") == 0) {
 									val = true;
 								}
-								return new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+								return new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 							}
 							else {
 								String val = "";
@@ -615,7 +626,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //									helper.notifyErrorListeners("something wrong while parsing string ... strange", start);
 //									return null;
 								}
-								return new StringIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+								return new StringIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 							}
 						}
 						catch(Exception e3) {
@@ -634,7 +645,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 		
 		String varValue = null;
-		for(Map.Entry<String, String> arg : DMLParserWrapper.argVals.entrySet()) {
+		for(Map.Entry<String, String> arg : this.argVals.entrySet()) {
 			if(arg.getKey().trim().compareTo(varName) == 0) {
 				if(varValue != null) {
 					helper.notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
@@ -699,8 +710,8 @@ public class DmlSyntacticValidator implements DmlListener {
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		if(DMLParserWrapper.currentPath != null) {
-			filePath = DMLParserWrapper.currentPath + File.separator + filePath;
+		if(this.currentPath != null) {
+			filePath = this.currentPath + File.separator + filePath;
 		}
 		
 		
@@ -712,7 +723,7 @@ public class DmlSyntacticValidator implements DmlListener {
 //		else {
 			DMLProgram prog = null;
 			try {
-				prog = (new DMLParserWrapper()).doParse(filePath, null);
+				prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
 			} catch (ParseException e) {
 				helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 				return;
@@ -968,6 +979,19 @@ public class DmlSyntacticValidator implements DmlListener {
 				ctx.info.expr = dbife;
 				return;
 			}
+			
+			if(DMLScript.PARSER_TREAT_UDF_AS_EXPRESSIONS) {
+				// TODO: Only for Optimizer
+				FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
+				try {
+					functCall.setFunctionName(functionName);
+					functCall.setFunctionNamespace(DMLProgram.DEFAULT_NAMESPACE);
+				} catch (ParseException e1) {
+					helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
+					return;
+				}
+			}
+			
 		} catch(Exception e) {
 			helper.notifyErrorListeners("unable to process builtin function expression " + functionName + ":" + e.getMessage(), ctx.start);
 			return ;
@@ -1353,7 +1377,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		DMLParserWrapper.currentPath = filePath + File.separator;
+		this.currentPath = filePath + File.separator;
 		ctx.info.stmt = stmt;
 	}
 	
@@ -1474,7 +1498,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		boolean val = false;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
@@ -1484,7 +1508,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		boolean val = true;
 		int linePosition = ctx.start.getLine();
 		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, DmlSyntacticErrorListener.currentFileName.peek(), linePosition, charPosition, linePosition, charPosition);
+		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	

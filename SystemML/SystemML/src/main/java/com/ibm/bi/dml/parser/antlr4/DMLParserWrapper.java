@@ -82,13 +82,8 @@ public class DMLParserWrapper {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 			"US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	public static CustomDmlErrorListener ERROR_LISTENER_INSTANCE = new CustomDmlErrorListener();
-
-	public static String currentPath = null; 
-	public static HashMap<String,String> argVals = null; 
-
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-
+	
 	/**
 	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in DmlSyntacticValidator for for, parfor, while, ...
 	 * @param current a statement
@@ -121,17 +116,6 @@ public class DMLParserWrapper {
 	}
 
 	/**
-	 * This is needed because unit test is invoked in single jvm.
-	 */
-	private static void cleanUpState() {
-		ERROR_LISTENER_INSTANCE = new CustomDmlErrorListener();
-		currentPath = null;
-		argVals = null;
-		DmlSyntacticErrorListener.atleastOneError = false;
-		DmlSyntacticErrorListener.currentFileName = new Stack<String>();
-	}
-
-	/**
 	 * Parses the passed file with command line parameters. You can either pass both (local file) or just dmlScript (hdfs) or just file name (import command)
 	 * @param fileName either full path or null --> only used for better error handling
 	 * @param dmlScript required
@@ -148,9 +132,7 @@ public class DMLParserWrapper {
 		
 		// Set the pipeline required for ANTLR parsing
 		DMLParserWrapper parser = new DMLParserWrapper();
-		DMLParserWrapper.argVals = argVals;
-		prog = parser.doParse(fileName, dmlScript);
-		DMLParserWrapper.cleanUpState(); //cleanup static state
+		prog = parser.doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
 			throw new ParseException("One or more errors found during parsing (couldnot construct AST for file: " + fileName + "). Cannot proceed ahead.");
@@ -164,7 +146,7 @@ public class DMLParserWrapper {
 	 * @param fileName
 	 * @return null if atleast one error
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		org.antlr.v4.runtime.ANTLRInputStream in;
@@ -190,6 +172,7 @@ public class DMLParserWrapper {
 		}
 
 		DmlprogramContext ast = null;
+		CustomDmlErrorListener errorListener = new CustomDmlErrorListener();
 		
 		try {
 			DmlLexer lexer = new DmlLexer(in);
@@ -212,13 +195,15 @@ public class DMLParserWrapper {
 					tokens.reset();
 					antlr4Parser.reset();
 					if(fileName != null) {
-						DmlSyntacticErrorListener.currentFileName.push(fileName);
+						errorListener.pushCurrentFileName(fileName);
+						// DmlSyntacticErrorListener.currentFileName.push(fileName);
 					}
 					else {
-						DmlSyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
+						errorListener.pushCurrentFileName("MAIN_SCRIPT");
+						// DmlSyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
-					antlr4Parser.addErrorListener(ERROR_LISTENER_INSTANCE);
+					antlr4Parser.addErrorListener(errorListener);
 					antlr4Parser.setErrorHandler(new DefaultErrorStrategy());
 					antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.LL);
 					ast = antlr4Parser.dmlprogram();
@@ -227,8 +212,8 @@ public class DMLParserWrapper {
 			else {
 				// Set our custom error listener
 				antlr4Parser.removeErrorListeners();
-				antlr4Parser.addErrorListener(ERROR_LISTENER_INSTANCE);
-				DmlSyntacticErrorListener.currentFileName.push(fileName);
+				antlr4Parser.addErrorListener(errorListener);
+				errorListener.pushCurrentFileName(fileName);
 	
 				// Now do the parsing
 				ast = antlr4Parser.dmlprogram();
@@ -245,10 +230,11 @@ public class DMLParserWrapper {
 			org.antlr.v4.runtime.tree.ParseTree tree = ast;
 			// And also do syntactic validation
 			org.antlr.v4.runtime.tree.ParseTreeWalker walker = new ParseTreeWalker();
-			DmlSyntacticValidator validator = new DmlSyntacticValidator();
+			DmlSyntacticValidatorHelper helper = new DmlSyntacticValidatorHelper(errorListener);
+			DmlSyntacticValidator validator = new DmlSyntacticValidator(helper, errorListener.peekFileName(), argVals);
 			walker.walk(validator, tree);
-			DmlSyntacticErrorListener.currentFileName.pop();
-			if(DmlSyntacticErrorListener.atleastOneError) {
+			errorListener.popFileName();
+			if(errorListener.isAtleastOneError()) {
 				return null;
 			}
 			dmlPgm = createDMLProgram(ast);

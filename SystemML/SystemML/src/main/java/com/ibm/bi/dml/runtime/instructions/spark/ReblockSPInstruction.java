@@ -7,19 +7,15 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -35,7 +31,6 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertALToBinaryBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatrixBlocks;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextLineToBinaryCellFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -44,21 +39,22 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private int blockRowLength; private int blockColLength;
+	private int brlen; private int bclen;
 	private boolean outputEmptyBlocks;
 	
 	
 	public ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
 			String opcode, String instr) {
 		super(op, in, out, opcode, instr);
-		blockRowLength=br;
-		blockColLength=bc;
+		brlen=br;
+		bclen=bc;
 		outputEmptyBlocks = emptyBlocks;
 	}
 	
@@ -106,10 +102,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			throw new DMLRuntimeException("Error: Incorrect input dimensions:" + numRows + "," +  numColumns); 
 		}
 		
-		
-		
 		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
-				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(blockRowLength, blockColLength))
+				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(brlen, bclen))
 				.filter(new DropEmptyBinaryCells());
 				
 		// TODO: Investigate whether binaryCells.persist() will help here or not
@@ -126,7 +120,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 						new ConvertCellToALFunction(), 
 						new AddCellToALFunction(), 
 						new MergeALFunction())
-						.mapToPair(new ConvertALToBinaryBlockFunction(blockRowLength, blockColLength, numRows, numColumns));		
+						.mapToPair(new ConvertALToBinaryBlockFunction(brlen, bclen, numRows, numColumns));		
 		// ----------------------------------------------------------------------------
 		
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
@@ -156,6 +150,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), binaryBlocksWithEmptyBlocks);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException, DMLUnsupportedOperationException {
@@ -190,7 +185,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			}
 			
 			if(iimd.getInputInfo() == InputInfo.TextCellInputInfo || iimd.getInputInfo() == InputInfo.MatrixMarketInputInfo ) {
-				@SuppressWarnings("unchecked")
 				JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 				processTextCellReblock(sec, lines);
 			}
@@ -217,38 +211,34 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				// TODO:
 				throw new DMLRuntimeException("BinaryCellInputInfo is not implemented for ReblockSPInstruction");
 			}
-			else {
+			else if(iimd.getInputInfo()==InputInfo.BinaryBlockInputInfo) {
 				/// HACK ALERT: Workaround for MLContext 
 				if(mc.getRowsPerBlock() == mcOut.getRowsPerBlock() && mc.getColsPerBlock() == mcOut.getColsPerBlock()) {
 					if(mo.getRDDHandle() != null) {
-						// TODO:
 						sec.setRDDHandleForVariable(output.getName(), (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle().getRDD() );
 						return;
 					}
 					else {
-						throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
+						throw new DMLRuntimeException("Input RDD is not accessible through buffer pool for ReblockSPInstruction:" + iimd.getInputInfo());
 					}
 				}
-				
-				// TODO:
-				throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
+				else {
+					// TODO: For global data flow optimization
+					throw new DMLRuntimeException("Reblocking to different sizes is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
+				}
 			}
-			
-			
-			// TODO: Deal with binary blocked rdd, RDD<LongWritable, Text> and filename 
-			
-			
-
-			
+			else {
+				throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
+			}		
 		} 
 		else {
 			throw new DMLRuntimeException("In ReblockSPInstruction,  Unknown opcode in Instruction: " + toString());
 		}
 	}
 	
-	private ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> getEmptyBlocks(List<MatrixIndexes> nonEmptyIndexes, long numRows, long numColumns) throws DMLRuntimeException {
-		long numBlocksPerRow = (long) Math.ceil((double)numRows / blockRowLength);
-		long numBlocksPerCol = (long) Math.ceil((double)numColumns / blockColLength);
+	private ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> getEmptyBlocks(List<MatrixIndexes> nonEmptyIndexes, long rlen, long clen) throws DMLRuntimeException {
+		long numBlocksPerRow = (long) Math.ceil((double)rlen / brlen);
+		long numBlocksPerCol = (long) Math.ceil((double)clen / bclen);
 		long expectedNumBlocks = numBlocksPerRow*numBlocksPerCol;
 		
 		if(expectedNumBlocks == nonEmptyIndexes.size()) {
@@ -263,8 +253,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		Collections.sort(nonEmptyIndexes); // sort in ascending order first wrt rows and then wrt columns
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 		int index = 0;
-		for(long row = 1; row <=  Math.ceil((double)numRows / blockRowLength); row++) {
-			for(long col = 1; col <=  Math.ceil((double)numColumns / blockColLength); col++) {
+		for(long row = 1; row <=  Math.ceil((double)rlen / brlen); row++) {
+			for(long col = 1; col <=  Math.ceil((double)clen / bclen); col++) {
 				boolean matrixBlockExists = false;
 				if(nonEmptyIndexes.size() > index) {
 					matrixBlockExists = (nonEmptyIndexes.get(index).getRowIndex() == row) && (nonEmptyIndexes.get(index).getColumnIndex() == col);
@@ -273,7 +263,18 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 					index++; // No need to add empty block
 				}
 				else {
-					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(row, col), new MatrixBlock()));
+					// ------------------------------------------------------------------
+					//	Compute local block size: 
+					// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
+					// We will have four local block sizes (1000X1000, 1000X100, 500X1000 and 500X1000)
+					long blockRowIndex = row;
+					long blockColIndex = col;
+					int emptyBlk_lrlen = UtilFunctions.computeBlockSize(rlen, blockRowIndex, brlen);
+					int emptyBlk_lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
+					// ------------------------------------------------------------------
+					
+					MatrixBlock emptyBlk = new MatrixBlock(emptyBlk_lrlen, emptyBlk_lclen, true);
+					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(blockRowIndex, blockColIndex), emptyBlk));
 				}
 			}
 		}

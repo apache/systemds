@@ -4,10 +4,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.Function2;
+
 import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterator<String>, Iterator<Tuple2<MatrixIndexes, MatrixBlock>>> {
 
@@ -95,7 +97,21 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 	            long blockRowIx = curLineNum / brlen;
 	            long rowOffsetWithinBlock = curLineNum % brlen;
 	            
-	            MatrixBlock curChunk = new MatrixBlock(brlen, bclen, true);
+	            
+	    		// ------------------------------------------------------------------
+	    		//	Compute local block size: 
+	    		// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
+	    		// We will have four local block sizes (1000X1000, 1000X100, 500X1000 and 500X1000)
+	    		long blockRowIndex = blockRowIx+1;
+	    		long blockColIndex = blockColIx+1;
+	    		int lrlen = UtilFunctions.computeBlockSize(rlen, blockRowIndex, brlen);
+	    		int lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
+	    		// ------------------------------------------------------------------
+	    		
+	    		// Take care of non-square blocks
+	    		MatrixBlock curChunk = new MatrixBlock(lrlen, lclen, true);
+	            // MatrixBlock curChunk = new MatrixBlock(brlen, bclen, true);
+	            
 	            int colOffsetWithinChunk = 0;
 	            
 	            while (null != curLine && curCellOffset < (blockColIx + 1) * bclen) {

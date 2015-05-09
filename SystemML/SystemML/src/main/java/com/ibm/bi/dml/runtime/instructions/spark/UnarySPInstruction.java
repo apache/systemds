@@ -106,7 +106,7 @@ public abstract class UnarySPInstruction extends ComputationSPInstruction
 			if(!mc1.dimsKnown())
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
 			else
-				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
+				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}
 	}
 }

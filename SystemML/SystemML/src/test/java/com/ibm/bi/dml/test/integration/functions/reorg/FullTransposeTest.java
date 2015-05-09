@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -89,19 +90,42 @@ public class FullTransposeTest extends AutomatedTestBase
 	{
 		runTransposeTest(OpType.COL_VECTOR, true, ExecType.CP);
 	}
+
+	/// -----------------------
+	@Test
+	public void testTransposeMatrixDenseSP() 
+	{
+		runTransposeTest(OpType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTransposeRowVectorDenseSP() 
+	{
+		runTransposeTest(OpType.ROW_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTransposeColVectorDenseSP() 
+	{
+		runTransposeTest(OpType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTransposeMatrixSparseSP() 
+	{
+		runTransposeTest(OpType.MATRIX, true, ExecType.SPARK);
+	}
 	
 	@Test
 	public void testTransposeRowVectorSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
- 			runTransposeTest(OpType.ROW_VECTOR, true, ExecType.SPARK);
+		runTransposeTest(OpType.ROW_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testTransposeColVectorSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
- 			runTransposeTest(OpType.COL_VECTOR, true, ExecType.SPARK);
+		runTransposeTest(OpType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	/// -----------------------
@@ -153,12 +177,14 @@ public class FullTransposeTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -207,6 +233,7 @@ public class FullTransposeTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

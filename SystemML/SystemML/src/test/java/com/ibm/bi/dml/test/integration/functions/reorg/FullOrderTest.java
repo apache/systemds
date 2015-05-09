@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReorgOp;
@@ -40,7 +41,7 @@ public class FullOrderTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1017;
-	private final static int rows2 = 2057;
+	private final static int rows2 = 42057;
 	private final static int cols1 = 7;	
 	private final static int by = 3;
 	private final static double sparsity1 = 0.7;
@@ -270,39 +271,198 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.CP);
 	}
 	
+	// ----------------------------
+	
+	@Test
+	public void testOrderMatrixDataAscDenseSP() 
+	{
+		runOrderTest(true, InputType.DENSE, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexAscDenseSP() 
+	{
+		runOrderTest(true, InputType.DENSE, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataAscSparseSP() 
+	{
+		runOrderTest(true, InputType.SPARSE, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexAscSparseSP() 
+	{
+		runOrderTest(true, InputType.SPARSE, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataAscEmptySP() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexAscEmptySP() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataDescDenseSP() 
+	{
+		runOrderTest(true, InputType.DENSE, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexDescDenseSP() 
+	{
+		runOrderTest(true, InputType.DENSE, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataDescSparseSP() 
+	{
+		runOrderTest(true, InputType.SPARSE, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexDescSparseSP() 
+	{
+		runOrderTest(true, InputType.SPARSE, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataDescEmptySP() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexDescEmptySP() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testOrderVectorDataAscDenseSP() 
+	{
+		runOrderTest(false, InputType.DENSE, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexAscDenseSP() 
+	{
+		runOrderTest(false, InputType.DENSE, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataAscSparseSP() 
+	{
+		runOrderTest(false, InputType.SPARSE, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexAscSparseSP() 
+	{
+		runOrderTest(false, InputType.SPARSE, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataAscEmptySP() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexAscEmptySP() 
+	{
+		runOrderTest(false, InputType.EMPTY, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataDescDenseSP() 
+	{
+		runOrderTest(false, InputType.DENSE, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexDescDenseSP() 
+	{
+		runOrderTest(false, InputType.DENSE, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataDescSparseSP() 
+	{
+		runOrderTest(false, InputType.SPARSE, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexDescSparseSP() 
+	{
+		runOrderTest(false, InputType.SPARSE, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorDataDescEmptySP() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderVectorIndexDescEmptySP() 
+	{
+		runOrderTest(false, InputType.EMPTY, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataAscEmptyNoRewriteSP() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixIndexAscEmptyNoRewriteSP() 
+	{
+		runOrderTest(true, InputType.EMPTY, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testOrderMatrixDataDescEmptyNoRewriteSP() 
+	{
+		runOrderTest(true, InputType.EMPTY, true, false, false, ExecType.SPARK);
+	}
+	
 	@Test
 	public void testOrderMatrixIndexDescEmptyNoRewriteSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			 runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.SPARK);
+		runOrderTest(true, InputType.EMPTY, true, true, false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testOrderVectorDataAscEmptyNoRewriteSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			 runOrderTest(false, InputType.EMPTY, false, false, false, ExecType.SPARK);
+		runOrderTest(false, InputType.EMPTY, false, false, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testOrderVectorIndexAscEmptyNoRewriteSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			 runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.SPARK);
+		runOrderTest(false, InputType.EMPTY, false, true, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testOrderVectorDataDescEmptyNoRewriteSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			 runOrderTest(false, InputType.EMPTY, true, false, false, ExecType.SPARK);
+		runOrderTest(false, InputType.EMPTY, true, false, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testOrderVectorIndexDescEmptyNoRewriteSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-				 runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.SPARK);
+		runOrderTest(false, InputType.EMPTY, true, true, false, ExecType.SPARK);
 	}
 	
 	// ----------------------------
@@ -738,6 +898,8 @@ public class FullOrderTest extends AutomatedTestBase
 		boolean rewriteOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean forceOpOld = ReorgOp.FORCE_MR_SORT_INDEXES;
 		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
 		try
 		{
 			String TEST_NAME = testname;
@@ -749,6 +911,8 @@ public class FullOrderTest extends AutomatedTestBase
 		    else {
 				rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 		    }
+			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
 			ReorgOp.FORCE_MR_SORT_INDEXES = forceDistSort;
@@ -799,6 +963,7 @@ public class FullOrderTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewriteOld;
 			ReorgOp.FORCE_MR_SORT_INDEXES = forceOpOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

@@ -1321,7 +1321,9 @@ public class TestUtils
 				if (random.nextDouble() > sparsity)
 					continue;
 				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+				// System.out.print(matrix[i][j] + "(" + i + "," + j + ")");
 			}
+			// System.out.println();
 		}
 
 		return matrix;

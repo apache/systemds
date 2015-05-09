@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -44,44 +45,52 @@ public class DiagV2MTest extends AutomatedTestBase
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
 	    rtplatform = platform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-        config.addVariable("rows", rows);
-          
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String RI_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = RI_HOME + "DiagV2MTest" + ".dml";
-		programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
-				Long.toString(rows), RI_HOME + OUTPUT_DIR + "C" };
-		fullRScriptName = RI_HOME + "DiagV2MTest" + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
-
-		Random rand=new Random(System.currentTimeMillis());
-		loadTestConfiguration(config);
-		double sparsity=0.599200924665577;//rand.nextDouble();
-		double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, 1397289950533L); // System.currentTimeMillis()
-        writeInputMatrix("A", A, true);
-        sparsity=rand.nextDouble();   
-		
-        //boolean exceptionExpected = false;
-		//int expectedNumberOfJobs = 12;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-        boolean exceptionExpected = false;
-		int expectedNumberOfJobs = -1;
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
-		
-		runRScript(true);
-		//disableOutAndExpectedDeletion();
+		try {
+	        config.addVariable("rows", rows);
+	          
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String RI_HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = RI_HOME + "DiagV2MTest" + ".dml";
+			programArgs = new String[]{"-explain", "-args",  RI_HOME + INPUT_DIR + "A" , 
+					Long.toString(rows), RI_HOME + OUTPUT_DIR + "C" };
+			fullRScriptName = RI_HOME + "DiagV2MTest" + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
 	
-		for(String file: config.getOutputFiles())
-		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
-		//	System.out.println(file+"-DML: "+dmlfile);
-		//	System.out.println(file+"-R: "+rfile);
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			Random rand=new Random(System.currentTimeMillis());
+			loadTestConfiguration(config);
+			double sparsity=0.599200924665577;//rand.nextDouble();
+			double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, 1397289950533L); // System.currentTimeMillis()
+	        writeInputMatrix("A", A, true);
+	        sparsity=rand.nextDouble();   
+			
+	        //boolean exceptionExpected = false;
+			//int expectedNumberOfJobs = 12;
+			//runTest(exceptionExpected, null, expectedNumberOfJobs);
+	        boolean exceptionExpected = false;
+			int expectedNumberOfJobs = -1;
+			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+			
+			runRScript(true);
+			//disableOutAndExpectedDeletion();
+		
+			for(String file: config.getOutputFiles())
+			{
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
+				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			//	System.out.println(file+"-DML: "+dmlfile);
+			//	System.out.println(file+"-R: "+rfile);
+				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			}
 		}
-		rtplatform = prevPlfm;
+		finally {
+			rtplatform = prevPlfm;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
 	}
 	
 	@Test
@@ -96,8 +105,7 @@ public class DiagV2MTest extends AutomatedTestBase
 	
 	@Test
 	public void testDiagV2MSP() {
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			commonReorgTest(RUNTIME_PLATFORM.SPARK);
+		commonReorgTest(RUNTIME_PLATFORM.SPARK);
 	}
 }
 

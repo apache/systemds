@@ -8,9 +8,12 @@
 package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
+
 import junit.framework.Assert;
+
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -76,29 +79,25 @@ public class BinUaggChainTest extends AutomatedTestBase
 	@Test
 	public void testBinUaggChainColSingleDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
-			 runBinUaggTest(TEST_NAME1, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testBinUaggChainColSingleSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
-			 runBinUaggTest(TEST_NAME1, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, true, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testBinUaggChainColMultiDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
-			 runBinUaggTest(TEST_NAME1, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testBinUaggChainColMultiSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK) 
-			 runBinUaggTest(TEST_NAME1, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
 	
 	// ----------------------
@@ -115,12 +114,15 @@ public class BinUaggChainTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try
 		{
@@ -151,14 +153,17 @@ public class BinUaggChainTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check compiled/executed jobs
-			int expectedNumCompiled = (singleBlock)?1:3; 
-			int expectedNumExecuted = (singleBlock)?1:3; 
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 		
+			if( rtplatform != RUNTIME_PLATFORM.SPARK ) {
+				int expectedNumCompiled = (singleBlock)?1:3; 
+				int expectedNumExecuted = (singleBlock)?1:3; 
+				checkNumCompiledMRJobs(expectedNumCompiled); 
+				checkNumExecutedMRJobs(expectedNumExecuted); 	
+			}
 		}
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

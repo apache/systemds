@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -99,48 +100,42 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	public void testDiagMMDenseDenseSP() 
 	{
 		//should apply diag_mm rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.SPARK, true);
 	}
 	
 	@Test
 	public void testDiagMMDenseDenseTransposeSP() 
 	{
 		//should apply diag_mm / t_t rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.SPARK, true);
 	}
 	
 	@Test
 	public void testDiagMVDenseDenseSP() 
 	{
 		//should not apply diag_mm rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.SPARK, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseSP() 
 	{
 		//should apply diag_mm rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.SPARK, true);
 	}
 	
 	@Test
 	public void testDiagMMSparseSparseTransposeSP() 
 	{
 		//should apply diag_mm / t_t rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.SPARK, true);
 	}
 	
 	@Test
 	public void testDiagMVSparseSparseSP() 
 	{
 		//should not apply diag_mm rewrite
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)  
-			runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.SPARK, true);
+		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.SPARK, true);
 	}
 	
 	// --------------------------------------------------------
@@ -268,12 +263,15 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		String TEST_NAME = rightTranspose ? TEST_NAME2 : TEST_NAME1;
 		boolean oldFlagSimplify = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -320,6 +318,7 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		{
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagSimplify;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

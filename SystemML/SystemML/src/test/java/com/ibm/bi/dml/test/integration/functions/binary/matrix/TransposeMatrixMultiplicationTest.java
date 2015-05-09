@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -107,6 +108,72 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runTransposeMatrixMultiplicationTest(true, true, ExecType.MR, false);
 	}
+	
+
+	/// ----------------------
+
+	@Test
+	public void testTransposeMMDenseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testTransposeMMDenseSparseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testTransposeMMSparseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(true, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testTransposeMMSparseSparseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(true, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testTransposeMVDenseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testTransposeMVDenseSparseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, true, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testTransposeMVSparseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(true, false, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testTransposeMVSparseSparseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(true, true, ExecType.SPARK, true);
+	}
+	
+	@Test
+	public void testTransposeMMMinusDenseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.SPARK, false, true);
+	}
+	
+	@Test
+	public void testTransposeMVMinusDenseDenseSP() 
+	{
+		runTransposeMatrixMultiplicationTest(false, false, ExecType.SPARK, true, true);
+	}
+	
+	/// ----------------------
+	
 
 	@Test
 	public void testTransposeMVDenseDenseCP() 
@@ -179,7 +246,8 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, true, true);
 	}
-
+	
+	 
 	/**
 	 * 
 	 * @param sparseM1
@@ -202,7 +270,15 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		int rowsA = vectorM2 ? rowsA2 : rowsA1;
 		int colsA = vectorM2 ? colsA2 : colsA1;
@@ -250,6 +326,7 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

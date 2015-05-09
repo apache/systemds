@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -59,6 +60,225 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"C"})); 
 	}
 
+	// ----------------
+	
+	@Test
+	public void testAdditionDenseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionDenseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionDenseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionSparseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionSparseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionSparseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionEmptyDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionEmptySparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testAdditionEmptyEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.ADDITION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionDenseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionDenseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionDenseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionSparseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionSparseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionSparseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionEmptyDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionEmptySparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSubstractionEmptyEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationDenseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationDenseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationDenseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationSparseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationSparseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationSparseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationEmptySparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMultiplicationEmptyEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.MULTIPLICATION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionDenseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionDenseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionDenseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionSparseDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionSparseSparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionSparseEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionEmptyDenseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionEmptySparseSP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testDivisionEmptyEmptySP() 
+	{
+		runMatrixCellwiseOperationTest(OpType.DIVISION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
+	}
+	
+	// ----------------
 	
 	@Test
 	public void testAdditionDenseDenseCP() 
@@ -502,7 +722,15 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		try
 		{
@@ -520,7 +748,7 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "A",
 					                        Integer.toString(rows),
 					                        Integer.toString(cols),
 					                        HOME + INPUT_DIR + "B",
@@ -582,6 +810,7 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

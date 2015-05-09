@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.Optimizer;
 import com.ibm.bi.dml.parser.ConditionalPredicate;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;

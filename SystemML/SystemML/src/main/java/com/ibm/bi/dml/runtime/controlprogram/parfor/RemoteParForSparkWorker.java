@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.spark.Accumulator;
+import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -123,8 +124,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private long constructWorkerID( Task ltask )
 	{
 		//create worker ID out of parfor ID and parfor task (independent of Spark)
-		int part1 = (int) _pfid; //parfor id (sequence number)
-		int part2 = (int) ltask.getIterations().get(0).getLongValue(); 
-		return IDHandler.concatIntIDsToLong(part1, part2);
+		//int part1 = (int) _pfid; //parfor id (sequence number)
+		//int part2 = (int) ltask.getIterations().get(0).getLongValue(); 
+		//return IDHandler.concatIntIDsToLong(part1, part2);
+		
+		TaskContext tctx = TaskContext.get();
+		return tctx.attemptId();		
 	}
 }

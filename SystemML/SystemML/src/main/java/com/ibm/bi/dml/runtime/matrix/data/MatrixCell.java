@@ -145,7 +145,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public int getNonZeros() {
+	public long getNonZeros() {
 		return 1;
 	}
 
@@ -194,7 +194,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		value=0;
 	}
 	
-	public void reset(int rl, int cl, boolean sp, int nnzs) {		
+	public void reset(int rl, int cl, boolean sp, long nnzs) {		
 		value=0;
 	}
 

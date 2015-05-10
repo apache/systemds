@@ -546,7 +546,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
-		int nnz = mb.getNonZeros();
+		long nnz = mb.getNonZeros();
 		long rows = mb.getNumRows();
 		long cols = mb.getNumColumns();
 		double sparsity = ((double)nnz)/(rows*cols);

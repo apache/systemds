@@ -110,7 +110,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public int getNonZeros() {
+	public long getNonZeros() {
 		return 1;
 	}
 
@@ -173,7 +173,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public void reset(int rl, int cl, boolean sp) {
 	}
 	
-	public void reset(int rl, int cl, boolean sp, int nnzs)
+	public void reset(int rl, int cl, boolean sp, long nnzs)
 	{
 	}
 

@@ -166,7 +166,7 @@ public class WriterMatrixMarketParallel extends MatrixWriter
 			
 			int rows = _src.getNumRows();
 	    	int cols = _src.getNumColumns();
-	    	int nnz = _src.getNonZeros();
+	    	long nnz = _src.getNonZeros();
 	    	
 			try
 			{

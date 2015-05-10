@@ -482,7 +482,7 @@ public class LibMatrixReorg
 		final int n = in.clen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		final int ennz2 = in.nonZeros/m2; 
+		final int ennz2 = (int) (in.nonZeros/m2); 
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
@@ -525,7 +525,7 @@ public class LibMatrixReorg
 		final int n = in.clen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		final int ennz2 = in.nonZeros/m2; 
+		final int ennz2 = (int) (in.nonZeros/m2); 
 		
 		//allocate output arrays (if required)
 		out.reset(m2, n2, true); //always sparse
@@ -788,7 +788,7 @@ public class LibMatrixReorg
 		
 		//allocate block if necessary
 		out.allocateSparseRowsBlock(false);
-		int estnnz = in.nonZeros/rows;
+		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
 		SparseRow[] aRows = in.sparseRows;
@@ -916,7 +916,7 @@ public class LibMatrixReorg
 		//allocate block if necessary
 		if(out.sparseRows==null)
 			out.sparseRows=new SparseRow[rows];
-		int estnnz = in.nonZeros/rows;
+		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
 		double[] a = in.denseBlock;

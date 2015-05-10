@@ -321,7 +321,7 @@ public class DataPartitionerRemoteMapper
 				long col_offset = (key2.getColumnIndex()-1)*_bclen;
 				
 				boolean sparse = value2.isInSparseFormat();
-				int nnz = value2.getNonZeros();
+				long nnz = value2.getNonZeros();
 				long rows = value2.getNumRows();
 				long cols = value2.getNumColumns();
 				double sparsity = ((double)nnz)/(rows*cols);

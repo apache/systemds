@@ -64,7 +64,7 @@ public class GatherWrapper extends PackageFunction
 			MatrixObject mo = inM.getMatrixObject();
 			MatrixBlock mb = mo.acquireRead();
 			int len1 = mb.getNumRows();
-			int len2 = mb.getNonZeros();
+			int len2 = (int) mb.getNonZeros();
 			
 			//create condensed position vector
 			double[][] outM = new double[len2][1];

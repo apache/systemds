@@ -1294,8 +1294,9 @@ public class Dag<N extends Lop>
 
 				// aligned reduce, make sure a parent that is reduce exists
 				if (node.getExecLocation() == ExecLocation.Reduce) {
-					if (   hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
-						|| hasChildNode(node, execNodes, ExecLocation.Map)) 
+					if (  compatibleWithChildrenInExecNodes(execNodes, node) && 
+							(hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
+							 || hasChildNode(node, execNodes, ExecLocation.Map) ) ) 
 					{ 
 						if( LOG.isTraceEnabled() )
 							LOG.trace(indent + "Adding -"+ node.toString());

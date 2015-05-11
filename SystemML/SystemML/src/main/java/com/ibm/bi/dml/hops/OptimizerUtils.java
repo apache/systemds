@@ -590,7 +590,7 @@ public class OptimizerUtils
 		
 		//the current CP runtime implementation has several limitations:
 		//1) for dense: 16GB because we use a linearized array (bounded to int in java)
-		//2) for sparse: 2G nnz because (1) nnz maintained as int, (2) potential changes 
+		//2) for sparse: 2G x 2G nnz because (1) nnz maintained as long, (2) potential changes 
 		//   to dense, and (3) sparse row arrays also of max int size (worst case in case of skew)  
 		long nnz = (long)(sparsity * rows * cols);
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, nnz);
@@ -598,7 +598,7 @@ public class OptimizerUtils
 		if( sparse ) //SPARSE
 		{
 			//check max nnz
-			ret = (nnz <= Integer.MAX_VALUE);
+			ret = (nnz <= Long.MAX_VALUE);
 		}
 		else //DENSE
 		{

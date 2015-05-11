@@ -111,7 +111,6 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 
 	@Override
 	public void writeLong(long v) throws IOException {
-		long tmp = Double.doubleToRawLongBits(v);
 		longToBa(v,  _buff, _count);
 		_count += 8;
 	}

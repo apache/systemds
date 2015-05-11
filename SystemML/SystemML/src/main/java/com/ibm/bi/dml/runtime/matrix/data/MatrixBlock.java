@@ -77,7 +77,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
-	public static final int HEADER_BASIC_N_REF_SIZE = 48;
+	public static final int HEADER_BASIC_N_REF_SIZE_DENSE = 44;
+	public static final int HEADER_BASIC_N_REF_SIZE_SPARSE = 48;
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -1121,16 +1122,14 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	{
 		long lrlen = (long) rlen;
 		long lclen = (long) clen;
-		long lnonZeros = (long) nonZeros;
-			
+
 		//ensure exact size estimates for write
-		if( lnonZeros <= 0 ) {
+		if( nonZeros <= 0 ) {
 			recomputeNonZeros();
-			lnonZeros = (long) nonZeros;
 		}	
 		
 		//decide on in-memory representation
-		return evalSparseFormatOnDisk(lrlen, lclen, lnonZeros);
+		return evalSparseFormatOnDisk(lrlen, lclen, nonZeros);
 	}
 	
 	/**
@@ -1953,7 +1952,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			switch(format)
 			{
 				case ULTRA_SPARSE_BLOCK:
-					nonZeros = in.readLong(); 
+					if (((long)rlen* (long)clen) > Integer.MAX_VALUE) {
+						nonZeros = in.readLong(); 
+					} else {
+						nonZeros = in.readInt(); 
+					}
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(true, true); //clean all
 					if( sparse )
@@ -1962,7 +1965,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 						readUltraSparseToDense(in);
 					break;
 				case SPARSE_BLOCK:
-					nonZeros = in.readLong(); 
+					if (((long)rlen* (long)clen) > Integer.MAX_VALUE) {
+						nonZeros = in.readLong(); 
+					} else {
+						nonZeros = in.readInt(); 
+					}
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(sparse, !sparse); 
 					if( sparse )
@@ -2214,7 +2221,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
-		out.writeLong( nonZeros ); //for deciding in-memory format on read
+		if (nonZeros > Integer.MAX_VALUE) {
+			out.writeLong( nonZeros ); //for deciding in-memory format on read
+		} else {
+			out.writeInt( (int)nonZeros );
+		}
 		
 		if( out instanceof MatrixBlockDataOutput ) //fast serialize
 			((MatrixBlockDataOutput)out).writeSparseRows(rlen, sparseRows);
@@ -2253,8 +2264,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		out.writeLong(nonZeros);
-
+		if (nonZeros > Integer.MAX_VALUE) {
+			out.writeLong( nonZeros ); //for deciding in-memory format on read
+		} else {
+			out.writeInt( (int)nonZeros );
+		}
 		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
 			if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
 			{
@@ -2315,7 +2329,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		out.writeLong(nonZeros);
+		if (nonZeros > Integer.MAX_VALUE) {
+			out.writeLong( nonZeros ); //for deciding in-memory format on read
+		} else {
+			out.writeInt( (int)nonZeros );
+		}
 
 		for(int r=0, ix=0; r<rlen; r++)
 			for(int c=0; c<clen; c++, ix++)
@@ -2331,7 +2349,11 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{	
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() ); //block type
-		out.writeLong( nonZeros ); //for deciding in-memory format on read
+		if (nonZeros > Integer.MAX_VALUE) {
+			out.writeLong( nonZeros ); //for deciding in-memory format on read
+		} else {
+			out.writeInt( (int)nonZeros );
+		}
 		
 		int start=0;
 		for(int r=0; r<rlen; r++)
@@ -2434,7 +2456,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private static long estimateSizeDenseInMemory(long nrows, long ncols)
 	{
 		// basic variables and references sizes
-		long size = HEADER_BASIC_N_REF_SIZE;
+		long size = HEADER_BASIC_N_REF_SIZE_DENSE;
 		
 		// core dense matrix block (double array)
 		size += nrows * ncols * 8;
@@ -2452,7 +2474,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
 	{
 		// basic variables and references sizes
-		long size = HEADER_BASIC_N_REF_SIZE;
+		long size = HEADER_BASIC_N_REF_SIZE_SPARSE;
 		
 		//NOTES:
 		// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
@@ -3522,7 +3544,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
 		MatrixBlock result=checkType(ret);
-		int estnnz=(int) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
+		long estnnz= (long) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		boolean result_sparsity = this.sparse && MatrixBlock.evalSparseFormatInMemory(ru-rl+1, cu-cl+1, estnnz);
 		if(result==null)
 			result=new MatrixBlock(ru-rl+1, cu-cl+1, result_sparsity, estnnz);
@@ -5799,9 +5821,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 
 	public static class SparsityEstimate
 	{
-		public int estimatedNonZeros=0;
+		public long estimatedNonZeros=0;
 		public boolean sparse=false;
-		public SparsityEstimate(boolean sps, int nnzs)
+		public SparsityEstimate(boolean sps, long nnzs)
 		{
 			sparse=sps;
 			estimatedNonZeros=nnzs;

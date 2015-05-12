@@ -145,6 +145,7 @@ public class MRJobConfiguration
 	private static final String PARTITIONING_OUTPUT_N_CONFIG="partitioning.output.n";
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	private static final String PARTITIONING_ITERVAR_CONFIG="partitioning.itervar";
+	private static final String PARTITIONING_MATRIXVAR_CONFIG="partitioning.matrixvar";
 	private static final String PARTITIONING_TRANSPOSE_COL_CONFIG="partitioning.transposed.col";
 	private static final String PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG="partitioning.output.keep.indexes";
 	
@@ -601,7 +602,7 @@ public class MRJobConfiguration
 		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
 	}
 	
-	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, String itervar, boolean tSparseCol )
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, String itervar, String matrixvar, boolean tSparseCol )
 			throws DMLRuntimeException
 	{
 		//set basic partitioning information
@@ -609,6 +610,9 @@ public class MRJobConfiguration
 		
 		//set iteration variable name (used for ParFor-DPE)
 		job.set(PARTITIONING_ITERVAR_CONFIG, itervar);
+		
+		//set iteration variable name (used for ParFor-DPE)
+		job.set(PARTITIONING_MATRIXVAR_CONFIG, matrixvar);
 		
 		//set transpose sparse column vector
 		job.setBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, tSparseCol);		
@@ -698,6 +702,11 @@ public class MRJobConfiguration
 	public static String getPartitioningItervar( JobConf job )
 	{
 		return job.get(PARTITIONING_ITERVAR_CONFIG);
+	}
+	
+	public static String getPartitioningMatrixvar( JobConf job )
+	{
+		return job.get(PARTITIONING_MATRIXVAR_CONFIG);
 	}
 	
 	public static boolean getPartitioningTransposedCol( JobConf job )

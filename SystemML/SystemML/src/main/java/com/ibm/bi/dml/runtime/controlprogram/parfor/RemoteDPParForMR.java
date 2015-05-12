@@ -74,7 +74,8 @@ public class RemoteDPParForMR
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static RemoteParForJobReturn runJob(long pfid, String itervar, String program, String resultFile, MatrixObject input, PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol,
+	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, MatrixObject input, 
+			                                   PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
 			                                   boolean enableCPCaching, int numReducers, int replication, int max_retry)  //opt params
 		throws DMLRuntimeException
 	{
@@ -106,7 +107,7 @@ public class RemoteDPParForMR
 			long clen = input.getNumColumns();
 			int brlen = (int) input.getNumRowsPerBlock();
 			int bclen = (int) input.getNumColumnsPerBlock();
-			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, oi, dpf, 1, input.getFileName(), itervar, tSparseCol);
+			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, oi, dpf, 1, input.getFileName(), itervar, matrixvar, tSparseCol);
 			job.setInputFormat(InputInfo.BinaryBlockInputInfo.inputFormatClass);
 			FileInputFormat.setInputPaths(job, path);
 			

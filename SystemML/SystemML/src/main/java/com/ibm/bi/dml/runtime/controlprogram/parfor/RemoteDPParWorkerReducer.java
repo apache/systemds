@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -127,6 +126,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		_brlen = MRJobConfiguration.getPartitioningBlockNumRows( job );
 		_bclen = MRJobConfiguration.getPartitioningBlockNumCols( job );
 		_iterVar = MRJobConfiguration.getPartitioningItervar( job );
+		_inputVar = MRJobConfiguration.getPartitioningMatrixvar( job );
 		_dpf = MRJobConfiguration.getPartitioningFormat( job );		
 		switch( _dpf ) { //create matrix partition for reuse
 			case ROW_WISE:    _rlen = 1; break;
@@ -195,9 +195,6 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			CacheStatistics.reset();
 			Statistics.reset();
 		}
-		
-		//get partitioned matrix varname (this needs to happen after program parsing) 
-		_inputVar = getPartionedMatrixName();	
 	}
 	
 	/**
@@ -229,25 +226,6 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		
 		//ensure caching is not disabled for CP in local mode
 		CacheableData.enableCaching();
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private String getPartionedMatrixName() 
-		throws RuntimeException
-	{
-		for( String var : _ec.getVariables().keySet() )
-		{
-			Data dat = _ec.getVariable( var );
-			if ( dat instanceof MatrixObject && ((MatrixObject)dat).isPartitioned() ) 
-				return var;
-		}
-		
-		throw new RuntimeException("Unable to find partioned matrix object in symboltable.");
 	}
 	
 	/**

@@ -892,7 +892,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
 		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
 		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
-			
+		
 		// Step 2) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
 		//        cannot reuse serialized string, since variables are serialized as well.
@@ -918,7 +918,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
 				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
 				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), program, resultFile, inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
+		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
+				inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP, MAX_RETRYS_ON_ERROR );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

@@ -34,19 +34,19 @@
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R
-#     				                 rank=10 reg="wl2" lambda=0.0001 fmt=csv
+#     				                         rank=10 reg="wl2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL	   = $L;
 fileR      = $R;
 # Default values of some parameters
-r          = ifdef ($rank, 10);	      # $rank=10;
-reg		   = ifdef ($reg, "l2")       # $reg="l2";
-lambda	   = ifdef ($lambda, 0);  	  # $lambda=0.0;
-max_iter   = ifdef ($maxi, 50);       # $maxi=50;
-check      = ifdef ($check, FALSE);	  # $check=FALSE;
-thr        = ifdef ($thr, 0.0001);    # $thr=0.0001;
-fmtO       = ifdef ($fmt, "text");    # $fmt="text";
+r          = ifdef ($rank, 10);	        # $rank=10;
+reg	   	   = ifdef ($reg, "l2")         # $reg="l2";
+lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
+max_iter   = ifdef ($maxi, 50);         # $maxi=50;
+check      = ifdef ($check, FALSE);	    # $check=FALSE;
+thr        = ifdef ($thr, 0.0001);      # $thr=0.0001;
+fmtO       = ifdef ($fmt, "text");      # $fmt="text";
 
 V = read (fileV);
 
@@ -58,7 +58,6 @@ if (n_empty_rows > 0) {
 	print ("Matrix V contains empty rows! These rows will be removed.");
 	V = removeEmpty (target = V, margin = "rows");
 }
-m = nrow (V);
 
 n_non_empty_cols = colSums (ppred (V, 0, "!="));
 ind_empty_cols = ppred (n_non_empty_cols, 0, "==");
@@ -67,211 +66,97 @@ if (n_empty_cols > 0) {
 	print ("Matrix V contains empty columns! These columns will be removed.");
 	V = removeEmpty (target = V, margin = "cols");
 }
-n = ncol (V);
 
 # initialize L and R randomly 
 V_nonzero_ind = ppred (V, 0, "!=")
-global_sum = sum (V);
-nnz = sum (V_nonzero_ind);
-global_mean = global_sum / nnz;
-# print ("global mean " + global_mean + " nnz " + nnz);
+# global_sum = sum (V);
+# nnz = sum (V_nonzero_ind);
+# global_mean = global_sum / nnz;
 # center V around its mean
-V = V - (global_mean * V_nonzero_ind);
- 
+# V = V - (global_mean * V_nonzero_ind);
+
+###### MAIN PART ######
+m = nrow (V);
+n = ncol (V);
+
+# initializing factor matrices
 L = rand (rows = m, cols = r, min = -0.5, max = 0.5);
 R = rand (rows = r, cols = n, min = -0.5, max = 0.5);
 
-
+# initializing transformed matrices
 Lt = t(L);
 Rt = t(R);
 Vt = t(V);
-lambda_I = diag(matrix(lambda, rows = r, cols = 1));
 
-	
-converged = FALSE;
-if (lambda == 0) {
-
-	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS");
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_init = sum ((V - LR_nonzero)^2);
-		print ("-----	Initial train loss: " + loss_init + " -----");
-	}
-
-	it = 0;
-	while ((it < max_iter) & (!converged)) {
-		it = it + 1;
-		# keep R fixed and update L
-		parfor (i in 1:m) {
-			R_nonzero_ind = V_nonzero_ind[i,];
-			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
-			Rt_nonzero = t(R_nonzero);			
-			A1 = (R_nonzero %*% Rt_nonzero); # coefficient matrix
-			Lt[,i] = solve (A1, R %*% Vt[,i]);
-			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
-		}
-		L = t(Lt);
-	
-		# keep L fixed and update R
-		parfor (j in 1:n) {
-			L_nonzero_ind = V_nonzero_ind[,j];
-			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
-			Lt_nonzero = t (L_nonzero);
-			A2 = (Lt_nonzero %*% L_nonzero); # coefficient matrix
-			R[,j] = solve (A2, Lt %*% V[,j]);
-			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
-		}
-		Rt = t(R);
-		
-		if (check) {
-			LR_nonzero = V_nonzero_ind * (L %*% R);
-			loss_cur = sum ((V - LR_nonzero)^2); 
-			print ("Train loss at iteration " + it + ": " + loss_cur);
-			loss_dec = (loss_init - loss_cur) / loss_init;
-			if (loss_dec >= 0 & loss_dec < thr) {
-				print ("----- ALS converged after " + it + " iterations!");
-				converged = TRUE;
-			}
-			loss_init = loss_cur;
-		}
-	}
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_final = sum ((V - LR_nonzero)^2); 
-		print ("-----	Final train loss: " + loss_final + " -----");
-	}
-} else if (reg == "l2") {
-
-	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 REGULARIZATION");
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_data = sum ((V - LR_nonzero)^2);
-		loss_model = lambda * (sum (L^2) + sum (R^2));
-		loss_init = loss_data + loss_model 
-		# print ("-----	Initial train loss: " + loss_init + " data " + loss_data + " model " + loss_model + " -----");
-		print ("-----	Initial train loss: " + loss_init + " -----");
-	}
-
-	it = 0;
-	while ((it < max_iter) & (!converged)) {
-		it = it + 1;
-		# keep R fixed and update L
-		parfor (i in 1:m) {
-			R_nonzero_ind = V_nonzero_ind[i,];
-			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
-			Rt_nonzero = t(R_nonzero);
-			A1 = ((R_nonzero %*% Rt_nonzero) + lambda_I); # coefficient matrix
-			Lt[,i] = solve (A1, R %*% Vt[,i]);
-			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);	
-		}
-		L = t(Lt);
-		
-		# keep L fixed and update R
-		parfor (j in 1:n) {
-			L_nonzero_ind = V_nonzero_ind[,j];
-			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
-			Lt_nonzero = t (L_nonzero);
-			A2 = ((Lt_nonzero %*% L_nonzero) + lambda_I); # coefficient matrix
-			R[,j] = solve (A2, Lt %*% V[,j]);
-			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
-		}
-		Rt = t(R);
-
-		if (check) {
-			LR_nonzero = V_nonzero_ind * (L %*% R);
-			loss_data = sum ((V - LR_nonzero)^2);
-			loss_model = lambda * (sum (L^2) + sum (R^2));
-			loss_cur =  loss_data + loss_model; 
-			# print ("Train loss at iteration (R) " + it + ": " + loss_cur + " data " + loss_data + " model " + loss_model);
-			print ("Train loss at iteration " + it + ": " + loss_cur);
-			loss_dec = (loss_init - loss_cur) / loss_init;
-			if (loss_dec >= 0 & loss_dec < thr) {
-				print ("----- ALS converged after " + it + " iterations!");
-				converged = TRUE;
-			}
-			loss_init = loss_cur;
-		}
-	}
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_data = sum ((V - LR_nonzero)^2);
-		loss_model = lambda * (sum (L^2) + sum (R^2));
-		loss_final = loss_data + loss_model;
-		# print ("-----	Final train loss: " + loss_final + " data " + loss_data + " model " + loss_model + " -----");
-		print ("-----	Final train loss: " + loss_final + " -----");
-	}
+V_nonzero_ind_row = nrow (V_nonzero_ind);
+V_nonzero_ind_col = ncol (V_nonzero_ind);
+row_nonzeros = matrix(1, rows = V_nonzero_ind_row, cols = 1);
+col_nonzeros = matrix(1, rows = 1, cols = V_nonzero_ind_col);
+  
+# check for regularization
+if (reg == "l2") {
+	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
 } else if (reg == "wl2") {
-
-	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 REGULARIZATION");
-	row_nonzeros = rowSums(V_nonzero_ind);
-	col_nonzeros = colSums(V_nonzero_ind);
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_data = sum ((V - LR_nonzero)^2);
-		loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-		loss_init =  loss_data + loss_model;
-		# print ("-----	Initial train loss: " + loss_init + " data " + loss_data + " model " + loss_model + " -----");
-		print ("-----	Initial train loss: " + loss_init + " -----");
-	}
-	
-	it = 0;
-	while ((it < max_iter) & (!converged)) {
-		it = it + 1;
-		# keep R fixed and update L
-		parfor (i in 1:m) {
-			R_nonzero_ind = V_nonzero_ind[i,];
-			R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
-			Rt_nonzero = t(R_nonzero);
-			A1 = ((R_nonzero %*% Rt_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I)); # coefficient matrix
-			Lt[,i] = solve (A1, R %*% Vt[,i]);
-			# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
-		}
-		L = t(Lt);
-	
-		# keep L fixed and update R
-		parfor (j in 1:n) {
-			L_nonzero_ind = V_nonzero_ind[,j];
-			L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
-			Lt_nonzero = t (L_nonzero);
-			A2 = ((Lt_nonzero %*% L_nonzero) + (as.scalar(col_nonzeros[1,j]) * lambda_I)); # coefficient matrix
-			R[,j] = solve (A2, Lt %*% V[,j]);
-			# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
-		}
-		Rt = t(R);
-
-		if (check) {
-			LR_nonzero = V_nonzero_ind * (L %*% R);
-			loss_data = sum ((V - LR_nonzero)^2);
-			loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-			loss_cur =  loss_data + loss_model; 
-			# print ("Train loss at iteration (R) " + it + ": " + loss_cur + " data " + loss_data + " model " + loss_model);
-			print ("Train loss at iteration " + it + ": " + loss_cur);
-			loss_dec = (loss_init - loss_cur) / loss_init;
-			if (loss_dec >= 0 & loss_dec < thr) {
-				print ("----- ALS converged after " + it + " iterations!");
-				converged = TRUE;
-			}
-			loss_init = loss_cur;
-		}
-	}
-	if (check) {
-		LR_nonzero = V_nonzero_ind * (L %*% R);
-		loss_data = sum ((V - LR_nonzero)^2);
-		loss_model = lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
-		loss_final =  loss_data + loss_model
-		# print ("-----	Final train loss: " + loss_final + " data " + loss_data + " model " + loss_model + " -----");
-		print ("-----	Final train loss: " + loss_final + " -----");
-	}
+	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
+	row_nonzeros = rowSums (V_nonzero_ind);
+	col_nonzeros = colSums (V_nonzero_ind);
 } else {
 	stop ("wrong regularization! " + reg);
 }
 
-
-if (!converged) {
-	print ("Max iteration achieved but not converged!");
-} else {
-	write (L, fileL, fmtO);
-	write (R, fileR, fmtO);
+if (check) {
+	loss_init = sum (V_nonzero_ind * (V - (L %*% R))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+	print ("-----   Initial train loss: " + loss_init + " -----");
 }
 
+lambda_I = diag (matrix (lambda, rows = r, cols = 1));
+it = 0;
+converged = FALSE;
+while ((it < max_iter) & (!converged)) {
+	it = it + 1;
+	# keep R fixed and update L
+	parfor (i in 1:m) { # log = DEBUG
+		R_nonzero_ind = V_nonzero_ind[i,];
+		R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
+		Rt_nonzero = t(R_nonzero);			
+		A1 = (R_nonzero %*% Rt_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
+		Lt[,i] = solve (A1, R %*% Vt[,i]);
+		# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
+	}
+	L = t(Lt);
+	
+	# keep L fixed and update R
+	parfor (j in 1:n) { # log = DEBUG
+		L_nonzero_ind = V_nonzero_ind[,j];
+		L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
+		Lt_nonzero = t (L_nonzero);
+		A2 = (Lt_nonzero %*% L_nonzero) + (as.scalar(col_nonzeros[1,j]) * lambda_I); # coefficient matrix
 
+		R[,j] = solve (A2, Lt %*% V[,j]);
+		# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
+	}
+	Rt = t(R);
+	
+	# check for convergence
+	if (check) {
+		loss_cur = sum (V_nonzero_ind * (V - (L %*% R))^2) + lambda * (sum ((L^2) * row_nonzeros) + sum ((R^2) * col_nonzeros));
+		loss_dec = (loss_init - loss_cur) / loss_init;
+		print ("Train loss at iteration (R) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
+		if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
+			print ("----- ALS converged after " + it + " iterations!");
+			converged = TRUE;
+		}
+		loss_init = loss_cur;
+	}
+} # end of while loop
+
+if (check) {
+	print ("-----	Final train loss: " + loss_init + " -----");
+}
+
+if (!converged) {
+   print ("Max iteration achieved but not converged!");
+} 
+
+write (L, fileL, fmtO);
+write (R, fileR, fmtO);

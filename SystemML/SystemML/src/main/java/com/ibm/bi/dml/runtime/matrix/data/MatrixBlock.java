@@ -2221,7 +2221,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
-		if (nonZeros > Integer.MAX_VALUE) {
+		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
 			out.writeLong( nonZeros ); //for deciding in-memory format on read
 		} else {
 			out.writeInt( (int)nonZeros );
@@ -2264,7 +2264,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		if (nonZeros > Integer.MAX_VALUE) {
+		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
 			out.writeLong( nonZeros ); //for deciding in-memory format on read
 		} else {
 			out.writeInt( (int)nonZeros );
@@ -2329,7 +2329,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		if (nonZeros > Integer.MAX_VALUE) {
+		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
 			out.writeLong( nonZeros ); //for deciding in-memory format on read
 		} else {
 			out.writeInt( (int)nonZeros );
@@ -2349,7 +2349,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{	
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() ); //block type
-		if (nonZeros > Integer.MAX_VALUE) {
+		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
 			out.writeLong( nonZeros ); //for deciding in-memory format on read
 		} else {
 			out.writeInt( (int)nonZeros );

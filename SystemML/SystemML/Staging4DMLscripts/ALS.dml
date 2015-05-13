@@ -158,5 +158,5 @@ if (!converged) {
    print ("Max iteration achieved but not converged!");
 } 
 
-write (L, fileL, fmtO);
-write (R, fileR, fmtO);
+write (L, fileL, format=fmtO);
+write (R, fileR, format=fmtO);

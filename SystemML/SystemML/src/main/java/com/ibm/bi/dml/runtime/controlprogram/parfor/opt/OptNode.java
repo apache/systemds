@@ -278,6 +278,25 @@ public class OptNode
 	 * 
 	 * @return
 	 */
+	public boolean hasOnlySimpleChilds()
+	{
+		boolean ret = true;
+		if( !isLeaf() )
+			for( OptNode n : _childs ) {
+				if( n.getNodeType()==NodeType.GENERIC )
+					ret &= n.hasOnlySimpleChilds();
+				//functions, loops, branches
+				else if( n.getNodeType()!=NodeType.HOP )
+					return false;
+			}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
 	public String getInstructionName() 
 	{
 		return String.valueOf(_etype) + Lop.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);

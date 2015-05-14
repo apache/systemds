@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
@@ -1497,6 +1498,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( flagNested && flagLIX )
 			LOG.warn(getOptMode()+" OPT: Task partitioner decision has conflicting input from rewrites 'nested parallelism' and 'result partitioning'.");
 		
+		boolean jvmreuse = ConfigurationManager.getConfig().getBooleanValue(DMLConfig.JVM_REUSE); 
 		
 		//set task partitioner
 		if( flagNested )
@@ -1507,6 +1509,14 @@ public class OptimizerRuleBased extends Optimizer
 		else if( flagLIX )
 		{
 			setTaskPartitioner( pn, PTaskPartitioner.FACTORING_CMAX );
+		}
+		else if( pn.getExecType()==ExecType.MR && !jvmreuse && pn.hasOnlySimpleChilds() )
+		{
+			//for simple body programs without loops, branches, or function calls, we don't
+			//expect much load imbalance and hence use static partitioning in order to
+			//(1) reduce task latency, (2) prevent repeated read (w/o jvm reuse), and (3)
+			//preaggregate results (less write / less read by result merge)
+			setTaskPartitioner( pn, PTaskPartitioner.STATIC );
 		}
 		else if( _N/4 >= pn.getK() ) //to prevent imbalance due to ceiling
 		{

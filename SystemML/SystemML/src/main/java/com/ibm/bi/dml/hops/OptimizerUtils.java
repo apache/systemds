@@ -656,6 +656,55 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * Determines if a given binary op is potentially conditional sparse safe. 
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static boolean isBinaryOpConditionalSparseSafe( OpOp2 op ) 
+	{
+		return (   op==OpOp2.GREATER 
+			    || op==OpOp2.LESS 
+			    || op==OpOp2.NOTEQUAL 
+			    || op==OpOp2.EQUAL 
+			    || op==OpOp2.MINUS);
+	}
+	
+	/**
+	 * Determines if a given binary op with scalar literal guarantee an output
+	 * sparsity which is exactly the same as its matrix input sparsity.
+	 * 
+	 * @param op
+	 * @param lit
+	 * @return
+	 */
+	public static boolean isBinaryOpConditionalSparseSafeExact( OpOp2 op, LiteralOp lit )
+	{
+		double val = HopRewriteUtils.getDoubleValueSafe(lit);
+		
+		return (  (op==OpOp2.NOTEQUAL && val==0)
+				||(op==OpOp2.EQUAL    && val!=0));
+	}
+	
+	/**
+	 * 
+	 * @param sp1
+	 * @param op
+	 * @param lit
+	 * @return
+	 */
+	public static double getBinaryOpSparsityConditionalSparseSafe( double sp1, OpOp2 op, LiteralOp lit )
+	{
+		double val = HopRewriteUtils.getDoubleValueSafe(lit);
+		
+		return (  (op==OpOp2.GREATER  && val==0) 
+				||(op==OpOp2.LESS     && val==0)
+				||(op==OpOp2.NOTEQUAL && val==0)
+				||(op==OpOp2.EQUAL    && val!=0)
+				||(op==OpOp2.MINUS    && val==0)) ? sp1 : 1.0;
+	}
+	
+	/**
 	 * Estimates the result sparsity for matrix-matrix binary operations (A op B)
 	 * 
 	 * @param sp1 -- sparsity of A

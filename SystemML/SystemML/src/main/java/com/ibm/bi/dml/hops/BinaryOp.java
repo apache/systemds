@@ -1289,9 +1289,16 @@ public class BinaryOp extends Hop
 				Hop input2 = getInput().get(1);
 				if( input1.dimsKnown() && input2.dimsKnown() )
 				{
-					double sp1 = (input1.getNnz()>0 && input1.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.getDim1(), input1.getDim2(), input1.getNnz()) : 1.0;
-					double sp2 = (input2.getNnz()>0 && input2.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input2.getDim1(), input2.getDim2(), input2.getNnz()) : 1.0;
-					sparsity = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true);	
+					if( OptimizerUtils.isBinaryOpConditionalSparseSafe(op) && input2 instanceof LiteralOp ) {
+						double sp1 = (input1.getNnz()>0 && input1.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.getDim1(), input1.getDim2(), input1.getNnz()) : 1.0;
+						LiteralOp lit = (LiteralOp)input2;
+						sparsity = OptimizerUtils.getBinaryOpSparsityConditionalSparseSafe(sp1, op, lit);
+					}
+					else {
+						double sp1 = (input1.getNnz()>0 && input1.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.getDim1(), input1.getDim2(), input1.getNnz()) : 1.0;
+						double sp2 = (input2.getNnz()>0 && input2.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input2.getDim1(), input2.getDim2(), input2.getNnz()) : 1.0;
+						sparsity = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true);	
+					}
 				}
 			}
 			else //e.g., for append,pow or after inference
@@ -1355,11 +1362,13 @@ public class BinaryOp extends Hop
 			{
 				ldim1 = mc[0].getRows();
 				ldim2 = mc[0].getCols();
+				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;	
 			}
 			else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
 			{
 				ldim1 = mc[1].getRows();
 				ldim2 = mc[1].getCols();
+				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
 			}
 			else //MATRIX - MATRIX 
 			{
@@ -1375,8 +1384,15 @@ public class BinaryOp extends Hop
 			
 			if( ldim1>0 && ldim2>0 )
 			{
-				long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true));
-				ret = new long[]{ldim1, ldim2, lnnz};
+				if( OptimizerUtils.isBinaryOpConditionalSparseSafe(op) && input2 instanceof LiteralOp ) {
+					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsityConditionalSparseSafe(sp1, op,(LiteralOp)input2));
+					ret = new long[]{ldim1, ldim2, lnnz};	
+				}
+				else
+				{
+					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true));
+					ret = new long[]{ldim1, ldim2, lnnz};
+				}
 			}
 		}
 
@@ -1790,8 +1806,11 @@ public class BinaryOp extends Hop
 				
 				//update nnz only if we can ensure exact results, 
 				//otherwise propagated via worst-case estimates
-				if(op == OpOp2.POW)
+				if(    op == OpOp2.POW 
+					|| (input2 instanceof LiteralOp && OptimizerUtils.isBinaryOpConditionalSparseSafeExact(op, (LiteralOp)input2)) ) 
+				{
 					setNnz( lnnz1 );
+				}
 			}
 		}	
 	}

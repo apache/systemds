@@ -582,8 +582,18 @@ public class OptTreeConverter
 			OptNode node = new OptNode(NodeType.HOP);
 			String opstr = hop.getOpString();
 			node.addParam(ParamType.OPSTRING,opstr);
-			LopProperties.ExecType et = hop.getExecType();
-			node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
+			LopProperties.ExecType et = (hop.getExecType()!=null) ? 
+					   hop.getExecType() : LopProperties.ExecType.CP;
+			switch( et ) {
+				case CP:
+					node.setExecType(ExecType.CP); break;
+				case SPARK:
+					node.setExecType(ExecType.SPARK); break;
+				case MR:
+					node.setExecType(ExecType.MR); break;
+				default:
+					throw new DMLRuntimeException("Unsupported optnode exec type: "+et);
+			}
 			_hlMap.putHopMapping(hop, node);
 			ret.add(node);
 		}	

@@ -420,7 +420,7 @@ public class OptimizerRuleBased extends Optimizer
 				//NOTE: for the moment, we do not partition according to the remote mem, because we can execute 
 				//it even without partitioning in CP. However, advanced optimizers should reason about this 					   
 				//double mold = h.getMemEstimate();
-				if(	   n.getExecType() == ExecType.MR ) //Opt Condition: MR, 
+				if(	   n.getExecType() == ExecType.MR ||  n.getExecType()==ExecType.SPARK ) //Opt Condition: MR/Spark
 				   // || (mold > _rm && mnew <= _rm)   ) //Opt Condition: non-MR special cases (for remote exec)
 				{
 					//NOTE: subsequent rewrites will still use the MR mem estimate
@@ -1589,12 +1589,13 @@ public class OptimizerRuleBased extends Optimizer
 		
 		boolean apply = false;
 		String partitioner = pn.getParam(ParamType.DATA_PARTITIONER);
+		PExecMode REMOTE_DPE = OptimizerUtils.isSparkExecutionMode() ? PExecMode.REMOTE_SPARK_DP : PExecMode.REMOTE_MR_DP;
 		
 		//precondition: rewrite only invoked if exec type MR 
 		// (this also implies that the body is CP only)
 		
 		// try to merge MR data partitioning and MR exec 
-		if(  pn.getExecType()==ExecType.MR   //MR EXEC and CP body
+		if( (pn.getExecType()==ExecType.MR || pn.getExecType()==ExecType.SPARK)   //MR EXEC and CP body
 			&& M < _rm2 //fits into remote memory of reducers	
 			&& partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString()) //MR partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
@@ -1616,10 +1617,10 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				int k = (int)Math.min(_N,_rk2);
 				
-				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
+				pn.addParam(ParamType.DATA_PARTITIONER, REMOTE_DPE.toString()+"(fused)");
 				pn.setK( k );
 				
-				pfpb.setExecMode(PExecMode.REMOTE_MR_DP); //set fused exec type	
+				pfpb.setExecMode(REMOTE_DPE); //set fused exec type	
 				pfpb.setDataPartitioner(PDataPartitioner.NONE);
 				pfpb.enableColocatedPartitionedMatrix( moVarname ); 
 				pfpb.setDegreeOfParallelism(k);

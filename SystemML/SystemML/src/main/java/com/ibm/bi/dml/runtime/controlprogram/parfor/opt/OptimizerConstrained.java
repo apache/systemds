@@ -115,7 +115,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
 		
 		//exec-type-specific rewrites
-		if( pn.getExecType() == ExecType.MR )
+		if( pn.getExecType() == ExecType.MR || pn.getExecType() == ExecType.SPARK )
 		{
 			if( flagRecompMR ){
 				//rewrite 4: set operations exec type

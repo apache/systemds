@@ -162,21 +162,27 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			
 			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
+			
+			// rewrite 15: runtime piggybacking
+			super.rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 		}	
 		
-		//rewrite 15: set result merge
+		// rewrite 16: remove unnecessary compare matrix
+		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
+		
+		//rewrite 17: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 16: set local recompile memory budget
+		//rewrite 18: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 17: parfor (in recursive functions) to for
+		// rewrite 19: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 18: parfor (par=1) to for 
+		// rewrite 20: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result

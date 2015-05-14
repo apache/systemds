@@ -25,12 +25,15 @@ import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
+import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReorgOp;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
@@ -92,10 +95,11 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  * - 13) rewrite set in-place result indexing
  * - 14) rewrite disable caching (prevent sparse serialization)
  * - 15) rewrite enable runtime piggybacking
- * - 16) rewrite set result merge 		 		 
- * - 17) rewrite set recompile memory budget
- * - 18) rewrite remove recursive parfor	
- * - 19) rewrite remove unnecessary parfor		
+ * - 16) rewrite remove unnecessary compare matrix
+ * - 17) rewrite set result merge 		 		 
+ * - 18) rewrite set recompile memory budget
+ * - 19) rewrite remove recursive parfor	
+ * - 20) rewrite remove unnecessary parfor		
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -268,19 +272,22 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 		}	
 
-		// rewrite 16: set result merge
+		// rewrite 16: remove unnecessary compare matrix
+		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
+		
+		// rewrite 17: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 17: set local recompile memory budget
+		// rewrite 18: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 18: parfor (in recursive functions) to for
+		// rewrite 19: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 19: parfor (par=1) to for 
+		// rewrite 20: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -2038,6 +2045,151 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
+	///////
+	//REWRITE remove compare matrix (for result merge, needs to be invoked before setting result merge)
+	///
+	
+	/**
+	 *
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException 
+	 */
+	protected void rewriteRemoveUnnecessaryCompareMatrix( OptNode n, ExecutionContext ec ) 
+		throws DMLRuntimeException
+	{
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+			    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+
+		ArrayList<String> cleanedVars = new ArrayList<String>();
+		ArrayList<String> resultVars = pfpb.getResultVariables();
+		String itervar = pfpb.getIterablePredicateVars()[0]; 
+		
+		for( String rvar : resultVars ) {
+			Data dat = ec.getVariable(rvar);
+			if( dat instanceof MatrixObject && ((MatrixObject)dat).getNnz()!=0     //subject to result merge with compare
+				&& rContainsResultFullReplace(n, rvar, itervar, (MatrixObject)dat) //guaranteed full matrix replace 
+				//&& !pfsb.variablesRead().containsVariable(rvar)                  //never read variable in loop body
+				&& rIsOnlyReadInLeftIndexing(n, rvar)                              //never read variable in loop body
+				&& ((MatrixObject)dat).getNumRows()<=Integer.MAX_VALUE
+				&& ((MatrixObject)dat).getNumColumns()<=Integer.MAX_VALUE )
+			{
+				//replace existing matrix object with empty matrix
+				MatrixObject mo = (MatrixObject)dat;
+				ec.cleanupMatrixObject(mo);
+				ec.setMatrixOutput(rvar, new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(),false));
+				
+				//keep track of cleaned result variables
+				cleanedVars.add(rvar);
+			}
+		}
+
+		_numEvaluatedPlans++;
+		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary compare matrix' - result="+(!cleanedVars.isEmpty())+" ("+ProgramConverter.serializeStringCollection(cleanedVars)+")" );
+	}
+	
+
+	/**
+	 * 
+	 * @param n
+	 * @param resultVar
+	 * @param iterVarname
+	 * @param mo
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean rContainsResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = false;
+		
+		//process hop node
+		if( n.getNodeType()==NodeType.HOP )
+			ret |= isResultFullReplace(n, resultVar, iterVarname, mo);
+			
+		//process childs recursively
+		if( !n.isLeaf() ) {
+			for( OptNode c : n.getChilds() ) 
+				ret |= rContainsResultFullReplace(c, resultVar, iterVarname, mo);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param resultVar
+	 * @param iterVarname
+	 * @param mo
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean isResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
+		throws DMLRuntimeException
+	{
+		//check left indexing operator
+		String opStr = n.getParam(ParamType.OPSTRING);
+		if( opStr==null || !opStr.equals(LeftIndexingOp.OPSTRING) )
+			return false;
+
+		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+		Hop base = h.getInput().get(0);
+
+		//check result variable
+		if( !resultVar.equals(base.getName()) )
+			return false;
+
+		//check access pattern, memory budget
+		Hop inpRowL = h.getInput().get(2);
+		Hop inpRowU = h.getInput().get(3);
+		Hop inpColL = h.getInput().get(4);
+		Hop inpColU = h.getInput().get(5);
+		//check for rowwise overwrite
+		if(   (inpRowL.getName().equals(iterVarname) && inpRowU.getName().equals(iterVarname))
+		   && inpColL instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)inpColL)==1
+		   && inpColU instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)inpColU)==mo.getNumColumns() )
+		{
+			return true;
+		}
+		
+		//check for colwise overwrite
+		if(   (inpColL.getName().equals(iterVarname) && inpColU.getName().equals(iterVarname))
+		   && inpRowL instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)inpRowL)==1
+		   && inpRowU instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)inpRowU)==mo.getNumRows() )
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param var
+	 * @return
+	 */
+	protected boolean rIsOnlyReadInLeftIndexing(OptNode n, String var) 
+	{
+		boolean ret = true;
+		
+		if( n.getNodeType()==NodeType.HOP ) {
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			if( h instanceof DataOp && ((DataOp)h).get_dataop()==DataOpTypes.TRANSIENTREAD ){
+				//found read of variable, check all parents using it
+				for( Hop parent : h.getParent() )
+					ret &= ( parent instanceof LeftIndexingOp && HopRewriteUtils.getChildReferencePos(parent, h)==0 );
+			}
+		}
+			
+		//process childs recursively
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				ret &= rIsOnlyReadInLeftIndexing(c, var);
+		
+		return ret;
+	}
 	
 	///////
 	//REWRITE set result merge

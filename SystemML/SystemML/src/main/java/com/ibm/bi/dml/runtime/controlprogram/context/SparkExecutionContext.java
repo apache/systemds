@@ -127,7 +127,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDDHandleForVariable( String varname ) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
 	}
 	

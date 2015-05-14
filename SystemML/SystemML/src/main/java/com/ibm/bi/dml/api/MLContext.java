@@ -579,7 +579,7 @@ public class MLContext {
 				if(retVal == null) {
 					retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
 				}
-				retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockedRDDHandleForVariable(ovar));
+				retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
 				_outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
 			}
 			else {

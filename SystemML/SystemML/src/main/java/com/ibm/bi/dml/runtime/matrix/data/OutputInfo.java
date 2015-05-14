@@ -8,6 +8,8 @@
 
 package com.ibm.bi.dml.runtime.matrix.data;
 
+import java.io.Serializable;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -24,12 +26,14 @@ import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
 
 
 
-public class OutputInfo 
+public class OutputInfo implements Serializable 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = -3115943514779675817L;
+
 	public Class<? extends OutputFormat> outputFormatClass;
 	public Class<? extends Writable> outputKeyClass;
 	public Class<? extends Writable> outputValueClass;
@@ -123,5 +127,17 @@ public class OutputInfo
 			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
+	}
+	
+	@Override
+	public boolean equals( Object o ) 
+	{
+		if( !(o instanceof OutputInfo) )
+			return false;
+		
+		OutputInfo that = (OutputInfo) o;
+		return ( outputFormatClass == that.outputFormatClass
+			 	&& outputKeyClass == that.outputKeyClass
+			 	&& outputValueClass == that.outputValueClass );
 	}
 }

@@ -48,6 +48,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteDPParForMR;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteDPParForSpark;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForSpark;
@@ -569,8 +570,8 @@ public class ParForProgramBlock extends ForProgramBlock
 					break;
 				
 				case REMOTE_SPARK_DP: // create parworkers as Spark tasks (one job per parfor)
-					throw new DMLUnsupportedOperationException("Not implemented yet.");
-					//break;
+					executeRemoteSparkParForDP(ec, iterVar, from, to, incr);
+					break;
 				
 				default:
 					throw new DMLRuntimeException("Undefined execution mode: '"+_execMode+"'.");
@@ -960,13 +961,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
-//TODO forced cp compilation for spark execution		
-//		boolean flagForced = false;
-//		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE || (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) )
-//		{
-//			//tid = 0  because replaced in remote parworker
-//			flagForced = checkMRAndRecompileToCP(0); 
-//		}
+		boolean flagForced = false;
+		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE || (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) )
+		{
+			//tid = 0  because replaced in remote parworker
+			flagForced = checkMRAndRecompileToCP(0); 
+		}
 			
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
@@ -1000,14 +1000,79 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			
 		// Step 4) collecting results from each parallel worker
-		int numExecutedTasks = (int)numCreatedTasks; //TODO ret.getNumExecutedTasks();
-		int numExecutedIterations = (int)numIterations; //TODO ret.getNumExecutedIterations();
+		int numExecutedTasks = ret.getNumExecutedTasks();
+		int numExecutedIterations = ret.getNumExecutedIterations();
 		
 		//consolidate results into global symbol table
 		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations , numExecutedTasks, 
 				                    ret.getVariables() );
-//		if( flagForced ) //see step 0
-//			releaseForcedRecompile(0);
+		if( flagForced ) //see step 0
+			releaseForcedRecompile(0);
+		
+		if( _monitor ) 
+		{
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+		}			
+	}
+	
+	private void executeRemoteSparkParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+	{
+		Timing time = ( _monitor ? new Timing(true) : null );
+		
+		// Step 0) check and compile to CP (if forced remote parfor)
+		boolean flagForced = checkMRAndRecompileToCP(0);
+		
+		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
+		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
+		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
+		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
+		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
+		
+		// Step 2) init parallel workers (serialize PBs)
+		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
+		//        cannot reuse serialized string, since variables are serialized as well.
+		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
+		String program = ProgramConverter.serializeParForBody( body );
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
+		
+		// Step 3) create tasks 
+		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
+		String resultFile = constructResultFileName();
+		long numIterations = partitioner.getNumIterations();
+		long numCreatedTasks = numIterations;//partitioner.createTasks().size();
+						
+		if( _monitor )
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
+		
+		//write matrices to HDFS 
+		exportMatricesToHDFS(ec);
+				
+		// Step 4) submit MR job (wait for finished work)
+		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PDataPartitionFormat.COLUMN_WISE)||
+				              (inputMatrix.getSparsity()<0.001 && inputDPF==PDataPartitionFormat.ROW_WISE))? 
+				             OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
+		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, itervar.getName(), _colocatedDPMatrix, program, resultFile, 
+				inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
+		
+		if( _monitor ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
+			
+		// Step 5) collecting results from each parallel worker
+		int numExecutedTasks = ret.getNumExecutedTasks();
+		int numExecutedIterations = ret.getNumExecutedIterations();
+		
+		//consolidate results into global symbol table
+		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
+				                    ret.getVariables() );
+		
+		if( flagForced ) //see step 0
+			releaseForcedRecompile(0);
+		inputMatrix.unsetPartitioned();
 		
 		if( _monitor ) 
 		{

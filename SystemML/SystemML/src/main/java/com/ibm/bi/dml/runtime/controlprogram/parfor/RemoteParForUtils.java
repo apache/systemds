@@ -10,12 +10,16 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
+import org.apache.commons.logging.Log;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -207,5 +211,38 @@ public class RemoteParForUtils
 			//cleanup working dir (e.g., of CP_FILE instructions)
 			LocalFileUtils.cleanupWorkingDirectory();
 		}
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 */
+	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
+		throws DMLRuntimeException
+	{
+		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
+
+		int countAll = 0;
+		for( Tuple2<Long,String> entry : out )
+		{
+			Long key = entry._1();
+			String val = entry._2();
+			if( !tmp.containsKey( key ) )
+        		tmp.put(key, new LocalVariableMap ());	   
+			Object[] dat = ProgramConverter.parseDataObject( val );
+        	tmp.get(key).put((String)dat[0], (Data)dat[1]);
+        	countAll++;
+		}
+
+		if( LOG != null ) {
+			LOG.debug("Num remote worker results (before deduplication): "+countAll);
+			LOG.debug("Num remote worker results: "+tmp.size());
+		}
+		
+		//create return array
+		return tmp.values().toArray(new LocalVariableMap[0]);	
 	}
 }

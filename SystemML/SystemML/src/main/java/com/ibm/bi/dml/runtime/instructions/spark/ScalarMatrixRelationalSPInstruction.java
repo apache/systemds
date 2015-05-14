@@ -44,7 +44,7 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 	
 			// Get input RDD
 			String rddVar 	= 	(input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( rddVar );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 			
 			// Get operator and scalar
 			CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
@@ -54,7 +54,7 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 			
 			//execute scalar matrix arithmetic instruction
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(rddVar);
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDScalarMatrixRelationalFunction(sc_op, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDScalarMatrixRelationalFunction(sc_op) );
 			
 			//put output RDD handle into symbol table
 			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
@@ -78,21 +78,16 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private ScalarOperator sc_op = null;
-		private int brlen; 
-		private int bclen;
 		
-		public RDDScalarMatrixRelationalFunction(ScalarOperator sc_op, int brlen, int bclen) {
+		public RDDScalarMatrixRelationalFunction(ScalarOperator sc_op) {
 			this.sc_op = sc_op;
-			this.brlen = brlen;
-			this.bclen = bclen;
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
-//			MatrixBlock resultBlk = new MatrixBlock(brlen, bclen, false);
-//			arg0._2.scalarOperations(sc_op, resultBlk);
-			MatrixBlock resultBlk = (MatrixBlock) arg0._2.scalarOperations(sc_op, new MatrixBlock());
-			
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+			throws Exception 
+		{
+			MatrixBlock resultBlk = (MatrixBlock) arg0._2.scalarOperations(sc_op, new MatrixBlock());	
 			return new Tuple2<MatrixIndexes, MatrixBlock>(arg0._1, resultBlk);
 		}
 		

@@ -50,7 +50,7 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 		}
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDMatrixBuiltinUnaryOp(getOpcode(), (UnaryOperator) _optr));
 		
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());

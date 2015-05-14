@@ -9,6 +9,8 @@
 package com.ibm.bi.dml.runtime.matrix.data;
 
 
+import java.io.Serializable;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -24,12 +26,14 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 
 
-public class InputInfo 
+public class InputInfo implements Serializable 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = 7059677437144672023L;
+
 	public Class<? extends InputFormat> inputFormatClass;
 	public Class<? extends Writable> inputKeyClass;
 	public Class<? extends Writable> inputValueClass;

@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
@@ -21,23 +28,25 @@ import scala.Tuple2;
  */
 public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFunction<Task, Long, String> 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private static final long serialVersionUID = -3254950138084272296L;
 
 	private boolean _initialized = false;
-	private long    _pfid = -1;
 	private String  _prog = null;
 	private boolean _caching = true;
 	
 	private Accumulator<Integer> _aTasks = null;
 	private Accumulator<Integer> _aIters = null;
 	
-	public RemoteParForSparkWorker(long id, String program, boolean cpCaching, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
+	public RemoteParForSparkWorker(String program, boolean cpCaching, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent
 		//when this constructor is actually called; hence, we do lazy initialization on task execution)
 		_initialized = false;
-		_pfid = id;
 		_prog = program;
 		_caching = cpCaching;
 		
@@ -52,8 +61,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	{
 		//lazy parworker initialization
 		if( !_initialized )
-			configureWorker( constructWorkerID( arg0 ) );
-			
+			configureWorker( TaskContext.get().attemptId() );
+			//configureWorker( TaskContext.get().taskAttemptId() ); //NOTE: this requires Spark 1.3
+		
 		//execute a single task
 		long numIter = getExecutedIterations();
 		super.executeTask( arg0 );
@@ -114,21 +124,5 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		//make as lazily intialized
 		_initialized = true;
-	}
-	
-	/**
-	 * 
-	 * @param ltask
-	 * @return
-	 */
-	private long constructWorkerID( Task ltask )
-	{
-		//create worker ID out of parfor ID and parfor task (independent of Spark)
-		//int part1 = (int) _pfid; //parfor id (sequence number)
-		//int part2 = (int) ltask.getIterations().get(0).getLongValue(); 
-		//return IDHandler.concatIntIDsToLong(part1, part2);
-		
-		TaskContext tctx = TaskContext.get();
-		return tctx.attemptId();		
 	}
 }

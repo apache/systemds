@@ -83,8 +83,8 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 				
 				if(mc1.getRows() == mc2.getRows() && mc1.getCols() == mc2.getCols()) {
 					// Matrix-matrix operation
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( rddVar1 );
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockedRDDHandleForVariable( rddVar2 );
+					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
+					JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
 					JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
 					out = cogroupRdd.mapToPair(new RDDMatrixMatrixArithmeticFunction(bop, this.instString));
 					isBroadcastRHSVar = false;
@@ -115,7 +115,7 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 						}
 					}
 					
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( rddVar );
+					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 					Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
 					out = in1.mapToPair(new RDDMatrixVectorArithmeticFunction(isBroadcastRHSVar, isColumnVectorOperation, in2, bop, rddMC.getRowsPerBlock(), rddMC.getColsPerBlock(), rddMC.getRows(), rddMC.getCols()));
 				}

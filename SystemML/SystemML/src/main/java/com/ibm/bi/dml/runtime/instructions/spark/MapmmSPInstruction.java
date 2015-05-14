@@ -111,7 +111,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
 		
 		//get inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( rddVar );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 		Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
 		
 		//execute mapmult instruction

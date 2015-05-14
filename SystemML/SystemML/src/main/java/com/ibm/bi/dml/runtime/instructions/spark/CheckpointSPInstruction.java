@@ -63,7 +63,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdd handle
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 
 		//checkpoint given rdd (only if currently in different storage level, which prevents redundancy)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;

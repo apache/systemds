@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -23,7 +21,6 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
 
 /**
  * This class serves two purposes: (1) isolating Spark imports to enable running in 
@@ -71,14 +68,14 @@ public class RemoteParForSpark
 		
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
-		RemoteParForSparkWorker func = new RemoteParForSparkWorker(pfid, program, cpCaching, aTasks, aIters);
+		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, cpCaching, aTasks, aIters);
 		List<Tuple2<Long,String>> out = 
 				sc.parallelize( tasks, numMappers )  //create rdd of parfor tasks
 		          .flatMapToPair( func )             //execute parfor tasks 
 		          .collect();                        //get output handles
 		
 		//de-serialize results
-		LocalVariableMap[] results = getResults(out);
+		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
 		int numTasks = aTasks.value(); //get accumulator value
 		int numIters = aIters.value(); //get accumulator value
 		
@@ -86,36 +83,5 @@ public class RemoteParForSpark
 		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);
 		
 		return ret;
-	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out ) 
-		throws DMLRuntimeException
-	{
-		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
-
-		int countAll = 0;
-		for( Tuple2<Long,String> entry : out )
-		{
-			Long key = entry._1();
-			String val = entry._2();
-			if( !tmp.containsKey( key ) )
-        		tmp.put(key, new LocalVariableMap ());	   
-			Object[] dat = ProgramConverter.parseDataObject( val );
-        	tmp.get(key).put((String)dat[0], (Data)dat[1]);
-        	countAll++;
-		}
-
-		LOG.debug("Num remote worker results (before deduplication): "+countAll);
-		LOG.debug("Num remote worker results: "+tmp.size());
-
-		//create return array
-		return tmp.values().toArray(new LocalVariableMap[0]);	
 	}
 }

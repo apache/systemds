@@ -86,8 +86,8 @@ public class RmmSPInstruction extends BinarySPInstruction
 		//get input rdds
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( input1.getName() );
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( input2.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockedRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		
 		//execute Spark RMM instruction
 		//step 1: prepare join keys (w/ replication), i/j/k 

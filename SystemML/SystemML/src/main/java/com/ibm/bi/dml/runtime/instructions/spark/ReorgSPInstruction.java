@@ -18,7 +18,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -39,12 +38,9 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBin
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.matrix.data.TripleIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -128,7 +124,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			}
 			
 			//get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 
 			//execute transpose reorg operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDReorgMapFunction(opcode));
@@ -147,7 +143,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			fnObject.computeDimension(mc1, mcOut);
 			
 			// get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			if(mc1.getCols() == 1) { // diagV2M
 				out = in1.flatMapToPair(new RDDV2MReorgMapFunction(mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
@@ -183,7 +179,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				}
 			}
 			// get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockedRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			
 			

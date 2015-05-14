@@ -25,7 +25,6 @@ import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
@@ -2068,9 +2067,10 @@ public class OptimizerRuleBased extends Optimizer
 		for( String rvar : resultVars ) {
 			Data dat = ec.getVariable(rvar);
 			if( dat instanceof MatrixObject && ((MatrixObject)dat).getNnz()!=0     //subject to result merge with compare
+				&& n.hasOnlySimpleChilds()                                         //guaranteed no conditional indexing	
 				&& rContainsResultFullReplace(n, rvar, itervar, (MatrixObject)dat) //guaranteed full matrix replace 
 				//&& !pfsb.variablesRead().containsVariable(rvar)                  //never read variable in loop body
-				&& rIsOnlyReadInLeftIndexing(n, rvar)                              //never read variable in loop body
+				&& !rIsReadInRightIndexing(n, rvar)                                //never read variable in loop body
 				&& ((MatrixObject)dat).getNumRows()<=Integer.MAX_VALUE
 				&& ((MatrixObject)dat).getNumColumns()<=Integer.MAX_VALUE )
 			{
@@ -2170,23 +2170,27 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param var
 	 * @return
 	 */
-	protected boolean rIsOnlyReadInLeftIndexing(OptNode n, String var) 
+	protected boolean rIsReadInRightIndexing(OptNode n, String var) 
 	{
+		//NOTE: This method checks if a given variables is used in right indexing
+		//expressions. This is sufficient for "remove unnecessary compare matrix" because
+		//we already checked for full replace, which is only valid if we dont access
+		//the entire matrix in any other operation.
 		boolean ret = true;
 		
 		if( n.getNodeType()==NodeType.HOP ) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if( h instanceof DataOp && ((DataOp)h).get_dataop()==DataOpTypes.TRANSIENTREAD ){
-				//found read of variable, check all parents using it
-				for( Hop parent : h.getParent() )
-					ret &= ( parent instanceof LeftIndexingOp && HopRewriteUtils.getChildReferencePos(parent, h)==0 );
+			if( h instanceof IndexingOp && h.getInput().get(0) instanceof DataOp
+				&& h.getInput().get(0).getName().equals(var) )
+			{
+				ret |= true;
 			}
 		}
 			
 		//process childs recursively
 		if( !n.isLeaf() )
 			for( OptNode c : n.getChilds() )
-				ret &= rIsOnlyReadInLeftIndexing(c, var);
+				ret |= rIsReadInRightIndexing(c, var);
 		
 		return ret;
 	}

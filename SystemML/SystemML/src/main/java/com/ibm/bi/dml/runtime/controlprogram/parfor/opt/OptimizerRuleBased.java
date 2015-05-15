@@ -2176,7 +2176,7 @@ public class OptimizerRuleBased extends Optimizer
 		//expressions. This is sufficient for "remove unnecessary compare matrix" because
 		//we already checked for full replace, which is only valid if we dont access
 		//the entire matrix in any other operation.
-		boolean ret = true;
+		boolean ret = false;
 		
 		if( n.getNodeType()==NodeType.HOP ) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());

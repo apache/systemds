@@ -595,35 +595,47 @@ public class LibMatrixReorg
 		SparseRow[] a = in.getSparseRows();
 		double[] c = out.getDenseArray();
 		
-		//blocking according to typical L2 cache sizes 
-		final int blocksizeI = 128;
-		final int blocksizeJ = 128; 
-	
-		//temporary array for block boundaries (for preventing binary search) 
-		int[] ix = new int[blocksizeI];
-		
-		//blocked execution
-		for( int bi = 0; bi<m; bi+=blocksizeI )
+		if( m==1 ) //ROW VECTOR TRANSPOSE
 		{
-			Arrays.fill(ix, 0);
-			for( int bj = 0; bj<n; bj+=blocksizeJ )
+			SparseRow arow = a[0];
+			int alen = arow.size();
+			int[] aix = arow.getIndexContainer();
+			double[] avals = arow.getValueContainer();
+			for( int j=0; j<alen; j++ )
+				c[ aix[j] ] = avals[j];
+		}
+		else //MATRIX TRANSPOSE
+		{
+			//blocking according to typical L2 cache sizes 
+			final int blocksizeI = 128;
+			final int blocksizeJ = 128; 
+		
+			//temporary array for block boundaries (for preventing binary search) 
+			int[] ix = new int[blocksizeI];
+			
+			//blocked execution
+			for( int bi = 0; bi<m; bi+=blocksizeI )
 			{
-				int bimin = Math.min(bi+blocksizeI, m);
-				int bjmin = Math.min(bj+blocksizeJ, n);
-
-				//core transpose operation
-				for( int i=bi, iix=0; i<bimin; i++, iix++ )
+				Arrays.fill(ix, 0);
+				for( int bj = 0; bj<n; bj+=blocksizeJ )
 				{
-					SparseRow arow = a[i];
-					if( arow!=null && !arow.isEmpty() )
+					int bimin = Math.min(bi+blocksizeI, m);
+					int bjmin = Math.min(bj+blocksizeJ, n);
+	
+					//core transpose operation
+					for( int i=bi, iix=0; i<bimin; i++, iix++ )
 					{
-						int alen = arow.size();
-						double[] avals = arow.getValueContainer();
-						int[] aix = arow.getIndexContainer();
-						int j = ix[iix]; //last block boundary
-						for( ; j<alen && aix[j]<bjmin; j++ )
-							c[ aix[j]*n2+i ] = avals[ j ];
-						ix[iix] = j; //keep block boundary						
+						SparseRow arow = a[i];
+						if( arow!=null && !arow.isEmpty() )
+						{
+							int alen = arow.size();
+							double[] avals = arow.getValueContainer();
+							int[] aix = arow.getIndexContainer();
+							int j = ix[iix]; //last block boundary
+							for( ; j<alen && aix[j]<bjmin; j++ )
+								c[ aix[j]*n2+i ] = avals[ j ];
+							ix[iix] = j; //keep block boundary						
+						}
 					}
 				}
 			}

@@ -116,24 +116,21 @@ while ((it < max_iter) & (!converged)) {
 	it = it + 1;
 	# keep R fixed and update L
 	parfor (i in 1:m) { # log = DEBUG
-		R_nonzero_ind = V_nonzero_ind[i,];
+		R_nonzero_ind = ppred(V[i,],0,"!=");
 		R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
 		Rt_nonzero = t(R_nonzero);			
 		A1 = (R_nonzero %*% Rt_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix
-		Lt[,i] = solve (A1, R %*% Vt[,i]);
-		# Lt[,i] = inv (A1) %*% (R %*% Vt[,i]);		
+		Lt[,i] = solve (A1, R %*% t(V[i,]));		
 	}
 	L = t(Lt);
 	
 	# keep L fixed and update R
 	parfor (j in 1:n) { # log = DEBUG
-		L_nonzero_ind = V_nonzero_ind[,j];
+		L_nonzero_ind = t(ppred(Vt[j,],0,"!="))
 		L_nonzero = removeEmpty (target=L * L_nonzero_ind, margin="rows");
 		Lt_nonzero = t (L_nonzero);
 		A2 = (Lt_nonzero %*% L_nonzero) + (as.scalar(col_nonzeros[1,j]) * lambda_I); # coefficient matrix
-
-		R[,j] = solve (A2, Lt %*% V[,j]);
-		# R[,j] = inv (A2) %*% (Lt %*% V[,j]);
+		R[,j] = solve (A2, Lt %*% t(Vt[j,]));
 	}
 	Rt = t(R);
 	

@@ -122,7 +122,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_MB = 128*1024*1024; //wrt overall memory consumption (min)
 	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;     
-	public static final int MAX_REPLICATION_FACTOR_EXPORT = 5;    
+	public static final int MAX_REPLICATION_FACTOR_EXPORT = 7;    
 	public static final boolean ALLOW_REMOTE_NESTED_PARALLELISM = false;
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";

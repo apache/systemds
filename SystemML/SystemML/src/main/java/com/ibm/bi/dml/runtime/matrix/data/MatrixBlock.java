@@ -3600,12 +3600,12 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				}
 			}
 		}
-		else if( rl==ru && cl==1 && cu==clen ) //ROW VECTOR 
+		else if( rl==ru && cl==0 && cu==clen-1 ) //ROW VECTOR 
 		{
 			//note: always sparse dest, but also works for dense
-			dest.appendRow(rl, sparseRows[rl]);
+			dest.appendRow(0, sparseRows[rl]);
 		}
-		else //general case (sparse/dense deset)
+		else //general case (sparse/dense dest)
 		{
 			for(int i=rl; i <= ru; i++) 
 				if(sparseRows[i] != null && !sparseRows[i].isEmpty()) 

@@ -613,6 +613,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		    LOG.info("\n"+StatisticMonitor.createReport());
 		
 		//reset flags/modifications made by optimizer
+		//TODO reset of hop parallelism constraint (e.g., ba+*)
 		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
 		    ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, dpvar, ec, false);
 		if( _execMode == PExecMode.REMOTE_MR_DP ) //release forced exectypes for fused dp/exec

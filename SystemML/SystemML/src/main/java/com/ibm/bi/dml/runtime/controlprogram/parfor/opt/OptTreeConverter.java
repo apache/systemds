@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -582,6 +583,8 @@ public class OptTreeConverter
 			OptNode node = new OptNode(NodeType.HOP);
 			String opstr = hop.getOpString();
 			node.addParam(ParamType.OPSTRING,opstr);
+			
+			//handle execution type
 			LopProperties.ExecType et = (hop.getExecType()!=null) ? 
 					   hop.getExecType() : LopProperties.ExecType.CP;
 			switch( et ) {
@@ -594,6 +597,14 @@ public class OptTreeConverter
 				default:
 					throw new DMLRuntimeException("Unsupported optnode exec type: "+et);
 			}
+			
+			//handle degree of parallelism
+			if( et == LopProperties.ExecType.CP && hop instanceof AggBinaryOp ){
+				AggBinaryOp abop = (AggBinaryOp) hop;
+				node.setK(abop.getConstrainedNumThreads() );
+			}
+			
+			//assign node to return
 			_hlMap.putHopMapping(hop, node);
 			ret.add(node);
 		}	

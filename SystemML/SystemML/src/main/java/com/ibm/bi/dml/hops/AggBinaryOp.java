@@ -1278,7 +1278,7 @@ public class AggBinaryOp extends Hop
 	 * 
 	 * @return
 	 */
-	private int getConstrainedNumThreads()
+	public int getConstrainedNumThreads()
 	{
 		//by default max local parallelism (vcores) 
 		int ret = InfrastructureAnalyzer.getLocalParallelism();

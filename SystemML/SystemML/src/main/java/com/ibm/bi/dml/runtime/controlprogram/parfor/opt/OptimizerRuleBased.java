@@ -1410,15 +1410,17 @@ public class OptimizerRuleBased extends Optimizer
 				kMax = _rkmax / tmpK; //per node (CP only inside)
 			}
 			
-			if( ALLOW_REMOTE_NESTED_PARALLELISM ) {
-				//ensure remote memory constraint
-				kMax = Math.min( kMax, (int)Math.floor( _rm / M ) ); //guaranteed >= 1 (see exec strategy)
-				if( kMax < 1 )
-					kMax = 1;
+			//ensure remote memory constraint
+			kMax = Math.min( kMax, (int)Math.floor( _rm / M ) ); //guaranteed >= 1 (see exec strategy)
+			if( kMax < 1 )
+				kMax = 1;
+			
+			//disable nested parallelism, if required
+			if( !ALLOW_REMOTE_NESTED_PARALLELISM )
+				kMax = 1;
 					
-				//distribute remaining parallelism
-				rAssignRemainingParallelism( n, kMax ); 
-			}
+			//distribute remaining parallelism and recompile parallel instructions
+			rAssignRemainingParallelism( n, kMax ); 
 		}		
 		
 		_numEvaluatedPlans++;

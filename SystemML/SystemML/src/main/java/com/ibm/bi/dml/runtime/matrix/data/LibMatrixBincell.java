@@ -735,7 +735,7 @@ public class LibMatrixBincell
 						//Arrays.fill(crow.getValueContainer(), 0, alen, 1);
 						double[] cvals = crow.getValueContainer();
 						for(int j=0; j<alen; j++)
-							cvals[j] = (avals[j] != 0) ? avals[j] : 0;
+							cvals[j] = (avals[j] != 0) ? 1 : 0;
 						c[r] = crow;
 						ret.nonZeros+=alen;
 					}

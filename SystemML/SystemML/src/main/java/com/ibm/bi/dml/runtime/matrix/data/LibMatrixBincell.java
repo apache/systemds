@@ -12,6 +12,7 @@ import java.util.Arrays;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
@@ -705,26 +706,50 @@ public class LibMatrixBincell
 			return;
 		}
 		
-		if( m1.sparse ) //implies ret is sparse
+		boolean copyOnes = (op.fn == NotEquals.getNotEqualsFnObject() && op.getConstant()==0);
+		
+		if( m1.sparse ) //SPARSE <- SPARSE
 		{	
 			//allocate sparse row structure
 			ret.allocateSparseRowsBlock();
-			
 			SparseRow[] a = m1.sparseRows;
+			SparseRow[] c = ret.sparseRows;
 			
-			for(int r=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++)
+			for(int r=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++) {
 				if( a[r]!=null && !a[r].isEmpty() )
 				{
 					int alen = a[r].size();
 					int[] aix = a[r].getIndexContainer();
 					double[] avals = a[r].getValueContainer();
-					for(int j=0; j<alen; j++) {
-						double val = op.executeScalar(avals[j]);
-						ret.appendValue(r, aix[j], val);
+					
+					if( copyOnes ) //SPECIAL CASE: e.g., (X != 0) 
+					{
+						//create sparse row without repeated resizing
+						SparseRow crow = new SparseRow(alen);
+						crow.setSize(alen);
+						
+						//memcopy/memset of indexes and values
+						//note: currently we do a safe copy of values because in special cases there
+						//might exist zeros in a sparserow and we need to ensure result correctness
+						System.arraycopy(aix, 0, crow.getIndexContainer(), 0, alen);
+						//Arrays.fill(crow.getValueContainer(), 0, alen, 1);
+						double[] cvals = crow.getValueContainer();
+						for(int j=0; j<alen; j++)
+							cvals[j] = (avals[j] != 0) ? avals[j] : 0;
+						c[r] = crow;
+						ret.nonZeros+=alen;
+					}
+					else //GENERAL CASE
+					{
+						for(int j=0; j<alen; j++) {
+							double val = op.executeScalar(avals[j]);
+							ret.appendValue(r, aix[j], val);
+						}
 					}
 				}
+			}
 		}
-		else //implies output is 
+		else //DENSE <- DENSE
 		{
 			//allocate dense block
 			ret.allocateDenseBlock(true);

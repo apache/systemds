@@ -682,8 +682,7 @@ public class OptimizerUtils
 	{
 		double val = HopRewriteUtils.getDoubleValueSafe(lit);
 		
-		return (  (op==OpOp2.NOTEQUAL && val==0)
-				||(op==OpOp2.EQUAL    && val!=0));
+		return ( op==OpOp2.NOTEQUAL && val==0);
 	}
 	
 	/**

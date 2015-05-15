@@ -29,7 +29,15 @@ public class SparseRow implements Serializable
 	private int size = 0;
 	private double[] values = null;
 	private int[] indexes = null;
+	
 
+	public SparseRow(int capacity)
+	{
+		estimatedNzs = capacity;
+		values=new double[capacity];
+		indexes=new int[capacity];
+	}
+	
 	public SparseRow(int estnns, int maxnns)
 	{
 		if(estnns>initialCapacity)
@@ -70,6 +78,11 @@ public class SparseRow implements Serializable
 		return size;
 	}
 	
+	public void setSize(int newsize)
+	{
+		size = newsize;
+	}
+	
 	public boolean isEmpty()
 	{
 		return (size == 0);
@@ -96,12 +109,6 @@ public class SparseRow implements Serializable
 	public int capacity()
 	{
 		return values.length;
-	}
-	
-	public SparseRow(int capacity)
-	{
-		values=new double[capacity];
-		indexes=new int[capacity];
 	}
 	
 	public void copy(SparseRow that)

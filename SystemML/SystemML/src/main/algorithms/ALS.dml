@@ -19,9 +19,9 @@
 # L       String   ---      Location to write the factor matrix L
 # R       String   ---      Location to write the factor matrix R
 # rank    Int      10       Rank of the factorization
-# reg     String   "l2"	    Regularization: 
-#						    "l2" = L2 regularization;
-#                           "wl2" = weighted L2 regularization
+# reg     String   "L2"	    Regularization: 
+#						    "L2" = L2 regularization;
+#                           "wL2" = weighted L2 regularization
 # lambda  Double   0.0      Regularization parameter, no regularization if 0.0
 # maxi    Int      50       Maximum number of iterations
 # check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating L and R once
@@ -34,14 +34,14 @@
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R
-#     				                         rank=10 reg="wl2" lambda=0.0001 fmt=csv
+#     				                         rank=10 reg="wL2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL	   = $L;
 fileR      = $R;
 # Default values of some parameters
 r          = ifdef ($rank, 10);	        # $rank=10;
-reg	   	   = ifdef ($reg, "l2")         # $reg="l2";
+reg	   	   = ifdef ($reg, "L2")         # $reg="L2";
 lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
 max_iter   = ifdef ($maxi, 50);         # $maxi=50;
 check      = ifdef ($check, FALSE);	    # $check=FALSE;
@@ -92,9 +92,9 @@ row_nonzeros = matrix(1, rows = V_nonzero_ind_row, cols = 1);
 col_nonzeros = matrix(1, rows = 1, cols = V_nonzero_ind_col);
   
 # check for regularization
-if (reg == "l2") {
+if (reg == "L2") {
 	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
-} else if (reg == "wl2") {
+} else if (reg == "wL2") {
 	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
 	row_nonzeros = rowSums (V_nonzero_ind);
 	col_nonzeros = colSums (V_nonzero_ind);
@@ -114,7 +114,7 @@ while ((it < max_iter) & (!converged)) {
 	it = it + 1;
 	# keep R fixed and update L
 	parfor (i in 1:m) {
-    R_nonzero_ind = ppred(V[i,],0,"!=");
+    	R_nonzero_ind = ppred(V[i,],0,"!=");
 		R_nonzero = removeEmpty (target=R * R_nonzero_ind, margin="cols");
 		Rt_nonzero = t(R_nonzero);			
 		A1 = (R_nonzero %*% Rt_nonzero) + (as.scalar(row_nonzeros[i,1]) * lambda_I); # coefficient matrix

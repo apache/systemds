@@ -507,7 +507,9 @@ public class DMLScript
 				throw new LanguageException("DML script was not specified!");
 			
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			dmlScriptStr = new Scanner(is).useDelimiter("\\A").next();	
+			Scanner scan = new Scanner(is);
+			dmlScriptStr = scan.useDelimiter("\\A").next();	
+			scan.close();
 		}
 		
 		return dmlScriptStr;

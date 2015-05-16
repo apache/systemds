@@ -13,10 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,15 +32,8 @@ import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.io.ReaderTextCell;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -144,7 +134,7 @@ public class Connection
 			rtprog = prog.getRuntimeProgram(_conf);
 			
 			//final cleanup runtime prog
-			cleanupRuntimeProgram(rtprog, outputs);
+			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
 			
 			//System.out.println(Explain.explain(rtprog));
 		}
@@ -249,72 +239,4 @@ public class Connection
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param prog
-	 */
-	private void cleanupRuntimeProgram( Program prog, String[] outputs)
-	{
-		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
-		if( funcMap != null && !funcMap.isEmpty() )
-		{
-			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
-			{
-				FunctionProgramBlock fpb = e.getValue();
-				for( ProgramBlock pb : fpb.getChildBlocks() )
-					rCleanupRuntimeProgram(pb, outputs);
-			}
-		}
-		
-		for( ProgramBlock pb : prog.getProgramBlocks() )
-			rCleanupRuntimeProgram(pb, outputs);
-	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @param outputs
-	 */
-	private void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
-	{
-		if( pb instanceof WhileProgramBlock )
-		{
-			WhileProgramBlock wpb = (WhileProgramBlock)pb;
-			for( ProgramBlock pbc : wpb.getChildBlocks() )
-				rCleanupRuntimeProgram(pbc,outputs);
-		}
-		else if( pb instanceof IfProgramBlock )
-		{
-			IfProgramBlock ipb = (IfProgramBlock)pb;
-			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() )
-				rCleanupRuntimeProgram(pbc,outputs);
-			for( ProgramBlock pbc : ipb.getChildBlocksElseBody() )
-				rCleanupRuntimeProgram(pbc,outputs);
-		}
-		else if( pb instanceof ForProgramBlock )
-		{
-			ForProgramBlock fpb = (ForProgramBlock)pb;
-			for( ProgramBlock pbc : fpb.getChildBlocks() )
-				rCleanupRuntimeProgram(pbc,outputs);
-		}
-		else
-		{
-			ArrayList<Instruction> tmp = pb.getInstructions();
-			for( int i=0; i<tmp.size(); i++ )
-			{
-				Instruction linst = tmp.get(i);
-				if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
-				{
-					VariableCPInstruction varinst = (VariableCPInstruction) linst;
-					for( String var : outputs )
-						if( varinst.isRemoveVariable(var) )
-						{
-							tmp.remove(i);
-							i--;
-							break;
-						}
-				}
-			}
-		}
-	}
 }

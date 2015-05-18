@@ -80,21 +80,21 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  * 
  * Applied rule-based rewrites
  * - 1) rewrite set data partitioner (incl. recompile RIX)
- * - 2) rewrite result partitioning (incl. recompile LIX)
- * - 3) rewrite set execution strategy
- * - 4) rewrite set operations exec type (incl. recompile)
- * - 5) rewrite use data colocation		 
- * - 6) rewrite set partition replication factor
- * - 7) rewrite set export replication factor 
- * - 8) rewrite use nested parallelism 
- * - 9) rewrite set degree of parallelism
- * - 10) rewrite set task partitioner
- * - 11) rewrite set fused data partitioning and execution
- * - 12) rewrite transpose vector operations (for sparse)
- * - 13) rewrite set in-place result indexing
- * - 14) rewrite disable caching (prevent sparse serialization)
- * - 15) rewrite enable runtime piggybacking
- * - 16) rewrite remove unnecessary compare matrix
+ * - 2) rewrite remove unnecessary compare matrix
+ * - 3) rewrite result partitioning (incl. recompile LIX)
+ * - 4) rewrite set execution strategy
+ * - 5) rewrite set operations exec type (incl. recompile)
+ * - 6) rewrite use data colocation		 
+ * - 7) rewrite set partition replication factor
+ * - 8) rewrite set export replication factor 
+ * - 9) rewrite use nested parallelism 
+ * - 10) rewrite set degree of parallelism
+ * - 11) rewrite set task partitioner
+ * - 12) rewrite set fused data partitioning and execution
+ * - 13) rewrite transpose vector operations (for sparse)
+ * - 14) rewrite set in-place result indexing
+ * - 15) rewrite disable caching (prevent sparse serialization)
+ * - 16) rewrite enable runtime piggybacking
  * - 17) rewrite set result merge 		 		 
  * - 18) rewrite set recompile memory budget
  * - 19) rewrite remove recursive parfor	
@@ -209,71 +209,71 @@ public class OptimizerRuleBased extends Optimizer
 		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices );
 		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
-		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
+		// rewrite 2: remove unnecessary compare matrix (before result partitioning)
+		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
+		
+		// rewrite 3: rewrite result partitioning (incl. log/phy recompile LIX) 
 		boolean flagLIX = rewriteSetResultPartitioning( pn, M1, ec.getVariables() );
 		M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M1) );
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		
-		// rewrite 3: execution strategy
+		// rewrite 4: execution strategy
 		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M0, M1, M2, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR || pn.getExecType()==ExecType.SPARK )
 		{
 			if( flagRecompMR ){
-				//rewrite 4: set operations exec type
+				//rewrite 5: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
 				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
 			}
 			
-			// rewrite 5: data colocation
+			// rewrite 6: data colocation
 			rewriteDataColocation( pn, ec.getVariables() );
 			
-			// rewrite 6: rewrite set partition replication factor
+			// rewrite 7: rewrite set partition replication factor
 			rewriteSetPartitionReplicationFactor( pn, partitionedMatrices, ec.getVariables() );
 			
-			// rewrite 7: rewrite set partition replication factor
+			// rewrite 8: rewrite set partition replication factor
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 8: nested parallelism (incl exec types)	
+			// rewrite 9: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M1, flagLIX );
 			
-			// rewrite 9: determine parallelism
+			// rewrite 10: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M1, flagNested );
 			
-			// rewrite 10: task partitioning 
+			// rewrite 11: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 			
-			// rewrite 11: fused data partitioning and execution
+			// rewrite 12: fused data partitioning and execution
 			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables());
 		
-			// rewrite 12: transpose sparse vector operations
+			// rewrite 13: transpose sparse vector operations
 			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
-			//rewrite 13: set in-place result indexing
+			// rewrite 14: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
-			//rewrite 14: disable caching
+			// rewrite 15: disable caching
 			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 9: determine parallelism
+			// rewrite 10: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M1, false );
 			
-			// rewrite 10: task partitioning
+			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
-			// rewrite 15: runtime piggybacking
+			// rewrite 16: runtime piggybacking
 			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 		}	
-
-		// rewrite 16: remove unnecessary compare matrix
-		rewriteRemoveUnnecessaryCompareMatrix(pn, ec);
-		
+	
 		// rewrite 17: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		

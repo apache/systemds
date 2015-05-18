@@ -1952,11 +1952,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			switch(format)
 			{
 				case ULTRA_SPARSE_BLOCK:
-					if (((long)rlen* (long)clen) > Integer.MAX_VALUE) {
-						nonZeros = in.readLong(); 
-					} else {
-						nonZeros = in.readInt(); 
-					}
+					nonZeros = readNnzInfo( in );
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(true, true); //clean all
 					if( sparse )
@@ -1965,11 +1961,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 						readUltraSparseToDense(in);
 					break;
 				case SPARSE_BLOCK:
-					if (((long)rlen* (long)clen) > Integer.MAX_VALUE) {
-						nonZeros = in.readLong(); 
-					} else {
-						nonZeros = in.readInt(); 
-					}
+					nonZeros = readNnzInfo( in );
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(sparse, !sparse); 
 					if( sparse )
@@ -2221,11 +2213,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
-		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
-			out.writeLong( nonZeros ); //for deciding in-memory format on read
-		} else {
-			out.writeInt( (int)nonZeros );
-		}
+		writeNnzInfo( out );
 		
 		if( out instanceof MatrixBlockDataOutput ) //fast serialize
 			((MatrixBlockDataOutput)out).writeSparseRows(rlen, sparseRows);
@@ -2264,11 +2252,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
-			out.writeLong( nonZeros ); //for deciding in-memory format on read
-		} else {
-			out.writeInt( (int)nonZeros );
-		}
+		writeNnzInfo( out );
+		
 		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
 			if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
 			{
@@ -2329,11 +2314,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
-			out.writeLong( nonZeros ); //for deciding in-memory format on read
-		} else {
-			out.writeInt( (int)nonZeros );
-		}
+		writeNnzInfo( out );
 
 		for(int r=0, ix=0; r<rlen; r++)
 			for(int c=0; c<clen; c++, ix++)
@@ -2349,11 +2330,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{	
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() ); //block type
-		if (((long)rlen*(long)clen) > Integer.MAX_VALUE) {
-			out.writeLong( nonZeros ); //for deciding in-memory format on read
-		} else {
-			out.writeInt( (int)nonZeros );
-		}
+		writeNnzInfo( out );
 		
 		int start=0;
 		for(int r=0; r<rlen; r++)
@@ -2374,6 +2351,44 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				start++;
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @throws IOException
+	 */
+	private long readNnzInfo( DataInput in ) 
+		throws IOException
+	{
+		long lrlen = (long)rlen;
+		long lclen = (long)clen;
+		
+		//read long if required, otherwise int (see writeNnzInfo, consistency required)
+		if( lrlen*lclen > Integer.MAX_VALUE)
+			nonZeros = in.readLong(); 
+		else
+			nonZeros = in.readInt(); 
+		
+		return nonZeros;
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
+	private void writeNnzInfo( DataOutput out ) 
+		throws IOException
+	{
+		long lrlen = (long)rlen;
+		long lclen = (long)clen;
+		
+		//write long if required, otherwise int
+		if( lrlen*lclen > Integer.MAX_VALUE)
+			out.writeLong( nonZeros ); 
+		else
+			out.writeInt( (int)nonZeros );
 	}
 	
 	/**

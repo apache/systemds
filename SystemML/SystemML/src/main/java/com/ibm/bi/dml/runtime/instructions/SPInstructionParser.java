@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
@@ -129,6 +130,14 @@ public class SPInstructionParser extends InstructionParser {
 		// String2SPInstructionType.put( "stop"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "inverse", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
+		
+		// Parameterized Builtin Functions
+		String2SPInstructionType.put( "cdf"	 		, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "invcdf"	 	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "groupedagg"	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rmempty"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "replace"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -218,6 +227,9 @@ public class SPInstructionParser extends InstructionParser {
 				else {
 					return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
 				}
+				
+			case ParameterizedBuiltin:
+				return (SPInstruction) ParameterizedBuiltinSPInstruction.parseInstruction(str);
 				
 			case Sort: 
 				return (SPInstruction) SortSPInstruction.parseInstruction(str);

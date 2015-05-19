@@ -14,6 +14,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -139,85 +140,73 @@ public class ReplaceTest extends AutomatedTestBase
 
 	@Test
 	public void testReplaceZeroDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME1, 0, false, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceValueDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME1, 7, false, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceNaNDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME2, Double.NaN, false, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplacePInfinityDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, false, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceNInfinityDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceMaxMinDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME5, -1, false, ExecType.SPARK );
 	}
 
 	@Test
 	public void testReplaceZeroSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTestReplace( TEST_NAME1, 0, true, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceValueSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
+	{	
 		runTestReplace( TEST_NAME1, 7, true, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceNaNSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTestReplace( TEST_NAME2, Double.NaN, true, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplacePInfinitySparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, true, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceNInfinitySparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.SPARK );
 	}
 	
 	@Test
 	public void testReplaceMaxMinSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runTestReplace( TEST_NAME5, -1, true, ExecType.SPARK );
 	}
 	
@@ -305,6 +294,7 @@ public class ReplaceTest extends AutomatedTestBase
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try
 		{
@@ -314,6 +304,9 @@ public class ReplaceTest extends AutomatedTestBase
 		    else {
 		    	rtplatform = (etype==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 		    }
+			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			
 			double sparsity = (sparse)? sparsity2 : sparsity1;
 				
 			//register test configuration
@@ -356,6 +349,7 @@ public class ReplaceTest extends AutomatedTestBase
 		{
 			//reset platform for additional tests
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

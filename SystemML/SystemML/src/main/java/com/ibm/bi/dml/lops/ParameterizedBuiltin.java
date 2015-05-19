@@ -92,11 +92,6 @@ public class ParameterizedBuiltin extends Lop
 		boolean definesMRJob = false;
 		ExecLocation eloc = null;
 		
-		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("Parameterized for ParameterizedBuiltinOp not implemented for Spark");
-			et = ExecType.CP;
-		}
-		
 		if( _operation == OperationTypes.REPLACE && et==ExecType.MR )
 		{
 			eloc = ExecLocation.MapOrReduce;

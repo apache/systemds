@@ -18,7 +18,9 @@ public class MinIndex extends IndexFunction
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = -4159274805822230421L;
+
 	private static MinIndex singleObj = null;
 	
 	private MinIndex() {

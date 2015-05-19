@@ -12,7 +12,9 @@ public class GreaterThan extends ValueFunction
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
+
+	private static final long serialVersionUID = 1408566061111937556L;
+
 	private static GreaterThan singleObj = null;
 
 	private GreaterThan() {

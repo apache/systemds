@@ -13,12 +13,14 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 
 
-public class ReduceCol  extends IndexFunction
+public class ReduceCol extends IndexFunction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final long serialVersionUID = 5751707683718583013L;
+
 	private static ReduceCol singleObj = null;
 	
 	private ReduceCol() {

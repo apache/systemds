@@ -27,7 +27,9 @@ public class CM extends ValueFunction
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = 9177194651533064123L;
+
 	private AggregateOperationTypes _type = null;
 	
 	//helper function objects for specific types
@@ -53,6 +55,8 @@ public class CM extends ValueFunction
 			case MEAN:
 				_plus = KahanPlus.getKahanPlusFnObject();
 				break;
+			default:
+				//do nothing
 		}
 	}
 	
@@ -167,13 +171,16 @@ public class CM extends ValueFunction
 				cm1.w=w;
 				break;
 			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported operation type: "+_type);
 		}
 		
 		return cm1;
 	}
 	
 	/**
-	 * General case for arbitary weights w2
+	 * General case for arbitrary weights w2
 	 */
 	@Override
 	public Data execute(Data in1, double in2, double w2) 
@@ -272,6 +279,9 @@ public class CM extends ValueFunction
 				cm1.w=w;
 				break;
 			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported operation type: "+_type);
 		}
 		
 		return cm1;
@@ -406,6 +416,9 @@ public class CM extends ValueFunction
 				cm1.w=w;
 				break;
 			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported operation type: "+_type);
 		}
 		
 		return cm1;

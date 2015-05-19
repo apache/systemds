@@ -16,6 +16,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -32,6 +33,8 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertALToBinaryBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextLineToBinaryCellFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -80,6 +83,59 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		return new ReblockSPInstruction(op, in, out, brlen, bclen, outputEmptyBlocks, opcode, str);
 	}
 	
+	private void processBinaryCellReblock(SparkExecutionContext sec, JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells) throws DMLRuntimeException {
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		
+		long numRows = -1;
+		long numColumns = -1;
+		if(!mcOut.dimsKnown() && !mc.dimsKnown()) {
+			throw new DMLRuntimeException("Unknown dimensions in reblock instruction for text format");
+		}
+		else if(mc.dimsKnown()) {
+			numRows = mc.getRows();
+			numColumns = mc.getCols();
+		}
+		else {
+			numRows = mcOut.getRows();
+			numColumns = mcOut.getCols();
+		}
+		
+		if(numRows <= 0 || numColumns <= 0) {
+			throw new DMLRuntimeException("Error: Incorrect input dimensions:" + numRows + "," +  numColumns); 
+		}
+		
+		// TODO: Investigate whether binaryCells.persist() will help here or not
+		
+		// ----------------------------------------------------------------------------
+		// Now merge binary cells into binary blocks
+		// Here you provide three "extremely light-weight" functions (that ignores sparsity):
+		// 1. cell -> ArrayList (AL)
+		// 2. (AL, cell) -> AL
+		// 3. (AL, AL) -> AL
+		// Then you convert the final AL -> binary blocks (here you take into account the sparsity).
+		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithoutEmptyBlocks =
+				binaryCells.combineByKey(
+						new ConvertCellToALFunction(), 
+						new AddCellToALFunction(), 
+						new MergeALFunction())
+						.mapToPair(new ConvertALToBinaryBlockFunction(brlen, bclen, numRows, numColumns));		
+		// ----------------------------------------------------------------------------
+		
+		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
+		if(outputEmptyBlocks) {
+			binaryBlocksWithEmptyBlocks = SparkUtils.getRDDWithEmptyBlocks(sec, 
+					binaryBlocksWithoutEmptyBlocks, numRows, numColumns, brlen, bclen);
+		}
+		else {
+			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
+		}
+		
+		
+		//put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), binaryBlocksWithEmptyBlocks);
+	}
+	
 	public void processTextCellReblock(SparkExecutionContext sec, JavaPairRDD<LongWritable, Text> lines) throws DMLRuntimeException {
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
@@ -106,48 +162,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(brlen, bclen))
 				.filter(new DropEmptyBinaryCells());
 				
-		// TODO: Investigate whether binaryCells.persist() will help here or not
 		
-		// ----------------------------------------------------------------------------
-		// Now merge binary cells into binary blocks
-		// Here you provide three "extremely light-weight" functions (that ignores sparsity):
-		// 1. cell -> ArrayList (AL)
-		// 2. (AL, cell) -> AL
-		// 3. (AL, AL) -> AL
-		// Then you convert the final AL -> binary blocks (here you take into account the sparsity).
-		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithoutEmptyBlocks =
-				binaryCells.combineByKey(
-						new ConvertCellToALFunction(), 
-						new AddCellToALFunction(), 
-						new MergeALFunction())
-						.mapToPair(new ConvertALToBinaryBlockFunction(brlen, bclen, numRows, numColumns));		
-		// ----------------------------------------------------------------------------
-		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
-		if(outputEmptyBlocks) {
-			// ----------------------------------------------------------------------------
-			// Now take care of empty blocks
-			// This is done as non-rdd operation due to complexity involved in "not in" operations
-			// Since this deals only with keys and not blocks, it might not be that bad.
-			List<MatrixIndexes> indexes = binaryBlocksWithoutEmptyBlocks.keys().collect();
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns);
-			if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
-				// Empty blocks needs to be inserted
-				binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(emptyBlocksList))
-						.union(binaryBlocksWithoutEmptyBlocks);
-			}
-			else {
-				binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
-			}
-			// ----------------------------------------------------------------------------
-		}
-		else {
-			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
-		}
-		
-		
-		//put output RDD handle into symbol table
-		sec.setRDDHandleForVariable(output.getName(), binaryBlocksWithEmptyBlocks);
+		processBinaryCellReblock(sec, binaryCells);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -167,7 +183,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				// The number of rows and columns remains the same for input and output
 				// However, the block size may vary: For example: global dataflow optimization
 				mcOut.set(mc.getRows(), mc.getCols(), brlen_out, bclen_out);
-				// System.out.println("In Reblock, 1. Setting " + output.getName() + " to " + mc.toString());
 			}
 			if(mcOut.dimsKnown() && !mc.dimsKnown()) {
 				int brlen_in = mc.getRowsPerBlock();
@@ -208,8 +223,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				return;
 			}
 			else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) {
-				// TODO:
-				throw new DMLRuntimeException("BinaryCellInputInfo is not implemented for ReblockSPInstruction");
+				JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+				processBinaryCellReblock(sec, binaryCells);
 			}
 			else if(iimd.getInputInfo()==InputInfo.BinaryBlockInputInfo) {
 				/// HACK ALERT: Workaround for MLContext 
@@ -223,8 +238,11 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 					}
 				}
 				else {
-					// TODO: For global data flow optimization
-					throw new DMLRuntimeException("Reblocking to different sizes is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
+					// Reblocking to different sizes
+					JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+					processBinaryReblock(sec, in1, mcOut.getRows(), mcOut.getCols(), 
+							mc.getRowsPerBlock(), mc.getColsPerBlock(),
+							mcOut.getRowsPerBlock(), mcOut.getColsPerBlock());
 				}
 			}
 			else {
@@ -236,56 +254,43 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		}
 	}
 	
-	private ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> getEmptyBlocks(List<MatrixIndexes> nonEmptyIndexes, long rlen, long clen) throws DMLRuntimeException {
-		long numBlocksPerRow = (long) Math.ceil((double)rlen / brlen);
-		long numBlocksPerCol = (long) Math.ceil((double)clen / bclen);
-		long expectedNumBlocks = numBlocksPerRow*numBlocksPerCol;
+	private void processBinaryReblock(SparkExecutionContext sec, JavaPairRDD<MatrixIndexes, MatrixBlock> in1,
+			long rlen, long clen, int in_brlen, int in_bclen, int out_brlen, int out_bclen) throws DMLRuntimeException {
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.flatMapToPair(
+				new ExtractBlockForBinaryReblock(rlen, clen, in_brlen, in_bclen, out_brlen, out_bclen))
+				.groupByKey()
+				.mapToPair(new MergeBinBlocks());
 		
-		if(expectedNumBlocks == nonEmptyIndexes.size()) {
-			return null; // no empty blocks required: sanity check
-		}
-		else if(expectedNumBlocks < nonEmptyIndexes.size()) {
-			throw new DMLRuntimeException("Error: Incorrect number of indexes in ReblockSPInstruction:" + nonEmptyIndexes.size());
-		}
-		
-		// ----------------------------------------------------------------------------
-		// Add empty blocks: Performs a "not-in" operation
-		Collections.sort(nonEmptyIndexes); // sort in ascending order first wrt rows and then wrt columns
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-		int index = 0;
-		for(long row = 1; row <=  Math.ceil((double)rlen / brlen); row++) {
-			for(long col = 1; col <=  Math.ceil((double)clen / bclen); col++) {
-				boolean matrixBlockExists = false;
-				if(nonEmptyIndexes.size() > index) {
-					matrixBlockExists = (nonEmptyIndexes.get(index).getRowIndex() == row) && (nonEmptyIndexes.get(index).getColumnIndex() == col);
-				}
-				if(matrixBlockExists) {
-					index++; // No need to add empty block
-				}
-				else {
-					// ------------------------------------------------------------------
-					//	Compute local block size: 
-					// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
-					// We will have four local block sizes (1000X1000, 1000X100, 500X1000 and 500X1000)
-					long blockRowIndex = row;
-					long blockColIndex = col;
-					int emptyBlk_lrlen = UtilFunctions.computeBlockSize(rlen, blockRowIndex, brlen);
-					int emptyBlk_lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
-					// ------------------------------------------------------------------
-					
-					MatrixBlock emptyBlk = new MatrixBlock(emptyBlk_lrlen, emptyBlk_lclen, true);
-					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(blockRowIndex, blockColIndex), emptyBlk));
-				}
-			}
-		}
-		// ----------------------------------------------------------------------------
-		
-		if(index != nonEmptyIndexes.size()) {
-			throw new DMLRuntimeException("Unexpected error while adding empty blocks in ReblockSPInstruction");
-		}
-		
-		return retVal;
+		//put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), out);
 	}
+	
+	public static class MergeBinBlocks implements PairFunction<Tuple2<MatrixIndexes,Iterable<MatrixBlock>>, MatrixIndexes, MatrixBlock> {
+		private static final long serialVersionUID = -5071035411478388254L;
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Iterable<MatrixBlock>> kv) throws Exception {
+			int brlen = -1; int bclen = -1;
+			long nnz = 0;
+			for(MatrixBlock mb : kv._2) {
+				if(brlen == -1) {
+					brlen = mb.getNumRows();
+					bclen = mb.getNumColumns();
+				}
+				mb.recomputeNonZeros();
+				nnz += mb.getNonZeros();
+			}
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(brlen, bclen, nnz);
+			MatrixBlock retVal = new MatrixBlock(brlen, bclen, sparse, nnz);
+			for(MatrixBlock mb : kv._2) {
+				retVal.merge(mb, false);
+			}
+			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, retVal);
+		}
+		
+	}
+	
+	
 	
 	// ====================================================================================================
 	// Three functions passed to combineByKey

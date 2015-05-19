@@ -8,8 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -429,12 +427,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(miniBlocks.getIndexes(), (MatrixBlock) miniBlocks.getValue()));
 			}
 			
-			return new Iterable<Tuple2<MatrixIndexes,MatrixBlock>>() {
-				@Override
-				public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> iterator() {
-					return retVal.iterator();
-				}
-			};
+			return retVal;
 		}
 		
 	}

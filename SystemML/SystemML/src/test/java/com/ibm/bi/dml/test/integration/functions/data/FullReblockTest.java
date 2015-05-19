@@ -13,6 +13,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -102,6 +103,82 @@ public class FullReblockTest extends AutomatedTestBase
 	{
 		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.CP);
 	}
+	
+	// ------------------------------------
+	
+	@Test
+	public void testTextCellSingleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTextCellSingeMSparseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTextCellSingleVDenseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTextCellSingeVSparseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTextCellMultipleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTextCellMultipleMSparseSP() 
+	{
+		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeMSparseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleVDenseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeVSparseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMSparseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.SPARK);
+	}
+	
+	// ------------------------------------
 	
 	@Test
 	public void testTextCellSingleMDenseMR() 
@@ -248,7 +325,15 @@ public class FullReblockTest extends AutomatedTestBase
 		int cols = (type==Type.Vector)? colsV : colsM;
 		
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
@@ -310,6 +395,7 @@ public class FullReblockTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

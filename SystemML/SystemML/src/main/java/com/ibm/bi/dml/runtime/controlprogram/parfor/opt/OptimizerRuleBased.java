@@ -270,6 +270,10 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
+			// rewrite 14: set in-place result indexing
+			HashSet<String> inplaceResultVars = new HashSet<String>();
+			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			
 			// rewrite 16: runtime piggybacking
 			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 		}	
@@ -1789,7 +1793,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
-			LOG.warn(getOptMode()+" OPT: Transpose sparse vector operations is only applicable for a ParFor node.");
+			LOG.warn(getOptMode()+" OPT: Set in-place result update is only applicable for a ParFor node.");
 		
 		boolean apply = false;
 
@@ -1801,19 +1805,40 @@ public class OptimizerRuleBased extends Optimizer
 		
 		ArrayList<String> retVars = pfpb.getResultVariables();
 		
-		//compute total sum of pinned result varible memory
+		//compute total sum of pinned result variable memory
 		double sum = computeTotalSizeResultVariables(retVars, vars);
 		
 		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
 		//most importantly counted twice if this is part of the maximum operation)
 		double totalMem = Math.min((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<String>()));
-		
-		if(   (pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR) 
-			&& totalMem < _rm //max operator and sum of result vars fit
-			&& rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) )
+	
+		//optimization decision
+		if( rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) ) //basic correctness constraint
 		{
-			apply = true;
-			
+			//result update in-place for MR/Spark (w/ remote memory constraint)
+			if( (  pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR
+				|| pfpb.getExecMode() == PExecMode.REMOTE_SPARK_DP || pfpb.getExecMode() == PExecMode.REMOTE_SPARK) 
+				&& totalMem < _rm )
+			{ 
+				apply = true;
+			}
+			//result update in-place for CP (w/ local memory constraint)
+			else if( pfpb.getExecMode() == PExecMode.LOCAL && totalMem < _lm ) 
+			{ 
+				apply = true;
+				
+				//ensure that all result variables are initially empty
+				for( String var : retVars ) {
+					Data dat = vars.get(var);
+					if( dat instanceof MatrixObject )
+						apply &= (((MatrixObject)dat).getNnz() == 0);
+				}	
+			}
+		}
+		
+		//modify result variable meta data, if rewrite applied
+		if( apply ) 
+		{
 			//add result vars to result and set state
 			//will be serialized and transfered via symbol table 
 			for( String var : retVars ){

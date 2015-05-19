@@ -145,7 +145,7 @@ public class MatrixObject extends CacheableData
 	/**
 	 * Constructor that takes both HDFS filename and associated metadata.
 	 */
-	public MatrixObject (ValueType vt, String file, MetaData mtd)
+	public MatrixObject( ValueType vt, String file, MetaData mtd )
 	{
 		super (DataType.MATRIX, vt);
 		_metaData = mtd; 
@@ -153,6 +153,31 @@ public class MatrixObject extends CacheableData
 		
 		_cache = null;
 		_data = null;
+	}
+	
+	/**
+	 * Copy constructor that copies meta data but NO data.
+	 * 
+	 * @param mo
+	 */
+	public MatrixObject( MatrixObject mo )
+	{
+		super(mo.getDataType(), mo.getValueType());
+
+		_hdfsFileName = mo._hdfsFileName;
+		_hdfsFileExists = mo._hdfsFileExists;
+		
+		MatrixFormatMetaData metaOld = (MatrixFormatMetaData)mo.getMetaData();
+		_metaData = new MatrixFormatMetaData(new MatrixCharacteristics(metaOld.getMatrixCharacteristics()),
+				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
+		
+		_varName = mo._varName;
+		_cleanupFlag = mo._cleanupFlag;
+		_pinnedFlag = mo._pinnedFlag;
+		_partitioned = mo._partitioned;
+		_partitionFormat = mo._partitionFormat;
+		_partitionSize = mo._partitionSize;
+		_partitionCacheName = mo._partitionCacheName;
 	}
 
 	public void setVarName(String s) 

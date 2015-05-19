@@ -68,6 +68,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
 
@@ -147,14 +148,34 @@ public class ProgramConverter
 	/**
 	 * Creates a deep copy of the given execution context.
 	 * For rt_platform=Hadoop, execution context has a symbol table.
+	 * 
 	 * @throws CloneNotSupportedException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec) 
-		throws CloneNotSupportedException 
+		throws CloneNotSupportedException, DMLRuntimeException 
 	{
 		ExecutionContext cpec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
 	
+		//handle result variables with in-place update flag
+		//(each worker requires its own copy of the empty matrix object)
+		for( String var : cpec.getVariables().keySet() ) {
+			Data dat = cpec.getVariables().get(var);
+			if( dat instanceof MatrixObject && ((MatrixObject)dat).isUpdateInPlaceEnabled() ) {
+				MatrixObject mo = (MatrixObject)dat;
+				if( mo.getNnz() != 0 )
+					throw new DMLRuntimeException("Unsupported copy of update-inplace matrix w/ nnz!=0: "+var);
+				
+				//create empty matrix block w/ dense representation (preferred for update in-place)
+				MatrixObject moNew = new MatrixObject(mo); 
+				moNew.acquireModify(new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(), false));
+				moNew.release();			
+				
+				cpec.setVariable(var, moNew);
+			}
+		}
+		
 		return cpec;
 	}
 	

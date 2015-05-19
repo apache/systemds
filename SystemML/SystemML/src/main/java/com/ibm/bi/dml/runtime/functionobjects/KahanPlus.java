@@ -39,24 +39,42 @@ public class KahanPlus extends ValueFunction implements Serializable
 		throw new CloneNotSupportedException();
 	}
 	
-	//overwride in1
-	public Data execute(Data in1, double in2) throws DMLRuntimeException {
+	@Override
+	public Data execute(Data in1, double in2) 
+		throws DMLRuntimeException 
+	{
 		KahanObject kahanObj=(KahanObject)in1;
+		
+		//fast path for INF/-INF in order to ensure result correctness
+		//(computing corrections otherwise incorrectly computes NaN)
+		if( Double.isInfinite(kahanObj._sum) || Double.isInfinite(in2) ) {
+			kahanObj.set(Double.isInfinite(in2) ? in2 : kahanObj._sum, 0);
+			return kahanObj;
+		}
+		
+		//default path for any other value
 		double correction=in2+kahanObj._correction;
 		double sum=kahanObj._sum+correction;
-		//kahanObj._correction=(correction-(sum-kahanObj._sum)); 	
-		//kahanObj._sum=sum;                                     
 		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt 		
 		return kahanObj;
 	}
 	
-	//overwride in1, in2 is the sum, in3 is the correction
-	public Data execute(Data in1, double in2, double in3) throws DMLRuntimeException {
+	@Override // in1, in2 is the sum, in3 is the correction
+	public Data execute(Data in1, double in2, double in3) 
+		throws DMLRuntimeException 
+	{
 		KahanObject kahanObj=(KahanObject)in1;
+		
+		//fast path for INF/-INF in order to ensure result correctness
+		//(computing corrections otherwise incorrectly computes NaN)
+		if( Double.isInfinite(kahanObj._sum) || Double.isInfinite(in2) ) {
+			kahanObj.set(Double.isInfinite(in2) ? in2 : kahanObj._sum, 0);
+			return kahanObj;
+		}
+		
+		//default path for any other value
 		double correction=in2+(kahanObj._correction+in3);
 		double sum=kahanObj._sum+correction;
-		//kahanObj._correction=correction-(sum-kahanObj._sum);
-		//kahanObj._sum=sum;
 		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt
 		return kahanObj;
 	}
@@ -70,6 +88,14 @@ public class KahanPlus extends ValueFunction implements Serializable
 	 */
 	public void execute2(KahanObject in1, double in2) 
 	{
+		//fast path for INF/-INF in order to ensure result correctness
+		//(computing corrections otherwise incorrectly computes NaN)
+		if( Double.isInfinite(in1._sum) || Double.isInfinite(in2) ) {
+			in1.set(Double.isInfinite(in2) ? in2 : in1._sum, 0);
+			return;
+		}
+		
+		//default path for any other value
 		double correction = in2 + in1._correction;
 		double sum = in1._sum + correction;
 		in1.set(sum, correction-(sum-in1._sum)); //prevent eager JIT opt 	

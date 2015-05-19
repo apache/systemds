@@ -1147,7 +1147,12 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		//determine target representation
 		boolean sparseDst = evalSparseFormatInMemory(); 
 				
-		//change representation if required
+		//check for empty blocks (e.g., sparse-sparse)
+		if( isEmptyBlock(false) )
+			cleanupBlock(true, true);
+		
+		//change representation if required (also done for 
+		//empty blocks in order to set representation flags)
 		if( sparse && !sparseDst)
 			sparseToDense();
 		else if( !sparse && sparseDst )
@@ -1205,68 +1210,75 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	////////
 	// basic block handling functions	
 	
-	
+	/**
+	 * 
+	 */
 	private void denseToSparse() 
 	{	
-		//LOG.info("**** denseToSparse: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
-		sparse=true;
-		allocateSparseRowsBlock();
-		reset();
+		//set target representation
+		sparse = true;
+		
+		//early abort on empty blocks
 		if(denseBlock==null)
 			return;
-		int index=0;
-		for(int r=0; r<rlen; r++)
-		{
-			for(int c=0; c<clen; c++)
-			{
-				if(denseBlock[index]!=0)
-				{
-					if(sparseRows[r]==null) //create sparse row only if required
-						sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
-					
-					sparseRows[r].append(c, denseBlock[index]);
+		
+		//allocate sparse target block (reset requires to maintain nnz again)
+		allocateSparseRowsBlock();
+		reset();
+		
+		//copy dense to sparse
+		double[] a = denseBlock;
+		SparseRow[] c = sparseRows;
+		
+		for( int i=0, aix=0; i<rlen; i++ )
+			for(int j=0; j<clen; j++, aix++)
+				if( a[aix] != 0 ) {
+					if( c[i]==null ) //create sparse row only if required
+						c[i]=new SparseRow(estimatedNNzsPerRow, clen);
+					c[i].append(j, a[aix]);
 					nonZeros++;
 				}
-				index++;
-			}
-		}
 				
 		//cleanup dense block
 		denseBlock = null;
 	}
 	
+	/**
+	 * 
+	 * @throws DMLRuntimeException
+	 */
 	private void sparseToDense() 
 		throws DMLRuntimeException 
 	{	
-		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
+		//set target representation
+		sparse = false;
 		
-		sparse=false;
+		//early abort on empty blocks
+		if(sparseRows==null)
+			return;
+		
 		int limit=rlen*clen;
 		if ( limit < 0 ) {
 			throw new DMLRuntimeException("Unexpected error in sparseToDense().. limit < 0: " + rlen + ", " + clen + ", " + limit);
 		}
 		
-		allocateDenseBlock();
+		//allocate dense target block, but keep nnz (no need to maintain)
+		allocateDenseBlock(false);
 		Arrays.fill(denseBlock, 0, limit, 0);
-		nonZeros=0;
 		
-		if(sparseRows==null)
-			return;
+		//copy sparse to dense
+		SparseRow[] a = sparseRows;
+		double[] c = denseBlock;
 		
-		for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-		{
-			if(sparseRows[r]==null) 
-				continue;
-			int[] cols=sparseRows[r].getIndexContainer();
-			double[] values=sparseRows[r].getValueContainer();
-			for(int i=0; i<sparseRows[r].size(); i++)
-			{
-				if(values[i]==0) 
-					continue;
-				denseBlock[r*clen+cols[i]]=values[i];
-				nonZeros++;
+		for( int i=0, cix=0; i<rlen; i++, cix+=clen)
+			if( a[i] != null && !a[i].isEmpty() ) {
+				int alen = a[i].size();
+				int[] aix = a[i].getIndexContainer();
+				double[] avals = a[i].getValueContainer();
+				for(int j=0; j<alen; j++)
+					if( avals[j] != 0 )
+						c[ cix+aix[j] ] = avals[j];
 			}
-		}
 		
 		//cleanup sparse rows
 		sparseRows = null;

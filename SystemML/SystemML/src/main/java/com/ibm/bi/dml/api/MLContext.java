@@ -7,10 +7,10 @@
 
 package com.ibm.bi.dml.api;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.io.LongWritable;
@@ -18,8 +18,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 
 import scala.Tuple2;
@@ -56,16 +55,9 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.Explain;
 
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
 
 
 /**
@@ -101,15 +93,39 @@ public class MLContext {
 	
 	private ArrayList<String> _inVarnames = null;
 	private ArrayList<String> _outVarnames = null;
-	private HashMap<String, MatrixCharacteristics> _outMetadata = null;
 	private LocalVariableMap _variables = null; // temporary symbol table
 	boolean parsePyDML = false;
 		
 	private DMLConfig _conf = null;
-//	private String tmpHDFSDir = null; 
+	
+	// export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.8.2.1-src.zip:$PYTHONPATH
+
+	// To check if Py4J is working:
+	// >>> str1 = sc._jvm.java.lang.Class.forName("java.lang.String")
+	// >>> str1.getName()
+	
+	// To check if MLContext is accessible:
+	// >>> sc._jvm.java.lang.Class.forName("com.ibm.bi.dml.api.MLContext")
+	// Note: pyspark doesnot add jars as of today (see SPARK-5185)
+	// Therefore, add --driver-class-path SystemML.jar or
+	// export SPARK_CLASSPATH=$SPARK_CLASSPATH:/home/biadmin/spark_test/SystemML.jar
+	
+	// ml = sc._jvm.com.ibm.bi.dml.api.MLContext(sc._jsc)
+	// ml.execute_python("toy.dml")
+	// TODO: https://github.com/apache/spark/blob/master/python/pyspark/mllib/common.py
+	// Look at def _to_java_object_rdd(rdd)
 	
 	public MLContext(SparkContext sc) {
 		MLContext._sc = sc;
+		initialize();
+	}
+	
+	public MLContext(JavaSparkContext sc) {
+		MLContext._sc = sc.sc();
+		initialize();
+	}
+	
+	private void initialize() {
 		//create default configuration
 		_conf = new DMLConfig();
 		ConfigurationManager.setConfig(_conf);
@@ -119,22 +135,21 @@ public class MLContext {
 	public void clear() {
 		_inVarnames = null;
 		_outVarnames = null;
-		_outMetadata = null;
 		_variables = null;
 		parsePyDML = false;
 	}
 	
-	// Allows user to project out few columns and also order them
-	public void registerInput(String varName, DataFrame df, Column[] columns) throws DMLRuntimeException {
-		JavaRDD<String> rdd = df.select(columns).javaRDD().map(new ConvertRowToCSVString());
-		registerInput(varName, rdd, "csv", -1, columns.length);
-	}
 	
+	// ====================================================================================
+	
+	// 1. DataFrame
 	public void registerInput(String varName, DataFrame df) throws DMLRuntimeException {
 		JavaRDD<String> rdd = df.javaRDD().map(new ConvertRowToCSVString());
 		registerInput(varName, rdd, "csv", -1, -1);
 	}
 	
+	// ------------------------------------------------------------------------------------
+	// 2. CSV/Text: Usually JavaRDD<String>, but also supports JavaPairRDD<LongWritable, Text>
 	public void registerInput(String varName, JavaRDD<String> rdd, String format, boolean hasHeader, String delim, boolean fill, double missingValue) throws DMLRuntimeException {
 		RDDProperties properties = new RDDProperties();
 		properties.setHasHeader(hasHeader);
@@ -143,27 +158,14 @@ public class MLContext {
 		properties.setMissingValue(missingValue);
 		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, -1, -1, properties);
 	}
-	
 	public void registerInput(String varName, JavaRDD<String> rdd, String format) throws DMLRuntimeException {
 		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, -1, -1, null);
 	}
-	
 	public void registerInput(String varName, JavaRDD<String> rdd, String format, long rlen, long clen) throws DMLRuntimeException {
 		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, null);
 	}
-	
-	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd) throws DMLRuntimeException {
-		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), -1, -1);
-	}
-	
-	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd, long rlen, long clen) throws DMLRuntimeException {
-		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), rlen, clen);
-	}
-		
-	// =============================================================================================
-	
 	// Register input for csv/text format
-	public void registerInput(String varName, JavaPairRDD<LongWritable, Text> rdd1, String format, long rlen, long clen, RDDProperties properties) throws DMLRuntimeException {
+	public void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, RDDProperties properties) throws DMLRuntimeException {
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
@@ -175,9 +177,6 @@ public class MLContext {
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		}
 		else if(format.compareTo("text") == 0) {
-//			if(rlen <= 0 || clen <= 0) {
-//				throw new DMLRuntimeException("The number of rows or columns for text format should be greater than 0");
-//			}
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
@@ -185,7 +184,7 @@ public class MLContext {
 			throw new DMLRuntimeException("Incorrect format in registerInput: " + format);
 		}
 		
-		JavaPairRDD<LongWritable, Text> rdd = rdd1.mapToPair(new CopyTextInputFunction());
+		JavaPairRDD<LongWritable, Text> rdd = textOrCsv_rdd.mapToPair(new CopyTextInputFunction());
 		if(properties != null) {
 			mo.setRddProperties(properties);
 		}
@@ -193,8 +192,15 @@ public class MLContext {
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 	}
+	// ------------------------------------------------------------------------------------
 	
-	
+	// 3. Binary blocked RDD: Support JavaPairRDD<MatrixIndexes,MatrixBlock> and also RDD<Tuple2<MatrixIndexes,MatrixBlock>>
+	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd) throws DMLRuntimeException {
+		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), -1, -1);
+	}
+	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd, long rlen, long clen) throws DMLRuntimeException {
+		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), rlen, clen);
+	}
 	// Register input for binary format
 	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, long rlen, long clen) throws DMLRuntimeException {
 		if(_variables == null)
@@ -211,130 +217,12 @@ public class MLContext {
 		_inVarnames.add(varName);
 	}
 	
-	
 	// =============================================================================================
 	
 	public void registerOutput(String varName) throws DMLRuntimeException {
 		if(_outVarnames == null)
 			_outVarnames = new ArrayList<String>();
 		_outVarnames.add(varName);
-	}
-	
-	private DataFrame getDF(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, String varName) {
-		long rlen = _outMetadata.get(varName).getRows(); long clen = _outMetadata.get(varName).getCols();
-		int brlen = _outMetadata.get(varName).getRowsPerBlock(); int bclen = _outMetadata.get(varName).getColsPerBlock();
-		
-		// Very expensive operation here: groupByKey (where number of keys might be too large)
-		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
-				.groupByKey().map(new ConvertDoubleArrayToRows(clen, bclen));
-		
-		int numColumns = (int) clen;
-		if(numColumns <= 0) {
-			numColumns = rowsRDD.first().length() - 1; // Ugly
-		}
-		
-		List<StructField> fields = new ArrayList<StructField>();
-		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
-		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false)); 
-		for(int i = 1; i <= numColumns; i++) {
-			fields.add(DataTypes.createStructField("C" + i, DataTypes.DoubleType, false));
-		}
-		
-		// This will cause infinite recursion due to bug in Spark
-		// https://issues.apache.org/jira/browse/SPARK-6999
-		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
-		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
-	}
-	
-	public static class ProjectRows implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Tuple2<Long, Double[]>> {
-		private static final long serialVersionUID = -4792573268900472749L;
-		long rlen; long clen;
-		int brlen; int bclen;
-		public ProjectRows(long rlen, long clen, int brlen, int bclen) {
-			this.rlen = rlen;
-			this.clen = clen;
-			this.brlen = brlen;
-			this.bclen = bclen;
-		}
-
-		@Override
-		public Iterable<Tuple2<Long, Tuple2<Long, Double[]>>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			// ------------------------------------------------------------------
-    		//	Compute local block size: 
-    		// Example: For matrix: 1500 X 1100 with block length 1000 X 1000
-    		// We will have four local block sizes (1000X1000, 1000X100, 500X1000 and 500X1000)
-    		long blockRowIndex = kv._1.getRowIndex();
-    		long blockColIndex = kv._1.getColumnIndex();
-    		int lrlen = UtilFunctions.computeBlockSize(rlen, blockRowIndex, brlen);
-    		int lclen = UtilFunctions.computeBlockSize(clen, blockColIndex, bclen);
-    		// ------------------------------------------------------------------
-			
-			long startRowIndex = (kv._1.getRowIndex()-1) * bclen;
-			MatrixBlock blk = kv._2;
-			ArrayList<Tuple2<Long, Tuple2<Long, Double[]>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,Double[]>>>();
-			for(int i = 0; i < lrlen; i++) {
-				Double[] partialRow = new Double[bclen];
-				for(int j = 0; j < lclen; j++) {
-					partialRow[j] = blk.getValue(i, j);
-				}
-				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
-			}
-			return (Iterable<Tuple2<Long, Tuple2<Long, Double[]>>>) retVal;
-		}
-	}
-	
-	public static class ConvertDoubleArrayToRows implements Function<Tuple2<Long, Iterable<Tuple2<Long, Double[]>>>, Row> {
-		private static final long serialVersionUID = 4441184411670316972L;
-		int bclen; long clen;
-		public ConvertDoubleArrayToRows(long clen, int bclen) {
-			this.clen = clen;
-			this.bclen = bclen;
-		}
-
-		@Override
-		public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double[]>>> arg0)
-				throws Exception {
-			HashMap<Long, Double[]> partialRows = new HashMap<Long, Double[]>();
-			int sizeOfPartialRows = 0;
-			for(Tuple2<Long, Double[]> kv : arg0._2) {
-				partialRows.put(kv._1, kv._2);
-				sizeOfPartialRows += kv._2.length;
-			}
-			// TODO: Make this check: It is quite possible the matrix characteristics are not inferred
-//			if(clen != sizeOfPartialRows) {
-//				throw new Exception("Incorrect number of columns in the row:" + clen + " != " + sizeOfPartialRows);
-//			}
-			
-			// Insert first row as row index
-			Double[] row = new Double[sizeOfPartialRows + 1];
-			long rowIndex = arg0._1;
-			row[0] = new Double(rowIndex);
-			for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
-				if(partialRows.containsKey(columnBlockIndex)) {
-					Double [] array = partialRows.get(columnBlockIndex);
-					for(int i = 0; i < array.length; i++) {
-						row[(int) ((columnBlockIndex-1)*bclen + i) + 1] = array[i];
-					}
-				}
-				else {
-					throw new Exception("The block for column index " + columnBlockIndex + " is missing. Make sure the last instruction is not returning empty blocks");
-				}
-			}
-			
-			Object[] row_fields = row;
-			return RowFactory.create(row_fields);
-		}
-
-		
-		
-	}
-		
-	private HashMap<String, DataFrame> getDFHashMap(SQLContext sqlContext, HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputVars) {
-		HashMap<String, DataFrame> retVal = new HashMap<String, DataFrame>(outputVars.size());
-		for(Entry<String, JavaPairRDD<MatrixIndexes, MatrixBlock>> kv : outputVars.entrySet()) {
-			retVal.put(kv.getKey(), getDF(sqlContext, kv.getValue(), kv.getKey()));
-		}
-		return retVal;
 	}
 	
 	/**
@@ -345,7 +233,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, HashMap<String, String> namedArgs) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs) throws IOException, DMLException, ParseException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
@@ -355,33 +243,17 @@ public class MLContext {
 		return runDMLScript(dmlScriptFilePath, args, true);
 	}
 	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, HashMap<String, String> namedArgs) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, namedArgs));
+	public MLOutput execute(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
+		return execute(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)));
 	}
-	
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
-		return execute_binary(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)));
-	}
-	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, namedArgs));
-	}
-	
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
+
+	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		this.parsePyDML = parsePyDML;
-		return execute_binary(dmlScriptFilePath, namedArgs);
+		return execute(dmlScriptFilePath, namedArgs);
 	}
 	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, namedArgs, parsePyDML));
-	}
-	
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		return execute_binary(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), parsePyDML);
-	}
-	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, namedArgs, parsePyDML));
+	public MLOutput execute(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
+		return execute(dmlScriptFilePath, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), parsePyDML);
 	}
 	
 	/**
@@ -392,21 +264,13 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, String [] args) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, String [] args) throws IOException, DMLException, ParseException {
 		return runDMLScript(dmlScriptFilePath, args, false);
 	}
 	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, String [] args) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, args));
-	}
-	
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, String [] args, boolean parsePyDML) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		this.parsePyDML = parsePyDML;
 		return runDMLScript(dmlScriptFilePath, args, false);
-	}
-	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, String [] args, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, args, parsePyDML));
 	}
 	
 	/**
@@ -416,30 +280,20 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath) throws IOException, DMLException, ParseException {
 		return runDMLScript(dmlScriptFilePath, null, false);
 	}
 	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath));
-	}
-	
-	public HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> execute_binary(String dmlScriptFilePath, boolean parsePyDML) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		this.parsePyDML = parsePyDML;
 		return runDMLScript(dmlScriptFilePath, null, false);
 	}
 	
-	public HashMap<String, DataFrame> execute(SQLContext sqlContext, String dmlScriptFilePath, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		return getDFHashMap(sqlContext, execute_binary(dmlScriptFilePath, parsePyDML));
-	}
-	
-	private HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> runDMLScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
+	private MLOutput runDMLScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
 		HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
 		
 		String dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);		
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
-		
-		// TODO: Set config file path
 		
 		HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 		//simplified compilation chain
@@ -496,30 +350,31 @@ public class MLContext {
 		System.out.println(Explain.explain(rtprog));
 		
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);	
-		ec.setVariables(_variables);
+		ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);
+		if(_variables != null) {
+			ec.setVariables(_variables);
+		}
 		
 		//core execute runtime program	
 		rtprog.execute( ec );
 		
-		if(_outMetadata == null) {
-			_outMetadata = new HashMap<String, MatrixCharacteristics>();
-		}
+		HashMap<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
 		
-		for( String ovar : _outVarnames ) {
-			if( _variables.keySet().contains(ovar) ) {
-				if(retVal == null) {
-					retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
+		if(_outVarnames != null) {
+			for( String ovar : _outVarnames ) {
+				if( _variables.keySet().contains(ovar) ) {
+					if(retVal == null) {
+						retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
+					}
+					retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
+					outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
 				}
-				retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
-				_outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
-			}
-			else {
-				throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
+				else {
+					throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
+				}
 			}
 		}
 		
-		
-		return retVal;
+		return new MLOutput(retVal, outMetadata);
 	}
 }

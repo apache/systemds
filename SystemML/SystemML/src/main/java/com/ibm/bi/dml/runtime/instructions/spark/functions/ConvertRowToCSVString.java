@@ -18,7 +18,7 @@ public class ConvertRowToCSVString implements Function<Row, String> {
 				val = Double.parseDouble(arg0.get(i).toString());
 			}
 			catch(Exception e) {
-				throw new Exception("Only double types are supported as input to SystemML");
+				throw new Exception("Only double types are supported as input to SystemML. The input argument is \'" + arg0.get(i) + "\'");
 			}
 			buf.append(val.toString());
 		}

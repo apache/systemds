@@ -24,11 +24,12 @@ public class MMCJ extends Lop
 		
 	/**
 	 * Constructor to perform a cross product operation.
+	 * @param et 
 	 * @param input
 	 * @param op
 	 */
 
-	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt) 
+	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
 		super(Lop.Type.MMCJ, dt, vt);		
 		this.addInput(input1);
@@ -36,16 +37,23 @@ public class MMCJ extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		/*
-		 * This lop can be executed only in MMCJ job.
-		 */
-		
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		lps.addCompatibility(JobType.MMCJ);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-		this.lps.setProducesIntermediateOutput(true);
+		if( et == ExecType.MR )
+		{
+			boolean breaksAlignment = true;
+			boolean aligner = false;
+			boolean definesMRJob = true;
+			lps.addCompatibility(JobType.MMCJ);
+			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProducesIntermediateOutput(true);
+		}
+		else //if( et == ExecType.SPARK )
+		{
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -54,6 +62,7 @@ public class MMCJ extends Lop
 		return "Operation = MMCJ";
 	}
 
+	//MR instruction generation
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index)
 	{
@@ -72,6 +81,22 @@ public class MMCJ extends Lop
 		return sb.toString();
 	}
 
- 
- 
+	//SPARK instruction generation
+	@Override
+	public String getInstructions(String input1, String input2, String output)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( "cpmm" );
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input1));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(input2));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( this.prepOutputOperand(output));
+		
+		return sb.toString();
+	}
 }

@@ -8,8 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -42,7 +40,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
 	@SuppressWarnings("unused")

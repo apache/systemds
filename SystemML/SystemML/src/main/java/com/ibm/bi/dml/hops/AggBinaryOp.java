@@ -171,8 +171,6 @@ public class AggBinaryOp extends Hop
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
 						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), mmtsj, chain);
 			
-				// TODO: Implement left transpose rewrite of CP_MM
-				
 				//dispatch SPARK lops construction 
 				switch( method )
 				{
@@ -711,11 +709,48 @@ public class AggBinaryOp extends Hop
 	private void constructSparkLopsCPMM() 
 		throws HopsException, LopsException
 	{
-		Lop matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.SPARK);
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers( matmultCP );
-		setLops(matmultCP);
+		if( isLeftTransposeRewriteApplicable(false, false) )
+		{
+			setLops( constructSparkLopsCPMMWithLeftTransposeRewrite() );
+		} 
+		else
+		{
+			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+								getDataType(), getValueType(), ExecType.SPARK);
+			setOutputDimensions( cpmm );
+			setLineNumbers( cpmm );
+			setLops( cpmm );
+		}
+	}
+	
+
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructSparkLopsCPMMWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose CP
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix multiply
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mmcj);
+
+		//result transpose CP 
+		Lop out = new Transform(mmcj, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		
+		return out;
 	}
 	
 	/**
@@ -750,7 +785,7 @@ public class AggBinaryOp extends Hop
 	{
 		if( method == MMultMethod.MAPMM_R && isLeftTransposeRewriteApplicable(false, true) )
 		{
-			setLops( constructMapMultMRLopWithLeftTransposeRewrite() );
+			setLops( constructMRLopsMapMMWithLeftTransposeRewrite() );
 		}
 		else //GENERAL CASE
 		{	
@@ -817,7 +852,7 @@ public class AggBinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop constructMapMultMRLopWithLeftTransposeRewrite() 
+	private Lop constructMRLopsMapMMWithLeftTransposeRewrite() 
 		throws HopsException, LopsException
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
@@ -942,12 +977,12 @@ public class AggBinaryOp extends Hop
 	{
 		if( isLeftTransposeRewriteApplicable(false, false) )
 		{
-			setLops( constructMMCJMRLopWithLeftTransposeRewrite() );
+			setLops( constructMRLopsCPMMWithLeftTransposeRewrite() );
 		} 
 		else //general case
 		{
 			MMCJ mmcj = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-					             getDataType(), getValueType());
+					             getDataType(), getValueType(), ExecType.MR);
 			mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mmcj);
 			
@@ -965,6 +1000,47 @@ public class AggBinaryOp extends Hop
 			setLops(agg1);
 		}
 	} 
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructMRLopsCPMMWithLeftTransposeRewrite() 
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+		
+		//right vector transpose CP
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+		
+		//matrix multiply
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), ExecType.MR);
+		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mmcj);
+		
+		Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
+		grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(grp);
+		
+		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
+		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(agg1);
+		
+		// aggregation uses kahanSum but the inputs do not have correction values
+		agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+
+		
+		//result transpose CP 
+		Lop out = new Transform(agg1, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		
+		return out;
+	}
 	
 	/**
 	 * 
@@ -1156,47 +1232,6 @@ public class AggBinaryOp extends Hop
 		}
 		
 		return ret;
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws HopsException
-	 * @throws LopsException
-	 */
-	private Lop constructMMCJMRLopWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
-	{
-		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
-		Hop Y = getInput().get(1);
-		
-		//right vector transpose CP
-		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
-		setLineNumbers(tY);
-		
-		//matrix multiply
-		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType());
-		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(mmcj);
-		
-		Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
-		grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(grp);
-		
-		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		setLineNumbers(agg1);
-		
-		// aggregation uses kahanSum but the inputs do not have correction values
-		agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-
-		
-		//result transpose CP 
-		Lop out = new Transform(agg1, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-		
-		return out;
 	}
 	
 	/**

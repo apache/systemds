@@ -7,81 +7,71 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.PairFunction;
+
+import scala.Tuple2;
+
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.COV;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
-public class CpmmSPInstruction extends BinarySPInstruction {
+/**
+ * Cpmm: cross-product matrix multiplication operation (distributed matrix multiply
+ * by join over common dimension and subsequent aggregation of partial results).
+ * 
+ * NOTE: There is additional optimization potential by preventing aggregation for a single
+ * block on the common dimension. However, in such a case we would never pick cpmm because
+ * this would result in a degree of parallelism of 1.	
+ * 
+ */
+public class CpmmSPInstruction extends BinarySPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CpmmSPInstruction(Operator op, 
-										CPOperand in1, 
-										CPOperand in2, 
-										CPOperand out, 
-										String opcode,
-										String istr ){
+	public CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
+	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.CPMM;
 	}
-	
-	public CpmmSPInstruction(Operator op, 
-			CPOperand in1, 
-			CPOperand in2, 
-			CPOperand in3, 
-			CPOperand out,
-			String opcode,
-			String istr ){
-		super(op, in1, in2, in3, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.CPMM;
-	}
 
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public static CpmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = null;
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
 		String opcode = InstructionUtils.getOpCode(str);
 
-		if ( opcode.equalsIgnoreCase("ba+*")) {
+		if ( opcode.equalsIgnoreCase("cpmm")) {
 			parseBinaryInstruction(str, in1, in2, out);
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			return new CpmmSPInstruction(aggbin, in1, in2, out, opcode, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("cov")) {
-			COVOperator cov = new COVOperator(COV.getCOMFnObject());
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			if ( parts.length == 4 ) {
-				// CP.cov.mVar0.mVar1.mVar2
-				parseBinaryInstruction(str, in1, in2, out);
-				return new CpmmSPInstruction(cov, in1, in2, out, opcode, str);
-			} else if ( parts.length == 5 ) {
-				// CP.cov.mVar0.mVar1.mVar2.mVar3
-				in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-				parseBinaryInstruction(str, in1, in2, in3, out);
-				return new CpmmSPInstruction(cov, in1, in2, in3, out, opcode, str);
-			}
-			else {
-				throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);
-			}
-		}
 		else {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
@@ -92,80 +82,87 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
-		String opcode = getOpcode();
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-		String output_name = output.getName(); 
+		//get rdd inputs
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		
-		if ( opcode.equalsIgnoreCase("ba+*")) {
-			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
-			
-			//release inputs/outputs
-			ec.releaseMatrixInput(input1.getName());
-			ec.releaseMatrixInput(input2.getName());
-			
-			// Checking the dimensionality
-			MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mc1 = ec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mc2 = ec.getMatrixCharacteristics(input2.getName());
-			if(!mcOut.dimsKnown()) { 
-				if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
-					throw new DMLRuntimeException("The output dimensions are not specified for MMCJSPInstruction");
-				else if(mc1.getCols() != mc2.getRows())
-					throw new DMLRuntimeException("Incompatible dimensions for MMCJSPInstruction");
-				else {
-					mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				}
-			}
+		//process core instruction 
+		JavaPairRDD<Long, IndexedMatrixValue> tmp1 = in1.mapToPair(new CpmmIndexFunction(true));
+		JavaPairRDD<Long, IndexedMatrixValue> tmp2 = in2.mapToPair(new CpmmIndexFunction(false));
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = tmp1
+				   .join( tmp2 )                                       // join over common dimension
+				   .mapToPair(new CpmmMultiplyFunction())              // compute block multiplications
+				   .reduceByKey(new AggregateSumMultiBlockFunction()); // aggregation per result block
+		
+		//put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.addLineageRDD(output.getName(), input2.getName());
+		
+		//update output statistics if not inferred
+		updateOutputMatrixCharacteristics(sec);
+	}
+	
+	/**
+	 * 
+	 * 
+	 */
+	private static class CpmmIndexFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, IndexedMatrixValue>  
+	{
+		private static final long serialVersionUID = -1187183128301671162L;
 
-			ec.setMatrixOutput(output_name, soresBlock);
+		private boolean _left = false;
+		
+		public CpmmIndexFunction( boolean left ) {
+			_left = left;
+		}
+		
+		@Override
+		public Tuple2<Long, IndexedMatrixValue> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+			throws Exception 
+		{
+			IndexedMatrixValue value = new IndexedMatrixValue();
+			value.set(arg0._1(), new MatrixBlock(arg0._2()));
 			
-		} 
-		else if ( opcode.equalsIgnoreCase("cov") ) {
-			throw new DMLRuntimeException("cov instruction not implemented");
-//			COVOperator cov_op = (COVOperator)_optr;
-//			CM_COV_Object covobj = new CM_COV_Object();
-//			
-//			if ( input3 == null ) 
-//			{
-//				// Unweighted: cov.mvar0.mvar1.out
-//				covobj = matBlock1.covOperations(cov_op, matBlock2);
-//				
-//				ec.releaseMatrixInput(input1.getName());
-//				ec.releaseMatrixInput(input2.getName());
-//			}
-//			else 
-//			{
-//				throw new DMLRuntimeException("cov instruction not implemented");
-//				// Weighted: cov.mvar0.mvar1.weights.out
-//		        MatrixBlock wtBlock = ec.getMatrixInput(input3.getName());
-//				
-//				covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
-//				
-//				ec.releaseMatrixInput(input1.getName());
-//				ec.releaseMatrixInput(input2.getName());
-//				ec.releaseMatrixInput(input3.getName());
-//			}
-//			double val = covobj.getRequiredResult(_optr);
-//			DoubleObject ret = new DoubleObject(output_name, val);
-//			
-//			ec.setScalarOutput(output_name, ret);
-		}
-		else {
-			throw new DMLRuntimeException("Unknown opcode in Instruction: " + toString());
-		}
+			Long key = _left ? arg0._1.getColumnIndex() : arg0._1.getRowIndex();
+			return new Tuple2<Long, IndexedMatrixValue>(key, value);
+		}	
 	}
 
 	/**
-	 * NOTE: This method is only used for experiments.
 	 * 
-	 * @return
+	 *
 	 */
-	@Deprecated
-	public AggregateBinaryOperator getAggregateOperator()
+	private static class CpmmMultiplyFunction implements PairFunction<Tuple2<Long, Tuple2<IndexedMatrixValue,IndexedMatrixValue>>, MatrixIndexes, MatrixBlock> 
 	{
-		return (AggregateBinaryOperator) _optr;
+		private static final long serialVersionUID = -2009255629093036642L;
+		
+		private AggregateBinaryOperator _op = null;
+		
+		public CpmmMultiplyFunction()
+		{
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<Long, Tuple2<IndexedMatrixValue, IndexedMatrixValue>> arg0)
+			throws Exception 
+		{
+			MatrixBlock blkIn1 = (MatrixBlock)arg0._2()._1().getValue();
+			MatrixBlock blkIn2 = (MatrixBlock)arg0._2()._2().getValue();
+			MatrixIndexes ixOut = new MatrixIndexes();
+			MatrixBlock blkOut = new MatrixBlock();
+			
+			//core block matrix multiplication 
+			blkIn1.aggregateBinaryOperations(blkIn1, blkIn2, blkOut, _op);
+			
+			//return target block
+			ixOut.setIndexes(arg0._2()._1().getIndexes().getRowIndex(), 
+					         arg0._2()._2().getIndexes().getColumnIndex());
+			return new Tuple2<MatrixIndexes, MatrixBlock>( ixOut, blkOut );
+		}
 	}
 }

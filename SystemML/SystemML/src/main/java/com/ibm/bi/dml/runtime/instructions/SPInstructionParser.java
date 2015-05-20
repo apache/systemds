@@ -46,11 +46,11 @@ public class SPInstructionParser extends InstructionParser {
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
 		//matrix multiplication operators
-		String2SPInstructionType.put( "ba+*"   	, SPINSTRUCTION_TYPE.CPMM);
-		String2SPInstructionType.put( "mapmm"   , SPINSTRUCTION_TYPE.MAPMM);
+		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
 		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
-		String2SPInstructionType.put( "tsmm"    , SPINSTRUCTION_TYPE.TSMM);
-		String2SPInstructionType.put( "rmm"    , SPINSTRUCTION_TYPE.RMM);
+		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
+		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
+		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
 		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);

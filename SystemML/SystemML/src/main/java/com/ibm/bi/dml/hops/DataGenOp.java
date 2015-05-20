@@ -128,8 +128,10 @@ public class DataGenOp extends Hop
 		{
 			ExecType et = optFindExecType();
 			if(et == ExecType.SPARK) {
-				// throw new Exception
-				et = ExecType.CP;
+				//current there is no support for spark datagen operations; in order to enable
+				//experiments on large scale data we temporarily redirect to mr jobs
+				//et = ExecType.MR;
+				et = ExecType.CP; // FIXME needs CP here, otherwise errors in piggybacking
 			}
 			
 			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();

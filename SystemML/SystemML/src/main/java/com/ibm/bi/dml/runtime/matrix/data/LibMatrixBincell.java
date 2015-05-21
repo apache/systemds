@@ -40,6 +40,7 @@ public class LibMatrixBincell
 		MATRIX_MATRIX,
 		MATRIX_COL_VECTOR,
 		MATRIX_ROW_VECTOR,
+		OUTER_VECTOR_VECTOR,
 		INVALID,
 	}
 	
@@ -125,8 +126,10 @@ public class LibMatrixBincell
 			return BinaryAccessType.MATRIX_MATRIX;
 		else if( clen1 > 1 && clen2 == 1 )
 			return BinaryAccessType.MATRIX_COL_VECTOR;
-		else if( rlen1 > 1 && rlen2 == 1 )
+		else if( rlen1 > 1 && clen1 > 1 && rlen2 == 1 )
 			return BinaryAccessType.MATRIX_ROW_VECTOR;
+		else if( clen1 == 1 && rlen2 == 1 )
+			return BinaryAccessType.OUTER_VECTOR_VECTOR;
 		else
 			return BinaryAccessType.INVALID;
 	}
@@ -146,11 +149,16 @@ public class LibMatrixBincell
 		int rlen2 = m2.rlen;
 		int clen2 = m2.clen;
 		
-		//currently we support MM (where both dimensions need to match) and
-		//MV operations w/ V always being a column vector (where row dimensions 
-		//need to match, and the second input has exactly 1 column)
-		return (   ( rlen1 == rlen2 || (rlen1 > 1 && rlen2 == 1) ) 
-				&& ( clen1 == clen2 || (clen1 > 1 && clen2 == 1) ) );
+		//currently we support three major binary cellwise operations:
+		//1) MM (where both dimensions need to match)
+		//2) MV operations w/ V either being a right-hand-side column or row vector 
+		//  (where one dimension needs to match and the other dimension is 1)
+		//3) VV outer vector operations w/ a common dimension of 1 
+		
+		return (   (rlen1 == rlen2 && clen1==clen2)            //MM 
+				|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) //MVc
+				|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
+				|| (clen1 == 1 && rlen2 == 1 ) );              //VV
 	}
 	
 	//////////////////////////////////////////////////////
@@ -187,6 +195,10 @@ public class LibMatrixBincell
 			else //generic combinations
 				safeBinaryMVGeneric(m1, m2, ret, op);
 		}	
+		else if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR ) //VECTOR - VECTOR
+		{
+			safeBinaryVVGeneric(m1, m2, ret, op);
+		}
 		else //MATRIX - MATRIX
 		{
 			if(m1.sparse && m2.sparse)
@@ -637,6 +649,32 @@ public class LibMatrixBincell
 		//no need to recomputeNonZeros since maintained in append value
 	}
 	
+	private static void safeBinaryVVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
+		throws DMLRuntimeException 
+	{
+		int rlen = m1.rlen;
+		int clen = m2.clen;
+		
+		//allocate once in order to prevent repeated reallocation 
+		if( ret.sparse )
+			ret.allocateSparseRowsBlock();
+		
+		//TODO performance improvement for relational operations like ">"
+		//sort rhs by val, compute cutoff and memset 1/0 for halfs
+
+		for(int r=0; r<rlen; r++) {
+			double v1 = m1.quickGetValue(r, 0);		
+			for(int c=0; c<clen; c++)
+			{
+				double v2 = m2.quickGetValue(0, c);
+				double v = op.fn.execute( v1, v2 );
+				ret.appendValue(r, c, v);	
+			}
+		}	
+			
+		//no need to recomputeNonZeros since maintained in append value
+	}
+	
 	/**
 	 * 
 	 * @param m1
@@ -677,6 +715,23 @@ public class LibMatrixBincell
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValue(r, c, v);
 				}
+		}
+		else if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR ) //VECTOR - VECTOR
+		{
+			int clen2 = m2.clen; 
+			
+			//TODO performance improvement for relational operations like ">"
+			//sort rhs by val, compute cutoff and memset 1/0 for halfs
+	
+			for(int r=0; r<rlen; r++) {
+				double v1 = m1.quickGetValue(r, 0);		
+				for(int c=0; c<clen2; c++)
+				{
+					double v2 = m2.quickGetValue(0, c);
+					double v = op.fn.execute( v1, v2 );
+					ret.appendValue(r, c, v);	
+				}
+			}
 		}
 		else // MATRIX - MATRIX
 		{

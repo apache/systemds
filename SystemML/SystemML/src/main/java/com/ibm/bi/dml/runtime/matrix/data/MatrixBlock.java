@@ -2632,44 +2632,52 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		*/
 	}
 	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param op
+	 * @return
+	 */
 	private static SparsityEstimate estimateSparsityOnBinary(MatrixBlock m1, MatrixBlock m2, BinaryOperator op)
 	{
 		SparsityEstimate est=new SparsityEstimate();
 		
 		//if result is a column vector, use dense format, otherwise use the normal process to decide 
-		if(!op.sparseSafe )
-		{
-			est.sparse=false;
+		if(!op.sparseSafe ) {
+			est.sparse = false;
 			return est;
 		}
 		
-		double m=m1.getNumRows();
-		double n=m1.getNumColumns();
-		double nz1=m1.getNonZeros();
-		double nz2=m2.getNonZeros();
-		
-		//account for matrix vector
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
-		if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
-			nz2 = nz2 * n;
-		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
-			nz2 = nz2 * m;
+		boolean outer = (atype == BinaryAccessType.OUTER_VECTOR_VECTOR);
+		long m = m1.getNumRows();
+		long n = outer ? m2.getNumColumns() : m1.getNumColumns();
+		long nz1 = m1.getNonZeros();
+		long nz2 = m2.getNonZeros();
 		
-		double estimated=0;
-		if(op.fn instanceof And || op.fn instanceof Multiply)//p*q
+		//account for matrix vector and vector/vector
+		long estnnz = 0;
+		if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR )
 		{
-			estimated = Math.min(nz1, nz2)/m/n; //worstcase wrt overlap
-			//estimated=nz1/n/m*nz2/n/m;
+			//for outer vector operations the sparsity estimate is exactly known
+			estnnz = nz1 * nz2; 
+		}
+		else //DEFAULT CASE
+		{		
+			if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
+				nz2 = nz2 * n;
+			else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
+				nz2 = nz2 * m;
 			
-		}
-		else //1-(1-p)*(1-q)
-		{
-			estimated = (nz1+nz2)/m/n; //worstcase wrt operation
-			//estimated=1-(1-nz1/n/m)*(1-nz2/n/m);
+			if(op.fn instanceof And || op.fn instanceof Multiply)
+				estnnz = Math.min(nz1, nz2); //worstcase wrt overlap
+			else
+				estnnz = nz1+nz2; //worstcase wrt operation
 		}
 		
-		est.sparse = evalSparseFormatInMemory((long)m,(long)n,(long)(estimated*m*n));
-		est.estimatedNonZeros=(int)(estimated*m*n);
+		est.sparse = evalSparseFormatInMemory(m, n, estnnz);
+		est.estimatedNonZeros = estnnz;
 		
 		return est;
 	}
@@ -2854,12 +2862,18 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					"cell operations: "+this.rlen+"x"+this.clen+" vs "+ that.rlen+"x"+that.clen);
 		}
 		
+		//compute output dimensions
+		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
+				         == BinaryAccessType.OUTER_VECTOR_VECTOR); 
+		int rows = rlen;
+		int cols = outer ? that.clen : clen;
+		
 		//estimate output sparsity
 		SparsityEstimate resultSparse = estimateSparsityOnBinary(this, that, op);
 		if( ret == null )
-			ret = new MatrixBlock(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
+			ret = new MatrixBlock(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		else
-			ret.reset(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
+			ret.reset(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
 		//core binary cell operation
 		LibMatrixBincell.bincellOp( this, that, ret, op );

@@ -12,6 +12,7 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -23,6 +24,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -45,10 +47,13 @@ public class CpmmSPInstruction extends BinarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
+	private SparkAggType _aggtype;
+	
+	public CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, SparkAggType aggtype, String opcode, String istr )
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.CPMM;
+		_aggtype = aggtype;
 	}
 
 	/**
@@ -64,13 +69,18 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
 		if ( opcode.equalsIgnoreCase("cpmm")) {
-			parseBinaryInstruction(str, in1, in2, out);
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			out.split(parts[3]);
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-			return new CpmmSPInstruction(aggbin, in1, in2, out, opcode, str);
+			SparkAggType aggtype = SparkAggType.valueOf(parts[4]);
+			
+			return new CpmmSPInstruction(aggbin, in1, in2, out, aggtype, opcode, str);
 		} 
 		else {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -88,18 +98,31 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		
-		//process core instruction 
+		//process core cpmm matrix multiply 
 		JavaPairRDD<Long, IndexedMatrixValue> tmp1 = in1.mapToPair(new CpmmIndexFunction(true));
 		JavaPairRDD<Long, IndexedMatrixValue> tmp2 = in2.mapToPair(new CpmmIndexFunction(false));
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = tmp1
-				   .join( tmp2 )                                       // join over common dimension
-				   .mapToPair(new CpmmMultiplyFunction())              // compute block multiplications
-				   .reduceByKey(new AggregateSumMultiBlockFunction()); // aggregation per result block
-		
-		//put output RDD handle into symbol table
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());
+				   .join( tmp2 )                            // join over common dimension
+				   .mapToPair(new CpmmMultiplyFunction());  // compute block multiplications
+				   
+		//process cpmm aggregation and handle outputs				
+		if( _aggtype == SparkAggType.SINGLE_BLOCK )
+		{
+			MatrixBlock out2 = out.values()
+		           .reduce(new AggregateSumSingleBlockFunction());
+			
+			//put output block into symbol table (no lineage because single block)
+			sec.setMatrixOutput(output.getName(), out2);	
+		}
+		else //DEFAULT: MULTI_BLOCK
+		{
+			out = out.reduceByKey(new AggregateSumMultiBlockFunction()); 
+			
+			//put output RDD handle into symbol table
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+			sec.addLineageRDD(output.getName(), input2.getName());		
+		}
 		
 		//update output statistics if not inferred
 		updateOutputMatrixCharacteristics(sec);

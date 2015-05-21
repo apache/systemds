@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -21,6 +22,9 @@ public class MMCJ extends Lop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
+	//optional attribute for spark exec type
+	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 		
 	/**
 	 * Constructor to perform a cross product operation.
@@ -56,6 +60,23 @@ public class MMCJ extends Lop
 		}
 	}
 
+	/**
+	 * 
+	 * @param input1
+	 * @param input2
+	 * @param dt
+	 * @param vt
+	 * @param aggtype
+	 * @param et
+	 */
+	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) 
+	{
+		this(input1, input2, dt, vt, et);
+		
+		_aggtype = aggtype;
+	}
+	
+	
 	@Override
 	public String toString() {
 	
@@ -91,12 +112,15 @@ public class MMCJ extends Lop
 		sb.append( "cpmm" );
 		sb.append( OPERAND_DELIMITOR );
 		
-		sb.append( getInputs().get(0).prepInputOperand(input1));
+		sb.append( getInputs().get(0).prepInputOperand(input1) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input2));
+		sb.append( getInputs().get(1).prepInputOperand(input2) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
+		sb.append( this.prepOutputOperand(output) );
 		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _aggtype );
+				
 		return sb.toString();
 	}
 }

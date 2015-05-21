@@ -715,8 +715,10 @@ public class AggBinaryOp extends Hop
 		} 
 		else
 		{
+			SparkAggType aggtype = getSparkMMAggregationType(true);
+			
 			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-								getDataType(), getValueType(), ExecType.SPARK);
+								getDataType(), getValueType(), aggtype, ExecType.SPARK);
 			setOutputDimensions( cpmm );
 			setLineNumbers( cpmm );
 			setLops( cpmm );
@@ -733,6 +735,8 @@ public class AggBinaryOp extends Hop
 	private Lop constructSparkLopsCPMMWithLeftTransposeRewrite() 
 		throws HopsException, LopsException
 	{
+		SparkAggType aggtype = getSparkMMAggregationType(true);
+		
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
 		
@@ -742,7 +746,7 @@ public class AggBinaryOp extends Hop
 		setLineNumbers(tY);
 		
 		//matrix multiply
-		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), aggtype, ExecType.SPARK);
 		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mmcj);
 

@@ -3128,6 +3128,17 @@ public class DMLTranslator
 			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
 			currBuiltinOp.setForcedExecType(ExecType.CP);
 			break;
+		
+		case OUTER:
+			if( !(expr3 instanceof LiteralOp) )
+				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);			
+			OpOp2 op = Hop.getOpOp2ForOuterVectorOperation(((LiteralOp)expr3).getStringValue());
+			if( op == null )
+				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
+			
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, expr, expr2);
+			((BinaryOp)currBuiltinOp).setOuterVectorOperation(true); //flag op as specific outer vector operation
+			break;
 			
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());

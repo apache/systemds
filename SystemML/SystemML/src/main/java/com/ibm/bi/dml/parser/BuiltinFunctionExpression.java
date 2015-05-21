@@ -838,6 +838,26 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(in.getRowsInBlock(), in.getColumnsInBlock());
 			break;
 			
+		case OUTER:
+			Identifier id2 = this.getSecondExpr().getOutput();
+			
+			//check input types and characteristics
+			checkNumParameters(3);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkScalarParam(getThirdExpr());
+			checkValueTypeParam(getThirdExpr(), ValueType.STRING);
+			if( id.getDim2() > 1 || id2.getDim1()>1 ) {
+				raiseValidateError("Outer vector operations require a common dimension of one: " +
+			                       id.getDim1()+"x"+id.getDim2()+" o "+id2.getDim1()+"x"+id2.getDim2()+".", false);
+			}
+			
+			//set output characteristics
+			output.setDataType(id.getDataType());
+			output.setDimensions(id.getDim1(), id2.getDim2());
+			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
+			break;
+			
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -1251,7 +1271,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.MEDIAN;
 		else if (functionName.equals("inv"))
 			bifop = Expression.BuiltinFunctionOp.INVERSE;
-		
+		else if ( functionName.equals("outer") )
+			bifop = Expression.BuiltinFunctionOp.OUTER;
 		else
 			return null;
 		

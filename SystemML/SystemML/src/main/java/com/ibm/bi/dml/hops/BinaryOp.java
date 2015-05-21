@@ -67,7 +67,8 @@ public class BinaryOp extends Hop
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 	
 	private Hop.OpOp2 op;
-
+	private boolean outer = false;
+	
 	private enum AppendMethod { 
 		CP_APPEND, //in-memory general case append
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
@@ -106,6 +107,14 @@ public class BinaryOp extends Hop
 	
 	public void setOp(OpOp2 iop) {
 		 op = iop;
+	}
+	
+	public void setOuterVectorOperation(boolean flag) {
+		outer = flag;
+	}
+	
+	public boolean isOuterVectorOperator(){
+		return outer;
 	}
 	
 	@Override
@@ -1825,6 +1834,7 @@ public class BinaryOp extends Hop
 		
 		//copy specific attributes
 		ret.op = op;
+		ret.outer = outer;
 		
 		return ret;
 	}
@@ -1837,6 +1847,7 @@ public class BinaryOp extends Hop
 		
 		BinaryOp that2 = (BinaryOp)that;
 		return (   op == that2.op
+				&& outer == that2.outer
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1));
 	}

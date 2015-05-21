@@ -69,6 +69,7 @@ public abstract class Expression
 		MOMENT, 
 		NCOL, 
 		NROW,
+		OUTER,
 		PPRED, 
 		PROD,
 		QUANTILE,

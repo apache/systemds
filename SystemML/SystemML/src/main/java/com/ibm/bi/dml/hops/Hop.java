@@ -1261,6 +1261,35 @@ public abstract class Hop
 		op == OpOp2.OR;
 	}
 	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 
+	{
+		if( "+".equals(op) ) return OpOp2.PLUS;
+		else if( "-".equals(op) ) return OpOp2.MINUS;
+		else if( "*".equals(op) ) return OpOp2.MULT;
+		else if( "/".equals(op) ) return OpOp2.DIV;
+		else if( "%%".equals(op) ) return OpOp2.MODULUS;
+		else if( "%/%".equals(op) ) return OpOp2.INTDIV;
+		else if( "min".equals(op) ) return OpOp2.MIN;
+		else if( "max".equals(op) ) return OpOp2.MAX;
+		else if( "<=".equals(op) ) return OpOp2.LESSEQUAL;
+		else if( "<".equals(op) ) return OpOp2.LESS;
+		else if( ">=".equals(op) ) return OpOp2.GREATEREQUAL;
+		else if( ">".equals(op) ) return OpOp2.GREATER;
+		else if( "=".equals(op) ) return OpOp2.EQUAL;
+		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
+		else if( "|".equals(op) ) return OpOp2.OR;
+		else if( "&".equals(op) ) return OpOp2.AND;
+		else if( "log".equals(op) ) return OpOp2.LOG;
+		else if( "^".equals(op) ) return OpOp2.POW;
+		
+		return null;		
+	}
+	
 	public static ValueType getResultValueType(ValueType vt1, ValueType vt2)
 	{
 		if(vt1 == ValueType.STRING || vt2  == ValueType.STRING)

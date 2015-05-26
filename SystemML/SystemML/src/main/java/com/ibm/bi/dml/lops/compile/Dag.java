@@ -2395,18 +2395,19 @@ public class Dag<N extends Lop>
 	@SuppressWarnings("unchecked")
 	private boolean hasOtherMapAndReduceParentNode(N tmpNode,
 			ArrayList<N> nodeList, N node) {
+		
+		if ( tmpNode.getExecLocation() == ExecLocation.MapAndReduce)
+			return true;
+		
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
 
-			if (nodeList.contains(n) && !n.equals(node)
-					&& n.getExecLocation() == ExecLocation.MapAndReduce
-					&& isChild(n, node, IDMap)) {
-				return true;
-			} else {
-				if (hasOtherMapAndReduceParentNode(n, nodeList, node))
+			if ( nodeList.contains(n) && isChild(n,node,IDMap)) {
+				if(!n.equals(node) && n.getExecLocation() == ExecLocation.MapAndReduce)
 					return true;
+				else
+					return hasOtherMapAndReduceParentNode(n, nodeList, node);
 			}
-
 		}
 
 		return false;

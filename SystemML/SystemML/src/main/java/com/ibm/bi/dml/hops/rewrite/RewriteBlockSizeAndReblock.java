@@ -39,6 +39,11 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if( roots == null )
 			return null;
 		
+		//maintain rewrite status
+		if( isReblockValid() )
+			state.setBlocksize(DMLTranslator.DMLBlockSize);
+		
+		//perform reblock and blocksize rewrite
 		for( Hop h : roots ) 
 			rule_BlockSizeAndReblock(h, DMLTranslator.DMLBlockSize);
 		
@@ -49,8 +54,15 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{
-		if( root != null )
-			rule_BlockSizeAndReblock(root, DMLTranslator.DMLBlockSize);
+		if( root == null )
+			return null;
+		
+		//maintain rewrite status
+		if( isReblockValid() )
+			state.setBlocksize(DMLTranslator.DMLBlockSize);
+		
+		//perform reblock and blocksize rewrite
+		rule_BlockSizeAndReblock(root, DMLTranslator.DMLBlockSize);
 		
 		return root;
 	}
@@ -64,8 +76,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				rule_BlockSizeAndReblock(hi, GLOBAL_BLOCKSIZE);
 		}
 
-		// boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK);
-		boolean canReblock = ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
+		boolean canReblock = isReblockValid();
 		
 		if (hop instanceof DataOp) 
 		{
@@ -203,5 +214,13 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 
 		hop.setVisited(Hop.VisitStatus.DONE);
 
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private static boolean isReblockValid() {
+		return ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
 	}
 }

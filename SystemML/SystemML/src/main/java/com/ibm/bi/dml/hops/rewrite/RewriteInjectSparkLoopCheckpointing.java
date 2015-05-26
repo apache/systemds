@@ -58,6 +58,8 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 		
 		//TODO keep meta data at symbol table level about 
 		
+		int blocksize = state.getBlocksize(); //blocksize set by reblock rewrite
+		
 		//apply rewrite for while and for (the decision for parfor loops is deferred until parfor
 		//optimization because otherwise we would prevent remote parfor)
 		//TODO this needs a more detailed treatment, which will be introduced with the generalization of reblockop/dataop 
@@ -88,9 +90,9 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), dat.getRowsInBlock(), dat.getColumnsInBlock());
 					DataOp chkpoint = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, 
 							            new LiteralOp(null,Checkpoint.getDefaultStorageLevelString()), DataOpTypes.CHECKPOINT, null);				
-					HopRewriteUtils.setOutputParameters(chkpoint, dat.getDim1(), dat.getDim2(), dat.getRowsInBlock(), dat.getColumnsInBlock(), dat.getNnz());
+					HopRewriteUtils.setOutputParameters(chkpoint, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());
 					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, chkpoint, DataOpTypes.TRANSIENTWRITE, null);
-					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), dat.getRowsInBlock(), dat.getColumnsInBlock(), dat.getNnz());
+					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());
 					hops.add(twrite);
 					livein.addVariable(var, read.getVariable(var));
 					liveout.addVariable(var, read.getVariable(var));

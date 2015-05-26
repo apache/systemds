@@ -16,6 +16,7 @@ public class ProgramRewriteStatus
 	//private boolean _rmHopsCSE  = false; //removed hops during common subexpression elimination
 	//private boolean _rmHopsCF   = false; //removed hops during constant folding
 	private boolean _rmBranches = false; //removed branches
+	private int _blkSize = -1;
 	
 	public ProgramRewriteStatus()
 	{
@@ -30,5 +31,13 @@ public class ProgramRewriteStatus
 	
 	public boolean getRemovedBranches(){
 		return _rmBranches;
+	}
+	
+	public void setBlocksize( int blkSize ){
+		_blkSize = blkSize;
+	}
+	
+	public int getBlocksize() {
+		return _blkSize;
 	}
 }

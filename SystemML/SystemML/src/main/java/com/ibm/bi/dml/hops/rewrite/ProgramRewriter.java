@@ -97,8 +97,8 @@ public class ProgramRewriter
  			if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
-				_sbRuleSet.add(  new RewriteForLoopVectorization()               );
- 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing()            );
+				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
+ 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing()            ); //dependency: reblock (blocksizes)
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

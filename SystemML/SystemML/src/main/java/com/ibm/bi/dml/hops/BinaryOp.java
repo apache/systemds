@@ -80,6 +80,7 @@ public class BinaryOp extends Hop
 		CP_BINARY,
 		MR_BINARY_R, //both mm, mv 
 		MR_BINARY_M, //only mv
+		MR_BINARY_OUTER, //only vv
 		MR_BINARY_UAGG_CHAIN,
 	}
 	
@@ -638,42 +639,65 @@ public class BinaryOp extends Hop
 					setLineNumbers(bin);
 					setLops(bin);
 				}
+				else if( mbin == MMBinaryMethod.MR_BINARY_OUTER )
+				{
+					boolean requiresRepLeft = (right.getDim2() > right.getColsInBlock());
+					boolean requiresRepRight = (left.getDim1() > right.getRowsInBlock());
+					
+					Lop leftLop = left.constructLops();
+					Lop rightLop = right.constructLops();
+					
+					if( requiresRepLeft ) {
+						Lop offset = createOffsetLop(right, true); //ncol of right determines rep of left
+						leftLop = new RepMat(leftLop, offset, true, left.getDataType(), left.getValueType());
+						setOutputDimensions(leftLop);
+						setLineNumbers(leftLop);
+					}
+					
+					if( requiresRepRight ) {
+						Lop offset = createOffsetLop(left, false); //nrow of right determines rep of right
+						rightLop = new RepMat(rightLop, offset, false, right.getDataType(), right.getValueType());
+						setOutputDimensions(rightLop);
+						setLineNumbers(rightLop);
+					}
+				
+					Group group1 = new Group( leftLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group1);
+					setOutputDimensions(group1);
+					
+					Group group2 = new Group( rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group2);
+					setOutputDimensions(group2);
+					
+					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+					setOutputDimensions(binary);
+					setLineNumbers(binary);
+					
+					setLops(binary);
+				}
 				else //MMBinaryMethod.MR_BINARY_R
 				{
 					boolean requiresRep = requiresReplication(left, right);
 					
 					Lop rightLop = right.constructLops();
 					if( requiresRep ) {
-						Lop offset = createOffsetLop(left, true); //ncol of left input (determines num replicates)
+						Lop offset = createOffsetLop(left, (right.getDim2()<=1)); //ncol of left input (determines num replicates)
 						rightLop = new RepMat(rightLop, offset, (right.getDim2()<=1), right.getDataType(), right.getValueType());
-						rightLop.getOutputParameters().setDimensions(right.getDim1(),
-								right.getDim2(), right.getRowsInBlock(),
-								right.getColsInBlock(), right.getNnz());
-						rightLop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						setOutputDimensions(rightLop);
+						setLineNumbers(rightLop);	
 					}
 				
-					// Both operands are matrices
-					Group group1 = new Group(getInput().get(0).constructLops(),
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					group1.getOutputParameters().setDimensions(getDim1(), getDim2(), 
-							getRowsInBlock(),getColsInBlock(), getNnz());
+					Group group1 = new Group(getInput().get(0).constructLops(), Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group1);
+					setOutputDimensions(group1);
 				
-					Group group2 = new Group( rightLop,
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					group2.getOutputParameters().setDimensions(getDim1(), getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
+					Group group2 = new Group( rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group2);
+					setOutputDimensions(group2);
 				
-					
-					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op),
-							getDataType(), getValueType(), et);
-					binary.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+					setLineNumbers(binary);
+					setOutputDimensions(binary);
 					
 					setLops(binary);
 				}
@@ -1306,7 +1330,9 @@ public class BinaryOp extends Hop
 					else {
 						double sp1 = (input1.getNnz()>0 && input1.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.getDim1(), input1.getDim2(), input1.getNnz()) : 1.0;
 						double sp2 = (input2.getNnz()>0 && input2.getDataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input2.getDim1(), input2.getDim2(), input2.getNnz()) : 1.0;
-						sparsity = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true);	
+						//sparsity estimates are conservative in terms of the worstcase behavior, however,
+						//for outer vector operations the average case is equivalent to the worst case.
+						sparsity = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, !outer);
 					}
 				}
 			}
@@ -1383,10 +1409,18 @@ public class BinaryOp extends Hop
 			{
 				//propagate if either input is known, rows need always be identical,
 				//for cols we need to be careful with regard to matrix-vector operations
-				ldim1 = (mc[0].getRows()>0) ? mc[0].getRows() : 
-				        (mc[1].getRows()>1) ? mc[1].getRows() : -1;
-				ldim2 = (mc[0].getCols()>0) ? mc[0].getCols() : 
-					    (mc[1].getCols()>1) ? mc[1].getCols() : -1;
+				if( outer ) //OUTER VECTOR OPERATION
+				{
+					ldim1 = mc[0].getRows();
+					ldim2 = mc[1].getCols();
+				}
+				else //GENERAL CASE
+				{
+					ldim1 = (mc[0].getRows()>0) ? mc[0].getRows() : 
+					        (mc[1].getRows()>1) ? mc[1].getRows() : -1;
+					ldim2 = (mc[0].getCols()>0) ? mc[0].getCols() : 
+						    (mc[1].getCols()>1) ? mc[1].getCols() : -1;
+				}
 				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
 				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
 			}
@@ -1399,7 +1433,9 @@ public class BinaryOp extends Hop
 				}
 				else
 				{
-					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true));
+					//sparsity estimates are conservative in terms of the worstcase behavior, however,
+					//for outer vector operations the average case is equivalent to the worst case.
+					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, !outer));
 					ret = new long[]{ldim1, ldim2, lnnz};
 				}
 			}
@@ -1726,6 +1762,11 @@ public class BinaryOp extends Hop
 		long m1_rpb = left.getRowsInBlock();
 		long m1_cpb = left.getColsInBlock();
 		
+		//MR_BINARY_OUTER only applied if outer vector operation 
+		if( outer ) {
+			return MMBinaryMethod.MR_BINARY_OUTER;
+		}
+		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
 		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
 			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
@@ -1744,6 +1785,7 @@ public class BinaryOp extends Hop
 				return MMBinaryMethod.MR_BINARY_M;		
 		}
 		
+		//MR_BINARY_R as robust fallback strategy
 		return MMBinaryMethod.MR_BINARY_R;
 	}
 	
@@ -1803,11 +1845,19 @@ public class BinaryOp extends Hop
 				{
 					//propagate if either input is known, rows need always be identical,
 					//for cols we need to be careful with regard to matrix-vector operations
-					ldim1 = (input1.getDim1()>0) ? input1.getDim1()
-							: ((input2.getDim1()>1)?input2.getDim1():-1);
-					ldim2 = (input1.getDim2()>0) ? input1.getDim2() 
-							: ((input2.getDim2()>1)?input2.getDim2():-1);
-					lnnz1 = input1.getNnz();
+					if( outer ) //OUTER VECTOR OPERATION
+					{
+						ldim1 = input1.getDim1();
+						ldim2 = input2.getDim2();
+					}
+					else //GENERAL CASE
+					{
+						ldim1 = (input1.getDim1()>0) ? input1.getDim1()
+								: ((input2.getDim1()>1)?input2.getDim1():-1);
+						ldim2 = (input1.getDim2()>0) ? input1.getDim2() 
+								: ((input2.getDim2()>1)?input2.getDim2():-1);
+						lnnz1 = input1.getNnz();
+					}
 				}
 				
 				setDim1( ldim1 );

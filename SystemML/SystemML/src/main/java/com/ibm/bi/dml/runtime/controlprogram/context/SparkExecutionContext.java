@@ -127,7 +127,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
 	}
 	
@@ -195,6 +197,7 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd);
+			rddhandle.setHDFSFile(true);
 			mo.setRDDHandle(rddhandle);
 		}
 		
@@ -314,6 +317,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
+	@SuppressWarnings("unchecked")
 	public static MatrixBlock toMatrixBlock(Object rdd, int rlen, int clen, int brlen, int bclen) 
 		throws DMLRuntimeException
 	{
@@ -368,6 +372,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd
 	 * @param oinfo
 	 */
+	@SuppressWarnings("unchecked")
 	public static void writeRDDtoHDFS( Object rdd, String path, OutputInfo oinfo )
 	{
 		RDDObject rddo = (RDDObject) rdd;

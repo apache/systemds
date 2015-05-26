@@ -8,7 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 public class LineageObject 
 {
@@ -16,8 +16,8 @@ public class LineageObject
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private int _numRef = -1;
-	private Collection<LineageObject> _childs = null;
+	protected int _numRef = -1;
+	protected List<LineageObject> _childs = null;
 	
 	protected LineageObject()
 	{
@@ -40,7 +40,7 @@ public class LineageObject
 		_numRef--;
 	}
 	
-	public Collection<LineageObject> getLineageChilds()
+	public List<LineageObject> getLineageChilds()
 	{
 		return _childs;
 	}

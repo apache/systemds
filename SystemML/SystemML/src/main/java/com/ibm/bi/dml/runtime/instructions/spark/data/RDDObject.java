@@ -17,6 +17,10 @@ public class RDDObject extends LineageObject
 
 	private JavaPairRDD<?,?> _rddHandle = null;
 	
+	//meta data on origin of given rdd handle
+	private boolean _checkpointed = false; //created via checkpoint instruction
+	private boolean _hdfsfile = false;     //created from hdfs file
+	
 	public RDDObject( JavaPairRDD<?,?> rddvar )
 	{
 		_rddHandle = rddvar;
@@ -29,5 +33,41 @@ public class RDDObject extends LineageObject
 	public JavaPairRDD<?,?> getRDD()
 	{
 		return _rddHandle;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean allowsShortCircuitRead()
+	{
+		boolean ret = false;
+		
+		if( isCheckpointRDD() && getLineageChilds().size() == 1 ) {
+			LineageObject lo = getLineageChilds().get(0);
+			ret = ( lo instanceof RDDObject && ((RDDObject)lo).isHDFSFile() );
+		}
+		
+		return ret;
+	}
+	
+	public void setCheckpointRDD( boolean flag )
+	{
+		_checkpointed = flag;
+	}
+	
+	public boolean isCheckpointRDD() 
+	{
+		return _checkpointed;
+	}
+	
+	public void setHDFSFile( boolean flag )
+	{
+		_hdfsfile = flag;
+	}
+	
+	public boolean isHDFSFile()
+	{
+		return _hdfsfile;
 	}
 }

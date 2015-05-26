@@ -449,7 +449,7 @@ public class MatrixObject extends CacheableData
 			{
 				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
-				if( getRDDHandle()==null )
+				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 					_data = readMatrixFromHDFS( _hdfsFileName );
 				else
 					_data = readMatrixFromRDD( getRDDHandle() );
@@ -776,7 +776,7 @@ public class MatrixObject extends CacheableData
 			    //read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				try
 				{
-					if( getRDDHandle()==null )
+					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 						_data = readMatrixFromHDFS( _hdfsFileName );
 					else
 						_data = readMatrixFromRDD( getRDDHandle() );
@@ -1286,7 +1286,7 @@ public class MatrixObject extends CacheableData
 	 * @return
 	 * @throws IOException 
 	 */
-	private MatrixBlock readMatrixFromRDD(Object rdd) 
+	private MatrixBlock readMatrixFromRDD(RDDObject rdd) 
 		throws IOException
 	{
 		//note: the read of a matrix block from an RDD might trigger
@@ -1312,7 +1312,7 @@ public class MatrixObject extends CacheableData
 	 * @param fname
 	 * @param outputFormat
 	 */
-	private void writeMatrixFromRDDtoHDFS(Object rdd, String fname, String outputFormat)
+	private void writeMatrixFromRDDtoHDFS(RDDObject rdd, String fname, String outputFormat)
 	{
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.

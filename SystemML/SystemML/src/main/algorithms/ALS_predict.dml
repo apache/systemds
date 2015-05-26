@@ -1,0 +1,79 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#  
+# THIS SCRIPT COMPUTES THE RATING/SCORE FOR A GIVEN LIST OF PAIRS: (USER-ID, ITEM-ID) USING 2 FACTOR MATRICES L AND R
+# WE ASSUME THAT ALL USERS HAVE RATED AT LEAST ONCE AND ALL ITEMS HAVE BEEN RATED AT LEAST ONCE.
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X       String   ---      The input user-id/item-id list
+# Y	  	  String   ---	    The output user-id/item-id/score
+# L       String   ---      Location of the factor matrix L: user-id x feature-id 
+# R       String   ---      Location to the factor matrix R: feature-id x item-id
+# Vrows   Integer  ---      The number of rows in the original matrix
+# Vcols   Integer  ---      The number of columns in the original matrix
+# fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
+
+fileX      = $X;
+fileY 	   = $Y;
+fileL	   = $L;
+fileR      = $R;
+Vrows	   = $Vrows;
+Vcols	   = $Vcols;	
+fmtO       = ifdef ($fmt, "text");    # $fmt="text";
+
+X = read (fileX);
+L = read (fileL);
+R = read (fileR);
+
+# we assume that the number of columns in X is equal to 2: user-id and item-id
+n = nrow(X);
+m = ncol(X);
+
+if (m != 2){
+	stop("The input matrix must have 2 columns: user-id and item-id");
+}
+
+Lrows = nrow(L);
+Rcols = ncol(R);
+
+X_user_max = max(X[,1]);
+X_item_max = max(X[,2]);
+
+#initializing Y matrix
+Y = matrix(0,rows=n,cols=3);
+
+if ( Lrows > Vrows | Rcols >  Vcols |  X_user_max > Vrows | X_item_max >  Vcols ){
+       stop("Predictions can be provided only if the number of rows and columns of the original matrix have been retained after the factorization and the users and items
+        in the test data are also available in the factor matrices");
+}
+
+
+# user2item table
+UI = table(X[,1],X[,2], Vrows, Vcols);
+
+# summing up over all items for all users
+U = rowSums(UI)
+
+# replacing all rows > 1 with 1
+U =  ppred(U,1,">=");
+
+# selecting users from factor L
+U_prime = L * U;
+
+# removes all rows with 0s
+U_prime = removeEmpty(target=U_prime, margin="rows")
+
+V_prime = (U_prime %*% R);
+
+# Applying items filter
+V_prime = UI * V_prime;
+
+write(V_prime, fileY, format=fmtO);

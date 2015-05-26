@@ -1,0 +1,437 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#  
+# THIS SCRIPT ANALIZES SURVIVAL DATA USING KAPLAN-MEIER ESTIMATES 
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X       String   ---          Location to read the input matrix X containing the survival data with the following schema:
+# 								 - column 1 contains timestamps 
+#								 - column 2 contains the information whether an event occurred (1) or data is censored (0)
+#								 - optionally X can also contain additional g+s columns representing categorical features, where g,s>=0; 
+#   							   g columns are used for grouping and s columns are used for stratifying 				
+# O       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis
+# M       String   ---          Location to write the median and its confidence intervals; 
+#								if survival data for multiple groups and strata are provided each row of S contains the median
+#							    and its confidence interval for a group and a stratum  
+# T 	  String   ---			If survival data from multiple groups available and ttype=log-rank or wilcoxon, 
+#								location to write the matrix containing result of the (stratified) test for comparing multiple groups
+# g       Int 	   0			Number of categorical features in matrix X used for grouping
+# s       Int 	   0		    Number of categorical features in matrix X used for stratifying
+# alpha   Double   0.05         Parameter to compute 100*(1-alpha)% confidence intervals for the survivor function and its median 
+# etype   String   "greenwood"  Parameter to specify the error type according to "greenwood" (the default) or "peto"
+# ctype   String   "log"        Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of 
+#								the confidence interval unmodified,	"log" corresponds to logistic transformation and 
+#								"log-log" corresponds to the complementary log-log transformation 
+# ttype   String   "none"   	If survival data for multiple groups is available specifies which test to perform for comparing 
+#								survival data across multiple groups: "none" (the default) "log-rank" or "wilcoxon" test   
+# fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# 1- An m x (7*n_g+7*n_s) matrix KM with (n_g is the number of groups, n_s is the number of strata, and m is the number of data records): 
+# 	KM[,1]: timestamp
+# 	KM[,2]: no. at risk
+# 	KM[,3]: no. of events
+# 	KM[,4]: Kaplan-Meier estimate of survivor function surv
+# 	KM[,5]: standard error of surv
+# 	KM[,6]: lower 100*(1-alpha)% confidence interval for surv
+# 	KM[,7]: upper 100*(1-alpha)% confidence interval for surv
+# 	If the number of groups and/or the number of strata is greater than 1, KM will have 7*g+7*s columns where each 7 consecutive columns 
+#	summarizes the results for combination of a group and a stratum of the survival data
+# 2- A (n_g+n_s) x 3 matrix S with 
+# 	S[,1]: median of surv
+#	S[,2]: lower 100*(1-alpha)% confidence interval of the median of surv 
+#	S[,3]: upper 100*(1-alpha)% confidence interval of the median of surv
+#	If the number of groups and/or the number of strata is greater than 1, S will have 3*g+3*s rows each corresponding to a combination
+#   of a group and stratum
+# 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T with	
+#	T[1,1] = no. of groups
+#	T[1,2] = degree of freedom for Chi-squared distributed test statistic
+#	T[1,3] = test statistic 
+#	T[1,4] = p-value
+# 4- An n_g x g matrix G where each row corresponds to a unique combination of values in the g categorical features used for grouping 
+# 5- An n_s x s matrix S where each row corresponds to a unique combination of values in the s categorical features used for stratifying	
+# -------------------------------------------------------------------------------------------
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X O=OUTPUT_DIR/O S=OUTPUT_DIR/S
+#     				                 alpha=0.01 rtype=greenwood ctype=log ttype=log-rank fmtO=csv
+
+fileX = $X;
+fileO = $O;
+
+# Default values of some parameters
+fileM = ifdef ($M, " ");				 # $M=" "
+fileT = ifdef ($T, " ");                 # $T=" "
+fmtO = ifdef ($fmt, "text");             # $fmt="text"
+alpha = ifdef ($alpha, 0.05);            # $alpha=0.05
+err_type  = ifdef ($etype, "greenwood"); # $etype="greenwood"
+conf_type = ifdef ($ctype, "log");       # $ctype="log"
+test_type = ifdef ($ttype, "none");      # $ttype="none"
+n_group_cols = ifdef ($g, 0);            # $g=0
+n_stratum_cols = ifdef ($s, 0);          # $s=0
+	
+# check arguments for validity
+if (err_type != "greenwood" & err_type != "peto") { 
+	stop (err_type + " is not a valid error type!");
+}
+
+if (conf_type != "plain" & conf_type != "log" & conf_type != "log-log") { 
+	stop (conf_type + " is not a valid confidence type!");
+}
+
+if (test_type != "log-rank" & test_type != "wilcoxon" & test_type != "none") {
+	stop (test_type + " is not a valid test type!");
+}
+
+if (2 + n_group_cols + n_stratum_cols != ncol (X)) {
+	stop ("X has an incorrect number of columns!");
+}
+
+num_records = nrow (X);
+num_groups = 1;
+num_strata = 1;
+
+### compute group id for each record
+print ("Perform grouping...");
+if (n_group_cols > 0) {
+	for (g in 1:n_group_cols) { # sort columns corresponding to groups sequentially
+		X = order (target = X, by = 2 + g);
+	}
+	Idx = matrix (1, rows = num_records, cols = 1);
+	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),3:(2 + n_group_cols)], X[2:num_records,3:(2 + n_group_cols)], "!="));
+	num_groups = sum (Idx);
+	GB = removeEmpty (target = seq (1,num_records) * Idx, margin = "rows"); # indices of group boundaries
+	A = removeEmpty (target = diag (Idx), margin = "cols");
+	if (ncol (A) > 1) {
+		A[,1:(ncol (A) - 1)] = A[,1:(ncol (A) - 1)] - A[,2:ncol (A)];
+		B = cumsum (A);
+		G = rowSums (B * t (seq (1,num_groups))); # group ids
+	} else { # there is only one group
+		G = matrix (1, rows = num_records, cols = 1);
+	}
+	if (n_stratum_cols > 0) {
+		X = append (append (X[,1:2],G), X[,4:ncol (X)]);
+	} else { # no strata
+		X = append (X[,1:2],G);
+	}
+}
+
+### compute stratum id for each record
+print ("Perform stratifying...");
+if (n_stratum_cols > 0) {
+	for (s in 1:n_stratum_cols) { # sort columns corresponding to strata sequentially
+		X = order (target = X, by = 3 + s);
+	}
+	Idx = matrix (1, rows = num_records, cols = 1);
+	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),4:(3 + n_stratum_cols)], X[2:num_records,4:(3 + n_stratum_cols)], "!="));
+	num_strata = sum (Idx);
+	SB = removeEmpty (target = seq (1,num_records) * Idx, margin = "rows"); # indices of stratum boundaries
+	A = removeEmpty (target = diag (Idx), margin = "cols");
+	if (ncol (A) > 1) {
+		A[,1:(ncol (A) - 1)] = A[,1:(ncol (A) - 1)] - A[,2:ncol (A)];
+		B = cumsum (A);
+		S = rowSums (B * t (seq (1,num_strata))); # stratum ids
+	} else { # there is only one stratum
+		S = matrix (1, rows = num_records, cols = 1);
+	}
+	X = append (X[,1:3],S);
+}
+
+if (n_group_cols == 0 & n_stratum_cols == 0) {
+	X = append (X, matrix (1, rows = num_records, cols = 2));
+	GB = matrix (1, rows = 1, cols = 1);
+	SB = matrix (1, rows = 1, cols = 1);	
+}
+
+######## BEGIN KAPLAN-MEIER ANALYSIS
+print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
+
+KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
+a = 0/0;
+M = matrix (a, rows = num_groups * num_strata, cols = 3);
+z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
+
+if (num_groups > 1 & test_type != "none") { 
+	str = "";
+	TEST = matrix (0, rows = 1, cols = 4);
+	U = matrix (0, rows = num_groups - 1, cols = num_strata);
+	V_sum = matrix (0, rows = num_groups - 1, cols = num_groups - 1);
+}
+
+parfor (s in 1:num_strata, check = 0) {
+# for (s in 1:num_strata, check = 0) {
+	
+	start_ind = as.scalar (SB[s,]);
+	end_ind = num_records;
+	if (s != num_strata) {
+		end_ind = as.scalar (SB[s + 1,]) - 1;
+	} 
+	
+	######## RECODING TIMESTAMPS PRESERVING THE ORDER
+	
+	X_cur = X[start_ind:end_ind,];
+	range = end_ind - start_ind + 1;
+	X_cur = order (target = X_cur, by = 1);
+	Idx = matrix (1, rows = range, cols = 1);
+	
+	num_timestamps = 1;
+	if (range == 1) {
+		RT = matrix (1, rows = 1, cols = 1);
+	} else {
+		Idx[2:range,1] = ppred (X_cur[1:(range - 1),1], X_cur[2:range,1], "!=");
+		num_timestamps = sum (Idx);
+		A = removeEmpty (target = diag (Idx), margin = "cols");
+		if (ncol (A) > 1) {
+			A[,1:(ncol (A) - 1)] = A[,1:(ncol (A) - 1)] - A[,2:ncol (A)];
+			B = cumsum (A);
+			RT = rowSums (B * t (seq (1,num_timestamps))); 
+		} else { # there is only one group
+			RT = matrix (1, rows = range, cols = 1);
+		}
+	}
+	
+	T = X_cur[,1];
+	E = X_cur[,2];
+	G = X_cur[,3];
+	S = X_cur[,4];
+	
+	n_event_stratum = aggregate (target = E, groups = RT, fn = "sum"); # no. of uncensored events per stratum 
+	n_event_all_stratum = aggregate (target = E, groups = RT, fn = "count"); # no. both censored and uncensored of events per stratum 
+	Idx = cumsum (n_event_all_stratum); 
+	time_stratum = table (seq (1, nrow (Idx), 1), Idx) %*% T; # distinct timestamps both censored and uncensored per stratum 
+	n_time_all = nrow (n_event_stratum);  # no. of distinct timestamps both censored and uncensored per stratum
+	n_event_all_stratum_agg = matrix (0, rows = n_time_all, cols = 1); 
+	if (n_time_all > 1) {
+		n_event_all_stratum_agg[2:n_time_all,] = Idx[1:(n_time_all - 1),]; 
+	}
+	n_risk_stratum = range - n_event_all_stratum_agg; # no. at risk per stratum
+
+	if (num_groups > 1 & test_type != "none") {	# needed for log-rank or wilcoxon test	
+		n_risk_n_event_stratum = matrix (0, rows = n_time_all, cols = num_groups * 2);
+	}
+
+	parfor (g in 1:num_groups, check = 0) {
+	# for (g in 1:num_groups, check = 0) {
+	
+		group_ind = ppred (G, g, "==");
+		if (sum (group_ind) != 0) { # group g is present in the stratum s		
+			E_cur = E * group_ind;
+
+			######## COMPUTE NO. AT RISK AND NO.OF EVENTS FOR EACH TIMESTAMP
+			
+			n_event = aggregate (target = E_cur, groups = RT, fn = "sum"); # no. of uncensored events per stratum per group
+			n_event_all = aggregate (target = group_ind, groups = RT, fn = "sum"); # no. of both censored and uncensored events per stratum per group
+			Idx = cumsum (n_event_all); 
+			# time = table (seq (1, nrow (Idx), 1), Idx) %*% T; # distinct timestamps both censored and uncensored per stratum per group	
+			time = removeEmpty (target = time_stratum * ppred (n_event, 0, ">"), margin = "rows");
+			n_time_all = nrow (n_event);  # no. of distinct timestamps both censored and uncensored per stratum per group
+			n_event_all_agg = matrix (0, rows = n_time_all, cols = 1); 
+			if (n_time_all > 1) {
+				n_event_all_agg[2:n_time_all,] = Idx[1:(n_time_all - 1),]; 
+			}
+			n_risk = sum (group_ind) - n_event_all_agg; # no. at risk per stratum per group
+			
+			if (num_groups > 1 & test_type != "none") {
+				n_risk_n_event_stratum[,(g - 1) * 2 + 1] = n_risk;
+				n_risk_n_event_stratum[,(g - 1) * 2 + 2] = n_event;					
+			}
+			
+			# Extract only rows corresponding to events, i.e., for which n_event is nonzero 
+			Idx = ppred (n_event, 0, "!=");
+			KM_1 = matrix (0, rows = n_time_all, cols = 3);
+			KM_1[,1] = time;
+			KM_1[,2] = n_risk;
+			KM_1[,3] = n_event;
+			KM_1 = removeEmpty (target = KM_1 * Idx, margin = "rows");
+			time = KM_1[,1];
+			n_risk = KM_1[,2];
+			n_event = KM_1[,3];
+			n_time = nrow (time);
+			
+			######## ESTIMATE SERVIVOR FUNCTION SURV, ITS STANDARD ERROR SE_SURV, AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL	
+			[surv] = cumulative_product ((n_risk - n_event) / n_risk);
+			tmp = n_event / (n_risk * (n_risk - n_event));
+			se_surv = sqrt (cumsum (tmp)) * surv; 
+			if (err_type == "peto") {
+				se_surv = (surv * sqrt(1 - surv) / sqrt(n_risk));		
+			}
+		
+			if (conf_type == "plain") { 
+				# True survivor function is in [surv +- z_alpha_2 * se_surv], 
+				# values less than 0 are replaced by 0, values larger than 1are replaced by 1!
+				CI_l = max (surv - (z_alpha_2 * se_surv), 0);  
+				CI_r = min (surv + (z_alpha_2 * se_surv), 1); 
+			} else if (conf_type == "log") {
+				# True survivor function is in [surv * exp(+- z_alpha_2 * se_surv / surv)]
+				CI_l = max (surv * exp (- z_alpha_2 * se_surv / surv), 0); 
+				CI_r = min (surv * exp ( z_alpha_2 * se_surv / surv), 1); 
+			} else { # conf_type == "log-log"
+				# True survivor function is in [surv ^ exp(+- z_alpha_2 * se(log(-log(surv))))]
+				CI_l = max (surv ^ exp (- z_alpha_2 * se_surv / log(surv)), 0); 
+				CI_r = min (surv ^ exp ( z_alpha_2 * se_surv / log(surv)), 1);  
+			}	 
+			#
+			if (as.scalar (n_risk[n_time,]) == as.scalar (n_event[n_time,])) {
+				CI_l[n_time,] = 0/0;
+				CI_r[n_time,] = 0/0;
+			}	
+		
+			KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+			KM[1:n_time,KM_offset + 1] = time;
+			KM[1:n_time,KM_offset + 2] = n_risk;			
+			KM[1:n_time,KM_offset + 3] = n_event;
+			KM[1:n_time,KM_offset + 4] = surv;
+			KM[1:n_time,KM_offset + 5] = se_surv;
+			KM[1:n_time,KM_offset + 6] = CI_l;
+			KM[1:n_time,KM_offset + 7] = CI_r;
+			
+			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
+		
+			p_5 = ppred (surv, 0.5, "<="); 
+			pn_5 = sum (p_5);
+			M_offset = (s - 1) * num_groups + g;
+			# if the estimated survivor function is larger than 0.5 for all timestamps median does not exist! 
+			p_5_exists = (pn_5 != 0);
+			if (p_5_exists) {
+				if ( as.scalar (surv[n_time - pn_5 + 1,1]) == 0.5 ) { # if the estimated survivor function is exactly equal to 0.5
+					if (pn_5 > 1) {
+						t_5 = as.scalar ((time[n_time - pn_5 + 1,1] + time[n_time - pn_5 + 2,1])/2);
+					} else {
+						t_5 = as.scalar (time[n_time - pn_5 + 1,1]);
+					}
+				} else {
+					t_5 = as.scalar (time[n_time - pn_5 + 1,1]);
+				}
+		
+				l_ind = ppred (CI_l, 0.5, "<=");
+				r_ind = ppred (CI_r, 0.5, "<=");
+				l_ind_sum = sum (l_ind);
+				r_ind_sum = sum (r_ind);
+				l_min_ind = as.scalar (rowIndexMin (t(l_ind)));
+				r_min_ind = as.scalar (rowIndexMin (t(r_ind)));		
+				if (l_min_ind == n_time) {
+					if (l_ind_sum > 0) {
+						if (as.scalar (l_ind[n_time,1]) == 0) { # NA at last position
+							M[M_offset,2] = time[n_time - l_ind_sum,1];
+						} else {
+							M[M_offset,2] = time[1,1];
+						}
+					}
+				} else {
+					M[M_offset,2] = time[l_min_ind + 1,1];
+				}
+				#
+				if (r_min_ind == n_time) {
+					if (r_ind_sum > 0) {
+						if (as.scalar (r_ind[n_time,1]) == 0) { # NA at last position
+							M[M_offset,3] = time[n_time - r_ind_sum,1];
+						} else {
+							M[M_offset,3] = time[1,1];
+						}
+					}
+				} else {
+					M[M_offset,3] = time[r_min_ind + 1,1];
+				}
+				M[M_offset,1] = t_5;
+			}
+		}		
+	}
+	
+	######## COMPARISON BETWEEN DIFFERENT GROUPS USING LOG-RANK OR WILCOXON TEST
+		
+	if (num_groups > 1 & test_type != "none") {
+
+		V = matrix (0, rows = num_groups - 1, cols = num_groups - 1);
+		parfor (g in 0:(num_groups - 2), check = 0) {
+		# for (g in 0:(num_groups - 2), check = 0) {
+		
+			n_risk = n_risk_n_event_stratum[,g * 2 + 1];			
+			n_event = n_risk_n_event_stratum[,g * 2 + 2];
+		
+			if (test_type == "log-rank") {
+				O = n_event;
+				E = n_risk * n_event_stratum / n_risk_stratum;		
+			} else { ### test_type == "wilcoxon"
+				O = n_risk_stratum * n_event / range;
+				E = n_risk * n_event_stratum / range;
+			}			
+			U[(g + 1),s] = sum (O - E);
+		}
+		
+		parfor (i1 in 0:(num_groups - 2), check = 0) {
+		# for (i1 in 0:(num_groups - 2), check = 0) {
+		
+			n_risk = n_risk_n_event_stratum[,1 + i1 * num_groups * 2]; 
+			n_event = n_risk_n_event_stratum[,2 + i1 * num_groups * 2]; 
+			for (i2 in 0:(num_groups - 2)) {
+				n_risk_i2j = n_risk_n_event_stratum[,1 + i2 * num_groups * 2]; 
+				I_i1i2 = 0;
+				if (i1 == i2) { 
+					I_i1i2 = 1;
+				}
+				if (test_type == "log-rank") {
+					V1 = n_risk * n_event_stratum * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
+					V1 = replace (target = V1, pattern = "NaN", replacement = 0);
+					V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
+					V[(i1 + 1),(i2 + 1)] = sum (V1 * V2);
+				} else { ### test_type == "wilcoxon"
+					V1 = (n_risk_stratum ^ 2) * (n_risk * n_event_stratum) * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
+					V1 = replace (target = V1, pattern = "NaN", replacement = 0);
+					V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
+					V[(i1 + 1),(i2 + 1)] = sum (V1 * V2) / (range ^ 2);
+				}
+			}
+		}
+		V_sum = V_sum + V;
+	}
+}
+
+if (num_groups > 1 & test_type != "none") {
+
+	U_sum = rowSums (U);
+	test_st = as.scalar (t(U_sum) %*% inv(V_sum) %*% U_sum);
+	p_val = 1 - cdf (target = test_st, dist = "chisq", df = num_groups - 1);
+	if (test_type == "log-rank") {
+		TEST[,1] = num_groups;
+		TEST[,2] = num_groups - 1;
+		TEST[,3] = test_st;
+		TEST[,4] = p_val;
+		str = append (str, "Logrank test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");	
+	} else { # test_type == "wilcoxon"
+		str = append (str, "Wilcoxon test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");		
+	}
+}
+			
+if (num_groups > 1 & test_type != "none") { 
+	if (fileT != " ") {
+		write (TEST, fileT, fmtO);
+	} else {
+		print (str);
+	}
+}
+
+write (M, fileM, fmtO);
+write (KM, fileO, fmtO);
+
+######## UDF FOR COMPUTING CUMULATIVE PRODUCT
+
+cumulative_product = function (Matrix[Double] X) return (Matrix[Double] result) {
+	n = nrow (X);
+	it = ceil (log(n)/log(2));
+	result = X;
+	for (i in 0:(it-1)) {
+		Y = matrix (1, rows=n, cols=1);
+		Y[((2^i)+1):n,1] = result[1:(n-(2^i)),1];
+		result = Y * result;
+	}
+}
+
+

@@ -271,8 +271,9 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
 			// rewrite 14: set in-place result indexing
-			HashSet<String> inplaceResultVars = new HashSet<String>();
-			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			//FIXME naive bayes empty file issues
+			//HashSet<String> inplaceResultVars = new HashSet<String>();
+			//rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
 			// rewrite 16: runtime piggybacking
 			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
@@ -1823,7 +1824,8 @@ public class OptimizerRuleBased extends Optimizer
 				apply = true;
 			}
 			//result update in-place for CP (w/ local memory constraint)
-			else if( pfpb.getExecMode() == PExecMode.LOCAL && totalMem < _lm ) 
+			else if(   pfpb.getExecMode() == PExecMode.LOCAL 
+					&& totalMem * pfpb.getDegreeOfParallelism()  < _lm ) 
 			{ 
 				apply = true;
 				

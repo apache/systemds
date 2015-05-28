@@ -69,7 +69,7 @@ U =  ppred(U,1,">=");
 U_prime = L * U;
 
 # removes all rows with 0s
-U_prime = removeEmpty(target=U_prime, margin="rows")
+# U_prime = removeEmpty(target=U_prime, margin="rows")
 
 V_prime = (U_prime %*% R);
 

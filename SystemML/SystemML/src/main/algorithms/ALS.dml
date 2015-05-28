@@ -149,4 +149,4 @@ if (!converged) {
 } 
 
 write (L, fileL, format=fmtO);
-write (R, fileR, format=fmtO);
+write (t(R), fileR, format=fmtO);

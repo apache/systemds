@@ -20,6 +20,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 
 
+
 import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -38,6 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBinaryBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -129,6 +131,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 
 			//execute transpose reorg operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDReorgMapFunction(opcode));
+			
+			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);

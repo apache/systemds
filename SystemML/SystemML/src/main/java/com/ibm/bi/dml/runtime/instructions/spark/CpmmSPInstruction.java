@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -117,6 +118,8 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		else //DEFAULT: MULTI_BLOCK
 		{
 			out = out.reduceByKey(new AggregateSumMultiBlockFunction()); 
+			
+			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName(), in2, input2.getName());
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

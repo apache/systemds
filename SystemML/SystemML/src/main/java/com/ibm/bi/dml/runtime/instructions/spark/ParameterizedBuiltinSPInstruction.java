@@ -209,6 +209,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			out = in1.mapToPair(new ReplaceMapFunction(pattern, replacement));
 			
+			SparkUtils.setLineageInfoForExplain(this, out, in1, params.get("target"));
+			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));

@@ -8,9 +8,13 @@
 package com.ibm.bi.dml.api;
 
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.io.LongWritable;
@@ -33,9 +37,9 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
 import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -95,41 +99,38 @@ public class MLContext {
 	private ArrayList<String> _outVarnames = null;
 	private LocalVariableMap _variables = null; // temporary symbol table
 	boolean parsePyDML = false;
-		
-	private DMLConfig _conf = null;
 	
-	// export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.8.2.1-src.zip:$PYTHONPATH
-
 	// To check if Py4J is working:
 	// >>> str1 = sc._jvm.java.lang.Class.forName("java.lang.String")
 	// >>> str1.getName()
 	
-	// To check if MLContext is accessible:
-	// >>> sc._jvm.java.lang.Class.forName("com.ibm.bi.dml.api.MLContext")
-	// Note: pyspark doesnot add jars as of today (see SPARK-5185)
-	// Therefore, add --driver-class-path SystemML.jar or
-	// export SPARK_CLASSPATH=$SPARK_CLASSPATH:/home/biadmin/spark_test/SystemML.jar
-	
-	// ml = sc._jvm.com.ibm.bi.dml.api.MLContext(sc._jsc)
-	// ml.execute_python("toy.dml")
-	// TODO: https://github.com/apache/spark/blob/master/python/pyspark/mllib/common.py
-	// Look at def _to_java_object_rdd(rdd)
-	
 	public MLContext(SparkContext sc) {
 		MLContext._sc = sc;
-		initialize();
+		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 	}
 	
 	public MLContext(JavaSparkContext sc) {
 		MLContext._sc = sc.sc();
-		initialize();
+		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 	}
 	
-	private void initialize() {
-		//create default configuration
-		_conf = new DMLConfig();
-		ConfigurationManager.setConfig(_conf);
-		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
+	// This code
+	public MLContext(String execType) throws DMLRuntimeException {
+		if(execType.compareTo("hybrid") == 0) {
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+		}
+		else if(execType.compareTo("hadoop") == 0) {
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HADOOP;
+		}
+		else if(execType.compareTo("singlenode") == 0) {
+			DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		}
+		else if(execType.compareTo("spark") == 0 || execType.compareTo("hybrid_spark") == 0) {
+			throw new DMLRuntimeException("Error: The constructor MLContext(String) is not applicable for spark. Please use MLContext(sc) instead.");
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported execution type:" + execType + ". Valid options are: hybrid, hadoop, singlenode.");
+		}
 	}
 	
 	public void clear() {
@@ -166,6 +167,10 @@ public class MLContext {
 	}
 	// Register input for csv/text format
 	public void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, RDDProperties properties) throws DMLRuntimeException {
+		if(DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK) {
+			throw new DMLRuntimeException("The registerInput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
+		}
+		
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
@@ -220,6 +225,9 @@ public class MLContext {
 	// =============================================================================================
 	
 	public void registerOutput(String varName) throws DMLRuntimeException {
+		if(DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK) {
+			throw new DMLRuntimeException("The registerOutput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
+		}
 		if(_outVarnames == null)
 			_outVarnames = new ArrayList<String>();
 		_outVarnames.add(varName);
@@ -240,7 +248,7 @@ public class MLContext {
 			args[i] = entry.getKey() + "=" + entry.getValue();
 			i++;
 		}
-		return runDMLScript(dmlScriptFilePath, args, true);
+		return compileAndExecuteScript(dmlScriptFilePath, args, true);
 	}
 	
 	public MLOutput execute(String dmlScriptFilePath, scala.collection.immutable.Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
@@ -265,12 +273,12 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args) throws IOException, DMLException, ParseException {
-		return runDMLScript(dmlScriptFilePath, args, false);
+		return compileAndExecuteScript(dmlScriptFilePath, args, false);
 	}
 	
 	public MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		this.parsePyDML = parsePyDML;
-		return runDMLScript(dmlScriptFilePath, args, false);
+		return compileAndExecuteScript(dmlScriptFilePath, args, false);
 	}
 	
 	/**
@@ -281,21 +289,138 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath) throws IOException, DMLException, ParseException {
-		return runDMLScript(dmlScriptFilePath, null, false);
+		return compileAndExecuteScript(dmlScriptFilePath, null, false);
 	}
 	
 	public MLOutput execute(String dmlScriptFilePath, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		this.parsePyDML = parsePyDML;
-		return runDMLScript(dmlScriptFilePath, null, false);
+		return compileAndExecuteScript(dmlScriptFilePath, null, false);
 	}
 	
-	private MLOutput runDMLScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
-		HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
+	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
+		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+			HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
+			
+			// Depending on whether registerInput/registerOutput was called initialize the variables 
+			String[] inputs = null; String[] outputs = null;
+			if(_inVarnames != null) {
+				inputs = _inVarnames.toArray(new String[0]);
+			}
+			else {
+				inputs = new String[0];
+			}
+			if(_outVarnames != null) {
+				outputs = _outVarnames.toArray(new String[0]);
+			}
+			else {
+				outputs = new String[0];
+			}
+			HashMap<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
+			
+			HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
+			
+			// Run the DML script
+			ExecutionContext ec = compileAndExecuteScript(dmlScriptFilePath, argVals, parsePyDML, inputs, outputs, _variables);
+			
+			// Now collect the output
+			if(_outVarnames != null) {
+				for( String ovar : _outVarnames ) {
+					if( _variables.keySet().contains(ovar) ) {
+						if(retVal == null) {
+							retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
+						}
+						retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
+						outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
+					}
+					else {
+						throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
+					}
+				}
+			}
+			
+			MLOutput out = new MLOutput(retVal, outMetadata);
+			out.setExplainOutput(explainOutput);
+			return out;
+		}
+		else if(DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ||
+				DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP ||
+				DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
+			// Instead of calling DMLScript directly, create a new process.
+			// This ensures that environment variables, security permission are preserved as well as
+			// memory budgets are not messed up.
+			List<String> commandLineArgs = new ArrayList<String>();
+			commandLineArgs.add("hadoop"); commandLineArgs.add("jar");
+			commandLineArgs.add("SystemML.jar");
+			commandLineArgs.add("-f"); commandLineArgs.add(dmlScriptFilePath);
+			commandLineArgs.add("-exec"); 
+			if(DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID) {
+				commandLineArgs.add("hybrid");
+			}
+			else if(DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP) {
+				commandLineArgs.add("hadoop");
+			}
+			else if(DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
+				commandLineArgs.add("singlenode");
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported execution type");
+			}
+			commandLineArgs.add("-explain");
+			if(args != null && args.length > 0) {
+				if(isNamedArgument) {
+					commandLineArgs.add("-nvargs");
+				}
+				else {
+					commandLineArgs.add("-args");
+				}
+				for(String arg : args) {
+					commandLineArgs.add(arg);
+				}
+			}
+			ProcessBuilder builder = new ProcessBuilder(commandLineArgs);
+			final Process process = builder.start();
+			InputStream is = process.getInputStream();
+		    InputStreamReader isr = new InputStreamReader(is);
+		    BufferedReader br = new BufferedReader(isr);
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		      System.out.println(line);
+		    }
+		    
+			return null;
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported runtime.");
+		}
+	}
+	
+	private String explainOutput = "";
+	
+	
+	/**
+	 * This runs the DML script and returns the ExecutionContext for the caller to extract the output variables.
+	 * The caller is expected to set inputSymbolTable with appropriate matrix representation (RDD, MatrixObject).
+	 * 
+	 * @param dmlScriptFilePath
+	 * @param args
+	 * @param isNamedArgument
+	 * @param parsePyDML
+	 * @param inputs
+	 * @param outputs
+	 * @param inputSymbolTable
+	 * @return
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException
+	 */
+	public ExecutionContext compileAndExecuteScript(String dmlScriptFilePath, HashMap<String, String> argVals, boolean parsePyDML, 
+			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable) throws IOException, DMLException, ParseException {
+		DMLConfig config = new DMLConfig();
+		ConfigurationManager.setConfig(config);
 		
-		String dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);		
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
+		String dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);
+		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 		
-		HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 		//simplified compilation chain
 		Program rtprog = null;
 		
@@ -310,6 +435,10 @@ public class MLContext {
 			prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
 		}
 		
+		if(prog == null) {
+			throw new ParseException("Couldnot parse the file:" + dmlScriptFilePath);
+		}
+		
 		//language validate
 		DMLTranslator dmlt = new DMLTranslator(prog);
 		dmlt.liveVariableAnalysis(prog);			
@@ -319,22 +448,8 @@ public class MLContext {
 		dmlt.constructHops(prog);
 		dmlt.rewriteHopsDAG(prog);
 		
-		String[] inputs = null; String[] outputs = null;
-		if(_inVarnames != null) {
-			inputs = _inVarnames.toArray(new String[0]);
-		}
-		else {
-			inputs = new String[0];
-		}
-		if(_outVarnames != null) {
-			outputs = _outVarnames.toArray(new String[0]);
-		}
-		else {
-			outputs = new String[0];
-		}
-		
 		//rewrite persistent reads/writes
-		if(_variables != null) {
+		if(inputSymbolTable != null) {
 			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
 			ProgramRewriter rewriter2 = new ProgramRewriter(rewrite);
 			rewriter2.rewriteProgramHopDAGs(prog);
@@ -342,39 +457,26 @@ public class MLContext {
 		
 		//lop construct and runtime prog generation
 		dmlt.constructLops(prog);
-		rtprog = prog.getRuntimeProgram(_conf);
+		rtprog = prog.getRuntimeProgram(config);
 		
 		//final cleanup runtime prog
 		JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
 		
-		System.out.println(Explain.explain(rtprog));
-		
 		//create and populate execution context
 		ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);
-		if(_variables != null) {
-			ec.setVariables(_variables);
+		if(inputSymbolTable != null) {
+			ec.setVariables(inputSymbolTable);
 		}
+		
+		// TODO: As first step, we will always print the plan, will revisit this later
+		Explain.PRINT_EXPLAIN_WITH_LINEAGE = true;
 		
 		//core execute runtime program	
 		rtprog.execute( ec );
 		
-		HashMap<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
+		explainOutput = Explain.explain(rtprog);
+		Explain.PRINT_EXPLAIN_WITH_LINEAGE = false;
 		
-		if(_outVarnames != null) {
-			for( String ovar : _outVarnames ) {
-				if( _variables.keySet().contains(ovar) ) {
-					if(retVal == null) {
-						retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
-					}
-					retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
-					outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
-				}
-				else {
-					throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
-				}
-			}
-		}
-		
-		return new MLOutput(retVal, outMetadata);
+		return ec;
 	}
 }

@@ -42,6 +42,7 @@ public class MLOutput {
 	
 	HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
 	private HashMap<String, MatrixCharacteristics> _outMetadata = null;
+	private String explainOutput;
 	
 	public MLOutput(HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, HashMap<String, MatrixCharacteristics> outMetadata) {
 		this._outputs = outputs;
@@ -89,6 +90,16 @@ public class MLOutput {
 		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
 	}
 	
+	// Note: Converting Java string to Python string might be expensive if this String is long 
+	public String getExplainOutput() {
+		return explainOutput;
+		// return explainOutput.replaceAll(Explain.lineSeparator, "\n").replaceAll(Explain.entrySeparator, "\n");
+	}
+
+	public void setExplainOutput(String explainOutput) {
+		this.explainOutput = explainOutput;
+	}
+
 
 	public static class ProjectRows implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Tuple2<Long, Double[]>> {
 		private static final long serialVersionUID = -4792573268900472749L;

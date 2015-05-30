@@ -128,6 +128,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
 		}
 		
+		// SparkUtils.setLineageInfoForExplain(this, binaryBlocksWithEmptyBlocks, output.getName());
 		
 		//put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), binaryBlocksWithEmptyBlocks);
@@ -227,7 +228,9 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				/// HACK ALERT: Workaround for MLContext 
 				if(mc.getRowsPerBlock() == mcOut.getRowsPerBlock() && mc.getColsPerBlock() == mcOut.getColsPerBlock()) {
 					if(mo.getRDDHandle() != null) {
-						sec.setRDDHandleForVariable(output.getName(), (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle().getRDD() );
+						JavaPairRDD<MatrixIndexes, MatrixBlock> out = (JavaPairRDD<MatrixIndexes, MatrixBlock>) mo.getRDDHandle().getRDD();
+						// SparkUtils.setLineageInfoForExplain(this, out, output.getName());
+						sec.setRDDHandleForVariable(output.getName(), out);
 						return;
 					}
 					else {
@@ -257,6 +260,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				new ExtractBlockForBinaryReblock(rlen, clen, in_brlen, in_bclen, out_brlen, out_bclen))
 				.groupByKey()
 				.mapToPair(new MergeBinBlocks());
+		
+		// SparkUtils.setLineageInfoForExplain(this, out, output.getName());
 		
 		//put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);

@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -58,6 +59,7 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 			throw new DMLRuntimeException("The output dimensions are not specified for MatrixBuiltinSPInstruction");
 		}
 		
+		SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 		//set output RDD
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());

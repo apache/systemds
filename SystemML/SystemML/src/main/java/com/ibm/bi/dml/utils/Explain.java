@@ -49,6 +49,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class Explain 
@@ -197,6 +198,7 @@ public class Explain
 	
 		return sb.toString();
 	}
+	
 
 	/**
 	 * 
@@ -208,10 +210,12 @@ public class Explain
 		StringBuilder sb = new StringBuilder();		
 	
 		//create header
-		sb.append("\nPROGRAM ( size CP/MR = ");
-		sb.append(countCompiledInstructions(rtprog, false, true));
+		sb.append("\nPROGRAM ( size CP/MR/SP = ");
+		sb.append(countCompiledInstructions(rtprog, false, true, false));
 		sb.append("/");
-		sb.append(countCompiledInstructions(rtprog, true, false));
+		sb.append(countCompiledInstructions(rtprog, true, false, false));
+		sb.append("/");
+		sb.append(countCompiledInstructions(rtprog, false, false, true));
 		sb.append(" )\n");
 		
 		//explain functions (if exists)
@@ -396,7 +400,7 @@ public class Explain
 	 */
 	public static int countCompiledMRJobs( Program rtprog )
 	{
-		return countCompiledInstructions(rtprog, true, false);
+		return countCompiledInstructions(rtprog, true, false, false);
 	}
 	
 	/**
@@ -773,6 +777,9 @@ public class Explain
 		return sb.toString();
 	}
 	
+	public static boolean PRINT_EXPLAIN_WITH_LINEAGE = false;
+//	public static String lineSeparator = "\u00b5";
+//	public static String entrySeparator = "\u00b6";
 	/**
 	 * 
 	 * @param inst
@@ -783,8 +790,14 @@ public class Explain
 		String tmp = null;
 		if( inst instanceof MRJobInstruction )
 			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
-		else
-			tmp = inst.toString();
+		else {
+			if(inst.getDebugString() != null && PRINT_EXPLAIN_WITH_LINEAGE) {
+				tmp = inst.toString() + "\n" + inst.getDebugString();
+				//tmp = inst.toString() + entrySeparator + inst.getDebugString().replaceAll("\n", lineSeparator);
+			}
+			else
+				tmp = inst.toString();
+		}
 		
 		if( REPLACE_SPECIAL_CHARACTERS ){
 			tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
@@ -856,17 +869,17 @@ public class Explain
 	 * @param CP
 	 * @return
 	 */
-	private static int countCompiledInstructions( Program rtprog, boolean MR, boolean CP )
+	private static int countCompiledInstructions( Program rtprog, boolean MR, boolean CP, boolean SP )
 	{
 		int ret = 0;
 		
 		//analyze DML-bodied functions
 		for( FunctionProgramBlock fpb : rtprog.getFunctionProgramBlocks().values() )
-			ret += countCompiledInstructions( fpb, MR, CP );
+			ret += countCompiledInstructions( fpb, MR, CP, SP );
 			
 		//analyze main program
 		for( ProgramBlock pb : rtprog.getProgramBlocks() ) 
-			ret += countCompiledInstructions( pb, MR, CP ); 
+			ret += countCompiledInstructions( pb, MR, CP, SP ); 
 		
 		return ret;
 	}
@@ -878,45 +891,45 @@ public class Explain
 	 * @param pb
 	 * @return
 	 */
-	private static int countCompiledInstructions(ProgramBlock pb, boolean MR, boolean CP) 
+	private static int countCompiledInstructions(ProgramBlock pb, boolean MR, boolean CP, boolean SP) 
 	{
 		int ret = 0;
 
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP);
+			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP, SP);
 			for (ProgramBlock pb2 : tmp.getChildBlocks())
-				ret += countCompiledInstructions(pb2,MR,CP);
+				ret += countCompiledInstructions(pb2,MR,CP, SP);
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP);
+			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP, SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
-				ret += countCompiledInstructions(pb2,MR,CP);
+				ret += countCompiledInstructions(pb2,MR,CP,SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
-				ret += countCompiledInstructions(pb2,MR,CP);
+				ret += countCompiledInstructions(pb2,MR,CP,SP);
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			ret += countCompiledInstructions(tmp.getFromInstructions(), MR, CP);
-			ret += countCompiledInstructions(tmp.getToInstructions(), MR, CP);
-			ret += countCompiledInstructions(tmp.getIncrementInstructions(), MR, CP);
+			ret += countCompiledInstructions(tmp.getFromInstructions(), MR, CP, SP);
+			ret += countCompiledInstructions(tmp.getToInstructions(), MR, CP, SP);
+			ret += countCompiledInstructions(tmp.getIncrementInstructions(), MR, CP, SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
-				ret += countCompiledInstructions(pb2,MR,CP);
+				ret += countCompiledInstructions(pb2,MR,CP,SP);
 			//additional parfor jobs counted during runtime
 		}		
 		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
 			for( ProgramBlock pb2 : fpb.getChildBlocks() )
-				ret += countCompiledInstructions(pb2,MR,CP);
+				ret += countCompiledInstructions(pb2,MR,CP,SP);
 		}
 		else 
 		{
-			ret += countCompiledInstructions(pb.getInstructions(), MR, CP);
+			ret += countCompiledInstructions(pb.getInstructions(), MR, CP, SP);
 		}
 		
 		return ret;
@@ -929,7 +942,7 @@ public class Explain
 	 * @param CP
 	 * @return
 	 */
-	private static int countCompiledInstructions( ArrayList<Instruction> instSet, boolean MR, boolean CP )
+	private static int countCompiledInstructions( ArrayList<Instruction> instSet, boolean MR, boolean CP, boolean SP )
 	{
 		int ret = 0;
 		
@@ -938,6 +951,8 @@ public class Explain
 			if( MR && inst instanceof MRJobInstruction ) 
 				ret++;
 			if( CP && inst instanceof CPInstruction )
+				ret++;
+			if( SP && inst instanceof SPInstruction )
 				ret++;
 		}
 		

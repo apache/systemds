@@ -32,6 +32,7 @@ public abstract class Instruction
 	
 	protected INSTRUCTION_TYPE type;
 	protected String           instString;
+	private String           debugString;
 	protected int              lineNum;
 	private long instID;
 	
@@ -88,6 +89,19 @@ public abstract class Instruction
 	}
 	public String toString() {
 		return instString;
+	}
+	
+	/**
+	 * Donot call this method directly, instead go through SparkUtils.setLineageInfoForExplain
+	 */
+	public void setDebugString(String debugString) {
+		if(this.debugString == null) {
+			this.debugString = debugString;
+		}
+	}
+	
+	public String getDebugString() {
+		return debugString;
 	}
 	
 	public String getGraphString() {

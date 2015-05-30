@@ -14,6 +14,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+
 import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -31,6 +32,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatr
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToText;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CountLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -144,6 +146,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 			// The nested lists are already set up to help us do this.
 			JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = chunks.reduceByKey(new MergeBlocks());
 			
+			// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
 			sec.setRDDHandleForVariable(output.getName(), blocksRDD);
 			
 		} else {

@@ -384,7 +384,7 @@ public class DMLScript
 	 * @param scriptArguments
 	 * @throws LanguageException
 	 */
-	static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	public static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
 		throws LanguageException
 	{			
 		HashMap<String, String> argMap = new HashMap<String,String>();
@@ -445,7 +445,7 @@ public class DMLScript
 	 * @throws IOException 
 	 * @throws LanguageException 
 	 */
-	static String readDMLScript( String argname, String script ) 
+	public static String readDMLScript( String argname, String script ) 
 		throws IOException, LanguageException
 	{
 		boolean fromFile = argname.equals("-f") ? true : false;

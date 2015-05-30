@@ -14,6 +14,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -68,6 +69,50 @@ public class AppendMatrixTest extends AutomatedTestBase
 	public void testAppendInBlock1SparseCP() {
 		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, true);
 	}
+	
+	// -----------------------------------------------------------------
+	
+	@Test
+	public void testAppendInBlock1DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, false);
+	}   
+	
+	@Test
+	public void testAppendInBlock1SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true);
+	}   
+	
+	@Test
+	public void testAppendInBlock2DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false);
+	}
+	
+	@Test
+	public void testAppendInBlock2SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true);
+	}
+	
+	@Test
+	public void testAppendOutBlock1DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, false);
+	}
+	
+	@Test
+	public void testAppendOutBlock1SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, true);
+	}
+	
+	@Test
+	public void testAppendOutBlock2DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false);
+	}
+	
+	@Test
+	public void testAppendOutBlock2SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true);
+	}
+	
+	// -----------------------------------------------------------------
 	
 	//NOTE: different dimension use cases only relvant for MR
 	/*
@@ -141,10 +186,13 @@ public class AppendMatrixTest extends AutomatedTestBase
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try
 		{
 		    rtplatform = platform;
+		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols1);
@@ -189,6 +237,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 		{
 			//reset execution platform
 			rtplatform = prevPlfm;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
    

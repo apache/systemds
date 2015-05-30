@@ -11,6 +11,7 @@ package com.ibm.bi.dml.test.integration.functions.append;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLException;
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -49,7 +50,26 @@ public class StringAppendTest extends AutomatedTestBase
 	public void testLoopStringAppendErrorCP() {
 		runStringAppendTest(TEST_NAME2, 10000, true, ExecType.CP);
 	}
+	
+	// -------------------------------------------------------
 
+	@Test
+	public void testBasicStringAppendSP() {
+		runStringAppendTest(TEST_NAME1, -1, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLoopStringAppendSP() {
+		runStringAppendTest(TEST_NAME2, 100, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLoopStringAppendErrorSP() {
+		runStringAppendTest(TEST_NAME2, 10000, true, ExecType.SPARK);
+	}
+	
+	// -------------------------------------------------------
+	
 	//note: there should be no difference to running in MR because scalar operation
 	
 	@Test
@@ -78,8 +98,17 @@ public class StringAppendTest extends AutomatedTestBase
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
 	{
 		RUNTIME_PLATFORM oldPlatform = rtplatform;		
-	    rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 
+	    if(et == ExecType.SPARK) {
+	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    }
+	    else {
+			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	    }
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);			
@@ -100,6 +129,7 @@ public class StringAppendTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldPlatform;	
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 		
 	}

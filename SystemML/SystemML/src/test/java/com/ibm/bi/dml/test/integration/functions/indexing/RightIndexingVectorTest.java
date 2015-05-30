@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -51,8 +52,7 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 	@Test
 	public void testRightIndexingSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runRightIndexingTest(ExecType.SPARK);
+		runRightIndexingTest(ExecType.SPARK);
 	}
 	
 	@Test
@@ -65,6 +65,8 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 				
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -74,6 +76,8 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		    else {
 		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
 		    }
+		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		    
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
@@ -114,6 +118,7 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldRTP;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

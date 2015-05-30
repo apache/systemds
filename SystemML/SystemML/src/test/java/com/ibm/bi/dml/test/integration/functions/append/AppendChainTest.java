@@ -13,6 +13,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -60,6 +61,29 @@ public class AppendChainTest extends AutomatedTestBase
 		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2b, cols3b, false);
 	}
 	
+	// ------------------------------------------------------
+	@Test
+	public void testAppendChainVectorDenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2a, cols3a, false);
+	}
+	
+	@Test
+	public void testAppendChainMatrixDenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2b, cols3b, false);
+	}
+	
+	@Test
+	public void testAppendChainVectorSparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2a, cols3a, true);
+	}
+	
+	@Test
+	public void testAppendChainMatrixSparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2b, cols3b, true);
+	}
+	
+	// ------------------------------------------------------
+	
 	@Test
 	public void testAppendChainVectorDenseMR() {
 		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1, cols2a, cols3a, false);
@@ -103,10 +127,13 @@ public class AppendChainTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try
 		{
 		    rtplatform = platform;
+		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		    loadTestConfiguration(config);
 			
@@ -157,6 +184,7 @@ public class AppendChainTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = prevPlfm;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

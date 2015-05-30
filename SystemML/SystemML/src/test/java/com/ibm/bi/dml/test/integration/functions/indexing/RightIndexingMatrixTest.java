@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -55,8 +56,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	@Test
 	public void testRightIndexingDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runRightIndexingTest(ExecType.SPARK, false);
+		runRightIndexingTest(ExecType.SPARK, false);
 	}
 	
 	@Test
@@ -74,8 +74,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	@Test
 	public void testRightIndexingSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runRightIndexingTest(ExecType.SPARK, true);
+		runRightIndexingTest(ExecType.SPARK, true);
 	}
 	
 	@Test
@@ -92,7 +91,9 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	public void runRightIndexingTest( ExecType et, boolean sparse ) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
-				
+			
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -102,6 +103,9 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 		    else {
 		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
 		    }
+			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			
 		    
 		    double sparsity = sparse ? sparsity2 : sparsity1;
 		    
@@ -154,6 +158,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldRTP;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

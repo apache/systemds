@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -50,8 +51,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	@Test
 	public void testLeftIndexingScalarSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-			runLeftIndexingTest(ExecType.SPARK);
+		runLeftIndexingTest(ExecType.SPARK);
 	}
 	
 	@Test
@@ -70,6 +70,10 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	    else {
 			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 	    }
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 	
 		try
 		{
@@ -100,6 +104,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

@@ -240,7 +240,7 @@ public class DMLParserWrapper {
 			dmlPgm = createDMLProgram(ast);
 		}
 		catch(Exception e) {
-			throw new ParseException("ERROR: Cannot translate the parse tree into DMLProgram");
+			throw new ParseException("ERROR: Cannot translate the parse tree into DMLProgram:" + e.getMessage());
 		}
 		
 		return dmlPgm;

@@ -8,10 +8,14 @@
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.AppendGAlignedSP;
+import com.ibm.bi.dml.lops.AppendGSP;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.AppendCP;
 import com.ibm.bi.dml.lops.AppendG;
+import com.ibm.bi.dml.lops.AppendMSP;
 import com.ibm.bi.dml.lops.AppendR;
+import com.ibm.bi.dml.lops.AppendRSP;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryScalar;
 import com.ibm.bi.dml.lops.BinaryM;
@@ -36,6 +40,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
@@ -74,6 +79,7 @@ public class BinaryOp extends Hop
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
+		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
 	};
 	
 	private enum MMBinaryMethod{
@@ -522,6 +528,25 @@ public class BinaryOp extends Hop
 		{
 			Lop lop = constructAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
 			setLops( lop );						
+		}
+		else if(et == ExecType.SPARK) {
+			
+			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) {
+				Lop lop = constructAppendSPLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
+				setLops( lop );
+				lop.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
+						                                getRowsInBlock(), getColsInBlock(), getNnz());
+				lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+			}
+			else { //SCALAR STRING append
+				AppendCP app = null;
+				app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				app.getOutputParameters().setDimensions(0,0,-1,-1,-1);
+				app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				setLops(app);
+			}
 		}
 		else //CP
 		{
@@ -1612,6 +1637,56 @@ public class BinaryOp extends Hop
 		return ret;
 	}
 	
+	public Lop constructAppendSPLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+			throws HopsException, LopsException
+		{
+			Lop ret = null;
+			
+			long m1_dim1 = left.getDim1();
+			long m1_dim2 = left.getDim2();		
+			long m2_dim1 = right.getDim1();
+			long m2_dim2 = right.getDim2();
+			long m3_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
+			long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
+			long brlen = left.getRowsInBlock();
+			long bclen = left.getColsInBlock();
+			
+			Lop offset = createOffsetLop( left, true ); //offset 1st input
+			AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+		
+			switch( am )
+			{
+				case MR_MAPPEND: //special case map-only append
+				{
+					ret = new AppendMSP(left.constructLops(), right.constructLops(), 
+							     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+					break;
+				}
+				case MR_RAPPEND: //special case reduce append w/ one column block
+				{
+					ret = new AppendRSP(left.constructLops(), right.constructLops(), 
+						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+					break;
+				}	
+				case MR_GAPPEND:
+				{
+					ret = new AppendGSP(left.constructLops(), right.constructLops(), 
+						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+					break;
+				}
+				case SP_GAlignedAppend:
+				{
+					ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), 
+						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+					break;
+				}
+				default:
+					throw new HopsException("Invalid SP append method: "+am);
+			}
+			
+			return ret;
+		}
+	
 	/**
 	 * Special case tertiary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
 	 * 
@@ -1716,6 +1791,34 @@ public class BinaryOp extends Hop
 			&& m1_dim2+m2_dim2 <= m1_cpb ) //output has one column block
 		{
 			return AppendMethod.MR_RAPPEND;
+		}
+		
+		//general case (map and reduce)
+		return AppendMethod.MR_GAPPEND; 	
+	}
+	
+	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
+	{
+		//check for best case (map-only)		
+		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
+			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
+		{
+			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
+			if(footprint < SparkExecutionContext.getBroadcastMemoryBudget()) {
+				return AppendMethod.MR_MAPPEND;
+			}
+		}
+		
+		//check for in-block append (reduce-only)
+		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
+			&& m1_dim2+m2_dim2 <= m1_cpb ) //output has one column block
+		{
+			return AppendMethod.MR_RAPPEND;
+		}
+		
+		// if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
+		if(m1_dim2 % m1_cpb == 0) {
+			return AppendMethod.SP_GAlignedAppend;
 		}
 		
 		//general case (map and reduce)

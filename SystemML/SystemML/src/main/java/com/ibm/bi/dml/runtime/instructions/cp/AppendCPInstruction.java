@@ -103,21 +103,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		}
 		else //STRING
 		{
-			//get input strings (vars or literals)
-			ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
-			ScalarObject so2 = ec.getScalarInput( input2.getName(), input2.getValueType(), input2.isLiteral() );
-			
-			//pre-checks
-			String val1 = so1.getStringValue();
-			String val2 = so2.getStringValue();
-			StringObject.checkMaxStringLength( val1.length()+val2.length() );
-			
-			//core execution
-			String outString = val1 + "\n" + val2;			
-			ScalarObject sores = new StringObject(outString);
-			
-			//set output
-			ec.setScalarOutput(output.getName(), sores);
+			InstructionUtils.processStringAppendInstruction(ec, input1, input2, output);
 		}		
 	}
 }

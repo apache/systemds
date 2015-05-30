@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -29,6 +30,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -149,7 +151,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		if( opcode.equalsIgnoreCase("rangeReIndex") )
 		{
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			if(!mcOut.dimsKnown()) {
 				if(!mc.dimsKnown()) {
 					throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
@@ -167,6 +169,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				.groupByKey()
 				.mapToPair(new MergeMiniBlocks(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
 			
+			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

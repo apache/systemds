@@ -17,6 +17,10 @@ import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AppendGAlignedSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AppendGSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AppendMSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AppendRSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
@@ -139,6 +143,11 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "rmempty"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "replace"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
+		String2SPInstructionType.put( "mappend", SPINSTRUCTION_TYPE.MAppend);
+		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);
+		String2SPInstructionType.put( "gappend", SPINSTRUCTION_TYPE.GAppend);
+		String2SPInstructionType.put( "galignedappend", SPINSTRUCTION_TYPE.GAlignedAppend);
+		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
 	}
@@ -230,6 +239,18 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case ParameterizedBuiltin:
 				return (SPInstruction) ParameterizedBuiltinSPInstruction.parseInstruction(str);
+				
+			case MAppend:
+				return (SPInstruction) AppendMSPInstruction.parseInstruction(str);
+			
+			case GAppend:
+				return (SPInstruction) AppendGSPInstruction.parseInstruction(str);
+			
+			case GAlignedAppend:
+				return (SPInstruction) AppendGAlignedSPInstruction.parseInstruction(str);
+				
+			case RAppend:
+				return (SPInstruction) AppendRSPInstruction.parseInstruction(str);
 				
 			case Sort: 
 				return (SPInstruction) SortSPInstruction.parseInstruction(str);

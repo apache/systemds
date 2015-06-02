@@ -368,12 +368,6 @@ public class DMLScript
 		return ret;
 	}
 	
-	public static boolean isRecompilationRequiredForGivenExecutionType() {
-		// Why is this commented ? To check if recompiler hides any potential issues with SPInstruction
-		// return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID || DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK;
-		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK;
-	}
-	
 	///////////////////////////////
 	// private internal utils (argument parsing)
 	////////
@@ -384,7 +378,7 @@ public class DMLScript
 	 * @param scriptArguments
 	 * @throws LanguageException
 	 */
-	public static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	protected static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
 		throws LanguageException
 	{			
 		HashMap<String, String> argMap = new HashMap<String,String>();
@@ -445,7 +439,7 @@ public class DMLScript
 	 * @throws IOException 
 	 * @throws LanguageException 
 	 */
-	public static String readDMLScript( String argname, String script ) 
+	protected static String readDMLScript( String argname, String script ) 
 		throws IOException, LanguageException
 	{
 		boolean fromFile = argname.equals("-f") ? true : false;

@@ -19,7 +19,6 @@ import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.Mean;
@@ -29,9 +28,6 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
-import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
@@ -351,21 +347,4 @@ public class InstructionUtils
 		return aggun;
 	}
 	
-	public static void processStringAppendInstruction(ExecutionContext ec, CPOperand input1, CPOperand input2, CPOperand output) throws DMLRuntimeException {
-		//get input strings (vars or literals)
-		ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
-		ScalarObject so2 = ec.getScalarInput( input2.getName(), input2.getValueType(), input2.isLiteral() );
-		
-		//pre-checks
-		String val1 = so1.getStringValue();
-		String val2 = so2.getStringValue();
-		StringObject.checkMaxStringLength( val1.length()+val2.length() );
-		
-		//core execution
-		String outString = val1 + "\n" + val2;			
-		ScalarObject sores = new StringObject(outString);
-		
-		//set output
-		ec.setScalarOutput(output.getName(), sores);
-	}
 }

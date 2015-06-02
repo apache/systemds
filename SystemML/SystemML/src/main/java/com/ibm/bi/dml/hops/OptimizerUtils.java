@@ -430,6 +430,15 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isHybridExecutionMode() {
+		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
+			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );
+	}
+	
+	/**
 	 * Returns the degree of parallelism used for parallel text read. 
 	 * This is computed as the number of virtual cores scales by the 
 	 * PARALLEL_READ_PARALLELISM_MULTIPLIER. If PARALLEL_READ_TEXTFORMATS

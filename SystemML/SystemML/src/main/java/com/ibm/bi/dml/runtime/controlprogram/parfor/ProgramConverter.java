@@ -609,7 +609,7 @@ public class ProgramConverter
 		try
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
-				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
+				&& OptimizerUtils.isHybridExecutionMode()	
 				&& sb != null  //forced deep copy for function recompilation
 				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
 			{
@@ -659,8 +659,8 @@ public class ProgramConverter
 		
 		try
 		{
-			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
-				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
+			if(    OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+				&& OptimizerUtils.isHybridExecutionMode()	
 				&& sb != null //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
@@ -712,7 +712,7 @@ public class ProgramConverter
 		try
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
-				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
+				&& OptimizerUtils.isHybridExecutionMode()	
 				&& sb != null  //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
@@ -764,7 +764,7 @@ public class ProgramConverter
 		try
 		{
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
-				&& DMLScript.isRecompilationRequiredForGivenExecutionType()	
+				&& OptimizerUtils.isHybridExecutionMode()	
 				&& sb != null 
 				&& ( Recompiler.requiresRecompilation(sb.getFromHops()) ||
 					 Recompiler.requiresRecompilation(sb.getToHops()) ||

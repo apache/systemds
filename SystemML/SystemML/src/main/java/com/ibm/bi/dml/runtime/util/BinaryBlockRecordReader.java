@@ -28,7 +28,7 @@ public class BinaryBlockRecordReader extends SequenceFileRecordReader<MatrixInde
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private long _time = 0;
+	//private long _time = 0;
 	
 	public BinaryBlockRecordReader(Configuration conf, FileSplit split)
 		throws IOException 
@@ -41,11 +41,11 @@ public class BinaryBlockRecordReader extends SequenceFileRecordReader<MatrixInde
 	public synchronized boolean next(MatrixIndexes key, MatrixBlock value)
 		throws IOException 
 	{
-		long t0 = System.nanoTime();		
+		//long t0 = System.nanoTime();		
 		boolean ret = super.next(key, value);		
-		long t1 = System.nanoTime();
+		//long t1 = System.nanoTime();
 		
-		_time+=(t1-t0);
+		//_time+=(t1-t0);
 		
 		return ret;
 	}

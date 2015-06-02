@@ -1028,7 +1028,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		throws HopsException
 	{
 		_requiresRecompile =   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			                   && DMLScript.isRecompilationRequiredForGivenExecutionType() 	
+			                   && OptimizerUtils.isHybridExecutionMode() 	
 			                   && Recompiler.requiresRecompilation(get_hops());
 	}
 	

@@ -152,7 +152,7 @@ public class InterProceduralAnalysis
 		}
 		
 		//step 4: flag functions with loops for 'recompile-on-entry'
-		if( FLAG_FUNCTION_RECOMPILE_ONCE && DMLScript.isRecompilationRequiredForGivenExecutionType()){
+		if( FLAG_FUNCTION_RECOMPILE_ONCE && OptimizerUtils.isHybridExecutionMode()){
 			flagFunctionsForRecompileOnce( dmlp );
 		}
 	}

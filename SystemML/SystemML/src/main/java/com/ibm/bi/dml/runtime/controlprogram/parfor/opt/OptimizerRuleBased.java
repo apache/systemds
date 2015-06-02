@@ -364,7 +364,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//search for candidates
 		boolean apply = false;
-		if(    DMLScript.isRecompilationRequiredForGivenExecutionType()  //only if we are allowed to recompile
+		if(    OptimizerUtils.isHybridExecutionMode()  //only if we are allowed to recompile
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();

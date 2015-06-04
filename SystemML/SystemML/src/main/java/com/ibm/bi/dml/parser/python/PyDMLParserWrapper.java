@@ -111,10 +111,9 @@ public class PyDMLParserWrapper {
 		prog = parser.doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
-			throw new ParseException("One or more errors found during parsing. Cannot proceed ahead.");
+			throw new ParseException("One or more errors found during parsing. (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
 		}
 		return prog;
-		// Use //+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
 	}
 
 	/**

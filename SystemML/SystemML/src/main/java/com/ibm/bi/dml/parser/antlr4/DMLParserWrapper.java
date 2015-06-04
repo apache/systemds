@@ -16,8 +16,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
-
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -135,10 +133,9 @@ public class DMLParserWrapper {
 		prog = parser.doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
-			throw new ParseException("One or more errors found during parsing (couldnot construct AST for file: " + fileName + "). Cannot proceed ahead.");
+			throw new ParseException("One or more errors found during parsing (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
 		}
 		return prog;
-		// Use //+ "Here is the parse tree:\n" + tree.toStringTree(antlr4Parser).replaceAll("expression ", "")
 	}
 
 	/**

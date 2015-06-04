@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Checkpoint;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
@@ -31,6 +32,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.RandSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
@@ -148,6 +150,9 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "gappend", SPINSTRUCTION_TYPE.GAppend);
 		String2SPInstructionType.put( "galignedappend", SPINSTRUCTION_TYPE.GAlignedAppend);
 		
+		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
+		String2SPInstructionType.put( DataGen.SEQ_OPCODE  , SPINSTRUCTION_TYPE.Rand);
+		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
 	}
@@ -251,6 +256,9 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case RAppend:
 				return (SPInstruction) AppendRSPInstruction.parseInstruction(str);
+				
+			case Rand:
+				return (SPInstruction) RandSPInstruction.parseInstruction(str);
 				
 			case Sort: 
 				return (SPInstruction) SortSPInstruction.parseInstruction(str);

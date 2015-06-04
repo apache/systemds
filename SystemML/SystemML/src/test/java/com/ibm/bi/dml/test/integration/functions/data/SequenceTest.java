@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -126,7 +127,19 @@ public class SequenceTest extends AutomatedTestBase
 			
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_HYBRID";
-			runTest(true, exceptionExpected, null, -1); 
+			runTest(true, exceptionExpected, null, -1);
+			
+			rtplatform = RUNTIME_PLATFORM.SPARK;
+			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+			try {
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+				programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_SPARK";
+				runTest(true, exceptionExpected, null, -1);
+			}
+			finally {
+				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			}
+			 
 			
 			if ( exceptionExpected == false ) {
 				runRScript(true);
@@ -139,6 +152,9 @@ public class SequenceTest extends AutomatedTestBase
 			
 				dmlfile = readDMLMatrixFromHDFS("A_HADOOP");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HADOOP", "A-R");
+				
+				dmlfile = readDMLMatrixFromHDFS("A_SPARK");
+				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-SPARK", "A-R");
 			}
 		}
 		finally

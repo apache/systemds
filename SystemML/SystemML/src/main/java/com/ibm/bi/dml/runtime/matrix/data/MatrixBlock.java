@@ -1163,8 +1163,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
 	 * in memory.
 	 * 
-	 * @param rows
-	 * @param cols
+	 * @param brlen
+	 * @param bclen
 	 * @param nnz
 	 * @return
 	 */
@@ -1188,8 +1188,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
 	 * on disk (or in any other serialized representation).
 	 * 
-	 * @param rows
-	 * @param cols
+	 * @param brlen
+	 * @param bclen
 	 * @param nnz
 	 * @return
 	 */

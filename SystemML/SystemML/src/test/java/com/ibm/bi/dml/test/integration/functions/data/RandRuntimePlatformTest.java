@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -175,6 +176,18 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
 			programArgs[6] = HOME + OUTPUT_DIR + "A_MR"; // data file generated from MR
 			runTest(true, exceptionExpected, null, -1); 
+			
+			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+			try {
+				// Generate Data in Spark
+				rtplatform = RUNTIME_PLATFORM.SPARK;
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+				programArgs[6] = HOME + OUTPUT_DIR + "A_SPARK"; // data file generated from MR
+				runTest(true, exceptionExpected, null, -1); 
+			}
+			finally {
+				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			}
 		
 			//compare matrices (1-2, 2-3 -> transitively 1-3)
 			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
@@ -183,6 +196,9 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			cpfile = null;
 			HashMap<CellIndex, Double> snfile = readDMLMatrixFromHDFS("A_SN");
 			TestUtils.compareMatrices(snfile, mrfile, eps, "SNFile", "MRFile");		
+			
+			HashMap<CellIndex, Double> spfile = readDMLMatrixFromHDFS("A_SPARK");
+			TestUtils.compareMatrices(spfile, mrfile, eps, "SPFile", "MRFile");	
 			
 		}
 		finally

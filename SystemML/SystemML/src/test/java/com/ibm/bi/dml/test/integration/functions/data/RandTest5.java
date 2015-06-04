@@ -11,6 +11,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -94,6 +95,46 @@ public class RandTest5 extends AutomatedTestBase
 		runRandTest(true, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.CP);
 	}
 	
+	// -------------------------------------------------------------
+	
+	@Test
+	public void testRandValuesDensePositiveSP() 
+	{
+		runRandTest(false, RandMinMaxType.POSITIVE_ONLY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandValuesDenseNegativeSP() 
+	{
+		runRandTest(false, RandMinMaxType.NEGATIVE_ONLY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandValuesDenseNegativePositiveSP() 
+	{
+		runRandTest(false, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandValuesSparsePositiveSP() 
+	{
+		runRandTest(true, RandMinMaxType.POSITIVE_ONLY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandValuesSparseNegativeSP() 
+	{
+		runRandTest(true, RandMinMaxType.NEGATIVE_ONLY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandValuesSparseNegativePositiveSP() 
+	{
+		runRandTest(true, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.SPARK);
+	}
+	
+	// -------------------------------------------------------------
+	
 	@Test
 	public void testRandValuesDensePositiveMR() 
 	{
@@ -140,7 +181,15 @@ public class RandTest5 extends AutomatedTestBase
 	{	
 		//keep old runtime 
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		//set basic parameters
 		String TEST_NAME = TEST_NAME1;		 
@@ -158,7 +207,7 @@ public class RandTest5 extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", Integer.toString(rows),
+		programArgs = new String[]{"-explain", "-args", Integer.toString(rows),
 											Integer.toString(cols),
 											Double.toString(min),
 											Double.toString(max),
@@ -183,6 +232,7 @@ public class RandTest5 extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

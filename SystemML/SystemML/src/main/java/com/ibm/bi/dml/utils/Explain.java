@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLException;
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
@@ -210,13 +212,20 @@ public class Explain
 		StringBuilder sb = new StringBuilder();		
 	
 		//create header
-		sb.append("\nPROGRAM ( size CP/MR/SP = ");
-		sb.append(countCompiledInstructions(rtprog, false, true, false));
-		sb.append("/");
-		sb.append(countCompiledInstructions(rtprog, true, false, false));
-		sb.append("/");
-		sb.append(countCompiledInstructions(rtprog, false, false, true));
-		sb.append(" )\n");
+		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+			sb.append("\nPROGRAM ( size CP/SP = ");
+			sb.append(countCompiledInstructions(rtprog, false, true, false));
+			sb.append("/");
+			sb.append(countCompiledInstructions(rtprog, false, false, true));
+			sb.append(" )\n");
+		}
+		else {
+			sb.append("\nPROGRAM ( size CP/MR = ");
+			sb.append(countCompiledInstructions(rtprog, false, true, false));
+			sb.append("/");
+			sb.append(countCompiledInstructions(rtprog, true, false, false));
+			sb.append(" )\n");
+		}
 		
 		//explain functions (if exists)
 		Map<String, FunctionProgramBlock> funcMap = rtprog.getFunctionProgramBlocks();

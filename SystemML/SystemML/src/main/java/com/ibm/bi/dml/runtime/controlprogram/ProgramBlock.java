@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -41,6 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.ComputationSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.sql.SQLScalarAssignInstruction;
@@ -48,6 +50,7 @@ import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
@@ -393,8 +396,12 @@ public class ProgramBlock
 				//execute original or updated instruction
 				if (tmp instanceof CPInstruction) 
 					((CPInstruction) tmp).processInstruction(ec);
-				else
+				else {
 					((SPInstruction) tmp).processInstruction(ec);
+					if(tmp instanceof ComputationSPInstruction && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
+						((SparkExecutionContext) ec).setDebugString(tmp, ((ComputationSPInstruction) tmp).getOutputVariableName());
+					}
+				}
 				
 				//check if function returned
 				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {

@@ -32,7 +32,7 @@ public abstract class Instruction
 	
 	protected INSTRUCTION_TYPE type;
 	protected String           instString;
-	private String           debugString;
+	protected String           debugString;
 	protected int              lineNum;
 	private long instID;
 	

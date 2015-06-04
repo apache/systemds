@@ -59,7 +59,6 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 			throw new DMLRuntimeException("The output dimensions are not specified for MatrixBuiltinSPInstruction");
 		}
 		
-		SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 		//set output RDD
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());

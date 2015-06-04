@@ -21,9 +21,10 @@ public class RDDObject extends LineageObject
 	private boolean _checkpointed = false; //created via checkpoint instruction
 	private boolean _hdfsfile = false;     //created from hdfs file
 	
-	public RDDObject( JavaPairRDD<?,?> rddvar )
+	public RDDObject( JavaPairRDD<?,?> rddvar, String varName)
 	{
 		_rddHandle = rddvar;
+		_varName = varName;
 	}
 	
 	/**

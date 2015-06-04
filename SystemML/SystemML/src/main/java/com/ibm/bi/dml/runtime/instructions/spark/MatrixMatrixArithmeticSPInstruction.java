@@ -89,7 +89,6 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 					JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
 					out = cogroupRdd.mapToPair(new RDDMatrixMatrixArithmeticFunction(bop, this.instString));
 					isBroadcastRHSVar = false;
-					SparkUtils.setLineageInfoForExplain(this, out, in1, rddVar1, in2, rddVar2);
 				}
 				else {
 					// Matrix-column vector operation
@@ -120,7 +119,6 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 					Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
 					out = in1.mapToPair(new RDDMatrixVectorArithmeticFunction(isBroadcastRHSVar, isColumnVectorOperation, in2, bop, rddMC.getRowsPerBlock(), rddMC.getColsPerBlock(), rddMC.getRows(), rddMC.getCols()));
-					SparkUtils.setLineageInfoForExplain(this, out, in1, rddVar);
 				}
 				
 				// put output RDD handle into symbol table

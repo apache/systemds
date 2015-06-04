@@ -96,7 +96,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("The output dimensions are not specified for AggregateUnarySPInstruction");
 		}
-		SparkUtils.setLineageInfoForExplain(this, out, in, input1.getName());
+		
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}

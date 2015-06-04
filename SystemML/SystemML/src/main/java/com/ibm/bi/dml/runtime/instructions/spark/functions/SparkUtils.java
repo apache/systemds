@@ -10,29 +10,21 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.Explain;
 
 public class SparkUtils {
 	
-	public static void setLineageInfoForExplain(Instruction inst, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in1, String in1Name) throws DMLRuntimeException {
-		setLineageInfoForExplain(inst, out, in1, in1Name, null, null);
-	}
-	
 	// This returns RDD with identifier as well as location
-	private static String getStartLineFromSparkDebugInfo(String line) throws DMLRuntimeException {
+	public static String getStartLineFromSparkDebugInfo(String line) throws DMLRuntimeException {
 		// To remove: (2)  -- Assumption: At max, 9 RDDs as input to transformation/action
 		String withoutPrefix = line.substring(4, line.length());
 		// To remove: [Disk Memory Deserialized 1x Replicated]
 		return  withoutPrefix.split(":")[0]; // Return 'MapPartitionsRDD[51] at mapToPair at ReorgSPInstruction.java'
 	}
 	
-	private static String getPrefixFromSparkDebugInfo(String line) {
+	public static String getPrefixFromSparkDebugInfo(String line) {
 		String [] lines = line.split("\\||\\+-");
 		String retVal = lines[0];
 		for(int i = 1; i < lines.length-1; i++) {
@@ -45,60 +37,6 @@ public class SparkUtils {
 			return retVal + "|" + twoSpaces;
 	}
 			
-	// The most expensive operation here is rdd.toDebugString() which can be a major hit because
-	// of unrolling lazy evaluation of Spark. Hence, it is guarded against it along with flag 'PRINT_EXPLAIN_WITH_LINEAGE' which is 
-	// enabled only through MLContext. This way, it doesnot affect our performance evaluation through non-MLContext path
-	public static void setLineageInfoForExplain(Instruction inst, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in1, String in1Name, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in2, String in2Name) throws DMLRuntimeException {
-		if(inst.getDebugString() == null && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
-			// First fetch start lines from input RDDs
-			String startLine1 = null; 
-			String startLine2 = null;
-			int i1length = 0, i2length = 0;
-			if(in1 != null) {
-				String [] lines = in1.toDebugString().split("\\r?\\n");
-				startLine1 = getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
-				i1length = lines.length;
-			}
-			if(in2 != null) {
-				String [] lines = in2.toDebugString().split("\\r?\\n");
-				startLine2 =  getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
-				i2length = lines.length;
-			}
-			
-			String outDebugString = "";
-			int skip = 0;
-			
-			// Now process output RDD and replace inputRDD debug string by the matrix variable name
-			String [] outLines = out.toDebugString().split("\\r?\\n");
-			for(int i = 0; i < outLines.length; i++) {
-				if(skip > 0) {
-					skip--;
-					// outDebugString += "\nSKIP:" + outLines[i];
-				}
-				else if(startLine1 != null && outLines[i].contains(startLine1)) {
-					String prefix = getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine1.length());
-					outDebugString += "\n" + prefix + "[[" + in1Name + "]]";
-					//outDebugString += "\n{" + prefix + "}[[" + in1Name + "]] => " + outLines[i];
-					skip = i1length - 1;  
-				}
-				else if(startLine2 != null && outLines[i].contains(startLine2)) {
-					String prefix = getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine2.length());
-					outDebugString += "\n" + prefix + "[[" + in2Name + "]]";
-					skip = i2length - 1;
-				}
-				else {
-					outDebugString += "\n" + outLines[i];
-				}
-			}
-			
-			// outDebugString += "\n{" + startLine1 + "}\n{" + startLine2 + "}";
-			
-			inst.setDebugString(outDebugString + "\n");
-		}
-	}
 	
 	// len = {clen or rlen}, blen = {brlen or bclen}
 	public static long getStartGlobalIndex(long blockIndex, int blen, long len) {

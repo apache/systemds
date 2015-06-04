@@ -132,8 +132,6 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			//execute transpose reorg operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDReorgMapFunction(opcode));
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
-			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());

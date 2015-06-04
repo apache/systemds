@@ -131,7 +131,6 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _aggtype == SparkAggType.MULTI_BLOCK )
 				out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, rddVar);
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);

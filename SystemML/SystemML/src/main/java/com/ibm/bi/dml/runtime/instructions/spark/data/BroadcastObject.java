@@ -19,9 +19,10 @@ public class BroadcastObject extends LineageObject
 
 	private Broadcast<MatrixBlock> _bcHandle = null;
 	
-	public BroadcastObject( Broadcast<MatrixBlock> bvar )
+	public BroadcastObject( Broadcast<MatrixBlock> bvar, String varName )
 	{
 		_bcHandle = bvar;
+		_varName = varName;
 	}
 	
 	/**

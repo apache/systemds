@@ -73,7 +73,7 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("The output dimensions are not specified for MatrixScalarBuiltinSPInstruction");
 		}
-		SparkUtils.setLineageInfoForExplain(this, out, in1, mat.getName());
+		
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), mat.getName());
 	}

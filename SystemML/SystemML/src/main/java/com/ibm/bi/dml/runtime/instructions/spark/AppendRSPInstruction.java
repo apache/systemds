@@ -112,8 +112,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 			
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.cogroup(in2).mapToPair(new ReduceSideAppend());
-					
-			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 			sec.addLineageRDD(output.getName(), input2.getName());

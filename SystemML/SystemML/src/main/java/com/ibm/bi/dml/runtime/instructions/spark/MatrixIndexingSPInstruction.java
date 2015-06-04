@@ -169,7 +169,6 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				.groupByKey()
 				.mapToPair(new MergeMiniBlocks(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

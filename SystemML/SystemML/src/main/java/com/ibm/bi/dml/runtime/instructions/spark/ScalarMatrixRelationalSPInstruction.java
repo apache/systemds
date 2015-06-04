@@ -66,8 +66,6 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 					sec.getMatrixCharacteristics(output.getName()).set(mc);
 			}
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, rddVar);
-			
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
 		}

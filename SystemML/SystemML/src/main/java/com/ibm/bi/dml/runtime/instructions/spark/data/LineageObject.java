@@ -10,7 +10,7 @@ package com.ibm.bi.dml.runtime.instructions.spark.data;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LineageObject 
+public abstract class LineageObject 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -18,11 +18,16 @@ public class LineageObject
 
 	protected int _numRef = -1;
 	protected List<LineageObject> _childs = null;
+	protected String _varName = null;
 	
 	protected LineageObject()
 	{
 		_numRef = 0;
 		_childs = new ArrayList<LineageObject>();
+	}
+	
+	public String getVarName() {
+		return _varName;
 	}
 	
 	public int getNumReferences()

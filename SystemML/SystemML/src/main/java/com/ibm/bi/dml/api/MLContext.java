@@ -193,7 +193,7 @@ public class MLContext {
 		if(properties != null) {
 			mo.setRddProperties(properties);
 		}
-		mo.setRDDHandle(new RDDObject(rdd));
+		mo.setRDDHandle(new RDDObject(rdd, varName));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 	}
@@ -217,7 +217,7 @@ public class MLContext {
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
-		mo.setRDDHandle(new RDDObject(rdd));
+		mo.setRDDHandle(new RDDObject(rdd, varName));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
 	}

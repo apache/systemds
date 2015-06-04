@@ -113,7 +113,6 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.flatMapToPair(
 					new MapSideAppend(in2, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 			sec.addLineageBroadcast(output.getName(), input2.getName());

@@ -89,7 +89,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		
 		MatrixObject mo = sec.getMatrixObject( input1.getName() );
 		RDDObject inro =  mo.getRDDHandle();  //guaranteed to exist (see above)
-		RDDObject outro = new RDDObject(out); //create new rdd object
+		RDDObject outro = new RDDObject(out, output.getName()); //create new rdd object
 		outro.setCheckpointRDD(true);         //mark as checkpointed
 		outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
 		mo.setRDDHandle(outro);

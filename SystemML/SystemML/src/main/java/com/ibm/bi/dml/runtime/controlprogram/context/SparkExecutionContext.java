@@ -27,18 +27,21 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.Explain;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -171,7 +174,7 @@ public class SparkExecutionContext extends ExecutionContext
 			mo.release(); //unpin matrix
 			
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd);
+			RDDObject rddhandle = new RDDObject(rdd, varname);
 			mo.setRDDHandle(rddhandle);
 		}
 		//CASE 3: non-dirty (file exists on HDFS)
@@ -196,7 +199,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd);
+			RDDObject rddhandle = new RDDObject(rdd, varname);
 			rddhandle.setHDFSFile(true);
 			mo.setRDDHandle(rddhandle);
 		}
@@ -231,7 +234,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//read data into memory (no matter where it comes from)
 			MatrixBlock mb = mo.acquireRead();
 			bret = _spctx.broadcast(mb);
-			BroadcastObject bchandle = new BroadcastObject(bret);
+			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 			mo.release();
 		}
@@ -254,7 +257,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException
 	{
 		MatrixObject mo = getMatrixObject(varname);
-		RDDObject rddhandle = new RDDObject(rdd);
+		RDDObject rddhandle = new RDDObject(rdd, varname);
 		mo.setRDDHandle( rddhandle );
 	}
 	
@@ -444,6 +447,92 @@ public class SparkExecutionContext extends ExecutionContext
 	///////////////////////////////////////////
 	// Cleanup of RDDs and Broadcast variables
 	///////
+	
+	public void setDebugString(Instruction inst, String outputVarName) throws DMLRuntimeException {
+		if(Explain.PRINT_EXPLAIN_WITH_LINEAGE && inst.getDebugString() == null) {
+			RDDObject parentLineage = getMatrixObject(outputVarName).getRDDHandle();
+			if(parentLineage != null) {
+				JavaPairRDD<?, ?> out = parentLineage.getRDD();
+				if(out != null) {
+					JavaPairRDD<?, ?> in1 = null; JavaPairRDD<?, ?> in2 = null;
+					String input1VarName = null; String input2VarName = null;
+					if(parentLineage.getLineageChilds() != null) {
+						for(LineageObject child : parentLineage.getLineageChilds()) {
+							if(child instanceof RDDObject) {
+								if(in1 == null) {
+									in1 = ((RDDObject) child).getRDD();
+									input1VarName = child.getVarName();
+								}
+								else if(in2 == null) {
+									in2 = ((RDDObject) child).getRDD();
+									input2VarName = child.getVarName();
+								}
+								else {
+									throw new DMLRuntimeException("PRINT_EXPLAIN_WITH_LINEAGE not yet supported for three outputs");
+								}
+							}
+						}
+					}
+					setLineageInfoForExplain(inst, out, in1, input1VarName, in2, input2VarName);
+				}
+			}
+		}
+	}
+	
+	// The most expensive operation here is rdd.toDebugString() which can be a major hit because
+	// of unrolling lazy evaluation of Spark. Hence, it is guarded against it along with flag 'PRINT_EXPLAIN_WITH_LINEAGE' which is 
+	// enabled only through MLContext. This way, it doesnot affect our performance evaluation through non-MLContext path
+	private void setLineageInfoForExplain(Instruction inst, 
+			JavaPairRDD<?, ?> out, 
+			JavaPairRDD<?, ?> in1, String in1Name, 
+			JavaPairRDD<?, ?> in2, String in2Name) throws DMLRuntimeException {
+		if(inst.getDebugString() == null && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
+			// First fetch start lines from input RDDs
+			String startLine1 = null; 
+			String startLine2 = null;
+			int i1length = 0, i2length = 0;
+			if(in1 != null) {
+				String [] lines = in1.toDebugString().split("\\r?\\n");
+				startLine1 = SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
+				i1length = lines.length;
+			}
+			if(in2 != null) {
+				String [] lines = in2.toDebugString().split("\\r?\\n");
+				startLine2 =  SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
+				i2length = lines.length;
+			}
+			
+			String outDebugString = "";
+			int skip = 0;
+			
+			// Now process output RDD and replace inputRDD debug string by the matrix variable name
+			String [] outLines = out.toDebugString().split("\\r?\\n");
+			for(int i = 0; i < outLines.length; i++) {
+				if(skip > 0) {
+					skip--;
+					// outDebugString += "\nSKIP:" + outLines[i];
+				}
+				else if(startLine1 != null && outLines[i].contains(startLine1)) {
+					String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine1.length());
+					outDebugString += "\n" + prefix + "[[" + in1Name + "]]";
+					//outDebugString += "\n{" + prefix + "}[[" + in1Name + "]] => " + outLines[i];
+					skip = i1length - 1;  
+				}
+				else if(startLine2 != null && outLines[i].contains(startLine2)) {
+					String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine2.length());
+					outDebugString += "\n" + prefix + "[[" + in2Name + "]]";
+					skip = i2length - 1;
+				}
+				else {
+					outDebugString += "\n" + outLines[i];
+				}
+			}
+			
+			// outDebugString += "\n{" + startLine1 + "}\n{" + startLine2 + "}";
+			
+			inst.setDebugString(outDebugString + "\n");
+		}
+	}
 	
 	/**
 	 * Adds a child rdd object to the lineage of a parent rdd.

@@ -119,8 +119,6 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		{
 			out = out.reduceByKey(new AggregateSumMultiBlockFunction()); 
 			
-			SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName(), in2, input2.getName());
-			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());

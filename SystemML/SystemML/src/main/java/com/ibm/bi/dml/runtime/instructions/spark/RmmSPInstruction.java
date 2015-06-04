@@ -102,8 +102,6 @@ public class RmmSPInstruction extends BinarySPInstruction
 				tmp1.join( tmp2 )                                         //join by result block 
 		            .mapToPair( new RmmMultiplyFunction() )               //do matrix multiplication
 		            .reduceByKey( new AggregateSumMultiBlockFunction() ); //aggregation per result block
-				
-		SparkUtils.setLineageInfoForExplain(this, out, in1, input1.getName(), in2, input2.getName());
 		
 		//put output block into symbol table (no lineage because single block)
 		updateOutputMatrixCharacteristics(sec);

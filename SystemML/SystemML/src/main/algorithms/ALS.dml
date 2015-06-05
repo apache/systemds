@@ -18,6 +18,7 @@
 # V       String   ---      Location to read the input matrix V to be factorized
 # L       String   ---      Location to write the factor matrix L
 # R       String   ---      Location to write the factor matrix R
+# M       String   ---      Location to write the model: V
 # rank    Int      10       Rank of the factorization
 # reg     String   "L2"	    Regularization: 
 #						    "L2" = L2 regularization;
@@ -33,12 +34,14 @@
 # OUTPUT: Matrix L and Matrix R
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R
+# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R V=OUTPUT_DIR/V
 #     				                         rank=10 reg="wL2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL	   = $L;
 fileR      = $R;
+fileM      = $M;
+
 # Default values of some parameters
 r          = ifdef ($rank, 10);	        # $rank=10;
 reg	   	   = ifdef ($reg, "L2")         # $reg="L2";
@@ -148,5 +151,9 @@ if (!converged) {
    print ("Max iteration achieved but not converged!");
 } 
 
+Rt = t(R);
 write (L, fileL, format=fmtO);
-write (t(R), fileR, format=fmtO);
+write (Rt, fileR, format=fmtO);
+#write V as part of the model
+write(V,fileM, format=fmtO);
+

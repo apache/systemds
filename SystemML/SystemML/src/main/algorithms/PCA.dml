@@ -1,0 +1,97 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+# 
+# This script performs Principal Component Analysis (PCA) on the given input data.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# INPUT  String ---      Location to read the matrix A of feature vectors
+# K      Int    ---      Indicates dimension of the new vector space constructed from eigen vectors
+# CENTER Int    0        Indicates whether or not to center data 
+# SCALE  Int    0        Indicates whether or not to scale data 
+# OFMT   String ---      Output data format
+# PROJDATA Int  0	     This argument indicates if the data should be projected or not
+# MODEL  String ---      Location to already existing model: eigenvectors and eigenvalues 
+# OUTPUT String /        Location to write output matrices (covariance matrix, new basis vectors, 
+#                           and data projected onto new basis vectors)
+# ---------------------------------------------------------------------------------------------
+
+A = read($INPUT);
+K = ifdef($K, ncol(A));
+ofmt = ifdef($OFMT, "CSV");
+projectData = ifdef($PROJDATA,0);
+model = ifdef($MODEL,"");
+center = ifdef($CENTER,0);
+scale = ifdef($SCALE,0);
+output = ifdef($OUTPUT,"/");
+
+evec_dominant = matrix(0,cols=1,rows=1);
+
+if (model != "") {
+	# reuse existing model to project data
+    evec_dominant = read(model+"/dominant.eigen.vectors");
+}else{
+	if (model == "" ){
+		model = output;	
+	}	
+
+	N = nrow(A);
+	D = ncol(A);
+
+	# perform z-scoring (centering and scaling)
+	if (center == 1) {
+	    cm = colMeans(A);
+	    A = A - cm;
+	}
+	if (scale == 1) {
+	    cvars = (colSums (A^2));	
+	    if (center == 1){
+		cm = colMeans(A);
+	    	cvars = (cvars - N*(cm^2))/(N-1);		    
+ 	    }
+	    Azscored = (A)/sqrt(cvars);
+            A = Azscored;
+	}	
+
+	# co-variance matrix 
+	mu = colSums(A)/N;
+	C = (t(A) %*% A)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+
+	# compute eigen vectors and values
+	[evalues, evectors] = eigen(C);
+
+	decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
+	diagmat = table(seq(1,D),decreasing_Idx);
+	# sorts eigenvalues by decreasing order
+	evalues = diagmat %*% evalues;
+	# sorts eigenvectors column-wise in the order of decreasing eigenvalues
+	evectors = evectors %*% diagmat;
+
+
+	# select K dominant eigen vectors 
+	nvec = ncol(evectors);
+
+	eval_dominant = evalues[1:K, 1];
+	evec_dominant = evectors[,1:K];
+	
+	# the square root of eigenvalues
+	eval_stdev_dominant = sqrt(eval_dominant);
+	
+	write(eval_stdev_dominant, model+"/dominant.eigen.standard.deviations", format=ofmt);
+	write(eval_dominant, model+"/dominant.eigen.values", format=ofmt);
+	write(evec_dominant, model+"/dominant.eigen.vectors", format=ofmt);
+}
+if (projectData == 1 | model != ""){
+	# Construct new data set by treating computed dominant eigenvectors as the basis vectors
+	newA = A %*% evec_dominant;
+	write(newA, output+"/projected.data", format=ofmt);
+}

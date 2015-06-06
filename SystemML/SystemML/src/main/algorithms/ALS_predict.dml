@@ -20,6 +20,9 @@
 # Vrows   Integer  ---      The number of rows in the original matrix
 # Vcols   Integer  ---      The number of columns in the original matrix
 # fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
+# hadoop jar system-ml.jar -f ALS_predict.dml -nvargs Vrows=3 Vcols=4  X=OUTPUT/recommend.mtx 
+# L=OUTPUT/L.mtx  R=OUTPUT/R.mtx  Y=OUTPUT/recommend.mtx
+#
 
 fileX      = $X;
 fileY 	   = $Y;

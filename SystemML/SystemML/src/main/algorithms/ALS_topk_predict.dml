@@ -20,6 +20,8 @@
 # V	  	  String   ---      Location of original matrix V: user-id x item-id
 # K	  	  Int      5	    The number of top K items	
 # fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
+# hadoop jar system-ml.jar -f ALS_topk_predict.dml -nvargs V=OUTPUT_DIR/V.mtx  X=OUTPUT_DIR/topk_recommend.mtx  
+# L=OUTPUT_DIR/L.mtx  R=OUTPUT_DIR/R.mtx  Y=OUTPUT_DIR/predict.mtx fmt=csv
 
 fileX      = $X;
 fileY 	   = $Y;

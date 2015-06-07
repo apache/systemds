@@ -56,7 +56,7 @@ public class ReorgOp extends Hop
 	
 	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, Hop inp) 
 	{
-		super(Kind.ReorgOp, l, dt, vt);
+		super(l, dt, vt);
 		op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
@@ -67,7 +67,7 @@ public class ReorgOp extends Hop
 	
 	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, ArrayList<Hop> inp) 
 	{
-		super(Kind.ReorgOp, l, dt, vt);
+		super(l, dt, vt);
 		op = o;
 		
 		for( int i=0; i<inp.size(); i++ ) {
@@ -590,7 +590,7 @@ public class ReorgOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.ReorgOp )
+		if( !(that instanceof ReorgOp) )
 			return false;
 		
 		ReorgOp that2 = (ReorgOp)that;		

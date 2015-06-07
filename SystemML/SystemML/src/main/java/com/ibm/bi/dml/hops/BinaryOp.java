@@ -96,7 +96,7 @@ public class BinaryOp extends Hop
 	
 	public BinaryOp(String l, DataType dt, ValueType vt, Hop.OpOp2 o,
 			Hop inp1, Hop inp2) {
-		super(Kind.BinaryOp, l, dt, vt);
+		super(l, dt, vt);
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -1992,7 +1992,7 @@ public class BinaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.BinaryOp )
+		if( !(that instanceof BinaryOp) )
 			return false;
 		
 		BinaryOp that2 = (BinaryOp)that;

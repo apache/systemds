@@ -84,7 +84,7 @@ public class DataGenOp extends Hop
 	 */
 	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters)
 	{
-		super(Kind.DataGenOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
+		super(id.getName(), DataType.MATRIX, ValueType.DOUBLE);
 		
 		_id = id;
 		_op = mthd;
@@ -340,7 +340,7 @@ public class DataGenOp extends Hop
 			double incr = computeBoundsInformation(input3);
 			boolean incrKnown = (incr != Double.MAX_VALUE);
 			
-			if(  !incrKnown && input3.getKind() == Kind.BinaryOp //special case for incr
+			if(  !incrKnown && input3 instanceof BinaryOp //special case for incr
 			   && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) 
 			{
 				incr = ( from >= to ) ? -1 : 1;
@@ -471,7 +471,7 @@ public class DataGenOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.DataGenOp )
+		if( !(that instanceof DataGenOp) )
 			return false;
 		
 		DataGenOp that2 = (DataGenOp)that;	

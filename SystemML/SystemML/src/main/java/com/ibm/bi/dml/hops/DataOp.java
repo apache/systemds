@@ -58,7 +58,7 @@ public class DataOp extends Hop
 	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
 			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
-		super(Kind.DataOp, l, dt, vt);
+		super(l, dt, vt);
 		_dataop = dop;
 		
 		_fileName = fname;
@@ -76,7 +76,7 @@ public class DataOp extends Hop
 	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, Hop in,
 			DataOpTypes dop, String fname) {
-		super(Kind.DataOp, l, dt, vt);
+		super(l, dt, vt);
 		_dataop = dop;
 		getInput().add(0, in);
 		in.getParent().add(this);
@@ -90,7 +90,7 @@ public class DataOp extends Hop
 	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, Hop in,
 			LiteralOp level, DataOpTypes dop, String fname) {
-		super(Kind.DataOp, l, dt, vt);
+		super(l, dt, vt);
 		_dataop = dop;
 		getInput().add(0, in);
 		getInput().add(1, level);
@@ -108,7 +108,7 @@ public class DataOp extends Hop
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 			DataOpTypes dop, HashMap<String, Hop> inputParameters) {
-		super(Kind.DataOp, l, dt, vt);
+		super(l, dt, vt);
 
 		_dataop = dop;
 
@@ -134,7 +134,7 @@ public class DataOp extends Hop
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 		DataOpTypes dop, Hop in, HashMap<String, Hop> inputParameters) {
-		super(Kind.DataOp, l, dt, vt);
+		super(l, dt, vt);
 
 		_dataop = dop;
 		

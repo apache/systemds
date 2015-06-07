@@ -94,7 +94,7 @@ public class AggBinaryOp extends Hop
 	
 	public AggBinaryOp(String l, DataType dt, ValueType vt, OpOp2 innOp,
 			AggOp outOp, Hop in1, Hop in2) {
-		super(Kind.AggBinaryOp, l, dt, vt);
+		super(l, dt, vt);
 		innerOp = innOp;
 		outerOp = outOp;
 		getInput().add(0, in1);
@@ -2026,7 +2026,7 @@ public class AggBinaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.AggBinaryOp )
+		if( !(that instanceof AggBinaryOp) )
 			return false;
 		
 		AggBinaryOp that2 = (AggBinaryOp)that;

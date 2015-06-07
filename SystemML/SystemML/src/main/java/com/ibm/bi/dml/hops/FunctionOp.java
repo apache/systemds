@@ -58,7 +58,7 @@ public class FunctionOp extends Hop
 
 	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs) 
 	{
-		super(Kind.FunctionOp, fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
+		super(fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
 		
 		_type = type;
 		_fnamespace = fnamespace;

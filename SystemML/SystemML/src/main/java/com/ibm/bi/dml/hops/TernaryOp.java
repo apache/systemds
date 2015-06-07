@@ -77,7 +77,7 @@ public class TernaryOp extends Hop
 	
 	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3) {
-		super(Hop.Kind.TernaryOp, l, dt, vt);
+		super(l, dt, vt);
 		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -91,7 +91,7 @@ public class TernaryOp extends Hop
 	// output dimensions
 	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5) {
-		super(Hop.Kind.TernaryOp, l, dt, vt);
+		super(l, dt, vt);
 		_op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -890,7 +890,7 @@ public class TernaryOp extends Hop
 					//note: for ctable histogram dim2 known but automatically replaces m         
 					//ret = new long[]{m, m, m};
 				}
-				if ( this.getInput().size() > 3 && this.getInput().get(3).getKind() == Kind.LiteralOp && this.getInput().get(4).getKind() == Kind.LiteralOp ) {
+				if ( this.getInput().size() > 3 && this.getInput().get(3) instanceof LiteralOp && this.getInput().get(4) instanceof LiteralOp ) {
 					try {
 						long outputDim1 = ((LiteralOp)getInput().get(3)).getLongValue();
 						long outputDim2 = ((LiteralOp)getInput().get(4)).getLongValue();
@@ -1001,9 +1001,9 @@ public class TernaryOp extends Hop
 						
 						// if output dimensions are provided, update _dim1 and _dim2
 						if( getInput().size() >= 5 ) {
-							if( getInput().get(3).getKind() == Kind.LiteralOp )
+							if( getInput().get(3) instanceof LiteralOp )
 								setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(3)) );
-							if( getInput().get(4).getKind() == Kind.LiteralOp )
+							if( getInput().get(4) instanceof LiteralOp )
 								setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(4)) );
 						}
 					}
@@ -1041,7 +1041,7 @@ public class TernaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.TernaryOp )
+		if( !(that instanceof TernaryOp) )
 			return false;
 		
 		TernaryOp that2 = (TernaryOp)that;

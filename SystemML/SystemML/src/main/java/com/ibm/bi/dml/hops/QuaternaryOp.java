@@ -49,7 +49,7 @@ public class QuaternaryOp extends Hop
 	
 	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
 			Hop inX, Hop inU, Hop inV, Hop inW, boolean post) {
-		super(Hop.Kind.QuaternaryOp, l, dt, vt);
+		super(l, dt, vt);
 		_op = o;
 		getInput().add(0, inX);
 		getInput().add(1, inU);
@@ -433,7 +433,7 @@ public class QuaternaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.QuaternaryOp )
+		if( !(that instanceof QuaternaryOp) )
 			return false;
 		
 		QuaternaryOp that2 = (QuaternaryOp)that;

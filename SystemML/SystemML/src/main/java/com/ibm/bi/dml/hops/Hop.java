@@ -45,24 +45,6 @@ public abstract class Hop
 	public static final long CPThreshold = 2000;
 	protected static final boolean BREAKONSCALARS = false;
 	protected static final boolean SPLITLARGEMATRIXMULT = true;
-	
-	public enum Kind {
-		AggUnaryOp, 
-		AggBinaryOp, 
-		UnaryOp, 
-		BinaryOp, 
-		TernaryOp,
-		QuaternaryOp,
-		ReorgOp, 
-		ReblockOp,
-		DataOp, 
-		LiteralOp, 
-		DataGenOp,
-		ParameterizedBuiltinOp, 
-		IndexingOp, 
-		LeftIndexingOp,
-		FunctionOp, 
-	};
 
 	public enum VisitStatus {
 		DONE, 
@@ -74,7 +56,6 @@ public abstract class Hop
 	private static IDSequence _seqHopID = new IDSequence();
 	
 	protected long _ID;
-	protected Kind _kind;
 	protected String _name;
 	protected DataType _dataType;
 	protected ValueType _valueType;
@@ -120,8 +101,7 @@ public abstract class Hop
 		//default constructor for clone
 	}
 		
-	public Hop(Kind k, String l, DataType dt, ValueType vt) {
-		_kind = k;
+	public Hop(String l, DataType dt, ValueType vt) {
 		_ID = getNextHopID();
 		setName(l);
 		setDataType(dt);
@@ -673,10 +653,6 @@ public abstract class Hop
 	public long getNnz(){
 		return _nnz;
 	}
-	
-	public Kind getKind() {
-		return _kind;
-	}
 
 	public abstract Lop constructLops() 
 		throws HopsException, LopsException;
@@ -776,7 +752,7 @@ public abstract class Hop
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()) {
 			StringBuilder s = new StringBuilder(""); 
-			s.append(_kind + " " + getHopID() + "\n");
+			s.append(getClass().getSimpleName() + " " + getHopID() + "\n");
 			s.append("  Label: " + getName() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
 			s.append("  Parent: ");
 			for (Hop h : getParent()) {
@@ -1643,7 +1619,6 @@ public abstract class Hop
 			throw new CloneNotSupportedException( "Hops deep copy w/ lops/inputs/parents not supported." );
 		
 		_ID = that._ID;
-		_kind = that._kind;
 		_name = that._name;
 		_dataType = that._dataType;
 		_valueType = that._valueType;

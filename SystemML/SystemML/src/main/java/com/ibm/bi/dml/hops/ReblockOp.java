@@ -30,9 +30,9 @@ public class ReblockOp extends Hop
 	
 	// Constructor that adds a Reblock Hop *AFTER* a hop (e.g. Read Hop) to
 	// produce a block size
-	public ReblockOp(Hop inp, int rows_per_block, int cols_per_block) {
-		super(Kind.ReblockOp, inp.getName(), inp.getDataType(), inp
-				.getValueType());
+	public ReblockOp(Hop inp, int rows_per_block, int cols_per_block) 
+	{
+		super(inp.getName(), inp.getDataType(), inp.getValueType());
 
 		setDim1(inp.getDim1());
 		setDim2(inp.getDim2());
@@ -62,9 +62,9 @@ public class ReblockOp extends Hop
 	// Constructor that adds a Reblock Hop *BEFORE* a hop to create its block
 	// size(e.g. Write Hop)
 
-	public ReblockOp(Hop par) {
-		super(Kind.ReblockOp, par.getName(), par.getDataType(), par
-				.getValueType());
+	public ReblockOp(Hop par) 
+	{
+		super(par.getName(), par.getDataType(), par.getValueType());
 
 		setDim1(par.getDim1());
 		setDim2(par.getDim2());
@@ -103,7 +103,7 @@ public class ReblockOp extends Hop
 					Hop input = getInput().get(0);
 					
 					// Create the reblock lop according to the format of the input hop
-					if ( input.getKind() == Kind.DataOp 
+					if ( input instanceof DataOp 
 							&& ((DataOp)input).get_dataop() == DataOpTypes.PERSISTENTREAD
 							&& ((DataOp)input).getFormatType() == FileFormatTypes.CSV ) {
 						// NOTE: only persistent reads can have CSV format
@@ -247,7 +247,7 @@ public class ReblockOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.ReblockOp )
+		if( !(that instanceof ReblockOp) )
 			return false;
 		
 		ReblockOp that2 = (ReblockOp)that;	

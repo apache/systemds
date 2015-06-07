@@ -65,7 +65,7 @@ public class ParameterizedBuiltinOp extends Hop
 	 */
 	public ParameterizedBuiltinOp(String l, DataType dt, ValueType vt,
 			ParamBuiltinOp op, HashMap<String, Hop> inputParameters) {
-		super(Hop.Kind.ParameterizedBuiltinOp, l, dt, vt);
+		super(l, dt, vt);
 
 		_op = op;
 
@@ -616,7 +616,7 @@ public class ParameterizedBuiltinOp extends Hop
 			// Get the number of groups provided as part of aggregate() invocation, whenever available.
 			if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
 				Hop ngroups = getInput().get(_paramIndexMap.get(Statement.GAGG_NUM_GROUPS));
-				if(ngroups != null && ngroups.getKind() == Kind.LiteralOp) {
+				if(ngroups != null && ngroups instanceof LiteralOp) {
 					try {
 						long m = ((LiteralOp)ngroups).getLongValue();
 						//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): m="+m);
@@ -774,7 +774,7 @@ public class ParameterizedBuiltinOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.ParameterizedBuiltinOp )
+		if( !(that instanceof ParameterizedBuiltinOp) )
 			return false;
 		
 		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;	

@@ -58,7 +58,7 @@ public class UnaryOp extends Hop
 	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp)
 			throws HopsException 
 	{
-		super(Hop.Kind.UnaryOp, l, dt, vt);
+		super(l, dt, vt);
 
 		getInput().add(0, inp);
 		inp.getParent().add(this);
@@ -780,7 +780,7 @@ public class UnaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.UnaryOp )
+		if( !(that instanceof UnaryOp) )
 			return false;
 		
 		UnaryOp that2 = (UnaryOp)that;		

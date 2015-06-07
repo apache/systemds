@@ -54,7 +54,7 @@ public class AggUnaryOp extends Hop
 	
 	public AggUnaryOp(String l, DataType dt, ValueType vt, AggOp o, Direction idx, Hop inp) 
 	{
-		super(Kind.AggUnaryOp, l, dt, vt);
+		super(l, dt, vt);
 		_op = o;
 		_direction = idx;
 		getInput().add(0, inp);
@@ -585,7 +585,7 @@ public class AggUnaryOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( that._kind!=Kind.AggUnaryOp )
+		if( !(that instanceof AggUnaryOp) )
 			return false;
 		
 		AggUnaryOp that2 = (AggUnaryOp)that;		

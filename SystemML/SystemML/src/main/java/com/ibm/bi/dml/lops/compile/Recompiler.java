@@ -38,7 +38,6 @@ import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
@@ -1561,7 +1560,7 @@ public class Recompiler
 				
 				//special case increment 
 				Hop input3 = d.getInput().get(ix3);
-				if ( input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR 
+				if ( input3 instanceof BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR 
 					&& from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) 
 				{
 					incr =( from >= to )? -1.0 : 1.0;

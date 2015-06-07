@@ -55,7 +55,7 @@ public class LeftIndexingOp  extends Hop
 	}
 	
 	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hop inpMatrixLeft, Hop inpMatrixRight, Hop inpRowL, Hop inpRowU, Hop inpColL, Hop inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
-		super(Kind.LeftIndexingOp, l, dt, vt);
+		super(l, dt, vt);
 
 		getInput().add(0, inpMatrixLeft);
 		getInput().add(1, inpMatrixRight);
@@ -385,8 +385,8 @@ public class LeftIndexingOp  extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if(    that._kind!=Kind.LeftIndexingOp 
-			&& getInput().size() != that.getInput().size() )
+		if(    !(that instanceof LeftIndexingOp) 
+			|| getInput().size() != that.getInput().size() )
 		{
 			return false;
 		}

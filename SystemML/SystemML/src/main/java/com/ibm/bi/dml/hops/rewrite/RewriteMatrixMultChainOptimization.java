@@ -66,7 +66,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 				return;
 		
-		if (  hop.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
+		if (  hop instanceof AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
 			  && !((AggBinaryOp)hop).hasLeftPMInput() 
 			  && hop.getVisited() != Hop.VisitStatus.DONE ) 
 		{
@@ -272,7 +272,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 */
 	private void optimizeMMChain( Hop hop ) throws HopsException 
 	{
-		LOG.trace("MM Chain Optimization for HOP: (" + " " + hop.getKind() + ", " + hop.getHopID() + ", "
+		LOG.trace("MM Chain Optimization for HOP: (" + " " + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ", "
 					+ hop.getName() + ")");
 		
 		ArrayList<Hop> mmChain = new ArrayList<Hop>();
@@ -307,7 +307,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 
-			if (    h.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
+			if (    h instanceof AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
 			     && !((AggBinaryOp)hop).hasLeftPMInput() 
 				 && h.getVisited() != Hop.VisitStatus.DONE ) 
 			{
@@ -343,7 +343,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			LOG.trace("Identified MM Chain: ");
 			//System.out.print("MMChain_" + getHopID() + " (" + mmChain.size() + "): ");
 			for (Hop h : mmChain) {
-				LOG.trace("Hop " + h.getName() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
+				LOG.trace("Hop " + h.getName() + "(" + h.getClass().getSimpleName() + ", " + h.getHopID() + ")" + " "
 						+ h.getDim1() + "x" + h.getDim2());
 				//System.out.print("[" + h.getName() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " " + h.getDim1() + "x" + h.getDim2() + "]  ");
 			}

@@ -144,7 +144,6 @@ public class L2SVMTest extends AutomatedTestBase
         
 		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
-        boolean success = TestUtils.compareMatrices(wR, wDML, Math.pow(10, -12), "wR", "wDML");
-        //System.out.println(success+"");
-	}
+        TestUtils.compareMatrices(wR, wDML, Math.pow(10, -12), "wR", "wDML");
+    }
 }

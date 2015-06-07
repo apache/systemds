@@ -30,7 +30,6 @@ public class AppendMInstruction extends AppendInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private long _offset = -1; 
-	private CacheType _cacheType = null;
 	
 	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, String istr)
 	{

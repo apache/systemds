@@ -9,8 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -211,7 +210,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals((double)val, dmlfile.get(new CellIndex(1,1)));
+			Assert.assertEquals(Double.valueOf(val), dmlfile.get(new CellIndex(1,1)));
 		}
 		catch(Exception ex)
 		{

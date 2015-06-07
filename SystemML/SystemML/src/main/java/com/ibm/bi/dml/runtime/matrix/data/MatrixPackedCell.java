@@ -24,7 +24,9 @@ public class MatrixPackedCell extends MatrixCell
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
+	private static final long serialVersionUID = -3633665169444817750L;
+
 	private double[] extras=null;
 	private int extra_size=0;
 	

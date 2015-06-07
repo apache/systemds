@@ -1646,12 +1646,9 @@ public class BinaryOp extends Hop
 			long m1_dim2 = left.getDim2();		
 			long m2_dim1 = right.getDim1();
 			long m2_dim2 = right.getDim2();
-			long m3_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
-			long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
 			long brlen = left.getRowsInBlock();
 			long bclen = left.getColsInBlock();
 			
-			Lop offset = createOffsetLop( left, true ); //offset 1st input
 			AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
 		
 			switch( am )

@@ -9,8 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -92,7 +91,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			
 			//check correct propagated size via final results
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals("Unexpected results.", rows*cols*3.0, dmlfile.get(new CellIndex(1,1)).doubleValue());
+			Assert.assertEquals("Unexpected results.", Double.valueOf(rows*cols*3.0), dmlfile.get(new CellIndex(1,1)));
 			
 			//check expected number of compiled and executed MR jobs
 			if( evalExpr || constFold )

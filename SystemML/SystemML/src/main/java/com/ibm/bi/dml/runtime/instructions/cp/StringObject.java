@@ -12,13 +12,14 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
 public class StringObject extends ScalarObject 
-{
-	private static final int MAX_STRING_SIZE = 1*1024*1024; //1MB
-	
-	
+{	
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	private static final long serialVersionUID = 2464839775369002455L;
+
+	private static final int MAX_STRING_SIZE = 1*1024*1024; //1MB
 	
 	private String _value;
 

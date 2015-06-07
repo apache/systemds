@@ -642,7 +642,6 @@ public class DMLDebuggerFunctions {
 		}
 		else if(colIndex >= 0) {
 			// Print a column
-			int numItemsPrinted = 0;
 			for(int i=0; i<min(mb.getNumRows(), DISPLAY_MAX_ROWS); i++) {
 				System.out.format("%.4f\t", mb.quickGetValue(i, colIndex-1));
 				System.out.println();

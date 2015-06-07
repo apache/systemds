@@ -3561,57 +3561,6 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * converts an array list of InputInfo into an array of InputInfo
-	 * 
-	 * @param infos
-	 * @return
-	 */
-
-	private InputInfo[] getInputInfoArray(ArrayList<InputInfo> infos) {
-		InputInfo[] arr = new InputInfo[infos.size()];
-
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = infos.get(i);
-		}
-
-		return arr;
-	}
-
-	/**
-	 * converts an array list of long into an array of long
-	 * 
-	 * @param list
-	 * @return
-	 */
-	private long[] getLongArray(ArrayList<Long> list) {
-		long[] arr = new long[list.size()];
-
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = list.get(i);
-		}
-
-		return arr;
-
-	}
-
-	/**
-	 * converts an array of longs into an array of int
-	 * 
-	 * @param list
-	 * @return
-	 */
-	private int[] getIntArray(ArrayList<Long> list) {
-		int[] arr = new int[list.size()];
-
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = list.get(i).intValue();
-		}
-
-		return arr;
-
-	}
-
-	/**
 	 * Method to populate aggregate and other instructions in reducer.
 	 * 
 	 * @param node

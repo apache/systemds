@@ -46,7 +46,6 @@ public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extend
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public RecordWriter<K, V> getRecordWriter(FileSystem ignored, JobConf job,
 			String name, Progressable progress) throws IOException {

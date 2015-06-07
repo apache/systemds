@@ -21,50 +21,33 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	/**
-	 * Main method for running one test at a time.
-	 */
-	public static void main(String[] args) {
-		long startMsec = System.currentTimeMillis();
-
-		ElementwiseAdditionTest t = new ElementwiseAdditionTest();
-		t.setUpBase();
-		t.setUp();
-		t.testSparse();
-		t.tearDown();
-
-		long elapsedMsec = System.currentTimeMillis() - startMsec;
-		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-
-	}
+	private String TEST_DIR = "functions/binary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
-		
 		// positive tests
-		availableTestConfigurations.put("DenseTest",
-				new TestConfiguration("ElementwiseAdditionTest", new String[] { "c" }));
-		availableTestConfigurations.put("SparseTest",
-				new TestConfiguration("ElementwiseAdditionTest", new String[] { "c" }));
-		availableTestConfigurations.put("EmptyTest",
-				new TestConfiguration("ElementwiseAdditionTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionLessRowsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionMoreRowsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionLessColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionMoreColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionLessRowsLessColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionMoreRowsMoreColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionLessRowsMoreColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionMoreRowsLessColsTest",
-				new TestConfiguration("ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("DenseTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+		addTestConfiguration("SparseTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+		addTestConfiguration("EmptyTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionLessRowsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionMoreRowsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionLessColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionMoreColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionLessRowsLessColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionMoreRowsMoreColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionLessRowsMoreColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionMoreRowsLessColsTest",
+				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		
 		// negative tests
 	}
@@ -78,7 +61,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("DenseTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 1, -1);
 		double[][] b = getRandomMatrix(rows, cols, -1, 1, 1, -1);
@@ -107,7 +90,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("SparseTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.05, -1);
 		double[][] b = getRandomMatrix(rows, cols, -1, 1, 0.05, -1);
@@ -140,7 +123,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionLessRowsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -158,7 +141,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionMoreRowsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -176,7 +159,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionLessColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -194,7 +177,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionMoreColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -212,7 +195,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionLessRowsLessColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -230,7 +213,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionMoreRowsMoreColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -248,7 +231,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionLessRowsMoreColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}
@@ -266,7 +249,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("rows2", rows2);
 		config.addVariable("cols2", cols2);
 		
-		loadTestConfiguration("WrongDimensionMoreRowsLessColsTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}

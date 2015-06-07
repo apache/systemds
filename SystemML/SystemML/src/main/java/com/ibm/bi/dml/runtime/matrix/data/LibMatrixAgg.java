@@ -264,6 +264,7 @@ public class LibMatrixAgg
 				case MIN: return AggType.MIN;
 				case MAXINDEX: return AggType.MAX_INDEX;
 				case MININDEX: return AggType.MIN_INDEX;
+				default: //do nothing
 			}
 		}
 		
@@ -740,6 +741,9 @@ public class LibMatrixAgg
 					d_uam(a, c, m, n );
 				break;
 			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
 		
 		//cleanup output and change representation (if necessary)
@@ -848,6 +852,9 @@ public class LibMatrixAgg
 					s_uam(a, c, m, n );
 				break;
 			}
+
+			default:
+				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
 		
 		//cleanup output and change representation (if necessary)
@@ -861,8 +868,10 @@ public class LibMatrixAgg
 	 * @param out
 	 * @param optype
 	 * @param ixFn
+	 * @throws DMLRuntimeException 
 	 */
-	private static void aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn)
+	private static void aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) 
+		throws DMLRuntimeException
 	{
 		//do nothing for pseudo sparse-safe operations
 		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD 
@@ -903,6 +912,9 @@ public class LibMatrixAgg
 						out.quickSetValue(1, j, in.rlen); //count				
 				break;
 			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
 	}
 	

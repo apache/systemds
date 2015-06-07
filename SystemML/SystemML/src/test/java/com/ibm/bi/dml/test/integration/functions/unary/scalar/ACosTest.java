@@ -59,7 +59,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.acos(intValue);
 		double computedDoubleValue = Math.acos(doubleValue);
@@ -82,7 +82,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("ZeroTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.acos(intValue);
 		double computedDoubleValue = Math.acos(doubleValue);
@@ -105,7 +105,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.acos(intValue);
 		double computedDoubleValue = Math.acos(doubleValue);
@@ -128,7 +128,7 @@ public class ACosTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.acos(intValue);
 		double computedDoubleValue = Math.acos(doubleValue);

@@ -70,6 +70,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			case INT: val = "7"; break;
 			case DOUBLE: val = "7.3"; break;
 			case BOOLEAN: val = "TRUE"; break;
+			default: //do nothing
 		}
 		
 		// This is for running the junit test the new way, i.e., construct the arguments directly

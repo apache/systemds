@@ -7,8 +7,7 @@
 
 package com.ibm.bi.dml.test.integration.functions.piggybacking;
 
-import static junit.framework.Assert.assertEquals;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -16,7 +15,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class PiggybackingTest1 extends AutomatedTestBase 
@@ -136,9 +134,9 @@ public class PiggybackingTest1 extends AutomatedTestBase
 		int numMRJobs = 4;
 		runTest(true, exceptionExpected, null, numMRJobs);
 	
-		double expected = 1120.0;
-		double output = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
-		assertEquals("Values not equal: " + output + "!=" + expected, output, expected);
+		Double expected = 1120.0;
+		Double output = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1));
+		Assert.assertEquals("Values not equal: " + output + "!=" + expected, output, expected);
 		
 		rtplatform = rtold;
 	}

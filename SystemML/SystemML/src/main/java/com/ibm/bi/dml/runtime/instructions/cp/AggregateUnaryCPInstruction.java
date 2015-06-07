@@ -164,6 +164,9 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				case INT:	  ret = new IntObject(output_name, rval); break;
 				case DOUBLE:  ret = new DoubleObject(output_name, rval); break;
 				case STRING:  ret = new StringObject(output_name, String.valueOf(rval)); break;
+				
+				default: 
+					throw new DMLRuntimeException("Invalid output value type: "+output.getValueType());
 			}
 			ec.setScalarOutput(output_name, ret);
 			return;

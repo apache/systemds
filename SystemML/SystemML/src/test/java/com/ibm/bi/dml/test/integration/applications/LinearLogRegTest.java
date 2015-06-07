@@ -93,7 +93,7 @@ public class LinearLogRegTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       LLR_HOME + INPUT_DIR + " " + LLR_HOME + EXPECTED_DIR;
       
-        loadTestConfiguration(TEST_LINEAR_LOG_REG);
+        loadTestConfiguration(config);
 
         // prepare training data set
         double[][] X = getRandomMatrix(rows, cols, 1, 10, sparsity, 100);
@@ -134,13 +134,6 @@ public class LinearLogRegTest extends AutomatedTestBase
         }
         
 		boolean exceptionExpected = false;
-		/*
-		 * Expected number of jobs:
-		 * Rand - 1 job 
-		 * Computation before while loop - 4 jobs
-		 * While loop iteration - 9 jobs
-		 * Final output write - 1 job
-		 */
 		int expectedNumberOfJobs = 31;
 		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
         

@@ -21,17 +21,17 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	@SuppressWarnings("deprecation")
+	private String TEST_DIR = "functions/binary/matrix/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
 
 		// positive tests
-		availableTestConfigurations.put("Term1", new TestConfiguration("ElementwiseAdditionMultiplicationTerm1",
+		addTestConfiguration("Term1", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm1",
 				new String[] { "result" }));
-		availableTestConfigurations.put("Term2", new TestConfiguration("ElementwiseAdditionMultiplicationTerm2",
+		addTestConfiguration("Term2", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm2",
 				new String[] { "result" }));
-		availableTestConfigurations.put("Term3", new TestConfiguration("ElementwiseAdditionMultiplicationTerm3",
+		addTestConfiguration("Term3", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm3",
 				new String[] { "result" }));
 	}
 
@@ -42,7 +42,7 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("Term1");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		loadTestConfiguration("Term1");
+		loadTestConfiguration(config);
 
 		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
@@ -74,7 +74,7 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("Term2");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		loadTestConfiguration("Term2");
+		loadTestConfiguration(config);
 
 		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
@@ -104,7 +104,7 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("Term3");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		loadTestConfiguration("Term3");
+		loadTestConfiguration(config);
 
 		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
 		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);

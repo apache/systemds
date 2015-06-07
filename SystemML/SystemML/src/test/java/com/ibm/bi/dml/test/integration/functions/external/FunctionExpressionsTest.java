@@ -7,10 +7,7 @@
 
 package com.ibm.bi.dml.test.integration.functions.external;
 
-import java.io.IOException;
-
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -93,7 +90,7 @@ public class FunctionExpressionsTest extends AutomatedTestBase
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 					             0, Statistics.getNoOfExecutedMRJobs());
 		} 
-		catch (IOException e) 
+		catch (Exception e) 
 		{
 			e.printStackTrace();
 		}

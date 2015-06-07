@@ -55,7 +55,7 @@ public class TraceTest extends AutomatedTestBase
         config.addVariable("rows", rows);
         config.addVariable("cols", cols);
 
-        loadTestConfiguration(TEST_GENERAL);
+        loadTestConfiguration(config);
 
         createHelperMatrix();
 
@@ -82,7 +82,7 @@ public class TraceTest extends AutomatedTestBase
 
         createHelperMatrix();
 
-        loadTestConfiguration(TEST_SCALAR);
+        loadTestConfiguration(config);
 
         runTest(true, DMLException.class);
     }

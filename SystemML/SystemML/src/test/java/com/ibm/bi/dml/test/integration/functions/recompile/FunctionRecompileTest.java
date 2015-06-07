@@ -9,7 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 

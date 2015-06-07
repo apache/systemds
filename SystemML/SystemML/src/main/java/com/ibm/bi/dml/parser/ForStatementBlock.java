@@ -11,8 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -391,6 +389,9 @@ public class ForStatementBlock extends StatementBlock
 								expr.getFilename(), expr.getBeginLine(), expr.getBeginColumn(), 
 								expr.getEndLine(), expr.getEndColumn());
 						break;
+						
+					default:
+						//do nothing
 				}
 			}
 		}

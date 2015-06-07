@@ -323,6 +323,36 @@ public class DataConverter
 	}
 	
 	/**
+	 * 
+	 * @param mb
+	 * @return
+	 */
+	public static double[] convertToDoubleVector( MatrixBlock mb )
+	{
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		double[] ret = new double[rows*cols];
+		
+		if( mb.isInSparseFormat() )
+		{
+			SparseRowsIterator iter = mb.getSparseRowsIterator();
+			while( iter.hasNext() )
+			{
+				IJV cell = iter.next();
+				ret[cell.i*rows+cell.j] = cell.v;
+			}
+		}
+		else
+		{
+			//memcopy row major representation if at least 1 non-zero
+			if( !mb.isEmptyBlock(false) )
+				System.arraycopy(mb.getDenseArray(), 0, ret, 0, rows*cols);
+		}
+				
+		return ret;
+	}
+	
+	/**
 	 * Creates a dense Matrix Block and copies the given double matrix into it.
 	 * 
 	 * @param data

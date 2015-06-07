@@ -80,12 +80,11 @@ public class OrderStatisticsTest extends AutomatedTestBase
 	public void testSimpleQuantile()
 	{
 		int rows = 10;
-        int cols = 1;
-
+		
         TestConfiguration config = getTestConfiguration("SimpleQuantileTest");
         config.addVariable("rows", rows);
 
-        loadTestConfiguration("SimpleQuantileTest");
+        loadTestConfiguration(config);
 
         createHelperMatrix();
         double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
@@ -114,13 +113,12 @@ public class OrderStatisticsTest extends AutomatedTestBase
 	{
 		int rows1 = 10;
 		int rows2 = 5;
-        int cols = 1;
 
         TestConfiguration config = getTestConfiguration("QuantileTest");
         config.addVariable("rows1", rows1);
         config.addVariable("rows2", rows2);
 
-        loadTestConfiguration("QuantileTest");
+        loadTestConfiguration(config);
 
         createHelperMatrix();
         double[][] vector = getRandomMatrix(rows1, 1, 0, 1, 1, System.currentTimeMillis());

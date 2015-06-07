@@ -7,10 +7,9 @@
 
 package com.ibm.bi.dml.test.integration.functions.piggybacking;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -65,7 +64,7 @@ public class PiggybackingTest2 extends AutomatedTestBase
 	
 		HashMap<CellIndex, Double> d = TestUtils.readDMLScalarFromHDFS(HOME + OUTPUT_DIR + config.getOutputFiles()[0]);
 		
-		assertEquals(d.get(new CellIndex(1,1)), 1.0, 1e-10);
+		Assert.assertEquals(d.get(new CellIndex(1,1)), Double.valueOf(1.0), 1e-10);
 		
 		rtplatform = rtold;
 	}

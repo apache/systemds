@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.test.integration.functions.external;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -89,7 +87,7 @@ public class DynReadWriteTest extends AutomatedTestBase
 		
 			TestUtils.compareMatrices(X, Y, rows, cols, eps);
 		} 
-		catch (IOException e) 
+		catch (Exception e) 
 		{
 			e.printStackTrace();
 		}

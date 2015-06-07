@@ -9,11 +9,7 @@ package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -23,7 +19,6 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -40,6 +35,8 @@ import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
+import com.ibm.bi.dml.runtime.io.MatrixWriter;
+import com.ibm.bi.dml.runtime.io.MatrixWriterFactory;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
@@ -57,8 +54,6 @@ import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
 import com.ibm.bi.dml.runtime.matrix.WriteCSVMR;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
@@ -327,34 +322,9 @@ public class RunMRJobs
 						{
 							//prepare output file
 							Path filepath = new Path(fname, "0-m-00000");
-							
-							if (outinfo == OutputInfo.TextCellOutputInfo) {
-								FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-								FSDataOutputStream writer = fs.create(filepath);
-								writer.writeBytes("1 1 0");
-								writer.close();
-							} 
-							else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
-								Configuration conf = new Configuration();
-								FileSystem fs = FileSystem.get(conf);
-								SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
-										                        MatrixIndexes.class, MatrixCell.class);
-								MatrixIndexes index = new MatrixIndexes(1, 1);
-								MatrixCell cell = new MatrixCell(0);
-								writer.append(index, cell);
-								writer.close();
-							}
-							else if( outinfo == OutputInfo.BinaryBlockOutputInfo ){
-								Configuration conf = new Configuration();
-								FileSystem fs = FileSystem.get(conf);
-								SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
-										                        MatrixIndexes.class, MatrixBlock.class);
-								MatrixIndexes index = new MatrixIndexes(1, 1);
-								MatrixBlock block = new MatrixBlock((int)Math.min(mc.getRows(), mc.getRowsPerBlock()),
-																	(int)Math.min(mc.getCols(), mc.getColsPerBlock()), true);
-								writer.append(index, block);
-								writer.close();
-							}
+							MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(outinfo);
+							writer.writeEmptyMatrixToHDFS(filepath.getName(), mc.getRows(), mc.getCols(), 
+									              mc.getRowsPerBlock(), mc.getColsPerBlock());
 						}
 						
 						outputMatrices[i].setFileExists(true);
@@ -477,29 +447,6 @@ public class RunMRJobs
 		return updateInstList.toString();
 	}
 
-	/*private static String[] updateLabels(String[] inst, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
-		String[] str_array = new String[inst.length];
-		for (int i = 0; i < inst.length; i++) {
-			str_array[i] = updateInstLabels(inst[i], labelValueMapping);
-		}
-		return str_array;
-	}*/
-	
-	
-	private static boolean compareInputDimensions(MatrixCharacteristics[] stats, int numBlocks ) {
-		for(int i=0; i < stats.length; i++ ) {
-			// check if the input dimensions are smaller than the specified number of blocks
-			if ( stats[i].getRows() != -1
-					&& stats[i].getRows() <= (long)numBlocks * DMLTranslator.DMLBlockSize
-					&& stats[i].getCols() != -1
-					&& stats[i].getCols() <= (long)numBlocks * DMLTranslator.DMLBlockSize) {
-				continue;
-			}
-			else 
-				return false;
-		}
-		return true;
-	}
 	
 	/**
 	 * 

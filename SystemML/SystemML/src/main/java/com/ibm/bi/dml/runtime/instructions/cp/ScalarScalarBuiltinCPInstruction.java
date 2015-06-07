@@ -47,18 +47,20 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			
 			if ( !DMLScript.suppressPrint2Stdout()) {
 				switch (input1.getValueType()) {
-				case INT:
-					System.out.println(buffer + so1.getLongValue());
-					break;
-				case DOUBLE:
-					System.out.println(buffer + so1.getDoubleValue());
-					break;
-				case BOOLEAN:
-					System.out.println(buffer + so1.getBooleanValue());
-					break;
-				case STRING:
-					System.out.println(buffer + so1.getStringValue());
-					break;
+					case INT:
+						System.out.println(buffer + so1.getLongValue());
+						break;
+					case DOUBLE:
+						System.out.println(buffer + so1.getDoubleValue());
+						break;
+					case BOOLEAN:
+						System.out.println(buffer + so1.getBooleanValue());
+						break;
+					case STRING:
+						System.out.println(buffer + so1.getStringValue());
+						break;
+					default:
+						//do nothing
 				}
 			}
 		}

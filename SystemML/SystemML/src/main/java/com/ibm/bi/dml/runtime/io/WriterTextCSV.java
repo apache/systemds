@@ -42,8 +42,7 @@ public class WriterTextCSV extends MatrixWriter
 	//(can be set to very large value to disable blocking)
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 	
-	
-	private CSVFileFormatProperties _props = null;
+	protected CSVFileFormatProperties _props = null;
 	
 	public WriterTextCSV( CSVFileFormatProperties props )
 	{
@@ -65,6 +64,17 @@ public class WriterTextCSV extends MatrixWriter
 		writeCSVMatrixToHDFS(path, job, src, rlen, clen, nnz, _props);
 	}
 
+	@Override
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+		throws IOException, DMLRuntimeException 
+	{
+		JobConf job = new JobConf();
+		Path path = new Path( fname );
+
+		MatrixBlock src = new MatrixBlock((int)rlen, 1, true);
+		writeCSVMatrixToHDFS(path, job, src, brlen, clen, 0, _props);
+	}
+	
 	/**
 	 * 
 	 * @param fileName
@@ -74,7 +84,7 @@ public class WriterTextCSV extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	public void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
+	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -242,9 +252,8 @@ public class WriterTextCSV extends MatrixWriter
 	 * @param clen
 	 * @throws IOException
 	 */
-	public void mergeCSVPartFiles(String srcFileName,
-			String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
-			throws IOException 
+	public void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
+		throws IOException 
 	{	
 		Configuration conf = new Configuration();
 
@@ -323,17 +332,16 @@ public class WriterTextCSV extends MatrixWriter
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	public static void addHeaderToCSV(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
-			throws IOException 
+	public void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
+		throws IOException 
 	{
-		
 		Configuration conf = new Configuration();
 
 		Path srcFilePath = new Path(srcFileName);
 		Path destFilePath = new Path(destFileName);
 		FileSystem hdfs = FileSystem.get(conf);
 		
-		if ( !csvprop.hasHeader() ) {
+		if ( !_props.hasHeader() ) {
 			// simply move srcFile to destFile
 			
 			/*
@@ -369,7 +377,7 @@ public class WriterTextCSV extends MatrixWriter
 		for (int i = 0; i < clen; i++) {
 			sb.append("C" + (i + 1));
 			if (i < clen - 1)
-				sb.append(csvprop.getDelim());
+				sb.append(_props.getDelim());
 		}
 		sb.append('\n');
 
@@ -429,8 +437,7 @@ public class WriterTextCSV extends MatrixWriter
 				IOUtilFunctions.closeSilently(out);
 			}
 		} else {
-			throw new IOException(srcFilePath.toString()
-					+ ": No such file or directory");
+			throw new IOException(srcFilePath.toString() + ": No such file or directory");
 		}
 	}
 }

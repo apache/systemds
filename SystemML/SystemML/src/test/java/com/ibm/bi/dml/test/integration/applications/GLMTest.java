@@ -212,7 +212,7 @@ public class GLMTest extends AutomatedTestBase
         config.addVariable ("glmIntercept", intercept);
         config.addVariable ("glmDispersion", dispersion);
         
-        loadTestConfiguration(TEST_GLM);
+        loadTestConfiguration(config);
 
         // prepare training data set
                                

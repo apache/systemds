@@ -37,7 +37,6 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 	private boolean _byrow = false;
 	
 	private MatrixCharacteristics _mcIn = null;
-	private MatrixCharacteristics _mcOut = null;
 	
 	//MB: cache should be integrated with tempValues, but for n blocks
 	private ArrayList<IndexedMatrixValue> _cache = null;
@@ -56,7 +55,6 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn, MatrixCharacteristics mcOut )
 	{
 		_mcIn = mcIn;
-		_mcOut = mcOut;
 	}
 	
 	/**

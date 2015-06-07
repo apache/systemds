@@ -26,20 +26,15 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
+import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -47,9 +42,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 
 
@@ -615,68 +607,20 @@ public class MapReduceTool
 		}
 	}
 	
-	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen) 
-	throws IOException
+	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
+		throws IOException, DMLRuntimeException
 	{
-		double[][] array=new double[(int)rlen][(int)clen];
-	//	String filename = getSubDirsIgnoreLogs(dir);
-		JobConf job = new JobConf();
-		FileInputFormat.addInputPath(job, new Path(dir));
-		
-		try {
-
-			InputFormat informat=inputinfo.inputFormatClass.newInstance();
-			if(informat instanceof TextInputFormat)
-				((TextInputFormat)informat).configure(job);
-			InputSplit[] splits= informat.getSplits(job, 1);
-			
-			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL).newInstance();
-			inputConverter.setBlockSize(brlen, bclen);
-    		
-			Writable key=inputinfo.inputKeyClass.newInstance();
-			Writable value=inputinfo.inputValueClass.newInstance();
-			
-			for(InputSplit split: splits)
-			{
-				RecordReader reader=informat.getRecordReader(split, job, Reporter.NULL);
-				while(reader.next(key, value))
-				{
-					inputConverter.convert(key, value);
-					while(inputConverter.hasNext())
-					{
-						Pair pair=inputConverter.next();
-						MatrixIndexes index=(MatrixIndexes) pair.getKey();
-						MatrixCell cell=(MatrixCell) pair.getValue();
-						array[(int)index.getRowIndex()-1][(int)index.getColumnIndex()-1]=cell.getValue();
-					}
-				}
-				reader.close();
-			}
-			
-		} catch (Exception e) {
-			throw new IOException(e);
-		}
-		return array;
+		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, rlen*clen);
+		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
 	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
-	throws IOException
+		throws IOException, DMLRuntimeException
 	{
-		assert(clen==1 && bclen==1);
-		double[][] array=readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen);
-		double[] ret=new double[array.length];
-		for(int i=0; i<array.length; i++)
-			ret[i]=array[i][0];
-		return ret;
-	}
-	
-	public static double[] readRowVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
-	throws IOException
-	{
-		assert(rlen==1 && brlen==1);
-		double[][] array=readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen);
-		return array[0];
+		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, rlen*clen);
+		return DataConverter.convertToDoubleVector(mb);
 	}
 	
 	public static double median(String dir, NumItemsByEachReducerMetaData metadata) throws IOException {

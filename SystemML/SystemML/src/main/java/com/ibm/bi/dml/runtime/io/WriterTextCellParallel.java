@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
-public class WriterTextCellParallel extends MatrixWriter
+public class WriterTextCellParallel extends WriterTextCell
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -55,7 +55,6 @@ public class WriterTextCellParallel extends MatrixWriter
 		//core write
 		writeTextCellMatrixToHDFS(path, job, src, rlen, clen);
 	}
-
 	
 	/**
 	 * 
@@ -68,7 +67,8 @@ public class WriterTextCellParallel extends MatrixWriter
 	 * @param bclen
 	 * @throws IOException
 	 */
-	private static void writeTextCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen )
+	@Override
+	protected void writeTextCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen )
 		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)

@@ -10,8 +10,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
@@ -26,18 +24,6 @@ public class CollectMultipleConvertedOutputs
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	private static final Log LOG = LogFactory.getLog(CollectMultipleConvertedOutputs.class.getName());
-	/*static class BlockSize
-	{
-		public int brlen=1;
-		public int bclen=1;
-		public BlockSize(int br, int bc)
-		{
-			brlen=br;
-			bclen=bc;
-		}
-	}*/
-	
 	protected Converter[] outputConverters;
 	protected MultipleOutputs multipleOutputs;
 	protected MatrixCharacteristics[] matrixStats;

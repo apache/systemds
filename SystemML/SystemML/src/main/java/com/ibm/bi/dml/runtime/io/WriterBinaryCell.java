@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class WriterBinaryCell extends MatrixWriter
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	@Override
@@ -44,7 +44,23 @@ public class WriterBinaryCell extends MatrixWriter
 		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen);
 	}
 
-	
+	@Override
+	@SuppressWarnings("deprecation")
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+		throws IOException, DMLRuntimeException 
+	{
+		JobConf job = new JobConf();
+		Path path = new Path( fname );
+		FileSystem fs = FileSystem.get(job);
+
+		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path,
+                MatrixIndexes.class, MatrixCell.class);
+		
+		MatrixIndexes index = new MatrixIndexes(1, 1);
+		MatrixCell cell = new MatrixCell(0);
+		writer.append(index, cell);
+		writer.close();
+	}
 
 	/**
 	 * 
@@ -58,7 +74,7 @@ public class WriterBinaryCell extends MatrixWriter
 	 * @throws IOException
 	 */
 	@SuppressWarnings("deprecation")
-	private static void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
+	protected void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();

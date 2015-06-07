@@ -45,7 +45,6 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private CacheType _cacheType = null;
 	private VectorType _vectorType = null;
 	
 	public BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out, String istr)
@@ -54,7 +53,6 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
 		
-		_cacheType = ctype;
 		_vectorType = vtype;
 	}
 	

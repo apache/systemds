@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,7 +27,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class WriterBinaryBlock extends MatrixWriter
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private int _replication = -1;
@@ -55,6 +55,24 @@ public class WriterBinaryBlock extends MatrixWriter
 			writeBinaryBlockMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen, _replication);
 	}
 
+	@Override
+	@SuppressWarnings("deprecation")
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+		throws IOException, DMLRuntimeException 
+	{
+		JobConf job = new JobConf();
+		Path path = new Path( fname );
+		FileSystem fs = FileSystem.get(job);
+
+		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path,
+				                        MatrixIndexes.class, MatrixBlock.class);
+		
+		MatrixIndexes index = new MatrixIndexes(1, 1);
+		MatrixBlock block = new MatrixBlock((int)Math.min(rlen, brlen),
+											(int)Math.min(clen, bclen), true);
+		writer.append(index, block);
+		writer.close();
+	}
 	
 	/**
 	 * 
@@ -70,7 +88,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
-	private void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
+	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -166,8 +184,8 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
-	private void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication ) 
-			throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+	protected void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication ) 
+		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);

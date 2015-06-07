@@ -68,8 +68,9 @@ public class PageRankTest extends AutomatedTestBase
 				                        Double.toString(alpha), Integer.toString(maxiter),
 				                         PAGE_RANK_HOME + OUTPUT_DIR + "p" };
 		
-        loadTestConfiguration(TEST_PAGE_RANK);
-
+        TestConfiguration config = getTestConfiguration(TEST_PAGE_RANK);
+        loadTestConfiguration(config);
+        
         double[][] g = getRandomMatrix(rows, cols, 1, 1, 0.000374962, -1);
         double[][] p = getRandomMatrix(rows, 1, 1, 1, 1, -1);
         double[][] e = getRandomMatrix(rows, 1, 1, 1, 1, -1);

@@ -155,7 +155,6 @@ public class DMLDebuggerInterface
 	 * Add new function to debugger CLI functions menu
 	 * @param opt New debugging function option
 	 */
-	@SuppressWarnings("static-access")
 	public void setOption(Option opt)
 	{
 		this.options.addOption(opt);

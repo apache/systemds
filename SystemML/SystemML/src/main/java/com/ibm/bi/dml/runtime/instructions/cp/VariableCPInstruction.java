@@ -21,7 +21,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.io.MatrixWriterFactory;
 import com.ibm.bi.dml.runtime.io.WriterMatrixMarket;
 import com.ibm.bi.dml.runtime.io.WriterTextCSV;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -80,7 +79,6 @@ public class VariableCPInstruction extends CPInstruction
 		InMemMedian,
 		InMemIQM,
 		MRIQM,
-		IQSize, 
 		Write, 
 		Read, 
 		SetFileName, 
@@ -899,7 +897,8 @@ public class VariableCPInstruction extends CPInstruction
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					WriterTextCSV.addHeaderToCSV(mo.getFileName(), fname, (CSVFileFormatProperties)formatProperties, mc.getRows(), mc.getCols());
+					WriterTextCSV writer = new WriterTextCSV((CSVFileFormatProperties)formatProperties);
+					writer.addHeaderToCSV(mo.getFileName(), fname, mc.getRows(), mc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(fname, outFmt, formatProperties);
@@ -936,7 +935,8 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
+					WriterMatrixMarket writer = new WriterMatrixMarket();
+					writer.mergeTextcellToMatrixMarket(mo.getFileName(), fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}

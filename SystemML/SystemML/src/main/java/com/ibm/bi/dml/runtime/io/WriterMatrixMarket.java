@@ -14,12 +14,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
@@ -48,6 +50,18 @@ public class WriterMatrixMarket extends MatrixWriter
 		writeMatrixMarketMatrixToHDFS(path, job, src, rlen, clen, nnz);
 	}
 
+	@Override
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+		throws IOException, DMLRuntimeException 
+	{
+		Path path = new Path( fname );
+		FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+		
+		FSDataOutputStream writer = fs.create(path);
+		writer.writeBytes("1 1 0");
+		writer.close();
+	}
+	
 	/**
 	 * 
 	 * @param fileName
@@ -57,7 +71,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	private static void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
+	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -151,7 +165,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	public static void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
+	public void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		  Configuration conf = new Configuration();

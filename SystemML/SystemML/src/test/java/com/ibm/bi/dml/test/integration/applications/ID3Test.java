@@ -81,7 +81,7 @@ public class ID3Test extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
       
-        loadTestConfiguration(TEST_NAME);
+        loadTestConfiguration(config);
 
         // prepare training data set
         double[][] X = round(getRandomMatrix(rows, cols, 1, 10, 1.0, 3));

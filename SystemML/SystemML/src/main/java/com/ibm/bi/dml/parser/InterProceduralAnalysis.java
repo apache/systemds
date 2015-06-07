@@ -20,7 +20,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
@@ -668,6 +667,8 @@ public class InterProceduralAnalysis
 					case INT:		scalar = new IntObject(lit.getLongValue()); break;
 					case BOOLEAN: 	scalar = new BooleanObject(lit.getBooleanValue()); break;
 					case STRING:	scalar = new StringObject(lit.getStringValue()); break;
+					default: 
+						//do nothing
 				}
 				vars.put(dat.getName(), scalar);	
 			}

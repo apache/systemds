@@ -31,16 +31,15 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
-public class WriterTextCSVParallel extends MatrixWriter
+public class WriterTextCSVParallel extends WriterTextCSV
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	private CSVFileFormatProperties _props = null;
-	
 	public WriterTextCSVParallel( CSVFileFormatProperties props )
 	{
+		super( props );
 		_props = props;
 	}
 	
@@ -79,7 +78,8 @@ public class WriterTextCSVParallel extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	private void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
+	@Override
+	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
 		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)

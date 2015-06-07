@@ -7,8 +7,7 @@
 
 package com.ibm.bi.dml.test.integration.functions.recompile;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;

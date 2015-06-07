@@ -1186,6 +1186,7 @@ public class LibMatrixReorg
 	 * @param reuse 
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix,
             long nnz, long rows1, long cols1, int brlen1, int bclen1,
             long rows2, long cols2, int brlen2, int bclen2, boolean rowwise, ArrayList<IndexedMatrixValue> reuse )

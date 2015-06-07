@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
-public class WriterMatrixMarketParallel extends MatrixWriter
+public class WriterMatrixMarketParallel extends WriterMatrixMarket
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -65,7 +65,8 @@ public class WriterMatrixMarketParallel extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	private static void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
+	@Override
+	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)

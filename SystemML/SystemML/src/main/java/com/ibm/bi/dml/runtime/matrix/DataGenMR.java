@@ -184,12 +184,6 @@ public class DataGenMR
 				inputs[i]=genInst.getBaseDir() + System.currentTimeMillis()+".seqinput";
 				maxsparsity = 1.0; //always dense
 				
-				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
-				PrintWriter pw = new PrintWriter(fsOut);
-				
-				//for obj reuse and preventing repeated buffer re-allocations
-				StringBuilder sb = new StringBuilder();
-				
 				double from = seqInst.fromValue;
 				double to = seqInst.toValue;
 				double incr = seqInst.incrValue;
@@ -216,6 +210,10 @@ public class DataGenMR
 					throw new DMLRuntimeException("Unexpected error while processing sequence instruction. Number of columns (" + clens[i] + ") must be equal to 1.");
 				else 
 					clens[i] = 1;
+
+				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
+				PrintWriter pw = new PrintWriter(fsOut);
+				StringBuilder sb = new StringBuilder();
 				
 				double temp = from;
 				double block_from, block_to;

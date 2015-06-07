@@ -82,7 +82,7 @@ public class LinearRegressionTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       LR_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + LR_HOME + EXPECTED_DIR;
       
-        loadTestConfiguration(TEST_LINEAR_REGRESSION);
+        loadTestConfiguration(config);
 
         double[][] v = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
         double[][] y = getRandomMatrix(rows, 1, 1, 10, 1, -1);
@@ -102,8 +102,8 @@ public class LinearRegressionTest extends AutomatedTestBase
         
 		runRScript(true);
         
-        HashMap<CellIndex, Double> wR = this.readRMatrixFromFS("w");
-        HashMap<CellIndex, Double> wDML= this.readDMLMatrixFromHDFS("w");
+        HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
+        HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
         TestUtils.compareMatrices(wR, wDML, Math.pow(10, -10), "wR", "wDML");
     }
 }

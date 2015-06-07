@@ -17,7 +17,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.integration.functions.external.SequenceMinerTest;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 /**

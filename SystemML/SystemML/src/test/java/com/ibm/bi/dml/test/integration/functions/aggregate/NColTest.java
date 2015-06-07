@@ -57,7 +57,7 @@ public class NColTest extends AutomatedTestBase
         config.addVariable("rows", rows);
         config.addVariable("cols", cols);
 
-        loadTestConfiguration(TEST_GENERAL);
+        loadTestConfiguration(config);
 
         createHelperMatrix();
         double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
@@ -82,7 +82,7 @@ public class NColTest extends AutomatedTestBase
 
         createHelperMatrix();
 
-        loadTestConfiguration(TEST_SCALAR);
+        loadTestConfiguration(config);
 
         runTest(true, DMLException.class);
     }

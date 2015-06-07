@@ -110,6 +110,10 @@ public class AggBinaryOp extends Hop
 		_hasLeftPMInput = flag;
 	}
 	
+	public boolean hasLeftPMInput(){
+		return _hasLeftPMInput;
+	}
+	
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
 	}

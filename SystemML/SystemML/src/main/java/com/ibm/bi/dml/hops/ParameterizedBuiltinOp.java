@@ -298,22 +298,10 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
-			
-			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(pbilop);
-			setLops(pbilop);
-		
-			
-			/* DISABLED because cross-dag rewrites like MMchainopt cannot deal with
-			   matrix multiplications with non-matching dimensions.
-			
 			if( et == ExecType.CP && isTargetDiagInput() && marginHop instanceof LiteralOp 
 					 && ((LiteralOp)marginHop).getStringValue().equals("rows")
 					 && _outputPermutationMatrix ) //SPECIAL CASE SELECTION VECTOR
-			{
-				
+			{				
 				//TODO this special case could be taken into account for memory estimates in order
 				// to reduce the estimates for the input diag and subsequent matrix multiply
 				
@@ -362,7 +350,6 @@ public class ParameterizedBuiltinOp extends Hop
 				setLineNumbers(pbilop);
 				setLops(pbilop);
 			}
-			*/
 		}
 		//special compile for mr removeEmpty-diag 
 		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 

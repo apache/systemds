@@ -66,8 +66,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 				return;
 		
-		if (hop.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
-				&& hop.getVisited() != Hop.VisitStatus.DONE) {
+		if (  hop.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) hop).isMatrixMultiply()
+			  && !((AggBinaryOp)hop).hasLeftPMInput() 
+			  && hop.getVisited() != Hop.VisitStatus.DONE ) 
+		{
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			optimizeMMChain(hop);
@@ -305,8 +307,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 
-			if (h.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
-					&& h.getVisited() != Hop.VisitStatus.DONE) {
+			if (    h.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
+			     && !((AggBinaryOp)hop).hasLeftPMInput() 
+				 && h.getVisited() != Hop.VisitStatus.DONE ) 
+			{
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
 				if (h.getParent().size() > 1 || inputCount( (Hop) ((h.getParent().toArray())[0]), h) > 1 ) {

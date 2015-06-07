@@ -77,8 +77,6 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
-	public static final int HEADER_BASIC_N_REF_SIZE_DENSE = 44;
-	public static final int HEADER_BASIC_N_REF_SIZE_SPARSE = 48;
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -367,7 +365,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
 		if( limit > Integer.MAX_VALUE ) {
-			throw new DMLRuntimeException("Dense in-memory matrix block exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
+			throw new DMLRuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
 					                      "Please, reduce the JVM heapsize to execute this in MR.");
 		}
 		
@@ -1956,7 +1954,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		
 		//check type information
 		if( bformat<0 || bformat>=BlockType.values().length )
-			throw new IOException("invalid format: '"+bformat+"' (need to be 0-"+BlockType.values().length+".");
+			throw new IOException("invalid format: '"+bformat+"' (need to be 0-"+BlockType.values().length+").");
 			
 		BlockType format=BlockType.values()[bformat];
 		try 
@@ -1964,7 +1962,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			switch(format)
 			{
 				case ULTRA_SPARSE_BLOCK:
-					nonZeros = readNnzInfo( in );
+					nonZeros = readNnzInfo( in, true );
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(true, true); //clean all
 					if( sparse )
@@ -1973,7 +1971,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 						readUltraSparseToDense(in);
 					break;
 				case SPARSE_BLOCK:
-					nonZeros = readNnzInfo( in );
+					nonZeros = readNnzInfo( in, false );
 					sparse = evalSparseFormatInMemory(rlen, clen, nonZeros);
 					cleanupBlock(sparse, !sparse); 
 					if( sparse )
@@ -2225,7 +2223,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() );
-		writeNnzInfo( out );
+		writeNnzInfo( out, false );
 		
 		if( out instanceof MatrixBlockDataOutput ) //fast serialize
 			((MatrixBlockDataOutput)out).writeSparseRows(rlen, sparseRows);
@@ -2264,21 +2262,26 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		writeNnzInfo( out );
+		writeNnzInfo( out, true );
 		
+		long wnnz = 0;
 		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
 			if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
 			{
 				int alen = sparseRows[r].size();
 				int[] aix = sparseRows[r].getIndexContainer();
 				double[] avals = sparseRows[r].getValueContainer();
-				for(int j=0; j<alen; j++)
-				{
+				for(int j=0; j<alen; j++) {
 					out.writeInt(r);
 					out.writeInt(aix[j]);
 					out.writeDouble(avals[j]);
+					wnnz++;
 				}
 			}	
+		
+		//validity check (nnz must exactly match written nnz)
+		if( nonZeros != wnnz )
+			throw new IOException("Invalid number of serialized non-zeros: "+wnnz+" (expected: "+nonZeros+")");
 	}
 	
 	/**
@@ -2323,11 +2326,17 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		}
 	}
 	
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
 	private void writeDenseToUltraSparse(DataOutput out) throws IOException 
 	{
 		out.writeByte( BlockType.ULTRA_SPARSE_BLOCK.ordinal() );
-		writeNnzInfo( out );
+		writeNnzInfo( out, true );
 
+		long wnnz = 0;
 		for(int r=0, ix=0; r<rlen; r++)
 			for(int c=0; c<clen; c++, ix++)
 				if( denseBlock[ix]!=0 )
@@ -2335,14 +2344,24 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					out.writeInt(r);
 					out.writeInt(c);
 					out.writeDouble(denseBlock[ix]);
+					wnnz++;
 				}
+		
+		//validity check (nnz must exactly match written nnz)
+		if( nonZeros != wnnz )
+			throw new IOException("Invalid number of serialized non-zeros: "+wnnz+" (expected: "+nonZeros+")");
 	}
 	
+	/**
+	 * 
+	 * @param out
+	 * @throws IOException
+	 */
 	private void writeDenseToSparse(DataOutput out) 
 		throws IOException 
 	{	
 		out.writeByte( BlockType.SPARSE_BLOCK.ordinal() ); //block type
-		writeNnzInfo( out );
+		writeNnzInfo( out, false );
 		
 		int start=0;
 		for(int r=0; r<rlen; r++)
@@ -2370,17 +2389,22 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * @param in
 	 * @throws IOException
 	 */
-	private long readNnzInfo( DataInput in ) 
+	private long readNnzInfo( DataInput in, boolean ultrasparse ) 
 		throws IOException
 	{
+		//note: if ultrasparse, int always sufficient because nnz<rlen
+		// where rlen is limited to integer
+				
 		long lrlen = (long)rlen;
 		long lclen = (long)clen;
 		
 		//read long if required, otherwise int (see writeNnzInfo, consistency required)
-		if( lrlen*lclen > Integer.MAX_VALUE)
-			nonZeros = in.readLong(); 
-		else
+		if( lrlen*lclen > Integer.MAX_VALUE  && !ultrasparse) {
+			nonZeros = in.readLong();
+		}
+		else {
 			nonZeros = in.readInt(); 
+		}
 		
 		return nonZeros;
 	}
@@ -2390,17 +2414,22 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	 * @param out
 	 * @throws IOException
 	 */
-	private void writeNnzInfo( DataOutput out ) 
+	private void writeNnzInfo( DataOutput out, boolean ultrasparse ) 
 		throws IOException
 	{
+		//note: if ultrasparse, int always sufficient because nnz<rlen
+		// where rlen is limited to integer
+		
 		long lrlen = (long)rlen;
 		long lclen = (long)clen;
 		
 		//write long if required, otherwise int
-		if( lrlen*lclen > Integer.MAX_VALUE)
+		if( lrlen*lclen > Integer.MAX_VALUE && !ultrasparse) {
 			out.writeLong( nonZeros ); 
-		else
+		}
+		else {
 			out.writeInt( (int)nonZeros );
+		}
 	}
 	
 	/**
@@ -2483,7 +2512,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private static long estimateSizeDenseInMemory(long nrows, long ncols)
 	{
 		// basic variables and references sizes
-		long size = HEADER_BASIC_N_REF_SIZE_DENSE;
+		long size = 44;
 		
 		// core dense matrix block (double array)
 		size += nrows * ncols * 8;
@@ -2501,7 +2530,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
 	{
 		// basic variables and references sizes
-		long size = HEADER_BASIC_N_REF_SIZE_SPARSE;
+		long size = 44;
 		
 		//NOTES:
 		// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
@@ -2572,8 +2601,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	{
 		//basic header: (int rlen, int clen, byte type) 
 		long size = HEADER_SIZE;
-		//extended head (long nnz)
-		size += 8;
+		//extended header (long nnz)
+		size += (nrows*ncols > Integer.MAX_VALUE) ? 8 : 4;
 		//data: (int num per row, int-double pair per non-zero value)
 		size += nrows * 4 + nnz * 12;	
 
@@ -2591,8 +2620,8 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	{
 		//basic header (int rlen, int clen, byte type) 
 		long size = HEADER_SIZE;
-		//extended header (long nnz)
-		size += 8;
+		//extended header (int nnz, guaranteed by rlen<nnz)
+		size += 4;
 		//data (int-int-double triples per non-zero value)
 		size += nnz * 16;	
 		

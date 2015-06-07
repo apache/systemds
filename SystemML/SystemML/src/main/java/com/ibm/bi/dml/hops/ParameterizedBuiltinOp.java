@@ -298,6 +298,14 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			
+			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setLineNumbers(pbilop);
+			setLops(pbilop);
+			
+			/*DISABLED CP PMM (see for example, MDA Bivar test, requires size propagation on recompile)
 			if( et == ExecType.CP && isTargetDiagInput() && marginHop instanceof LiteralOp 
 					 && ((LiteralOp)marginHop).getStringValue().equals("rows")
 					 && _outputPermutationMatrix ) //SPECIAL CASE SELECTION VECTOR
@@ -350,6 +358,7 @@ public class ParameterizedBuiltinOp extends Hop
 				setLineNumbers(pbilop);
 				setLops(pbilop);
 			}
+			*/
 		}
 		//special compile for mr removeEmpty-diag 
 		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 

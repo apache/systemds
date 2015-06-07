@@ -1220,7 +1220,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		if(denseBlock==null)
 			return;
 		
-		//allocate sparse target block (reset requires to maintain nnz again)
+		//allocate sparse target block (reset required to maintain nnz again)
 		allocateSparseRowsBlock();
 		reset();
 		
@@ -2042,7 +2042,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	private void readSparseBlock(DataInput in) 
 		throws IOException 
 	{			
-		allocateSparseRowsBlock();
+		allocateSparseRowsBlock(false); 
 		resetSparse(); //reset all sparse rows
 		
 		if( in instanceof MatrixBlockDataInput ) //fast deserialize
@@ -2280,8 +2280,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			}	
 		
 		//validity check (nnz must exactly match written nnz)
-		if( nonZeros != wnnz )
+		if( nonZeros != wnnz ) {
 			throw new IOException("Invalid number of serialized non-zeros: "+wnnz+" (expected: "+nonZeros+")");
+		}
 	}
 	
 	/**
@@ -2348,8 +2349,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				}
 		
 		//validity check (nnz must exactly match written nnz)
-		if( nonZeros != wnnz )
+		if( nonZeros != wnnz ) {
 			throw new IOException("Invalid number of serialized non-zeros: "+wnnz+" (expected: "+nonZeros+")");
+		}
 	}
 	
 	/**

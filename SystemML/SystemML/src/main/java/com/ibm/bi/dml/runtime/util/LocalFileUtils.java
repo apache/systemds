@@ -172,8 +172,7 @@ public class LocalFileUtils
 		throws IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
-		BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
-		DataInputStream in = new DataInputStream( bis );
+		FastBufferedDataInputStream in = new FastBufferedDataInputStream( fis, BUFFER_SIZE );
 		int bufferSize = 0;
 		
 		try

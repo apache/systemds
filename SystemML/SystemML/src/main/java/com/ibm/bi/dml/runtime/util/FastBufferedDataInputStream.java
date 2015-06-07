@@ -161,14 +161,14 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	///////////////////////////////////////////////	
 
 	@Override
-	public int readDoubleArray(int len, double[] varr) 
+	public long readDoubleArray(int len, double[] varr) 
 		throws IOException 
 	{
 		//if( len<=0 || len != varr.length )
 		//	throw new IndexOutOfBoundsException("len="+len+", varr.length="+varr.length);
 		
 		//counter for non-zero elements
-		int nnz = 0;
+		long nnz = 0;
 		
 		//outer loop for buffered read
 		for( int i=0; i<len; i+=_bufflen/8 ) 
@@ -193,11 +193,11 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	}
 
 	@Override
-	public int readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseRow[] rows) 
 		throws IOException 
 	{
 		//counter for non-zero elements
-		int nnz = 0;
+		long nnz = 0;
 		
 		//read all individual sparse rows from input
 		for( int i=0; i<rlen; i++ )

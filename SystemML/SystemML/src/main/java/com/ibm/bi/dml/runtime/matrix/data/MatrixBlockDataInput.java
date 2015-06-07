@@ -31,7 +31,7 @@ public interface MatrixBlockDataInput
 	 * @return
 	 * @throws IOException
 	 */
-	public int readDoubleArray(int len, double[] varr) 
+	public long readDoubleArray(int len, double[] varr) 
 		throws IOException;
 	
 	/**
@@ -42,6 +42,6 @@ public interface MatrixBlockDataInput
 	 * @param rows
 	 * @throws IOException
 	 */
-	public int readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseRow[] rows) 
 		throws IOException;
 }

@@ -132,11 +132,11 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
     ///////////////////////////////////////////////	
 	
 	@Override
-	public int readDoubleArray(int len, double[] varr) 
+	public long readDoubleArray(int len, double[] varr) 
 		throws IOException 
 	{
 		//counter for non-zero elements
-		int nnz = 0;
+		long nnz = 0;
 		
 		int off = _count;
 		for( int i=0; i<len; i++ ) 
@@ -154,11 +154,11 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	}
 
 	@Override
-	public int readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseRow[] rows) 
 		throws IOException 
 	{
 		//counter for non-zero elements
-		int nnz = 0;
+		long nnz = 0;
 		
 		//read all individual sparse rows from input
 		for( int i=0; i<rlen; i++ )

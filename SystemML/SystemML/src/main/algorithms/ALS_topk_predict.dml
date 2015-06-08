@@ -49,7 +49,7 @@ Rcols = ncol(R);
 
 X_user_max = max(X[,1]);
 
-if ( Lrows > Vrows | Rcols >  Vcols |  X_user_max > Vrows ){
+if ( Lrows < Vrows | Rcols <  Vcols |  X_user_max > Vrows ){
        stop("Predictions can be provided only if the number of rows and columns of the original matrix have been retained after the factorization and the users
         in test data are also available in the factor matrices");
 }

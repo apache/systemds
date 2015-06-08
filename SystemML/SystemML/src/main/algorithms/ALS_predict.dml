@@ -53,7 +53,7 @@ X_item_max = max(X[,2]);
 #initializing Y matrix
 Y = matrix(0,rows=n,cols=3);
 
-if ( Lrows > Vrows | Rcols >  Vcols |  X_user_max > Vrows | X_item_max >  Vcols ){
+if ( Lrows < Vrows | Rcols <  Vcols |  X_user_max > Vrows | X_item_max >  Vcols ){
        stop("Predictions can be provided only if the number of rows and columns of the original matrix have been retained after the factorization and the users and items
         in the test data are also available in the factor matrices");
 }

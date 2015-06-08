@@ -15,7 +15,6 @@ import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -34,7 +33,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 	}
 	
 	//offset of second matrix, can be a var name or constant
-	private CPOperand _offset;
+	// private CPOperand _offset;
 	
 	//type (matrix cbind / scalar string concatenation)
 	private AppendType _type;
@@ -44,7 +43,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.GAppend;
 		
-		_offset = in3;
+		// _offset = in3;
 		_type = type;
 	}
 	

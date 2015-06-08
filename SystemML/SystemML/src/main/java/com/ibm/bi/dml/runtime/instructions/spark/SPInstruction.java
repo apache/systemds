@@ -32,7 +32,8 @@ public abstract class SPInstruction extends Instruction
 		MAPMM, MAPMMCHAIN, TSMM, CPMM, RMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, Reblock, CSVReblock, 
 		Builtin, BuiltinUnary, BuiltinBinary, Sort, Variable, Checkpoint,
-		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand,
+		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
+		MatrixReshape,
 		INVALID, 
 	};
 	

@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -271,7 +272,12 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf)); 
-						
+			
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown()) {
+				mcOut.set(rows, cols, rowsInBlock, colsInBlock, (long) (meanNNz*nnz.length));
+			}
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else if ( this.method == DataGenMethod.SEQ ) {
@@ -284,11 +290,18 @@ public class RandSPInstruction extends UnarySPInstruction
 			// TODO: bad way: This will create issue for ultra sparse dataset, but will work for preview
 			ArrayList<Double> startSequences = new ArrayList<Double>();
 			double start = seq_from;
+			long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
+			
 			while((seq_incr > 0 && start <= seq_to) || (seq_incr < 0 && start >= seq_to)) {
 				startSequences.add(start);
+				
 				// 1 entry at seq_incr
 				// rowsInBlock entries at seq_incr*rowsInBlock
 				start += seq_incr*rowsInBlock;
+			}
+			
+			if(nnz != rows && rows != -1) {
+				throw new DMLRuntimeException("Incorrect number of non-zeros: " + nnz + " != " + rows);
 			}
 			
 			if( LOG.isTraceEnabled() )
@@ -297,6 +310,11 @@ public class RandSPInstruction extends UnarySPInstruction
 			JavaRDD<Double> startSequencesRDD = sec.getSparkContext().parallelize(startSequences);
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = startSequencesRDD.mapToPair(new GenerateSequenceBlock(rowsInBlock, seq_from, seq_to, seq_incr));
 
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown()) {
+				mcOut.set(nnz, 1, rowsInBlock, colsInBlock, nnz);
+			}
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		

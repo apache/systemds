@@ -7,18 +7,19 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.PairFunction;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.matrix.data.LibCommonsMath;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -43,33 +44,89 @@ public class MatrixMatrixBuiltinSPInstruction extends BuiltinBinarySPInstruction
 
 		String opcode = getOpcode();
         
-		try {
-		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("myfile.txt", true)));
-		    out.println("-- MatrixMatrixBuiltinSPInstruction:" + getOpcode());
-		    out.close();
-		} catch (IOException e) {
-		    //exception handling left as an exercise for the reader
+		if(opcode.compareTo("min") == 0 || opcode.compareTo("max") == 0) {
+			SparkExecutionContext sec = (SparkExecutionContext) ec;
+			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			if(!mcOut.dimsKnown() && !mc1.dimsKnown() && !mc2.dimsKnown()) {
+				throw new DMLRuntimeException("The output dimensions are not specified for MatrixMatrixBuiltinSPInstruction");
+			}
+			else if(mc1.getRows() != mc2.getRows() || mc1.getCols() != mc2.getCols()) {
+				throw new DMLRuntimeException("Incorrect dimensions specified for MatrixMatrixBuiltinSPInstruction");
+			}
+			else if(!mcOut.dimsKnown()) {
+				mcOut.set(mc1);
+				// mcOut.setDimension(mc1.getRows(), mc1.getCols());
+			}
+			
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+			BinaryOperator bop = (BinaryOperator) _optr;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.cogroup(in2).mapToPair(new StreamableMMBuiltin(bop));
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+			sec.addLineageRDD(output.getName(), input2.getName());
+		}
+		else {
+			throw new DMLRuntimeException("ERROR: The MatrixMatrixBuiltinSPInstruction not implemented for opcode:" + opcode);
 		}
 		
-        if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
-        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations((MatrixObject)ec.getVariable(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
-    		ec.setMatrixOutput(output.getName(), solution);
-        	return;
-        }
+//        if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
+//        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations((MatrixObject)ec.getVariable(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+//    		ec.setMatrixOutput(output.getName(), solution);
+//        	return;
+//        }
+//		
+//        /* Default behavior of this instruction */
+//		String output_name = output.getName();
+//		BinaryOperator bop = (BinaryOperator) _optr;
+//		
+//        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+//        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+//		
+//        MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+//		
+//		ec.setMatrixOutput(output_name, resultBlock);
+//		
+//		ec.releaseMatrixInput(input1.getName());
+//		ec.releaseMatrixInput(input2.getName());
+	}
+	
+	public static class StreamableMMBuiltin implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> {
+
+		private static final long serialVersionUID = -3761426075578633158L;
 		
-        /* Default behavior of this instruction */
-		String output_name = output.getName();
-		BinaryOperator bop = (BinaryOperator) _optr;
+		BinaryOperator bop;
+		public StreamableMMBuiltin(BinaryOperator bop) {
+			this.bop = bop;
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> kv) throws Exception {
+			MatrixBlock matBlock1 = null;
+			MatrixBlock matBlock2 = null;
+			for(MatrixBlock m : kv._2._1) {
+				if(matBlock1 == null) {
+					matBlock1 = m;
+				}
+				else {
+					throw new Exception("ERROR: Multiple blocks for the given MatrixIndexes");
+				}
+			}
+			for(MatrixBlock m : kv._2._2) {
+				if(matBlock2 == null) {
+					matBlock2 = m;
+				}
+				else {
+					throw new Exception("ERROR: Multiple blocks for the given MatrixIndexes");
+				}
+			}
+			
+			MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlock);
+		}
 		
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-		
-        MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
-		
-		ec.setMatrixOutput(output_name, resultBlock);
-		
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
 	}
 	
 }

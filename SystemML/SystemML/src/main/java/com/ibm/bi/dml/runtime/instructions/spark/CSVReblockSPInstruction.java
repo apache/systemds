@@ -32,7 +32,6 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatr
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToText;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CountLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;

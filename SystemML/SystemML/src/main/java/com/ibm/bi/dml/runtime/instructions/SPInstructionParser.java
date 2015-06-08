@@ -16,6 +16,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -83,8 +84,10 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		
+		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'"   	    , SPINSTRUCTION_TYPE.Reorg);
 		String2SPInstructionType.put( "rdiag"   	    , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rshape"      , SPINSTRUCTION_TYPE.MatrixReshape);
 		String2SPInstructionType.put( "rsort"   	    , SPINSTRUCTION_TYPE.Reorg);
 		
 		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -244,6 +247,9 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case ParameterizedBuiltin:
 				return (SPInstruction) ParameterizedBuiltinSPInstruction.parseInstruction(str);
+				
+			case MatrixReshape:
+				return (CPInstruction) MatrixReshapeCPInstruction.parseInstruction(str);
 				
 			case MAppend:
 				return (SPInstruction) AppendMSPInstruction.parseInstruction(str);

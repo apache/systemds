@@ -1,10 +1,5 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -15,7 +10,6 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -42,22 +36,19 @@ public class MatrixBuiltinSPInstruction  extends BuiltinUnarySPInstruction
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		try {
-		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("myfile.txt", true)));
-		    out.println("MatrixBuiltinSPInstruction:"+ getOpcode());
-		    out.close();
-		} catch (IOException e) {
-		    //exception handling left as an exercise for the reader
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown() && !mc1.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions are not specified for MatrixBuiltinSPInstruction");
+		}
+		else if(!mcOut.dimsKnown() && mc1.dimsKnown()) {
+			mcOut.set(mc1);
+			//mcOut.setDimension(mc1.getRows(), mc1.getCols());
 		}
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDMatrixBuiltinUnaryOp(getOpcode(), (UnaryOperator) _optr));
-		
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			throw new DMLRuntimeException("The output dimensions are not specified for MatrixBuiltinSPInstruction");
-		}
 		
 		//set output RDD
 		sec.setRDDHandleForVariable(output.getName(), out);	

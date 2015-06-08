@@ -7,11 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -24,7 +19,6 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -52,12 +46,14 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		try {
-		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("myfile.txt", true)));
-		    out.println("MatrixScalarBuiltinSPInstruction:" + getOpcode());
-		    out.close();
-		} catch (IOException e) {
-		    //exception handling left as an exercise for the reader
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown() && !mc1.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions are not specified for MatrixScalarBuiltinSPInstruction");
+		}
+		else {
+			mcOut.set(mc1);
+			// mcOut.setDimension(mc1.getRows(), mc1.getCols());
 		}
 		
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
@@ -68,11 +64,6 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( mat.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDMatrixScalarBuiltinUnaryOp( (ScalarOperator)_optr, constant.getDoubleValue()));
-		
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			throw new DMLRuntimeException("The output dimensions are not specified for MatrixScalarBuiltinSPInstruction");
-		}
 		
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), mat.getName());

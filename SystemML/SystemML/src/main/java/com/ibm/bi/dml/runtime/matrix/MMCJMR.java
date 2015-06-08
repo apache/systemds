@@ -198,6 +198,10 @@ public class MMCJMR
 		job.setInt("dfs.replication", replication);
 		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
 		//set up map/reduce memory configurations (if in AM context)
 		DMLConfig config = ConfigurationManager.getConfig();
 		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);

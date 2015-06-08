@@ -329,22 +329,29 @@ public class GMR
 			ArrayList<Byte> indexList = new ArrayList<Byte>();
 			String[] inst = allInsts.split(Instruction.INSTRUCTION_DELIM);
 			for( String tmp : inst ){
+				ArrayList<Byte> tmpindexList = new ArrayList<Byte>();
+				
 				if( tmp.contains(MapMultChain.OPCODE) )
-					MapMultChainInstruction.addDistCacheIndex(tmp, indexList);
+					MapMultChainInstruction.addDistCacheIndex(tmp, tmpindexList);
 				else if( tmp.contains(MapMult.OPCODE) )
-					AggregateBinaryInstruction.addDistCacheIndex(tmp, indexList);
+					AggregateBinaryInstruction.addDistCacheIndex(tmp, tmpindexList);
 				else if( tmp.contains(PMMJ.OPCODE) )
-					PMMJMRInstruction.addDistCacheIndex(tmp, indexList);
+					PMMJMRInstruction.addDistCacheIndex(tmp, tmpindexList);
 				else if( tmp.contains(AppendM.OPCODE) )
-					AppendMInstruction.addDistCacheIndex(tmp, indexList);		
+					AppendMInstruction.addDistCacheIndex(tmp, tmpindexList);		
 				else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
-					BinaryMInstruction.addDistCacheIndex(tmp, indexList);	
+					BinaryMInstruction.addDistCacheIndex(tmp, tmpindexList);	
 				else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, indexList);	
+					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
 				else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, indexList);	
+					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
+
+				//copy distinct indexes only (prevent redundant add to distcache)
+				for( Byte tmpix : tmpindexList )
+					if( !indexList.contains(tmpix) )
+						indexList.add(tmpix);
 			}
-			
+
 			//construct index and path strings
 			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
 			StringBuilder indexString = new StringBuilder(); // input indices to be placed in Distributed Cache (concatenated) 
@@ -359,6 +366,7 @@ public class GMR
 				indexString.append(index);
 				pathString.append(inputs[index]);
 			}
+			
 			
 			//configure mr job with distcache indexes
 			MRJobConfiguration.setupDistCacheInputs(job, indexString.toString(), pathString.toString(), pathList);

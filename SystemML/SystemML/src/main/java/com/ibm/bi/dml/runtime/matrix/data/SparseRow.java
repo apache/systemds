@@ -9,6 +9,7 @@
 package com.ibm.bi.dml.runtime.matrix.data;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import com.ibm.bi.dml.runtime.util.SortUtils;
 
@@ -30,47 +31,39 @@ public class SparseRow implements Serializable
 	private double[] values = null;
 	private int[] indexes = null;
 	
-
 	public SparseRow(int capacity)
 	{
 		estimatedNzs = capacity;
-		values=new double[capacity];
-		indexes=new int[capacity];
+		values = new double[capacity];
+		indexes = new int[capacity];
 	}
 	
-	public SparseRow(int estnns, int maxnns)
+	public SparseRow(int estnnz, int maxnnz)
 	{
-		if(estnns>initialCapacity)
-			estimatedNzs=estnns;
-		maxNzs=maxnns;
-		if(estnns<initialCapacity && estnns>0)
-		{
-			//LOG.trace("Allocating 1 .. " + estnns);
-			values=new double[estnns];
-			indexes=new int[estnns];
-		}else
-		{
-			//LOG.trace("Allocating 2 .. " + estnns);
-			values=new double[initialCapacity];
-			indexes=new int[initialCapacity];
-		}
+		if( estnnz > initialCapacity )
+			estimatedNzs = estnnz;
+		maxNzs = maxnnz;
+		int capacity = ((estnnz<initialCapacity && estnnz>0) ? 
+				         estnnz : initialCapacity);
+		values = new double[capacity];
+		indexes = new int[capacity];
 	}
 	
 	public SparseRow(SparseRow that)
 	{
-		size=that.size;
-		int capa=Math.max(initialCapacity, that.size);
-		values=new double[capa];
-		indexes=new int[capa];
-		System.arraycopy(that.values, 0, values, 0, that.size);
-		System.arraycopy(that.indexes, 0, indexes, 0, that.size);
+		size = that.size;
+		int cap = Math.max(initialCapacity, that.size);
+		
+		//allocate arrays and copy new values
+		values = Arrays.copyOf(that.values, cap);
+		indexes = Arrays.copyOf(that.indexes, cap);
 	}
 	
 	public void truncate(int newsize)
 	{
-		if(newsize>size || newsize<0)
+		if( newsize>size || newsize<0 )
 			throw new RuntimeException("truncate size: "+newsize+" should <= size: "+size+" and >=0");
-		size=newsize;
+		size = newsize;
 	}
 	
 	public int size()
@@ -111,262 +104,334 @@ public class SparseRow implements Serializable
 		return values.length;
 	}
 	
+	/**
+	 * 
+	 * @param that
+	 */
 	public void copy(SparseRow that)
 	{
-		if(values.length<that.size)
-			recap(that.size);
-		System.arraycopy(that.values, 0, values, 0, that.size);
-		System.arraycopy(that.indexes, 0, indexes, 0, that.size);
-		size=that.size;
+		//note: no recap (if required) + copy, in order to prevent unnecessary copy of old values
+		//in case we have to reallocate the arrays
+		
+		if( values.length < that.size ) {
+			//reallocate arrays and copy new values
+			values = Arrays.copyOf(that.values, that.size);
+			indexes = Arrays.copyOf(that.indexes, that.size);
+		}
+		else {
+			//copy new values
+			System.arraycopy(that.values, 0, values, 0, that.size);
+			System.arraycopy(that.indexes, 0, indexes, 0, that.size);	
+		}
+		size = that.size;
 	}
-	
-	public void append(int col, double v)
-	{
-		if(v==0.0)
-			return;
-		if(size==values.length)
-			recap();
-		values[size]=v;
-		indexes[size]=col;
-		size++;
-	}
-	
+
+	/**
+	 * 
+	 * @param estnns
+	 * @param maxnns
+	 */
 	public void reset(int estnns, int maxnns)
 	{
-		this.estimatedNzs=estnns;
-		this.maxNzs=maxnns;
-		size=0;
+		estimatedNzs = estnns;
+		maxNzs = maxnns;
+		size = 0;
 	}
 	
-	public void recap(int newCap) {
-		if(newCap<=values.length)
+	/**
+	 * 
+	 * @param newCap
+	 */
+	public void recap(int newCap) 
+	{
+		if( newCap<=values.length )
 			return;
-		double[] oldvalues=values;
-		int[] oldindexes=indexes;
-		values=new double[newCap];
-		indexes=new int[newCap];
-		System.arraycopy(oldvalues, 0, values, 0, size);
-		System.arraycopy(oldindexes, 0, indexes, 0, size);
+		
+		//reallocate arrays and copy old values
+		values = Arrays.copyOf(values, newCap);
+		indexes = Arrays.copyOf(indexes, newCap);
 	}
-	/*
-	 * doubling before capacity reaches estimated nonzeros, then 1.1x after that
-	 * for default behavor: always 1.1x
+	
+	/**
+	 * Heuristic for resizing:
+	 *   doubling before capacity reaches estimated nonzeros, then 1.1x after that for default behavior: always 1.1x
+	 *   (both with exponential size increase for log N steps of reallocation and shifting)
+	 * 
+	 * @return
 	 */
 	private int newCapacity()
 	{
-		if(values.length<this.estimatedNzs)
-		{
-			return Math.min(this.estimatedNzs, values.length*2);
-		}
+		if( values.length < estimatedNzs )
+			return Math.min(estimatedNzs, values.length*2);
 		else
-		{
-			return (int) Math.min(this.maxNzs, Math.ceil((double)(values.length)*1.1)); //exponential growth
-			//return (int) Math.min(this.maxNzs, values.length+Math.floor((double)(estimatedNzs)*0.1)); //constant growth
-		}
-	}
-	
-	private void recap() {
-		recap(newCapacity());
+			return (int) Math.min(this.maxNzs, Math.ceil((double)(values.length)*1.1));
 	}
 
-	public boolean set(int col, double v)
+	/**
+	 * In-place compaction of non-zero-entries; removes zero entries and
+	 * shifts non-zero entries to the left if necessary.
+	 */
+	public void compact() 
 	{
-		int index=binarySearch(col);
-		if(index<size && col==indexes[index])
-		{
-			values[index]=v;
-			return false;
-		}
-		else
-		{
-			if(v==0.0)
-				return false;
-			if(size==values.length)
-				resizeAndInsert(index, col, v);
-			else
-				shiftAndInsert(index, col, v);
-			return true;
-		}
+		int nnz = 0;
+		for( int i=0; i<size; i++ ) 
+			if( values[i] != 0 ){
+				values[nnz] = values[i];
+				indexes[nnz] = indexes[i];
+				nnz++;
+			}
+		size = nnz; //adjust row size
 	}
 	
-	
-	/*
-	 * Copies an entire sparserow into an existing sparserow in order to
-	 * reduce the shifting effort.
+	/**
 	 * 
-	 * Use case: copy sparse-sparse but currently not used since specific case
-	 * for read.
-	 * 
-	 * @param col_offset
-	 * @param arow
+	 * @param col
+	 * @param v
 	 * @return
 	 */
-	/*
-    public boolean set( int col_offset, SparseRow arow )
+	public boolean set(int col, double v)
 	{
-		int index = searchIndexesFirstGT(col_offset);
+		//early abort on zero 
+		if( v == 0.0 ) { 
+			return false;
+		}
 		
-		if( size+arow.size>values.length )
-		{
-			//resize and insert
-			int newCap=Math.max(newCapacity(),values.length+arow.size);
-			double[] oldvalues=values;
-			int[] oldindexes=indexes;
-			values=new double[newCap];
-			indexes=new int[newCap];
-			System.arraycopy(oldvalues, 0, values, 0, index);
-			System.arraycopy(oldindexes, 0, indexes, 0, index);
-			
-			System.arraycopy(arow.values, 0, values, index, arow.size);
-			for( int i=0; i<arow.size; i++ )
-				indexes[index+i] = col_offset + arow.indexes[i];
-
-			System.arraycopy(oldvalues, index, values, index+arow.size, size-index);
-			System.arraycopy(oldindexes, index, indexes, index+arow.size, size-index);
-			size+=arow.size;
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0 ) {
+			values[index] = v;
+			return false; //overwritten
 		}
+		
+		//insert new index-value pair
+		index = Math.abs( index+1 );
+		if( size==values.length )
+			resizeAndInsert(index, col, v);
 		else
-		{
-			//shift and insert
-			System.arraycopy(values, index, values, index+arow.size, size-index);
-			System.arraycopy(indexes, index, indexes, index+arow.size, size-index);			
-			System.arraycopy(arow.values, 0, values, index, arow.size);
-			for( int i=0; i<arow.size; i++ )
-				indexes[index+i] = col_offset + arow.indexes[i];
-			size+=arow.size;
-		}
-			
+			shiftRightAndInsert(index, col, v);
 		return true;
 	}
-	*/
 	
-	private void shiftAndInsert(int index, int col, double v) {
-		for(int i=size; i>index; i--)
-		{
-			values[i]=values[i-1];
-			indexes[i]=indexes[i-1];
+	/**
+	 * 
+	 * @param col
+	 * @param v
+	 */
+	public void append(int col, double v)
+	{
+		//early abort on zero 
+		if( v==0.0 ) {
+			return;
 		}
-		values[index]=v;
-		indexes[index]=col;
+		
+		//resize if required
+		if( size==values.length )
+			recap(newCapacity());
+		
+		//append value at end
+		values[size] = v;
+		indexes[size] = col;
 		size++;
 	}
-
-	private void resizeAndInsert(int index, int col, double v) {
-		int newCap=newCapacity();
-		double[] oldvalues=values;
-		int[] oldindexes=indexes;
-		values=new double[newCap];
-		indexes=new int[newCap];
-		System.arraycopy(oldvalues, 0, values, 0, index);
-		System.arraycopy(oldindexes, 0, indexes, 0, index);
-		indexes[index]=col;
-		values[index]=v;
-		System.arraycopy(oldvalues, index, values, index+1, size-index);
-		System.arraycopy(oldindexes, index, indexes, index+1, size-index);
-		size++;
-	}
-
+	
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
 	public double get(int col)
 	{
-		int index=binarySearch(col);
-		if(index<size && col==indexes[index])
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);		
+		if( index >= 0 )
 			return values[index];
 		else
 			return 0;
 	}
-	private int binarySearch(int x)
-	{
-		 int min = 0;
-		 int max =size-1;
-		 while(min<=max)
-		 {
-			 int mid=min+(max-min)/2;
-			 if(x<indexes[mid])
-				 max=mid-1;
-			 else if(x>indexes[mid])
-				 min=mid+1;
-			 else
-				 return mid;
-		 }
-		 return min;
-	}
-	
+
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
 	public int searchIndexesFirstGTE(int col)
 	{
-		int index=binarySearch(col);
-		if(index>=size)
+		int index = binarySearch(col);
+		if( index >= size )
 			return -1;
-		else return index;
+		else 
+			return index;
 	}
 	
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
 	public int searchIndexesFirstLTE(int col)
 	{
-		int index=binarySearch(col);
-		if(index<size && col==indexes[index])
+		int index = binarySearch(col);
+		if( index<size && col==indexes[index] )
 			return index;
-		else if(index-1<0)
+		else if( index-1 < 0 )
 			return -1;
 		else
 			return index-1;
 	}
 	
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
 	public int searchIndexesFirstGT(int col)
 	{
-		int index=binarySearch(col);
-		if(index<size && col==indexes[index])
+		int index = binarySearch(col);
+		if( index<size && col==indexes[index] )
 			return index+1;
-		else if(index>=0)
+		else if( index >= 0 )
 			return index;
 		else
 			return -1;
 	}
-	
-	public void deleteIndexRange(int lowerIndex, int upperIndex)
+
+	/**
+	 * 
+	 * @param col
+	 */
+	public void delete(int col)
 	{
-		int start = searchIndexesFirstGTE(lowerIndex);
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0 ) {
+			//shift following entries left by 1
+			shiftLeftAndDelete(index);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param lowerCol
+	 * @param upperCol
+	 */
+	public void deleteIndexRange(int lowerCol, int upperCol)
+	{
+		int start = searchIndexesFirstGTE(lowerCol);
 		if(start<0) 
 			return;
 		
-		int end = searchIndexesFirstGT(upperIndex);
+		int end = searchIndexesFirstGT(upperCol);
 		if( end<0 || start>end ) 
 			return;
 		
-		for(int i=0; i<size-end; i++) {
-			indexes[start+i]=indexes[end+i];
-			values[start+i]=values[end+i];
-		}
+		//overlapping array copy (shift rhs values left)
+		System.arraycopy(values, end, values, start, size-end);
+		System.arraycopy(indexes, end, indexes, start, size-end);
 		size-=(end-start);
 	}
-	
-	public void deleteIndex( int index )
+		
+	/**
+	 * 
+	 * @param lowerCol
+	 * @param upperCol
+	 */
+	public void deleteIndexComplementaryRange(int lowerCol, int upperCol)
 	{
-		int pos=binarySearch(index);
-		if(pos<size && index==indexes[pos])
-		{
-			for(int i=pos; i<size-1; i++)
-			{
-				indexes[i]=indexes[i+1];
-				values[i]=values[i+1];
-			}		
-			size--;	
-		}
-	}
-	
-	public void deleteIndexComplementaryRange(int lowerIndex, int upperIndex)
-	{
-		int start = searchIndexesFirstGTE(lowerIndex);
+		int start = searchIndexesFirstGTE(lowerCol);
 		if( start<0 ) 
 			return;
 		
-		int end = searchIndexesFirstGT(upperIndex);
+		int end = searchIndexesFirstGT(upperCol);
 		if( end<0 || start>end ) 
 			return;
 		
-		for(int i=0; i<end-start; i++) {
-			indexes[i]=indexes[start+i];
-			values[i]=values[start+i];
-		}
-		size=(end-start);
+		//overlapping array copy (shift ixrange values left)
+		System.arraycopy(values, start, values, 0, end-start);
+		System.arraycopy(indexes, start, indexes, 0, end-start);
+		size = (end-start);
+	}
+
+
+	/**
+	 * 
+	 * @param index
+	 * @param col
+	 * @param v
+	 */
+	private void resizeAndInsert(int index, int col, double v) 
+	{
+		//allocate new arrays
+		int newCap = newCapacity();
+		double[] oldvalues = values;
+		int[] oldindexes = indexes;
+		values = new double[newCap];
+		indexes = new int[newCap];
+		
+		//copy lhs values to new array
+		System.arraycopy(oldvalues, 0, values, 0, index);
+		System.arraycopy(oldindexes, 0, indexes, 0, index);
+		
+		//insert new value
+		indexes[index] = col;
+		values[index] = v;
+		
+		//copy rhs values to new array
+		System.arraycopy(oldvalues, index, values, index+1, size-index);
+		System.arraycopy(oldindexes, index, indexes, index+1, size-index);
+		size++;
+	}
+	
+	/**
+	 * 
+	 * @param index
+	 * @param col
+	 * @param v
+	 */
+	private void shiftRightAndInsert(int index, int col, double v) 
+	{		
+		//overlapping array copy (shift rhs values right by 1)
+		System.arraycopy(values, index, values, index+1, size-index);
+		System.arraycopy(indexes, index, indexes, index+1, size-index);
+
+		//insert new value
+		values[index] = v;
+		indexes[index] = col;
+		size++;
+	}
+	
+	/**
+	 * 
+	 * @param index
+	 */
+	private void shiftLeftAndDelete(int index)
+	{
+		//overlapping array copy (shift rhs values left by 1)
+		System.arraycopy(values, index+1, values, index, size-index-1);
+		System.arraycopy(indexes, index+1, indexes, index, size-index-1);
+		size--;
+	}
+	
+	/**
+	 * Custom binary search for search gt, gte, lte.
+	 * 
+	 * @param x
+	 * @return
+	 */
+	private int binarySearch(int x)
+	{
+		 int min = 0;
+		 int max = size-1;
+		 while(min<=max)
+		 {
+			 int mid = min+(max-min)/2;
+			 if(x<indexes[mid])
+				 max = mid-1;
+			 else if(x>indexes[mid])
+				 min = mid+1;
+			 else
+				 return mid;
+		 }
+		 return min;
 	}
 	
 	/**
@@ -382,22 +447,6 @@ public class SparseRow implements Serializable
 	{
 		if( size<=100 || !SortUtils.isSorted(0, size, indexes) )
 			SortUtils.sortByIndex(0, size, indexes, values);
-	}
-	
-	/**
-	 * In-place compaction of non-zero-entries; removes zero entries and
-	 * shifts non-zero entries to the left if necessary.
-	 */
-	public void compact() 
-	{
-		int nnz = 0;
-		for( int i=0; i<size; i++ ) 
-			if( values[i] != 0 ){
-				values[nnz] = values[i];
-				indexes[nnz] = indexes[i];
-				nnz++;
-			}
-		size = nnz; //adjust row size
 	}
 	
 	/**

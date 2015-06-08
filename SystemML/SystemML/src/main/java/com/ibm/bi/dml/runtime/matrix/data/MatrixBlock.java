@@ -1616,7 +1616,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					if( cl==cu && cl==aix[0] ) 
 					{
 						if (avals[0]==0)
-							brow.deleteIndex(cl);
+							brow.delete(cl);
 						else
 							brow.set(cl, avals[0] );
 					}
@@ -1721,7 +1721,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 				if( cl==cu ) 
 				{
 					if ((val = src.denseBlock[ix])==0)
-						brow.deleteIndex(cl);
+						brow.delete(cl);
 					else
 						brow.set(cl, val);
 				}
@@ -1782,7 +1782,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
 					{
 						int lnnz = sparseRows[i].size();
-						sparseRows[i].deleteIndex(cl);
+						sparseRows[i].delete(cl);
 						nonZeros += (sparseRows[i].size()-lnnz);
 					}
 			}
@@ -1790,7 +1790,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 			{
 				for( int i=rl; i<=ru; i++ )
 					if( sparseRows[i] != null && !sparseRows[i].isEmpty() )
-						sparseRows[i].deleteIndex(cl);
+						sparseRows[i].delete(cl);
 			}
 		}
 		else

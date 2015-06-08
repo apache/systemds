@@ -40,7 +40,6 @@ public class WriterTextCSVParallel extends WriterTextCSV
 	public WriterTextCSVParallel( CSVFileFormatProperties props )
 	{
 		super( props );
-		_props = props;
 	}
 	
 	@Override

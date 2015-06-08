@@ -118,7 +118,7 @@ public class AggUnaryOp extends Hop
 				//unary aggregate
 				PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
 						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType());
-				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock());
+				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
 				setLineNumbers(transform1);
 				
 				Lop aggregate = null;
@@ -127,11 +127,11 @@ public class AggUnaryOp extends Hop
 				if( requiresAggregation(input, _direction) )
 				{
 					group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
-					group1.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
+					group1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
 					setLineNumbers(group1);
 					
 					agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, getValueType(), et);
-					agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+					agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
 					agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
 					setLineNumbers(agg1);
 					
@@ -150,13 +150,13 @@ public class AggUnaryOp extends Hop
 					// Set the dimensions of PartialAggregate LOP based on the
 					// direction in which aggregation is performed
 					transform1.setDimensionsBasedOnDirection(input.getDim1(), input.getDim2(),
-							getRowsInBlock(), getColsInBlock());
+							input.getRowsInBlock(), input.getColsInBlock());
 					
 					if( group1 != null && agg1 != null ) { //if aggregation required
 						group1.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), 
-								getRowsInBlock(), getColsInBlock(), getNnz());
+								input.getRowsInBlock(), input.getColsInBlock(), getNnz());
 						agg1.getOutputParameters().setDimensions(1, 1, 
-								getRowsInBlock(), getColsInBlock(), getNnz());
+								input.getRowsInBlock(), input.getColsInBlock(), getNnz());
 					}
 					
 					UnaryCP unary1 = new UnaryCP(
@@ -174,7 +174,7 @@ public class AggUnaryOp extends Hop
 				//unary aggregate
 				PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
 						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), needAgg, et);
-				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock());
+				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
 				setLineNumbers(transform1);
 				setLops(transform1);
 

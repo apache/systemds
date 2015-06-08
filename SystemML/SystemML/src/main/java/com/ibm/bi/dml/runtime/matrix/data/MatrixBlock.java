@@ -1356,6 +1356,24 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		return nnz;
 	}
 	
+	/**
+	 * Basic debugging primitive to check correctness of nnz, this method is not intended for
+	 * production use.
+	 * 
+	 * @throws DMLRuntimeException
+	 */
+	public void checkNonZeros() 
+		throws DMLRuntimeException
+	{
+		//take non-zeros before and after recompute nnz
+		long nnzBefore = getNonZeros();
+		recomputeNonZeros();
+		long nnzAfter = getNonZeros();
+		
+		//raise exception if non-zeros don't match up
+		if( nnzBefore != nnzAfter )
+			throw new DMLRuntimeException("Number of non zeros incorrect: "+nnzBefore+" vs "+nnzAfter);
+	}
 
 	public void copy(MatrixValue thatValue) 
 	{
@@ -2630,37 +2648,27 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		return size;
 	}
 	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param op
+	 * @return
+	 */
 	public static SparsityEstimate estimateSparsityOnAggBinary(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op)
 	{
-		//NOTE: since MatrixMultLib always uses a dense intermediate output
+		//Since MatrixMultLib always uses a dense output (except for ultra-sparse mm)
 		//with subsequent check for sparsity, we should always return a dense estimate.
 		//Once, we support more aggregate binary operations, we need to change this.
-		return new SparsityEstimate(false, m1.getNumRows()*m2.getNumRows());
-	
-		/*
-		SparsityEstimate est=new SparsityEstimate();
 		
-		double m=m2.getNumColumns();
+		//WARNING: KEEP CONSISTENT WITH LIBMATRIXMULT
+		//Note that it is crucial to report the right output representation because
+		//in case of block reuse (e.g., mmcj) the output 'reset' refers to either
+		//dense or sparse representation and hence would produce incorrect results
+		//if we report the wrong representation (i.e., missing reset on ultrasparse mm). 
 		
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if ( !op.sparseSafe || m <=SKINNY_MATRIX_TURN_POINT)
-		{
-			est.sparse=false;
-		}
-		else
-		{
-			double n=m1.getNumRows();
-			double k=m1.getNumColumns();	
-			double nz1=m1.getNonZeros();
-			double nz2=m2.getNonZeros();
-			double pq=nz1*nz2/n/k/k/m;
-			double estimated= 1-Math.pow(1-pq, k);
-			est.sparse=(estimated < SPARCITY_TURN_POINT);
-			est.estimatedNonZeros=(int)(estimated*n*m);
-		}
-		return est;
-		*/
+		boolean ultrasparse = (m1.isUltraSparse() || m2.isUltraSparse());
+		return new SparsityEstimate(ultrasparse, m1.getNumRows()*m2.getNumRows());
 	}
 	
 	/**
@@ -4799,9 +4807,9 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		
 		//create output matrix block
 		if( ret==null )
-			ret = new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
+			ret = new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		else
-			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
+			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		
 		//compute matrix multiplication (only supported binary aggregate operation)
 		if( op.getNumThreads() > 1 )
@@ -5792,7 +5800,7 @@ public class MatrixBlock extends MatrixValue implements Serializable
 	
 	////////
 	// Misc methods
-		
+	
 	private static MatrixBlock checkType(MatrixValue block) throws DMLUnsupportedOperationException
 	{
 		if( block!=null && !(block instanceof MatrixBlock))

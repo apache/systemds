@@ -323,7 +323,7 @@ public class RunMRJobs
 							//prepare output file
 							Path filepath = new Path(fname, "0-m-00000");
 							MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(outinfo);
-							writer.writeEmptyMatrixToHDFS(filepath.getName(), mc.getRows(), mc.getCols(), 
+							writer.writeEmptyMatrixToHDFS(filepath.toString(), mc.getRows(), mc.getCols(), 
 									              mc.getRowsPerBlock(), mc.getColsPerBlock());
 						}
 						

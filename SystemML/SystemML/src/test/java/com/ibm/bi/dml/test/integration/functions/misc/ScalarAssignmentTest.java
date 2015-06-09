@@ -163,6 +163,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 			case DOUBLE: value = Double.valueOf(7.7); break;
 			case STRING: value = "This is a test!"; break;
 			case BOOLEAN: value = Boolean.valueOf(true); break;
+			default: //do nothing
 		}
 		
 	    TestConfiguration config = getTestConfiguration(TEST_NAME);

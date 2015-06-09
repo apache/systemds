@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,14 +16,15 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 public class PageRankTest extends AutomatedScalabilityTestBase 
 {
+	private static final String TEST_DIR = "test/scripts/scalability/page_rank/";
+	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     @Override
     public void setUp() {
-        baseDirectory = "test/scripts/scalability/page_rank/";
-        availableTestConfigurations.put("PageRankTest", new TestConfiguration("PageRankTest", new String[] { "p" }));
+        addTestConfiguration("PageRankTest", new TestConfiguration(TEST_DIR, "PageRankTest", new String[] { "p" }));
         matrixSizes = new int[][] {
                 { 9914 }
         };
@@ -31,7 +32,8 @@ public class PageRankTest extends AutomatedScalabilityTestBase
     
     @Test
     public void testPageRank() {
-    	loadTestConfiguration("PageRankTest");
+    	TestConfiguration config = getTestConfiguration("PageRankTest");
+    	loadTestConfiguration(config);
         
         addInputMatrix("g", -1, -1, 1, 1, 0.000374962, -1).setRowsIndexInMatrixSizes(0).setColsIndexInMatrixSizes(0);
         addInputMatrix("p", -1, 1, 1, 1, 1, -1).setRowsIndexInMatrixSizes(0);

@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.util;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

@@ -40,14 +40,16 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
+import com.ibm.bi.dml.runtime.io.MatrixReader;
+import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
+import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
-import com.ibm.bi.dml.test.MatrixIndex;
+import com.ibm.bi.dml.test.integration.BinaryMatrixCharacteristics;
 
 
 /**
@@ -304,13 +306,10 @@ public class TestUtils
 				System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
 			}
 			
-			long cellCounter = 0;
-			
 			while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 							.parseDouble(rcv[2]));
-					cellCounter++;
 			}
 			outIn.close();
 
@@ -410,10 +409,11 @@ public class TestUtils
 	 * @param filePath
 	 * @return
 	 */
-	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) {
-		FileSystem fs;
-		try {
-			fs = FileSystem.get(conf);
+	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) 
+	{
+		try 
+		{
+			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
@@ -430,7 +430,8 @@ public class TestUtils
 			}
 
 			return expectedValues;
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
 
@@ -1800,7 +1801,7 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			FileStatus[] files = fs.listStatus(new Path(directory));
 
-			HashMap<MatrixIndex, Double> valueMap = new HashMap<MatrixIndex, Double>();
+			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
 			int rows = 0;
 			int cols = 0;
 			MatrixIndexes indexes = new MatrixIndexes();
@@ -1814,8 +1815,7 @@ public class TestUtils
 					if (cols < indexes.getColumnIndex())
 						cols = (int) indexes.getColumnIndex();
 
-					valueMap.put(new MatrixIndex((int) indexes.getRowIndex(), (int) indexes.getColumnIndex()), value
-							.getValue());
+					valueMap.put(new MatrixIndexes(indexes), value.getValue());
 				}
 
 				reader.close();
@@ -1823,8 +1823,8 @@ public class TestUtils
 
 			double[][] values = new double[rows][cols];
 			long nonZeros = 0;
-			for (MatrixIndex index : valueMap.keySet()) {
-				values[index.getRow() - 1][index.getCol() - 1] = valueMap.get(index);
+			for (MatrixIndexes index : valueMap.keySet()) {
+				values[(int)index.getRowIndex() - 1][(int)index.getColumnIndex() - 1] = valueMap.get(index);
 				if (valueMap.get(index) != 0)
 					nonZeros++;
 			}
@@ -1859,7 +1859,7 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			FileStatus[] files = fs.listStatus(new Path(directory));
 
-			HashMap<MatrixIndex, Double> valueMap = new HashMap<MatrixIndex, Double>();
+			HashMap<MatrixIndexes, Double> valueMap = new HashMap<MatrixIndexes, Double>();
 			int rowsInLastBlock = -1;
 			int colsInLastBlock = -1;
 			int rows = 0;
@@ -1909,7 +1909,7 @@ public class TestUtils
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();
-							valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + cell.i),
+							valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + cell.i),
 									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.j)), cell.v);
 						}
 						
@@ -1917,7 +1917,7 @@ public class TestUtils
 						double[] valuesInBlock = value.getDenseArray();
 						for (int i = 0; i < value.getNumRows(); i++) {
 							for (int j = 0; j < value.getNumColumns(); j++) {
-								valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + i),
+								valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + i),
 										(int) ((indexes.getColumnIndex() - 1) * colsInBlock + j)), valuesInBlock[i
 										* value.getNumColumns() + j]);
 							}
@@ -1930,8 +1930,8 @@ public class TestUtils
 
 			long nonZeros = 0;
 			double[][] values = new double[rows][cols];
-			for (MatrixIndex index : valueMap.keySet()) {
-				values[index.getRow()][index.getCol()] = valueMap.get(index);
+			for (MatrixIndexes index : valueMap.keySet()) {
+				values[(int)index.getRowIndex()][(int)index.getColumnIndex()] = valueMap.get(index);
 				if (valueMap.get(index) != 0)
 					nonZeros++;
 			}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,19 +17,21 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class AndTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "functions/binary/scalar/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("AndTest", new TestConfiguration("AndTest",
+		addTestConfiguration("AndTest", new TestConfiguration(TEST_DIR, "AndTest",
 				new String[] { "left_1", "left_2", "left_3", "left_4", "right_1", "right_2", "right_3", "right_4" }));
 	}
 	
 	@Test
 	public void testAnd() {
-		loadTestConfiguration("AndTest");
+		TestConfiguration config = getTestConfiguration("AndTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("left_1", 2);

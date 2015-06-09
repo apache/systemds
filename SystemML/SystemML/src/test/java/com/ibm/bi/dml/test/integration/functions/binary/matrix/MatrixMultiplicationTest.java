@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,21 +21,21 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class MatrixMultiplicationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "functions/binary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
-
 		// positive tests
-		availableTestConfigurations.put("MatrixMultiplicationTest", new TestConfiguration("MatrixMultiplicationTest",
+		addTestConfiguration("MatrixMultiplicationTest", new TestConfiguration(TEST_DIR, "MatrixMultiplicationTest",
 				new String[] { "c" }));
-		availableTestConfigurations.put("WrongDimensionsTest", new TestConfiguration("MatrixMultiplicationTest",
+		addTestConfiguration("WrongDimensionsTest", new TestConfiguration(TEST_DIR, "MatrixMultiplicationTest",
 				new String[] { "c" }));
-		availableTestConfigurations.put("AMultASpecial1Test", new TestConfiguration("AMultASpecial1Test",
+		addTestConfiguration("AMultASpecial1Test", new TestConfiguration(TEST_DIR, "AMultASpecial1Test",
 				new String[] { "a" }));
-		availableTestConfigurations.put("AMultBSpecial2Test", new TestConfiguration("AMultBSpecial2Test",
+		addTestConfiguration("AMultBSpecial2Test", new TestConfiguration(TEST_DIR, "AMultBSpecial2Test",
 				new String[] { "e" }));
 
 		// negative tests
@@ -53,7 +53,7 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 		config.addVariable("n2", n);
 		config.addVariable("k", k);
 
-		loadTestConfiguration("MatrixMultiplicationTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
@@ -81,7 +81,7 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 		config.addVariable("n2", n2);
 		config.addVariable("k", k);
 
-		loadTestConfiguration("WrongDimensionsTest");
+		loadTestConfiguration(config);
 
 		createRandomMatrix("a", m, n1, -1, 1, 0.5, -1);
 		createRandomMatrix("b", n2, k, -1, 1, 0.5, -1);

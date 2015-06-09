@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,7 +20,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ValueTypeAutoCastingTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "functions/misc/";
@@ -157,6 +157,8 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 				case BOOLEAN:
 					val1 = (V[0][0]!=0)?"TRUE":"FALSE"; 
 					val2 = (V[0][1]!=0)?"TRUE":"FALSE"; break;
+				default:
+					//do nothing
 			}
 			
 		    String HOME = SCRIPT_DIR + TEST_DIR;

@@ -431,6 +431,7 @@ public class DMLConfig
 	 * 
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
 	public void makeQualifiedScratchSpacePath() 
 		throws IOException
 	{

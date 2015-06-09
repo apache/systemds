@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,25 +17,25 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ScalarSubtractionTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "functions/binary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
-		
 		// positive tests
-		availableTestConfigurations.put("IntConstTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("IntVarTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleConstTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleVarTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("SparseTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("EmptyTest", new TestConfiguration("ScalarSubtractionTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests
@@ -55,7 +55,7 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 		config.addVariable("subtrahend", subtrahend);
 		config.addVariable("minuend", minuend);
 		
-		loadTestConfiguration("IntConstTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -100,7 +100,7 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 		config.addVariable("subtrahend", "Subtrahend");
 		config.addVariable("minuend", minuend);
 		
-		loadTestConfiguration("IntVarTest");
+		loadTestConfiguration(config);
 
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -145,7 +145,7 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 		config.addVariable("subtrahend", subtrahend);
 		config.addVariable("minuend", minuend);
 		
-		loadTestConfiguration("DoubleConstTest");
+		loadTestConfiguration(config);
 
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -190,7 +190,7 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 		config.addVariable("subtrahend", "Subtrahend");
 		config.addVariable("minuend", minuend);
 		
-		loadTestConfiguration("DoubleVarTest");
+		loadTestConfiguration(config);
 
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -235,7 +235,7 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 		config.addVariable("subtrahend", subtrahend);
 		config.addVariable("minuend", minuend);
 		
-		loadTestConfiguration("SparseTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 0.05, -1);
 		double[][] computedVectorLeft = new double[rows][1];

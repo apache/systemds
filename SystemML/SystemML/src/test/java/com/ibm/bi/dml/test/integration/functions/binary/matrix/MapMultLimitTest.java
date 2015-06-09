@@ -1,13 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
-import static junit.framework.Assert.assertTrue;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class MapMultLimitTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "MapMultLimitTest";
@@ -35,7 +35,6 @@ public class MapMultLimitTest extends AutomatedTestBase
 	private final static int cols = 1500;
 	
 	private final static double sparsity1 = 0.7;
-	private final static double sparsity2 = 0.1;
 	
 	@Override
 	public void setUp() 
@@ -90,7 +89,7 @@ public class MapMultLimitTest extends AutomatedTestBase
 			// Expected 3 jobs: 1 Reblock, 2 MapMults
 			runTest(true, exceptionExpected, null, 3); 
 			//System.out.println("#Jobs: " + Statistics.getNoOfExecutedMRJobs() + ", " + Statistics.getNoOfCompiledMRJobs());
-			assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
+			Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
 		}
 		finally
 		{

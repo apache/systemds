@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,6 +17,8 @@ import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+
 
 
 
@@ -96,7 +98,7 @@ public abstract class AutomatedTestBase
 	// *** END HACK ***
 	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final String SCRIPT_DIR = "./src/test/scripts/";
@@ -630,10 +632,12 @@ public abstract class AutomatedTestBase
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
 	}
 	
+	@SuppressWarnings("deprecation")
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
+	@SuppressWarnings("deprecation")
 	public static HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + fileName);
@@ -1046,7 +1050,7 @@ public abstract class AutomatedTestBase
 	{
 		String executionFile = baseDirectory + selectedTest + ".dmlt";
 		
-		TestUtils.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
+		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
 		
 		try {
 		if(DEBUG)

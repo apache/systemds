@@ -1,14 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.test.integration.functions.io;
 
-import static junit.framework.Assert.assertEquals;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -19,7 +18,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class ScalarIOTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "scalarIOTest";
@@ -51,20 +50,20 @@ public class ScalarIOTest extends AutomatedTestBase
                 				  };
 		runTest(true, false, null, -1);
 		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).intValue();
-		assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
+		Assert.assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 		
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
 		int_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).intValue();
-		assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
+		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 		
 	}
 
 	@Test
-	public void testDoubleScalarWrite() {
-
-		double double_scalar = 464.55;
+	public void testDoubleScalarWrite() 
+	{
+		Double double_scalar = 464.55;
 		
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -76,14 +75,14 @@ public class ScalarIOTest extends AutomatedTestBase
 									HOME + OUTPUT_DIR + "a.scalar"
                 				  };
 		runTest(true, false, null, -1);
-		double double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
-		assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
+		Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
+		Assert.assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
 
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
 		double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
-		assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
+		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
 	}
 
 	@Test
@@ -104,7 +103,7 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		boolean boolean_out_scalar = TestUtils.readDMLBoolean(OUT_FILE);
 		
-		assertEquals("Values not equal: " + boolean_scalar + "!=" + boolean_out_scalar, boolean_scalar, boolean_out_scalar);
+		Assert.assertEquals("Values not equal: " + boolean_scalar + "!=" + boolean_out_scalar, boolean_scalar, boolean_out_scalar);
 	}
 
 	@Test
@@ -125,7 +124,7 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		String string_out_scalar = TestUtils.readDMLString(OUT_FILE);
 		
-		assertEquals("Values not equal: " + string_scalar + "!=" + string_out_scalar, string_scalar, string_out_scalar);
+		Assert.assertEquals("Values not equal: " + string_scalar + "!=" + string_out_scalar, string_scalar, string_out_scalar);
 	}
 	
 	@Test

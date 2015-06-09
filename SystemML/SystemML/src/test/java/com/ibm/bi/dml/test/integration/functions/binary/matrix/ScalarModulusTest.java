@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -18,27 +18,27 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ScalarModulusTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/binary/matrix/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/matrix/";
-		
 		// positive tests
-		availableTestConfigurations.put("IntConstTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("IntVarTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleConstTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DoubleVarTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("SparseTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("EmptyTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		availableTestConfigurations.put("DivisionByZeroTest", new TestConfiguration("ScalarModulusTest",
+		addTestConfiguration("DivisionByZeroTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests
@@ -58,7 +58,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", divisor);
 		config.addVariable("dividend", dividend);
 		
-		loadTestConfiguration("IntConstTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -104,7 +104,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", "divisor");
 		config.addVariable("dividend", "dividend");
 		
-		loadTestConfiguration("IntVarTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -150,7 +150,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", divisor);
 		config.addVariable("dividend", dividend);
 		
-		loadTestConfiguration("DoubleConstTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -196,7 +196,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", "divisor");
 		config.addVariable("dividend", "dividend");
 		
-		loadTestConfiguration("DoubleVarTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -242,7 +242,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", divisor);
 		config.addVariable("dividend", dividend);
 		
-		loadTestConfiguration("SparseTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.05, -1);
 		double[][] computedVectorLeft = new double[rows][1];
@@ -288,7 +288,7 @@ public class ScalarModulusTest extends AutomatedTestBase
 		config.addVariable("divisor", divisor);
 		config.addVariable("dividend", dividend);
 		
-		loadTestConfiguration("DivisionByZeroTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.5, -1);
 		double[][] computedVectorLeft = new double[rows][1];

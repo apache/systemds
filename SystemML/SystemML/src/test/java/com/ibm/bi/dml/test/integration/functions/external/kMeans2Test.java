@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,37 +21,22 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class kMeans2Test extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	private final static String TEST_KMEANS = "kMeans2";  // The version w/ init kCenters
 
-	/**
-	 * Main method for running one test at a time.
-	 */
-	public static void main(String[] args) {
-		long startMsec = System.currentTimeMillis();
+	private static final String TEST_DIR = "functions/external/";
+	private static final String TEST_KMEANS = "kMeans2";  // The version w/ init kCenters
 
-		kMeans2Test t = new kMeans2Test();
-		t.setUpBase();
-		t.setUp();
-		t.testkMeansTest();
-		t.tearDown();
 
-		long elapsedMsec = System.currentTimeMillis() - startMsec;
-		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-
-	}
-	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/external/";
-		availableTestConfigurations.put(TEST_KMEANS, new TestConfiguration(TEST_KMEANS, new String[] { "kcenters", "kcentersWithInit"}));
+		addTestConfiguration(TEST_KMEANS, new TestConfiguration(TEST_DIR, TEST_KMEANS, new String[] { "kcenters", "kcentersWithInit"}));
 	}
 
 	@Test
-	public void testkMeansTest() {
-
+	@SuppressWarnings("deprecation")
+	public void testkMeansTest() 
+	{
 		int rows = 100;
 		int cols = 10;
 		int centers = 5;
@@ -75,11 +60,8 @@ public class kMeans2Test extends AutomatedTestBase
 		writeInputMatrix("M", M);
 		writeInputMatrix("initialCenters",initCenters);
 
-
 		HashMap<CellIndex, Double> expected_kCenters = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "kMeans2/kMeansWrapperOutput1");
 		HashMap<CellIndex, Double> expected_kCentersWithInit = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "kMeans2/kMeansWrapperOutput2");
-
-
 
 		double [][] kcenters_arr = TestUtils.convertHashMapToDoubleArray(expected_kCenters);
 		double [][] kcenters_init_arr = TestUtils.convertHashMapToDoubleArray(expected_kCentersWithInit);
@@ -87,12 +69,10 @@ public class kMeans2Test extends AutomatedTestBase
 		writeExpectedMatrix("kcenters", kcenters_arr);
 		writeExpectedMatrix("kcentersWithInit", kcenters_init_arr);
 
-
 		loadTestConfiguration(config);
 
 		runTest(true, false, null, -1);
 		
-
 		compareResults(0.0001);
 	}
 }

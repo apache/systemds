@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,8 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -18,17 +17,15 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.Statistics;
 
 public class OuterProductTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "OuterProduct";
 	private final static String TEST_DIR = "functions/binary/matrix/";
-	private final static double eps = 1e-10;
 	
 	private final static int rows = 41456;
 	private final static int cols = 9703;
@@ -101,8 +98,8 @@ public class OuterProductTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			//HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			double dmlret = dmlfile.get(new CellIndex(1,1));
-			double compare = computeMinOuterProduct(A, B, rows, cols);
+			Double dmlret = dmlfile.get(new CellIndex(1,1));
+			Double compare = computeMinOuterProduct(A, B, rows, cols);
 			Assert.assertEquals("Wrong result value.", compare, dmlret);
 			
 			int expectedNumCompiled = 4; //REBLOCK, MMRJ, GMR, GMR write

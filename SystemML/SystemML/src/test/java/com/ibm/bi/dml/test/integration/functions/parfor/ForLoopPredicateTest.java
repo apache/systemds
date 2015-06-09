@@ -9,8 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -172,7 +171,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		Assert.assertEquals( Math.ceil((Math.round(to)-Math.round(from)+1)/increment),
+		Assert.assertEquals( Double.valueOf(Math.ceil((Math.round(to)-Math.round(from)+1)/increment)),
 				             dmlfile.get(new CellIndex(1,1)));
 	}
 	

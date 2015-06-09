@@ -50,8 +50,9 @@ public class SequenceMinerTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSequenceMiner() {
-		
+	@SuppressWarnings("deprecation")
+	public void testSequenceMiner() 
+	{	
 		int rows = 5;
 		int cols = 10;
 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -33,25 +33,25 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class AdditionTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	private static final String TEST_DIR = "functions/binary/scalar/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		
 		// positive tests
-		availableTestConfigurations.put("ConstConstTest", new TestConfiguration("AdditionTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("VarConstTest", new TestConfiguration("AdditionTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("ConstVarTest", new TestConfiguration("AdditionTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("VarVarTest", new TestConfiguration("AdditionTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 		
 		// negative tests
-		availableTestConfigurations.put("BooleanTest", new TestConfiguration("AdditionSingleTest",
+		addTestConfiguration("BooleanTest", new TestConfiguration(TEST_DIR, "AdditionSingleTest",
 				new String[] { "out" }));
 	}
 	
@@ -80,7 +80,7 @@ public class AdditionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 		
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = intIntValue1 + intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 + intDoubleValue2;
@@ -123,7 +123,7 @@ public class AdditionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 		
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = intIntValue1 + intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 + intDoubleValue2;
@@ -166,7 +166,7 @@ public class AdditionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 		
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = intIntValue1 + intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 + intDoubleValue2;
@@ -213,7 +213,7 @@ public class AdditionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 		
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = intIntValue1 + intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 + intDoubleValue2;
@@ -237,7 +237,7 @@ public class AdditionTest extends AutomatedTestBase
 		config.addVariable("op1", "true");
 		config.addVariable("op2", 1);
 		
-		loadTestConfiguration("BooleanTest");
+		loadTestConfiguration(config);
 		
 		runTest(true, DMLException.class);
 	}

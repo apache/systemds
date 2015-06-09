@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
+import com.ibm.bi.dml.test.integration.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
@@ -59,7 +59,7 @@ public class WriteTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");	
-		loadTestConfiguration("TextTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
 		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
@@ -79,7 +79,7 @@ public class WriteTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		loadTestConfiguration("BinaryTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
 		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
@@ -109,7 +109,7 @@ public class WriteTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("WriteTwiceTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
 		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));

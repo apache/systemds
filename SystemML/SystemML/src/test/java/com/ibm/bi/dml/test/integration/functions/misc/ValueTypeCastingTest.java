@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ValueTypeCastingTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "functions/misc/";
@@ -127,6 +127,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 			case DOUBLE:  TEST_NAME = TEST_NAME1; break;
 			case INT: 	  TEST_NAME = TEST_NAME2; break;
 			case BOOLEAN: TEST_NAME = TEST_NAME3; break;
+			default: //do nothing
 		}
 		
 		int numVals = (exceptionExpected ? 7 : 1);
@@ -163,6 +164,8 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 					case BOOLEAN: 
 						MapReduceTool.writeBooleanToHDFS(V[0][0]!=0, HOME + INPUT_DIR + "V"); 
 						inVal = (V[0][0]!=0)?1:0; break;
+					default: 
+						//do nothing	
 				}				
 				MapReduceTool.writeScalarMetaDataFile(HOME + INPUT_DIR + "V.mtd", vtIn);
 			}
@@ -178,6 +181,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 					case DOUBLE:  Assert.assertEquals(inVal, MapReduceTool.readDoubleFromHDFSFile(outName), 1e-16); break;
 					case INT:     Assert.assertEquals((int) inVal, MapReduceTool.readIntegerFromHDFSFile(outName)); break;
 					case BOOLEAN: Assert.assertEquals(inVal!=0, MapReduceTool.readBooleanFromHDFSFile(outName)); break;
+					default: //do nothing
 		        }
 	        }
 		}

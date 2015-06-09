@@ -93,8 +93,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, IOException
 	{
-		
-		// check the namespace exists, and that function is defined in the namespace
+		// Step 1: check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null){
 			raiseValidateError("namespace " + _namespace + " is not defined ", conditional);
 		}
@@ -102,77 +101,56 @@ public class FunctionCallIdentifier extends DataIdentifier
 		if (fblock == null){
 			raiseValidateError("function " + _name + " is undefined in namespace " + _namespace, conditional);
 		}
-		// set opcode (whether internal or external function) -- based on whether FunctionStatement
+		
+		// Step 2: set opcode (whether internal or external function) -- based on whether FunctionStatement
 		// in FunctionStatementBlock is ExternalFunctionStatement or FunctionStatement
 		if (fblock.getStatement(0) instanceof ExternalFunctionStatement)
 			_opcode = Expression.FunctCallOp.EXTERNAL;
 		else
 			_opcode = Expression.FunctCallOp.INTERNAL;
 		
-		// force all parameters to be either unnammed or named for functions
+		// Step 3: check all parameters to be either unnamed or named for functions
 		boolean hasNamed = false, hasUnnamed = false;
-		for (ParameterExpression paramExpr : _paramExprs){
+		for( ParameterExpression paramExpr : _paramExprs ) {
 			if (paramExpr.getName() == null)
 				hasUnnamed = true;
 			else
 				hasNamed = true;
 		}
-		
 		if (hasNamed && hasUnnamed){
 			raiseValidateError(" In DML, functions can only have named parameters " +
 					"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
 					_name + " has both parameter types.", conditional);
 		}
-		// validate expressions for each passed parameter
-		for (ParameterExpression paramExpr : _paramExprs) {
-			
-			if (paramExpr.getExpr() instanceof FunctionCallIdentifier){
+		
+		// Step 4: validate expressions for each passed parameter
+		for( ParameterExpression paramExpr : _paramExprs ) {
+			if (paramExpr.getExpr() instanceof FunctionCallIdentifier) {
 				raiseValidateError("UDF function call not supported as parameter to function call", false);
 			}
-			
 			paramExpr.getExpr().validateExpression(ids, constVars, conditional);
 		}
-	
-		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 		
-		// TODO: DRB: FIX THIS
-		// check correctness of number of arguments and their types 
-		if (fstmt.getInputParams().size() < _paramExprs.size()){ 
+		// Step 5: constant propagation into function call statement
+		for( ParameterExpression paramExpr : _paramExprs ) {
+			Expression expri = paramExpr.getExpr();
+			if( expri instanceof DataIdentifier && !(expri instanceof IndexedIdentifier)
+				&& constVars.containsKey(((DataIdentifier)expri).getName()) )
+			{
+				//replace varname with constant in function call expression
+				paramExpr.setExpr(constVars.get(((DataIdentifier)expri).getName()));
+			}
+		}
+	
+		// Step 6: check correctness of number of arguments and their types 
+		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
+		if (fstmt.getInputParams().size() < _paramExprs.size()) { 
 			raiseValidateError("function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
 					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size(), conditional);
 		}
 		
-		/*
-		// check the types of the input to see they match OR has default values
-		for (int i = 0; i < fstmt.getInputParams().size(); i++) {
-					
-			if (i >= _paramExprs.size()){
-				// check a default value is provided for this variable
-				if (fstmt.getInputParams().get(i).getDefaultValue() == null){
-					LOG.error(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
-					throw new LanguageException(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
-				}
-			}
-			
-			else {
-				Expression param = fstmt.getInputParams().get(i);
-				boolean sameDataType = param.getOutput().getDataType().equals(fstmt.getInputParams().get(i).getDataType());
-				if (!sameDataType){
-					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
-					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
-				}
-				boolean sameValueType = param.getOutput().getValueType().equals(fstmt.getInputParams().get(i).getValueType());
-				if (!sameValueType){
-					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
-					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
-				}
-			}
-		}
-		*/
-		
-		
-		// set the outputs for the function
+		// Step 7: set the outputs for the function
 		_outputs = new Identifier[fstmt.getOutputParams().size()];
 		for(int i=0; i < fstmt.getOutputParams().size(); i++) {
 			_outputs[i] = new DataIdentifier(fstmt.getOutputParams().get(i));
@@ -181,6 +159,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 		return;
 	}
 	
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		if (_namespace != null && _namespace.length() > 0 && !_namespace.equals(".defaultNS")) 

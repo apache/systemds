@@ -164,7 +164,7 @@ public class SparseRow implements Serializable
 		if( values.length < estimatedNzs )
 			return Math.min(estimatedNzs, values.length*2);
 		else
-			return (int) Math.min(this.maxNzs, Math.ceil((double)(values.length)*1.1));
+			return (int) Math.min(maxNzs, Math.ceil((double)(values.length)*1.1));
 	}
 
 	/**
@@ -248,20 +248,6 @@ public class SparseRow implements Serializable
 		else
 			return 0;
 	}
-
-	/**
-	 * 
-	 * @param col
-	 * @return
-	 */
-	public int searchIndexesFirstGTE(int col)
-	{
-		int index = binarySearch(col);
-		if( index >= size )
-			return -1;
-		else 
-			return index;
-	}
 	
 	/**
 	 * 
@@ -270,13 +256,46 @@ public class SparseRow implements Serializable
 	 */
 	public int searchIndexesFirstLTE(int col)
 	{
-		int index = binarySearch(col);
-		if( index<size && col==indexes[index] )
-			return index;
-		else if( index-1 < 0 )
-			return -1;
-		else
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0  ) {
+			if( index < size )
+				return index;
+			else 
+				return -1;
+		}
+		
+		//search lt col index
+		index = Math.abs( index+1 );
+		if( index-1 >= 0 )
 			return index-1;
+		else 
+			return -1;
+	}
+	
+
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
+	public int searchIndexesFirstGTE(int col)
+	{
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0  ) {
+			if( index < size )
+				return index;
+			else 
+				return -1;
+		}
+		
+		//search gt col index
+		index = Math.abs( index+1 );
+		if( index < size )
+			return index;
+		else 
+			return -1;
 	}
 	
 	/**
@@ -286,12 +305,20 @@ public class SparseRow implements Serializable
 	 */
 	public int searchIndexesFirstGT(int col)
 	{
-		int index = binarySearch(col);
-		if( index<size && col==indexes[index] )
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0  ) {
+			if( index+1 < size )
+				return index+1;
+			else 
+				return -1;
+		}
+		
+		//search gt col index
+		index = Math.abs( index+1 );
+		if( index+1 < size )
 			return index+1;
-		else if( index >= 0 )
-			return index;
-		else
+		else 
 			return -1;
 	}
 
@@ -409,29 +436,6 @@ public class SparseRow implements Serializable
 		System.arraycopy(values, index+1, values, index, size-index-1);
 		System.arraycopy(indexes, index+1, indexes, index, size-index-1);
 		size--;
-	}
-	
-	/**
-	 * Custom binary search for search gt, gte, lte.
-	 * 
-	 * @param x
-	 * @return
-	 */
-	private int binarySearch(int x)
-	{
-		 int min = 0;
-		 int max = size-1;
-		 while(min<=max)
-		 {
-			 int mid = min+(max-min)/2;
-			 if(x<indexes[mid])
-				 max = mid-1;
-			 else if(x>indexes[mid])
-				 min = mid+1;
-			 else
-				 return mid;
-		 }
-		 return min;
 	}
 	
 	/**

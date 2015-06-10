@@ -1164,9 +1164,6 @@ public class MatrixObject extends CacheableData
 		{
 			case LOCAL:
 				LazyWriteBuffer.deleteMatrix(cacheFilePathAndName);
-				//File f = new File(cacheFilePathAndName);
-				//if( f.exists() )
-				//	f.delete();
 				break;
 			case HDFS:
 				try{

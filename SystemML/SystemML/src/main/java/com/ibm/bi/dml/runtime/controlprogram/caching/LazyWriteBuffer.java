@@ -8,8 +8,9 @@
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -31,10 +32,15 @@ public class LazyWriteBuffer
 		LRU
 	}
 	
-	private static long _limit; //global limit
-	private static long _size;  //current size
-	private static HashMap<String, ByteBuffer> _mData;
-	private static LinkedList<String> _mQueue;
+	//global size limit in bytes
+	private static long _limit; 
+	
+	//current size in bytes
+	private static long _size;  
+	
+	//eviction queue of <filename,buffer> pairs (implemented via linked hash map 
+	//for (1) queue semantics and (2) constant time get/insert/delete operations)
+	private static EvictionQueue _mQueue;
 	
 	static 
 	{
@@ -61,13 +67,16 @@ public class LazyWriteBuffer
 			ByteBuffer bbuff = null;
 			
 			//modify buffer pool
-			synchronized( _mData )
+			synchronized( _mQueue )
 			{
 				//evict matrices to make room (by default FIFO)
 				while( _size+lSize >= _limit )
 				{
-					String ftmp = _mQueue.removeFirst();
-					ByteBuffer tmp = _mData.remove(ftmp);
+					//remove first entry from eviction queue
+					Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+					String ftmp = entry.getKey();
+					ByteBuffer tmp = entry.getValue();
+					
 					if( tmp != null )
 					{
 						//wait for pending serialization
@@ -86,9 +95,8 @@ public class LazyWriteBuffer
 				//create buffer (reserve mem), and lock
 				bbuff = new ByteBuffer( lSize );
 				
-				//put placeholder into buffer pool
-				_mData.put(fname, bbuff);
-				_mQueue.addLast(fname);
+				//put placeholder into buffer pool 
+				_mQueue.addLast(fname, bbuff);
 				_size += lSize;	
 			}
 			
@@ -115,19 +123,16 @@ public class LazyWriteBuffer
 	{
 		boolean requiresDelete = true;
 		
-		synchronized( _mData )
+		synchronized( _mQueue )
 		{
-			//remove serialized matrix
-			ByteBuffer ldata = _mData.remove(fname);
+			//remove queue entry 
+			ByteBuffer ldata = _mQueue.remove(fname);
 			if( ldata != null )
 			{
 				_size -= ldata.getSize(); 
 				requiresDelete = false;
 				ldata.freeMemory(); //cleanup
 			}
-			
-			//remove queue entry
-			_mQueue.remove(fname);	
 		}
 		
 		//delete from FS if required
@@ -148,16 +153,17 @@ public class LazyWriteBuffer
 		ByteBuffer ldata = null;
 		
 		//probe write buffer
-		synchronized( _mData )
+		synchronized( _mQueue )
 		{
-			ldata = _mData.get(fname);
+			ldata = _mQueue.get(fname);
 			
 			//modify eviction order (accordingly to access)
 			if(    CacheableData.CACHING_BUFFER_POLICY == RPolicy.LRU 
 				&& ldata != null )
 			{
-				_mQueue.remove( fname ); //equals
-				_mQueue.addLast( fname );
+				//reinsert entry at end of eviction queue
+				_mQueue.remove( fname );
+				_mQueue.addLast( fname, ldata );
 			}
 		}
 		
@@ -183,8 +189,7 @@ public class LazyWriteBuffer
 	 */
 	public static void init()
 	{
-		_mData = new HashMap<String, ByteBuffer>();
-		_mQueue = new LinkedList<String>();		
+		_mQueue = new EvictionQueue();		
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
@@ -195,8 +200,6 @@ public class LazyWriteBuffer
 	 */
 	public static void cleanup()
 	{
-		if( _mData!=null )
-			_mData.clear();
 		if( _mQueue!=null )
 			_mQueue.clear();
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
@@ -224,16 +227,45 @@ public class LazyWriteBuffer
 		System.out.println("\tWB: Buffer Meta Data: " +
 				     "limit="+_limit+", " +
 				     "size[bytes]="+_size+", " +
-				     "size[elements]="+_mQueue.size()+"/"+_mData.size());
+				     "size[elements]="+_mQueue.size()+"/"+_mQueue.size());
 		
 		//print current buffer entries
 		int count = _mQueue.size();
-		for( String fname : _mQueue )
+		for( Entry<String, ByteBuffer> entry : _mQueue.entrySet() )
 		{
-			ByteBuffer bbuff = _mData.get(fname);
+			String fname = entry.getKey();
+			ByteBuffer bbuff = entry.getValue();
 			
 			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isInSparseFormat());
 			count--;
+		}
+	}
+	
+	/**
+	 * Extended LinkedHashMap with convenience methods for adding and removing 
+	 * last/first entries.
+	 * 
+	 */
+	private static class EvictionQueue extends LinkedHashMap<String, ByteBuffer>
+	{
+		private static final long serialVersionUID = -5208333402581364859L;
+		
+		public void addLast( String fname, ByteBuffer bbuff )
+		{
+			//put entry into eviction queue w/ 'addLast' semantics
+			put(fname, bbuff);
+		}
+		
+		public Entry<String, ByteBuffer> removeFirst() 
+		{
+			//move iterator to first entry
+			Iterator<Entry<String, ByteBuffer>> iter = entrySet().iterator();
+			Entry<String, ByteBuffer> entry = iter.next();
+			
+			//remove current iterator entry
+			iter.remove();
+			
+			return entry;
 		}
 	}
 }

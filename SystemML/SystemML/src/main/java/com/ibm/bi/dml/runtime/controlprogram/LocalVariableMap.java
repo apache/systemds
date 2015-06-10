@@ -110,10 +110,7 @@ public class LocalVariableMap implements Cloneable
 	 */
 	public boolean hasReferences( Data d )
 	{
-		for( Data tmpdat : localMap.values() ) 
-			if ( tmpdat == d ) 
-				return true;
-		return false;
+		return localMap.containsValue(d);
 	}
 
 	/**

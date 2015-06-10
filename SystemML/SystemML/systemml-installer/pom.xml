@@ -92,6 +92,6 @@
 	</build>
 
 	<properties>
-		<installDir>${bi.value.add.home.dir}/bigr/3.15/bigr-SystemML/${project.version}</installDir>
+		<installDir>${bi.value.add.home.dir}/bigr/4.0/bigr-SystemML/${project.version}</installDir>
 	</properties>
 </project>

@@ -37,9 +37,10 @@ public class kMeansTest extends AutomatedTestBase
 		int rows = 100;
 		int cols = 10;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_KMEANS);
+		TestConfiguration config = getTestConfiguration(TEST_KMEANS);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String KMEANS_HOME = baseDirectory;
@@ -57,8 +58,6 @@ public class kMeansTest extends AutomatedTestBase
 		double [][] expected_means_arr = TestUtils.convertHashMapToDoubleArray(expected_kmeans);
 		
 		writeExpectedMatrix("kCenters", expected_means_arr);
-						
-		loadTestConfiguration(config);
 
 		runTest(true, false, null, -1);
 

@@ -38,15 +38,13 @@ public class SGDMFTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("SGDMFTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 
 		double[][] V = getRandomMatrix(rows, cols, 1, 5, 0.05, -1);
 		
 		writeInputMatrix("V", V);
-		
-		loadTestConfiguration(config);
 
 		runTest();
-
 		checkForResultExistence();
 	}
 }

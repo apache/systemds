@@ -9,8 +9,12 @@ package com.ibm.bi.dml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.Serializable;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -60,10 +64,11 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
+import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
-public class MatrixBlock extends MatrixValue implements Serializable
+public class MatrixBlock extends MatrixValue implements Externalizable
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -2449,6 +2454,52 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		}
 		else {
 			out.writeInt( (int)nonZeros );
+		}
+	}
+	
+	/**
+	 * Redirects the default java serialization via externalizable to our default 
+	 * hadoop writable serialization for efficient broadcast/rdd deserialization. 
+	 * 
+	 * @param is
+	 * @throws IOException
+	 */
+	public void readExternal(ObjectInput is) 
+		throws IOException
+	{
+		if( is instanceof ObjectInputStream )
+		{
+			//fast deserialize of dense/sparse blocks
+			ObjectInputStream ois = (ObjectInputStream)is;
+			FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
+			readFields(fis);
+		}
+		else {
+			//default deserialize (general case)
+			readFields(is);
+		}
+	}
+	
+	/**
+	 * Redirects the default java serialization via externalizable to our default 
+	 * hadoop writable serialization for efficient broadcast/rdd serialization. 
+	 * 
+	 * @param is
+	 * @throws IOException
+	 */
+	public void writeExternal(ObjectOutput os) 
+		throws IOException
+	{
+		if( os instanceof ObjectOutputStream ) {
+			//fast serialize of dense/sparse blocks
+			ObjectOutputStream oos = (ObjectOutputStream)os;
+			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
+			write(fos);
+			fos.flush();
+		}
+		else {
+			//default serialize (general case)
+			write(os);	
 		}
 	}
 	
@@ -5910,5 +5961,4 @@ public class MatrixBlock extends MatrixValue implements Serializable
 		}
 		public SparsityEstimate(){}
 	}
-	
 }

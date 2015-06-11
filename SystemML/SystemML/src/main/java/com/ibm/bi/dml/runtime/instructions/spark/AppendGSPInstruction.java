@@ -193,7 +193,8 @@ public class AppendGSPInstruction extends BinarySPInstruction
 				firstBlk = replaceFirstBlk;
 			}
 			
-			firstBlk.merge(secondBlk, true);
+			//merge with sort since blocks might be in any order
+			firstBlk.merge(secondBlk, false);
 			if(firstBlk.getNumColumns() != lclen) {
 				// Sanity check
 				throw new DMLRuntimeException("Incorrect dimensions of the input block while merging shifted blocks:" + firstBlk.getNumColumns() + " != " +  lclen);

@@ -39,7 +39,6 @@ import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
-import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -67,7 +66,6 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -127,7 +125,7 @@ public class PerfTestTool
 	private static final boolean MODEL_INTERCEPT        = true;
 	
 	private static final String  PERF_TOOL_DIR          = "./conf/PerfTestTool/";
-	private static final String  PERF_RESULTS_FNAME     = PERF_TOOL_DIR + "%id%.dat";
+//	private static final String  PERF_RESULTS_FNAME     = PERF_TOOL_DIR + "%id%.dat";
 	private static final String  PERF_PROFILE_FNAME     = PERF_TOOL_DIR + "performance_profile.xml";
 	private static final String  DML_SCRIPT_FNAME       = "./src/com/ibm/bi/dml/runtime/controlprogram/parfor/opt/PerfTestToolRegression.dml";
 	private static final String  DML_TMP_FNAME          = PERF_TOOL_DIR + "temp.dml";
@@ -162,7 +160,7 @@ public class PerfTestTool
 	
 	
 	private static Integer[] _defaultConf  = null;
-	private static Integer[] _MRConf  = null;
+//	private static Integer[] _MRConf  = null;
 	
 	//raw measurement data (instID, physical defID, results)
 	private static HashMap<Integer,HashMap<Integer,LinkedList<Double>>> _results = null;
@@ -494,6 +492,7 @@ public class PerfTestTool
 		
 	}
 	
+/*
 	private static Instruction createMRJobInstruction(JobType type, MRInstruction inst) 
 	{
 		MRJobInstruction mrinst = new MRJobInstruction(type);
@@ -520,7 +519,8 @@ public class PerfTestTool
 		
 		return mrinst;
 	}
-
+*/
+	
 	/**
 	 * 
 	 * @param def
@@ -699,6 +699,8 @@ public class PerfTestTool
 					case DATA_SIZE: 
 						in = new InternalTestVariable[]{InternalTestVariable.DIM1_SIZE,InternalTestVariable.DIM2_SIZE,InternalTestVariable.DIM3_SIZE}; 
 						break;
+					default:
+						//do nothing
 				}
 				
 				int newid = getTestDefID(def.getMeasure(), def.getVariable(), def.getDataformat(), in );
@@ -855,6 +857,8 @@ public class PerfTestTool
 				sparsity = DEFAULT_SPARSITY;
 				//sortio = varValue;
 				break;	
+			default:
+				//do nothing
 		}
 		
 		//set specific dimensions
@@ -970,6 +974,7 @@ public class PerfTestTool
 				case DIM1_SIZE: dim1=varValue[i]; break;
 				case DIM2_SIZE: dim2=varValue[i]; break;
 				case DIM3_SIZE: dim3=varValue[i]; break;
+				default: //do nothing
 			}
 		}
 		

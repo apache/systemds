@@ -136,7 +136,9 @@ public abstract class CostEstimator
 							tmp = node.getParam(ParamType.NUM_ITERATIONS);
 							N = (tmp!=null) ? (double)Long.parseLong(tmp) : FACTOR_NUM_ITERATIONS; 
 							val = N * getSumEstimate(measure, node.getChilds(), et) / node.getK(); 
-							break;						
+							break;	
+						default:
+							//do nothing
 					}
 					break;
 					
@@ -156,6 +158,8 @@ public abstract class CostEstimator
 							else if ( node.getExecType() == OptNode.ExecType.CP )
 								val = getMaxEstimate(measure, node.getChilds(), et) * node.getK(); //everything executed within 1 JVM
 							break;
+						default:
+							//do nothing
 					}
 					break;
 			}
@@ -308,6 +312,8 @@ public abstract class CostEstimator
 							return lval;
 					}
 					break;
+				default:
+					//do nothing
 			}
 		}
 			

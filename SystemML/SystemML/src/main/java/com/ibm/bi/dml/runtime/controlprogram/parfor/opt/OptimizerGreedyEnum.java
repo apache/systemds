@@ -69,7 +69,7 @@ class OptimizerGreedyEnum extends Optimizer
 		OptNode lRoot = lPlan.getRoot();
 		OptNode pRoot = pPlan.getRoot();
 		double T = est.getEstimate(TestMeasure.EXEC_TIME, pRoot);
-		double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pRoot);
+		//double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pRoot);
 		
 		//TODO optimize reuse of enumerated/computed intermediates
 		//     (as soon as all rewrites are successfully integrated)
@@ -145,7 +145,7 @@ class OptimizerGreedyEnum extends Optimizer
 					ProgramRecompiler.exchangeProgram( minC.getID(), minC.getRtProgramBlock() );
 					pRoot = OptTreeConverter.exchangePermanently( pRoot, minC.getID(), minC.getRtOptNode() ); 
 					T = minT;
-					M = est.getEstimate(TestMeasure.MEMORY_USAGE, pRoot);
+					//M = est.getEstimate(TestMeasure.MEMORY_USAGE, pRoot);
 					change = true;
 				}
 				else

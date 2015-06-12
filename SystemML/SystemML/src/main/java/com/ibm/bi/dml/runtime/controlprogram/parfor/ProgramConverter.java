@@ -615,6 +615,7 @@ public class ProgramConverter
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
+				ret.setDMLProg(sb.getDMLProg());
 				ret.setLiveIn( sb.liveIn() ); 
 				ret.setLiveOut( sb.liveOut() ); 
 				ret.setUpdatedVariables( sb.variablesUpdated() );

@@ -82,6 +82,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			{
 				//duplicate sb incl live variable sets
 				StatementBlock sb1 = new StatementBlock();
+				sb1.setDMLProg(sb.getDMLProg());
 				sb1.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 				sb1.setLiveIn(new VariableSet());
 				sb1.setLiveOut(new VariableSet());

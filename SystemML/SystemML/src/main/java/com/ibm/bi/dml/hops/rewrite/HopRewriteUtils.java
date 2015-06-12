@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -444,6 +445,37 @@ public class HopRewriteUtils
 			datagen.setNnz(0);
 			
 		return datagen;
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public static ReorgOp createTranspose(Hop input)
+	{
+		ReorgOp transpose = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), ReOrgOp.TRANSPOSE, input);
+		HopRewriteUtils.setOutputBlocksizes(transpose, input.getRowsInBlock(), input.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(input, transpose);
+		transpose.refreshSizeInformation();	
+		
+		return transpose;
+	}
+	
+	/**
+	 * 
+	 * @param left
+	 * @param right
+	 * @return
+	 */
+	public static AggBinaryOp createMatrixMultiply(Hop left, Hop right)
+	{
+		AggBinaryOp mmult = new AggBinaryOp(left.getName(), left.getDataType(), left.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
+		mmult.setRowsInBlock(left.getRowsInBlock());
+		mmult.setColsInBlock(right.getColsInBlock());
+		mmult.refreshSizeInformation();
+		
+		return mmult;
 	}
 	
 	public static Hop createValueHop( Hop hop, boolean row ) 

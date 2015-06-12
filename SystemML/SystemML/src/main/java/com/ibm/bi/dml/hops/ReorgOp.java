@@ -253,10 +253,8 @@ public class ReorgOp extends Hop
 							table.setOutputEmptyBlocks(false);
 							
 							//generate matrix mult
-							AggBinaryOp mmult = new AggBinaryOp("tmp6", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, table, input);
-							HopRewriteUtils.setOutputBlocksizes(mmult, getRowsInBlock(), getColsInBlock());
-							mmult.refreshSizeInformation();
-							table.setForcedExecType(ExecType.MR); //force MR 
+							AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(table, input);
+							mmult.setForcedExecType(ExecType.MR); //force MR 
 							
 							setLops( mmult.constructLops() );
 							

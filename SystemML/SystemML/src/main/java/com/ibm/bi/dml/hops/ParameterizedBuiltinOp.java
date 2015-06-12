@@ -473,9 +473,7 @@ public class ParameterizedBuiltinOp extends Hop
 			//Step 2: compute row offsets for non-empty rows
 			Hop cumsumInput = emptyInd;
 			if( !rmRows ){
-				cumsumInput = new ReorgOp( "tmp3a", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, emptyInd );
-				HopRewriteUtils.setOutputBlocksizes(cumsumInput, brlen, bclen);
-				cumsumInput.refreshSizeInformation();
+				cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
 				cumsumInput.computeMemEstimate(new MemoTable()); //select exec type
 				HopRewriteUtils.copyLineNumbers(this, cumsumInput);	
 			}
@@ -488,9 +486,7 @@ public class ParameterizedBuiltinOp extends Hop
 		
 			Hop cumsumOutput = cumsum;
 			if( !rmRows ){
-				cumsumOutput = new ReorgOp( "tmp3b", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, cumsum );
-				HopRewriteUtils.setOutputBlocksizes(cumsumOutput, brlen, bclen);
-				cumsumOutput.refreshSizeInformation();
+				cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
 				cumsumOutput.computeMemEstimate(new MemoTable()); //select exec type
 				HopRewriteUtils.copyLineNumbers(this, cumsumOutput);	
 			}

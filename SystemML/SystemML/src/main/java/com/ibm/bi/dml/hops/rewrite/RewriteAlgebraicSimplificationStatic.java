@@ -854,9 +854,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//removeChildReference(hi2, right);
 				
 				//create new operators (incl refresh size inside for transpose)
-				ReorgOp trans = new ReorgOp(right.getName(), right.getDataType(), right.getValueType(), ReOrgOp.TRANSPOSE, right);
-				trans.setRowsInBlock(right.getRowsInBlock());
-				trans.setColsInBlock(right.getColsInBlock());
+				ReorgOp trans = HopRewriteUtils.createTranspose(right);
 				BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, left, trans);
 				mult.setRowsInBlock(right.getRowsInBlock());
 				mult.setColsInBlock(right.getColsInBlock());
@@ -1144,9 +1142,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop V = tmp.getInput().get(1).getInput().get(1);
 					
 					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
-						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
-						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
-						V.refreshSizeInformation(); 
+						V = HopRewriteUtils.createTranspose(V);
 					}
 					else 
 						V = V.getInput().get(0);
@@ -1182,9 +1178,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop V = tmp.getInput().get(1).getInput().get(1);
 					
 					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
-						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
-						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
-						V.refreshSizeInformation(); 
+						V = HopRewriteUtils.createTranspose(V);
 					}
 					else 
 						V = V.getInput().get(0);
@@ -1218,13 +1212,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					Hop V = tmp.getInput().get(1);
 	
 					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
-						V = new ReorgOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, V);
-						HopRewriteUtils.setOutputBlocksizes(V, V.getInput().get(0).getRowsInBlock(), V.getInput().get(0).getColsInBlock());
-						V.refreshSizeInformation(); 
+						V = HopRewriteUtils.createTranspose(V);
 					}
-					else 
+					else {
 						V = V.getInput().get(0);
-					
+					}
 					
 					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
 							  OpOp4.WSLOSS, X, U, V, W, false);

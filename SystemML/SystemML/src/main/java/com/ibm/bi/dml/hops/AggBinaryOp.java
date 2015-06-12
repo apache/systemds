@@ -1111,9 +1111,7 @@ public class AggBinaryOp extends Hop
 		{
 			//compute condensed permutation matrix vector input			
 			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
-			ReorgOp transpose = new ReorgOp( "tmp1", DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, pmInput );
-			HopRewriteUtils.setOutputBlocksizes(transpose, brlen, bclen);
-			transpose.refreshSizeInformation();
+			ReorgOp transpose = HopRewriteUtils.createTranspose(pmInput);
 			transpose.setForcedExecType(ExecType.MR);
 			HopRewriteUtils.copyLineNumbers(this, transpose);	
 			

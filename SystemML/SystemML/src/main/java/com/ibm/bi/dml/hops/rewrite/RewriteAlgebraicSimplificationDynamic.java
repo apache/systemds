@@ -138,6 +138,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,max=1)) -> rand(rows=1,max=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
+			hi = simplifyColSumsMVMult(hop, hi, i);           //e.g., colSums(X*Y) -> t(Y) %*% X, if Y col vector
+			hi = simplifyRowSumsMVMult(hop, hi, i);           //e.g., rowSums(X*Y) -> X %*% t(Y), if Y row vector
 			hi = simplifyEmptyAggregate(hop, hi, i);          //e.g., sum(X) -> 0, if nnz(X)==0
 			hi = simplifyEmptyUnaryOperation(hop, hi, i);     //e.g., round(X) -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0			
 			hi = simplifyEmptyReorgOperation(hop, hi, i);     //e.g., t(X) -> matrix(0, ncol(X), nrow(X)) 
@@ -585,6 +587,114 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @return
 	 * @throws HopsException
 	 */
+	private Hop simplifyColSumsMVMult( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		//colSums(X*Y) -> t(Y) %*% X, if Y col vector; additional transpose later
+		//removed by other rewrite if unnecessary, i.e., if Y==t(Z)
+		if( hi instanceof AggUnaryOp  ) 
+		{
+			AggUnaryOp uhi = (AggUnaryOp)hi;
+			Hop input = uhi.getInput().get(0);
+			
+			if( uhi.getOp() == AggOp.SUM && uhi.getDirection() == Direction.Col  ) //colsums
+			{
+				if( input instanceof BinaryOp && ((BinaryOp)input).getOp()==OpOp2.MULT ) //b(*) 
+				{
+					Hop left = input.getInput().get(0);
+					Hop right = input.getInput().get(1);
+					
+					if(    left.getDim1()>1 && left.getDim2()>1 
+						&& right.getDim1()>1 && right.getDim2()==1 ) // MV (col vector)
+					{
+						//remove link parent to rowsums
+						HopRewriteUtils.removeChildReference(parent, hi);
+						
+						//create new operators 
+						ReorgOp trans = HopRewriteUtils.createTranspose(right);
+						AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(trans, left);
+						
+						//relink new child
+						HopRewriteUtils.addChildReference(parent, mmult, pos);
+						hi = mmult;
+						
+						//cleanup old dag
+						if( uhi.getParent().isEmpty() )
+							HopRewriteUtils.removeAllChildReferences(uhi);
+						if( input.getParent().isEmpty() )
+							HopRewriteUtils.removeAllChildReferences(input);
+						
+						LOG.debug("Applied simplifyColSumsMVMult");
+					}
+				}	
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyRowSumsMVMult( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		//rowSums(X * Y) -> X %*% t(Y), if Y row vector; additional transpose later
+		//removed by other rewrite if unnecessary, i.e., if Y==t(Z)
+		if( hi instanceof AggUnaryOp  ) 
+		{
+			AggUnaryOp uhi = (AggUnaryOp)hi;
+			Hop input = uhi.getInput().get(0);
+			
+			if( uhi.getOp() == AggOp.SUM && uhi.getDirection() == Direction.Row  ) //rowsums
+			{
+				if( input instanceof BinaryOp && ((BinaryOp)input).getOp()==OpOp2.MULT ) //b(*) 
+				{
+					Hop left = input.getInput().get(0);
+					Hop right = input.getInput().get(1);
+					
+					if(    left.getDim1()>1 && left.getDim2()>1      
+						&& right.getDim1()==1 && right.getDim2()>1 ) // MV (row vector)
+					{
+						//remove link parent to rowsums
+						HopRewriteUtils.removeChildReference(parent, hi);
+						
+						//create new operators 
+						ReorgOp trans = HopRewriteUtils.createTranspose(right);
+						AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(left, trans);
+						
+						//relink new child
+						HopRewriteUtils.addChildReference(parent, mmult, pos);
+						hi = mmult;
+						
+						//cleanup old dag
+						if( uhi.getParent().isEmpty() )
+							HopRewriteUtils.removeAllChildReferences(uhi);
+						if( input.getParent().isEmpty() )
+							HopRewriteUtils.removeAllChildReferences(input);
+						
+						LOG.debug("Applied simplifyRowSumsMVMult");
+					}
+				}	
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
 	private Hop simplifyEmptyAggregate(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1000,9 +1110,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//removeChildReference(hi2, right);
 				
 				//create new operators (incl refresh size inside for transpose)
-				ReorgOp trans = new ReorgOp(right.getName(), right.getDataType(), right.getValueType(), ReOrgOp.TRANSPOSE, right);
-				trans.setRowsInBlock(right.getRowsInBlock());
-				trans.setColsInBlock(right.getColsInBlock());
+				ReorgOp trans = HopRewriteUtils.createTranspose(right);
 				BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, left, trans);
 				mult.setRowsInBlock(right.getRowsInBlock());
 				mult.setColsInBlock(right.getColsInBlock());
@@ -1202,15 +1310,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.removeChildReference(parent, hi);
 				
 				//create new operator chain
-				ReorgOp transpose = new ReorgOp(baLeft.getName(), DataType.MATRIX, ValueType.DOUBLE, ReOrgOp.TRANSPOSE, baLeft);
-				transpose.setRowsInBlock(baLeft.getRowsInBlock());
-				transpose.setColsInBlock(baLeft.getColsInBlock());
-				transpose.refreshSizeInformation();
-				
-				AggBinaryOp mmult = new AggBinaryOp(baLeft.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, transpose, baRight);
-				mmult.setRowsInBlock(baLeft.getRowsInBlock());
-				mmult.setColsInBlock(baLeft.getColsInBlock());
-				mmult.refreshSizeInformation();
+				ReorgOp trans = HopRewriteUtils.createTranspose(baLeft);
+				AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(trans, baRight);
 				
 				UnaryOp cast = new UnaryOp(baLeft.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp1.CAST_AS_SCALAR, mmult);
 				HopRewriteUtils.setOutputParameters(cast, 0, 0, 0, 0, -1);
@@ -1446,14 +1547,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			colSum.setRowsInBlock(left.getRowsInBlock());
 			colSum.setColsInBlock(left.getColsInBlock());
 			colSum.refreshSizeInformation();
-			ReorgOp transpose = new ReorgOp(colSum.getName(), colSum.getDataType(), colSum.getValueType(), ReOrgOp.TRANSPOSE, colSum);
-			transpose.setRowsInBlock(colSum.getRowsInBlock());
-			transpose.setColsInBlock(colSum.getColsInBlock());
+			ReorgOp trans = HopRewriteUtils.createTranspose(colSum);
 			AggUnaryOp rowSum = new AggUnaryOp(right.getName(), right.getDataType(), right.getValueType(), AggOp.SUM, Direction.Row, right);
 			rowSum.setRowsInBlock(right.getRowsInBlock());
 			rowSum.setColsInBlock(right.getColsInBlock());
 			rowSum.refreshSizeInformation();
-			BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, transpose, rowSum);
+			BinaryOp mult = new BinaryOp(right.getName(), right.getDataType(), right.getValueType(), OpOp2.MULT, trans, rowSum);
 			mult.setRowsInBlock(right.getRowsInBlock());
 			mult.setColsInBlock(right.getColsInBlock());
 			mult.refreshSizeInformation();

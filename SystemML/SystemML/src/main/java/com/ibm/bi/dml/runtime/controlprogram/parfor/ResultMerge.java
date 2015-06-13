@@ -99,8 +99,11 @@ public abstract class ResultMerge
 	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
 		throws DMLRuntimeException
 	{
-		//NOTE: always iterate over entire block in order to compare all values
-		//      (using sparse iterator would miss values set to 0)
+		//Notes for result correctness:
+		// * Always iterate over entire block in order to compare all values 
+		//   (using sparse iterator would miss values set to 0) 
+		// * Explicit NaN awareness because for cases were original matrix contains
+		//   NaNs, since NaN != NaN, otherwise we would potentially overwrite results
 		
 		if( in.isInSparseFormat() ) //sparse input format
 		{
@@ -110,7 +113,9 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{	
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
-						if( value != compare[i][j] ) {  //for new values only (div)
+						if( value != compare[i][j] ||                 //for new values only (div)
+							Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
+						{
 					    	out.quickSetValue( i, j, value );	
 						}
 					}
@@ -125,7 +130,9 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
-					    if( value != compare[i][j] ) { //for new values only (div)
+					    if( value != compare[i][j] ||                //for new values only (div)
+					    	Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
+					    {
 					    	out.quickSetValue( i, j, value );	
 					    }
 					}

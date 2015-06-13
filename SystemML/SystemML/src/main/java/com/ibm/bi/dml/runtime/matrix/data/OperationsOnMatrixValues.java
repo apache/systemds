@@ -248,13 +248,6 @@ public class OperationsOnMatrixValues
 			valueAgg.binaryOperationsInPlace(op.increOp, valueAdd);
 	}
 	
-	public static void performRandUnary(MatrixIndexes indexesIn, MatrixValue valueIn, 
-			MatrixIndexes indexesOut, MatrixValue valueOut, int brlen, int bclen)
-	{
-		indexesOut.setIndexes(indexesIn);
-		valueOut.copy(valueIn);
-	}
-	
 	public static void performAggregateUnary(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			MatrixValue valueOut, AggregateUnaryOperator op,int brlen, int bclen)
 		throws DMLUnsupportedOperationException, DMLRuntimeException

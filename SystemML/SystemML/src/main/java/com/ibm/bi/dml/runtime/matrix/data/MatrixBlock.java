@@ -1343,7 +1343,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 						}
 				}
 			}
-		}else
+		}
+		else
 		{
 			if(denseBlock!=null)
 			{
@@ -1380,40 +1381,19 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			throw new DMLRuntimeException("Number of non zeros incorrect: "+nnzBefore+" vs "+nnzAfter);
 	}
 
+	@Override
 	public void copy(MatrixValue thatValue) 
 	{
-		MatrixBlock that;
-		try {
-			that = checkType(thatValue);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
-		}
+		MatrixBlock that = checkType(thatValue);
 		
-		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
-			throw new RuntimeException( "Copy must not overwrite itself!" );
-		
-		this.rlen = that.rlen;
-		this.clen = that.clen;
-		this.sparse = that.evalSparseFormatInMemory();
-		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
-		if(this.sparse && that.sparse)
-			copySparseToSparse(that);
-		else if(this.sparse && !that.sparse)
-			copyDenseToSparse(that);
-		else if(!this.sparse && that.sparse)
-			copySparseToDense(that);
-		else
-			copyDenseToDense(that);
-		
+		//copy into automatically determined representation
+		copy( that, that.evalSparseFormatInMemory() );
 	}
 	
-	public void copy(MatrixValue thatValue, boolean sp) {
-		MatrixBlock that;
-		try {
-			that = checkType(thatValue);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
-		}	
+	@Override
+	public void copy(MatrixValue thatValue, boolean sp) 
+	{
+		MatrixBlock that = checkType(thatValue);
 		
 		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
 			throw new RuntimeException( "Copy must not overwrite itself!" );
@@ -2821,7 +2801,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		checkType(result);
+		MatrixBlock ret = checkType(result);
 		
 		// estimate the sparsity structure of result matrix
 		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
@@ -2829,23 +2809,26 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			sp = false; // if the operation is not sparse safe, then result will be in dense format
 		
 		//allocate output
-		if(result==null)
-			result=new MatrixBlock(rlen, clen, sp, this.nonZeros);
+		if( ret == null )
+			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
 		else 
-			result.reset(rlen, clen, sp);
+			ret.reset(rlen, clen, sp);
 		
 		//core execute
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) //e.g., cumsum
 		{
-			LibMatrixAgg.aggregateUnaryMatrix(this, (MatrixBlock)result, op);
+			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
 		}
 		else
 		{
-			result.copy(this);
-			((MatrixBlock)result).unaryOperationsInPlace(op);
+			//copy input into target dense/sparse representation
+			ret.copy(this, sp);
+			
+			//compute unary operations in-place of target representation
+			ret.unaryOperationsInPlace(op);
 		}
 		
-		return result;
+		return ret;
 	}
 	
 	public void unaryOperationsInPlace(UnaryOperator op) 
@@ -2928,14 +2911,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			if(denseBlock==null)
 				allocateDenseBlock();
 			
-			int limit=rlen*clen;
-			nonZeros=0;
-			for(int i=0; i<limit; i++)
-			{
-				denseBlock[i]=op.fn.execute(denseBlock[i]);
-				if(denseBlock[i]!=0)
-					nonZeros++;
-			}
+			//compute values in-place and update nnz
+			final int limit = rlen*clen;
+			int lnnz = 0;
+			for( int i=0; i<limit; i++ ) {
+				denseBlock[i] = op.fn.execute(denseBlock[i]);	
+				if( denseBlock[i]!=0 )
+					lnnz++;
+			}		
+			nonZeros = lnnz;
+			
+			//IBM JVM bug (JDK6) causes crash for certain inputs (w/ infinities) 
+			//nonZeros = 0;
+			//for(int i=0; i<limit; i++)
+			//{
+			//	denseBlock[i]=op.fn.execute(denseBlock[i]);
+			//	if(denseBlock[i]!=0)
+			//		nonZeros++;
+			//}
 		}
 	}
 	
@@ -5852,10 +5845,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	////////
 	// Misc methods
 	
-	private static MatrixBlock checkType(MatrixValue block) throws DMLUnsupportedOperationException
+	private static MatrixBlock checkType(MatrixValue block) 
+		throws RuntimeException
 	{
 		if( block!=null && !(block instanceof MatrixBlock))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not MatrixBlockDSM!");
+			throw new RuntimeException("Unsupported matrix value: "+block.getClass().getSimpleName());
 		return (MatrixBlock) block;
 	}
 	

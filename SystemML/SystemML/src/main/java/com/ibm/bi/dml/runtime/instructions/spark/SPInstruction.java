@@ -99,5 +99,4 @@ public abstract class SPInstruction extends Instruction
 	 */
 	public abstract void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException;
-
 }

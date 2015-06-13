@@ -122,7 +122,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		{
 			MatrixBlock out2 = out.values()
 					              .reduce(new AggregateSumSingleBlockFunction());
+			
 			//put output block into symbol table (no lineage because single block)
+			//this also includes implicit maintenance of matrix characteristics
 			sec.setMatrixOutput(output.getName(), out2);
 		}
 		else //MULTI_BLOCK or NONE
@@ -134,10 +136,10 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
 			sec.addLineageBroadcast(output.getName(), bcastVar);
+			
+			//update output statistics if not inferred
+			updateBinaryMMOutputMatrixCharacteristics(sec);
 		}
-		
-		//update output statistics if not inferred
-		updateOutputMatrixCharacteristics(sec);
 	}
 	
 	/**

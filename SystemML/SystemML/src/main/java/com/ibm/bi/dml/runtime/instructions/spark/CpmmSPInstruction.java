@@ -112,6 +112,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		           .reduce(new AggregateSumSingleBlockFunction());
 			
 			//put output block into symbol table (no lineage because single block)
+			//this also includes implicit maintenance of matrix characteristics
 			sec.setMatrixOutput(output.getName(), out2);	
 		}
 		else //DEFAULT: MULTI_BLOCK
@@ -122,10 +123,10 @@ public class CpmmSPInstruction extends BinarySPInstruction
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 			sec.addLineageRDD(output.getName(), input2.getName());		
+			
+			//update output statistics if not inferred
+			updateBinaryMMOutputMatrixCharacteristics(sec);
 		}
-		
-		//update output statistics if not inferred
-		updateOutputMatrixCharacteristics(sec);
 	}
 	
 	/**

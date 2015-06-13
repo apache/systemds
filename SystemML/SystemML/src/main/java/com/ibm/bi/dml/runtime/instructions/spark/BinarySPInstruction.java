@@ -233,7 +233,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * @param sec
 	 * @throws DMLRuntimeException
 	 */
-	protected void updateOutputMatrixCharacteristics(SparkExecutionContext sec) 
+	protected void updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());

@@ -103,7 +103,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 		            .reduceByKey( new AggregateSumMultiBlockFunction() ); //aggregation per result block
 		
 		//put output block into symbol table (no lineage because single block)
-		updateOutputMatrixCharacteristics(sec);
+		updateBinaryMMOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());

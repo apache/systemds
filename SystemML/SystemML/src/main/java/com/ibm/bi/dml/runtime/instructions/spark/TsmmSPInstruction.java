@@ -84,13 +84,13 @@ public class TsmmSPInstruction extends UnarySPInstruction {
         //    at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:432)
 
 		//execute tsmm instruction (always produce exactly one output block)
-		//(this formalation with values() requires --conf spark.driver.maxResultSize=0)
+		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
 		MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
 				            .values()
 		                    .reduce( new AggregateSumSingleBlockFunction() );
 		
 		//put output block into symbol table (no lineage because single block)
-		updateOutputMatrixCharacteristics(sec);
+		//this also includes implicit maintenance of matrix characteristics
 		sec.setMatrixOutput(output.getName(), out);
 	}
 	

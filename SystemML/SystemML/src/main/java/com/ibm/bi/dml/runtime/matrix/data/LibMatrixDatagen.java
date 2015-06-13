@@ -232,7 +232,8 @@ public class LibMatrixDatagen
 				out.nonZeros = 0;
 				return;
 			} 
-			else if( !out.sparse && sparsity==1.0d && min == max ) //equal values
+			else if( !out.sparse && sparsity==1.0d && (min == max  //equal values, dense
+					|| (Double.isNaN(min) && Double.isNaN(max))) ) //min == max == NaN
 			{
 				out.init(min, out.rlen, out.clen); 
 				return;

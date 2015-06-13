@@ -102,8 +102,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	{
 		//lazy parworker initialization
 		if( !_initialized )
-			configureWorker( TaskContext.get().attemptId() );
-			//configureWorker( TaskContext.get().taskAttemptId() ); //NOTE: this requires Spark 1.3
+			configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
 	
 		//collect input partition (check via equals because oinfo deserialized instance)
 		if( _oinfo.equals(OutputInfo.BinaryBlockOutputInfo) )

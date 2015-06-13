@@ -61,8 +61,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	{
 		//lazy parworker initialization
 		if( !_initialized )
-			configureWorker( TaskContext.get().attemptId() );
-			//configureWorker( TaskContext.get().taskAttemptId() ); //NOTE: this requires Spark 1.3
+			configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
 		
 		//execute a single task
 		long numIter = getExecutedIterations();

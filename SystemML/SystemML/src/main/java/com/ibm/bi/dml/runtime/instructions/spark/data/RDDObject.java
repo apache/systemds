@@ -36,22 +36,6 @@ public class RDDObject extends LineageObject
 		return _rddHandle;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public boolean allowsShortCircuitRead()
-	{
-		boolean ret = false;
-		
-		if( isCheckpointRDD() && getLineageChilds().size() == 1 ) {
-			LineageObject lo = getLineageChilds().get(0);
-			ret = ( lo instanceof RDDObject && ((RDDObject)lo).isHDFSFile() );
-		}
-		
-		return ret;
-	}
-	
 	public void setCheckpointRDD( boolean flag )
 	{
 		_checkpointed = flag;
@@ -70,5 +54,32 @@ public class RDDObject extends LineageObject
 	public boolean isHDFSFile()
 	{
 		return _hdfsfile;
+	}
+	
+
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean allowsShortCircuitRead()
+	{
+		boolean ret = false;
+		
+		if( isCheckpointRDD() && getLineageChilds().size() == 1 ) {
+			LineageObject lo = getLineageChilds().get(0);
+			ret = ( lo instanceof RDDObject && ((RDDObject)lo).isHDFSFile() );
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean allowsShortCircuitCollect()
+	{
+		return ( isCheckpointRDD() && getLineageChilds().size() == 1
+			     && getLineageChilds().get(0) instanceof RDDObject );
 	}
 }

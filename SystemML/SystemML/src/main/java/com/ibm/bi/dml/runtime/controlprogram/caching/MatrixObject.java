@@ -1289,11 +1289,19 @@ public class MatrixObject extends CacheableData
 		//note: the read of a matrix block from an RDD might trigger
 		//lazy evaluation of pending transformations.
 		
+		RDDObject lrdd = rdd;
+		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		MatrixBlock mb = null;
 		try {
-			mb = SparkExecutionContext.toMatrixBlock(rdd, (int)mc.getRows(), (int)mc.getCols(),
+			//prevent unnecessary collect through rdd checkpoint
+			if( rdd.allowsShortCircuitCollect() ) {
+				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
+			}
+			
+			//collect matrix block from RDD
+			mb = SparkExecutionContext.toMatrixBlock(lrdd, (int)mc.getRows(), (int)mc.getCols(),
 					                       (int)mc.getRowsPerBlock(), (int)mc.getColsPerBlock());	
 		}
 		catch(DMLRuntimeException ex) {

@@ -1448,6 +1448,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
+	@SuppressWarnings("unchecked")
 	private void processConsumersForInputs(N node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
@@ -1907,6 +1908,8 @@ public class Dag<N extends Lop>
 							queueit = true;
 						code=4;
 						break;
+					default:
+						//do nothing
 					}
 					
 					if(queueit) {
@@ -2192,6 +2195,7 @@ public class Dag<N extends Lop>
 	   return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	private boolean branchCanBePiggyBackedMap(N tmpNode, N node, ArrayList<N> execNodes, ArrayList<N> queuedNodes, ArrayList<N> markedNodes) {
 		if(node.getExecLocation() != ExecLocation.Map)
 			return false;
@@ -2344,8 +2348,9 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 
-	private boolean hasMapAndReduceParentNode(N tmpNode, ArrayList<N> execNodes,
-			N node) {
+	@SuppressWarnings({ "unchecked", "unused" })
+	private boolean hasMapAndReduceParentNode(N tmpNode, ArrayList<N> execNodes, N node) 
+	{
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
 
@@ -2645,8 +2650,10 @@ public class Dag<N extends Lop>
 	 */
 
 	// This code is replicated in ReBlock.java
-	private Format getChildFormat(N node) throws LopsException {
-
+	@SuppressWarnings("unused")
+	private Format getChildFormat(N node) 
+		throws LopsException 
+	{
 		if (node.getOutputParameters().getFile_name() != null
 				|| node.getOutputParameters().getLabel() != null) {
 			return node.getOutputParameters().getFormat();
@@ -2838,6 +2845,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 */
+	@SuppressWarnings("unchecked")
 	private NodeOutput setupNodeOutputs(N node, ExecType et, boolean cellModeOverride, boolean copyTWrite) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException, LopsException {
 		
@@ -3239,6 +3247,7 @@ public class Dag<N extends Lop>
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unchecked")
 	public void generateMapReduceInstructions(ArrayList<N> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
 			JobType jt) throws LopsException,
@@ -3543,22 +3552,6 @@ public class Dag<N extends Lop>
 		return arr;
 	}
 
-	/**
-	 * converts an array list of OutputInfo into an array of OutputInfo
-	 * 
-	 * @param infos
-	 * @return
-	 */
-
-	private OutputInfo[] getOutputInfoArray(ArrayList<OutputInfo> infos) {
-		OutputInfo[] arr = new OutputInfo[infos.size()];
-
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = infos.get(i);
-		}
-
-		return arr;
-	}
 
 	/**
 	 * Method to populate aggregate and other instructions in reducer.
@@ -3643,7 +3636,6 @@ public class Dag<N extends Lop>
 			
 			boolean instGenerated = true;
 			int output_index = start_index[0];
-			String tempInst = null;			
 	
 			switch(node.getType()) {
 			
@@ -3845,7 +3837,7 @@ public class Dag<N extends Lop>
 
 		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
 		int max_input_index = -1;
-		N child_for_max_input_index = null;
+		//N child_for_max_input_index = null;
 
 		// get mapper instructions
 		for (int i = 0; i < node.getInputs().size(); i++) {
@@ -3860,7 +3852,7 @@ public class Dag<N extends Lop>
 
 			if (ret_val > max_input_index) {
 				max_input_index = ret_val;
-				child_for_max_input_index = childNode;
+				//child_for_max_input_index = childNode;
 			}
 		}
 
@@ -4274,12 +4266,12 @@ public class Dag<N extends Lop>
 		return a.get_reachable()[bID];
 	}
 	
-	@SuppressWarnings("unchecked")
 	/**
 	 * Method to topologically sort lops
 	 * 
 	 * @param v
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void doTopologicalSort_strict_order(ArrayList<N> v) {
 		//int numNodes = v.size();
 
@@ -4337,12 +4329,8 @@ public class Dag<N extends Lop>
 				sb.append("), ");
 				
 				LOG.trace(sb.toString());
-				//LOG.trace(v.get(i).getID() + "(" + v.get(i).getLevel()
-				//		+ ")  " + v.get(i).getType()  + ", ");
-				//System.out.print(v.get(i).getID() + "(" + v.get(i).getLevel()+ "), ");
 			}
 			
-			//System.out.println("");
 			LOG.trace("topological sort -- done");
 		}
 
@@ -4355,6 +4343,7 @@ public class Dag<N extends Lop>
 	 * @param root
 	 * @param marked
 	 */
+	@SuppressWarnings("unchecked")
 	void dagDFS(N root, boolean[] marked) {
 		//contains check currently required for globalopt, will be removed when cleaned up
 		if( !IDMap.containsKey(root.getID()) )
@@ -4461,6 +4450,7 @@ public class Dag<N extends Lop>
 		return onlyDatagen;
 	}
 
+	@SuppressWarnings("unchecked")
 	private int getChildAlignment(N node, ArrayList<N> execNodes, ExecLocation type) {
 
 		for (int i = 0; i < node.getInputs().size(); i++) {

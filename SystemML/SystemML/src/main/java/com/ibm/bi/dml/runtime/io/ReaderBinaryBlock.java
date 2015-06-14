@@ -176,8 +176,7 @@ public class ReaderBinaryBlock extends MatrixReader
 			}
 			finally
 			{
-				if( reader != null )
-					reader.close();
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 		
@@ -239,8 +238,7 @@ public class ReaderBinaryBlock extends MatrixReader
 			}
 			finally
 			{
-				if( reader != null )
-					reader.close();
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 	}

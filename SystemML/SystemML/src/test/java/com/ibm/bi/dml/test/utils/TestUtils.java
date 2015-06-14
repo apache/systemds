@@ -40,10 +40,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
-import com.ibm.bi.dml.runtime.io.MatrixReader;
-import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
+import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -208,14 +206,12 @@ public class TestUtils
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
-			long cellCounter = 0;
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 							.parseDouble(rcv[2]));
-					cellCounter++;
 				}
 				outIn.close();
 			}
@@ -367,14 +363,12 @@ public class TestUtils
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
-			long cellCounter = 0;
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 							.parseDouble(rcv[2]));
-					cellCounter++;
 				}
 				outIn.close();
 			}
@@ -452,7 +446,7 @@ public class TestUtils
 	// to read matrices from R
 	
 	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) {
-		BufferedReader compareIn;
+		BufferedReader compareIn = null;
 		try {
 			compareIn = new BufferedReader(new FileReader(filePath));
 
@@ -488,9 +482,14 @@ public class TestUtils
 			}
 			compareIn.close();
 			return expectedValues;
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
+		finally {
+			IOUtilFunctions.closeSilently(compareIn);
+		}
+		
 		return null;
 	}
 	
@@ -973,14 +972,12 @@ public class TestUtils
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
-			long cellCounter = 0;
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 							.parseDouble(rcv[2]));
-					cellCounter++;
 				}
 				outIn.close();
 			}
@@ -1038,19 +1035,15 @@ public class TestUtils
 			double[][] actualMatrix = new double[rows][cols];
 
 			String line;
-			long actualCellCounter = 0;
 			while ((line = outIn.readLine()) != null) {
 				String[] rcv = line.split(" ");
 				actualMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
-				actualCellCounter++;
 			}
 			outIn.close();
 
-			long expectedCellCounter = 0;
 			while ((line = compareIn.readLine()) != null) {
 				String[] rcv = line.split(" ");
 				expectedMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
-				expectedCellCounter++;
 			}
 			compareIn.close();
 

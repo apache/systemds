@@ -24,8 +24,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 
-
-
+@SuppressWarnings("rawtypes")
 public class InputInfo implements Serializable 
 {
 	@SuppressWarnings("unused")

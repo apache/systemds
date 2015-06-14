@@ -40,6 +40,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
+import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -126,6 +127,9 @@ public class SortMR
     	catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
+    	finally {
+    		IOUtilFunctions.closeSilently(reader);
+    	}
 		
 		reader.close();
 		return parts;

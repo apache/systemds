@@ -34,6 +34,7 @@ import org.apache.hadoop.util.ReflectionUtils;
  * An {@link InputSplit} that tags another InputSplit with extra data for use by
  * {@link DelegatingInputFormat}s and {@link DelegatingMapper}s.
  */
+@SuppressWarnings("rawtypes")
 class TaggedInputSplit implements Configurable, InputSplit {
 
   private Class<? extends InputSplit> inputSplitClass;

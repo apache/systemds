@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,18 +17,19 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class OrderStatisticsTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static final String TEST_DIR = "applications/descriptivestats/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "applications/descriptivestats/";
-		availableTestConfigurations.put("SimpleQuantileTest",
-				new TestConfiguration("SimpleQuantileTest", new String[] { "median", "weighted_median" }));
-		availableTestConfigurations.put("QuantileTest",
-				new TestConfiguration("QuantileTest", new String[] { "quantile", "weighted_quantile" }));
-		availableTestConfigurations.put("IQMTest",
-				new TestConfiguration("IQMTest", new String[] { "iqm", "weighted_iqm" }));
+		addTestConfiguration("SimpleQuantileTest",
+				new TestConfiguration(TEST_DIR, "SimpleQuantileTest", new String[] { "median", "weighted_median" }));
+		addTestConfiguration("QuantileTest",
+				new TestConfiguration(TEST_DIR, "QuantileTest", new String[] { "quantile", "weighted_quantile" }));
+		addTestConfiguration("IQMTest",
+				new TestConfiguration(TEST_DIR, "IQMTest", new String[] { "iqm", "weighted_iqm" }));
 		
 		
 	}

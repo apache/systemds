@@ -164,8 +164,7 @@ public class WriterBinaryBlock extends MatrixWriter
 		}
 		finally
 		{
-			if( writer != null )
-				writer.close();
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 	
@@ -271,8 +270,7 @@ public class WriterBinaryBlock extends MatrixWriter
 		}
 		finally
 		{
-			if( writer != null )
-				writer.close();
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 
@@ -352,8 +350,7 @@ public class WriterBinaryBlock extends MatrixWriter
 					}
 					finally
 					{
-						if( writer != null )
-							writer.close();
+						IOUtilFunctions.closeSilently(writer);
 					}
 				}
 				break;
@@ -404,8 +401,7 @@ public class WriterBinaryBlock extends MatrixWriter
 					}
 					finally
 					{
-						if( writer != null )
-							writer.close();
+						IOUtilFunctions.closeSilently(writer);
 					}
 				}
 				break;

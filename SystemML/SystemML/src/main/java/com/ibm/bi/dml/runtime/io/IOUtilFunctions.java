@@ -14,6 +14,7 @@ import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.SequenceFile;
 
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -67,7 +68,7 @@ public class IOUtilFunctions
 				br.close();
         } 
 		catch (Exception ex) {
-           LOG.error("Failed to buffered reader.", ex);
+           LOG.error("Failed to close buffered reader.", ex);
 		}
 	}
 	
@@ -85,6 +86,37 @@ public class IOUtilFunctions
            LOG.error("Failed to buffered writer.", ex);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param br
+	 */
+	public static void closeSilently( SequenceFile.Reader br ) 
+	{
+		try {
+			if( br != null )
+				br.close();
+        } 
+		catch (Exception ex) {
+           LOG.error("Failed to close reader.", ex);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param br
+	 */
+	public static void closeSilently( SequenceFile.Writer bw ) 
+	{
+		try {
+			if( bw != null )
+				bw.close();
+        } 
+		catch (Exception ex) {
+           LOG.error("Failed to writer.", ex);
+		}
+	}
+
 	
 	/**
 	 * 

@@ -32,6 +32,7 @@ import org.apache.hadoop.util.ReflectionUtils;
  * This class supports MapReduce jobs that have multiple input paths with
  * a different {@link InputFormat} and {@link Mapper} for each path 
  */
+@SuppressWarnings("rawtypes")
 public class MultipleInputs {
   /**
    * Add a {@link Path} with a custom {@link InputFormat} to the list of

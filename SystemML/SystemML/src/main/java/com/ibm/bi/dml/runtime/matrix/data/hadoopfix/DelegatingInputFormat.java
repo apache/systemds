@@ -43,6 +43,7 @@ import org.apache.hadoop.util.ReflectionUtils;
  * 
  * @see MultipleInputs#addInputPath(JobConf, Path, Class, Class)
  */
+@SuppressWarnings("rawtypes")
 public class DelegatingInputFormat<K, V> implements InputFormat<K, V> {
 
   public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException {

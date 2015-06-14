@@ -133,8 +133,7 @@ public class WriterBinaryCell extends MatrixWriter
 		}
 		finally
 		{
-			if( writer != null )
-				writer.close();
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 }

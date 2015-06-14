@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
 
 
 
-
+@SuppressWarnings("rawtypes")
 public class OutputInfo implements Serializable 
 {
 	@SuppressWarnings("unused")

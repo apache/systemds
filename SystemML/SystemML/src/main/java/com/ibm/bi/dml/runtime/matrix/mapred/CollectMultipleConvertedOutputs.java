@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
 
 
+@SuppressWarnings("rawtypes")
 public class CollectMultipleConvertedOutputs 
 {
 	@SuppressWarnings("unused")
@@ -52,16 +53,16 @@ public class CollectMultipleConvertedOutputs
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void directOutput(Writable key, Writable value, int output, Reporter reporter) 
-	throws IOException
+		throws IOException
 	{
-		//System.out.println("output before convert: "+key+" "+value +" --> output " + output);
 		multipleOutputs.getCollector(Integer.toString(output), reporter).collect(key, value);
-		//LOG.info("** output in collectOutput "+key+":"+value);
 	}
 
-	public void close() throws IOException {
-		
+	public void close() 
+		throws IOException 
+	{	
 		multipleOutputs.close();
 	}
 

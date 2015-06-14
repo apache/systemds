@@ -85,6 +85,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
+@SuppressWarnings("rawtypes")
 public class MRJobConfiguration 
 {
 	@SuppressWarnings("unused")
@@ -476,7 +477,6 @@ public class MRJobConfiguration
 		job.setClass(OUTPUT_CONVERTER_CLASS_PREFIX_CONFIG+i, converterClass, Converter.class);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static Converter getInputConverter(JobConf job, byte input)
 	{
 		Converter inputConverter;
@@ -489,7 +489,6 @@ public class MRJobConfiguration
 		return inputConverter;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static Converter getOuputConverter(JobConf job, int i)
 	{
 		Converter outputConverter;
@@ -766,6 +765,7 @@ public class MRJobConfiguration
 	
 	//get the indexes that this matrix file represents, 
 	//since one matrix file can occur multiple times in a statement
+	@SuppressWarnings("deprecation")
 	public static ArrayList<Byte> getInputMatrixIndexesInMapper(JobConf job) throws IOException
 	{
 		String[] matrices=job.getStrings(INPUT_MATRICIES_DIRS_CONFIG);
@@ -1014,6 +1014,7 @@ public class MRJobConfiguration
 		//do nothing, not used currently
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
 		job.set(DISTCACHE_INPUT_INDICES, indices);
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);

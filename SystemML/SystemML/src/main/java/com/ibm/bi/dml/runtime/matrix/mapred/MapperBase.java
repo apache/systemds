@@ -34,7 +34,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
 
-
+@SuppressWarnings("rawtypes")
 public abstract class MapperBase extends MRBaseForCommonInstructions
 {
 	@SuppressWarnings("unused")
@@ -87,6 +87,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 	};
 	
 	
+	@SuppressWarnings("unchecked")
 	protected void commonMap(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException 
 	{

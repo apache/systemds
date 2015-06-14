@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
+@SuppressWarnings("rawtypes")
 public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writable, KOUT extends WritableComparable, VOUT extends Writable> extends MapReduceBase 
       implements Mapper<KIN, VIN, KOUT, VOUT>
 {
@@ -41,6 +42,7 @@ public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writabl
 	private IntWritable one=new IntWritable(1);
 	private DoubleWritable combinedKey=new DoubleWritable();
 	
+	@SuppressWarnings("unchecked")
 	public void map(KIN key, VIN value, OutputCollector<KOUT, VOUT> out,
 			Reporter reporter) throws IOException {
 		inputConverter.convert(key, value);
@@ -58,15 +60,16 @@ public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writabl
 		}
 	} 
 	
+	@SuppressWarnings("unchecked")
 	private void processCombineUnaryInstruction(Pair pair, OutputCollector<KOUT, VOUT> out) 
-	throws IOException
+		throws IOException
 	{
 		combinedKey.set(((MatrixCell)pair.getValue()).getValue());
 		out.collect((KOUT)combinedKey, (VOUT)one);
-		//System.out.println("output: "+combinedKey+": "+one);
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void configure(JobConf job)
 	{
 		try 

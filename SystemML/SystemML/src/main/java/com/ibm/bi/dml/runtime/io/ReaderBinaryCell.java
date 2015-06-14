@@ -110,8 +110,7 @@ public class ReaderBinaryCell extends MatrixReader
 				}
 				finally
 				{
-					if( reader != null )
-						reader.close();
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 			

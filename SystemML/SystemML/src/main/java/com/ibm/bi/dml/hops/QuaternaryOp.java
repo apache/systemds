@@ -71,32 +71,36 @@ public class QuaternaryOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{	
-		if (getLops() == null) 
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+
+		try 
 		{
-			try 
-			{
-				ExecType et = optFindExecType();
-				WeightsType wtype = checkWeightsType();
-				
-				switch( _op ) {
-					case WSLOSS:
-						if( et == ExecType.CP )
-							constructCPLopsWeightedSquaredLoss(wtype);
-						else if( et == ExecType.MR )
-							constructMRLopsWeightedSquaredLoss(wtype);
-						else
-							throw new HopsException("Unsupported quaternaryop exec type: "+et);
-						break;
+			ExecType et = optFindExecType();
+			WeightsType wtype = checkWeightsType();
 			
-					default:
-						throw new HopsException(this.printErrorLocation() + "Unknown QuaternaryOp (" + _op + ") while constructing Lops");
-				}
-			} 
-			catch(LopsException e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing lops for QuaternaryOp." , e);
+			switch( _op ) {
+				case WSLOSS:
+					if( et == ExecType.CP )
+						constructCPLopsWeightedSquaredLoss(wtype);
+					else if( et == ExecType.MR )
+						constructMRLopsWeightedSquaredLoss(wtype);
+					else
+						throw new HopsException("Unsupported quaternaryop exec type: "+et);
+					break;
+		
+				default:
+					throw new HopsException(this.printErrorLocation() + "Unknown QuaternaryOp (" + _op + ") while constructing Lops");
 			}
+		} 
+		catch(LopsException e) {
+			throw new HopsException(this.printErrorLocation() + "error constructing lops for QuaternaryOp." , e);
 		}
 	
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+				
 		return getLops();
 	}
 

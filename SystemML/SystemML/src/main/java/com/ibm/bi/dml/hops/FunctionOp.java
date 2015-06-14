@@ -207,26 +207,26 @@ public class FunctionOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{
-		if (getLops() == null) {
-			ExecType et = optFindExecType();
-			
-			if ( et == ExecType.SPARK )  {
-				// throw new HopsException("constructLop for FunctionOp not implemented for Spark");
-				et = ExecType.CP;
-			}
-			
-			if ( et != ExecType.CP ) {
-				throw new HopsException("Invalid execution type for function: " + _fname);
-			}
-			//construct input lops (recursive)
-			ArrayList<Lop> tmp = new ArrayList<Lop>();
-			for( Hop in : getInput() )
-				tmp.add( in.constructLops() );
-			
-			//construct function call
-			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops );
-			setLops( fcall );
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+
+		ExecType et = optFindExecType();
+		
+		if ( et != ExecType.CP ) {
+			throw new HopsException("Invalid execution type for function: " + _fname);
 		}
+		//construct input lops (recursive)
+		ArrayList<Lop> tmp = new ArrayList<Lop>();
+		for( Hop in : getInput() )
+			tmp.add( in.constructLops() );
+		
+		//construct function call
+		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops );
+		setLineNumbers( fcall );
+		setLops( fcall );
+	
+		//note: no reblock lop because outputs directly bound
 		
 		return getLops();
 	}

@@ -17,6 +17,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -215,34 +216,62 @@ public abstract class Hop
 		_requiresReblock = flag;
 	}
 	
+	public void setOutputBlocksizes( long brlen, long bclen )
+	{
+		setRowsInBlock( brlen );
+		setColsInBlock( bclen );
+	}
+	
 	public boolean requiresReblock()
 	{
 		return _requiresReblock;
 	}
 	
 	/**
+	 * TODO set exec type to mr for preads of text inputs
 	 * 
 	 * @throws HopsException
 	 */
-	public void constructAndSetReblockLopIfRequired(ExecType et) 
+	public void constructAndSetReblockLopIfRequired() 
 		throws HopsException
 	{
+		//determine execution type
+		ExecType et = ExecType.CP;
+		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE 
+			&& !(getDataType()==DataType.SCALAR) )
+		{
+			et = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		}
+
 		//add reblock lop to output if required
-		if( _requiresReblock )
+		if( _requiresReblock && et != ExecType.CP )
 		{
 			Lop input = getLops();
-		
-			ReBlock reblock;
-			try {
-				reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
-						                       getDataType(), getValueType(), _outputEmptyBlocks, et);
-			} catch (LopsException e) {
-				throw new HopsException(e.getMessage());
+			Lop reblock = null;
+			
+			try
+			{
+				if(    this instanceof DataOp  // CSV
+					&& ((DataOp)this).get_dataop() == DataOpTypes.PERSISTENTREAD
+					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV )
+				
+				{
+					// NOTE: only persistent reads can have CSV format
+					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
+							getDataType(), getValueType(), et);
+				}
+				else //TEXT / MM / BINARYBLOCK / BINARYCELL  
+				{
+					reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
+		                    getDataType(), getValueType(), _outputEmptyBlocks, et);
+				}
+			}
+			catch( LopsException ex ) {
+				throw new HopsException(ex);
 			}
 		
-			reblock.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
+			setOutputDimensions( reblock );
+			setLineNumbers( reblock );
 			setLops(reblock);
 		}
 	}

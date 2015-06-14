@@ -17,7 +17,6 @@ import com.ibm.bi.dml.hops.Hop.Direction;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -144,8 +143,7 @@ public class GDFNode
 	 */
 	public boolean isValidInputFormatForOperation( FileFormatTypes format )
 	{
-		return (   _hop instanceof ReblockOp //any format
-				|| _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
+		return (   _hop instanceof UnaryOp && format!=FileFormatTypes.CSV
 				|| (_hop instanceof AggUnaryOp && ((AggUnaryOp)_hop).getDirection()==Direction.RowCol && format!=FileFormatTypes.CSV)
 				|| (_hop instanceof ReorgOp && ((ReorgOp)_hop).getOp()==ReOrgOp.TRANSPOSE && format!=FileFormatTypes.CSV)
 				|| format==FileFormatTypes.BINARY ); //any op

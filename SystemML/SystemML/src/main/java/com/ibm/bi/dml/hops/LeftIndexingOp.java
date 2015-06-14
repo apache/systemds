@@ -82,108 +82,109 @@ public class LeftIndexingOp  extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{			
-		if (getLops() == null) {
-			try {
-				ExecType et = optFindExecType();
-				
-				if(et == ExecType.MR) {
-					
-					//the right matrix is reindexed
-					Lop top=getInput().get(2).constructLops();
-					Lop bottom=getInput().get(3).constructLops();
-					Lop left=getInput().get(4).constructLops();
-					Lop right=getInput().get(5).constructLops();
-					/*
-					//need to creat new lops for converting the index ranges
-					//original range is (a, b) --> (c, d)
-					//newa=2-a, newb=2-b
-					Lops two=new Data(null,	Data.OperationTypes.READ, null, "2", Expression.DataType.SCALAR, Expression.ValueType.INT, false);
-					Lops newTop=new Binary(two, top, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
-					Lops newLeft=new Binary(two, left, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
-					//newc=leftmatrix.row-a+1, newd=leftmatrix.row
-					*/
-					//right hand matrix
-					Lop nrow=new UnaryCP(getInput().get(0).constructLops(), 
-									OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
-					Lop ncol=new UnaryCP(getInput().get(0).constructLops(), 
-											OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
-					
-					Lop rightInput = null;
-					if (isRightHandSideScalar()) {
-						//insert cast to matrix if necessary (for reuse MR runtime)
-						rightInput = new UnaryCP(getInput().get(1).constructLops(),
-								                 OperationTypes.CAST_AS_MATRIX, 
-								                 DataType.MATRIX, ValueType.DOUBLE);
-						rightInput.getOutputParameters().setDimensions( (long)1, (long)1,
-																		(long)DMLTranslator.DMLBlockSize, 
-								                                        (long)DMLTranslator.DMLBlockSize,
-								                                        (long)-1);
-					} 
-					else 
-						rightInput = getInput().get(1).constructLops();
-	
-					
-					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							rightInput, top, bottom, 
-							left, right, nrow, ncol,
-							getDataType(), getValueType(), et, true);
-					
-					reindex.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
-					
-					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					Group group1 = new Group(
-							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-							getValueType());
-					group1.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
-					
-					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					//the left matrix is zeroed out
-					ZeroOut zeroout = new ZeroOut(
-							getInput().get(0).constructLops(), top, bottom,
-							left, right, getInput().get(0).getDim1(), getInput().get(0).getDim2(),
-							getDataType(), getValueType(), et);
-	
-					zeroout.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					zeroout.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
-					Group group2 = new Group(
-							zeroout, Group.OperationTypes.Sort, DataType.MATRIX,
-							getValueType());
-					group2.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
-					
-					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hop.OpOp2.PLUS),
-							getDataType(), getValueType(), et);
-					
-					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					binary.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-							getRowsInBlock(), getColsInBlock(), getNnz());
-	
-					setLops(binary);
-				}
-				else {
-					LeftIndex left = new LeftIndex(
-							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-							getDataType(), getValueType(), et);
-					
-					left.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-					left.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					setLops(left);
-				}
-			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops " , e);
-			}
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
 
+		try 
+		{
+			ExecType et = optFindExecType();
+			
+			if(et == ExecType.MR) 
+			{	
+				//the right matrix is reindexed
+				Lop top=getInput().get(2).constructLops();
+				Lop bottom=getInput().get(3).constructLops();
+				Lop left=getInput().get(4).constructLops();
+				Lop right=getInput().get(5).constructLops();
+				/*
+				//need to creat new lops for converting the index ranges
+				//original range is (a, b) --> (c, d)
+				//newa=2-a, newb=2-b
+				Lops two=new Data(null,	Data.OperationTypes.READ, null, "2", Expression.DataType.SCALAR, Expression.ValueType.INT, false);
+				Lops newTop=new Binary(two, top, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
+				Lops newLeft=new Binary(two, left, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
+				//newc=leftmatrix.row-a+1, newd=leftmatrix.row
+				*/
+				//right hand matrix
+				Lop nrow=new UnaryCP(getInput().get(0).constructLops(), 
+								OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
+				Lop ncol=new UnaryCP(getInput().get(0).constructLops(), 
+										OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+				
+				Lop rightInput = null;
+				if (isRightHandSideScalar()) {
+					//insert cast to matrix if necessary (for reuse MR runtime)
+					rightInput = new UnaryCP(getInput().get(1).constructLops(),
+							                 OperationTypes.CAST_AS_MATRIX, 
+							                 DataType.MATRIX, ValueType.DOUBLE);
+					rightInput.getOutputParameters().setDimensions( (long)1, (long)1,
+																	(long)DMLTranslator.DMLBlockSize, 
+							                                        (long)DMLTranslator.DMLBlockSize,
+							                                        (long)-1);
+				} 
+				else 
+					rightInput = getInput().get(1).constructLops();
+
+				
+				RangeBasedReIndex reindex = new RangeBasedReIndex(
+						rightInput, top, bottom, 
+						left, right, nrow, ncol,
+						getDataType(), getValueType(), et, true);
+				
+				reindex.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+						getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(reindex);
+				
+				Group group1 = new Group(
+						reindex, Group.OperationTypes.Sort, DataType.MATRIX,
+						getValueType());
+				group1.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+						getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(group1);
+				
+				//the left matrix is zeroed out
+				ZeroOut zeroout = new ZeroOut(
+						getInput().get(0).constructLops(), top, bottom,
+						left, right, getInput().get(0).getDim1(), getInput().get(0).getDim2(),
+						getDataType(), getValueType(), et);
+				zeroout.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+						getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(zeroout);
+				
+				Group group2 = new Group(
+						zeroout, Group.OperationTypes.Sort, DataType.MATRIX,
+						getValueType());
+				group2.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+						getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(group2);
+				
+				Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hop.OpOp2.PLUS),
+						getDataType(), getValueType(), et);				
+				binary.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
+						getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(binary);
+				
+				setLops(binary);
+			}
+			else 
+			{
+				LeftIndex left = new LeftIndex(
+						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
+						getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+						getDataType(), getValueType(), et);
+				
+				setOutputDimensions(left);
+				setLineNumbers(left);
+				setLops(left);
+			}
+		} 
+		catch (Exception e) {
+			throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops " , e);
 		}
+
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
 		
 		return getLops();
 	}

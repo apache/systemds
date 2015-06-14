@@ -119,74 +119,70 @@ public class ParameterizedBuiltinOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{		
-		if (getLops() == null) {
-
-			// construct lops for all input parameters
-			HashMap<String, Lop> inputlops = new HashMap<String, Lop>();
-			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-				inputlops.put(cur.getKey(), getInput().get(cur.getValue())
-						.constructLops());
-			}
-
-			if ( _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF ) 
-			{
-				// simply pass the hashmap of parameters to the lop
-
-				// set the lop for the function call
-				
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-						HopsParameterizedBuiltinLops.get(_op), getDataType(),
-						getValueType());
-				
-				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				setLops(pbilop);
-
-				// set the dimesnions for the lop for the output
-				getLops().getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			} 
-			else if (_op == ParamBuiltinOp.GROUPEDAGG) 
-			{
-				ExecType et = optFindExecType();
-				
-				constructLopsGroupedAggregate(inputlops, et);
-			}
-			else if( _op == ParamBuiltinOp.RMEMPTY ) 
-			{
-				ExecType et = optFindExecType();
-				et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
-				
-				constructLopsRemoveEmpty(inputlops, et);
-			} 
-			else if(   _op == ParamBuiltinOp.REPLACE ) 
-			{
-				ExecType et = optFindExecType();
-				
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
-						et, inputlops,
-						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
-				
-				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				setLops(pbilop);
-
-				// set the dimensions for the lop for the output
-				getLops().getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			} 
-
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+		
+		// construct lops for all input parameters
+		HashMap<String, Lop> inputlops = new HashMap<String, Lop>();
+		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+			inputlops.put(cur.getKey(), getInput().get(cur.getValue())
+					.constructLops());
 		}
 
+		if ( _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF ) 
+		{
+			// simply pass the hashmap of parameters to the lop
+			// set the lop for the function call
+			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(),
+					getValueType());
+			
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+			setLops(pbilop);
+		} 
+		else if (_op == ParamBuiltinOp.GROUPEDAGG) 
+		{
+			ExecType et = optFindExecType();
+			
+			constructLopsGroupedAggregate(inputlops, et);
+		}
+		else if( _op == ParamBuiltinOp.RMEMPTY ) 
+		{
+			ExecType et = optFindExecType();
+			et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
+			
+			constructLopsRemoveEmpty(inputlops, et);
+		} 
+		else if(   _op == ParamBuiltinOp.REPLACE ) 
+		{
+			ExecType et = optFindExecType();
+			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+					et, inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+			setLops(pbilop);
+		} 
+
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+				
 		return getLops();
 	}
 	
 	private void constructLopsGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
+		//reset reblock requirement (see MR aggregate / construct lops)
+		setRequiresReblock( false );
 		
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsGroupedAggregate for ParameterizedBuiltinOp not implemented for Spark");
+			// TODO: implement Spark support
 			et = ExecType.CP;
 		}
 		
@@ -262,10 +258,7 @@ public class ParameterizedBuiltinOp extends Hop
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 			setLops(grp_agg);
-			setRequiresReblock(true);
-
-			// construct and set reblock lop as current root lop
-			constructAndSetReblockLopIfRequired(et);
+			setRequiresReblock( true );
 		}
 		else //CP 
 		{
@@ -292,7 +285,7 @@ public class ParameterizedBuiltinOp extends Hop
 		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
 		
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsRemoveEmpty for ParameterizedBuiltinOp not implemented for Spark");
+			// TODO implement Spark support
 			et = ExecType.CP;
 		}
 		

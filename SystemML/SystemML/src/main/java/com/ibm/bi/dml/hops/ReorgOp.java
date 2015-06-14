@@ -96,188 +96,190 @@ public class ReorgOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{
-		if (getLops() == null) {
-			
-			ExecType et = optFindExecType();
-			
-			switch( op )
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+
+		ExecType et = optFindExecType();
+		
+		switch( op )
+		{
+			case TRANSPOSE:
+			case DIAG:
 			{
-				case TRANSPOSE:
-				case DIAG:
+				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				setLops(transform1);
+				
+				break;
+			}
+			case RESHAPE:
+			{
+				if( et==ExecType.MR )
 				{
 					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
 							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
+					for( int i=1; i<=3; i++ ) //rows, cols, byrow
+					{
+						Lop ltmp = getInput().get(i).constructLops();
+						transform1.addInput(ltmp);
+						ltmp.addOutput(transform1);
+					}
+					transform1.setLevel(); //force order of added lops
+					
+					Group group1 = new Group(
+							transform1, Group.OperationTypes.Sort, DataType.MATRIX,
+							getValueType());
+					setOutputDimensions(group1);
+					setLineNumbers(group1);
+	
+					Aggregate agg1 = new Aggregate(
+							group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
+							getValueType(), et);
+					setOutputDimensions(agg1);
+					setLineNumbers(agg1);
+					
+					setLops(agg1);
+				}
+				else //CP
+				{
+					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+					setOutputDimensions(transform1);
+					setLineNumbers(transform1);
+					
+					for( int i=1; i<=3; i++ ) //rows, cols, byrow
+					{
+						Lop ltmp = getInput().get(i).constructLops();
+						transform1.addInput(ltmp);
+						ltmp.addOutput(transform1);
+					}
+					transform1.setLevel(); //force order of added lops
+					
 					setLops(transform1);
-					
-					break;
 				}
-				case RESHAPE:
-				{
-					if( et==ExecType.MR )
-					{
-						Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-								HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
-						setOutputDimensions(transform1);
-						setLineNumbers(transform1);
-						for( int i=1; i<=3; i++ ) //rows, cols, byrow
-						{
-							Lop ltmp = getInput().get(i).constructLops();
-							transform1.addInput(ltmp);
-							ltmp.addOutput(transform1);
-						}
-						transform1.setLevel(); //force order of added lops
-						
-						Group group1 = new Group(
-								transform1, Group.OperationTypes.Sort, DataType.MATRIX,
-								getValueType());
-						group1.getOutputParameters().setDimensions(getDim1(),
-								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
-						Aggregate agg1 = new Aggregate(
-								group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-								getValueType(), et);
-						agg1.getOutputParameters().setDimensions(getDim1(),
-								getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());		
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						setLops(agg1);
-					}
-					else //CP
-					{
-						Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-								HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
-						setOutputDimensions(transform1);
-						setLineNumbers(transform1);
-						
-						for( int i=1; i<=3; i++ ) //rows, cols, byrow
-						{
-							Lop ltmp = getInput().get(i).constructLops();
-							transform1.addInput(ltmp);
-							ltmp.addOutput(transform1);
-						}
-						transform1.setLevel(); //force order of added lops
-						
-						setLops(transform1);
-					}
-					break;
-				}
-				case SORT:
-				{
-					Hop input = getInput().get(0);
-					Hop by = getInput().get(1);
-					Hop desc = getInput().get(2);
-					Hop ixret = getInput().get(3);
-					
-					if( et==ExecType.MR )
-					{
-						
-						if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
-							LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
-							setRequiresRecompile();
-							desc = new LiteralOp("FALSE", false);
-							ixret = new LiteralOp("FALSE", false);
-						}
-							
-						//Step 1: extraction (if unknown ncol or multiple columns)
-						Hop vinput = input;
-						if( input.getDim2() != 1 ) {
-							vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp("1", 1L), 
-									HopRewriteUtils.createValueHop(input, true), by, by, false, true);
-							vinput.refreshSizeInformation();
-							HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
-							HopRewriteUtils.copyLineNumbers(this, vinput);	
-						}
-						
-						//Step 2: Index vector sort 
-						Hop voutput = null;
-						if( OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
-							> OptimizerUtils.getLocalMemBudget() 
-							|| FORCE_MR_SORT_INDEXES ) 
-						{ 
-							//large vector, fallback to MR sort
-							//sort indexes according to given values
-							SortKeys sort = new SortKeys(
-									vinput.constructLops(), HopRewriteUtils.getBooleanValueSafe((LiteralOp)desc), 
-									SortKeys.OperationTypes.Indexes, 
-									vinput.getDataType(), vinput.getValueType(), ExecType.MR);
-				
-							sort.getOutputParameters().setDimensions(vinput.getDim1(), 1, 
-									vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-				
-							setLineNumbers(sort);
-							
-							//note: this sortindexes includes also the shift by offsets and 
-							//final aggregate because sideways passing of offsets would
-							//not nicely fit the current instruction model
-							
-							setLops(sort);
-							voutput = this;
-						}
-						else
-						{
-							//small vector, use in-memory sort
-							ArrayList<Hop> sinputs = new ArrayList<Hop>();
-							sinputs.add(vinput);
-							sinputs.add(new LiteralOp("1",1)); //by (always vector)
-							sinputs.add(desc);
-							sinputs.add(new LiteralOp("TRUE", true)); //indexreturn (always indexes)
-							voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
-							HopRewriteUtils.copyLineNumbers(this, voutput);	
-							//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
-							voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP) );
-							voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-							setLops( voutput.constructLops() );								
-						}
-						
-						//Step 3: Data permutation (only required for sorting data) 
-						// -- done via X' = table(seq(), IX') %*% X;
-						if( !HopRewriteUtils.getBooleanValueSafe((LiteralOp)ixret) ) 
-						{
-							//generate seq 
-							DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(voutput);
-							seq.setName("tmp4");
-							seq.refreshSizeInformation(); 
-							seq.computeMemEstimate(new MemoTable()); //select exec type
-							HopRewriteUtils.copyLineNumbers(this, seq);	
-							
-							//generate table
-							TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
-							HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
-							table.refreshSizeInformation();
-							table.setForcedExecType(ExecType.MR); //force MR 
-							HopRewriteUtils.copyLineNumbers(this, table);
-							table.setDisjointInputs(true);
-							table.setOutputEmptyBlocks(false);
-							
-							//generate matrix mult
-							AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(table, input);
-							mmult.setForcedExecType(ExecType.MR); //force MR 
-							
-							setLops( mmult.constructLops() );
-							
-							//cleanups
-							HopRewriteUtils.removeChildReference(table, input);		
-						}
-					}
-					else //CP or Spark
-					{
-						Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et);
-						setOutputDimensions(transform1);
-						setLineNumbers(transform1);
-						
-						setLops(transform1);
-					}
-					break;
-				}
-				
-				default: 
-					throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
+				break;
 			}
+			case SORT:
+			{
+				Hop input = getInput().get(0);
+				Hop by = getInput().get(1);
+				Hop desc = getInput().get(2);
+				Hop ixret = getInput().get(3);
+				
+				if( et==ExecType.MR )
+				{
+					
+					if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
+						LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
+						setRequiresRecompile();
+						desc = new LiteralOp("FALSE", false);
+						ixret = new LiteralOp("FALSE", false);
+					}
+						
+					//Step 1: extraction (if unknown ncol or multiple columns)
+					Hop vinput = input;
+					if( input.getDim2() != 1 ) {
+						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp("1", 1L), 
+								HopRewriteUtils.createValueHop(input, true), by, by, false, true);
+						vinput.refreshSizeInformation();
+						HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
+						HopRewriteUtils.copyLineNumbers(this, vinput);	
+					}
+					
+					//Step 2: Index vector sort 
+					Hop voutput = null;
+					if( OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
+						> OptimizerUtils.getLocalMemBudget() 
+						|| FORCE_MR_SORT_INDEXES ) 
+					{ 
+						//large vector, fallback to MR sort
+						//sort indexes according to given values
+						SortKeys sort = new SortKeys(
+								vinput.constructLops(), HopRewriteUtils.getBooleanValueSafe((LiteralOp)desc), 
+								SortKeys.OperationTypes.Indexes, 
+								vinput.getDataType(), vinput.getValueType(), ExecType.MR);
+			
+						sort.getOutputParameters().setDimensions(vinput.getDim1(), 1, 
+								vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
+			
+						setLineNumbers(sort);
+						
+						//note: this sortindexes includes also the shift by offsets and 
+						//final aggregate because sideways passing of offsets would
+						//not nicely fit the current instruction model
+						
+						setLops(sort);
+						voutput = this;
+					}
+					else
+					{
+						//small vector, use in-memory sort
+						ArrayList<Hop> sinputs = new ArrayList<Hop>();
+						sinputs.add(vinput);
+						sinputs.add(new LiteralOp("1",1)); //by (always vector)
+						sinputs.add(desc);
+						sinputs.add(new LiteralOp("TRUE", true)); //indexreturn (always indexes)
+						voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
+						HopRewriteUtils.copyLineNumbers(this, voutput);	
+						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
+						voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP) );
+						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
+						setLops( voutput.constructLops() );								
+					}
+					
+					//Step 3: Data permutation (only required for sorting data) 
+					// -- done via X' = table(seq(), IX') %*% X;
+					if( !HopRewriteUtils.getBooleanValueSafe((LiteralOp)ixret) ) 
+					{
+						//generate seq 
+						DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(voutput);
+						seq.setName("tmp4");
+						seq.refreshSizeInformation(); 
+						seq.computeMemEstimate(new MemoTable()); //select exec type
+						HopRewriteUtils.copyLineNumbers(this, seq);	
+						
+						//generate table
+						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
+						HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
+						table.refreshSizeInformation();
+						table.setForcedExecType(ExecType.MR); //force MR 
+						HopRewriteUtils.copyLineNumbers(this, table);
+						table.setDisjointInputs(true);
+						table.setOutputEmptyBlocks(false);
+						
+						//generate matrix mult
+						AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(table, input);
+						mmult.setForcedExecType(ExecType.MR); //force MR 
+						
+						setLops( mmult.constructLops() );
+						
+						//cleanups
+						HopRewriteUtils.removeChildReference(table, input);		
+					}
+				}
+				else //CP or Spark
+				{
+					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et);
+					setOutputDimensions(transform1);
+					setLineNumbers(transform1);
+					
+					setLops(transform1);
+				}
+				break;
+			}
+			
+			default: 
+				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 		}
 		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+				
 		return getLops();
 	}
 

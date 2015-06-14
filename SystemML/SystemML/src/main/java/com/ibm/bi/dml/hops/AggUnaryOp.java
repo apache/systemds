@@ -105,7 +105,7 @@ public class AggUnaryOp extends Hop
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et);
 				}
 				
-				agg1.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				setOutputDimensions(agg1);
 				setLineNumbers(agg1);
 				setLops(agg1);
 				
@@ -190,6 +190,9 @@ public class AggUnaryOp extends Hop
 		catch (Exception e) {
 			throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops " , e);
 		}
+		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
 		
 		//return created lops
 		return getLops();

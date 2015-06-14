@@ -125,19 +125,15 @@ public class UnaryOp extends Hop
 						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
 					
 					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
-					unary1.getOutputParameters().setDimensions(getDim1(), getDim2(), 
-							             getRowsInBlock(), getColsInBlock(), getNnz());
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setOutputDimensions(unary1);
+					setLineNumbers(unary1);
+
 					setLops(unary1);
 				}
 			} 
 			else //general case MATRIX
 			{
 				ExecType et = optFindExecType();
-//				if ( et == ExecType.SPARK )  {
-//					// throw new HopsException("constructLops (cumsum) for UnaryOp not implemented for Spark");
-//					et = ExecType.CP;
-//				}
 				
 				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
 				{
@@ -149,9 +145,8 @@ public class UnaryOp extends Hop
 				{
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
 							                 getDataType(), getValueType(), et);
-					unary1.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					setOutputDimensions(unary1);
+					setLineNumbers(unary1);
 					setLops(unary1);
 				}
 			}
@@ -161,16 +156,18 @@ public class UnaryOp extends Hop
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 		}
 		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+		
 		return getLops();
 	}
 	
 
-	private Lop constructLopsMedian() throws HopsException, LopsException {
+	private Lop constructLopsMedian() 
+		throws HopsException, LopsException 
+	{
 		ExecType et = optFindExecType();
-//		if ( et == ExecType.SPARK )  {
-//			// throw new HopsException("constructLopsMedian for UnaryOp not implemented for Spark");
-//			et = ExecType.CP;
-//		}
+
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(
 					getInput().get(0).constructLops(),
@@ -236,13 +233,12 @@ public class UnaryOp extends Hop
 		}
 	}
 	
-	private Lop constructLopsIQM() throws HopsException, LopsException {
+	private Lop constructLopsIQM() 
+		throws HopsException, LopsException
+	{
+
 		ExecType et = optFindExecType();
-//		if ( et == ExecType.SPARK )  {
-//			// throw new HopsException("constructLopsIQM for UnaryOp not implemented for Spark");
-//			et = ExecType.CP;
-//		}
-		
+
 		Hop input = getInput().get(0);
 		if ( et == ExecType.MR ) {
 			CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),

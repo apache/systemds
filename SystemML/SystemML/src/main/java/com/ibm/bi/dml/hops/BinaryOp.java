@@ -128,69 +128,47 @@ public class BinaryOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{	
-		if (getLops() == null) 
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+
+		//select the execution type
+		ExecType et = optFindExecType();
+		
+		switch(op) 
 		{
-			switch(op) {
-				case IQM: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLops not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsIQM(et);
-					break;
-				}
-				case CENTRALMOMENT: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLops not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsCentralMoment(et);
-					break;
-				}	
-				case COVARIANCE: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLopsCovariance for BinaryOp not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsCovariance(et);
-					break;
-				}
-				case QUANTILE:
-				case INTERQUANTILE: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLops not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsQuantile(et);
-					break;
-				}
-				case MEDIAN: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLops not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsMedian(et);
-					break;
-				}
-				case APPEND: {
-					ExecType et = optFindExecType();
-//					if ( et == ExecType.SPARK )  {
-//						// throw new HopsException("constructLops not implemented for Spark");
-//						et = ExecType.CP;
-//					}
-					constructLopsAppend(et);
-					break;
-				}
-				default:
-					constructLopsBinaryDefault();	
+			case IQM: {
+				constructLopsIQM(et);
+				break;
 			}
+			case CENTRALMOMENT: {
+				constructLopsCentralMoment(et);
+				break;
+			}	
+			case COVARIANCE: {
+				constructLopsCovariance(et);
+				break;
+			}
+			case QUANTILE:
+			case INTERQUANTILE: {
+				constructLopsQuantile(et);
+				break;
+			}
+			case MEDIAN: {
+				constructLopsMedian(et);
+				break;
+			}
+			case APPEND: {
+				constructLopsAppend(et);
+				break;
+			}
+			default:
+				constructLopsBinaryDefault();	
 		}
-	
+
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+		
 		return getLops();
 	}
 	

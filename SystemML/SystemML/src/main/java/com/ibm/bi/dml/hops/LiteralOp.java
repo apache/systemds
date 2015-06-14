@@ -63,9 +63,13 @@ public class LiteralOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException  
 	{	
-		if (getLops() == null) {
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
 
-			try {
+		
+		try 
+		{
 			Lop l = null;
 
 			switch (getValueType()) {
@@ -84,17 +88,18 @@ public class LiteralOp extends Hop
 			default:
 				throw new HopsException(this.printErrorLocation() + 
 						"unexpected value type constructing lops for LiteralOp.\n");
-
 			}
 
 			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(l);
 			setLops(l);
-			} catch(LopsException e) {
-				throw new HopsException(e);
-			}
+		} 
+		catch(LopsException e) {
+			throw new HopsException(e);
 		}
-	
+		
+		//note: no reblock lop because always scalar
+		
 		return getLops();
 	}
 

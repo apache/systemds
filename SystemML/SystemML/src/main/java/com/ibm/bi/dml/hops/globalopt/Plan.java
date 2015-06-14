@@ -3,7 +3,6 @@ package com.ibm.bi.dml.hops.globalopt;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -135,7 +134,8 @@ public class Plan
 		boolean ret = true;
 		
 		ret &= !( _node.getHop() instanceof FunctionOp && _conf.getExecType()!=ExecType.CP );
-		ret &= !( _node.getHop() instanceof ReblockOp &&  _conf.getExecType()!=ExecType.MR );
+		//unnecessary, because reblock now merged into base hop
+		//ret &= !( _node.getHop() instanceof ReblockOp &&  _conf.getExecType()!=ExecType.MR );
 		
 		return ret;
 	}

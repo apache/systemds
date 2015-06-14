@@ -235,6 +235,9 @@ public class AggBinaryOp extends Hop
 		else
 			throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
 		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+		
 		return getLops();
 	}
 

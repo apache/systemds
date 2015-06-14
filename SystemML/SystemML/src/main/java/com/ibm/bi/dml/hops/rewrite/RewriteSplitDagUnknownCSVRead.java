@@ -59,7 +59,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 				ArrayList<Hop> sb1hops = new ArrayList<Hop>();			
 				for( Hop c : cand )
 				{
-					Hop reblock = c.getParent().get(0);
+					Hop reblock = c;
 					long rlen = reblock.getDim1();
 					long clen = reblock.getDim2();
 					long nnz = reblock.getNnz();
@@ -146,7 +146,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		{
 			DataOp dop = (DataOp) hop;
 			if(    dop.get_dataop() == DataOpTypes.PERSISTENTREAD
-				&& dop.getFormatType() == FileFormatTypes.CSV
+				&& dop.getInputFormatType() == FileFormatTypes.CSV
 				&& !dop.dimsKnown()
 				&& !HopRewriteUtils.hasOnlyWriteParents(dop, true, false) )
 			{

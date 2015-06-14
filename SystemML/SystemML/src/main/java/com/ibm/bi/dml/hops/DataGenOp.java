@@ -124,33 +124,37 @@ public class DataGenOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException
 	{
-		if(getLops() == null)
-		{
-			ExecType et = optFindExecType();
-			
-			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
-			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-				if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
-					inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim1), _dim1).constructLops());
-				else if( cur.getKey().equals(DataExpression.RAND_COLS) && _dim2>0 )
-					inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim2), _dim2).constructLops());
-				else
-					inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
-			}
-			
-			DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
-					getDataType(), getValueType(), et);
-			
-			rnd.getOutputParameters().setDimensions(
-					getDim1(), getDim2(),
-					//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
-					(getRowsInBlock()>0)?getRowsInBlock():DMLTranslator.DMLBlockSize, 
-					(getColsInBlock()>0)?getColsInBlock():DMLTranslator.DMLBlockSize,  
-					getNnz());
-			
-			rnd.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			setLops(rnd);
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
+
+		ExecType et = optFindExecType();
+		
+		HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
+		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+			if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
+				inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim1), _dim1).constructLops());
+			else if( cur.getKey().equals(DataExpression.RAND_COLS) && _dim2>0 )
+				inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim2), _dim2).constructLops());
+			else
+				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}
+		
+		DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
+				getDataType(), getValueType(), et);
+		
+		rnd.getOutputParameters().setDimensions(
+				getDim1(), getDim2(),
+				//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
+				(getRowsInBlock()>0)?getRowsInBlock():DMLTranslator.DMLBlockSize, 
+				(getColsInBlock()>0)?getColsInBlock():DMLTranslator.DMLBlockSize,  
+				getNnz());
+		
+		setLineNumbers(rnd);
+		setLops(rnd);
+		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
 		
 		return getLops();
 	}

@@ -15,8 +15,6 @@ import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.MemoTable;
-import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 
@@ -81,45 +79,38 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if (hop instanceof DataOp) 
 		{
 			// if block size does not match
-			if (canReblock && hop.getDataType() != DataType.SCALAR
-					&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE)) {
-
-				if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
-				
+			if(    canReblock && hop.getDataType() != DataType.SCALAR
+				&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE) ) 
+			{
+				if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) 
+				{
 					// insert reblock after the hop
-					ReblockOp r = new ReblockOp(hop, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
-					r.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
-					r.refreshMemEstimates(new MemoTable());
-					r.setVisited(Hop.VisitStatus.DONE);
-				
-				} else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
-
-					if (hop.getRowsInBlock() == -1 && hop.getColsInBlock() == -1) {
-
-						// if this dataop is for cell ouput, then no reblock is
-						// needed as (A) all jobtypes can produce block2cell and
-						// cell2cell and (B) we don't generate an explicit
-						// instruction for it (the info is conveyed through
-						// OutputInfo.
-
-					} else if (hop.getInput().get(0) instanceof ReblockOp && hop.getInput().get(0).getParent().size() == 1) {
-
-						// if a reblock is feeding into this, then use it if
-						// this is
+					hop.setRequiresReblock(true);
+					hop.setOutputBlocksizes(GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
+				} 
+				else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) 
+				{
+					if (hop.getRowsInBlock() == -1 && hop.getColsInBlock() == -1) 
+					{
+						// if this dataop is for cell output, then no reblock is needed 
+						// as (A) all jobtypes can produce block2cell and cell2cell and 
+						// (B) we don't generate an explicit instruction for it (the info 
+						// is conveyed through OutputInfo.
+					} 
+					else if (hop.getInput().get(0).requiresReblock() && hop.getInput().get(0).getParent().size() == 1) 
+					{
+						// if a reblock is feeding into this, then use it if this is
 						// the only parent, otherwise new Reblock
-
-						hop.getInput().get(0).setRowsInBlock(hop.getRowsInBlock());
-						hop.getInput().get(0).setColsInBlock(hop.getColsInBlock());
-
-					} else {
-
-						ReblockOp r = new ReblockOp(hop);
-						r.setAllPositions(hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
-						r.refreshMemEstimates(new MemoTable());
-						r.setVisited(Hop.VisitStatus.DONE);
+						hop.getInput().get(0).setOutputBlocksizes(hop.getRowsInBlock(),hop.getColsInBlock());
+					} 
+					else 
+					{
+						// insert reblock after the hop
+						hop.setRequiresReblock(true);
+						hop.setOutputBlocksizes(GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					}
-
-				} else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
+				} 
+				else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| ((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTREAD) {
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
 						// simply copy the values from its input
@@ -143,7 +134,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			//set_rows_per_block(GLOBAL_BLOCKSIZE);
 			//set_cols_per_block(GLOBAL_BLOCKSIZE);
 			
-			// TODO: this is hack!
 			/*
 			 * Handle hops whose output dimensions are unknown!
 			 * 
@@ -161,7 +151,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			 * Remaining hops will get their blocking dimensions from their input hops.
 			 */
 			
-			if ( hop instanceof ReblockOp ) {
+			if ( hop.requiresReblock() ) {
 				hop.setRowsInBlock(GLOBAL_BLOCKSIZE);
 				hop.setColsInBlock(GLOBAL_BLOCKSIZE);
 			}
@@ -213,7 +203,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		}
 
 		hop.setVisited(Hop.VisitStatus.DONE);
-
 	}
 	
 	/**

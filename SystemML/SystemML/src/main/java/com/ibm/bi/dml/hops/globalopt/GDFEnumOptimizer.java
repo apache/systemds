@@ -231,9 +231,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				//and default configuration or specification (write)
 				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()) ? 
 						       ExecType.MR : ExecType.CP;
-				int blocksize = dhop.getFormatType() == FileFormatTypes.BINARY ? 
+				int blocksize = dhop.getInputFormatType() == FileFormatTypes.BINARY ? 
 						       DMLTranslator.DMLBlockSize : -1; //e.g., -1 for text
-				RewriteConfig rcmr = new RewriteConfig(et, blocksize, dhop.getFormatType());
+				RewriteConfig rcmr = new RewriteConfig(et, blocksize, dhop.getInputFormatType());
 				InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
 				Plan mrplan = new Plan(node, ipsmr, rcmr, null);
 				plans.add( mrplan );	

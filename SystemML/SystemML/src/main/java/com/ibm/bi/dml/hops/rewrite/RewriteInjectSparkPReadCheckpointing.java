@@ -15,7 +15,6 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.ReblockOp;
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -69,7 +68,7 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 			return;
 		
 		if(    (hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD)
-			|| (hop instanceof ReblockOp) )
+			|| (hop.requiresReblock()) )
 		{
 			//get parents (before linking checkpoint as new parent)
 			ArrayList<Hop> parents = new ArrayList<Hop>(hop.getParent());

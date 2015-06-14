@@ -1532,7 +1532,7 @@ public class Recompiler
 		//special case for persistent reads with unknown size (read-after-write)
 		else if( hop instanceof DataOp 
 				&& ((DataOp)hop).get_dataop() == DataOpTypes.PERSISTENTREAD
-				&& !hop.dimsKnown() && ((DataOp)hop).getFormatType()!=FileFormatTypes.CSV )
+				&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV )
 		{
 			//update hop with read meta data
 			DataOp dop = (DataOp) hop; 

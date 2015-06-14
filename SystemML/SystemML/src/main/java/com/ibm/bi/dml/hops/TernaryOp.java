@@ -118,38 +118,42 @@ public class TernaryOp extends Hop
 	public Lop constructLops() 
 		throws HopsException, LopsException 
 	{	
-		if (getLops() == null) 
-		{
-			try 
-			{
-				switch( _op ) {
-					case CENTRALMOMENT:
-						constructLopsCentralMoment();
-						break;
-						
-					case COVARIANCE:
-						constructLopsCovariance();
-						break;
-						
-					case QUANTILE:
-					case INTERQUANTILE:
-						constructLopsQuantile();
-						break;
-						
-					case CTABLE:
-						constructLopsCtable();
-						break;
-						
-					default:
-						throw new HopsException(this.printErrorLocation() + "Unknown TernaryOp (" + _op + ") while constructing Lops \n");
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
 
-				}
-			} 
-			catch(LopsException e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
+		try 
+		{
+			switch( _op ) {
+				case CENTRALMOMENT:
+					constructLopsCentralMoment();
+					break;
+					
+				case COVARIANCE:
+					constructLopsCovariance();
+					break;
+					
+				case QUANTILE:
+				case INTERQUANTILE:
+					constructLopsQuantile();
+					break;
+					
+				case CTABLE:
+					constructLopsCtable();
+					break;
+					
+				default:
+					throw new HopsException(this.printErrorLocation() + "Unknown TernaryOp (" + _op + ") while constructing Lops \n");
+
 			}
+		} 
+		catch(LopsException e) {
+			throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 		}
-	
+
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
+				
 		return getLops();
 	}
 
@@ -166,7 +170,7 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsCentralMoment for TertiaryOp not implemented for Spark");
+			// TODO implement Spark support
 			et = ExecType.CP;
 		}
 		if ( et == ExecType.MR ) {
@@ -222,7 +226,7 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsCovariance for TertiaryOp not implemented for Spark");
+			// TODO implement Spark support
 			et = ExecType.CP;
 		}
 		if ( et == ExecType.MR ) {
@@ -283,7 +287,7 @@ public class TernaryOp extends Hop
 		ExecType et = optFindExecType();
 		
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsQuantile for TertiaryOp not implemented for Spark");
+			// TODO implement Spark support
 			et = ExecType.CP;
 		}
 		
@@ -391,9 +395,12 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		if ( et == ExecType.SPARK )  {
-			// throw new HopsException("constructLopsCtable for TertiaryOp not implemented for Spark");
+			// TODO implement Spark support
 			et = ExecType.CP;
 		}
+		
+		//reset reblock requirement (see MR ctable / construct lops)
+		setRequiresReblock( false );
 		
 		if ( et == ExecType.CP ) 
 		{	
@@ -619,9 +626,6 @@ public class TernaryOp extends Hop
 			if ( !dimsKnown() && !_dimInputsPresent ) {
 				setRequiresReblock( true );
 			}
-			
-			// construct and set reblock lop as current root lop
-			constructAndSetReblockLopIfRequired(et);
 		}
 	}
 	

@@ -632,8 +632,8 @@ public class OptimizerUtils
 			p.optFindExecType(); //ensure exec type evaluated
 			ret &=   (  p.getExecType()==ExecType.CP 
 					 ||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
-					 ||(p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE && ((DataOp)p).getFormatType()==FileFormatTypes.TEXT))
-				  && !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getFormatType()!=FileFormatTypes.TEXT) ); //no function call or transient write
+					 ||(p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE && ((DataOp)p).getInputFormatType()==FileFormatTypes.TEXT))
+				  && !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormatTypes.TEXT) ); //no function call or transient write
 		}
 			
 		return ret;	

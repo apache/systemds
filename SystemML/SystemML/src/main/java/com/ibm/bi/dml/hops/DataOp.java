@@ -36,7 +36,11 @@ public class DataOp extends Hop
 
 	private DataOpTypes _dataop;
 	private String _fileName = null;
-	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
+	
+	//read dataop properties
+	private FileFormatTypes _inFormat = FileFormatTypes.TEXT;
+	private long _inRowsInBlock = -1;
+	private long _inColsInBlock = -1;
 	
 	private boolean _recompileRead = true;
 	
@@ -54,8 +58,10 @@ public class DataOp extends Hop
 		//default constructor for clone
 	}
 	
-	// READ operation for Matrix w/ dim1, dim2. 
-	// This constructor does not support any expression in parameters
+	/**
+	 *  READ operation for Matrix w/ dim1, dim2. 
+	 * This constructor does not support any expression in parameters
+	 */
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
 			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
 		super(l, dt, vt);
@@ -65,43 +71,11 @@ public class DataOp extends Hop
 		setDim1(dim1);
 		setDim2(dim2);
 		setNnz(nnz);
-		setRowsInBlock(rowsPerBlock);
-		setColsInBlock(colsPerBlock);
 		
-		if (dop == DataOpTypes.TRANSIENTREAD)
-			setFormatType(FileFormatTypes.BINARY);
+		if( dop == DataOpTypes.TRANSIENTREAD )
+			setInputFormatType(FileFormatTypes.BINARY);
 	}
 
-	// WRITE operation
-	// This constructor does not support any expression in parameters
-	public DataOp(String l, DataType dt, ValueType vt, Hop in,
-			DataOpTypes dop, String fname) {
-		super(l, dt, vt);
-		_dataop = dop;
-		getInput().add(0, in);
-		in.getParent().add(this);
-		_fileName = fname;
-
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
-			setFormatType(FileFormatTypes.BINARY);
-	}
-	
-	// CHECKPOINT operation
-	// This constructor does not support any expression in parameters
-	public DataOp(String l, DataType dt, ValueType vt, Hop in,
-			LiteralOp level, DataOpTypes dop, String fname) {
-		super(l, dt, vt);
-		_dataop = dop;
-		getInput().add(0, in);
-		getInput().add(1, level);
-		in.getParent().add(this);
-		level.getParent().add(this);
-		_fileName = fname;
-
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT || dop == DataOpTypes.CHECKPOINT )
-			setFormatType(FileFormatTypes.BINARY);
-	}
-	
 	/**
 	 * READ operation for Matrix
 	 * This constructor supports expressions in parameters
@@ -124,9 +98,40 @@ public class DataOp extends Hop
 			index++;
 		}
 		if (dop == DataOpTypes.TRANSIENTREAD ){
-			setFormatType(FileFormatTypes.BINARY);
+			setInputFormatType(FileFormatTypes.BINARY);
 		}
 	}
+	
+	// WRITE operation
+	// This constructor does not support any expression in parameters
+	public DataOp(String l, DataType dt, ValueType vt, Hop in,
+			DataOpTypes dop, String fname) {
+		super(l, dt, vt);
+		_dataop = dop;
+		getInput().add(0, in);
+		in.getParent().add(this);
+		_fileName = fname;
+
+		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
+			setInputFormatType(FileFormatTypes.BINARY);
+	}
+	
+	// CHECKPOINT operation
+	// This constructor does not support any expression in parameters
+	public DataOp(String l, DataType dt, ValueType vt, Hop in,
+			LiteralOp level, DataOpTypes dop, String fname) {
+		super(l, dt, vt);
+		_dataop = dop;
+		getInput().add(0, in);
+		getInput().add(1, level);
+		in.getParent().add(this);
+		level.getParent().add(this);
+		_fileName = fname;
+
+		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT || dop == DataOpTypes.CHECKPOINT )
+			setInputFormatType(FileFormatTypes.BINARY);
+	}
+	
 	
 	/**
 	 *  WRITE operation for Matrix
@@ -157,7 +162,7 @@ public class DataOp extends Hop
 		}
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
-			setFormatType(FileFormatTypes.BINARY);
+			setInputFormatType(FileFormatTypes.BINARY);
 	}
 	
 	public DataOpTypes getDataOpType()
@@ -195,92 +200,102 @@ public class DataOp extends Hop
 	public Lop constructLops()
 			throws HopsException, LopsException 
 	{	
-		if (getLops() == null) {
-			Lop l = null;
+		//return already created lops
+		if( getLops() != null )
+			return getLops();
 
-			ExecType et = optFindExecType();
-			
-			// construct lops for all input parameters
-			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
-			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-				inputLops.put(cur.getKey(), getInput().get(cur.getValue())
-						.constructLops());
-			}
-
-			// Set the transient flag
-			boolean isTransient = false;
-			switch(_dataop) 
-			{
-				case PERSISTENTREAD:
-				case PERSISTENTWRITE:
-					isTransient = false;
-					break;
-					
-				case TRANSIENTREAD:
-				case TRANSIENTWRITE:
-					isTransient = true;
-					break;
-					
-				case FUNCTIONOUTPUT:
-					/* TODO: currently, function outputs are treated as transient.
-					 * This needs to be revisited whenever function calls are fully integrated into Hop DAGs.
-					 */
-					isTransient = true;
-					break;
-				
-				case CHECKPOINT:
-					isTransient = true;
-					break;
-					
-				default:
-					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
-			}
-			
-			// Create the lop
-			switch(_dataop) 
-			{
-				case TRANSIENTREAD:
-				case PERSISTENTREAD:
-					l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
-					break;
-					
-				case PERSISTENTWRITE:
-				case TRANSIENTWRITE:
-				case FUNCTIONOUTPUT:
-					Data tmp = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, getDataType(), getValueType(), isTransient, getFormatType());
-					// TODO: should we set the exec type for transient write ?
-					if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
-						tmp.setExecType(et);
-				
-					l = tmp;
-					break;
-			
-				case CHECKPOINT:
-					String strlevel = ((LiteralOp)getInput().get(1)).getStringValue();
-					l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, ExecType.SPARK);
-					break;
-					
-				default:
-					throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
-			}
-			
-			//set remaining meta data
-			l.getOutputParameters().setDimensions(getDim1(), getDim2(),getRowsInBlock(), getColsInBlock(), getNnz());
-			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			
-			setLops(l);
+		ExecType et = optFindExecType();
+		Lop l = null;
+		
+		// construct lops for all input parameters
+		HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
+		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+			inputLops.put(cur.getKey(), getInput().get(cur.getValue())
+					.constructLops());
 		}
+
+		// Create the lop
+		switch(_dataop) 
+		{
+			case TRANSIENTREAD:
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
+						getDataType(), getValueType(), true, getInputFormatType());
+				setOutputDimensions(l);
+				break;
+				
+			case PERSISTENTREAD:
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
+						getDataType(), getValueType(), false, getInputFormatType());
+				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inRowsInBlock, _inColsInBlock, getNnz());
+				break;
+				
+			case PERSISTENTWRITE:
+				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, 
+						getDataType(), getValueType(), false, getInputFormatType());
+				((Data)l).setExecType(et);
+				setOutputDimensions(l);
+				break;
+				
+			case TRANSIENTWRITE:
+				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null,
+						getDataType(), getValueType(), true, getInputFormatType());
+				setOutputDimensions(l);
+				break;
+				
+			case FUNCTIONOUTPUT:
+				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, 
+						getDataType(), getValueType(), true, getInputFormatType());
+				((Data)l).setExecType(et);
+				setOutputDimensions(l);
+				break;
+		
+			case CHECKPOINT:
+				String strlevel = ((LiteralOp)getInput().get(1)).getStringValue();
+				l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, ExecType.SPARK);
+				setOutputDimensions(l);
+				break;
+				
+			default:
+				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
+		}
+		
+		setLineNumbers(l);
+		setLops(l);
+		
+		//add reblock lop if necessary
+		constructAndSetReblockLopIfRequired();
 	
 		return getLops();
 
 	}
 
-	public void setFormatType(FileFormatTypes ft) {
-		_formatType = ft;
+	public void setInputFormatType(FileFormatTypes ft) {
+		_inFormat = ft;
 	}
 
-	public FileFormatTypes getFormatType() {
-		return _formatType;
+	public FileFormatTypes getInputFormatType() {
+		return _inFormat;
+	}
+	
+	public void setInputBlockSizes( long brlen, long bclen ){
+		setInputRowsInBlock(brlen);
+		setInputColsInBlock(bclen);
+	}
+	
+	public void setInputRowsInBlock( long brlen ){
+		_inRowsInBlock = brlen;
+	}
+	
+	public long getInputRowsInBlock(){
+		return _inRowsInBlock;
+	}
+	
+	public void setInputColsInBlock( long bclen ){
+		_inColsInBlock = bclen;
+	}
+	
+	public long getInputColsInBlock(){
+		return _inColsInBlock;
 	}
 	
 	public boolean isRead()
@@ -314,7 +329,7 @@ public class DataOp extends Hop
 				if (_fileName != null) {
 					LOG.debug(" file: " + _fileName);
 				}
-				LOG.debug(" format: " + getFormatType());
+				LOG.debug(" format: " + getInputFormatType());
 				for (Hop h : getInput()) {
 					h.printMe();
 				}
@@ -658,7 +673,9 @@ public class DataOp extends Hop
 		//copy specific attributes
 		ret._dataop = _dataop;
 		ret._fileName = _fileName;
-		ret._formatType = _formatType;
+		ret._inFormat = _inFormat;
+		ret._inRowsInBlock = _inRowsInBlock;
+		ret._inColsInBlock = _inColsInBlock;
 		ret._recompileRead = _recompileRead;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 

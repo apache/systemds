@@ -1541,13 +1541,13 @@ public class DMLTranslator
 				
 				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
-				ae.setFormatType(Expression.convertFormatType(formatName));
+				ae.setInputFormatType(Expression.convertFormatType(formatName));
 
 				if (ae.getDataType() == DataType.SCALAR ) {
 					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), -1, -1);
 				}
 				else {
-					switch(ae.getFormatType()) {
+					switch(ae.getInputFormatType()) {
 					case TEXT:
 					case MM:
 					case CSV:
@@ -1561,7 +1561,7 @@ public class DMLTranslator
 					    break;
 						
 						default:
-							throw new LanguageException("Unrecognized file format: " + ae.getFormatType());
+							throw new LanguageException("Unrecognized file format: " + ae.getInputFormatType());
 					}
 				}
 				
@@ -2049,7 +2049,7 @@ public class DMLTranslator
 				
 				if (ae instanceof DataOp){
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setFormatType(Expression.convertFormatType(formatName));
+					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
 				}
 				//hops.put(target.getName(), ae);
 				return ae;
@@ -2597,9 +2597,10 @@ public class DMLTranslator
 							+ source.getOpCode());
 		}
 		
-		
-		//TODO: Leo This might be a problem, because we do not know cols and rows
+		//set identifier meta data (incl dimensions and blocksizes)
 		setIdentifierParams(currBuiltinOp, source.getOutput());
+		if( source.getOpCode()==DataExpression.DataOp.READ )
+			((DataOp)currBuiltinOp).setInputBlockSizes(target.getRowsInBlock(), target.getColumnsInBlock());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		
 		return currBuiltinOp;

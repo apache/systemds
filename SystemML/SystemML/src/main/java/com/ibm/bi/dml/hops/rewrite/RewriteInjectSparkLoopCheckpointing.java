@@ -12,10 +12,8 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -56,8 +54,6 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 		//2) Also, we do not take size information into account right now. This means that all candidates
 		//are checkpointed even if they are only used by CP operations.
 		
-		//TODO keep meta data at symbol table level about 
-		
 		int blocksize = state.getBlocksize(); //blocksize set by reblock rewrite
 		
 		//apply rewrite for while and for (the decision for parfor loops is deferred until parfor
@@ -88,11 +84,9 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 					DataIdentifier dat = read.getVariable(var);
 					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.TRANSIENTREAD, 
 							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), dat.getRowsInBlock(), dat.getColumnsInBlock());
-					DataOp chkpoint = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, 
-							            new LiteralOp(null,Checkpoint.getDefaultStorageLevelString()), DataOpTypes.CHECKPOINT, null);				
-					HopRewriteUtils.setOutputParameters(chkpoint, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());
-					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, chkpoint, DataOpTypes.TRANSIENTWRITE, null);
-					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());
+					tread.setRequiresCheckpoint( true );
+					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, DataOpTypes.TRANSIENTWRITE, null);
+					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());					
 					hops.add(twrite);
 					livein.addVariable(var, read.getVariable(var));
 					liveout.addVariable(var, read.getVariable(var));

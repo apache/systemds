@@ -18,6 +18,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.CSVReBlock;
+import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -85,15 +86,18 @@ public abstract class Hop
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
 	protected boolean _requiresRecompile = false;
-
+	
 	// indicates if the output of this hop needs to be reblocked
 	// (usually this happens on persistent reads dataops)
 	protected boolean _requiresReblock = false;
 	
+	// indicates if the output of this hop needs to be checkpointed (cached)
+	// (the default storage level for caching is not yet exposed here)
+	protected boolean _requiresCheckpoint = false;
+	
 	// indicates if the output of this hops needs to contain materialized empty blocks 
 	// if those exists; otherwise only blocks w/ non-zero values are materialized
 	protected boolean _outputEmptyBlocks = true;
-	
 	
 	private Lop _lops = null;
 	private SQLLops _sqllops = null;
@@ -227,12 +231,35 @@ public abstract class Hop
 		return _requiresReblock;
 	}
 	
+	public void setRequiresCheckpoint(boolean flag)
+	{
+		_requiresCheckpoint = flag;
+	}
+	
+	public boolean requiresCheckpoint()
+	{
+		return _requiresCheckpoint;
+	}
+	
 	/**
-	 * TODO set exec type to mr for preads of text inputs
 	 * 
 	 * @throws HopsException
 	 */
-	public void constructAndSetReblockLopIfRequired() 
+	public void constructAndSetLopsDataFlowProperties() 
+		throws HopsException
+	{
+		//Step 1: construct reblock lop if required (output of hop)
+		constructAndSetReblockLopIfRequired();
+		
+		//Step 2: construct checkpoint lop if required (output of hop or reblock)
+		constructAndSetCheckpointLopIfRequired();
+	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 */
+	private void constructAndSetReblockLopIfRequired() 
 		throws HopsException
 	{
 		//determine execution type
@@ -272,10 +299,48 @@ public abstract class Hop
 		
 			setOutputDimensions( reblock );
 			setLineNumbers( reblock );
-			setLops(reblock);
+			setLops( reblock );
 		}
 	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 */
+	private void constructAndSetCheckpointLopIfRequired() 
+		throws HopsException
+	{
+		//determine execution type
+		ExecType et = ExecType.CP;
+		if( OptimizerUtils.isSparkExecutionMode() 
+			&& !(getDataType()==DataType.SCALAR) )
+		{
+			et = ExecType.SPARK;
+		}
 
+		//add reblock lop to output if required
+		if( _requiresCheckpoint && et != ExecType.CP )
+		{
+			Lop input = getLops();			
+			Lop chkpoint = null;
+			
+			try
+			{
+				chkpoint = new Checkpoint(input, getDataType(), getValueType(),
+						Checkpoint.getDefaultStorageLevelString(), et);
+			}
+			catch( LopsException ex ) {
+				throw new HopsException(ex);
+			}
+		
+			setOutputDimensions( chkpoint );
+			setLineNumbers( chkpoint );
+			setLops( chkpoint );
+		}
+		
+	}
+	
+	
 	/**
 	 * 
 	 * @param inputPos
@@ -932,7 +997,7 @@ public abstract class Hop
 	};
 
 	public enum DataOpTypes {
-		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT, CHECKPOINT
+		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT
 	};
 
 	public enum Direction {
@@ -1236,7 +1301,6 @@ public abstract class Hop
 		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
-		HopsData2String.put(DataOpTypes.CHECKPOINT, "chkpt");
 	}
 	
 	public static boolean isFunction(OpOp2 op)
@@ -1671,6 +1735,7 @@ public abstract class Hop
 		_processingMemEstimate = that._processingMemEstimate;
 		_requiresRecompile = that._requiresRecompile;
 		_requiresReblock = that._requiresReblock;
+		_requiresCheckpoint = that._requiresCheckpoint;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;

@@ -152,8 +152,8 @@ public class IndexingOp extends Hop
 			}
 		}
 		
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 		
 		return getLops();
 	}

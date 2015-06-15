@@ -151,8 +151,8 @@ public class TernaryOp extends Hop
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 		}
 
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 				
 		return getLops();
 	}

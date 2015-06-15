@@ -11,13 +11,9 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.lops.Checkpoint;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine
@@ -70,22 +66,10 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(    (hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD)
 			|| (hop.requiresReblock()) )
 		{
-			//get parents (before linking checkpoint as new parent)
-			ArrayList<Hop> parents = new ArrayList<Hop>(hop.getParent());
-			
-			//create checkpoint operator
-			DataOp chkpoint = new DataOp(hop.getName(), DataType.MATRIX, ValueType.DOUBLE, hop, 
-		            new LiteralOp(null,Checkpoint.getDefaultStorageLevelString()), DataOpTypes.CHECKPOINT, null);				
-			HopRewriteUtils.setOutputParameters(chkpoint, hop.getDim1(), hop.getDim2(), hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
-
-			//relink parent references
-			for( Hop parent : parents ) {
-				int pos = HopRewriteUtils.getChildReferencePos(parent, hop);
-				HopRewriteUtils.removeChildReferenceByPos(parent, hop, pos);
-				HopRewriteUtils.addChildReference(parent, chkpoint, pos);
-			}
-				
+			//make given hop for checkpointing (w/ default storage level)
 			//note: we do not recursively process childs here in order to prevent unnecessary checkpoints
+			
+			hop.setRequiresCheckpoint(true);
 		}
 		else
 		{

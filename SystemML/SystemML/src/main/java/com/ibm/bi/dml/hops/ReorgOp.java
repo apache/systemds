@@ -277,8 +277,8 @@ public class ReorgOp extends Hop
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 		}
 		
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 				
 		return getLops();
 	}

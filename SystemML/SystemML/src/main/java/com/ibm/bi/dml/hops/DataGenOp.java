@@ -153,8 +153,8 @@ public class DataGenOp extends Hop
 		setLineNumbers(rnd);
 		setLops(rnd);
 		
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 		
 		return getLops();
 	}

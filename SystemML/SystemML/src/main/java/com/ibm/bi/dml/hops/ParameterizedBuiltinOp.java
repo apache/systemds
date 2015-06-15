@@ -169,8 +169,8 @@ public class ParameterizedBuiltinOp extends Hop
 			setLops(pbilop);
 		} 
 
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 				
 		return getLops();
 	}

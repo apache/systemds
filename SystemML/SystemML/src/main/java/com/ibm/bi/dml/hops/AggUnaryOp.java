@@ -191,8 +191,8 @@ public class AggUnaryOp extends Hop
 			throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops " , e);
 		}
 		
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 		
 		//return created lops
 		return getLops();

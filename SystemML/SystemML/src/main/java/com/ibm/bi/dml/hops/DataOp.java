@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -128,7 +127,7 @@ public class DataOp extends Hop
 		level.getParent().add(this);
 		_fileName = fname;
 
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT || dop == DataOpTypes.CHECKPOINT )
+		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
 	
@@ -248,13 +247,7 @@ public class DataOp extends Hop
 				((Data)l).setExecType(et);
 				setOutputDimensions(l);
 				break;
-		
-			case CHECKPOINT:
-				String strlevel = ((LiteralOp)getInput().get(1)).getStringValue();
-				l = new Checkpoint(getInput().get(0).constructLops(), getDataType(), getValueType(), strlevel, ExecType.SPARK);
-				setOutputDimensions(l);
-				break;
-				
+			
 			default:
 				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 		}
@@ -262,8 +255,8 @@ public class DataOp extends Hop
 		setLineNumbers(l);
 		setLops(l);
 		
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 	
 		return getLops();
 
@@ -586,7 +579,7 @@ public class DataOp extends Hop
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
-		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE || _dataop == DataOpTypes.CHECKPOINT )
+		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
 		{
 			checkAndSetForcedPlatform();
 

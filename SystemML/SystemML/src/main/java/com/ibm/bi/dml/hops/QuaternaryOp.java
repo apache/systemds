@@ -98,8 +98,8 @@ public class QuaternaryOp extends Hop
 			throw new HopsException(this.printErrorLocation() + "error constructing lops for QuaternaryOp." , e);
 		}
 	
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 				
 		return getLops();
 	}

@@ -183,8 +183,8 @@ public class LeftIndexingOp  extends Hop
 			throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops " , e);
 		}
 
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 		
 		return getLops();
 	}

@@ -166,8 +166,8 @@ public class BinaryOp extends Hop
 				constructLopsBinaryDefault();	
 		}
 
-		//add reblock lop if necessary
-		constructAndSetReblockLopIfRequired();
+		//add reblock/checkpoint lops if necessary
+		constructAndSetLopsDataFlowProperties();
 		
 		return getLops();
 	}

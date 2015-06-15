@@ -60,11 +60,12 @@ public class Explain
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//internal parameters
+	//internal configuration parameters
 	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;	
-	private static final boolean SHOW_MEM_ABOVE_BUDGET = true;
-	private static final boolean SHOW_LITERAL_HOPS = false;
-	private static final boolean SHOW_DATA_DEPENDENCIES = true;
+	private static final boolean SHOW_MEM_ABOVE_BUDGET      = true;
+	private static final boolean SHOW_LITERAL_HOPS          = false;
+	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
+	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
 	
 
 	//different explain levels
@@ -555,7 +556,7 @@ public class Explain
 		sb.append(hop.getOpString());
 		
 		//input hop references 
-		if( SHOW_DATA_DEPENDENCIES ){
+		if( SHOW_DATA_DEPENDENCIES ) {
 			StringBuilder childs = new StringBuilder();
 			childs.append(" (");
 			boolean childAdded = false;
@@ -582,6 +583,16 @@ public class Explain
 		               + showMem(hop.getIntermediateMemEstimate(), false) + "," 
 				       + showMem(hop.getOutputMemEstimate(), false) + " -> " 
 		               + showMem(hop.getMemEstimate(), true) + "]");
+		
+		//data flow properties
+		if( SHOW_DATA_FLOW_PROPERTIES ) {
+			if( hop.requiresReblock() && hop.requiresCheckpoint() )
+				sb.append(" [rblk,chkpt]");
+			else if( hop.requiresReblock() )
+				sb.append(" [rblk]");
+			else if( hop.requiresCheckpoint() )
+				sb.append(" [chkpt]");
+		}
 		
 		//exec type
 		if (hop.getExecType() != null)

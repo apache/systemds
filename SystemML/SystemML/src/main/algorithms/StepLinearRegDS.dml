@@ -26,7 +26,7 @@
 # thr     Double    0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
 #                            no further features are being checked and the algorithm stops 
 # dir     String  "forward"  The mode of stepwise search; start from one feature and iteratively add 
-#							 features until AIC improves. Currently only forward selection is implemented 
+#							 features until AIC improves. Currently only forward selection is supported 
 # fmt     String   "text"    Matrix output format for B (the betas) only, usually "text" or "csv"
 # --------------------------------------------------------------------------------------------
 # OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
@@ -117,7 +117,13 @@ if (dir == "forward") {
 	if (column_best == 0) {
 		print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
 		S = matrix (0, rows=1, cols=1);
-		B = matrix (beta, rows=1, cols=1);
+		if (intercept_status == 0) {
+			B = matrix (beta, rows = m_orig, cols = 1);
+		} else {
+			B_tmp = matrix (0, rows = m_orig + 1, cols = 1);
+			B_tmp[m_orig + 1,] = beta;
+			B = B_tmp;
+		}
 		write (S, fileS, format="text");
 		write (B, fileB, format="text");
 		stop ("");
@@ -170,8 +176,7 @@ if (dir == "forward") {
 	[AIC] = linear_regression (X_global, y, m_orig, columns_fixed_ordered, fileB); 
 	
 } else {
-	print ("Currently only forward direction is implemented!");
-	stop("");
+	stop ("Currently only forward direction is implemented!");
 } 
 
 

@@ -345,27 +345,41 @@ public class SparkExecutionContext extends ExecutionContext
 	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen) 
 		throws DMLRuntimeException
 	{
-		//current assumption always dense
-		MatrixBlock out = new MatrixBlock(rlen, clen, false);
-		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+		MatrixBlock out = null;
 		
-		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
+		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
 		{
-			MatrixIndexes ix = keyval._1();
-			MatrixBlock block = keyval._2();
-			
-			int row_offset = (int)(ix.getRowIndex()-1)*brlen;
-			int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
-			int rows = block.getNumRows();
-			int cols = block.getNumColumns();
-			
-			out.copy( row_offset, row_offset+rows-1, 
-					  col_offset, col_offset+cols-1,
-					  block, false );			
+			//special case without copy and nnz maintenance
+			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+			if( list.size()>1 )
+				throw new DMLRuntimeException("Expecting no more than one result block.");
+			else if( list.size()==1 )
+				out = list.get(0)._2();
 		}
-		
-		out.recomputeNonZeros();
-		out.examSparsity();
+		else //MULTIPLE BLOCKS
+		{
+			//current assumption always dense
+			out = new MatrixBlock(rlen, clen, false);
+			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+			
+			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
+			{
+				MatrixIndexes ix = keyval._1();
+				MatrixBlock block = keyval._2();
+				
+				int row_offset = (int)(ix.getRowIndex()-1)*brlen;
+				int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
+				int rows = block.getNumRows();
+				int cols = block.getNumColumns();
+				
+				out.copy( row_offset, row_offset+rows-1, 
+						  col_offset, col_offset+cols-1,
+						  block, false );			
+			}
+			
+			out.recomputeNonZeros();
+			out.examSparsity();
+		}
 		
 		return out;
 	}

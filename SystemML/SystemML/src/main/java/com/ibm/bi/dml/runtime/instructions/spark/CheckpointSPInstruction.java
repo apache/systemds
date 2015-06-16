@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -73,10 +74,15 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		// This prevents unnecessary overhead if the dataset is only consumed by cp operations.
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( !in.getStorageLevel().equals(_level) )
-			out = in.persist( _level );
-		else
+		if( !in.getStorageLevel().equals(_level) ) {
+			//since persist is an in-place marker for a storage level, we 
+			//apply a narrow copy to allow for short-circuit collects 
+			out = in.mapToPair(new CopyBlockFunction())
+					.persist( _level );
+		}
+		else {
 			out = in;
+		}
 			
 		// Step 2: In-place update of input matrix rdd handle and set as output
 		// -------
@@ -88,11 +94,13 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		// lineage information in order to prevent cycles on cleanup. 
 		
 		MatrixObject mo = sec.getMatrixObject( input1.getName() );
-		RDDObject inro =  mo.getRDDHandle();  //guaranteed to exist (see above)
-		RDDObject outro = new RDDObject(out, output.getName()); //create new rdd object
-		outro.setCheckpointRDD(true);         //mark as checkpointed
-		outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
-		mo.setRDDHandle(outro);
+		if( out != in ) {                         //prevent unnecessary lineage info
+			RDDObject inro =  mo.getRDDHandle();  //guaranteed to exist (see above)
+			RDDObject outro = new RDDObject(out, output.getName()); //create new rdd object
+			outro.setCheckpointRDD(true);         //mark as checkpointed
+			outro.addLineageChild(inro);          //keep lineage to prevent cycles on cleanup
+			mo.setRDDHandle(outro);
+		}
 		sec.setVariable( output.getName(), mo);
 	}
 }

@@ -130,7 +130,15 @@ if (2 + n_group_cols + n_stratum_cols > ncol (X)) {
 }
 
 # reorder cols of X 
-Is = append (TE, append (GI, SI));
+if (GI_1_1 == 0 & SI_1_1 == 0) {
+	Is = TE;
+} else if (GI_1_1 == 0) {
+	Is = append (TE, SI);
+} else if (SI_1_1 == 0) {
+	Is = append (TE, GI);
+} else {
+	Is = append (TE, append (GI, SI));
+}
 X = X %*% table (Is, seq (1, 2 + n_group_cols + n_stratum_cols), ncol (X), 2 + n_group_cols + n_stratum_cols);	
 
 num_records = nrow (X);
@@ -208,7 +216,7 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
 
 KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
-a = 0/0;
+a = 1/0;
 M = matrix (a, rows = num_groups * num_strata, cols = 3);
 z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
 
@@ -221,8 +229,7 @@ if (num_groups > 1 & test_type != "none") {
 	stop ("Data contains only one group or no groups, at least two groups are required for test!");
 }
 
-# parfor (s in 1:num_strata, check = 0) {
-for (s in 1:num_strata, check = 0) {
+parfor (s in 1:num_strata, check = 0) {
 	
 	start_ind = as.scalar (SB[s,]);
 	end_ind = num_records;
@@ -273,8 +280,7 @@ for (s in 1:num_strata, check = 0) {
 		n_risk_n_event_stratum = matrix (0, rows = n_time_all1, cols = num_groups * 2);
 	}
 
-	# parfor (g in 1:num_groups, check = 0) {
-	for (g in 1:num_groups, check = 0) {
+	parfor (g in 1:num_groups, check = 0) {
 	
 		group_ind = ppred (G, g, "==");
 		if (sum (group_ind) != 0) { # group g is present in the stratum s		
@@ -467,6 +473,7 @@ if (num_groups > 1 & test_type != "none") {
 	}
 }
 
+M = replace (target = M, pattern = "Infinity", replacement = "NaN");
 write (M, fileM, fmtO);
 write (KM, fileO, fmtO);
 if (num_groups > 1 & test_type != "none") {

@@ -1,0 +1,478 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#  
+# THIS SCRIPT FITS A COX PROPORTIONAL HAZARD REGRESSION MODEL.
+# The Breslow method is used for handling ties and the regression parameters 
+# are computed using trust region newton method with conjugate gradient 
+# 
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X       String   ---          Location to read the input matrix X containing the survival data with the following schema:
+# 								 - X[,1]: timestamps 
+#								 - X[,2]: whether an event occurred (1) or data is censored (0)
+#								 - X[,3:]: feature vectors 	
+# P   	  String   ---	        Location to read the matrix P containing the start and end indices of the factors (categorical variables) 
+#								in the input matrix X
+#								 - P[,1]: start indices
+#								 - P[,2]: end indices	
+#								Alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from X; 
+#								in this case the start and end indices corresponding to the baseline level need to be the same  	
+# O       String   ---          Location to store results of Cox regression analysis including estimated regression parameters (the betas), 
+#						        their standard errors and confidence intervals and p-values 
+# B  	  String   ---			Location to store the coefficients (the betas) of the fitted Cox model
+# S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including;
+#								by default is standard output 
+#								log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare 
+# T       String   " "          Location to store the results of Likelihood ratio test, Wald test, and Score (log-rank) test of the fitted model;
+#								by default is standard output 
+# COV	  String   ---			Location to store the variance-covariance matrix of the betas
+# RT      String   ---			Location to store matrix RT containing the order preserving recoded timestamps from X 
+# XO      String   ---			Location to store sorted input matrix by the timestamps 
+# alpha   Double   0.05         Parameter to compute a 100*(1-alpha)% confidence interval for the betas  
+# tol     Double   0.000001     Tolerance ("epsilon")
+# moi     Int      100     		Max. number of outer (Newton) iterations
+# mii     Int      0      		Max. number of inner (conjugate gradient) iterations, 0 = no max   
+# fmt     String   "text"       Matrix output format, usually "text" or "csv" (for matrices only)
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# 1- A D x 7 matrix O, where D denotes the number of covariates, with the following schema:
+#	O[,1]: betas	
+#	O[,2]: exp(betas)
+#	O[,3]: standard error of betas
+#	O[,4]: Z 
+#	O[,5]: p-value
+#	O[,6]: lower 100*(1-alpha)% confidence interval of betas
+#	O[,7]: upper 100*(1-alpha)% confidence interval of betas
+#
+# Two log files containing a summary of some statistics of the fitted model in CSV format:
+# 1- File S with the following format 
+#   - line 1: log-likelihood 
+#	- line 2: AIC
+#	- line 3: Rsquare (Cox & Snell)
+#	- line 4: max possible Rsquare
+# 2- File T with the following format
+#	- line 1: Likelihood ratio test statistic, degree of freedom, p-value
+#	- line 2: Wald test statistic, degree of freedom, p-value
+#	- line 3: Score (log-rank) test statistic, degree of freedom, p-value
+# 
+# Additionally, the following matrices are stored (needed for prediction)
+# 1- A column matrix RT that contains the order preserving recoded timestamps from X 
+# 2- Matrix XO which is matrix X sorted according to timestamps  
+# 3- Variance-covariance matrix of the betas COV
+# -------------------------------------------------------------------------------------------
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X P=INPUT_DIR/P O=OUTPUT_DIR/O B=OUTPUT_DIR/B 
+#									 S=OUTPUT_DIR/S T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT  
+#									 XO=OUTPUT_DIR/XO alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
+
+fileX = $X;
+fileP = $P;
+fileO = $O;
+fileB = $B;
+fileXO = $XO;
+fileCOV = $COV;
+
+# Default values of some parameters
+fileS = ifdef ($S, " ");         	 # $S=" " 
+fileT = ifdef ($T, " ");         	 # $T=" " 
+fmtO = ifdef ($fmt, "text");         # $fmt="text" 
+alpha = ifdef ($alpha, 0.05);        # $alpha=0.05
+lambda = ifdef ($lambda, 0.0);       # $lambda=0.0;
+tol = ifdef ($tol, 0.000001);   	 # $tol=0.000001;
+maxiter = ifdef ($moi, 100);    	 # $moi=100;
+maxinneriter = ifdef ($mii, 0);      # $mii=0;
+
+X_orig = read (fileX);
+P = read (fileP);
+
+
+######## CHECK FOR FACTORS AND REMOVE THE BASELINE OF EACH FACTOR FROM THE DATASET
+
+if (ncol (P) == 2) {
+	if (as.scalar (P[1,1]) != 0 & as.scalar (P[1,2]) != 0) {
+		print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
+		# remove the baseline columns from X_orig
+		col_ind = seq (1, ncol(X_orig));
+		col_sum = colSums (X_orig);
+		P = order (target = P, by = 1); # sort according to start index
+		parfor (i in 1:nrow (P), check = 0) {
+			start_ind = as.scalar (P[i,1]);
+			end_ind = as.scalar (P[i,2]);
+			baseline_ind = as.scalar (rowIndexMax (col_sum[1, start_ind:end_ind])) + start_ind - 1;
+			col_ind[baseline_ind,] = 0;
+		}
+		col_ind = removeEmpty (target = col_ind, margin = "rows");
+		# pull out the remaining cols from X_orig
+		X_orig = X_orig %*% table (col_ind, seq (1, nrow (col_ind)), ncol (X_orig), nrow (col_ind));
+	}
+} else { 
+	stop ("P has a wrong number of columns!");
+}
+
+######## RECODING TIMESTAMPS PRESERVING THE ORDER
+print ("RECODING TIMESTAMPS...");
+
+N = nrow (X_orig);
+X_orig = order (target = X_orig, by = 1);
+Idx = matrix (1, rows = N, cols = 1);
+num_timestamps = 1;
+if (N == 1) {
+	RT = matrix (1, rows = 1, cols = 1);
+} else {
+	Idx[2:N,1] = ppred (X_orig[1:(N - 1),1], X_orig[2:N,1], "!=");
+	num_timestamps = sum (Idx);
+	A = removeEmpty (target = diag (Idx), margin = "cols");
+	if (ncol (A) > 1) {
+		A[,1:(ncol (A) - 1)] = A[,1:(ncol (A) - 1)] - A[,2:ncol (A)];
+		B = cumsum (A);
+		RT = B %*% seq(1, ncol(B));
+	} else { # there is only one group
+		RT = matrix (1, rows = N, cols = 1);
+	}
+}
+E = X_orig[,2];
+X = X_orig[,3:ncol(X_orig)];
+D = ncol (X);
+
+
+print ("BEGIN COX PROPORTIONAL HAZARD SCRIPT");
+
+######## PARAMETERS OF THE TRUST REGION NEWTON METHOD WITH CONJUGATE GRADIENT
+#  b: the regression betas
+#  o: loss function value
+#  g: loss function gradient
+#  H: loss function Hessian
+# sb: shift of b in one iteration
+# so: shift of o in one iteration
+#  r: CG residual = H %*% sb + g
+#  d: CG direction vector
+# Hd: = H %*% d
+#  c: scalar coefficient in CG
+# delta: trust region size
+# lambda: regularization constant
+# tol: tolerance value
+#  i: outer (Newton) iteration count
+#  j: inner (CG) iteration count
+
+# computing initial coefficients b (all initialized to 0)
+zeros_D = matrix (0, rows = D, cols = 1);
+b = zeros_D; 
+d_r = aggregate (target = E, groups = RT, fn = "sum"); 
+e_r = aggregate (target = RT, groups = RT, fn = "count");
+
+# computing initial loss function value o
+if (TRUE) {
+}
+num_distinct = nrow (d_r); # no. of distinct timestamps
+I_rev = table (seq (1, num_distinct, 1), seq (num_distinct, 1, -1)); 
+I_rev_all = table (seq (1, N, 1), seq (N, 1, -1));
+e_r_rev_agg = cumsum (I_rev %*% e_r);
+d_r_rev = I_rev %*% d_r;
+o = sum (d_r_rev * log (e_r_rev_agg));
+o_init = o;
+
+# computing initial gradient g 
+# part 1 g0_1
+g0_1 = - t (colSums (X * E)); # g_1
+# part 2 g0_2
+X_rev_agg = cumsum (I_rev_all %*% X);
+select = t (colSums (table (seq (1, num_distinct), e_r_rev_agg))); 
+# replace 0s by NaNs
+X_rev_agg = replace (target = X_rev_agg, pattern = 0, replacement = "NaN");
+X_agg = removeEmpty (target = X_rev_agg * select, margin = "rows");
+# replace back NaNs by 0s
+X_agg = replace (target = X_agg, pattern = "NaN", replacement = 0);
+g0_2 = t (colSums ((X_agg * d_r_rev)/ e_r_rev_agg));
+#
+g0 = g0_1 + g0_2;
+g = g0; 
+
+# initialization for trust region Newton method
+delta = 0.5 * sqrt (D) / max (sqrt (rowSums (X ^ 2))); 
+initial_g2 = sum (g ^ 2);
+exit_g2 = initial_g2 * tol ^ 2;
+maxiter = 100; 
+maxinneriter = min (D, 100); 
+i = 0;
+while (sum (g ^ 2) > exit_g2 & i < maxiter) {  
+	i = i + 1;
+    sb = zeros_D;  
+    r = g;  
+    r2 = sum (r ^ 2);  
+    exit_r2 = 0.01 * r2;
+    d = - r;  
+    trust_bound_reached = FALSE;  
+    j = 0;
+    while (r2 > exit_r2 & (! trust_bound_reached) & j < maxinneriter) { 
+        j = j + 1;
+		# computing Hessian times d (Hd)
+		# part 1 Hd_1
+		exp_Xb = exp (X %*% b);
+		exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
+		Xd = X %*% d;
+		X_Xd_exp_Xb = X * (Xd) * exp_Xb;
+		X_Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_Xd_exp_Xb);
+		# replace 0s by NaNs
+		X_Xd_exp_Xb_rev_agg = replace (target = X_Xd_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+		X_Xd_exp_Xb_rev_agg = removeEmpty (target = X_Xd_exp_Xb_rev_agg * select, margin = "rows");
+		# replace back NaNs by 0s
+		X_Xd_exp_Xb_rev_agg = replace (target = X_Xd_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		
+		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
+		Hd_1 = X_Xd_exp_Xb_rev_agg / D_r_rev;
+		# part 2 Hd_2
+		X_exp_Xb = X * exp_Xb;
+		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+		# replace 0s by NaNs
+		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+		X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows");
+		# replace back NaNs by 0s
+		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		
+		Xd_exp_Xb = Xd * exp_Xb;
+		Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xd_exp_Xb);
+		# replace 0s by NaNs
+		Xd_exp_Xb_rev_agg = replace (target = Xd_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+		Xd_exp_Xb_rev_agg = removeEmpty (target = Xd_exp_Xb_rev_agg * select, margin = "rows");	
+		# replace back NaNs by 0s
+		Xd_exp_Xb_rev_agg = replace (target = Xd_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		
+		Hd_2_num = X_exp_Xb_rev_agg * Xd_exp_Xb_rev_agg; # numerator
+		Hd_2 = Hd_2_num / (D_r_rev ^ 2);
+		
+		Hd = t (colSums ((Hd_1 - Hd_2) * d_r_rev));
+
+		c = r2 / sum (d * Hd);
+        [c, trust_bound_reached] = ensure_trust_bound (c, sum(d ^ 2), 2 * sum(sb * d), sum(sb ^ 2) - delta ^ 2);
+        sb = sb + c * d;  
+        r = r + c * Hd;  
+        r2_new = sum (r ^ 2);
+        d = - r + (r2_new / r2) * d;  
+        r2 = r2_new;
+    }
+
+    # computing loss change in 1 iteration (so)
+	# part 1 so_1
+	so_1 = - as.scalar (colSums (X * E) %*% (b + sb)); 
+	# part 2 so_2
+	exp_Xbsb = exp (X %*% (b + sb));
+	exp_Xbsb_agg = aggregate (target = exp_Xbsb, groups = RT, fn = "sum");
+	so_2 = sum (d_r_rev * log (cumsum (I_rev %*% exp_Xbsb_agg)));
+	#
+	so = so_1 + so_2;
+	so = so + 0.5 * lambda * sum ((b + sb) ^ 2) - o; 
+	
+	delta = update_trust_bound (delta, sqrt (sum (sb ^ 2)), so, sum (sb * g), 0.5 * sum (sb * (r + g)));
+    if (so < 0) {
+        b = b + sb;  
+        o = o + so;  
+		# compute new gradient g
+		exp_Xb = exp (X %*% b);
+		exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
+		X_exp_Xb = X * exp_Xb;
+		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+		# replace 0s by NaNs
+		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+		X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows"); # numerator	
+		# replace back NaNs by 0s
+		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		
+		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
+		g_2 = t (colSums ((X_exp_Xb_rev_agg / D_r_rev) * d_r_rev));
+		g = g0_1 + g_2 + (lambda * b);
+    }
+}
+
+print ("COMPUTING HESSIAN...");
+
+# compute Hessian
+H = matrix (0, rows = D, cols = D);
+parfor (i in 1:D, check = 0) {
+	Xi = X[,i];
+	# part 1 H_1
+	Xi_X_exp_Xb = X_exp_Xb * Xi;
+	Xi_X_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xi_X_exp_Xb);
+	# replace 0s by NaNs
+	Xi_X_exp_Xb_rev_agg = replace (target = Xi_X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+	Xi_X_exp_Xb_rev_agg = removeEmpty (target = Xi_X_exp_Xb_rev_agg * select, margin = "rows"); # numerator
+	# replace back NaNs by 0s
+	Xi_X_exp_Xb_rev_agg = replace (target = Xi_X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);	
+
+	H_1 = Xi_X_exp_Xb_rev_agg / D_r_rev;
+	# part 2 H_2
+	Xi_exp_Xb = exp_Xb * Xi;
+	Xi_exp_Xb_agg = aggregate (target = Xi_exp_Xb, groups = RT, fn = "sum"); 
+	X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+	# replace 0s by NaNs
+	X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
+	X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows");
+	# replace back NaNs by 0s
+	X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);	
+	
+	Xi_exp_Xb_agg_rev_agg = cumsum (I_rev %*% Xi_exp_Xb_agg);
+	H_2_num = X_exp_Xb_rev_agg * Xi_exp_Xb_agg_rev_agg; # numerator
+	H_2 = H_2_num / (D_r_rev ^ 2);
+	#
+	H[i,] = colSums ((H_1 - H_2) * d_r_rev);
+}
+
+# compute standard error for betas
+H_inv = inv (H);
+se_b = sqrt (diag (H_inv));
+
+# compute exp(b), Z, Pr[>|Z|]
+exp_b = exp (b);
+Z = b / se_b;
+P = matrix (0, rows = D, cols = 1);
+parfor (i in 1:D) {
+	P[i,1] = 2 - 2 * (cdf (target = abs (as.scalar (Z[i,1])), dist = "normal"));
+}
+
+# compute confidence intervals for b
+z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
+CI_l = b - se_b * z_alpha_2;
+CI_r = b - se_b + z_alpha_2;
+
+######## SOME STATISTICS AND TESTS
+S_str = "";
+# log-likelihood
+loglik = -o;
+S_str = append (S_str, "loglik " + loglik + " ");
+
+# AIC = -2 * loglik + 2 * D
+AIC = -2 * loglik + 2 * D;
+S_str = append (S_str, "AIC " + AIC + " ");
+
+T_str = "";
+# Wald test
+wald_t = as.scalar (t(b) %*% H %*% b);
+wald_p = 1 - cdf (target = wald_t, dist = "chisq", df = D);
+T_str = append (T_str, "Wald test = " + wald_t + " on " + D + " df, p = " + wald_p + " ");
+
+# Likelihood ratio test
+lratio_t = 2 * o_init - 2 * o;
+lratio_p = 1 - cdf (target = lratio_t, dist = "chisq", df = D);
+T_str = append (T_str, "Likelihood ratio test = " + lratio_t + " on " + D + " df, p = " + lratio_p + " ");
+
+print ("COMPUTING H(0)...");
+
+# Score (log-rank) test
+# compute H(0)
+H0 = matrix (0, rows = D, cols = D);
+parfor (i in 1:D, check = 0) {
+	Xi = X[,i];
+	# part 1 H0_1
+	Xi_X = X * Xi;
+	Xi_X_rev_agg = cumsum (I_rev_all %*% Xi_X);
+	# replace 0s by NaNs
+	Xi_X_rev_agg = replace (target = Xi_X_rev_agg, pattern = 0, replacement = "NaN");
+	Xi_X_rev_agg = removeEmpty (target = Xi_X_rev_agg * select, margin = "rows"); # numerator
+ 	# replace back NaNs by 0s
+	Xi_X_rev_agg = replace (target = Xi_X_rev_agg, pattern = "NaN", replacement = 0);
+	
+	H0_1 = Xi_X_rev_agg / e_r_rev_agg;
+	# part 2 H0_2
+	Xi_agg = aggregate (target = Xi, groups = RT, fn = "sum");
+	Xi_agg_rev_agg = cumsum (I_rev %*% Xi_agg);	
+	H0_2_num = X_agg * Xi_agg_rev_agg; # numerator
+	H0_2 = H0_2_num / (e_r_rev_agg ^ 2);
+	#
+	H0[i,] = colSums ((H0_1 - H0_2) * d_r_rev);
+}
+
+H0_inv = inv (H0);
+score_t = as.scalar (t (g0) %*% H0_inv %*% g0);
+score_p = 1 - cdf (target = score_t, dist = "chisq", df = D);
+T_str = append (T_str, "Score (logrank) test = " + score_t + " on " + D + " df, p = " + score_p + " ");
+
+# Rsquare (Cox & Snell)
+Rsquare = 1 - exp (-lratio_t / N);  
+Rsquare_max = 1 - exp (-2 * o_init / N);
+S_str = append (S_str, "Rsquare (Cox & Snell): " + Rsquare + " ");
+S_str = append (S_str, "max possible Rsquare: " + Rsquare_max);
+
+Y = matrix (0, rows = D, cols = 7);
+Y[,1] = b;
+Y[,2] = exp_b;
+Y[,3] = se_b;
+Y[,4] = Z;
+Y[,5] = P;
+Y[,6] = CI_l;
+Y[,7] = CI_r;
+
+write (Y, fileO, fmtO);
+if (fileS != " ") {
+	write (S_str, fileS);
+} else {
+	print (S_str);
+}
+if (fileT != " ") {
+	write (T_str, fileT);
+} else {
+	print (T_str);
+}
+# needed for prediction
+write (b, fileB, fmtO);
+write (RT, fileRT, fmtO);
+write (H_inv, fileCOV, fmtO);
+write (X_orig, fileXO, fmtO);
+
+
+####### UDFS FOR TRUST REGION NEWTON METHOD
+
+ensure_trust_bound =
+    function (double x, double a, double b, double c)
+    return (double x_new, boolean is_violated)
+{
+    if (a * x^2 + b * x + c > 0)
+    {
+        is_violated = TRUE;
+        rad = sqrt (b ^ 2 - 4 * a * c);
+        if (b >= 0) {
+            x_new = - (2 * c) / (b + rad);
+        } else {
+            x_new = - (b - rad) / (2 * a);
+        }
+    } else {
+        is_violated = FALSE;
+        x_new = x;
+    }
+}
+
+update_trust_bound =
+    function (double delta,
+              double sb_distance,
+              double so_exact,
+              double so_linear_approx,
+              double so_quadratic_approx)
+    return   (double delta)
+{
+    sigma1 = 0.25;
+    sigma2 = 0.5;
+    sigma3 = 4.0;
+
+    if (so_exact <= so_linear_approx) {
+       alpha = sigma3;
+    } else {
+       alpha = max (sigma1, - 0.5 * so_linear_approx / (so_exact - so_linear_approx));
+    }
+
+    rho = so_exact / so_quadratic_approx;
+    if (rho < 0.0001) {
+        delta = min (max (alpha, sigma1) * sb_distance, sigma2 * delta);
+    } else { if (rho < 0.25) {
+        delta = max (sigma1 * delta, min (alpha * sb_distance, sigma2 * delta));
+    } else { if (rho < 0.75) {
+        delta = max (sigma1 * delta, min (alpha * sb_distance, sigma3 * delta));
+    } else {
+        delta = max (delta, min (alpha * sb_distance, sigma3 * delta));
+    }}} 
+}

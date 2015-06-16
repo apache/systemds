@@ -1529,11 +1529,13 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private Hop simplifySumMatrixMult(Hop parent, Hop hi, int pos)
 	{
 		//sum(A%*%B) -> sum(t(colSums(A))*rowSums(B))
-		//if not product not applied since aggregate removed
+		//if not dot product, not applied since aggregate removed
+		//if sum not the only consumer, not applied to prevent redundancy 
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM  //sum
 			&& ((AggUnaryOp)hi).getDirection() == Direction.RowCol	         //full aggregate
 			&& hi.getInput().get(0) instanceof AggBinaryOp                   //A%*%B
-			&& (hi.getInput().get(0).getDim1()>1 || hi.getInput().get(0).getDim2()>1) ) //not dot product
+			&& (hi.getInput().get(0).getDim1()>1 || hi.getInput().get(0).getDim2()>1) //not dot product
+			&& hi.getInput().get(0).getParent().size()==1 )     //not multiple consumers of matrix mult
 		{
 			Hop hi2 = hi.getInput().get(0);
 			Hop left = hi2.getInput().get(0);

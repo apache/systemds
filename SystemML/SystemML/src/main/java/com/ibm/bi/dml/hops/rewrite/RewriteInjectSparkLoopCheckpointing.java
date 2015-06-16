@@ -83,7 +83,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 				{
 					DataIdentifier dat = read.getVariable(var);
 					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.TRANSIENTREAD, 
-							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), dat.getRowsInBlock(), dat.getColumnsInBlock());
+							            dat.getFilename(), dat.getDim1(), dat.getDim2(), dat.getNnz(), blocksize, blocksize);
 					tread.setRequiresCheckpoint( true );
 					DataOp twrite = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, tread, DataOpTypes.TRANSIENTWRITE, null);
 					HopRewriteUtils.setOutputParameters(twrite, dat.getDim1(), dat.getDim2(), blocksize, blocksize, dat.getNnz());					

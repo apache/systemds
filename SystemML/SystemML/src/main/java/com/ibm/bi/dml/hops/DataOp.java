@@ -69,6 +69,8 @@ public class DataOp extends Hop
 		_fileName = fname;
 		setDim1(dim1);
 		setDim2(dim2);
+		setRowsInBlock(rowsPerBlock);
+		setColsInBlock(colsPerBlock);
 		setNnz(nnz);
 		
 		if( dop == DataOpTypes.TRANSIENTREAD )

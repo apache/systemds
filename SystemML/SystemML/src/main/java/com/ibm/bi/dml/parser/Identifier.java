@@ -219,7 +219,7 @@ public abstract class Identifier extends Expression
 				
 				}
 				
-				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars);
+				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars, conditional);
 				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				
 			}

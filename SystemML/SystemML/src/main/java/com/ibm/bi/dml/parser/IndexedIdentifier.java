@@ -62,9 +62,17 @@ public class IndexedIdentifier extends DataIdentifier
    		_origDim2 = -1L;
 	}
 	
-		
-	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
-		
+	/**
+	 * 	
+	 * @param ids
+	 * @param currConstVars
+	 * @param conditional
+	 * @return
+	 * @throws LanguageException
+	 */
+	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+		throws LanguageException 
+	{	
 		// stores the updated row / col dimension info
 		long updatedRowDim = -1, updatedColDim = -1;
 		
@@ -91,20 +99,17 @@ public class IndexedIdentifier extends DataIdentifier
 				rowLB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_rowLowerBound).getValue());
 				
 			if (rowLB_1_1 < 1){
-				LOG.error(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
+				raiseValidateError("lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1", conditional);
 			}
 			if ((this.getOrigDim1() > 0)  && (rowLB_1_1 > this.getOrigDim1())) {
-				LOG.error(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
+				raiseValidateError("lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1(), conditional);
 			}
 			// valid lower row bound value
 			isConst_rowLowerBound = true;
 		}
 		
 		else if (_rowLowerBound instanceof ConstIdentifier) {
-			LOG.error(this.printErrorLocation() + " assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString());
-			throw new LanguageException(this.printErrorLocation() + " assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString());
+			raiseValidateError("assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString(), conditional);
 		}
 	
 		// perform constant propogation for row lower bound
@@ -154,10 +159,7 @@ public class IndexedIdentifier extends DataIdentifier
 						isConst_rowLowerBound = true;
 					}
 				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))				
-			} // end if (currConstVars.containsKey(identifierName))
-			
-			// TODO: DRB: handle list-based indexing case
-					
+			} // end if (currConstVars.containsKey(identifierName))		
 		} // end constant propogation for row LB
 		
 		// check 1 < indexed row lower-bound < rows in IndexedIdentifier 
@@ -186,27 +188,23 @@ public class IndexedIdentifier extends DataIdentifier
 				rowUB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_rowUpperBound).getValue());
 				
 			if (rowUB_1_1 < 1){
-				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
-				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
+				raiseValidateError("upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1", conditional);
 			}
 			if ((this.getOrigDim1() > 0)  && (rowUB_1_1 > this.getOrigDim1())) {
-				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
-				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
+				raiseValidateError("upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1(), conditional);
 			}
 			if (isConst_rowLowerBound && rowUB_1_1 < rowLB_1){
-				LOG.error(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " greater than lower-bound row index " + rowLB_1);
+				raiseValidateError("upper-bound row index " + rowUB_1_1 + " greater than lower-bound row index " + rowLB_1, conditional);
 			}
 			isConst_rowUpperBound = true;
 		}	
 		else if (_rowUpperBound instanceof ConstIdentifier){
-			LOG.error(this.printErrorLocation() + " assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString());
-			throw new LanguageException(this.printErrorLocation() + " assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString());
+			raiseValidateError("assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString(), conditional);
 		}
 		
 		// perform constant propogation for upper row index
 		else if (_rowUpperBound != null && _rowUpperBound instanceof DataIdentifier && !(_rowUpperBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_rowUpperBound).getName();
-			
 			
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
@@ -257,16 +255,7 @@ public class IndexedIdentifier extends DataIdentifier
 				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
 			} // end if (currConstVars.containsKey(identifierName)){
 			
-			// TODO: DRB: handle list-based indexing case
-			
-			//else if(){
-			//	
-			//}
-			//else {
-			//	
-			//}
-			
-		} // end constant propogation for row UB	
+		} // end constant propagation for row UB	
 		
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,20 +272,17 @@ public class IndexedIdentifier extends DataIdentifier
 				colLB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_colLowerBound).getValue());
 				
 			if (colLB_1_1 < 1){
-				LOG.error(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
-				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
+				raiseValidateError("lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1", conditional);
 			}
 			if ((this.getOrigDim2() > 0)  && (colLB_1_1 > this.getOrigDim2())){ 
-				LOG.error(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
-				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
+				raiseValidateError("lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2(), conditional);
 			}
 			// valid lower row bound value
 			isConst_colLowerBound = true;
 		}
 			
 		else if (_colLowerBound instanceof ConstIdentifier) {
-			LOG.error(this.printErrorLocation() + " assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString());
-			throw new LanguageException(this.printErrorLocation() + " assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString());
+			raiseValidateError("assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString(), conditional);
 		}
 		
 		// perform constant propogation for column lower bound
@@ -375,21 +361,19 @@ public class IndexedIdentifier extends DataIdentifier
 				colUB_1_1 = UtilFunctions.toLong(((DoubleIdentifier)_colUpperBound).getValue());
 				
 			if (colUB_1_1 < 1){
-				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
-				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
+				raiseValidateError("upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1", conditional);
 			}
 			if ((this.getOrigDim2() > 0)  && (colUB_1_1 > this.getOrigDim2())) {
-				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
-				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
+				raiseValidateError("upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2(), conditional);
 			}
-			if (isConst_rowLowerBound && colUB_1_1 < colLB_1)
-				LOG.error(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " greater than lower-bound row index " + colLB_1);
+			if (isConst_rowLowerBound && colUB_1_1 < colLB_1) {
+				raiseValidateError("upper-bound column index " + colUB_1_1 + " greater than lower-bound row index " + colLB_1, conditional);
+			}
 		    	
 			isConst_colUpperBound = true;
 		}	
 		else if (_colUpperBound instanceof ConstIdentifier){	
-			LOG.error(this.printErrorLocation() + " assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString());
-			throw new LanguageException(this.printErrorLocation() + " assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString());
+			raiseValidateError("assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString(), conditional);
 		}
 		
 		// perform constant propogation for upper row index
@@ -453,7 +437,7 @@ public class IndexedIdentifier extends DataIdentifier
 					}
 				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
 			}	
-		} // end constant propogation for column UB	
+		} // end constant propagation for column UB	
 		
 		///////////////////////////////////////////////////////////////////////
 		// STEP 2: update row dimensions

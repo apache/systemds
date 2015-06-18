@@ -113,6 +113,14 @@ print ("Reading X and Y...");
 X_orig = read (fileX);
 Y = read (fileY);
 
+Y_min = min (Y);
+Y_max = max (Y);
+if (Y_min == 1 & Y_max == 2) {
+	Y = Y * ppred (Y, 2, "!=");
+} else if (Y_min == -1 & Y_max == 1) {
+	Y = Y + ppred (Y, -1, "==");
+} 
+
 num_records = nrow (X_orig);
 num_features = ncol (X_orig);
 
@@ -214,8 +222,7 @@ if (dir == "forward") {
 	[AIC] = glm (X_global, Y, intercept_status, num_features, columns_fixed_ordered, fileB);
   
 } else {
-	print ("Currently only forward direction is implemented!");
-	stop("");
+	stop ("Currently only forward direction is implemented!");
 }
 
 
@@ -465,8 +472,8 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
             #---------------------------- last part
 
 			if (termination_code != 1) {
-				print ("One of the runs of GLM did not converged in " + i_IRLS + " steps! Increase moi and try again!");
-				stop ("");
+				print ("One of the runs of GLM did not converged in " + i_IRLS + " steps!");
+				# stop ("");
 			}
                       
             ##### COMPUTE AIC ##### 
@@ -477,8 +484,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 					AIC = AIC + 2 * num_features;	
 				}
 			} else {
-				print ("Currently only the binomial distribution family is supported!");
-				stop ("");
+				stop ("Currently only the binomial distribution family is supported!");
 			}
 					           
             if (fileB != " ") {
@@ -498,9 +504,8 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
                 }
                 
                 if (intercept_status == 0 & num_features == 1) {
-					p = ppred (X, 1, "==");
-					ones = sum(p);
-					if (ones == num_records) {
+					p = sum (ppred (X, 1, "=="));
+					if (p == num_records) {
 						beta_out = beta_out[1,];
 					}					
                 } 
@@ -538,8 +543,7 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
                         
                 #####  END OF THE MAIN PART  #####
                         
-                str = "";
-                str = append (str, "BETA_MIN," + min_beta);
+                str = "BETA_MIN," + min_beta;
                 str = append (str, "BETA_MIN_INDEX," + i_min_beta);
                 str = append (str, "BETA_MAX," + max_beta);
                 str = append (str, "BETA_MAX_INDEX," + i_max_beta);
@@ -558,9 +562,18 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 			
 				# Prepare the output matrix
 				print ("Writing the output matrix...");
-                if (intercept_status == 0 & num_features == 1) {
-					write (beta_out, fileB, format=fmt);
-					stop ("");
+                if (intercept_status == 0 & num_features == 1) { 
+					if (p == num_records) {
+						beta_out_tmp = matrix (0, rows = num_features_orig + 1, cols = 1); 
+						beta_out_tmp[num_features_orig + 1,] = beta_out;
+						beta_out = beta_out_tmp;
+						write (beta_out, fileB, format=fmt);
+						stop ("");
+					} else if (sum (X) == 0){
+						beta_out = matrix (0, rows = num_features_orig, cols = 1);
+						write (beta_out, fileB, format=fmt);
+						stop ("");
+					}
 				}
 
 				no_selected = ncol (Selected);

@@ -27,6 +27,8 @@ import org.apache.hadoop.io.DataInputBuffer;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
@@ -34,11 +36,11 @@ import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
+import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -2711,10 +2713,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 */
 	private static SparsityEstimate estimateSparsityOnBinary(MatrixBlock m1, MatrixBlock m2, BinaryOperator op)
 	{
-		SparsityEstimate est=new SparsityEstimate();
+		SparsityEstimate est = new SparsityEstimate();
 		
-		//if result is a column vector, use dense format, otherwise use the normal process to decide 
-		if(!op.sparseSafe ) {
+		//estimate dense output for all sparse-unsafe operations, except DIV (because it commonly behaves like
+		//sparse-safe but is not due to 0/0->NaN, this is consistent with the current hop sparsity estimate)
+		if( !op.sparseSafe && !(op.fn instanceof Divide) ) {
 			est.sparse = false;
 			return est;
 		}
@@ -2739,11 +2742,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				nz2 = nz2 * n;
 			else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
 				nz2 = nz2 * m;
-			
-			if(op.fn instanceof And || op.fn instanceof Multiply)
-				estnnz = Math.min(nz1, nz2); //worstcase wrt overlap
-			else
-				estnnz = nz1+nz2; //worstcase wrt operation
+		
+			//compute output sparsity consistent w/ the hop compiler
+			OpOp2 bop = op.getBinaryOperatorOpOp2();
+			double sp1 = OptimizerUtils.getSparsity(m, n, nz1);
+			double sp2 = OptimizerUtils.getSparsity(m, n, nz2);
+			double spout = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, bop, true);
+			estnnz = UtilFunctions.toLong(spout * m * n);
 		}
 		
 		est.sparse = evalSparseFormatInMemory(m, n, estnnz);

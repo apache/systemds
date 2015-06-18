@@ -2717,6 +2717,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		//estimate dense output for all sparse-unsafe operations, except DIV (because it commonly behaves like
 		//sparse-safe but is not due to 0/0->NaN, this is consistent with the current hop sparsity estimate)
+		//see also, special sparse-safe case for DIV in LibMatrixBincell 
 		if( !op.sparseSafe && !(op.fn instanceof Divide) ) {
 			est.sparse = false;
 			return est;

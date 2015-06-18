@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.util.Arrays;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
@@ -86,7 +87,7 @@ public class LibMatrixBincell
 	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException
 	{
-		if(op.sparseSafe)
+		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinary(m1, m2, ret, op);
 		else
 			unsafeBinary(m1, m2, ret, op);
@@ -103,7 +104,7 @@ public class LibMatrixBincell
 	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException
 	{
-		if(op.sparseSafe)
+		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinaryInPlace(m1ret, m2, op);
 		else
 			unsafeBinaryInPlace(m1ret, m2, op);
@@ -159,6 +160,18 @@ public class LibMatrixBincell
 				|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) //MVc
 				|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
 				|| (clen1 == 1 && rlen2 == 1 ) );              //VV
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @param rhs
+	 * @return
+	 */
+	public static boolean isSparseSafeDivide(BinaryOperator op, MatrixBlock rhs)
+	{
+		//if rhs is fully dense, there cannot be a /0 and hence DIV becomes sparse safe
+		return (op.fn instanceof Divide && rhs.getNonZeros()==(long)rhs.getNumRows()*rhs.getNumColumns());
 	}
 	
 	//////////////////////////////////////////////////////

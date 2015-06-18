@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+nr = $1;
+xr = $2;
+NaNval = 0/0;
+
+R = matrix(0, rows=nr, cols=nr); 
+R[1:xr,] = matrix(NaNval, rows=xr, cols=nr);
+
+parfor( i in 1:nr )
+{
+   R[i,i] = i^2 + 7;           
+}   
+
+write(R, $3);       

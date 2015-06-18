@@ -113,8 +113,8 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{	
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
-						if( value != compare[i][j] ||                 //for new values only (div)
-							Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
+						if(   (value != compare[i][j] && !Double.isNaN(value) )     //for new values only (div)
+							|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
 						{
 					    	out.quickSetValue( i, j, value );	
 						}
@@ -130,8 +130,8 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
-					    if( value != compare[i][j] ||                //for new values only (div)
-					    	Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
+					    if(    (value != compare[i][j] && !Double.isNaN(value) )    //for new values only (div)
+					    	|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
 					    {
 					    	out.quickSetValue( i, j, value );	
 					    }

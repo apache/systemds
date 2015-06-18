@@ -117,6 +117,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "sqrt" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "exp"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "log"  , MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "log_nz"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "slog" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "pow"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
@@ -264,7 +265,7 @@ public class MRInstructionParser extends InstructionParser
 		case Aggregate:
 			return (MRInstruction) AggregateInstruction.parseInstruction(str);
 			
-		case ArithmeticBinary:
+		case ArithmeticBinary: {
 			String opcode = InstructionUtils.getOpCode(str);
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			// extract datatypes of first and second input operands
@@ -279,6 +280,7 @@ public class MRInstructionParser extends InstructionParser
 				else
 					return (MRInstruction) BinaryInstruction.parseInstruction(str);
 			}
+		}
 		case AggregateBinary:
 			return (MRInstruction) AggregateBinaryInstruction.parseInstruction(str);
 			
@@ -309,9 +311,14 @@ public class MRInstructionParser extends InstructionParser
 		case Replicate:
 			return (MRInstruction) ReplicateInstruction.parseInstruction(str);
 		
-		case Unary:
-			return (MRInstruction) UnaryInstruction.parseInstruction(str);
-			
+		case Unary: {
+			String opcode = InstructionUtils.getOpCode(str);
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			if( parts.length==4 && (opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz")) )
+				return (MRInstruction) ScalarInstruction.parseInstruction(str);
+			else //default case
+				return (MRInstruction) UnaryInstruction.parseInstruction(str);
+		}
 		case MMTSJ:
 			return (MRInstruction) MMTSJMRInstruction.parseInstruction(str);
 		

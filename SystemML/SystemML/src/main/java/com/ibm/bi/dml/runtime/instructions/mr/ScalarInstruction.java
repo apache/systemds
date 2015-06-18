@@ -154,6 +154,11 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 				return new ScalarInstruction(new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(NotEquals.getNotEqualsFnObject(), cst), in, out, str);
 		}
+		else if ( opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(Builtin.getBuiltinFnObject(opcode), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject(opcode), cst), in, out, str);
+		}
 		
 		
 		return null;

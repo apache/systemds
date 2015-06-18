@@ -155,7 +155,12 @@ if (n_group_cols > 0) {
 	Idx = matrix (1, rows = num_records, cols = 1);
 	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),3:(2 + n_group_cols)], X[2:num_records,3:(2 + n_group_cols)], "!="));
 	num_groups = sum (Idx);
-	G_cols = removeEmpty (target = XG * Idx, margin = "rows"); 
+	
+	XG = replace (target = XG, pattern = 0, replacement = "Infinity");
+	XG = XG * Idx;
+	XG = replace (target = XG, pattern = "NaN", replacement = 0);	
+	G_cols = removeEmpty (target = XG, margin = "rows"); 
+	G_cols = replace (target = G_cols, pattern = "Infinity", replacement = 0);	
 
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {

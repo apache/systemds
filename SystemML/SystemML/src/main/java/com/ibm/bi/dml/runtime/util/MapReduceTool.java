@@ -528,6 +528,9 @@ public class MapReduceTool
 		  case STRING:
 			line += "\"string\"\n";
 			break;
+		  case UNKNOWN:
+				line += "\"unknown\"\n";
+				break;		
           };
         
           line += 
@@ -594,6 +597,9 @@ public class MapReduceTool
         	case STRING:
         		line += "\"string\"\n";
         		break;
+        	case UNKNOWN:
+        		line += "\"unknown\"\n";
+        		break;	
           };
           
           line += "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": \"text\"\n" + 

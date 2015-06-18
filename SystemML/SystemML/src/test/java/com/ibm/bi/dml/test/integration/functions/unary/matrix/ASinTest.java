@@ -43,7 +43,7 @@ public class ASinTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] asinVector = new double[rows][1];
@@ -77,7 +77,7 @@ public class ASinTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 0, 1, -1);
 		double[][] asinVector = new double[rows][1];
@@ -111,7 +111,7 @@ public class ASinTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 1, -1);
 		double[][] asinVector = new double[rows][1];

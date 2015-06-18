@@ -20,15 +20,16 @@ public class AbsTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/matrix/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("AbsTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("AbsTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("AbsTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "AbsTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("NegativeTest",
+				new TestConfiguration(TEST_DIR, "AbsTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("RandomTest",
+				new TestConfiguration(TEST_DIR, "AbsTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test
@@ -40,7 +41,7 @@ public class AbsTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] absVector = new double[rows][1];
@@ -74,7 +75,7 @@ public class AbsTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 0, 1, -1);
 		double[][] absVector = new double[rows][1];
@@ -108,7 +109,7 @@ public class AbsTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 1, -1);
 		double[][] absVector = new double[rows][1];

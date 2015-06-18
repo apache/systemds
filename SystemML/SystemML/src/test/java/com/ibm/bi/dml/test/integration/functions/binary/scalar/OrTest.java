@@ -20,16 +20,18 @@ public class OrTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/binary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("OrTest", new TestConfiguration("OrTest",
+		addTestConfiguration("OrTest", new TestConfiguration(TEST_DIR, "OrTest",
 				new String[] { "left_1", "left_2", "left_3", "left_4", "right_1", "right_2", "right_3", "right_4" }));
 	}
 	
 	@Test
 	public void testOr() {
-		loadTestConfiguration("OrTest");
+		TestConfiguration config = getTestConfiguration("OrTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("left_1", 2);

@@ -28,13 +28,12 @@ public class NotTest extends AutomatedTestBase
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	private static final String TEST_DIR = "functions/unary/scalar/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
-		
 		// positive tests
-		availableTestConfigurations.put("NotTest", new TestConfiguration("NotTest",
+		addTestConfiguration("NotTest", new TestConfiguration(TEST_DIR, "NotTest",
 				new String[] { "true_true", "true_false", "false_false", "false_true" }));
 		
 		// negative tests
@@ -42,7 +41,8 @@ public class NotTest extends AutomatedTestBase
 	
 	@Test
 	public void testNot() {
-		loadTestConfiguration("NotTest");
+		TestConfiguration config = getTestConfiguration("NotTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("true_true", 1);

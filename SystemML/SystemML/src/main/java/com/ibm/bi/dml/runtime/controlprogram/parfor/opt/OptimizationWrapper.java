@@ -449,12 +449,6 @@ public class OptimizationWrapper
 		
 		switch( otype )
 		{
-			case FULL_DP:
-				opt = new OptimizerDPEnum();
-				break;
-			case GREEDY:
-				opt = new OptimizerGreedyEnum();
-				break;
 			case HEURISTIC:
 				opt = new OptimizerHeuristic();
 				break;
@@ -464,6 +458,15 @@ public class OptimizationWrapper
 			case CONSTRAINED:
 				opt = new OptimizerConstrained();
 				break;	
+		
+			//MB: removed unused and experimental prototypes
+			//case FULL_DP:
+			//	opt = new OptimizerDPEnum();
+			//	break;
+			//case GREEDY:
+			//	opt = new OptimizerGreedyEnum();
+			//	break;
+			
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}

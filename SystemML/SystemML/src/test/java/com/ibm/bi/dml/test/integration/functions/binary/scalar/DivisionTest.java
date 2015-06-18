@@ -19,22 +19,23 @@ public class DivisionTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/binary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("ConstConstTest", new TestConfiguration("DivisionTest", new String[] {
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("VarConstTest", new TestConfiguration("DivisionTest", new String[] { "int_int",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("ConstVarTest", new TestConfiguration("DivisionTest", new String[] { "int_int",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("VarVarTest", new TestConfiguration("DivisionTest", new String[] { "int_int",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		availableTestConfigurations.put("PositiveDivisionByZeroTest", new TestConfiguration("DivisionSingleTest",
+		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
-		availableTestConfigurations.put("NegativeDivisionByZeroTest", new TestConfiguration("DivisionSingleTest",
+		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
-		availableTestConfigurations.put("ZeroDivisionByZeroTest", new TestConfiguration("DivisionSingleTest",
+		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
 	}
 
@@ -63,7 +64,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 / intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 / intDoubleValue2;
@@ -106,7 +107,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 / intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 / intDoubleValue2;
@@ -149,7 +150,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 / intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 / intDoubleValue2;
@@ -196,7 +197,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 / intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 / intDoubleValue2;
@@ -224,7 +225,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("PositiveDivisionByZeroTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.POSITIVE_INFINITY);
@@ -244,7 +245,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("PositiveDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.POSITIVE_INFINITY);
@@ -264,7 +265,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("NegativeDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NEGATIVE_INFINITY);
@@ -284,7 +285,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("NegativeDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NEGATIVE_INFINITY);
@@ -304,7 +305,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("ZeroDivisionByZeroTest");
+		loadTestConfiguration(config);
 
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);
@@ -324,7 +325,7 @@ public class DivisionTest extends AutomatedTestBase
 		config.addVariable("op1", op1);
 		config.addVariable("op2", op2);
 
-		loadTestConfiguration("ZeroDivisionByZeroTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("computed", Double.NaN);

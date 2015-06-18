@@ -20,16 +20,18 @@ public class GreaterThanOrEqualTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/binary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("GreaterThanOrEqualTest", new TestConfiguration("GreaterThanOrEqualTest",
+		addTestConfiguration("GreaterThanOrEqualTest", new TestConfiguration(TEST_DIR, "GreaterThanOrEqualTest",
 				new String[] { "left_1", "left_2", "left_3", "right_1", "right_2", "right_3" }));
 	}
 	
 	@Test
 	public void testGreaterThanOrEqual() {
-		loadTestConfiguration("GreaterThanOrEqualTest");
+		TestConfiguration config = getTestConfiguration("GreaterThanOrEqualTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		writeExpectedHelperMatrix("left_1", 1);

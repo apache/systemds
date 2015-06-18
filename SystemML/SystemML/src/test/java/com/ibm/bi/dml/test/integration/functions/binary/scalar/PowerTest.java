@@ -20,16 +20,17 @@ public class PowerTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/binary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("ConstConstTest", new TestConfiguration("PowerTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("VarConstTest", new TestConfiguration("PowerTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("ConstVarTest", new TestConfiguration("PowerTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		availableTestConfigurations.put("VarVarTest", new TestConfiguration("PowerTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 	}
 	
@@ -58,7 +59,7 @@ public class PowerTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 		
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = Math.pow(intIntValue1, intIntValue2);
 		double computedIntDoubleValue = Math.pow(intDoubleValue1, intDoubleValue2);
@@ -101,7 +102,7 @@ public class PowerTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 		
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = Math.pow(intIntValue1, intIntValue2);
 		double computedIntDoubleValue = Math.pow(intDoubleValue1, intDoubleValue2);
@@ -144,7 +145,7 @@ public class PowerTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 		
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = Math.pow(intIntValue1, intIntValue2);
 		double computedIntDoubleValue = Math.pow(intDoubleValue1, intDoubleValue2);
@@ -191,7 +192,7 @@ public class PowerTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 		
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntIntValue = Math.pow(intIntValue1, intIntValue2);
 		double computedIntDoubleValue = Math.pow(intDoubleValue1, intDoubleValue2);

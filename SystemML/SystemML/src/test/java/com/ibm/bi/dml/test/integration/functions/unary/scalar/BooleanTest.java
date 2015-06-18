@@ -20,12 +20,14 @@ public class BooleanTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 		
 		// positive tests
-		availableTestConfigurations.put("WhileTest", new TestConfiguration("BooleanWhileTest",
+		addTestConfiguration("WhileTest", new TestConfiguration(TEST_DIR, "BooleanWhileTest",
 				new String[] { "true", "false" }));
 		
 		// negative tests
@@ -33,7 +35,8 @@ public class BooleanTest extends AutomatedTestBase
 	
 	@Test
 	public void testWhile() {
-		loadTestConfiguration("WhileTest");
+		TestConfiguration config = getTestConfiguration("WhileTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		

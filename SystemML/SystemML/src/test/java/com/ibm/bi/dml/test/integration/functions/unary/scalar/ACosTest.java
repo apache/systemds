@@ -33,18 +33,20 @@ public class ACosTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 		
 		// positive tests
-		availableTestConfigurations.put("PositiveTest", new TestConfiguration("ACosTest",
+		addTestConfiguration("PositiveTest", new TestConfiguration(TEST_DIR, "ACosTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("NegativeTest", new TestConfiguration("ACosTest",
+		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_DIR, "ACosTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("ZeroTest", new TestConfiguration("ACosTest",
+		addTestConfiguration("ZeroTest", new TestConfiguration(TEST_DIR, "ACosTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("RandomTest", new TestConfiguration("ACosTest",
+		addTestConfiguration("RandomTest", new TestConfiguration(TEST_DIR, "ACosTest",
 				new String[] { "int", "double" }));
 		
 		// negative tests

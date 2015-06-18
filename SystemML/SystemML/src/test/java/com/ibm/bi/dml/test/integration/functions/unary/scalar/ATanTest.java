@@ -32,17 +32,18 @@ public class ATanTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 		
 		// positive tests
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("ATanTest", new String[] { "int", "double" }));
-		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("ATanTest", new String[] { "int", "double" }));
-		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("ATanTest", new String[] { "int", "double" }));
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "int", "double" }));
+		addTestConfiguration("NegativeTest",
+				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "int", "double" }));
+		addTestConfiguration("RandomTest",
+				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "int", "double" }));
 		
 		// negative tests
 	}
@@ -56,7 +57,7 @@ public class ATanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.atan(intValue);
 		double computedDoubleValue = Math.atan(doubleValue);
@@ -79,7 +80,7 @@ public class ATanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.atan(intValue);
 		double computedDoubleValue = Math.atan(doubleValue);
@@ -102,7 +103,7 @@ public class ATanTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.atan(intValue);
 		double computedDoubleValue = Math.atan(doubleValue);

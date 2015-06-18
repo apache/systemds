@@ -22,13 +22,14 @@ public class PrintTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
-
-		availableTestConfigurations.put("PrintTest", new TestConfiguration("PrintTest", new String[] {}));
-		availableTestConfigurations.put("PrintTest2", new TestConfiguration("PrintTest2", new String[] {}));
-		availableTestConfigurations.put("PrintTest3", new TestConfiguration("PrintTest3", new String[] {}));
+		
+		addTestConfiguration("PrintTest", new TestConfiguration(TEST_DIR, "PrintTest", new String[] {}));
+		addTestConfiguration("PrintTest2", new TestConfiguration(TEST_DIR, "PrintTest2", new String[] {}));
+		addTestConfiguration("PrintTest3", new TestConfiguration(TEST_DIR, "PrintTest3", new String[] {}));
 	}
 
 	@Test

@@ -19,26 +19,27 @@ public class SubtractionTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/binary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/binary/scalar/";
-		availableTestConfigurations.put("ConstConstTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("VarConstTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("ConstVarTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("VarVarTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("NegativeConstConstTest", new TestConfiguration("SubtractionTest",
+		addTestConfiguration("NegativeConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("NegativeVarConstTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("NegativeVarConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("NegativeConstVarTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("NegativeConstVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("NegativeVarVarTest", new TestConfiguration("SubtractionTest", new String[] {
+		addTestConfiguration("NegativeVarVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		availableTestConfigurations.put("ConstConstConstTest", new TestConfiguration("SubtractionMultipleOperantsTest",
+		addTestConfiguration("ConstConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionMultipleOperantsTest",
 				new String[] { "int_int_int", "double_double_double" }));
 	}
 
@@ -67,7 +68,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -154,7 +155,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -197,7 +198,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -244,7 +245,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -287,7 +288,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("ConstConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -330,7 +331,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar");
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		loadTestConfiguration("VarConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -373,7 +374,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", "DoubleIntVar");
 
-		loadTestConfiguration("ConstVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -420,7 +421,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", "DoubleIntVar1");
 		config.addVariable("doubleintop2", "DoubleIntVar2");
 
-		loadTestConfiguration("VarVarTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;
 		double computedIntDoubleValue = intDoubleValue1 - intDoubleValue2;
@@ -455,7 +456,7 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubledoubledoubleop2", doubleDoubleDoubleValue2);
 		config.addVariable("doubledoubledoubleop3", doubleDoubleDoubleValue3);
 
-		loadTestConfiguration("ConstConstConstTest");
+		loadTestConfiguration(config);
 
 		double computedIntIntIntValue = intIntIntValue1 - intIntIntValue2 - intIntIntValue3;
 		double computedDoubleDoubleDoubleValue = doubleDoubleDoubleValue1 - doubleDoubleDoubleValue2

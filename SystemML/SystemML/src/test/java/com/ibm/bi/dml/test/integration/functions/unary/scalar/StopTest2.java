@@ -29,7 +29,7 @@ public class StopTest2 extends AutomatedTestBase
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 
-		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_STOP, new String[] {}));
+		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_DIR, TEST_STOP, new String[] {}));
 	}
 
 	String errMessage = "Stop Here.";

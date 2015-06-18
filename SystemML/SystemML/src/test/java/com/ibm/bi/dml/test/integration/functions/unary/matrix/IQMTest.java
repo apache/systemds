@@ -7,7 +7,7 @@
 
 package com.ibm.bi.dml.test.integration.functions.unary.matrix;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 

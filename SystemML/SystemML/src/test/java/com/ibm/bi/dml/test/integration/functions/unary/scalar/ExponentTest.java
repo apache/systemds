@@ -38,24 +38,24 @@ public class ExponentTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
-		
 		// positive tests
-		availableTestConfigurations.put("ConstTest", new TestConfiguration("ExponentTest",
+		addTestConfiguration("ConstTest", new TestConfiguration(TEST_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("VarTest", new TestConfiguration("ExponentTest",
+		addTestConfiguration("VarTest", new TestConfiguration(TEST_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("RandomConstTest", new TestConfiguration("ExponentTest",
+		addTestConfiguration("RandomConstTest", new TestConfiguration(TEST_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("RandomVarTest", new TestConfiguration("ExponentTest",
+		addTestConfiguration("RandomVarTest", new TestConfiguration(TEST_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		availableTestConfigurations.put("NegativeTest", new TestConfiguration("ExponentTest",
+		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
 		
 		// negative tests
-		availableTestConfigurations.put("TwoParametersTest", new TestConfiguration("ExponentBinaryTest",
+		addTestConfiguration("TwoParametersTest", new TestConfiguration(TEST_DIR, "ExponentBinaryTest",
 				new String[] { "computed" }));
 	}
 	
@@ -70,7 +70,7 @@ public class ExponentTest extends AutomatedTestBase
 		config.addVariable("doubledeclaration", "");
 		config.addVariable("doubleop", doubleValue);
 		
-		loadTestConfiguration("ConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.exp(intValue);
 		double computedDoubleValue = Math.exp(doubleValue);
@@ -96,7 +96,7 @@ public class ExponentTest extends AutomatedTestBase
 				TestUtils.getStringRepresentationForDouble(doubleValue) + ";");
 		config.addVariable("doubleop", "doubleValue");
 		
-		loadTestConfiguration("VarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.exp(intValue);
 		double computedDoubleValue = Math.exp(doubleValue);
@@ -121,7 +121,7 @@ public class ExponentTest extends AutomatedTestBase
 		config.addVariable("doubledeclaration", "");
 		config.addVariable("doubleop", doubleValue);
 		
-		loadTestConfiguration("RandomConstTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.exp(intValue);
 		double computedDoubleValue = Math.exp(doubleValue);
@@ -147,7 +147,7 @@ public class ExponentTest extends AutomatedTestBase
 				TestUtils.getStringRepresentationForDouble(doubleValue) + ";");
 		config.addVariable("doubleop", "doubleValue");
 		
-		loadTestConfiguration("RandomVarTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.exp(intValue);
 		double computedDoubleValue = Math.exp(doubleValue);
@@ -172,7 +172,7 @@ public class ExponentTest extends AutomatedTestBase
 		config.addVariable("doublevardeclaration", "");
 		config.addVariable("doubleop", doubleValue);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.exp(intValue);
 		double computedDoubleValue = Math.exp(doubleValue);
@@ -193,7 +193,7 @@ public class ExponentTest extends AutomatedTestBase
 		config.addVariable("op1", 1);
 		config.addVariable("op2", 2);
 		
-		loadTestConfiguration("TwoParametersTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		

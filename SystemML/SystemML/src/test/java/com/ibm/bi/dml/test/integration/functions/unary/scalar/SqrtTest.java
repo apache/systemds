@@ -38,25 +38,26 @@ public class SqrtTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 		
 		// positive tests
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("SqrtTest", new String[] { "int", "double" }));
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "SqrtTest", new String[] { "int", "double" }));
 		
 		// random tests
-		availableTestConfigurations.put("RandomIntTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "computed" }));
-		availableTestConfigurations.put("RandomDoubleTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "computed" }));
+		addTestConfiguration("RandomIntTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+		addTestConfiguration("RandomDoubleTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
 		
 		// negative tests
-		availableTestConfigurations.put("NegativeIntTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "computed" }));
-		availableTestConfigurations.put("NegativeDoubleTest",
-				new TestConfiguration("SqrtSingleTest", new String[] { "computed" }));
+		addTestConfiguration("NegativeIntTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+		addTestConfiguration("NegativeDoubleTest",
+				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
 	}
 	
 	@Test
@@ -68,7 +69,7 @@ public class SqrtTest extends AutomatedTestBase
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double computedIntValue = Math.sqrt(intValue);
 		double computedDoubleValue = Math.sqrt(doubleValue);
@@ -89,7 +90,7 @@ public class SqrtTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("RandomIntTest");
 		config.addVariable("value", intValue);
 		
-		loadTestConfiguration("RandomIntTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		
@@ -106,7 +107,7 @@ public class SqrtTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("RandomDoubleTest");
 		config.addVariable("value", doubleValue);
 		
-		loadTestConfiguration("RandomDoubleTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		
@@ -123,7 +124,7 @@ public class SqrtTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("NegativeIntTest");
 		config.addVariable("value", intValue);
 		
-		loadTestConfiguration("NegativeIntTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		
@@ -137,7 +138,7 @@ public class SqrtTest extends AutomatedTestBase
 		TestConfiguration config = availableTestConfigurations.get("NegativeDoubleTest");
 		config.addVariable("value", doubleValue);
 		
-		loadTestConfiguration("NegativeDoubleTest");
+		loadTestConfiguration(config);
 		
 		createHelperMatrix();
 		

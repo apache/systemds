@@ -118,6 +118,7 @@ public class CPInstructionParser extends InstructionParser
 
 		// Builtin Instruction Opcodes 
 		String2CPInstructionType.put( "log"  , CPINSTRUCTION_TYPE.Builtin);
+		String2CPInstructionType.put( "log_nz"  , CPINSTRUCTION_TYPE.Builtin);
 
 		String2CPInstructionType.put( "max"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "min"  , CPINSTRUCTION_TYPE.BuiltinBinary);
@@ -315,7 +316,7 @@ public class CPInstructionParser extends InstructionParser
 				return (CPInstruction) MatrixIndexingCPFileInstruction.parseInstruction(str);
 		case Builtin: 
 			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			if ( parts[0].equals("log") ) {
+			if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
 				if ( parts.length == 3 ) {
 					// B=log(A), y=log(x)
 					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);

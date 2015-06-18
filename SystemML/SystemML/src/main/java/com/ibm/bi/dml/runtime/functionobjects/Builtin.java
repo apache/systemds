@@ -35,16 +35,13 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
  */
 public class Builtin extends ValueFunction 
 {
-	/**
-	 * Version ID for serialization
-	 */
-	private static final long serialVersionUID = 3836744687789840574L;
-
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE, SPROP, SIGMOID };
+
+	private static final long serialVersionUID = 3836744687789840574L;
+	
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE, SPROP, SIGMOID };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -60,6 +57,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "acos"   , BuiltinFunctionCode.ACOS);
 		String2BuiltinFunctionCode.put( "atan"   , BuiltinFunctionCode.ATAN);
 		String2BuiltinFunctionCode.put( "log"    , BuiltinFunctionCode.LOG);
+		String2BuiltinFunctionCode.put( "log_nz"    , BuiltinFunctionCode.LOG_NZ);
 		String2BuiltinFunctionCode.put( "min"    , BuiltinFunctionCode.MIN);
 		String2BuiltinFunctionCode.put( "max"    , BuiltinFunctionCode.MAX);
 		String2BuiltinFunctionCode.put( "maxindex"    , BuiltinFunctionCode.MAXINDEX);
@@ -84,7 +82,7 @@ public class Builtin extends ValueFunction
 	
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
-	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
+	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, stopObj = null, spropObj = null, sigmoidObj = null;
@@ -102,8 +100,8 @@ public class Builtin extends ValueFunction
 		BuiltinFunctionCode code = String2BuiltinFunctionCode.get(str);
 		
 		if ( code == null ) 
-			return null;
-		
+			return null; 
+			
 		switch ( code ) {
 		case SIN:
 			if ( sinObj == null )
@@ -135,6 +133,10 @@ public class Builtin extends ValueFunction
 			if ( logObj == null )
 				logObj = new Builtin(BuiltinFunctionCode.LOG);
 			return logObj;
+		case LOG_NZ:
+			if ( lognzObj == null )
+				lognzObj = new Builtin(BuiltinFunctionCode.LOG_NZ);
+			return lognzObj;
 		case MAX:
 			if ( maxObj == null )
 				maxObj = new Builtin(BuiltinFunctionCode.MAX);
@@ -260,6 +262,7 @@ public class Builtin extends ValueFunction
 			return (_arity == 1);
 		
 		case LOG:
+		case LOG_NZ:
 			return (_arity == 1 || _arity == 2);
 			
 		case MAX:
@@ -285,6 +288,8 @@ public class Builtin extends ValueFunction
 			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
 			// for negative numbers, Math.log will return NaN
 			return FASTMATH ? FastMath.log(in) : Math.log(in);
+		case LOG_NZ:
+			return (in==0) ? 0 : FASTMATH ? FastMath.log(in) : Math.log(in);
 		
 		case ABS:
 			return Math.abs(in); //no need for FastMath
@@ -375,13 +380,19 @@ public class Builtin extends ValueFunction
 			}
 			// *** END HACK ***
 		case LOG:
-			if ( in1 <= 0 )
-				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
+			//if ( in1 <= 0 )
+			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
 			if( FASTMATH )
 				return (FastMath.log(in1)/FastMath.log(in2)); 
 			else
 				return (Math.log(in1)/Math.log(in2)); 
-				
+		case LOG_NZ:
+			if( FASTMATH )
+				return (in1==0) ? 0 : (FastMath.log(in1)/FastMath.log(in2)); 
+			else
+				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
+		
+			
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -422,12 +433,18 @@ public class Builtin extends ValueFunction
 		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
 		case MININDEX: return (in1 <= in2) ? 1 : 0;
 		case LOG:
-			if ( in1 <= 0 )
-				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
+			//if ( in1 <= 0 )
+			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
 			if( FASTMATH )
 				return (FastMath.log(in1)/FastMath.log(in2));
 			else
 				return (Math.log(in1)/Math.log(in2));
+		case LOG_NZ:
+			if( FASTMATH )
+				return (in1==0) ? 0 : (FastMath.log(in1)/FastMath.log(in2)); 
+			else
+				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2)); 
+		
 				
 		
 		default:

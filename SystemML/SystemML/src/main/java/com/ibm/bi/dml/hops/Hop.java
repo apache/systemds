@@ -950,7 +950,8 @@ public abstract class Hop
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
 		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
-		MINUS_NZ //sparse-safe minus: X-(mean*ppred(X,0,!=))
+		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
+		LOG_NZ //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 	};
 
 	// Operations that require 3 operands
@@ -1117,6 +1118,7 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
 		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, com.ibm.bi.dml.lops.Unary.OperationTypes.SUBTRACT_NZ);
+		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG_NZ);
 	}
 
 	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
@@ -1216,6 +1218,7 @@ public abstract class Hop
 		HopsOpOp2String = new HashMap<Hop.OpOp2, String>();
 		HopsOpOp2String.put(OpOp2.PLUS, "+");
 		HopsOpOp2String.put(OpOp2.MINUS, "-");
+		HopsOpOp2String.put(OpOp2.MINUS_NZ, "-nz");
 		HopsOpOp2String.put(OpOp2.MULT, "*");
 		HopsOpOp2String.put(OpOp2.DIV, "/");
 		HopsOpOp2String.put(OpOp2.MODULUS, "%%");
@@ -1231,6 +1234,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.OR, "|");
 		HopsOpOp2String.put(OpOp2.AND, "&");
 		HopsOpOp2String.put(OpOp2.LOG, "log");
+		HopsOpOp2String.put(OpOp2.LOG_NZ, "log_nz");
 		HopsOpOp2String.put(OpOp2.POW, "^");
 		HopsOpOp2String.put(OpOp2.CONCAT, "concat");
 		HopsOpOp2String.put(OpOp2.INVALID, "?");

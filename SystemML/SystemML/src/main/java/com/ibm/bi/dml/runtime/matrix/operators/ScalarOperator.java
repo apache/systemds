@@ -10,6 +10,8 @@ package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import com.ibm.bi.dml.runtime.functionobjects.Equals;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
@@ -43,7 +45,8 @@ public class ScalarOperator  extends Operator
 		//note: additional functionobjects might qualify according to constant
 		if(   fn instanceof Multiply || fn instanceof Multiply2 
 		   || fn instanceof Power || fn instanceof Power2 
-		   || fn instanceof And || fn instanceof MinusNz  ) 
+		   || fn instanceof And || fn instanceof MinusNz
+		   || (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ)) 
 		{
 			sparseSafe=true;
 		}
@@ -68,11 +71,12 @@ public class ScalarOperator  extends Operator
 		if(    fn instanceof Multiply || fn instanceof Multiply2 
 			|| fn instanceof Power || fn instanceof Power2 
 			|| fn instanceof And || fn instanceof MinusNz
-			||(fn instanceof GreaterThan && _constant==0) 
-			||(fn instanceof LessThan && _constant==0)
-			||(fn instanceof NotEquals && _constant==0)
-			||(fn instanceof Equals && _constant!=0)
-			||(fn instanceof Minus && _constant==0)  )
+			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.LOG_NZ
+			|| (fn instanceof GreaterThan && _constant==0) 
+			|| (fn instanceof LessThan && _constant==0)
+			|| (fn instanceof NotEquals && _constant==0)
+			|| (fn instanceof Equals && _constant!=0)
+			|| (fn instanceof Minus && _constant==0))
 		{
 			sparseSafe = true;
 		}

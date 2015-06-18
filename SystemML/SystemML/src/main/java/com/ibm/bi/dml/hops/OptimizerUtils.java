@@ -750,6 +750,7 @@ public class OptimizerUtils
 				case MODULUS:
 				case POW:
 				case MINUS_NZ:
+				case LOG_NZ:	
 					ret = sp1; break; 
 				//case EQUAL: //doesnt work on worstcase estimates, but on 
 				//	ret = 1-Math.abs(sp1-sp2); break;	

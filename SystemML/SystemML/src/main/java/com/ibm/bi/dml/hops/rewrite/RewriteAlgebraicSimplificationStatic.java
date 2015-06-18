@@ -140,6 +140,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			hi = simplifyWeightedSquaredLoss(hop, hi, i);        //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true)
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
+			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1238,6 +1239,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
 	private Hop fuseMinusNzBinaryOperation(Hop parent, Hop hi, int pos) 
 		throws HopsException
 	{
@@ -1268,6 +1277,54 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				hi = hnew;
+				
+				LOG.debug("Applied fuseMinusNzBinaryOperation (line "+hi.getBeginLine()+")");	
+			}		
+		}
+		
+		return hi;
+	}
+	
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop fuseLogNzBinaryOperation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//pattern ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
+		//note: this is done as a hop rewrite in order to significantly reduce the 
+		//memory estimate and to prevent dense intermediates if X is ultra sparse  
+		if( hi instanceof BinaryOp && ((BinaryOp)hi).getOp()==OpOp2.MULT
+			&& hi.getInput().get(0).getDataType()==DataType.MATRIX
+			&& hi.getInput().get(1).getDataType()==DataType.MATRIX
+			&& hi.getInput().get(1) instanceof BinaryOp 
+			&& ((BinaryOp)hi.getInput().get(1)).getOp()==OpOp2.LOG )
+		{
+			Hop pred = hi.getInput().get(0);
+			Hop X = hi.getInput().get(1).getInput().get(0);
+			Hop log = hi.getInput().get(1).getInput().get(1);
+			
+			if(    pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL
+				&& pred.getInput().get(0) == X //depend on common subexpression elimination
+				&& pred.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred.getInput().get(1))==0 )
+			{
+				Hop hnew = new BinaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, OpOp2.LOG_NZ, X, log);
+				HopRewriteUtils.setOutputBlocksizes(hnew, hi.getRowsInBlock(), hi.getColsInBlock());
+				hnew.refreshSizeInformation();
+		
+				//relink new hop into original position
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, hnew, pos);
+				hi = hnew;
+				
+				LOG.debug("Applied fuseLogNzBinaryOperation (line "+hi.getBeginLine()+")");	
 			}		
 		}
 		

@@ -29,6 +29,8 @@
 #								if survival data consists of a single group G will contain only entry 1
 # S       Sting    " "	        Location to write matrix S where each row i corresponds to a unique combination of the factors for stratum i;
 #								if survival data consists of a single stratum S will contain only entry 1
+# GSI 	  String   ---	        Location to write Matrix GSI in which each row contains the group id (first position) and stratum id (second position) 
+#								present in the data
 # alpha   Double   0.05         Parameter to compute 100*(1-alpha)% confidence intervals for the survivor function and its median 
 # etype   String   "greenwood"  Parameter to specify the error type according to "greenwood" (the default) or "peto"
 # ctype   String   "log"        Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of 
@@ -63,6 +65,7 @@
 #	T[1,4] = p-value
 # 4- An n_g x g matrix G where each row corresponds to a unique combination of values in the g factors used for grouping 
 # 5- An n_s x s matrix S where each row corresponds to a unique combination of values in the s factors used for stratifying	
+# 6- An (n_g*n_s) x 2 matrix GSI where each row contains the group id (first position) and stratum id (second position) present in the data 
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O M=OUTPUT_DIR/M
@@ -72,6 +75,7 @@ fileX = $X;
 fileTE = $TE;
 fileGI = $GI;
 fileSI = $SI;
+fileGSI = $GSI;
 fileO = $O;
 fileM = $M;
 
@@ -224,6 +228,7 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
 
 KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
+GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
 M = matrix (a, rows = num_groups * num_strata, cols = 3);
 z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
@@ -291,7 +296,11 @@ parfor (s in 1:num_strata, check = 0) {
 	parfor (g in 1:num_groups, check = 0) {
 	
 		group_ind = ppred (G, g, "==");
-		if (sum (group_ind) != 0) { # group g is present in the stratum s		
+		if (sum (group_ind) != 0) { # group g is present in the stratum s
+
+			GSI_offset = (s - 1) * num_groups + g; 
+			GSI[GSI_offset,1] = g;
+			GSI[GSI_offset,2] = s;
 			E_cur = E * group_ind;
 
 			######## COMPUTE NO. AT RISK AND NO.OF EVENTS FOR EACH TIMESTAMP
@@ -497,6 +506,8 @@ if (fileG != " ") {
 if (fileS != " ") {
 	write (S_cols, fileS, fmtO);
 }
+GSI = removeEmpty (target = GSI, margin = "rows");
+write (GSI, fileGSI, fmtO);
 
 ######## UDF FOR COMPUTING CUMULATIVE PRODUCT
 

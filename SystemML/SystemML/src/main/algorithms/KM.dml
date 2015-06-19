@@ -187,11 +187,17 @@ if (n_stratum_cols > 0) {
 	for (s in 1:n_stratum_cols) { # sort columns corresponding to strata sequentially
 		X = order (target = X, by = s_offset + s);		
 	}
-	XS = X[,(s_offset + 1):(s_offset + n_stratum_cols)];
+	XS = X[,(s_offset + 1):(s_offset + n_stratum_cols)];	
 	Idx = matrix (1, rows = num_records, cols = 1);
 	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),(s_offset + 1):(s_offset + n_stratum_cols)], X[2:num_records,(s_offset + 1):(s_offset + n_stratum_cols)], "!="));
 	num_strata = sum (Idx);
-	S_cols = removeEmpty (target = XS * Idx, margin = "rows"); 
+	
+	XS = replace (target = XS, pattern = 0, replacement = "Infinity");
+	XS = XS * Idx;
+	XS = replace (target = XS, pattern = "NaN", replacement = 0);	
+	S_cols = removeEmpty (target = XS, margin = "rows"); 
+	S_cols = replace (target = S_cols, pattern = "Infinity", replacement = 0);
+	
 	SB = removeEmpty (target = seq (1,num_records) * Idx, margin = "rows"); # indices of stratum boundaries
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {

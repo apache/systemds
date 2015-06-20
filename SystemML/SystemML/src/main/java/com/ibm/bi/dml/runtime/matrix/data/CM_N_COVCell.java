@@ -13,7 +13,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
@@ -295,8 +294,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
-			MatrixValue that2,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 		
@@ -304,31 +302,28 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
-			double scalarThat2, boolean ignoreZeros,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			double scalarThat2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			double scalarThat2,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 	
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			MatrixValue that2,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}

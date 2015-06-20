@@ -7,11 +7,9 @@
 
 package com.ibm.bi.dml.runtime.functionobjects;
 
-import java.util.HashMap;
-
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
@@ -51,70 +49,7 @@ public class CTable extends ValueFunction
 	 * @param ctableResult
 	 * @throws DMLRuntimeException
 	 */
-	public void execute(double v1, double v2, HashMap<MatrixIndexes, Double> ctableResult) 
-		throws DMLRuntimeException 
-	{	
-		// If any of the values are NaN (i.e., missing) then 
-		// we skip this tuple, proceed to the next tuple
-		if ( Double.isNaN(v1) || Double.isNaN(v2) ) {
-			return;
-		}
-		
-		// safe casts to long for consistent behavior with indexing
-		long row = UtilFunctions.toLong( v1 );
-		long col = UtilFunctions.toLong( v2 );
-		
-		if ( row <= 0 || col <= 0 ) {
-			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
-		} 
-		
-		MatrixIndexes temp=new MatrixIndexes(row, col);
-		Double oldw=ctableResult.get(temp);
-		if(oldw==null)
-			oldw=0.0;
-		ctableResult.put(temp, oldw+1);
-	}
-	
-	/**
-	 * 
-	 * @param v1
-	 * @param v2
-	 * @param w
-	 * @param ctableResult
-	 * @throws DMLRuntimeException
-	 */
-	public void execute(double v1, double v2, MatrixBlock ctableResult) 
-		throws DMLRuntimeException 
-	{	
-		// If any of the values are NaN (i.e., missing) then 
-		// we skip this tuple, proceed to the next tuple
-		if ( Double.isNaN(v1) || Double.isNaN(v2) ) {
-			return;
-		}
-		
-		// safe casts to long for consistent behavior with indexing
-		long row = UtilFunctions.toLong( v1 );
-		long col = UtilFunctions.toLong( v2 );
-		
-		if ( row <= 0 || col <= 0 ) {
-			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
-		} 
-		// skip this entry as it does not fall within specified output dimensions
-		if ( row > ctableResult.getNumRows() || col > ctableResult.getNumColumns() )
-			return;
-		
-		ctableResult.addValue((int)row, (int)col, 1);
-	}
-	
-	/**
-	 * 
-	 * @param v1
-	 * @param v2
-	 * @param w
-	 * @param ctableResult
-	 * @throws DMLRuntimeException
-	 */
-	public void execute(double v1, double v2, double w, boolean ignoreZeros, HashMap<MatrixIndexes, Double> ctableResult) 
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) 
 		throws DMLRuntimeException 
 	{	
 		// If any of the values are NaN (i.e., missing) then 
@@ -136,12 +71,9 @@ public class CTable extends ValueFunction
 		if( row <= 0 || col <= 0 ) {
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero): "+v1+" "+v2);
 		} 
-		
-		MatrixIndexes temp=new MatrixIndexes(row, col);
-		Double oldw=ctableResult.get(temp);
-		if(oldw==null)
-			oldw=0.0;
-		ctableResult.put(temp, oldw+w);
+	
+		//hash group-by for core ctable computation
+		resultMap.aggregate(row, col, w);	
 	}	
 
 	/**

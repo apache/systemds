@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
-import java.util.HashMap;
-
 import com.ibm.bi.dml.lops.Ternary;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -17,8 +15,8 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
@@ -94,7 +92,7 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
-		HashMap<MatrixIndexes,Double> ctableMap = new HashMap<MatrixIndexes,Double>();
+		CTableMap resultMap = new CTableMap();
 		MatrixBlock resultBlock = null;
 		Ternary.OperationTypes ctableOp = findCtableOperation();
 		ctableOp = _isExpand ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
@@ -121,13 +119,13 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 			// F=ctable(A,B,W)
 			matBlock2 = ec.getMatrixInput(input2.getName());
 			wtBlock = ec.getMatrixInput(input3.getName());
-			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, ctableMap, resultBlock);
+			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, wtBlock, resultMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = ec.getMatrixInput(input2.getName());
 			cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, cst1, _ignoreZeros, ctableMap, resultBlock);
+			matBlock1.ternaryOperations((SimpleOperator)_optr, matBlock2, cst1, _ignoreZeros, resultMap, resultBlock);
 			break;
 		case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 			// F = ctable(seq,A) or F = ctable(seq,B,1)
@@ -140,13 +138,13 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
 			cst2 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-			matBlock1.ternaryOperations((SimpleOperator)_optr, cst1, cst2, ctableMap, resultBlock);
+			matBlock1.ternaryOperations((SimpleOperator)_optr, cst1, cst2, resultMap, resultBlock);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 			// F=ctable(A,1,W)
 			wtBlock = ec.getMatrixInput(input3.getName());
 			cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-			matBlock1.ternaryOperations((SimpleOperator)_optr, cst1, wtBlock, ctableMap, resultBlock);
+			matBlock1.ternaryOperations((SimpleOperator)_optr, cst1, wtBlock, resultMap, resultBlock);
 			break;
 		
 		default:
@@ -164,14 +162,13 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 			//we need to respect potentially specified output dimensions here, because we might have 
 			//decided for hash-aggregation just to prevent inefficiency in case of sparse outputs.  
 			if( outputDimsKnown )
-				resultBlock = DataConverter.convertToMatrixBlock( ctableMap, (int)outputDim1, (int)outputDim2 );
+				resultBlock = DataConverter.convertToMatrixBlock( resultMap, (int)outputDim1, (int)outputDim2 );
 			else
-				resultBlock = DataConverter.convertToMatrixBlock( ctableMap );
+				resultBlock = DataConverter.convertToMatrixBlock( resultMap );
 		}
 		else
 			resultBlock.examSparsity();
 		
 		ec.setMatrixOutput(output.getName(), resultBlock);
-		ctableMap.clear();
 	}	
 }

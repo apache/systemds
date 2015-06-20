@@ -18,7 +18,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -5412,7 +5411,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 */
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+			MatrixValue that2Val, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixBlock that2 = checkType(that2Val);
@@ -5452,7 +5451,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 */
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			double scalarThat2, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
@@ -5488,7 +5487,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 */
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
-			boolean left, int brlen, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+			boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		CTable ctable = CTable.getCTableFnObject();
@@ -5535,7 +5534,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 */
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue thatVal, double scalarThat2, boolean ignoreZeros,
-			     HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+			     CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		//setup ctable computation
@@ -5635,14 +5634,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * (i1,j1,v2) from input2 (that)
 	 * (i1,j1,w)  from input3 (that2)
 	 */
-	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> ctableResult)
+	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, CTableMap resultMap)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		ternaryOperations(op, thatVal, that2Val, ctableResult, null);
+		ternaryOperations(op, thatVal, that2Val, resultMap, null);
 	}
 		
 	@Override
-	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<MatrixIndexes, Double> resultMap, MatrixBlock resultBlock)
+	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, CTableMap resultMap, MatrixBlock resultBlock)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
 		MatrixBlock that = checkType(thatVal);

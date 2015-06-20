@@ -15,8 +15,8 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -204,7 +204,7 @@ public class TernaryInstruction extends MRInstruction
 	}
 	
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
-			            IndexedMatrixValue zeroInput, HashMap<Byte, HashMap<MatrixIndexes, Double>> cacheForCtable, HashMap<Byte, MatrixBlock> blockCacheForCtable, 
+			            IndexedMatrixValue zeroInput, HashMap<Byte, CTableMap> resultMaps, HashMap<Byte, MatrixBlock> resultBlocks, 
 			            int blockRowFactor, int blockColFactor)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
@@ -212,16 +212,16 @@ public class TernaryInstruction extends MRInstruction
 		IndexedMatrixValue in1, in2, in3 = null;
 		in1 = cachedValues.getFirst(input1);
 		
-		HashMap<MatrixIndexes, Double> ctableResult = null;
+		CTableMap ctableResult = null;
 		MatrixBlock ctableResultBlock = null;
 		
 		if ( knownOutputDims() ) {
-			if ( blockCacheForCtable != null ) {
-				ctableResultBlock = blockCacheForCtable.get(output);
+			if ( resultBlocks != null ) {
+				ctableResultBlock = resultBlocks.get(output);
 				if ( ctableResultBlock == null ) {
 					// From MR, output of ctable is set to be sparse since it is built from a single input block.
 					ctableResultBlock = new MatrixBlock((int)_outputDim1, (int)_outputDim2, true);
-					blockCacheForCtable.put(output, ctableResultBlock);
+					resultBlocks.put(output, ctableResultBlock);
 				}
 			}
 			else {
@@ -230,11 +230,11 @@ public class TernaryInstruction extends MRInstruction
 		}
 		else {
 			//prepare aggregation maps
-			ctableResult=cacheForCtable.get(output);
+			ctableResult=resultMaps.get(output);
 			if(ctableResult==null)
 			{
-				ctableResult=new HashMap<MatrixIndexes, Double>();
-				cacheForCtable.put(output, ctableResult);
+				ctableResult = new CTableMap();
+				resultMaps.put(output, ctableResult);
 			}
 		}
 		

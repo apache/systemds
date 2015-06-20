@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
@@ -414,21 +413,21 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
-			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
-		if ( ctableResult != null)
-			ctable.execute(this.value, c2.value, c3.value, false, ctableResult);
+		if ( resultMap != null)
+			ctable.execute(this.value, c2.value, c3.value, false, resultMap);
 		else
-			ctable.execute(this.value, c2.value, c3.value, false, ctableResultBlock);
+			ctable.execute(this.value, c2.value, c3.value, false, resultBlock);
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that, double scalarThat2, boolean ignoreZeros, 
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			CTableMap ctableResult, MatrixBlock ctableResultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
@@ -441,48 +440,48 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			double scalarThat2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
-		if ( ctableResult != null)
-			ctable.execute(this.value, scalarThat, scalarThat2, false, ctableResult);		
+		if ( resultMap != null)
+			ctable.execute(this.value, scalarThat, scalarThat2, false, resultMap);		
 		else
-			ctable.execute(this.value, scalarThat, scalarThat2, false, ctableResultBlock);		
+			ctable.execute(this.value, scalarThat, scalarThat2, false, resultBlock);		
 	}
 	
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
-			HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//ctable expand (column vector to ctable)
 		CTable ctable = CTable.getCTableFnObject();
-		if ( ctableResult != null ) {
+		if ( resultMap != null ) {
 			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, ctableResult);		
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, resultMap);		
 			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, ctableResult);			
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, resultMap);			
 		} 
 		else {
 			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, ctableResultBlock);		
+				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, resultBlock);		
 			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, ctableResultBlock);			
+				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, resultBlock);			
 		}
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
-			MatrixValue that2, HashMap<MatrixIndexes, Double> ctableResult, MatrixBlock ctableResultBlock)
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
-		if ( ctableResult != null)
-			ctable.execute(this.value, scalarThat, c3.value, false, ctableResult);
+		if ( resultMap != null)
+			ctable.execute(this.value, scalarThat, c3.value, false, resultMap);
 		else 
-			ctable.execute(this.value, scalarThat, c3.value, false, ctableResultBlock);
+			ctable.execute(this.value, scalarThat, c3.value, false, resultBlock);
 
 	}
 	

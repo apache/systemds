@@ -16,6 +16,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.io.MatrixWriter;
+import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -31,7 +32,7 @@ public class GMRCtableBuffer
 	//4k entries * ~64byte = 256KB (common L2 cache size)
 	public static final int MAX_BUFFER_SIZE = 4096; 
 	
-	private HashMap<Byte, HashMap<MatrixIndexes, Double>> _buffer = null;
+	private HashMap<Byte, CTableMap> _mapBuffer = null;
 	private HashMap<Byte, MatrixBlock> _blockBuffer = null;
 	private CollectMultipleConvertedOutputs _collector = null;
 
@@ -47,7 +48,7 @@ public class GMRCtableBuffer
 		if ( outputDimsKnown )
 			_blockBuffer = new HashMap<Byte, MatrixBlock>();
 		else
-			_buffer = new HashMap<Byte, HashMap<MatrixIndexes, Double>>();
+			_mapBuffer = new HashMap<Byte, CTableMap>();
 		_collector = collector;
 	}
 	
@@ -74,9 +75,9 @@ public class GMRCtableBuffer
 	 */
 	public int getBufferSize()
 	{
-		if ( _buffer != null ) {
+		if ( _mapBuffer != null ) {
 			int ret = 0;
-			for( Entry<Byte, HashMap<MatrixIndexes, Double>> ctable : _buffer.entrySet() )
+			for( Entry<Byte, CTableMap> ctable : _mapBuffer.entrySet() )
 				ret += ctable.getValue().size();
 			return ret;
 		}
@@ -100,9 +101,9 @@ public class GMRCtableBuffer
 	 * 
 	 * @return
 	 */
-	public HashMap<Byte, HashMap<MatrixIndexes, Double>> getBuffer()
+	public HashMap<Byte, CTableMap> getMapBuffer()
 	{
-		return _buffer;
+		return _mapBuffer;
 	}
 	
 	public HashMap<Byte, MatrixBlock> getBlockBuffer() 
@@ -115,30 +116,35 @@ public class GMRCtableBuffer
 	 * @param reporter
 	 * @throws RuntimeException
 	 */
+	@SuppressWarnings("deprecation")
 	public void flushBuffer( Reporter reporter ) 
 		throws RuntimeException 
 	{
 		try
 		{
-			if ( _buffer != null ) {
+			if ( _mapBuffer != null ) {
 				MatrixIndexes key=null;//new MatrixIndexes();
 				MatrixCell value=new MatrixCell();
-				for(Entry<Byte, HashMap<MatrixIndexes, Double>> ctable: _buffer.entrySet())
+				for(Entry<Byte, CTableMap> ctable: _mapBuffer.entrySet())
 				{
-					ArrayList<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
-					for(Entry<MatrixIndexes, Double> e: ctable.getValue().entrySet())
-					{
+					ArrayList<Integer> resultIDs = ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);
+					CTableMap resultMap = ctable.getValue();
+					
+					//maintain result dims and nonzeros
+					for(Integer i: resultIDs) {
+						_resultNonZeros[i] += resultMap.size();
+						if( _resultDimsUnknown[i] == (byte) 1 ) {
+							_resultMaxRowDims[i] = Math.max( resultMap.getMaxRow(), _resultMaxRowDims[i]);
+							_resultMaxColDims[i] = Math.max( resultMap.getMaxColumn(), _resultMaxColDims[i]);
+						}
+					}
+					
+					//output result data 
+					for(Entry<MatrixIndexes, Double> e: resultMap.entrySet()) {
 						key = e.getKey();
 						value.setValue(e.getValue());
-						for(Integer i: resultIDs)
-						{
+						for(Integer i: resultIDs) {
 							_collector.collectOutput(key, value, i, reporter);
-							_resultNonZeros[i]++;
-							
-							if( _resultDimsUnknown[i] == (byte) 1 ) {
-								_resultMaxRowDims[i] = Math.max( key.getRowIndex(), _resultMaxRowDims[i]);
-								_resultMaxColDims[i] = Math.max( key.getColumnIndex(), _resultMaxColDims[i]);
-							}
 						}
 					}
 				}
@@ -216,8 +222,8 @@ public class GMRCtableBuffer
 			throw new RuntimeException("Failed to flush ctable buffer.", ex);
 		}
 		//remove existing partial ctables
-		if (_buffer != null ) 
-			_buffer.clear();
+		if (_mapBuffer != null ) 
+			_mapBuffer.clear();
 		else 
 			_blockBuffer.clear();
 	}

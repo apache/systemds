@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.io.MatrixWriter;
 import com.ibm.bi.dml.runtime.io.MatrixWriterFactory;
 import com.ibm.bi.dml.runtime.io.ReadProperties;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -469,6 +470,31 @@ public class DataConverter
 		return mb;
 	}
 
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock( CTableMap map )
+	{
+		// compute dimensions from the map
+		int nrows = (int)map.getMaxRow();
+		int ncols = (int)map.getMaxColumn();
+		
+		// convert to matrix block
+		return convertToMatrixBlock(map, nrows, ncols);
+	}
+	
+	/**
+	 * NOTE: this method also ensures the specified matrix dimensions
+	 * 
+	 * @param map
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock( CTableMap map, int rlen, int clen )
+	{
+		return map.toMatrixBlock(rlen, clen);
+	}
 	
 	/**
 	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,

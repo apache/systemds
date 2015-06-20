@@ -76,7 +76,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 				if(ins instanceof TernaryInstruction)
 				{  
 					MatrixCharacteristics dim = dimensions.get(((TernaryInstruction) ins).input1);
-					((TernaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getBuffer(), _buff.getBlockBuffer(), dim.getRowsPerBlock(), dim.getColsPerBlock());
+					((TernaryInstruction) ins).processInstruction(valueClass, cachedValues, zeroInput, _buff.getMapBuffer(), _buff.getBlockBuffer(), dim.getRowsPerBlock(), dim.getColsPerBlock());
 					if( _buff.getBufferSize() > GMRCtableBuffer.MAX_BUFFER_SIZE )
 						_buff.flushBuffer(cachedReporter); //prevent oom for large/many ctables
 				}

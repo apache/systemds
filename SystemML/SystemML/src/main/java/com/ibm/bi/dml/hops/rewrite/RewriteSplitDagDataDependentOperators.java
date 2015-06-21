@@ -31,8 +31,10 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
+import com.ibm.bi.dml.utils.Explain;
 
 /**
  * Rule: Split Hop DAG after specific data-dependent operators. This is
@@ -458,6 +460,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		if( cand != null )
 			for( Hop root : cand )
 				rCollectCandidateChildOperators(root, cand, candChilds, false);
+		
+		// Immediately reset the visit status because candidates might be inner nodes in the DAG.
+		// Subsequent resets on the root nodes of the DAG would otherwise not necessarily reach 
+		// these nodes which could lead to missing checks on subsequent passes (e.g., when checking 
+		// for replicated operators).
+		Hop.resetVisitStatus(cand);
 	}
 	
 	/**

@@ -616,14 +616,11 @@ public class ProgramConverter
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
 				ret.setDMLProg(sb.getDMLProg());
+				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 				ret.setLiveIn( sb.liveIn() ); 
 				ret.setLiveOut( sb.liveOut() ); 
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
-				ret.setBeginLine(sb.getBeginLine());
-				ret.setBeginColumn(sb.getBeginColumn());
-				ret.setEndLine(sb.getEndLine());
-				ret.setEndColumn(sb.getEndColumn());
 				
 				//deep copy hops dag for concurrent recompile
 				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
@@ -667,14 +664,12 @@ public class ProgramConverter
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new IfStatementBlock();
+				ret.setDMLProg(sb.getDMLProg());
+				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
-				ret.setBeginLine(sb.getBeginLine());
-				ret.setBeginColumn(sb.getBeginColumn());
-				ret.setEndLine(sb.getEndLine());
-				ret.setEndColumn(sb.getEndColumn());
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -719,14 +714,12 @@ public class ProgramConverter
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new WhileStatementBlock();
+				ret.setDMLProg(sb.getDMLProg());
+				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
-				ret.setBeginLine(sb.getBeginLine());
-				ret.setBeginColumn(sb.getBeginColumn());
-				ret.setEndLine(sb.getEndLine());
-				ret.setEndColumn(sb.getEndColumn());
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -775,14 +768,12 @@ public class ProgramConverter
 				ret = (sb instanceof ParForStatementBlock) ? new ParForStatementBlock() : new ForStatementBlock();
 				
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
+				ret.setDMLProg(sb.getDMLProg());
+				ret.setAllPositions(sb.getFilename(), sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 				ret.setLiveIn( sb.liveIn() );
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
-				ret.setBeginLine(sb.getBeginLine());
-				ret.setBeginColumn(sb.getBeginColumn());
-				ret.setEndLine(sb.getEndLine());
-				ret.setEndColumn(sb.getEndColumn());
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );

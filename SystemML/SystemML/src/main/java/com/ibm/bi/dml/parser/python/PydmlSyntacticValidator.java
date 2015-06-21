@@ -860,7 +860,9 @@ public class PydmlSyntacticValidator implements PydmlListener {
 			return;
 		}
 		try {
-			ctx.info.stmt = new PrintStatement(functionName, expr);
+			int line = ctx.start.getLine();
+			int col = ctx.start.getCharPositionInLine();
+			ctx.info.stmt = new PrintStatement(functionName, expr, line, col, line, col);
 		} catch (LanguageException e) {
 			helper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;

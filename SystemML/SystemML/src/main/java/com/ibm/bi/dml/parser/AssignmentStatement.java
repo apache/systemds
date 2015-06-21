@@ -47,8 +47,9 @@ public class AssignmentStatement extends Statement
 	}
 	
 	
-	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol) throws LanguageException{
-		
+	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol) 
+		throws LanguageException
+	{	
 		_targetList = new ArrayList<DataIdentifier>();
 		_targetList.add(t);
 		_source = s;

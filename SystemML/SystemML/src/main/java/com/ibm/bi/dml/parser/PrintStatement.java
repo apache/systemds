@@ -32,8 +32,15 @@ public class PrintStatement extends Statement
 			throw new LanguageException("Unknown statement type: " + type);
 	}
 	
-	public PrintStatement(String type, Expression expr) throws LanguageException{
+	public PrintStatement(String type, Expression expr, int beginLine, int beginCol, int endLine, int endCol) 
+		throws LanguageException
+	{
 		this(getPrintType(type), expr);
+		
+		setBeginLine(beginLine);
+		setBeginColumn(beginCol);
+		setEndLine(endLine);
+		setEndColumn(endCol);
 	}
 	 
 	public PrintStatement(PRINTTYPE type, Expression expr) throws LanguageException{

@@ -59,6 +59,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		job.setLong(NUMBER_OF_ZERO, metadata.getNumberOfZero());
 	}
 	
+	@SuppressWarnings("rawtypes")
 	public static void setKeyValueClasses(JobConf job, 
 			Class<? extends WritableComparable> keyClass, Class<? extends Writable> valueClass)
 	{
@@ -275,6 +276,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			ubound = Double.parseDouble(f2[2]);
 		}
 
+		@SuppressWarnings("unchecked")
 		public RangePickRecordReader(JobConf job, FileSplit split) throws IOException {
 			parseSelectedRangeString(job.get(SELECTED_RANGES));
 			
@@ -430,6 +432,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			return Integer.parseInt(name.substring(i+5));
 		}
 		
+		@SuppressWarnings("unchecked")
 		public PickRecordReader(JobConf job, FileSplit split)
 				throws IOException{
 			fs = FileSystem.get(job);

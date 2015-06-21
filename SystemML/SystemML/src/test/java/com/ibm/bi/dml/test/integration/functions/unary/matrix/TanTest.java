@@ -20,17 +20,17 @@ public class TanTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/unary/matrix/";
 	private static final double EPS = 1e-14;
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
-		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
-		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("PositiveTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("NegativeTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "vector", "matrix" }));
+		addTestConfiguration("RandomTest",
+				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test
@@ -42,7 +42,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("PositiveTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		double[][] tanVector = new double[rows][1];
@@ -76,7 +76,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("NegativeTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 0, 1, -1);
 		double[][] tanVector = new double[rows][1];
@@ -110,7 +110,7 @@ public class TanTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("RandomTest");
+		loadTestConfiguration(config);
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 1, -1);
 		double[][] tanVector = new double[rows][1];

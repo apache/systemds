@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 
 
+@SuppressWarnings("deprecation")
 public class MRBaseForCommonInstructions extends MapReduceBase
 {
 	@SuppressWarnings("unused")

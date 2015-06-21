@@ -31,6 +31,7 @@ public class AddDummyWeightConverter implements Converter<Writable, Writable, Ma
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void convert(Writable k1, Writable v1) {
 		if(toCellConverter==null)
 		{
@@ -51,6 +52,7 @@ public class AddDummyWeightConverter implements Converter<Writable, Writable, Ma
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Pair<MatrixIndexes, WeightedPair> next() {
 		Pair<MatrixIndexes, MatrixCell> temp=toCellConverter.next();
 		pair.setKey(temp.getKey());

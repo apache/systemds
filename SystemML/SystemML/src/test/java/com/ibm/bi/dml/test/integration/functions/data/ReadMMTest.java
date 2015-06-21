@@ -54,35 +54,38 @@ public class ReadMMTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/data/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/data/";
-
+	
 		// positive tests
-		availableTestConfigurations.put("TextSimpleTest", new TestConfiguration("ReadMMTest", new String[] { "a" }));
-		availableTestConfigurations.put("BinarySimpleTest", new TestConfiguration("ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextSimpleTest", new TestConfiguration(TEST_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinarySimpleTest", new TestConfiguration(TEST_DIR, "ReadMMTest", new String[] { "a" }));
 
 		// negative tests
-		availableTestConfigurations.put("TextWrongRowDimensionTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("TextWrongRowDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("TextWrongColDimensionTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("TextWrongColDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("TextWrongDimensionsTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("TextWrongDimensionsTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("TextWrongFormatTest",
-				new TestConfiguration("ReadMMTest", new String[] { "a" }));
-		availableTestConfigurations.put("BinaryWrongRowDimensionTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("TextWrongFormatTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
 				new String[] { "a" }));
-		availableTestConfigurations.put("BinaryWrongColDimensionTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("BinaryWrongRowDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("BinaryWrongDimensionsTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("BinaryWrongColDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("BinaryWrongFormatTest", new TestConfiguration("ReadMMTest",
+		addTestConfiguration("BinaryWrongDimensionsTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("TextWrongIndexBaseTest", new TestConfiguration("ReadMMIndexTest",
+		addTestConfiguration("BinaryWrongFormatTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
+				new String[] { "a" }));
+		addTestConfiguration("TextWrongIndexBaseTest", new TestConfiguration(TEST_DIR, "ReadMMIndexTest",
 				new String[] { "b" }));
-		availableTestConfigurations.put("EmptyTextTest", new TestConfiguration("ReadMMTest", new String[] { "a" }));
-		availableTestConfigurations.put("EmptyBinaryTest", new TestConfiguration("ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("EmptyTextTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
+				new String[] { "a" }));
+		addTestConfiguration("EmptyBinaryTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
+				new String[] { "a" }));
 	}
 
 	@Test
@@ -95,7 +98,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 	
-		loadTestConfiguration("TextSimpleTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);
@@ -116,7 +119,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		loadTestConfiguration("TextWrongRowDimensionTest");
+		loadTestConfiguration(config);
 
 		createRandomMatrix("a", (rows + 5), cols, -1, 1, 1, -1);
 
@@ -133,7 +136,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		loadTestConfiguration("TextWrongColDimensionTest");
+		loadTestConfiguration(config);
 
 		createRandomMatrix("a", rows, (cols + 5), -1, 1, 1, -1);
 
@@ -163,7 +166,7 @@ public class ReadMMTest extends AutomatedTestBase
 			}
 		}
 
-		loadTestConfiguration("TextWrongDimensionsTest");
+		loadTestConfiguration(config);
 
 		writeInputMatrix("a", a);
 
@@ -184,7 +187,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		loadTestConfiguration("TextWrongIndexBaseTest");
+		loadTestConfiguration(config);
 
 		runTest(true, DMLException.class);
 	}
@@ -199,7 +202,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 
-		loadTestConfiguration("TextWrongFormatTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 1, -1);
 		writeInputBinaryMatrix("a", a, rows, cols, false);
@@ -219,7 +222,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
 		
-		loadTestConfiguration("BinaryWrongRowDimensionTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
@@ -239,7 +242,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
 		
-		loadTestConfiguration("BinaryWrongColDimensionTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, (cols + 5), -1, 1, 1, -1);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
@@ -274,7 +277,7 @@ public class ReadMMTest extends AutomatedTestBase
 			}
 		}
 
-		loadTestConfiguration("TextWrongDimensionsTest");
+		loadTestConfiguration(config);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
@@ -291,7 +294,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
 		
-		loadTestConfiguration("BinaryWrongFormatTest");
+		loadTestConfiguration(config);
 
 		//createRandomMatrix("a", rows, cols, -1, 1, 1, -1);
 
@@ -315,7 +318,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		loadTestConfiguration("EmptyTextTest");
+		loadTestConfiguration(config);
 
 		try {
 			TestUtils.createFile(baseDirectory + INPUT_DIR + "a/in");
@@ -337,7 +340,7 @@ public class ReadMMTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
 		
-		loadTestConfiguration("EmptyBinaryTest");
+		loadTestConfiguration(config);
 
 		try {
 			String fname = baseDirectory + INPUT_DIR + "a";

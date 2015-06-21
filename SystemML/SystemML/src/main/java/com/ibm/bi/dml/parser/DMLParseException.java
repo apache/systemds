@@ -28,8 +28,6 @@ public class DMLParseException extends ParseException
 	
 	private ArrayList<DMLParseException> _exceptionList;
 	
-	private Exception _origException;
-	
 	public ArrayList<DMLParseException> getExceptionList(){
 		return _exceptionList;
 	}
@@ -37,21 +35,18 @@ public class DMLParseException extends ParseException
 	public DMLParseException(String fname){
 		super();
 		_filename = fname;
-		_origException = this;
 		_exceptionList = new ArrayList<DMLParseException>();
 	}
 	
 	public DMLParseException(String fname, String msg){
 		super(msg);
 		_filename = fname;
-		_origException = this;
 		_exceptionList = new ArrayList<DMLParseException>();
 		_exceptionList.add(this);
 	}
 	
 	public DMLParseException(String fname, Exception e){
 		super();
-		_origException = e;
 		_filename = fname;
 		_exceptionList = new ArrayList<DMLParseException>();
 		String newMsg = e.getMessage();

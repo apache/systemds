@@ -16,7 +16,6 @@ import java.io.OutputStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -25,7 +24,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.parser.DataExpression;
@@ -38,8 +36,6 @@ import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
@@ -270,81 +266,6 @@ public class MapReduceTool
 		
 		return ret;
 	}
-
-	public static double readSingleNumberFromHDFS(String dir) throws IOException {
-		String filename = getSubDirsIgnoreLogs(dir);
-		if (filename.contains(","))
-			throw new IOException("expect only one file, but given " + filename);
-		Configuration conf = new Configuration();
-		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), new Path(filename), conf);
-		MatrixIndexes indexes = new MatrixIndexes();
-		MatrixCell value = new MatrixCell();
-		if (!reader.next(indexes, value)) {
-			reader.close();
-			throw new IOException("no item to read!");
-		}
-		// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
-		assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
-		double ret = value.getValue();
-		assert (!reader.next(indexes, value));
-		reader.close();
-		return ret;
-	}
-
-	public static double readFirstNumberFromHDFSMatrix(String dir) throws IOException {
-		String filename = getSubDirsIgnoreLogs(dir);
-		if (filename.contains(","))
-			throw new IOException("expect only one file, but given " + filename);
-		Configuration conf = new Configuration();
-		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), new Path(filename), conf);
-		MatrixIndexes indexes = new MatrixIndexes();
-		
-		try {
-			MatrixBlock value = new MatrixBlock();
-			if (!reader.next(indexes, value)) {
-				reader.close();
-				throw new IOException("no item to read!");
-			}
-			// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
-			assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
-
-			double ret = value.getValue(0, 0);
-			assert (!reader.next(indexes, value));
-			reader.close();
-			return ret;
-		} catch(Exception e) {
-			MatrixCell value = new MatrixCell();
-			if (!reader.next(indexes, value))
-				throw new IOException("no item to read!");
-			// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
-			assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
-
-			double ret = value.getValue(0, 0);
-			assert (!reader.next(indexes, value));
-			reader.close();
-			return ret;
-		}
-	}
-
-	public static double readSingleNumberFromHDFSBlock(String dir) throws IOException {
-		String filename = getSubDirsIgnoreLogs(dir);
-		if (filename.contains(","))
-			throw new IOException("expect only one file, but given " + filename);
-		Configuration conf = new Configuration();
-		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), new Path(filename), conf);
-		MatrixIndexes indexes = new MatrixIndexes();
-		MatrixBlock value = new MatrixBlock();
-		if (!reader.next(indexes, value)) {
-			reader.close();
-			throw new IOException("no item to read!");
-		}
-		// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
-		assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
-		double ret = value.getValue(0, 0);
-		assert (!reader.next(indexes, value));
-		reader.close();
-		return ret;
-	}
 	
 	private static BufferedReader setupInputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
@@ -516,21 +437,24 @@ public class MapReduceTool
           "    ,\"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
         
           switch (v) {
-          case DOUBLE:
-			line += "\"double\"\n";
-			break;
-	  	  case INT:
-			line += "\"int\"\n";
-			break;
-		  case BOOLEAN:
-			line += "\"boolean\"\n";
-			break;
-		  case STRING:
-			line += "\"string\"\n";
-			break;
-		  case UNKNOWN:
+	          case DOUBLE:
+				line += "\"double\"\n";
+				break;
+		  	  case INT:
+				line += "\"int\"\n";
+				break;
+			  case BOOLEAN:
+				line += "\"boolean\"\n";
+				break;
+			  case STRING:
+				line += "\"string\"\n";
+				break;
+			  case UNKNOWN:
 				line += "\"unknown\"\n";
 				break;		
+			  case OBJECT:
+				line += "\"object\"\n"; 
+				break;
           };
         
           line += 
@@ -599,7 +523,9 @@ public class MapReduceTool
         		break;
         	case UNKNOWN:
         		line += "\"unknown\"\n";
-        		break;	
+        		break;
+        	case OBJECT:
+        		throw new IOException("Write of generic object types not supported.");
           };
           
           line += "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": \"text\"\n" + 

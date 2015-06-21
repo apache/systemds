@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,18 +30,19 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class DiagTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	private static final String TEST_DIR = "functions/unary/matrix/";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
 		
 		// positive tests
-		availableTestConfigurations.put("DiagTest", new TestConfiguration("DiagTest", new String[] { "b", "d" }));
+		addTestConfiguration("DiagTest", new TestConfiguration(TEST_DIR, "DiagTest", new String[] { "b", "d" }));
 		
 		// negative tests
-		availableTestConfigurations.put("WrongDimensionsTest", new TestConfiguration("DiagSingleTest",
+		addTestConfiguration("WrongDimensionsTest", new TestConfiguration(TEST_DIR, "DiagSingleTest",
 				new String[] { "b" }));
 	}
 	
@@ -53,7 +54,7 @@ public class DiagTest extends AutomatedTestBase
 		config.addVariable("rows", rowsCols);
 		config.addVariable("cols", rowsCols);
 		
-		loadTestConfiguration("DiagTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rowsCols, rowsCols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);
@@ -87,7 +88,7 @@ public class DiagTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("WrongDimensionsTest");
+		loadTestConfiguration(config);
 		
 		createRandomMatrix("a", rows, cols, -1, 1, 0.5, -1);
 		

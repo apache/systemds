@@ -29,12 +29,13 @@ public class VariableTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/data/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/data/";
 		
 		// positive tests
-		availableTestConfigurations.put("CopyVariableTest", new TestConfiguration("CopyVariableTest",
+		addTestConfiguration("CopyVariableTest", new TestConfiguration(TEST_DIR, "CopyVariableTest",
 				new String[] { "a", "b" }));
 		
 		// negative tests
@@ -49,7 +50,7 @@ public class VariableTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		loadTestConfiguration("CopyVariableTest");
+		loadTestConfiguration(config);
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);

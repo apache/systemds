@@ -31,10 +31,8 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.utils.Explain;
 
 /**
  * Rule: Split Hop DAG after specific data-dependent operators. This is

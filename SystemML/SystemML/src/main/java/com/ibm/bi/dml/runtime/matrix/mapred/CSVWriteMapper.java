@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -24,7 +23,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
 
-public class CSVWriteMapper extends MapperBase implements Mapper<WritableComparable, Writable, TaggedFirstSecondIndexes, MatrixBlock>
+public class CSVWriteMapper extends MapperBase implements Mapper<Writable, Writable, TaggedFirstSecondIndexes, MatrixBlock>
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -35,12 +34,12 @@ public class CSVWriteMapper extends MapperBase implements Mapper<WritableCompara
 	TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
 	
 	@Override
-	public void map(WritableComparable rawKey, Writable rawValue,
+	@SuppressWarnings("unchecked")
+	public void map(Writable rawKey, Writable rawValue,
 			OutputCollector<TaggedFirstSecondIndexes, MatrixBlock> out,
-			Reporter reporter) throws IOException {
+			Reporter reporter) throws IOException
+	{
 		long start=System.currentTimeMillis();
-		
-	//	System.out.println("read in Mapper: "+rawKey+": "+rawValue);
 		
 		//for each represenattive matrix, read the record and apply instructions
 		for(int i=0; i<representativeMatrixes.size(); i++)

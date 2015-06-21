@@ -116,6 +116,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 	}	
 	
 	@Override
+	@SuppressWarnings("deprecation")
 	public void configure(JobConf job)
 	{
 		super.configure(job);

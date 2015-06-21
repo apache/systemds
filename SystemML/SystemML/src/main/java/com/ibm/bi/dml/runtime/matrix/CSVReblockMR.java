@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
+@SuppressWarnings("deprecation")
 public class CSVReblockMR 
 {
 	@SuppressWarnings("unused")
@@ -67,6 +68,7 @@ public class CSVReblockMR
 	      }
 	    }; 
 	
+	@SuppressWarnings("rawtypes")
 	public static class OffsetCount implements WritableComparable
 	{
 		public String filename;

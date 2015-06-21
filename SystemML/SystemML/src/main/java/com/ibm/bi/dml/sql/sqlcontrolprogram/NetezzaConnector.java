@@ -567,7 +567,7 @@ public class NetezzaConnector
     	}
     }
     
-    public <T> T getVariableValue(String varName) 
+    public Object getVariableValue(String varName) 
     	throws SQLException
     {
     	checkConnected();
@@ -595,7 +595,7 @@ public class NetezzaConnector
 	        	rs.close();
 	    }
 	    
-	    return (T)output;
+	    return output;
     }
     
     private void checkConnected() throws SQLException

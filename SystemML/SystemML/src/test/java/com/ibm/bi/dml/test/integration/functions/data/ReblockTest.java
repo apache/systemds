@@ -30,12 +30,13 @@ public class ReblockTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/data/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/data/";
 		
 		// positive tests
-		availableTestConfigurations.put("ReblockTest", new TestConfiguration("ReblockTest",
+		addTestConfiguration("ReblockTest", new TestConfiguration(TEST_DIR, "ReblockTest",
 				new String[] { "a" }));
 		
 		// negative tests
@@ -43,8 +44,9 @@ public class ReblockTest extends AutomatedTestBase
 	
 	@Test
 	public void testReblock() {
-		loadTestConfiguration("ReblockTest");
-
+		TestConfiguration config = getTestConfiguration("ReblockTest");
+		loadTestConfiguration(config);
+		
 		int rows = 10;
 		int cols = 10;
 

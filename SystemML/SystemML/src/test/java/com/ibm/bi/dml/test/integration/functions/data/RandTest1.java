@@ -33,13 +33,14 @@ public class RandTest1 extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static final String TEST_DIR = "functions/data/";
+	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/data/";
 
 		// positive tests
-		availableTestConfigurations.put("MatrixTest", new TestConfiguration("RandTest1", new String[] { "rand" }));
-		availableTestConfigurations.put("ScalarTest", new TestConfiguration("RandScalarTest", new String[] { "rand" }));
+		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_DIR, "RandTest1", new String[] { "rand" }));
+		addTestConfiguration("ScalarTest", new TestConfiguration(TEST_DIR, "RandScalarTest", new String[] { "rand" }));
 
 		// negative tests
 	}

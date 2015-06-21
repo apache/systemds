@@ -63,6 +63,7 @@ public class CompactOutputFormat<K extends Writable, V extends Writable> extends
 		}
 		
 		@Override
+		@SuppressWarnings("deprecation")
 		public void close(Reporter reporter) throws IOException {
 			if (finalSync) {
 		        ((FSDataOutputStream) out).sync();

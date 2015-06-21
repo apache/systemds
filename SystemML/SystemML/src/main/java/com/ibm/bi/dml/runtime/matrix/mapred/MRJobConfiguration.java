@@ -85,7 +85,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({ "rawtypes", "deprecation" })
 public class MRJobConfiguration 
 {
 	@SuppressWarnings("unused")
@@ -765,7 +765,6 @@ public class MRJobConfiguration
 	
 	//get the indexes that this matrix file represents, 
 	//since one matrix file can occur multiple times in a statement
-	@SuppressWarnings("deprecation")
 	public static ArrayList<Byte> getInputMatrixIndexesInMapper(JobConf job) throws IOException
 	{
 		String[] matrices=job.getStrings(INPUT_MATRICIES_DIRS_CONFIG);
@@ -1014,7 +1013,6 @@ public class MRJobConfiguration
 		//do nothing, not used currently
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
 		job.set(DISTCACHE_INPUT_INDICES, indices);
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);
@@ -1036,22 +1034,6 @@ public class MRJobConfiguration
 		return job.get(DISTCACHE_INPUT_PATHS);
 	}
 	
-	
-	
-	private static String getCSVString(boolean[] flags) {
-		if ( flags == null || flags.length == 0 )
-			return "";
-		
-		StringBuilder s = new StringBuilder();
-		s.append(flags[0]);
-		for(int i=1; i < flags.length; i++) { 
-			s.append(",");
-			s.append(flags[i]);
-		}
-		
-		return s.toString();
-	}
-	
 	private static String getCSVString(PDataPartitionFormat[] formats) {
 		if ( formats == null || formats.length == 0 )
 			return "";
@@ -1065,7 +1047,6 @@ public class MRJobConfiguration
 		
 		return s.toString();
 	}
-	
 	
 	public static void setInputPartitioningInfo(JobConf job, PDataPartitionFormat[] pformats) {
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, MRJobConfiguration.getCSVString(pformats));

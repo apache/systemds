@@ -77,6 +77,7 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 	}
 	
 	@Override
+	@SuppressWarnings("deprecation")
 	public void configure(JobConf job)
 	{	
 		byte thisIndex;

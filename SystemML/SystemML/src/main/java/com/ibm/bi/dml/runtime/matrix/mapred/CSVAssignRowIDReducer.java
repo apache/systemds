@@ -31,6 +31,7 @@ public class CSVAssignRowIDReducer extends MapReduceBase implements Reducer<Byte
 	private ArrayList<OffsetCount> list = new ArrayList<OffsetCount>();
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void reduce(ByteWritable key, Iterator<OffsetCount> values,
 			OutputCollector<ByteWritable, OffsetCount> out, Reporter report)
 			throws IOException 

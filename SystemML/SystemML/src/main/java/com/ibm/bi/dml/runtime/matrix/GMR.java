@@ -93,7 +93,7 @@ public class GMR
 	 * outputInfos: output format information for the output matrices
 	 */
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, 
 			boolean[] partitioned, PDataPartitionFormat[] pformats, int[] psizes,

@@ -80,6 +80,7 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 	    }
 
 		@Override
+		@SuppressWarnings("unchecked")
 		public int compare(Tagged a, Tagged b) {
 			if(a.tag!=b.tag)
 				return a.tag-b.tag;
@@ -89,6 +90,7 @@ public class Tagged<T extends WritableComparable> implements WritableComparable<
 	  }
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public int compareTo(Tagged other) {
 		if(tag!=other.tag)
 			return tag-other.tag;

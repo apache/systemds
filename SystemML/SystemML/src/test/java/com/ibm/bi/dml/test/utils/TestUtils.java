@@ -164,12 +164,14 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			
 			Path compareFile = new Path(expectedFile);
-			FSDataInputStream compareIn = fs.open(compareFile);
+			FSDataInputStream fsin = fs.open(compareFile);
+			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
 			lineExpected = compareIn.readLine();
 			compareIn.close();
 			
 			Path outFile = new Path(actualFile);
-			FSDataInputStream outIn = fs.open(outFile);
+			FSDataInputStream fsout = fs.open(outFile);
+			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
 			lineActual = outIn.readLine();
 			outIn.close();
 
@@ -192,7 +194,9 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
-			FSDataInputStream compareIn = fs.open(compareFile);
+			FSDataInputStream fsin = fs.open(compareFile);
+			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
+			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			while ((line = compareIn.readLine()) != null) {
@@ -207,7 +211,9 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
@@ -263,7 +269,9 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
-			FSDataInputStream compareIn = fs.open(compareFile);
+			FSDataInputStream fsin = fs.open(compareFile);
+			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
+			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			
@@ -283,7 +291,9 @@ public class TestUtils
 
 			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 
-			FSDataInputStream outIn = fs.open(outDirectory);
+			FSDataInputStream fsout = fs.open(outDirectory);
+			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+			
 			
 			//skip MM header
 			line = outIn.readLine();
@@ -349,7 +359,9 @@ public class TestUtils
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
-			FSDataInputStream compareIn = fs.open(compareFile);
+			FSDataInputStream fsin = fs.open(compareFile);
+			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
+			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			while ((line = compareIn.readLine()) != null) {
@@ -364,7 +376,9 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
@@ -451,7 +465,6 @@ public class TestUtils
 			compareIn = new BufferedReader(new FileReader(filePath));
 
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
-			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
 			String line;
 			/** skip both R header lines */
 			line = compareIn.readLine();
@@ -511,7 +524,9 @@ public class TestUtils
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
 					d = Double.parseDouble(line);
 				}
@@ -533,7 +548,9 @@ public class TestUtils
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
 					b = Boolean.valueOf(Boolean.parseBoolean(line));
 				}
@@ -555,7 +572,9 @@ public class TestUtils
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
 					s = line; 
 				}
@@ -677,18 +696,6 @@ public class TestUtils
 	}
 
 	/**
-	 * Compares two double values. If one or both of them is null it is
-	 * converted to 0.0.
-	 * 
-	 * @param v1
-	 * @param v2
-	 * @return
-	 */
-	private static boolean compareCellValue(Double v1, Double v2) {
-		return compareCellValue(v1, v2, 0, false);
-	}
-
-	/**
 	 * <p>
 	 * Compares two matrices in array format.
 	 * </p>
@@ -769,7 +776,6 @@ public class TestUtils
 		}
 
 		int countErrorWithinTolerance = 0;
-		int countErrorIdentical = 0;
 		int countIdentical = 0;
 		double minerr = -1;
 		double maxerr = 0;
@@ -787,7 +793,6 @@ public class TestUtils
 				maxerr = Math.abs(v1 - v2);
 
 			if (!compareCellValue(first.get(index), second.get(index), 0, ignoreNaN)) {
-				countErrorIdentical++;
 				if (!compareCellValue(first.get(index), second.get(index), tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
 					if(!flag)
@@ -973,7 +978,9 @@ public class TestUtils
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+				FSDataInputStream fsout = fs.open(file.getPath());
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
@@ -1113,7 +1120,9 @@ public class TestUtils
 			{
 				FileStatus[] outFiles = fs.listStatus(outDirectory);
 				for (FileStatus file : outFiles) {
-					FSDataInputStream outIn = fs.open(file.getPath());
+					FSDataInputStream fsout = fs.open(file.getPath());
+					BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+					
 					String line;
 					while ((line = outIn.readLine()) != null) {
 						String[] rcv = line.split(" ");
@@ -1129,7 +1138,9 @@ public class TestUtils
 			}
 			else
 			{
-				FSDataInputStream outIn = fs.open(outDirectory);
+				FSDataInputStream fsout = fs.open(outDirectory);
+				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+				
 				String line;
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");
@@ -1161,7 +1172,9 @@ public class TestUtils
 			Path outDirectory = new Path(outDir);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			assertEquals("number of files in directory not 1", 1, outFiles.length);
-			FSDataInputStream outIn = fs.open(outFiles[0].getPath());
+			FSDataInputStream fsout = fs.open(outFiles[0].getPath());
+			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
+			
 			String outLine = outIn.readLine();
 			outIn.close();
 			assertNotNull("file is empty", outLine);
@@ -1524,6 +1537,7 @@ public class TestUtils
 	 * @param matrix
 	 *            matrix
 	 */
+	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixCells(String file, double[][] matrix) {
 		try {
 			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
@@ -1564,6 +1578,7 @@ public class TestUtils
 	 * @param sparseFormat
 	 *            sparse format
 	 */
+	@SuppressWarnings("deprecation")
 	public static void writeBinaryTestMatrixBlocks(String file, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
 		try {
@@ -1743,7 +1758,7 @@ public class TestUtils
 				String fileName = file.getPath().toString().substring(
 						file.getPath().getParent().toString().length() + 1);
 				if (fileName.contains("temp"))
-					fs.delete(file.getPath());
+					fs.delete(file.getPath(), false);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -1789,6 +1804,7 @@ public class TestUtils
 	 *            directory containing the matrix
 	 * @return matrix characteristics
 	 */
+	@SuppressWarnings("deprecation")
 	public static BinaryMatrixCharacteristics readCellsFromSequenceFile(String directory) {
 		try {
 			FileSystem fs = FileSystem.get(conf);
@@ -1846,6 +1862,7 @@ public class TestUtils
 	 *            columns in block
 	 * @return matrix characteristics
 	 */
+	@SuppressWarnings("deprecation")
 	public static BinaryMatrixCharacteristics readBlocksFromSequenceFile(String directory, int rowsInBlock,
 			int colsInBlock) {
 		try {

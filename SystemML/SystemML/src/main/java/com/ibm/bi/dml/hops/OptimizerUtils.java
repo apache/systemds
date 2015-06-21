@@ -174,10 +174,6 @@ public class OptimizerUtils
 	/**
 	 * Enables multi-threaded matrix multiply for mm, mmchain, and tsmm.
 	 * 
-	 * TODO to be enabled, currently disabled because parallel mmchain shows 
-	 * numerical stability issues on GLM (in detail, several aspects contribute here
-	 * e.g., by disabling rewrites like -1*x->-x or dotproductsum it also runs fine 
-	 * in parallel; otherwise local aggregation leads to crossing the error threshold).
 	 */
 	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = true;
 	

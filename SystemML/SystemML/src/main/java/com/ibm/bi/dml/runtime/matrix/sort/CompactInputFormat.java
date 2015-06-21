@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
 
+@SuppressWarnings("rawtypes")
 public class CompactInputFormat<K extends WritableComparable, V extends Writable> extends FileInputFormat<K, V>  
 {
 	@SuppressWarnings("unused")
@@ -62,7 +63,8 @@ public class CompactInputFormat<K extends WritableComparable, V extends Writable
 	    
 	    protected FSDataInputStream currentStream;
 	    
-	    public CompactInputRecordReader(JobConf job, FileSplit split) throws IOException {
+		@SuppressWarnings("unchecked")
+		public CompactInputRecordReader(JobConf job, FileSplit split) throws IOException {
 
 	    	fs = FileSystem.get(job);
 	    	path = split.getPath();
@@ -97,7 +99,6 @@ public class CompactInputFormat<K extends WritableComparable, V extends Writable
 			return totLength==0 ? 0 : ((float)getPos()) / totLength;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public boolean next(K key, V value)
 				throws IOException {

@@ -64,6 +64,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 /**
  * TODO fix issues sortindex mappers
  */
+@SuppressWarnings("deprecation")
 public class SortMR 
 {
 
@@ -95,8 +96,6 @@ public class SortMR
                       implements Partitioner<K, V>
   { 
 	private ArrayList<WritableComparable> splitPoints;
-    private Class<? extends WritableComparable> keyClass;
-    private Class<? extends Writable> valueClass;
     
     /**
      * Read the cut points from the given sequence file.
@@ -137,9 +136,7 @@ public class SortMR
 
     public void configure(JobConf job) {
       try {
-    	  keyClass=(Class<? extends WritableComparable>) job.getMapOutputKeyClass();
-          valueClass=(Class<? extends Writable>) job.getMapOutputValueClass();
-          FileSystem fs = FileSystem.get(job);
+    	  FileSystem fs = FileSystem.get(job);
           Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job)); 
           splitPoints = readPartitions(fs, partFile, job);
         
@@ -147,10 +144,6 @@ public class SortMR
       catch (IOException ie) {
         throw new IllegalArgumentException("can't read paritions file", ie);
       }
-    }
-
-    public TotalOrderPartitioner() {
-    	
     }
 
     public int getPartition(K key, V value, int numPartitions) {
@@ -172,6 +165,7 @@ public class SortMR
     
   }
   
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static JobReturn runJob(MRJobInstruction inst, String input, InputInfo inputInfo, long rlen, long clen, 
 			int brlen, int bclen, String combineInst, String sortInst, int numReducers, 
 			int replication, String output, OutputInfo outputInfo, boolean valueIsWeight) 

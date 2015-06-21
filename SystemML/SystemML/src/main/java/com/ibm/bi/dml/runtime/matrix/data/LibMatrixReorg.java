@@ -43,6 +43,7 @@ public class LibMatrixReorg
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final boolean SHALLOW_DENSE_VECTOR_TRANSPOSE = true;
+	public static final boolean SHALLOW_DENSE_ROWWISE_RESHAPE = true;
 	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
 	private enum ReorgType {
@@ -734,6 +735,15 @@ public class LibMatrixReorg
 		//reshape empty block
 		if( in.denseBlock == null )
 			return;
+		
+		//shallow dense by-row reshape (w/o result allocation)
+		if( SHALLOW_DENSE_ROWWISE_RESHAPE && rowwise ) {
+			//since the physical representation of dense matrices is always the same,
+			//we don't need to create a copy, given our copy on write semantics.
+			//however, note that with update in-place this would be an invalid optimization
+			out.denseBlock = in.denseBlock;
+			return;
+		}
 		
 		//allocate block if necessary
 		out.allocateDenseBlock(false);

@@ -71,6 +71,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		_statements.add(s);
 		
 		if (_statements.size() == 1){
+			this._filename      = s.getFilename();
 			this._beginLine 	= s.getBeginLine(); 
 			this._beginColumn 	= s.getBeginColumn();
 		}

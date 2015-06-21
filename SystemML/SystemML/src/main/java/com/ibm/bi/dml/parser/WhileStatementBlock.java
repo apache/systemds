@@ -295,7 +295,7 @@ public class WhileStatementBlock extends StatementBlock
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			LOG.warn(   "***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on while execution");
+			LOG.warn(_warnSet.getVariable(varName).printWarningLocation() + "Initialization of " + varName + " depends on while execution");
 		}
 		
 		// Cannot remove kill variables

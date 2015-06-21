@@ -108,11 +108,11 @@ public class IfStatementBlock extends StatementBlock
 			
 			//value type handling		
 			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getValueType().equals(elseVersion.getOutput().getValueType())){
-				LOG.warn(elseVersion.printWarningLocation() + "variable " + elseVersion.getName() + " defined with different value type in if and else clause");
+				LOG.warn(elseVersion.printWarningLocation() + "Variable " + elseVersion.getName() + " defined with different value type in if and else clause.");
 			}
 		}
 		
-		// handle constant variable propogation -- (IF UNION ELSE) MINUS updated vars
+		// handle constant variable propagation -- (IF UNION ELSE) MINUS updated vars
 		
 		//////////////////////////////////////////////////////////////////////////////////
 		// handle constant variables 

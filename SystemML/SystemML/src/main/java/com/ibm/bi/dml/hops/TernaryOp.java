@@ -849,13 +849,10 @@ public class TernaryOp extends Hop
 	{
 		double ret = 0;
 		if( _op == OpOp3.CTABLE ) {
-			if ( _dim1 >0 && _dim2 > 0 ) {
+			if ( _dim1 > 0 && _dim2 > 0 ) {
 				// output dimensions are known, and hence a MatrixBlock is allocated
-				// Allocated block is in sparse format only when #inputRows < #cellsInOutput
-				long inRows = getInput().get(0).getDim1();
-				//long outputNNZ = Math.min(inRows, _dim1*_dim2);
-				boolean sparse = (inRows > 0 && inRows < _dim1*_dim2);
-				ret = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, (sparse ? 0.1d : 1.0d) );
+				double sp = OptimizerUtils.getSparsity(_dim1, _dim2, nnz);
+				ret = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, sp );
 			}
 			else {
 				ret =  2*4 * dim1 + //hash table (worst-case overhead 2x)
@@ -881,8 +878,10 @@ public class TernaryOp extends Hop
 		switch( _op ) 
 		{
 			case CTABLE:
+				boolean dimsSpec = (getInput().size() > 3); 
+				
+				// Step 1: general dimension info inputs
 				long worstCaseDim = -1;
-				boolean inferred = false;
 				// since the dimensions of both inputs must be the same, checking for one input is sufficient
 				if( mc[0].dimsKnown() || mc[1].dimsKnown() ) {
 					// Output dimensions are completely data dependent. In the worst case, 
@@ -894,25 +893,21 @@ public class TernaryOp extends Hop
 					//note: for ctable histogram dim2 known but automatically replaces m         
 					//ret = new long[]{m, m, m};
 				}
-				if ( this.getInput().size() > 3 && this.getInput().get(3) instanceof LiteralOp && this.getInput().get(4) instanceof LiteralOp ) {
-					try {
-						long outputDim1 = ((LiteralOp)getInput().get(3)).getLongValue();
-						long outputDim2 = ((LiteralOp)getInput().get(4)).getLongValue();
-						long outputNNZ = ( outputDim1*outputDim2 > outputDim1 ? outputDim1 : outputDim1*outputDim2 );
-						
-						this._dim1 = outputDim1;
-						this._dim2 = outputDim2;
-						inferred = true;
-						return new long[]{outputDim1, outputDim2, outputNNZ};
-					} catch (HopsException e) {
-						throw new RuntimeException(e);
-					}
+				
+				// Step 2: special handling specified dims
+				if( dimsSpec && getInput().get(3) instanceof LiteralOp && getInput().get(4) instanceof LiteralOp ) 
+				{
+					long outputDim1 = HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(3));
+					long outputDim2 = HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(4));
+					long outputNNZ = ( outputDim1*outputDim2 > outputDim1 ? outputDim1 : outputDim1*outputDim2 );
+					_dim1 = outputDim1;
+					_dim2 = outputDim2;
+					return new long[]{outputDim1, outputDim2, outputNNZ};
 				}
-				if ( !inferred ) {
-					//note: for ctable histogram dim2 known but automatically replaces m         
-					return new long[]{worstCaseDim, worstCaseDim, worstCaseDim};
-				}
-				break;
+				
+				// Step 3: general case
+				//note: for ctable histogram dim2 known but automatically replaces m         
+				return new long[]{worstCaseDim, worstCaseDim, worstCaseDim};
 			
 			case QUANTILE:
 				if( mc[2].dimsKnown() )

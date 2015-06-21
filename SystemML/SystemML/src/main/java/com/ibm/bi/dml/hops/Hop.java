@@ -1246,6 +1246,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.COVARIANCE, "cov");
 		HopsOpOp2String.put(OpOp2.APPEND, "app");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
+		HopsOpOp2String.put(OpOp2.SEQINCR, "seqincr");
 	}
 	
 	public static String getOpOp2String( OpOp2 op ) {

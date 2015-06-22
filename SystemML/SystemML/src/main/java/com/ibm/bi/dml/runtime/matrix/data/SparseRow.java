@@ -344,12 +344,12 @@ public class SparseRow implements Serializable
 	public void deleteIndexRange(int lowerCol, int upperCol)
 	{
 		int start = searchIndexesFirstGTE(lowerCol);
-		if(start<0) 
+		if( start < 0 ) //nothing to delete 
 			return;
 		
 		int end = searchIndexesFirstGT(upperCol);
-		if( end<0 || start>end ) 
-			return;
+		if( end < 0 ) //delete all remaining
+			end = size;
 		
 		//overlapping array copy (shift rhs values left)
 		System.arraycopy(values, end, values, start, size-end);

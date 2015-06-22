@@ -25,12 +25,6 @@
 #							    and its confidence interval for a group and a stratum  
 # T 	  String   " "			If survival data from multiple groups available and ttype=log-rank or wilcoxon, 
 #								location to write the matrix containing result of the (stratified) test for comparing multiple groups
-# G       Sting    " "	        Location to write matrix G where each row i corresponds to a unique combination of the factors for group i;
-#								if survival data consists of a single group G will contain only entry 1
-# S       Sting    " "	        Location to write matrix S where each row i corresponds to a unique combination of the factors for stratum i;
-#								if survival data consists of a single stratum S will contain only entry 1
-# GSI 	  String   ---	        Location to write Matrix GSI in which each row contains the group id (first position) and stratum id (second position) 
-#								present in the data
 # alpha   Double   0.05         Parameter to compute 100*(1-alpha)% confidence intervals for the survivor function and its median 
 # etype   String   "greenwood"  Parameter to specify the error type according to "greenwood" (the default) or "peto"
 # ctype   String   "log"        Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of 
@@ -41,41 +35,40 @@
 # fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# 1- An m x (7*n_g+7*n_s) matrix KM with (n_g is the number of groups, n_s is the number of strata, and m is the number of data records): 
-# 	KM[,1]: timestamp
-# 	KM[,2]: no. at risk
-# 	KM[,3]: no. of events
-# 	KM[,4]: Kaplan-Meier estimate of survivor function surv
-# 	KM[,5]: standard error of surv
-# 	KM[,6]: lower 100*(1-alpha)% confidence interval for surv
-# 	KM[,7]: upper 100*(1-alpha)% confidence interval for surv
-# 	If the number of groups, denoted by g, and/or the number of strata, denoted by s, is greater than 1, KM will have 7*g+7*s columns 
-#	where each 7 consecutive columns summarizes the results for combination of a group and a stratum of the survival data; 
-#	if some group is not present in a stratum the corresponding columns of O will contain zeros 
-# 2- A (n_g+n_s) x 3 matrix M with 
-# 	M[,1]: median of surv
+# 1- Matrix KM whose dimension depends on the number of groups (denoted by g) and strata (denoted by s) in the data: 
+#	each group of 7 consecutive columns in KM corresponds to a unique combination of groups and strata in the data with the following schema
+# 	1. col: timestamp
+# 	2. col: no. at risk
+# 	3. col: no. of events
+# 	4. col: Kaplan-Meier estimate of survivor function surv
+# 	5. col: standard error of surv
+# 	6. col: lower 100*(1-alpha)% confidence interval for surv
+# 	7. col: upper 100*(1-alpha)% confidence interval for surv
+# 2- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
+#	,i.e., ncol(GI) and t denotes the number of factors used for stratifying, i.e., ncol(SI))
+#	M[,1:k]: unique combination of values in the k factors used for grouping 
+#   M[,(k+1):(k+t)]: unique combination of values in the t factors used for stratifying
+#	M[,k+t+1]: median of surv
+#	M[,k+t+2]: lower 100*(1-alpha)% confidence interval of the median of surv 
+#	M[,k+t+3]: upper 100*(1-alpha)% confidence interval of the median of surv
+#	If the number of groups and/or the number of strata is greater than 1, M will have 3 columns with 
+#	M[,1]: median of surv
 #	M[,2]: lower 100*(1-alpha)% confidence interval of the median of surv 
 #	M[,3]: upper 100*(1-alpha)% confidence interval of the median of surv
-#	If the number of groups and/or the number of strata is greater than 1, M will have 3*g+3*s rows each corresponding to a combination
-#   of a group and stratum
 # 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T with	
 #	T[1,1] = no. of groups
 #	T[1,2] = degree of freedom for Chi-squared distributed test statistic
 #	T[1,3] = test statistic 
 #	T[1,4] = p-value
-# 4- An n_g x g matrix G where each row corresponds to a unique combination of values in the g factors used for grouping 
-# 5- An n_s x s matrix S where each row corresponds to a unique combination of values in the s factors used for stratifying	
-# 6- An (n_g*n_s) x 2 matrix GSI where each row contains the group id (first position) and stratum id (second position) present in the data 
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O M=OUTPUT_DIR/M
-#     				                 T=OUTPUT_DIR/T G=OUTPUT_DIR/G S=OUTPUT_DIR/S alpha=0.01 rtype=greenwood ctype=log ttype=log-rank fmtO=csv
+#     				                 T=OUTPUT_DIR/T alpha=0.01 rtype=greenwood ctype=log ttype=log-rank fmtO=csv
 
 fileX = $X;
 fileTE = $TE;
 fileGI = $GI;
 fileSI = $SI;
-fileGSI = $GSI;
 fileO = $O;
 fileM = $M;
 
@@ -228,9 +221,11 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
 
 KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
+KM_cols = seq (1, num_groups * num_strata * 7);
 GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
 M = matrix (a, rows = num_groups * num_strata, cols = 3);
+M_cols = seq (1, num_groups * num_strata);
 z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
 
 if (num_groups > 1 & test_type != "none") { 
@@ -296,6 +291,8 @@ parfor (s in 1:num_strata, check = 0) {
 	parfor (g in 1:num_groups, check = 0) {
 	
 		group_ind = ppred (G, g, "==");
+		KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+		M_offset = (s - 1) * num_groups + g;
 		if (sum (group_ind) != 0) { # group g is present in the stratum s
 
 			GSI_offset = (s - 1) * num_groups + g; 
@@ -359,7 +356,7 @@ parfor (s in 1:num_strata, check = 0) {
 				CI_r[n_time,] = 0/0;
 			}	
 		
-			KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+			# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
 			KM[1:n_time,KM_offset + 1] = time;
 			KM[1:n_time,KM_offset + 2] = n_risk;			
 			KM[1:n_time,KM_offset + 3] = n_event;
@@ -372,7 +369,7 @@ parfor (s in 1:num_strata, check = 0) {
 		
 			p_5 = ppred (surv, 0.5, "<="); 
 			pn_5 = sum (p_5);
-			M_offset = (s - 1) * num_groups + g;
+			# M_offset = (s - 1) * num_groups + g;
 			# if the estimated survivor function is larger than 0.5 for all timestamps median does not exist! 
 			p_5_exists = (pn_5 != 0);
 			if (p_5_exists) {
@@ -419,6 +416,8 @@ parfor (s in 1:num_strata, check = 0) {
 			}
 		} else {
 			print ("group " + g + " is not present in the stratum " + s);
+			KM_cols[(KM_offset + 1):(KM_offset + 7),1] = matrix (0, rows = 7, cols = 1);
+			M_cols[M_offset,1] = 0;
 		}		
 	}
 	
@@ -490,7 +489,39 @@ if (num_groups > 1 & test_type != "none") {
 	}
 }
 
+GSI = removeEmpty (target = GSI, margin = "rows");
+if (n_group_cols > 0) {
+	GSI_1 = GSI[,1];
+	tab_G = table (seq (1, nrow (GSI_1)), GSI_1, nrow (GSI_1), nrow (G_cols));
+	G_cols = tab_G %*% G_cols;
+}
+
+if (n_stratum_cols > 0) {
+	GSI_2 = GSI[,2];
+	tab_S = table (seq (1, nrow (GSI_2)), GSI_2, nrow (GSI_2), nrow (S_cols));
+	S_cols = tab_S %*% S_cols;
+}
+
+# pull out non-empty rows from M 
+M_cols = removeEmpty (target = M_cols, margin = "rows");
+tab_M = table (seq (1, nrow (M_cols)), M_cols, nrow (M_cols), nrow (M));
+M = tab_M %*% M;
 M = replace (target = M, pattern = "Infinity", replacement = "NaN");
+
+if (n_group_cols > 0 & n_stratum_cols > 0) {
+	M = append (append (G_cols, S_cols), M);
+} else if (n_group_cols > 0) {
+	M = append (G_cols, M);
+} else if (n_stratum_cols > 0) {
+	M = append (S_cols, M);
+}
+
+# pull out non-empty columns from KM
+KM_cols = removeEmpty (target = KM_cols, margin = "rows");
+tab_KM = table (KM_cols, seq (1, nrow (KM_cols)), ncol (KM), nrow (KM_cols));
+KM = removeEmpty (target = KM %*% tab_KM, margin = "rows");
+
+# write output matrices
 write (M, fileM, fmtO);
 write (KM, fileO, fmtO);
 if (num_groups > 1 & test_type != "none") {
@@ -500,14 +531,6 @@ if (num_groups > 1 & test_type != "none") {
 		print (str);
 	}	
 }
-if (fileG != " ") {
-	write (G_cols, fileG, fmtO);
-}
-if (fileS != " ") {
-	write (S_cols, fileS, fmtO);
-}
-GSI = removeEmpty (target = GSI, margin = "rows");
-write (GSI, fileGSI, fmtO);
 
 ######## UDF FOR COMPUTING CUMULATIVE PRODUCT
 

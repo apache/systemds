@@ -379,11 +379,15 @@ public class OptimizerRuleBased extends Optimizer
 				}
 					
 			}
+			
 			apply = rFindDataPartitioningCandidates(n, cand2, vars);
 			if( apply )
 				partitionedMatrices.putAll(cand2);
 		}
-		PDataPartitioner pdp = (apply)? PDataPartitioner.REMOTE_MR : PDataPartitioner.NONE;		
+		
+		PDataPartitioner REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
+				PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
+		PDataPartitioner pdp = (apply)? REMOTE : PDataPartitioner.NONE;		
 		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
 		//      matrix and hence always apply REMOTE_MR (the benefit for large matrices outweigths
 		//      potentially unnecessary MR jobs for smaller matrices)

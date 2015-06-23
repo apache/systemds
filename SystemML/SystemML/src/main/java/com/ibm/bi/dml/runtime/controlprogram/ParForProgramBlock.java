@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteSpark;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
@@ -171,7 +172,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		NONE,       // no data partitioning
 		LOCAL,      // local file based partition split on master node
 		REMOTE_MR,  // remote partition split using a reblock MR job 
-		UNSPECIFIED
+		REMOTE_SPARK, // remote partition split using a spark job
+		UNSPECIFIED, 
   	}
 
 	public enum PResultMerge {
@@ -1119,10 +1121,13 @@ public class ParForProgramBlock extends ForProgramBlock
 						Data dpdatNew = _variablesDPReuse.get(var);
 						if( dpdatNew == null ) //no reuse opportunity
 						{
-							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
+							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner, ec );
 							//disable binary cell for sparse if consumed by MR jobs
-							if( !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf ) )
+							if(    !OptimizerRuleBased.allowsBinaryCellPartitions(moVar, dpf )
+								|| OptimizerUtils.isSparkExecutionMode() ) //TODO support for binarycell
+							{
 								dp.disableBinaryCell();
+							}
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
 							dpdatNew = moVarNew;
 							
@@ -1410,31 +1415,38 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @param dpf
 	 * @param dataPartitioner
+	 * @param ec 
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	private DataPartitioner createDataPartitioner(PDataPartitionFormat dpf, PDataPartitioner dataPartitioner) 
+	private DataPartitioner createDataPartitioner(PDataPartitionFormat dpf, PDataPartitioner dataPartitioner, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
 		DataPartitioner dp = null;
 		
+		//determine max degree of parallelism
+		int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() )
+			maxNumRed = (int)Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );				
+		int numRed = Math.min(numReducers,maxNumRed);
+		
+		//create data partitioner
 		switch( dataPartitioner )
 		{
 			case LOCAL:
 				dp = new DataPartitionerLocal(dpf, -1, _numThreads);
 				break;
 			case REMOTE_MR:
-				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
-				int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-				//correction max number of reducers on yarn clusters
-				if( InfrastructureAnalyzer.isYarnEnabled() )
-					maxNumRed = (int)Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );				
-				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, 
-						                          Math.min(numReducers,maxNumRed),
+				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, numRed,
 						                          _replicationDP, 
 						                          MAX_RETRYS_ON_ERROR, 
 						                          ALLOW_REUSE_MR_JVMS, false );
 				break;
+			case REMOTE_SPARK:
+				dp = new DataPartitionerRemoteSpark( dpf, -1, ec, numRed, false );
+				break;	
 			default:
 				throw new DMLRuntimeException("Undefined data partitioner: '" +dataPartitioner.toString()+"'.");
 		}

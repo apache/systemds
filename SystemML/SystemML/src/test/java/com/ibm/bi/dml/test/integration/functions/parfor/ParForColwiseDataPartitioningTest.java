@@ -11,6 +11,8 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -109,6 +111,31 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, true);
 	}
 
+	@Test
+	public void testParForDataPartitioningRemoteSparkLocalLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteSparkLocalLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningRemoteSparkRemoteLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteSparkRemoteLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, true);
+	}
+
+	
 	//colblockwise partitioning
 	
 
@@ -171,6 +198,31 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	{
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, true);
 	}
+	
+	@Test
+	public void testParForDataPartitioningRemoteSparkLocalSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteSparkLocalSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningRemoteSparkRemoteSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_MR, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteSparkRemoteSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_MR, true, true);
+	}
+
 
 	//NOT colwise
 	
@@ -184,6 +236,18 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	public void testParForNoDataPartitioningRemoteLocalLargeSparse() 
 	{
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, true, true);
+	}
+	
+	@Test
+	public void testParForNoDataPartitioningRemoteSparkLocalLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, false, true);
+	}
+	
+	@Test
+	public void testParForNoDataPartitioningRemoteSparkLocalLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, true, true);
 	}
 	
 	/**
@@ -206,78 +270,95 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	 */
 	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse, boolean multiParts )
 	{
-		//inst exec type, influenced via rows
-		int rows = -1, cols = -1;
-		if( small )
-		{
-			rows = rows1;
-			cols = cols1;
+		RUNTIME_PLATFORM oldRT = rtplatform;
+		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
+		if( partitioner == PDataPartitioner.REMOTE_SPARK || mode == PExecMode.REMOTE_SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		}
-		else
+
+		try
 		{
-			rows = rows2;
-			cols = cols2;
-		}
+			//inst exec type, influenced via rows
+			int rows = small ? rows1 : rows2;
+			int cols = small ? cols1 : cols2;
+				
+			//script
+			int scriptNum = -1;
+			switch( partitioner )
+			{
+				case NONE: 
+					scriptNum=1; 
+					break; 
+				case LOCAL: 
+					if( mode==PExecMode.LOCAL )
+						scriptNum=2; 
+					else
+						scriptNum=3;
+				case REMOTE_MR: 
+					if( mode==PExecMode.LOCAL ){
+						if( !multiParts )
+							scriptNum = 4; 
+						else 
+							scriptNum = 6;
+					}
+					else
+						scriptNum = 5;	
+					break; 
+				case REMOTE_SPARK: 
+					if( mode==PExecMode.LOCAL ){
+						if( !multiParts )
+							scriptNum = 7; 
+						else 
+							scriptNum = 9;
+					}
+					else
+						scriptNum = 8;	
+					break; 
+				default:
+					//do nothing
+			}
 			
-		//script
-		int scriptNum = -1;
-		switch( partitioner )
-		{
-			case NONE: 
-				scriptNum=1; 
-				break; 
-			case LOCAL: 
-				if( mode==PExecMode.LOCAL )
-					scriptNum=2; 
-				else
-					scriptNum=3;
-			case REMOTE_MR: 
-				if( mode==PExecMode.LOCAL ){
-					if( !multiParts )
-						scriptNum = 4; 
-					else 
-						scriptNum = 6;
-				}
-				else
-					scriptNum = 5;	
-				break; 
-			default:
-				//do nothing
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
+			
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
+			programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
+					                        Integer.toString(rows),
+					                        Integer.toString(cols),
+					                        HOME + OUTPUT_DIR + "R" };
+			fullRScriptName = HOME + TEST_NAME + (multiParts?"6":"") + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			
+			loadTestConfiguration(config);
+	
+			long seed = System.nanoTime();
+			double sparsity = -1;
+			if( sparse )
+				sparsity = sparsity2;
+			else
+				sparsity = sparsity1;
+	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+			writeInputMatrix("V", V, true);
+	
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1);
+			runRScript(true);
+			
+			//compare matrices
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 		}
-		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        HOME + OUTPUT_DIR + "R" };
-		fullRScriptName = HOME + TEST_NAME + (multiParts?"6":"") + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
-
-		long seed = System.nanoTime();
-		double sparsity = -1;
-		if( sparse )
-			sparsity = sparsity2;
-		else
-			sparsity = sparsity1;
-        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
-		writeInputMatrix("V", V, true);
-
-		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
-		runRScript(true);
-		
-		//compare matrices
-		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
-		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
+		finally
+		{
+			rtplatform = oldRT;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseSparkConfig;
+		}
 	}
 }

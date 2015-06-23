@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1,rows=$2,cols=$3);
+n = $3;
+
+R = matrix(0, rows=1,cols=n); 
+dummy = matrix(1, rows=1, cols=1);
+
+parfor( i in 1:n-1, par=4, mode=LOCAL, datapartitioner=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
+{
+   X = V[,i:(i+1)];                 
+   sX = sum(X);
+   R[1,i] = dummy * sX; 
+}   
+
+write(R, $4);       

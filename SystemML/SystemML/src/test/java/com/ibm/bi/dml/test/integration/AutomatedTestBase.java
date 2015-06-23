@@ -990,6 +990,8 @@ public abstract class AutomatedTestBase
 			args.add("nz");
 		else if (rtplatform == RUNTIME_PLATFORM.SPARK)
 			args.add("spark");
+		else if (rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+			args.add("hybrid_spark");
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}

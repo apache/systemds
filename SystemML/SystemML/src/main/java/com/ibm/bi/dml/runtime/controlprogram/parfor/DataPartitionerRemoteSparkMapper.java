@@ -29,6 +29,8 @@ import scala.Tuple2;
  * NOTE: for the moment we only support binary block here
  * TODO extend impl for binarycell and textcell	
  * 
+ * Interface of Writable output in order to support both PairWritableBlock and PairWritableCell.
+ * 
  */
 public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Writable> 
 {
@@ -64,7 +66,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	public Iterable<Tuple2<Long, Writable>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{	
-		List<Tuple2<Long,Writable>> ret = new LinkedList<Tuple2<Long, Writable>>();
+		List<Tuple2<Long, Writable>> ret = new LinkedList<Tuple2<Long, Writable>>();
 		
 		MatrixIndexes key2 =  arg0._1();
 		MatrixBlock value2 = arg0._2();

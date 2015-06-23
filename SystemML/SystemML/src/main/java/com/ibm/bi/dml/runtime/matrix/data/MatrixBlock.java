@@ -5127,11 +5127,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we dont allow matrices with dims 0)
-		if( nonZeros==0 ) {
+		if( isEmptyBlock(false) ) {
 			if( rows )
-				ret.reset(1, clen, false);
+				ret.reset(1, clen, sparse);
 			else //cols
-				ret.reset(rlen, 1, false);	
+				ret.reset(rlen, 1, sparse);	
 			return ret;
 		}
 		

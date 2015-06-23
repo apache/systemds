@@ -911,7 +911,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				sparseRows[r].copy(values);
 			nonZeros+=values.size();
 			
-		}else
+		}
+		else
 		{
 			int[] cols=values.getIndexContainer();
 			double[] vals=values.getValueContainer();
@@ -5186,36 +5187,48 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 
 		//Step 2: reset result and copy rows
-		//dense stays dense, sparse might be dense/sparse
+		//dense stays dense if correct input representation (but robust for any input), 
+		//sparse might be dense/sparse
 		rlen2 = Math.max(rlen2, 1); //ensure valid output
 		boolean sp = evalSparseFormatInMemory(rlen2, n, nonZeros);
 		ret.reset(rlen2, n, sp);
 		
-		if( sparse ) //SPARSE
+		if( sparse ) //* <- SPARSE
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
 				if( flags[i] )
 					ret.appendRow(cix++, sparseRows[i]);
 		}
-		else //DENSE
+		else if( !sparse && !ret.sparse )  //DENSE <- DENSE
 		{
 			ret.allocateDenseBlock();
 			double[] a = denseBlock;
 			double[] c = ret.denseBlock;
 			
 			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
-				if( flags[i] )
-				{
+				if( flags[i] ) {
 					System.arraycopy(a, aix, c, cix, n);
 					cix += n; //target index
+				}
+		}
+		else //SPARSE <- DENSE
+		{
+			ret.allocateSparseRowsBlock();
+			double[] a = denseBlock;
+			
+			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+				if( flags[i] ) {
+					for( int j=0; j<n; j++ )
+						ret.appendValue(cix, j, a[aix+j]);
+					cix++;
 				}
 		}
 		
 		//check sparsity
 		ret.nonZeros = this.nonZeros;
 		ret.examSparsity();
-		
+
 		return ret;
 	}
 	
@@ -5270,12 +5283,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				cix[j] = pos++;	
 		
 		//Step 3: reset result and copy cols
-		//dense stays dense, sparse might be dense/sparse
+		//dense stays dense if correct input representation (but robust for any input), 
+		// sparse might be dense/sparse
 		clen2 = Math.max(clen2, 1); //ensure valid output
 		boolean sp = evalSparseFormatInMemory(m, clen2, nonZeros);
 		ret.reset(m, clen2, sp);
 			
-		if( sparse ) //SPARSE 
+		if( sparse ) //* <- SPARSE 
 		{
 			//note: output dense or sparse
 			SparseRow[] a = sparseRows;
@@ -5289,7 +5303,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 						ret.appendValue(i, cix[aix[j]], avals[j]);
 				}
 		}
-		else //DENSE
+		else if( !sparse && !ret.sparse )  //DENSE <- DENSE
 		{
 			ret.allocateDenseBlock();
 			double[] a = denseBlock;
@@ -5299,6 +5313,16 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				for(int j=0; j<n; j++, aix++)
 					if( a[aix] != 0 )
 						 c[ lcix+cix[j] ] = a[aix];	
+		}
+		else //SPARSE <- DENSE
+		{
+			ret.allocateSparseRowsBlock();
+			double[] a = denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						 ret.appendValue(i, cix[j], a[aix]);	
 		}
 		
 		//check sparsity

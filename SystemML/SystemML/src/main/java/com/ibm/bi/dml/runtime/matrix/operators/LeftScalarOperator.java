@@ -9,6 +9,10 @@
 package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
@@ -42,5 +46,14 @@ public class LeftScalarOperator extends ScalarOperator
 		//disable sparse-safe for c^M because 1^0=1
 		if( fn instanceof Power )
 			sparseSafe = false;
+		
+		//enable conditionally sparse safe operations
+		if(    (fn instanceof GreaterThan && _constant<=0)
+			|| (fn instanceof GreaterThanEquals && _constant<0)
+			|| (fn instanceof LessThan && _constant>=0)
+			|| (fn instanceof LessThanEquals && _constant>0))
+		{
+			sparseSafe = true;
+		}
 	}
 }

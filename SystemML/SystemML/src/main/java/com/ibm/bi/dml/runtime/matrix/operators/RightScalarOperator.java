@@ -9,6 +9,10 @@
 package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 
@@ -27,5 +31,21 @@ public class RightScalarOperator extends ScalarOperator
 	@Override
 	public double executeScalar(double in) throws DMLRuntimeException {
 		return fn.execute(in, _constant);
+	}
+	
+
+	@Override
+	public void setConstant(double cst) 
+	{
+		super.setConstant(cst);
+		
+		//enable conditionally sparse safe operations
+		if(    (fn instanceof GreaterThan && _constant>=0)
+			|| (fn instanceof GreaterThanEquals && _constant>0)
+			|| (fn instanceof LessThan && _constant<=0)
+			|| (fn instanceof LessThanEquals && _constant<0))
+		{
+			sparseSafe = true;
+		}
 	}
 }

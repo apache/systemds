@@ -19,23 +19,23 @@
 # 								 - X[,1]: timestamps 
 #								 - X[,2]: whether an event occurred (1) or data is censored (0)
 #								 - X[,3:]: feature vectors 	
-# P   	  String   ---	        Location to read the matrix P containing the start and end indices of the factors (categorical variables) 
-#								in the input matrix X
-#								 - P[,1]: start indices
-#								 - P[,2]: end indices	
+# F   	  String   " "	        If factors (categorical variables) available in the input matrix X, location to read the matrix F containing 
+#								the start and end indices of the factors in X
+#								 - F[,1]: start indices
+#								 - F[,2]: end indices	
 #								Alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from X; 
-#								in this case the start and end indices corresponding to the baseline level need to be the same  	
-# O       String   ---          Location to store results of Cox regression analysis including estimated regression parameters (the betas), 
-#						        their standard errors and confidence intervals and p-values 
-# B  	  String   ---			Location to store the coefficients (the betas) of the fitted Cox model
-# S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including;
-#								by default is standard output 
-#								log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare 
+#								in this case the start and end indices corresponding to the baseline level need to be the same;
+#								if F is not provided by default all variables are considered to be continuous   	
+# M       String   ---          Location to store results of Cox regression analysis including estimated regression parameters of the fitted 
+#								Cox model (the betas), their standard errors and confidence intervals and p-values 
+# S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including			
+#								log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare; by default is standard output  
 # T       String   " "          Location to store the results of Likelihood ratio test, Wald test, and Score (log-rank) test of the fitted model;
 #								by default is standard output 
 # COV	  String   ---			Location to store the variance-covariance matrix of the betas
-# RT      String   ---			Location to store matrix RT containing the order preserving recoded timestamps from X 
+# RT      String   ---			Location to store matrix RT containing the order-preserving recoded timestamps from X 
 # XO      String   ---			Location to store sorted input matrix by the timestamps 
+# BF      String   " "          If factors available in the input matrix X, location to store column indices of X excluding the baseline factors
 # alpha   Double   0.05         Parameter to compute a 100*(1-alpha)% confidence interval for the betas  
 # tol     Double   0.000001     Tolerance ("epsilon")
 # moi     Int      100     		Max. number of outer (Newton) iterations
@@ -43,14 +43,14 @@
 # fmt     String   "text"       Matrix output format, usually "text" or "csv" (for matrices only)
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# 1- A D x 7 matrix O, where D denotes the number of covariates, with the following schema:
-#	O[,1]: betas	
-#	O[,2]: exp(betas)
-#	O[,3]: standard error of betas
-#	O[,4]: Z 
-#	O[,5]: p-value
-#	O[,6]: lower 100*(1-alpha)% confidence interval of betas
-#	O[,7]: upper 100*(1-alpha)% confidence interval of betas
+# 1- A D x 7 matrix M, where D denotes the number of covariates, with the following schema:
+#	M[,1]: betas	
+#	M[,2]: exp(betas)
+#	M[,3]: standard error of betas
+#	M[,4]: Z 
+#	M[,5]: p-value
+#	M[,6]: lower 100*(1-alpha)% confidence interval of betas
+#	M[,7]: upper 100*(1-alpha)% confidence interval of betas
 #
 # Two log files containing a summary of some statistics of the fitted model in CSV format:
 # 1- File S with the following format 
@@ -64,25 +64,26 @@
 #	- line 3: Score (log-rank) test statistic, degree of freedom, p-value
 # 
 # Additionally, the following matrices are stored (needed for prediction)
-# 1- A column matrix RT that contains the order preserving recoded timestamps from X 
+# 1- A column matrix RT that contains the order-preserving recoded timestamps from X 
 # 2- Matrix XO which is matrix X sorted according to timestamps  
 # 3- Variance-covariance matrix of the betas COV
+# 4- A column matrix BF that contains the column indices of X excluding the baseline factors if available
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X P=INPUT_DIR/P O=OUTPUT_DIR/O B=OUTPUT_DIR/B 
-#									 S=OUTPUT_DIR/S T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT  
-#									 XO=OUTPUT_DIR/XO alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
+# hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X F=INPUT_DIR/F M=OUTPUT_DIR/M S=OUTPUT_DIR/S 
+#									  T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT XO=OUTPUT_DIR/XO 
+#									  BF=OUTPUT/BF alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
 
 fileX = $X;
-fileP = $P;
-fileO = $O;
-fileB = $B;
+fileM = $M;
 fileXO = $XO;
 fileCOV = $COV;
 
 # Default values of some parameters
+fileF = ifdef ($F, " ");         	 # $F=" " 
 fileS = ifdef ($S, " ");         	 # $S=" " 
 fileT = ifdef ($T, " ");         	 # $T=" " 
+fileBF = ifdef ($BF, " ");         	 # $BF=" " 
 fmtO = ifdef ($fmt, "text");         # $fmt="text" 
 alpha = ifdef ($alpha, 0.05);        # $alpha=0.05
 lambda = ifdef ($lambda, 0.0);       # $lambda=0.0;
@@ -91,30 +92,30 @@ maxiter = ifdef ($moi, 100);    	 # $moi=100;
 maxinneriter = ifdef ($mii, 0);      # $mii=0;
 
 X_orig = read (fileX);
-P = read (fileP);
-
 
 ######## CHECK FOR FACTORS AND REMOVE THE BASELINE OF EACH FACTOR FROM THE DATASET
 
-if (ncol (P) == 2) {
-	if (as.scalar (P[1,1]) != 0 & as.scalar (P[1,2]) != 0) {
-		print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
-		# remove the baseline columns from X_orig
-		col_ind = seq (1, ncol(X_orig));
-		col_sum = colSums (X_orig);
-		P = order (target = P, by = 1); # sort according to start index
-		parfor (i in 1:nrow (P), check = 0) {
-			start_ind = as.scalar (P[i,1]);
-			end_ind = as.scalar (P[i,2]);
-			baseline_ind = as.scalar (rowIndexMax (col_sum[1, start_ind:end_ind])) + start_ind - 1;
-			col_ind[baseline_ind,] = 0;
-		}
-		col_ind = removeEmpty (target = col_ind, margin = "rows");
-		# pull out the remaining cols from X_orig
-		X_orig = X_orig %*% table (col_ind, seq (1, nrow (col_ind)), ncol (X_orig), nrow (col_ind));
+if (fileF != " ") {
+	F = read (fileF);
+	print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
+	# remove the baseline columns from X_orig
+	col_ind = seq (1, ncol(X_orig));
+	col_sum = colSums (X_orig);
+	F = order (target = F, by = 1); # sort according to start index
+	parfor (i in 1:nrow (F), check = 0) {
+		start_ind = as.scalar (F[i,1]);
+		end_ind = as.scalar (F[i,2]);
+		baseline_ind = as.scalar (rowIndexMax (col_sum[1, start_ind:end_ind])) + start_ind - 1;
+		col_ind[baseline_ind,] = 0;
 	}
-} else { 
-	stop ("P has a wrong number of columns!");
+	col_ind = removeEmpty (target = col_ind, margin = "rows");
+	# pull out the remaining cols from X_orig
+	X_orig = X_orig %*% table (col_ind, seq (1, nrow (col_ind)), ncol (X_orig), nrow (col_ind));
+	if (fileBF != " ") {
+		write (col_ind, fileBF, fmtO);
+	} else {
+		stop ("Please provide argument IF!");
+	}
 }
 
 ######## RECODING TIMESTAMPS PRESERVING THE ORDER
@@ -399,16 +400,16 @@ Rsquare_max = 1 - exp (-2 * o_init / N);
 S_str = append (S_str, "Rsquare (Cox & Snell): " + Rsquare + " ");
 S_str = append (S_str, "max possible Rsquare: " + Rsquare_max);
 
-Y = matrix (0, rows = D, cols = 7);
-Y[,1] = b;
-Y[,2] = exp_b;
-Y[,3] = se_b;
-Y[,4] = Z;
-Y[,5] = P;
-Y[,6] = CI_l;
-Y[,7] = CI_r;
+M = matrix (0, rows = D, cols = 7);
+M[,1] = b;
+M[,2] = exp_b;
+M[,3] = se_b;
+M[,4] = Z;
+M[,5] = P;
+M[,6] = CI_l;
+M[,7] = CI_r;
 
-write (Y, fileO, fmtO);
+write (M, fileM, fmtO);
 if (fileS != " ") {
 	write (S_str, fileS);
 } else {
@@ -420,7 +421,6 @@ if (fileT != " ") {
 	print (T_str);
 }
 # needed for prediction
-write (b, fileB, fmtO);
 write (RT, fileRT, fmtO);
 write (H_inv, fileCOV, fmtO);
 write (X_orig, fileXO, fmtO);

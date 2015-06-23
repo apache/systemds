@@ -265,9 +265,9 @@ public class SparseRow implements Serializable
 				return -1;
 		}
 		
-		//search lt col index
+		//search lt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index-1 >= 0 )
+		if( index-1 < size )
 			return index-1;
 		else 
 			return -1;
@@ -290,7 +290,7 @@ public class SparseRow implements Serializable
 				return -1;
 		}
 		
-		//search gt col index
+		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
 		if( index < size )
 			return index;
@@ -314,10 +314,10 @@ public class SparseRow implements Serializable
 				return -1;
 		}
 		
-		//search gt col index
+		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
-		if( index+1 < size )
-			return index+1;
+		if( index < size )
+			return index;
 		else 
 			return -1;
 	}
@@ -355,27 +355,6 @@ public class SparseRow implements Serializable
 		System.arraycopy(values, end, values, start, size-end);
 		System.arraycopy(indexes, end, indexes, start, size-end);
 		size-=(end-start);
-	}
-		
-	/**
-	 * 
-	 * @param lowerCol
-	 * @param upperCol
-	 */
-	public void deleteIndexComplementaryRange(int lowerCol, int upperCol)
-	{
-		int start = searchIndexesFirstGTE(lowerCol);
-		if( start<0 ) 
-			return;
-		
-		int end = searchIndexesFirstGT(upperCol);
-		if( end<0 || start>end ) 
-			return;
-		
-		//overlapping array copy (shift ixrange values left)
-		System.arraycopy(values, start, values, 0, end-start);
-		System.arraycopy(indexes, start, indexes, 0, end-start);
-		size = (end-start);
 	}
 
 

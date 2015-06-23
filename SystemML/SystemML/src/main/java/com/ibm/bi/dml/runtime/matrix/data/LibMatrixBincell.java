@@ -774,6 +774,10 @@ public class LibMatrixBincell
 			return;
 		}
 		
+		//sanity check input/output sparsity
+		if( m1.sparse != ret.sparse )
+			throw new DMLRuntimeException("Unsupported safe binary scalar operations over different input/output representation: "+m1.sparse+" "+ret.sparse);
+		
 		boolean copyOnes = (op.fn == NotEquals.getNotEqualsFnObject() && op.getConstant()==0);
 		
 		if( m1.sparse ) //SPARSE <- SPARSE
@@ -833,6 +837,7 @@ public class LibMatrixBincell
 					ret.nonZeros++;
 			}
 		}
+		
 	}
 	
 	/**
@@ -855,6 +860,10 @@ public class LibMatrixBincell
 			return;
 		}
 		
+		//sanity check input/output sparsity
+		if( ret.sparse )
+			throw new DMLRuntimeException("Unsupported unsafe binary scalar operations over sparse output representation.");
+		
 		if( m1.sparse ) //SPARSE MATRIX
 		{
 			ret.allocateDenseBlock();
@@ -864,10 +873,12 @@ public class LibMatrixBincell
 			int clen = m1.clen;
 			double cval0= op.executeScalar(0);
 			
-			for(int r=0, cix=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++, cix+=clen){
+			for(int r=0, cix=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++, cix+=clen) {
 				//set base val for row (in cache for subsequent update)
-				Arrays.fill(c, cix, cix+clen, cval0); 
-				ret.nonZeros += clen;
+				if( cval0 != 0 ) { //awareness of unnecessarily sparse-unsafe ops
+					Arrays.fill(c, cix, cix+clen, cval0); 
+					ret.nonZeros += clen;
+				}
 				
 				if( a[r]!=null && !a[r].isEmpty() )
 				{
@@ -877,7 +888,7 @@ public class LibMatrixBincell
 					for(int j=0; j<alen; j++) {
 						double val = op.executeScalar(avals[j]);
 						c[ cix+aix[j] ] = val;
-						ret.nonZeros -= (val==0)? 1 : 0;
+						ret.nonZeros -= (val==0 && cval0!=0)? 1 : 0;
 					}
 				}
 			}

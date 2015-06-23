@@ -20,9 +20,8 @@
 # GI	  String   ---          Column indices of X corresponding to the factors to be used for grouping in csv format
 # SI	  String   ---          Column indices of X corresponding to the factors to be used for stratifying in csv format				
 # O       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis
-# M       String   ---          Location to write the median and its confidence intervals; 
-#								if survival data for multiple groups and strata are provided each row of S contains the median
-#							    and its confidence interval for a group and a stratum  
+# M       String   ---          Location to write Matrix M containing the following statistic: total number of events, median and its confidence intervals; 
+#								if survival data for multiple groups and strata are provided each row of M contains the above statistics per group and stratum
 # T 	  String   " "			If survival data from multiple groups available and ttype=log-rank or wilcoxon, 
 #								location to write the matrix containing result of the (stratified) test for comparing multiple groups
 # alpha   Double   0.05         Parameter to compute 100*(1-alpha)% confidence intervals for the survivor function and its median 
@@ -48,13 +47,15 @@
 #	,i.e., ncol(GI) and t denotes the number of factors used for stratifying, i.e., ncol(SI))
 #	M[,1:k]: unique combination of values in the k factors used for grouping 
 #   M[,(k+1):(k+t)]: unique combination of values in the t factors used for stratifying
-#	M[,k+t+1]: median of surv
-#	M[,k+t+2]: lower 100*(1-alpha)% confidence interval of the median of surv 
-#	M[,k+t+3]: upper 100*(1-alpha)% confidence interval of the median of surv
+#	M[,k+t+1]: total number of events
+#	M[,k+t+2]: median of surv
+#	M[,k+t+3]: lower 100*(1-alpha)% confidence interval of the median of surv 
+#	M[,k+t+4]: upper 100*(1-alpha)% confidence interval of the median of surv
 #	If the number of groups and/or the number of strata is greater than 1, M will have 3 columns with 
-#	M[,1]: median of surv
-#	M[,2]: lower 100*(1-alpha)% confidence interval of the median of surv 
-#	M[,3]: upper 100*(1-alpha)% confidence interval of the median of surv
+#	M[,1]: total number of events
+#	M[,2]: median of surv
+#	M[,3]: lower 100*(1-alpha)% confidence interval of the median of surv 
+#	M[,4]: upper 100*(1-alpha)% confidence interval of the median of surv
 # 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T with	
 #	T[1,1] = no. of groups
 #	T[1,2] = degree of freedom for Chi-squared distributed test statistic
@@ -224,7 +225,7 @@ KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
 KM_cols = seq (1, num_groups * num_strata * 7);
 GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
-M = matrix (a, rows = num_groups * num_strata, cols = 3);
+M = matrix (a, rows = num_groups * num_strata, cols = 4);
 M_cols = seq (1, num_groups * num_strata);
 z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
 
@@ -277,6 +278,10 @@ parfor (s in 1:num_strata, check = 0) {
 	n_event_all_stratum = aggregate (target = E, groups = RT, fn = "count"); # no. both censored and uncensored of events per stratum 
 	Idx1 = cumsum (n_event_all_stratum); 
 	time_stratum = table (seq (1, nrow (Idx1), 1), Idx1) %*% T; # distinct timestamps both censored and uncensored per stratum 
+	time_stratum_has_zero = sum (ppred (time_stratum, 0, "==")) > 0;
+	if (time_stratum_has_zero) {
+		time_stratum = 	replace (target = time_stratum, pattern = 0, replacement = "Infinity");
+	}
 	n_time_all1 = nrow (n_event_stratum);  # no. of distinct timestamps both censored and uncensored per stratum
 	n_event_all_stratum_agg = matrix (0, rows = n_time_all1, cols = 1); 
 	if (n_time_all1 > 1) {
@@ -305,7 +310,14 @@ parfor (s in 1:num_strata, check = 0) {
 			n_event = aggregate (target = E_cur, groups = RT, fn = "sum"); # no. of uncensored events per stratum per group
 			n_event_all = aggregate (target = group_ind, groups = RT, fn = "sum"); # no. of both censored and uncensored events per stratum per group
 			Idx1 = cumsum (n_event_all); 
-			time = removeEmpty (target = time_stratum * ppred (n_event, 0, ">"), margin = "rows");
+			event_occurred = ppred (n_event, 0, ">");
+			if (time_stratum_has_zero) {
+				time = replace (target = time_stratum * event_occurred, pattern = "NaN", replacement = 0);
+				time = removeEmpty (target = time, margin = "rows");
+				time = replace (target = time, pattern = "Infinity", replacement = 0);
+			} else {
+				time = removeEmpty (target = time_stratum * event_occurred, margin = "rows");
+			}
 			n_time_all2 = nrow (n_event);  # no. of distinct timestamps both censored and uncensored per stratum per group
 			n_event_all_agg = matrix (0, rows = n_time_all2, cols = 1); 
 			if (n_time_all2 > 1) {
@@ -356,15 +368,17 @@ parfor (s in 1:num_strata, check = 0) {
 				CI_r[n_time,] = 0/0;
 			}	
 		
-			# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
-			KM[1:n_time,KM_offset + 1] = time;
-			KM[1:n_time,KM_offset + 2] = n_risk;			
-			KM[1:n_time,KM_offset + 3] = n_event;
-			KM[1:n_time,KM_offset + 4] = surv;
-			KM[1:n_time,KM_offset + 5] = se_surv;
-			KM[1:n_time,KM_offset + 6] = CI_l;
-			KM[1:n_time,KM_offset + 7] = CI_r;
-			
+			n_event_sum = sum (n_event);
+			if (n_event_sum > 0) {
+				# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+				KM[1:n_time,KM_offset + 1] = time;
+				KM[1:n_time,KM_offset + 2] = n_risk;			
+				KM[1:n_time,KM_offset + 3] = n_event;
+				KM[1:n_time,KM_offset + 4] = surv;
+				KM[1:n_time,KM_offset + 5] = se_surv;
+				KM[1:n_time,KM_offset + 6] = CI_l;
+				KM[1:n_time,KM_offset + 7] = CI_r;
+			}
 			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
 			p_5 = ppred (surv, 0.5, "<="); 
@@ -372,6 +386,7 @@ parfor (s in 1:num_strata, check = 0) {
 			# M_offset = (s - 1) * num_groups + g;
 			# if the estimated survivor function is larger than 0.5 for all timestamps median does not exist! 
 			p_5_exists = (pn_5 != 0);
+			M[M_offset,1] = n_event_sum;
 			if (p_5_exists) {
 				if ( as.scalar (surv[n_time - pn_5 + 1,1]) == 0.5 ) { # if the estimated survivor function is exactly equal to 0.5
 					if (pn_5 > 1) {
@@ -392,27 +407,27 @@ parfor (s in 1:num_strata, check = 0) {
 				if (l_min_ind == n_time) {
 					if (l_ind_sum > 0) {
 						if (as.scalar (l_ind[n_time,1]) == 0) { # NA at last position
-							M[M_offset,2] = time[n_time - l_ind_sum,1];
-						} else {
-							M[M_offset,2] = time[1,1];
-						}
-					}
-				} else {
-					M[M_offset,2] = time[l_min_ind + 1,1];
-				}
-				#
-				if (r_min_ind == n_time) {
-					if (r_ind_sum > 0) {
-						if (as.scalar (r_ind[n_time,1]) == 0) { # NA at last position
-							M[M_offset,3] = time[n_time - r_ind_sum,1];
+							M[M_offset,3] = time[n_time - l_ind_sum,1];
 						} else {
 							M[M_offset,3] = time[1,1];
 						}
 					}
 				} else {
-					M[M_offset,3] = time[r_min_ind + 1,1];
+					M[M_offset,3] = time[l_min_ind + 1,1];
 				}
-				M[M_offset,1] = t_5;
+				#
+				if (r_min_ind == n_time) {
+					if (r_ind_sum > 0) {
+						if (as.scalar (r_ind[n_time,1]) == 0) { # NA at last position
+							M[M_offset,4] = time[n_time - r_ind_sum,1];
+						} else {
+							M[M_offset,4] = time[1,1];
+						}
+					}
+				} else {
+					M[M_offset,4] = time[r_min_ind + 1,1];
+				}
+				M[M_offset,2] = t_5;
 			}
 		} else {
 			print ("group " + g + " is not present in the stratum " + s);

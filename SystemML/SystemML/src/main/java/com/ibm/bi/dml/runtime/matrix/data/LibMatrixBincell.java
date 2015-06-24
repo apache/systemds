@@ -870,28 +870,30 @@ public class LibMatrixBincell
 			
 			SparseRow[] a = m1.sparseRows;
 			double[] c = ret.denseBlock;			
-			int clen = m1.clen;
-			double cval0= op.executeScalar(0);
+			int m = m1.rlen;
+			int n = m1.clen;
 			
-			for(int r=0, cix=0; r<Math.min(m1.rlen, m1.sparseRows.length); r++, cix+=clen) {
-				//set base val for row (in cache for subsequent update)
-				if( cval0 != 0 ) { //awareness of unnecessarily sparse-unsafe ops
-					Arrays.fill(c, cix, cix+clen, cval0); 
-					ret.nonZeros += clen;
-				}
-				
-				if( a[r]!=null && !a[r].isEmpty() )
+			//init dense result with unsafe 0-value
+			double cval0 = op.executeScalar(0);
+			Arrays.fill(c, cval0);
+			
+			//compute non-zero input values
+			for(int i=0, cix=0; i<m; i++, cix+=n) 
+			{
+				if( a[i]!=null && !a[i].isEmpty() )
 				{
-					int alen = a[r].size();
-					int[] aix = a[r].getIndexContainer();
-					double[] avals = a[r].getValueContainer();
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();
 					for(int j=0; j<alen; j++) {
 						double val = op.executeScalar(avals[j]);
 						c[ cix+aix[j] ] = val;
-						ret.nonZeros -= (val==0 && cval0!=0)? 1 : 0;
 					}
 				}
 			}
+		
+			//recompute non zeros 
+			ret.recomputeNonZeros();
 		}
 		else //DENSE MATRIX
 		{

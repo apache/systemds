@@ -2243,20 +2243,22 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
+		PResultMerge REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
+				PResultMerge.REMOTE_SPARK : PResultMerge.REMOTE_MR;
 		PResultMerge ret = null;
 		
 		//investigate details of current parfor node
-		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
+		boolean flagRemoteParFOR = (n.getExecType() == ExecType.MR || n.getExecType() == ExecType.SPARK);
 		boolean flagLargeResult = hasLargeTotalResults( n, pfpb.getResultVariables(), vars, true );
-		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
+		boolean flagRemoteLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
 		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars, true );
 		
 		//optimimality decision on result merge
 		//MR, if remote exec, and w/compare (prevent huge transfer/merge costs)
-		if( flagMRParFOR && flagLargeResult )
+		if( flagRemoteParFOR && flagLargeResult )
 		{
-			ret = PResultMerge.REMOTE_MR;
+			ret = REMOTE;
 		}
 		//CP, if all results in mem	
 		else if( flagOnlyInMemResults )
@@ -2266,10 +2268,10 @@ public class OptimizerRuleBased extends Optimizer
 		//MR, if result partitioning and copy not possible
 		//NOTE: 'at least one' instead of 'all' condition of flagMRLeftIndexing because the 
 		//      benefit for large matrices outweigths potentially unnecessary MR jobs for smaller matrices)
-		else if(    ( flagMRParFOR || flagMRLeftIndexing) 
+		else if(    ( flagRemoteParFOR || flagRemoteLeftIndexing) 
 			    && !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
 		{
-			ret = PResultMerge.REMOTE_MR;
+			ret = REMOTE;
 		}
 		//CP, otherwise (decide later if in mem or file-based)
 		else
@@ -2285,7 +2287,7 @@ public class OptimizerRuleBased extends Optimizer
 
 		//recursively apply rewrite for parfor nodes
 		if( n.getChilds() != null )
-			rInvokeSetResultMerge(n.getChilds(), vars, inLocal && !flagMRParFOR);
+			rInvokeSetResultMerge(n.getChilds(), vars, inLocal && !flagRemoteParFOR);
 		
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result merge' - result="+ret );
@@ -2343,7 +2345,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			String opName = n.getParam(ParamType.OPSTRING);
 			//check opstring and exec type
-			if( opName !=null && opName.equals(LeftIndexingOp.OPSTRING) && n.getExecType()==ExecType.MR )
+			if( opName !=null && opName.equals(LeftIndexingOp.OPSTRING) && 
+				(n.getExecType() == ExecType.MR || n.getExecType() == ExecType.SPARK) )
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname

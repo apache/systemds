@@ -18,6 +18,7 @@ import org.junit.runners.Suite;
 	ParForRowwiseDataPartitioningTest.class,
 	
 	ParForParallelRemoteResultMergeTest.class,
+	ParForSerialRemoteResultMergeTest.class,
 	ParForRepeatedOptimizationTest.class,
 	ParForRulebasedOptimizerTest.class
 })

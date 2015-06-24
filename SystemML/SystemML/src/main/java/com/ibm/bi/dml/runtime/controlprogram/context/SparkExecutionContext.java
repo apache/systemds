@@ -137,7 +137,22 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 	
 	/**
-	 * This call returns an RDD handle for a given variable name. This includes 
+	 * 
+	 * @param varname
+	 * @param inputInfo
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		MatrixObject mo = getMatrixObject(varname);
+		return getRDDHandleForMatrixObject(mo, inputInfo);
+	}
+	
+	/**
+	 * This call returns an RDD handle for a given matrix object. This includes 
 	 * the creation of RDDs for in-memory or binary-block HDFS data. 
 	 * 
 	 * 
@@ -147,10 +162,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) 
+	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		MatrixObject mo = getMatrixObject(varname);
 		
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are 
@@ -174,7 +188,7 @@ public class SparkExecutionContext extends ExecutionContext
 			mo.release(); //unpin matrix
 			
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, varname);
+			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
 			mo.setRDDHandle(rddhandle);
 		}
 		//CASE 3: non-dirty (file exists on HDFS)
@@ -199,7 +213,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			
 			//keep rdd handle for future operations on it
-			RDDObject rddhandle = new RDDObject(rdd, varname);
+			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
 			rddhandle.setHDFSFile(true);
 			mo.setRDDHandle(rddhandle);
 		}

@@ -88,7 +88,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
 		//Timing time = null;
-		LOG.trace("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		LOG.trace("ResultMerge (remote, mr): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
 		//	time = new Timing();
 		//	time.start();
 		

@@ -1,0 +1,22 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1,rows=$2,cols=$3);
+m = $2;
+n = $3;
+
+R1 = matrix(1,rows=m,cols=n);
+parfor( i in 1:(n-7), par=8, mode=REMOTE_SPARK, resultmerge=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
+{
+   X = V[,i];
+   R1[,i] = X;
+}   
+
+R = R1 + R1; 
+write(R, $4);       

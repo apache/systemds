@@ -138,7 +138,6 @@ public abstract class ResultMerge
 					}
 		}	
 	}
-	
 
 	protected long computeNonZeros( MatrixObject out, ArrayList<MatrixObject> in )
 	{
@@ -153,6 +152,20 @@ public abstract class ResultMerge
 			long inNNZ = tmpmc.getNonZeros();
 			ret +=  (inNNZ - outNNZ);			
 		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	protected ArrayList<MatrixObject> convertToList(MatrixObject[] in)
+	{
+		ArrayList<MatrixObject> ret = new ArrayList<MatrixObject>();
+		for( MatrixObject mo : in )
+			ret.add( mo );
 		
 		return ret;
 	}

@@ -58,6 +58,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeRemoteMR;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeRemoteSpark;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoring;
@@ -177,10 +178,11 @@ public class ParForProgramBlock extends ForProgramBlock
   	}
 
 	public enum PResultMerge {
-		LOCAL_MEM,  // in-core (in-memory) result merge (output and one input at a time)
-		LOCAL_FILE, // out-of-core result merge (file format dependent)
+		LOCAL_MEM,       // in-core (in-memory) result merge (output and one input at a time)
+		LOCAL_FILE,      // out-of-core result merge (file format dependent)
 		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix 
-		REMOTE_MR, // remote parallel result merge
+		REMOTE_MR,       // remote MR parallel result merge
+		REMOTE_SPARK,    // remote Spark parallel result merge
 		UNSPECIFIED,
 	}
 	
@@ -1463,11 +1465,24 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname ) 
+	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname, ExecutionContext ec ) 
 		throws DMLRuntimeException 
 	{
 		ResultMerge rm = null;
 		
+		//determine degree of parallelism
+		int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+		int maxRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+		//correction max number of reducers on yarn clusters
+		if( InfrastructureAnalyzer.isYarnEnabled() ) {					
+			maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );	
+			maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );	
+		}
+		int numMap = Math.max(_numThreads, maxMap);
+		int numRed = Math.min(numReducers, maxRed);
+		
+		//create result merge implementation		
 		switch( prm )
 		{
 			case LOCAL_MEM:
@@ -1480,21 +1495,15 @@ public class ParForProgramBlock extends ForProgramBlock
 				rm = new ResultMergeLocalAutomatic( out, in, fname );
 				break;
 			case REMOTE_MR:
-				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
-				int maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-				int maxRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-				//correction max number of reducers on yarn clusters
-				if( InfrastructureAnalyzer.isYarnEnabled() ) {					
-					maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );	
-					maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );	
-				}
-				rm = new ResultMergeRemoteMR( out, in, fname, _ID, 
-					                          Math.max(_numThreads, maxMap), 
-					                          Math.min(numReducers, maxRed),
+				rm = new ResultMergeRemoteMR( out, in, fname, _ID, numMap, numRed,
 					                          WRITE_REPLICATION_FACTOR, 
 					                          MAX_RETRYS_ON_ERROR, 
 					                          ALLOW_REUSE_MR_JVMS );
-				break;	
+				break;
+			case REMOTE_SPARK:
+				rm = new ResultMergeRemoteSpark( out, in, fname, ec, numMap, numRed );
+				break;
+				
 			default:
 				throw new DMLRuntimeException("Undefined result merge: '" +prm.toString()+"'.");
 		}
@@ -1686,7 +1695,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					for( int i=0; i< results.length; i++ )
 						in[i] = (MatrixObject) results[i].get( var ); 			
 					String fname = constructResultMergeFileName();
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, ec);
 					MatrixObject outNew = null;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );
@@ -1732,7 +1741,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		return (USE_PARALLEL_RESULT_MERGE_REMOTE 
 			    && _resultVars.size() > 1
-			    && _resultMerge == PResultMerge.REMOTE_MR);
+			    && ( _resultMerge == PResultMerge.REMOTE_MR
+			       ||_resultMerge == PResultMerge.REMOTE_SPARK) );
 	}
 	
 	/**
@@ -1995,7 +2005,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						in[i] = (MatrixObject) _refVars[i].get( varname ); 			
 					String fname = constructResultMergeFileName();
 				
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, _ec);
 					MatrixObject outNew = null;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );

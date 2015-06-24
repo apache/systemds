@@ -21,7 +21,6 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 public class LeftIndexingOp  extends Hop 
 {
@@ -216,10 +215,6 @@ public class LeftIndexingOp  extends Hop
 		setVisited(VisitStatus.DONE);
 	}
 
-	public SQLLops constructSQLLOPs() throws HopsException {
-		throw new HopsException(this.printErrorLocation() + "constructSQLLOPs should not be called for LeftIndexingOp \n");
-	}
-	
 	@Override
 	public boolean allowsAllExecTypes()
 	{

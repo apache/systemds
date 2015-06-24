@@ -75,11 +75,6 @@ public class DotGraph
 		String graphString = HopGraph.getHopGraphString(dmlp, title, x, y, basePath);
 		visualize(graphString, title, x, y, basePath, draw_graph);
 	}
-	
-	public void drawSQLLopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath, boolean draw_graph) throws HopsException, LanguageException {
-		String graphString = SQLLopGraph.getSQLLopGraphString(dmlp, title, x, y, basePath);
-		visualize(graphString, title, x, y, basePath, draw_graph);
-	}
 
 	/**
 	 * 

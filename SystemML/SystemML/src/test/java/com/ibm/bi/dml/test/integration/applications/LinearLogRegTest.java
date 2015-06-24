@@ -8,7 +8,6 @@
 package com.ibm.bi.dml.test.integration.applications;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,9 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
@@ -65,8 +62,7 @@ public class LinearLogRegTest extends AutomatedTestBase
     }
     
     @Test
-    @SuppressWarnings("unused")
-	public void testLinearLogReg() throws ClassNotFoundException, SQLException, IOException
+    public void testLinearLogReg() throws ClassNotFoundException, IOException
     {
     	int rows = numRecords;			// # of rows in the training data 
         int cols = numFeatures;
@@ -109,31 +105,6 @@ public class LinearLogRegTest extends AutomatedTestBase
         writeInputMatrix("yt", yt, true);
         
         
-        HashMap<CellIndex, Double> wSQL = null;
-        if(RUNNETEZZA)
-        {
-        	String path1 = baseDirectory + INPUT_DIR + "X";
-			String path2 = baseDirectory + INPUT_DIR + "y";
-			String path3 = baseDirectory + INPUT_DIR + "Xt";
-			String path4 = baseDirectory + INPUT_DIR + "yt";
-			String file1 = DMLScript.class.getProtectionDomain().getCodeSource().getLocation().toString().replace("bin/", "") + path1.replace("./", "");
-			String file2 = DMLScript.class.getProtectionDomain().getCodeSource().getLocation().toString().replace("bin/", "") + path2.replace("./", "");
-			String file3 = DMLScript.class.getProtectionDomain().getCodeSource().getLocation().toString().replace("bin/", "") + path3.replace("./", "");
-			String file4 = DMLScript.class.getProtectionDomain().getCodeSource().getLocation().toString().replace("bin/", "") + path4.replace("./", "");
-			
-			NetezzaConnector con = new NetezzaConnector();
-			con.connect();
-			
-			con.exportHadoopDirectoryToNetezza(file1.substring(6).replace("%20", " "), path1, true);
-			con.exportHadoopDirectoryToNetezza(file2.substring(6).replace("%20", " "), path2, true);
-			con.exportHadoopDirectoryToNetezza(file3.substring(6).replace("%20", " "), path3, true);
-			con.exportHadoopDirectoryToNetezza(file4.substring(6).replace("%20", " "), path4, true);
-			con.disconnect();
-			
-			runSQL();
-			wSQL = readDMLmatrixFromTable("w");
-        }
-        
 		boolean exceptionExpected = false;
 		int expectedNumberOfJobs = 31;
 		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
@@ -143,10 +114,5 @@ public class LinearLogRegTest extends AutomatedTestBase
         HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
         TestUtils.compareMatrices(wR, wDML, Math.pow(10, -14), "wR", "wDML");
-        
-        if(wSQL != null)
-        {
-        	TestUtils.compareMatrices(wR, wSQL, Math.pow(10, -14), "wR", "wSQL");
-        }
     }
 }

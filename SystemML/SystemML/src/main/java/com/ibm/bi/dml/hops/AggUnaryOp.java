@@ -19,14 +19,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.sql.sqllops.SQLCondition;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
-import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 
 /* Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
@@ -221,117 +213,6 @@ public class AggUnaryOp extends Hop
 			}
 			setVisited(VisitStatus.DONE);
 		}
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() throws HopsException {
-		
-		if(this.getSqlLops() == null)
-		{
-			if(this.getInput().size() != 1)
-				throw new HopsException(this.printErrorLocation() + "The aggregate unary hop must have one input");
-			
-			//Check whether this is going to be an Insert or With
-			GENERATES gen = determineGeneratesFlag();
-			
-			Hop input = this.getInput().get(0);
-			SQLLops lop = new SQLLops(this.getName(),
-									gen,
-									input.constructSQLLOPs(),
-									this.getValueType(),
-									this.getDataType());
-			
-			//TODO Uncomment this to make scalar placeholders
-			if(this.getDataType() == DataType.SCALAR && gen == GENERATES.DML)
-				lop.set_tableName("##" + lop.get_tableName() + "##");
-			
-			lop.set_sql(getSQLSelectCode(input));
-			lop.set_properties(getProperties(input));
-			this.setSqlLops(lop);
-			return lop;
-		}
-		else
-			return this.getSqlLops();
-	}
-	
-	@SuppressWarnings("unused")
-	private SQLSelectStatement getSQLSelect(Hop input)
-	{
-		SQLSelectStatement stmt = new SQLSelectStatement();
-		stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.getSqlLops().get_tableName()), ""));
-		
-		if((this._op == AggOp.SUM && _direction == Direction.RowCol) || this._op == AggOp.TRACE)
-		{
-			stmt.getColumns().add("SUM(value)");
-			if(this._op == AggOp.TRACE)
-				stmt.getWheres().add(new SQLCondition("row = col"));
-		}
-		else if(_op == AggOp.SUM)
-		{
-			if(_direction == Direction.Row)
-			{
-				stmt.getColumns().add("row");
-				stmt.getColumns().add("1 AS col");
-				stmt.getGroupBys().add("row");
-			}
-			else
-			{
-				stmt.getColumns().add("1 AS row");
-				stmt.getColumns().add("col");
-				stmt.getGroupBys().add("col");
-			}
-			stmt.getColumns().add("SUM(value)");
-		}
-		
-		return stmt;
-	}
-	
-	private SQLLopProperties getProperties(Hop input)
-	{
-		SQLLopProperties prop = new SQLLopProperties();
-		JOINTYPE join = JOINTYPE.NONE;
-		AGGREGATIONTYPE agg = AGGREGATIONTYPE.NONE;
-		
-		//TODO: PROD
-		if(_op == AggOp.SUM || _op == AggOp.TRACE)
-			agg = AGGREGATIONTYPE.SUM;
-		else if(_op == AggOp.MAX)
-			agg = AGGREGATIONTYPE.MAX;
-		else if(_op == AggOp.MIN)
-			agg = AGGREGATIONTYPE.MIN;
-		
-		prop.setAggType(agg);
-		prop.setJoinType(join);
-		prop.setOpString(Hop.HopsAgg2String.get(_op) + " " + input.getSqlLops().get_tableName());
-		
-		return prop;
-	}
-	
-	private String getSQLSelectCode(Hop input)
-	{
-		String sql = null;
-		if(this._op == AggOp.PROD)
-		{
-		
-		}
-		else if(this._op == AggOp.TRACE)
-		{
-			sql = String.format(SQLLops.UNARYTRACE, input.getSqlLops().get_tableName());
-		}
-		else if(this._op == AggOp.SUM)
-		{
-			if(this._direction == Direction.RowCol)
-				sql = String.format(SQLLops.UNARYSUM, input.getSqlLops().get_tableName());
-			else if(this._direction == Direction.Row)
-				sql = String.format(SQLLops.UNARYROWSUM, input.getSqlLops().get_tableName());
-			else
-				sql = String.format(SQLLops.UNARYCOLSUM, input.getSqlLops().get_tableName());
-		}
-		else
-		{
-			sql = String.format(SQLLops.UNARYMAXMIN, Hop.HopsAgg2String.get(this._op),input.getSqlLops().get_tableName());
-		}
-		return sql;
 	}
 	
 	@Override

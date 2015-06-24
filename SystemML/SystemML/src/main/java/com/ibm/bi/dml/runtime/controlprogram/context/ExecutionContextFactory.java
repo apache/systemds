@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.controlprogram.context;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 
 public class ExecutionContextFactory 
 {
@@ -52,22 +51,8 @@ public class ExecutionContextFactory
 			case HYBRID_SPARK:
 				ec = new SparkExecutionContext(allocateVars, prog);
 				break;
-				
-			case NZ:
-				ec = new SQLExecutionContext(allocateVars, prog);
-				break;
 		}
 		
 		return ec;
-	}
-	
-	/**
-	 * 
-	 * @param conn
-	 * @return
-	 */
-	public static SQLExecutionContext createSQLContext( NetezzaConnector conn )
-	{
-		return new SQLExecutionContext(conn);
 	}
 }

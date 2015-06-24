@@ -18,7 +18,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 
@@ -173,10 +172,6 @@ public class IndexingOp extends Hop
 			}
 		}
 		setVisited(VisitStatus.DONE);
-	}
-
-	public SQLLops constructSQLLOPs() throws HopsException {
-		throw new HopsException(this.printErrorLocation() + "constructSQLLOPs should not be called for IndexingOp Hop \n");
 	}
 	
 	@Override

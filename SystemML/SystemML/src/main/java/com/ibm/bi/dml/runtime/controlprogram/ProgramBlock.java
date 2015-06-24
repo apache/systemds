@@ -44,8 +44,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ComputationSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
-import com.ibm.bi.dml.runtime.instructions.sql.SQLInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.sql.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -249,7 +247,6 @@ public class ProgramBlock
 	{
 		ScalarObject ret = null;
 		String retName = null;
- 		boolean isSQL = false;
 
  		//execute all instructions
  		for (int i = 0; i < inst.size(); i++)
@@ -267,21 +264,11 @@ public class ProgramBlock
 					retName = ((ComputationCPInstruction) currInst).getOutputVariableName();  
 				else if(currInst instanceof VariableCPInstruction && ((VariableCPInstruction)currInst).getOutputVariableName()!=null)
 					retName = ((VariableCPInstruction)currInst).getOutputVariableName();
-				else if(currInst instanceof SQLScalarAssignInstruction){
-					retName = ((SQLScalarAssignInstruction) currInst).getVariableName();
-					isSQL = true;
-				}
 			}
 		}
 		
-		//get return value
-		if(!isSQL)
-			// TODO: how do we differentiate literals and variables?
-			ret = (ScalarObject) ec.getScalarInput(retName, retType, false);
-		else {
-			throw new DMLRuntimeException("Encountered unimplemented feature!");
-			//ret = (ScalarObject) ec.getVariable(retName, retType);
-		}
+		//get return value TODO: how do we differentiate literals and variables?
+		ret = (ScalarObject) ec.getScalarInput(retName, retType, false);
 		
 		//execute rmvar instructions
 		for (int i = 0; i < inst.size(); i++) {
@@ -423,10 +410,6 @@ public class ProgramBlock
 				
 				if( CHECK_MATRIX_SPARSITY )
 					checkSparsity( tmp, ec.getVariables() );
-			}
-			else if(currInst instanceof SQLInstructionBase)
-			{			
-				((SQLInstructionBase)currInst).execute(null); // TODO: must pass SQLExecutionContext here!!!
 			}
 			//check if breakpoint instruction 
 			else if (DMLScript.ENABLE_DEBUG_MODE && currInst instanceof BreakPointInstruction)

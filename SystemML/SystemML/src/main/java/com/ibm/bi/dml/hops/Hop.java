@@ -32,8 +32,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 
 public abstract class Hop 
@@ -100,7 +98,6 @@ public abstract class Hop
 	protected boolean _outputEmptyBlocks = true;
 	
 	private Lop _lops = null;
-	private SQLLops _sqllops = null;
 	
 	protected Hop(){
 		//default constructor for clone
@@ -750,10 +747,9 @@ public abstract class Hop
 
 	public abstract Lop constructLops() 
 		throws HopsException, LopsException;
-	
-	public abstract SQLLops constructSQLLOPs() throws HopsException; 
 
-	protected abstract ExecType optFindExecType() throws HopsException;
+	protected abstract ExecType optFindExecType() 
+		throws HopsException;
 	
 	public abstract String getOpString();
 
@@ -780,15 +776,15 @@ public abstract class Hop
 				hopRoot.resetVisitStatus();
 	}
 	
-	public void resetVisitStatus() {
-		if (this.getVisited() == Hop.VisitStatus.NOTVISITED)
+	public void resetVisitStatus() 
+	{
+		if ( getVisited() == Hop.VisitStatus.NOTVISITED )
 			return;
+		
 		for (Hop h : this.getInput())
 			h.resetVisitStatus();
 		
-		if(this.getSqlLops() != null)
-			this.getSqlLops().setVisited(VisitStatus.NOTVISITED);
-		this.setVisited(Hop.VisitStatus.NOTVISITED);
+		setVisited(Hop.VisitStatus.NOTVISITED);
 	}
 
 	public static void resetRecompilationFlag( ArrayList<Hop> hops, ExecType et )
@@ -893,14 +889,6 @@ public abstract class Hop
 
 	public void setLops(Lop lops) {
 		_lops = lops;
-	}
-	
-	public SQLLops getSqlLops() {
-		return _sqllops;
-	}
-
-	public void setSqlLops(SQLLops sqllops) {
-		_sqllops = sqllops;
 	}
 
 	public VisitStatus getVisited() {
@@ -1374,39 +1362,6 @@ public abstract class Hop
 			return ValueType.INT;
 	}
 	
-	@SuppressWarnings("unused")
-	protected GENERATES determineGeneratesFlag()
-	{
-		//Check whether this is going to be an Insert or With
-		GENERATES gen = GENERATES.SQL;
-		if(this.getParent().size() > 1)
-			gen = GENERATES.DML;
-		else
-		{
-			boolean hasWriteOutput = false;
-			for(Hop h : this.getParent())
-				if(h instanceof DataOp)
-				{
-					DataOp o = ((DataOp)h);
-					if(o.getDataOpType() == DataOpTypes.PERSISTENTWRITE || o.getDataOpType() == DataOpTypes.TRANSIENTWRITE)
-					{
-						hasWriteOutput = true;
-						break;
-					}
-				}
-				else if(h instanceof UnaryOp && ((UnaryOp)h).getOp() == OpOp1.PRINT)
-				{
-					hasWriteOutput = true;
-					break;
-				}
-			if(hasWriteOutput)
-				gen = GENERATES.DML;
-		}
-		if(BREAKONSCALARS && this.getDataType() == DataType.SCALAR)
-			gen = GENERATES.DML;
-		return gen;
-	}
-	
 	/////////////////////////////////////
 	// methods for dynamic re-compilation
 	/////////////////////////////////////
@@ -1731,7 +1686,6 @@ public abstract class Hop
 		_parent = new ArrayList<Hop>();
 		_input = new ArrayList<Hop>();
 		_lops = null;
-		_sqllops = null;
 		
 		_etype = that._etype;
 		_etypeForced = that._etypeForced;

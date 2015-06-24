@@ -61,7 +61,6 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.controlprogram.context.SQLExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -71,8 +70,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
 import com.ibm.bi.dml.utils.Statistics;
@@ -92,12 +89,8 @@ public class DMLScript
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
-		NZ,             // execute matrix operations on NZ SQL backend
 		SPARK			// execute matrix operations in Spark
 	};
-	
-	//switch to disable Netezza runtime for production
-	private static final boolean DISABLE_NZ_RUNTIME = true;
 	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
@@ -524,8 +517,6 @@ public class DMLScript
 			lrtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		else if ( platform.equalsIgnoreCase("hybrid"))
 			lrtplatform = RUNTIME_PLATFORM.HYBRID;
-		else if ( platform.equalsIgnoreCase("nz"))
-			lrtplatform = RUNTIME_PLATFORM.NZ;
 		else if ( platform.equalsIgnoreCase("spark"))
 			lrtplatform = RUNTIME_PLATFORM.SPARK;
 		else if ( platform.equalsIgnoreCase("hybrid_spark"))
@@ -639,10 +630,6 @@ public class DMLScript
 			case HYBRID_SPARK:
 				executeHadoop(dmlt, prog, conf, dmlScriptStr, allArgs);
 				break;
-			case NZ:
-				if( DISABLE_NZ_RUNTIME )
-					throw new DMLRuntimeException("Runtime platform '"+rtplatform+"' is disabled for production use.");
-				executeNetezza(dmlt, prog, conf, "dmlnz");	
 				
 			default:
 				throw new DMLRuntimeException("Unsupported runtime platform: "+rtplatform);
@@ -856,92 +843,6 @@ public class DMLScript
 			cleanupHadoopExecution( conf );		
 		}
 	} 
-
-	/**
-	 * executeNetezza: handles execution on Netezza runtime
-	 * 
-	 * @param dmlt DML Translator
-	 * @param prog DML program from parsed DML script
-	 * @param config from parsed config file (e.g., config.xml)
-	 * @throws ParseException 
-	 * @throws HopsException 
-	 * @throws DMLRuntimeException 
-	 */
-	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName)
-		throws HopsException, LanguageException, ParseException, DMLRuntimeException
-	{
-		dmlt.constructSQLLops(prog);
-	
-		SQLProgram sqlprog = dmlt.getSQLProgram(prog);
-		String[] split = fileName.split("/");
-		String name = split[split.length-1].split("\\.")[0];
-		sqlprog.set_name(name);
-		dmlt.resetSQLLopsDAGVisitStatus(prog);
-
-		// plan visualization (hops after rewrite)
-		if(VISUALIZE){
-//			DotGraph g = new DotGraph();
-//			g.drawSQLLopsDAG(prog, "SQLLopsDAG", 100, 100, PATH_TO_SRC, VISUALIZE);
-//			dmlt.resetSQLLopsDAGVisitStatus(prog);
-		}
-	
-		String sql = sqlprog.generateSQLString();
-	
-		Program pr = sqlprog.getProgram();
-		pr.printMe();
-	
-		if (true) {
-			System.out.println(sql);
-		}
-	
-		NetezzaConnector con = new NetezzaConnector();
-		try
-		{
-			SQLExecutionContext ec = ExecutionContextFactory.createSQLContext(con);
-			ec.setDebug(false);
-	
-			con.connect();
-			long time = System.currentTimeMillis();
-			pr.execute(ec);
-			long end = System.currentTimeMillis() - time;
-			System.out.println("Control program took " + ((double)end / 1000) + " seconds");
-			con.disconnect();
-			System.out.println("Done");
-		}
-		catch(Exception e)
-		{
-			throw new DMLRuntimeException(e);
-		}
-		
-		/*
-		// Code to execute the stored procedure version of the DML script
-		try
-		{
-			con.connect();
-			con.executeSQL(sql);
-			long time = System.currentTimeMillis();
-			con.callProcedure(name);
-			long end = System.currentTimeMillis() - time;
-			System.out.println("Stored procedure took " + ((double)end / 1000) + " seconds");
-			System.out.println(String.format("Procedure %s was executed on Netezza", name));
-			con.disconnect();
-		}
-		catch(Exception e)
-		{
-			throw new DMLRuntimeException(e);
-		}*/
-		
-		//cleanup netezza connector
-		try { 
-			con.close(); 
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
-
-	} // end executeNetezza
-	
-	
 	
 
 	/**

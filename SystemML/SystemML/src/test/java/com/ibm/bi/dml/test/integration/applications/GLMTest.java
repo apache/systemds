@@ -8,7 +8,6 @@
 package com.ibm.bi.dml.test.integration.applications;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -194,7 +193,7 @@ public class GLMTest extends AutomatedTestBase
     }
     
     @Test
-    public void testGLM() throws ClassNotFoundException, SQLException, IOException
+    public void testGLM() throws ClassNotFoundException, IOException
     {
     	int rows = numRecords;			    // # of rows in the training data 
         int cols = numFeatures;			    // # of features in the training data 

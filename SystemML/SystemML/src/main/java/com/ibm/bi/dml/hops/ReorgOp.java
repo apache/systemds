@@ -20,11 +20,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 /**
  *  Reorg (cell) operation: aij
@@ -299,56 +294,7 @@ public class ReorgOp extends Hop
 		
 		return transform1;
 	}
-	
-	@Override
-	public SQLLops constructSQLLOPs() throws HopsException {
-		if (this.getSqlLops() == null) {
-			if (this.getInput().size() != 1)
-				throw new HopsException(this.printErrorLocation() + "An unary hop must have only one input \n");
-
-			// Check whether this is going to be an Insert or With
-			GENERATES gen = determineGeneratesFlag();
-
-			Hop input = this.getInput().get(0);
-
-			SQLLops sqllop = new SQLLops(this.getName(),
-										gen,
-										input.constructSQLLOPs(),
-										this.getValueType(),
-										this.getDataType());
-
-			String sql = null;
-			if (this.op == ReOrgOp.TRANSPOSE) {
-				sql = String.format(SQLLops.TRANSPOSEOP, input.getSqlLops().get_tableName());
-			} 
-			//TODO diag (size-aware)
-			/*
-			else if (op == ReOrgOp.DIAG_M2V) {
-				sql = String.format(SQLLops.DIAG_M2VOP, input.getSqlLops().get_tableName());
-			} else if (op == ReOrgOp.DIAG_V2M) {
-				sql = String.format(SQLLops.DIAG_V2M, input.getSqlLops().get_tableName());
-			}
-			*/
 			
-			//TODO reshape
-			
-			sqllop.set_properties(getProperties(input));
-			sqllop.set_sql(sql);
-
-			this.setSqlLops(sqllop);
-		}
-		return this.getSqlLops();
-	}
-	
-	private SQLLopProperties getProperties(Hop input)
-	{
-		SQLLopProperties prop = new SQLLopProperties();
-		prop.setJoinType(JOINTYPE.NONE);
-		prop.setAggType(AGGREGATIONTYPE.NONE);
-		prop.setOpString(HopsTransf2String.get(op) + "(" + input.getSqlLops().get_tableName() + ")");
-		return prop;
-	}
-		
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		

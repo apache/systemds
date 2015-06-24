@@ -25,7 +25,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
@@ -122,13 +121,6 @@ public class QuaternaryOp extends Hop
 			}
 			setVisited(VisitStatus.DONE);
 		}
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() 
-		throws HopsException 
-	{
-		throw new HopsException("QuaternaryOp does not support SQL lops yet!");
 	}
 
 	@Override

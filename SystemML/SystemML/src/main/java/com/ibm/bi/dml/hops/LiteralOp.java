@@ -14,11 +14,6 @@ import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 
 public class LiteralOp extends Hop 
@@ -155,65 +150,7 @@ public class LiteralOp extends Hop
 		}
 		return "LiteralOp " + val;
 	}
-	
-	private SQLLopProperties getProperties() 
-		throws HopsException
-	{
-		SQLLopProperties prop = new SQLLopProperties();
-		prop.setJoinType(JOINTYPE.NONE);
-		prop.setAggType(AGGREGATIONTYPE.NONE);
 		
-		String val = null;
-		switch (getValueType()) {
-			case DOUBLE:
-				val = Double.toString(value_double);
-				break;
-			case BOOLEAN:
-				val = Boolean.toString(value_boolean);
-				break;
-			case STRING:
-				val = value_string;
-				break;
-			case INT:
-				val = Long.toString(value_long);
-				break;
-			default:
-				throw new HopsException("Invalid value type: "+getValueType());
-		}
-		
-		prop.setOpString(val);
-		
-		return prop;
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() throws HopsException {
-		/*
-		 * Does not generate SQL, instead the actual value is passed in the table name and can be inserted directly
-		 */
-		if(this.getSqlLops() == null)
-		{
-			SQLLops sqllop = new SQLLops(this.getName(),
-										GENERATES.NONE,
-										this.getValueType(),
-										this.getDataType());
-
-			//Retrieve string for value
-			if(this.getValueType() == ValueType.DOUBLE)
-				sqllop.set_tableName(String.format(Double.toString(this.value_double)));
-			else if(this.getValueType() == ValueType.INT)
-				sqllop.set_tableName(String.format(Long.toString(this.value_long)));
-			else if(this.getValueType() == ValueType.STRING)
-				sqllop.set_tableName("'" + this.value_string + "'");
-			else if(this.getValueType() == ValueType.BOOLEAN)
-				sqllop.set_tableName(Boolean.toString(this.value_boolean));
-			
-			sqllop.set_properties(getProperties());
-			this.setSqlLops(sqllop);
-		}
-		return this.getSqlLops();
-	}
-	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		

@@ -18,8 +18,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
@@ -606,9 +604,6 @@ public class DataExpression extends DataIdentifier
 
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = true;
-			
-			if ( DMLScript.rtplatform == RUNTIME_PLATFORM.NZ)
-				shouldReadMTD = false;
 			
 			// track whether format type has been inferred 
 			boolean inferredFormatType = false;

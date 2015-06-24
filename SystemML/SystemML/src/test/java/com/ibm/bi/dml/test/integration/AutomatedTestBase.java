@@ -14,16 +14,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-
-
-
-
-
-
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -39,7 +31,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
@@ -444,34 +435,6 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 	
-	protected double[][] createTable(String name, double[][] matrix) throws ClassNotFoundException
-	{
-		NetezzaConnector con = null;
-		try{
-		con = new NetezzaConnector();
-		
-		con.connect();
-		con.createTable(baseDirectory + INPUT_DIR + name, matrix);
-		
-		return matrix;
-		}
-		catch(SQLException e)
-		{
-			return null;
-		}
-		finally
-		{
-			try
-			{
-				if(con != null)
-					con.disconnect();
-			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
-	}
 	/**
 	 * <p>
 	 * Adds a matrix to the input path and writes it to a file.
@@ -986,8 +949,6 @@ public abstract class AutomatedTestBase
 			args.add("hybrid");
 		else if (rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			args.add("singlenode");
-		else if (rtplatform == RUNTIME_PLATFORM.NZ)
-			args.add("nz");
 		else if (rtplatform == RUNTIME_PLATFORM.SPARK)
 			args.add("spark");
 		else if (rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
@@ -1048,31 +1009,6 @@ public abstract class AutomatedTestBase
 		}
 	}
 	
-	protected void runSQL()
-	{
-		String executionFile = baseDirectory + selectedTest + ".dmlt";
-		
-		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
-		
-		try {
-		if(DEBUG)
-			DMLScript.main(new String[] { "-f" ,executionFile, "-nz" });
-		else
-			DMLScript.main(new String[] { "-f" ,executionFile, "-nz" });
-		} catch (Exception e) {
-				e.printStackTrace();
-				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append("failed to run script " + executionFile);
-				errorMessage.append("\nexception: " + e.toString());
-				errorMessage.append("\nmessage: " + e.getMessage());
-				errorMessage.append("\nstack trace:");
-				for (StackTraceElement ste : e.getStackTrace()) {
-					errorMessage.append("\n>" + ste);
-				}
-				fail(errorMessage.toString());
-		}
-	}
-	
 	public void cleanupScratchSpace()
 	{
 		try 
@@ -1091,21 +1027,7 @@ public abstract class AutomatedTestBase
 			return; //no effect on tests
 		}
 	}
-	
-	protected HashMap<CellIndex, Double> readDMLmatrixFromTable(String tableName)
-	{
-		NetezzaConnector con = new NetezzaConnector();
-		try {
-			con.connect();
-			HashMap<CellIndex, Double> res = con.tableToHashMap(baseDirectory + OUTPUT_DIR + tableName);
-			con.disconnect();
-			return res;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
+		
 	/**
 	 * <p>
 	 * Compares the results of the computation with the expected ones.

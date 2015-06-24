@@ -26,11 +26,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
-import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 /**
  * 
@@ -170,34 +165,6 @@ public class DataGenOp extends Hop
 
 			setVisited(VisitStatus.DONE);
 		}
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() throws HopsException {
-		if(this.getSqlLops() == null)
-		{
-			
-			SQLLops sqllop = new SQLLops("Random" + _id.getName(), GENERATES.PROC,
-					this.getValueType(),
-					this.getDataType());
-
-			//TODO extend for seed
-			sqllop.set_sql("CALL gensparsematrix('" + sqllop.get_tableName() + "', " + this.getDim1() + ", "
-					+ this.getDim2() + ");");
-			
-			sqllop.set_properties(getProperties());
-			this.setSqlLops(sqllop);
-		}
-		return this.getSqlLops();
-	}
-	
-	private SQLLopProperties getProperties()
-	{
-		SQLLopProperties prop = new SQLLopProperties();
-		prop.setJoinType(JOINTYPE.NONE);
-		prop.setAggType(AGGREGATIONTYPE.NONE);
-		prop.setOpString("Rand");
-		return prop;
 	}
 
 	@Override

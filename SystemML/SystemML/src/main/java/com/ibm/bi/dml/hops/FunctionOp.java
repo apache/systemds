@@ -17,7 +17,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.
@@ -229,14 +228,6 @@ public class FunctionOp extends Hop
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() 
-		throws HopsException 
-	{
-		// TODO MB: @Shirish should we support function for SQL at all?
-		return null;
 	}
 
 	@Override

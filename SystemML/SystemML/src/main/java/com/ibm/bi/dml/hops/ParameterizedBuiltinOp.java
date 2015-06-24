@@ -24,7 +24,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.sql.sqllops.SQLLops;
 
 
 /**
@@ -555,12 +554,6 @@ public class ParameterizedBuiltinOp extends Hop
 
 			setVisited(VisitStatus.DONE);
 		}
-	}
-
-	@Override
-	public SQLLops constructSQLLOPs() throws HopsException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

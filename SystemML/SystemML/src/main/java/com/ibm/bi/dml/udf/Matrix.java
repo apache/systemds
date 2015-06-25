@@ -7,25 +7,21 @@
 
 package com.ibm.bi.dml.udf;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.nimble.hadoop.HDFSFileManager;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
+import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 /**
  * Class to represent the matrix input type
@@ -141,65 +137,26 @@ public class Matrix extends FunctionParameter
 	{
 		double[][] ret = null;
 		
-		if( _mo != null ) //CP ext function
+		try 
 		{
-			try
+			if( _mo != null ) //CP ext function
 			{
 				MatrixBlock mb = _mo.acquireRead();
 				ret = DataConverter.convertToDoubleMatrix( mb );
 				_mo.release();
 			}
-			catch(Exception ex)
+			else //traditional ext function (matrix file produced by reblock)
 			{
-				throw new PackageRuntimeException(ex);
+				MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
+				MatrixBlock mb = reader.readMatrixFromHDFS(this.getFilePath(), _rows, _cols, -1, -1, -1);
+				ret = DataConverter.convertToDoubleMatrix( mb );
 			}
 		}
-		else //traditional ext function (matrix file produced by reblock)
+		catch(Exception ex)
 		{
-			double[][] arr = new double[(int) _rows][(int) _cols];
-	
-			try {
-	
-				String[] files;
-	
-				// get file names for this matrix.
-	
-				files = HDFSFileManager.getFileNamesWithPrefixStatic(this
-						.getFilePath() + "/");
-				String line = null;
-	
-				// read each file into memory.
-				FastStringTokenizer st = new FastStringTokenizer(' ');
-				for (String file : files) 
-				{
-					FSDataInputStream inStrm = HDFSFileManager.getInputStreamStatic(file);
-					BufferedReader br = new BufferedReader(new InputStreamReader(inStrm));
-					try
-					{
-						while ((line = br.readLine()) != null) 
-						{
-							st.reset( line ); //reset tokenizer
-							int i = st.nextInt() - 1;
-							int j = st.nextInt() - 1;
-							double val = st.nextDouble();
-		
-							arr[ i ][ j ] = val;
-						}
-					}
-					finally
-					{
-						if( br != null )
-							br.close();
-					}
-				}
-			} 
-			catch (Exception e) 
-			{
-				throw new PackageRuntimeException(e.toString());
-			}
-			ret = arr;
+			throw new PackageRuntimeException(ex);
 		}
-		
+			
 		return ret;
 
 	}

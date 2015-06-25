@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
@@ -687,5 +688,20 @@ public class MapReduceTool
 		
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
 		//similarly setting dfs.datanode.data.dir.perm as no effect either.
+	}
+	
+	/**
+	 * 
+	 * @param filename
+	 * @param overwrite
+	 * @return
+	 * @throws IOException
+	 */
+	public static FSDataOutputStream getHDFSDataOutputStream(String filename, boolean overwrite) 
+		throws IOException
+	{
+		FileSystem fs = FileSystem.get(_rJob);
+		Path path = new Path(filename);
+		return fs.create(path, overwrite);
 	}
 }

@@ -55,7 +55,6 @@ import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
@@ -669,9 +668,6 @@ public class DMLScript
 			SystemMLdb.runSystemMLDebugger();
 		}
 		finally {
-			//shut down nimble queue (if existing)
-			ExternalFunctionProgramBlock.shutDownNimbleQueue();
-	    
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution(p.conf);
 		}
@@ -835,9 +831,6 @@ public class DMLScript
 			Statistics.stopRunTimer();
 			LOG.info(Statistics.display());
 			LOG.info("END DML run " + getDateTime() );
-			
-			//shut down nimble queue (if existing)
-			ExternalFunctionProgramBlock.shutDownNimbleQueue();
 			
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution( conf );		

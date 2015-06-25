@@ -21,18 +21,18 @@ public class ExternalFunctionStatement extends FunctionStatement
 	//valid attribute names
 	public static final String CLASS_NAME    = "classname";
 	public static final String EXEC_TYPE     = "exectype";
-	public static final String EXEC_LOCATION = "execlocation";
+	//public static final String EXEC_LOCATION = "execlocation"; 	//MB: obsolete
 	public static final String CONFIG_FILE   = "configfile";
 	
 	//valid attribute values for execlocation and 
 	public static final String FILE_BASED    = "file";
 	public static final String IN_MEMORY     = "mem";
-	public static final String MASTER        = "master";
-	public static final String WORKER        = "worker";
+	//public static final String MASTER        = "master";	//MB: obsolete
+	//public static final String WORKER        = "worker";	//MB: obsolete
 	
 	//default values for optional attributes
 	public static final String DEFAULT_EXEC_TYPE = FILE_BASED;
-	public static final String DEFAULT_EXEC_LOCATION = MASTER;
+	//public static final String DEFAULT_EXEC_LOCATION = MASTER; 	//MB: obsolete
 	
 	//all parameters
 	private HashMap<String,String> _otherParams;
@@ -72,9 +72,11 @@ public class ExternalFunctionStatement extends FunctionStatement
 		
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
-			if( !(   varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) || varName.equals(EXEC_LOCATION) 
+			if( !(   varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) 
 				  || varName.equals(CONFIG_FILE) ) )                                                  
-				LOG.warn("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " -- External function specifies undefined attribute type '"+varName+"'.");
+			{
+				LOG.warn( printWarningLocation() + "External function specifies undefined attribute type '"+varName+"'.");
+			}
 		
 		//class name (required)
 		if( !_otherParams.containsKey(CLASS_NAME) ){
@@ -97,21 +99,6 @@ public class ExternalFunctionStatement extends FunctionStatement
 		{
 			//put default values
 			_otherParams.put(EXEC_TYPE, DEFAULT_EXEC_TYPE);
-		}
-		
-		//exec location (optional, default: master)
-		if( _otherParams.containsKey( EXEC_LOCATION ) )
-		{
-			//check specified values
-			String execLocation = _otherParams.get(EXEC_LOCATION);
-			if( !(execLocation.equals(MASTER) || execLocation.equals(WORKER)) ){ //always unconditional (invalid parameter)
-				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"+EXEC_LOCATION+"' (valid values: "+MASTER+","+WORKER+").", false);
-			}
-		}
-		else
-		{
-			//put default values
-			_otherParams.put(EXEC_LOCATION, DEFAULT_EXEC_LOCATION);
 		}
 	}
 	

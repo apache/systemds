@@ -22,8 +22,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.nimble.hadoop.HDFSFileManager;
 
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.udf.FunctionParameter;
 import com.ibm.bi.dml.udf.Matrix;
 import com.ibm.bi.dml.udf.PackageFunction;
@@ -80,7 +80,7 @@ public class RemoveEmptyRows extends PackageFunction
 			
 			//prepare output
 			String fnameNew = createOutputFilePathAndName( OUTPUT_FILE );
-			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic( fnameNew, true);
+			DataOutputStream ostream = MapReduceTool.getHDFSDataOutputStream( fnameNew, true );
 		
 			//read and write if necessary
 			InputSplit[] splits = informat.getSplits(job, 1);

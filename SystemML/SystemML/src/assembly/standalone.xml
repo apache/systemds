@@ -123,7 +123,6 @@
 		<dependencySet>
 			<includes>
 				<include>*:JSON4J*</include>
-				<include>*:nimble-*</include>
 				<include>*:antlr*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>

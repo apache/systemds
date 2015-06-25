@@ -136,7 +136,11 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<excludes>
+						<exclude>**/udf/lib/kMeansWrapper.java</exclude>
 						<exclude>**/udf/lib/LinearSolverWrapperCP.java</exclude>
+						<exclude>**/udf/lib/OutlierWrapper.java</exclude>
+						<exclude>**/udf/lib/SequenceMinerWrapper.java</exclude>
+						<exclude>**/udf/lib/SGDWrapper.java</exclude>
 						<exclude>**/dml/utils/visualize/*.java</exclude>
 					</excludes>
 				</configuration>
@@ -423,11 +427,6 @@
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.ibm.thirdparty</groupId>
-			<artifactId>nimble-hadoop</artifactId>
-			<version>1.0.2</version>
 		</dependency>
 		<!-- <dependency> -->
 		<!-- <groupId>com.ibm.thirdparty</groupId> -->

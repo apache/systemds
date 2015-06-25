@@ -14,13 +14,6 @@ import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
-import org.nimble.configuration.NimbleConfig;
-import org.nimble.control.DAGQueue;
-import org.nimble.control.PMLDriver;
-import org.nimble.exception.NimbleCheckedRuntimeException;
-import org.nimble.task.AbstractTask;
-import org.w3c.dom.Element;
-
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
@@ -58,8 +51,6 @@ import com.ibm.bi.dml.udf.PackageFunction;
 import com.ibm.bi.dml.udf.PackageRuntimeException;
 import com.ibm.bi.dml.udf.Scalar;
 import com.ibm.bi.dml.udf.FunctionParameter.FunctionParameterType;
-import com.ibm.bi.dml.udf.WrapperTaskForControlNode;
-import com.ibm.bi.dml.udf.WrapperTaskForWorkerNode;
 import com.ibm.bi.dml.udf.BinaryObject;
 import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
 
@@ -71,9 +62,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		
 	protected static final IDSequence _idSeq = new IDSequence();
 
-	//handle to the nimble dag queue
-	protected static DAGQueue _dagQueue = null;
-	
 	protected String _baseDir = null;
 
 	ArrayList<Instruction> block2CellInst; 
@@ -121,12 +109,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 		_unblockedFileNames = new HashMap<String, String>();
 		_blockedFileNames = new HashMap<String, String>();
-
-		//setup nimble queue (if not existing)
-		setupNIMBLEQueue();
-		if (_dagQueue == null)
-			LOG.warn("dagQueue is not set");
-		
+	
 		// generate instructions
 		createInstructions();
 	}
@@ -213,19 +196,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		}
 		
 		// now execute package function
-		for (int i = 0; i < _inst.size(); i++) {
-
-			if (_inst.get(i) instanceof ExternalFunctionInvocationInstruction) {
-				try {
-					executeInstruction(ec,
-							(ExternalFunctionInvocationInstruction) _inst.get(i),
-							getDAGQueue());
-				} catch (NimbleCheckedRuntimeException e) {
-				
-					throw new PackageRuntimeException(this.printBlockErrorLocation() + 
-							"Failed to execute instruction "
-									+ _inst.get(i).toString(), e);
-				}
+		for (int i = 0; i < _inst.size(); i++) 
+		{
+			try {
+				if (_inst.get(i) instanceof ExternalFunctionInvocationInstruction)
+					executeInstruction(ec, (ExternalFunctionInvocationInstruction) _inst.get(i));
+			} 
+			catch(Exception e) {
+				throw new PackageRuntimeException(this.printBlockErrorLocation() + 
+						"Failed to execute instruction " + _inst.get(i).toString(), e);
 			}
 		}
 
@@ -305,8 +284,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// assemble information provided through keyvalue pairs
 		String className = _otherParams.get(ExternalFunctionStatement.CLASS_NAME);
 		String configFile = _otherParams.get(ExternalFunctionStatement.CONFIG_FILE);
-		String execLocation = _otherParams.get(ExternalFunctionStatement.EXEC_LOCATION);
-
+		
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
@@ -318,7 +296,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 		// generate instruction
 		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
-				className, configFile, execLocation, inputParameterString,
+				className, configFile, inputParameterString,
 				outputParameterString);
 		if(DMLScript.ENABLE_DEBUG_MODE) {
 			if (getInputParams().size() > 0)
@@ -629,10 +607,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @throws NimbleCheckedRuntimeException
 	 * @throws DMLRuntimeException 
 	 */
-
-	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst,
-			DAGQueue dQueue) throws NimbleCheckedRuntimeException, DMLRuntimeException {
-
+	@SuppressWarnings("unchecked")
+	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 
+		throws DMLRuntimeException 
+	{		
 		String className = inst.getClassName();
 		String configFile = inst.getConfigFile();
 
@@ -640,18 +618,19 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
 
 		// create instance of package function.
-
 		Object o;
-		try {
-			o = Class.forName(className).newInstance();
-		} catch (Exception e) {
-			throw new PackageRuntimeException(this.printBlockErrorLocation() +
-					"Error generating package function object " + e.toString());
+		try 
+		{
+			Class<Instruction> cla = (Class<Instruction>) Class.forName(className);
+			o = cla.newInstance();
+		} 
+		catch (Exception e) 
+		{
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " ,e );
 		}
 
 		if (!(o instanceof PackageFunction))
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + 
-					"Class is not of type PackageFunction");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class is not of type PackageFunction");
 
 		PackageFunction func = (PackageFunction) o;
 
@@ -660,36 +639,13 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		setupInputs(func, inst.getInputParams(), ec.getVariables());
 		func.setConfiguration(configFile);
 		func.setBaseDir(_baseDir);
-
-		AbstractTask t = null;
-
-		// determine exec location, default is control node
-		// and allocate the appropriate NIMBLE task
-		if (inst.getExecLocation().equals(ExternalFunctionStatement.WORKER))
-			t = new WrapperTaskForWorkerNode(func);
-		else
-			t = new WrapperTaskForControlNode(func);
-
-		// execute task and wait for completion
-		dQueue.pushTask(t);
-		try {
-			t = dQueue.waitOnTask(t);
-		} catch (Exception e) {
-			throw new PackageRuntimeException(e);
-		}
-
-		// get updated function
-		PackageFunction returnFunc;
-		if (inst.getExecLocation().equals(ExternalFunctionStatement.WORKER))
-			returnFunc = ((WrapperTaskForWorkerNode) t)
-			.getUpdatedPackageFunction();
-		else
-			returnFunc = ((WrapperTaskForControlNode) t)
-			.getUpdatedPackageFunction();
-
+		
+		//executes function
+		func.execute();
+		
 		// verify output of function execution matches declaration
 		// and add outputs to variableMapping and Metadata
-		verifyAndAttachOutputs(ec, returnFunc, inst.getOutputParams());
+		verifyAndAttachOutputs(ec, func, inst.getOutputParams());
 	}
 
 	/**
@@ -1059,82 +1015,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in external function program block generated from external function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
-	}
-	
-	
-	/**
-	 * Method to setup the NIMBLE task queue. 
-	 * This will be used in future external function invocations
-	 * @param dmlCfg DMLConfig object
-	 * @return NIMBLE task queue
-	 */
-	public synchronized static void setupNIMBLEQueue() 
-	{
-		if( _dagQueue == null )
-		{
-			DMLConfig dmlCfg = ConfigurationManager.getConfig();	
-			
-			//config not provided
-			if (dmlCfg == null) 
-				return;
-			
-			// read in configuration files
-			NimbleConfig config = new NimbleConfig();
-	
-			try {
-				config.parseSystemDocuments(dmlCfg.getConfig_file_name());
-				
-				//ensure unique working directory for nimble output
-				StringBuilder sb = new StringBuilder();
-				sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
-				sb.append( Lop.FILE_SEPARATOR );
-				sb.append( Lop.PROCESS_PREFIX );
-				sb.append( DMLScript.getUUID() );
-				sb.append( Lop.FILE_SEPARATOR  );
-				sb.append( dmlCfg.getTextValue(DMLConfig.NIMBLE_SCRATCH) );			
-				((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
-				                .setTextContent( sb.toString() );						
-			} catch (Exception e) {
-				throw new PackageRuntimeException ("Error parsing Nimble configuration files", e);
-			}
-	
-			// get threads configuration and validate
-			int numSowThreads = 1;
-			int numReapThreads = 1;
-	
-			numSowThreads = Integer.parseInt
-					(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_SOW_THREADS));
-			numReapThreads = Integer.parseInt
-					(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
-			
-			if (numSowThreads < 1 || numReapThreads < 1){
-				throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
-			}
-	
-			// Initialize an instance of the driver.
-			PMLDriver driver = null;
-			try {
-				driver = new PMLDriver(numSowThreads, numReapThreads, config);
-				driver.startEmptyDriver(config);
-			} catch (Exception e) {
-				throw new PackageRuntimeException("Problem starting nimble driver", e);
-			} 
-	
-			_dagQueue = driver.getDAGQueue();
-		}
-	}
-
-	public static DAGQueue getDAGQueue()
-	{
-		return _dagQueue;
-	}
-	
-	public synchronized static void shutDownNimbleQueue()
-	{
-		//cleanup all nimble threads
-		if(_dagQueue != null)
-	  	    _dagQueue.forceShutDown();
-		_dagQueue = null;
 	}
 	
 	

@@ -12,7 +12,6 @@ import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
@@ -33,7 +32,6 @@ public abstract class PackageFunction implements Serializable
 	
 	private ArrayList<FunctionParameter> _function_inputs; // function inputs
 	private String _configurationFile; // configuration file parameter that is provided during declaration
-	private DAGQueue _dQueue; // DAG queue that can be used to spawn other tasks.
 	
 	private String _baseDir; // base dir for all created files of that external function
 	private IDSequence _seq = null;
@@ -145,25 +143,6 @@ public abstract class PackageFunction implements Serializable
 
 	public final String getConfiguration() {
 		return _configurationFile;
-	}
-
-	/**
-	 * Method to return the DAG queue.
-	 * 
-	 * @return
-	 */
-	public final DAGQueue getDAGQueue() {
-		return _dQueue;
-	}
-
-	/**
-	 * Method to set the DAG queue.
-	 * 
-	 * @param q
-	 */
-
-	public final void setDAGQueue(DAGQueue q) {
-		_dQueue = q;
 	}
 	
 	/**

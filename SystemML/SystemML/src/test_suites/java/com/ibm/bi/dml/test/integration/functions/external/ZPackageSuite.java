@@ -10,12 +10,12 @@ import org.junit.runners.Suite;
 	DynProjectTest.class,
 	DynReadWriteTest.class,
 	FunctionExpressionsTest.class,
-	kMeans2Test.class,
-	kMeansTest.class,
 	OrderTest.class,
-	OutlierTest.class,
-	SequenceMinerTest.class,
-	SGDMFTest.class
+	//kMeans2Test.class,
+	//kMeansTest.class,
+	//OutlierTest.class,
+	//SequenceMinerTest.class,
+	//SGDMFTest.class
 })
 
 

@@ -57,12 +57,14 @@ public class DMLConfig
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
 	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
-	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
-	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
-	public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
-	public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
-	public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
-	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
+
+	//obsolete nimble configuration (removed 06/24/2015)
+	//public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
+	//public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
+	//public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
+	//public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
+	//public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
+	//public static final String NIMBLE_SCRATCH       = "NimbleScratch";
 
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
@@ -87,12 +89,12 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPMASTERMEM,    "2048" );
 		_defaultVals.put(YARN_MAPREDUCEMEM,    "-1" );
 		_defaultVals.put(YARN_APPQUEUE,    	   "default" );
-		_defaultVals.put(NUM_MERGE_TASKS,      "4" );
-		_defaultVals.put(NUM_SOW_THREADS,      "1" );
-		_defaultVals.put(NUM_REAP_THREADS,     "1" );
-		_defaultVals.put(SOWER_WAIT_INTERVAL,  "1000" );
-		_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
-		_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
+		//_defaultVals.put(NUM_MERGE_TASKS,      "4" );
+		//_defaultVals.put(NUM_SOW_THREADS,      "1" );
+		//_defaultVals.put(NUM_REAP_THREADS,     "1" );
+		//_defaultVals.put(SOWER_WAIT_INTERVAL,  "1000" );
+		//_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
+		//_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 	}
 	
 	public DMLConfig()
@@ -386,11 +388,13 @@ public class DMLConfig
 	 */
 	public String getConfigInfo() 
 	{
-		String[] tmpConfig = new String[]{ LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
-				                     NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
-				                     YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM,
-				                     NUM_MERGE_TASKS, NUM_SOW_THREADS,NUM_REAP_THREADS,
-				                     SOWER_WAIT_INTERVAL,REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH }; 
+		String[] tmpConfig = new String[] { 
+				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
+				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
+				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM,
+				//NUM_MERGE_TASKS, NUM_SOW_THREADS,NUM_REAP_THREADS,
+				//SOWER_WAIT_INTERVAL,REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH 
+		}; 
 		
 		StringBuilder sb = new StringBuilder();
 		for( String tmp : tmpConfig )
@@ -456,5 +460,4 @@ public class DMLConfig
 	{
 		return _defaultVals.get( key );
 	}
-	
 }

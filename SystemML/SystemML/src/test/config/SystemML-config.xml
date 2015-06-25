@@ -35,12 +35,4 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
-
-   <!-- configuration properties for Nimble external package support -->
-   <NumMergeTasks>4</NumMergeTasks>
-   <NumberOfSowThreads>1</NumberOfSowThreads>
-   <NumberOfReapThreads>1</NumberOfReapThreads>
-   <SowerWaitInterval>1000</SowerWaitInterval>
-   <ReaperWaitInterval>1000</ReaperWaitInterval>
-   <NimbleScratch>nimbleoutput</NimbleScratch>
 </root>

@@ -10,8 +10,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.nimble.exception.NimbleCheckedRuntimeException;
-
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
@@ -27,7 +25,6 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
 import com.ibm.bi.dml.udf.PackageRuntimeException;
 
 /**
@@ -110,44 +107,14 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * @throws DMLRuntimeException 
 	 * @throws NimbleCheckedRuntimeException
 	 */
-	@SuppressWarnings("unchecked")
-	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) throws DMLRuntimeException 
+	@Override
+	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 
+		throws DMLRuntimeException 
 	{
-		String className = inst.getClassName();
-		String configFile = inst.getConfigFile();
-
-		if (className == null)
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
-
-		// create instance of package function.
-		Object o;
-		try 
-		{
-			Class<Instruction> cla = (Class<Instruction>) Class.forName(className);
-			o = cla.newInstance();
-		} 
-		catch (Exception e) 
-		{
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " ,e );
-		}
-
-		if (!(o instanceof PackageFunction))
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class is not of type PackageFunction");
-
-		PackageFunction func = (PackageFunction) o;
-
-		// add inputs to this package function based on input parameter
-		// and their mappings.
-		setupInputs(func, inst.getInputParams(), ec.getVariables());
-		func.setConfiguration(configFile);
-		func.setBaseDir(_baseDir);
-		
-		//executes function
-		func.execute();
-		
-		// verify output of function execution matches declaration
-		// and add outputs to variableMapping and Metadata
-		verifyAndAttachOutputs(ec, func, inst.getOutputParams());
+		// After removal of nimble, we moved the code of ExternalFunctionProgramBlockCP to 
+		// ExternalFunctionProgramBlock and hence hence both types of external functions can
+		// share the same code path here.
+		super.executeInstruction(ec, inst);
 	}
 	
 
@@ -159,10 +126,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		// assemble information provided through keyvalue pairs
 		String className = _otherParams.get(ExternalFunctionStatement.CLASS_NAME);
 		String configFile = _otherParams.get(ExternalFunctionStatement.CONFIG_FILE);
-		String execLocation = _otherParams.get(ExternalFunctionStatement.EXEC_LOCATION);
-
-		// class name cannot be null, however, configFile and execLocation can
-		// be null
+		
+		// class name cannot be null, however, configFile and execLocation can be null
 		if (className == null)
 			throw new PackageRuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
@@ -172,7 +137,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 
 		// generate instruction
 		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
-				className, configFile, execLocation, inputParameterString,
+				className, configFile, inputParameterString,
 				outputParameterString);
 
 		_inst.add(einst);

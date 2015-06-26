@@ -6,64 +6,73 @@
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
+#  
+# THIS SCRIPT IMPLEMENTS CLASSIFICATION TREES (WITH SCALE FEATURES ONLY!)
 #
-# Implements classification trees (with scale features)
-#
-# Example Usage:
-#
-# hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y model=$OUPUT_DIR/model bins=50 depth=10 num_leaf=1 fmt="csv"
-#
-# Args:
-# X, Y: Input features and labels, respectively
-# bins: Generates this many number of equiheight bins per scale feature to choose thresholds
-# depth: Defines max depth of the learnt tree
-# num_leaf: Defines the number of samples when splitting stops and a leaf node is added
-# model: HDFS location where the learnt tree is stored; includes three row matrices where each entry corresponds to a node in a full binary tree: 
-# N: contains leaf labels if the corresponding node is a leaf node and 0 otherwise
-# F: contains which features are used for splitting for internal nodes and 0 otherwise
-# S: contains the split value corresponding to features in F 
-# fmt: Preferred format of the model files (default is ijv/"text")
+# INPUT         PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             String   ---          Location to read feature matrix X; note that X needs to be recoded and dummy coded 
+# Y 			String   ---		  Location to read label matrix Y
+# I             String   " "          If X contains categorical features, location to read the matrix containing the start and end indices 
+#									  of columns corresponding to each feature (both scale and categorical)
+#								   		- I[,1]: start indices
+#								   		- I[,2]: end indices
+#									  If I is not provided all features are assumed to be scale
+# T             String   " "          If X contains categorical features, location to read the row matrix T denoting the types of the features in X: 
+#									  1 for scale, 2 for categorical 
+#									  If T is not provided all features are assumed to be scale
+# bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
+# depth         Int 	 25			  Maximum depth of the learnt tree
+# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
+# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
+# impurity      String   "entropy"    Impurity measure: entropy (the default) or Gini 
+# M             String 	 ---	   	  Location to write matrix M containing the learnt tree
+# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# Matrix M where each column corresponds to a node in the learnt tree and each row contains the following information:
+#	 M[1,j]: id of node j (in a complete binary tree)
+#	 M[2,j]: Offset (no. of columns) to left child of j 
+#	 M[3,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
+#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
+#		     otherwise the label that leaf node j is supposed to predict
+#	 M[5,j]: Only applicable for internal nodes. Threshold the example's feature value is compared to if the feature 
+#	     	 chosen for j is scale or the size of the subset of values stored in rows 6,7,... if the feature chosen for j is categorical 
+#	 M[6:,j]: Only applicable if j is an internal node and the feature chosen for j is categorical: rows 6,7,... depict the value subset chosen for j   
+# -------------------------------------------------------------------------------------------
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f decision-tree-scale.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y I=INPUT_DIR/I T=INPUT_DIR/T M=OUTPUT_DIR/M
+#     				                 					     bins=20 depth=20 num_leaf=1 num_samples=3000 fmtO=csv
 
 # udf for binning
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
 	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
 
-time = externalFunction(Integer i) return (Double B) implemented in
-  	(classname="com.ibm.bi.dml.udf.lib.TimeWrapper", exectype="mem");
 	
-	
-fmt = ifdef($fmt, "text");
+fileI = ifdef($I, " ");
+fileT = ifdef ($T, " ");	
 num_bins = ifdef($bins, 20); 
 depth = ifdef($depth, 25); 
 num_leaf = ifdef($leaf, 10); 
-threshold = ifdef ($thr, 3000); # 6000
+threshold = ifdef ($num_samples, 3000); 
+impurity = ifdef($impurity, "entropy");
+fmtO = ifdef($fmt, "text");
 
-# X = read($X)
-# Y = read($Y)
-
-# random data
-# X = rand (rows = 20, cols = 5, min = 0, max = 10);
-# Y = floor (rand (rows = 20, cols = 1, min = 1, max = 3.999999999999)); # 3.99999999999999
-
-# iris
-# M = read ("/temp/irisM");
-# X = M[,1:4];
-# Y = M[,5];
-
-# MNIST small
-# X = read ("/user/biadmin/sen/product_testing_new/train_data.mtx");
-# Y = read ("/user/biadmin/sen/product_testing_new/train_label.mtx");
-
-# MNIST 
-# X = read ("/user/biadmin/fmakari/mnist.data");
-# Y = read ("/user/biadmin/fmakari/mnist.label");
-
-# MNIST scaled each entry divided by 255
-X = read ("/user/biadmin/fmakari/mnist_train.data.mtx");
-Y = read ("/user/biadmin/fmakari/mnist_train.labels.mtx");
-
-# X = X[1:30000,];
-# Y = Y[1:30000,];
+X = read($X)
+Y = read($Y)
+if (fileI != " ") {
+	I = read (fileI);
+}
+if (fileT != " ") {
+	T = read (fileT);
+	# check types
+	type_not_supported = max (ppred (T, 1, "!="));
+	if (type_not_supported) {
+		stop ("Currently only scale features are supported!");
+	}
+}
 
 num_rows = nrow (X);
 num_features = ncol (X);
@@ -71,38 +80,23 @@ num_features = ncol (X);
 Y_bin = table (seq (1, num_rows), Y); # Y in binary representation
 num_classes = ncol (Y_bin);
 
-/*
-print ("X");
-[success] = print_result2 (X);
-print ("Y");
-[success] = print_result2 (Y);
-*/
 
 # --- binning ---
-t_binning_start = time (1);
 bin_size = max (as.integer (nrow(X) / num_bins), 1);
 count_thresholds = matrix (0, rows = 1, cols = num_features)
 thresholds = matrix (0, rows = num_bins + 1, cols = num_features)
 print ("Computing binning...");
-parfor(i1 in 1:num_features, log = DEBUG) {
+parfor(i1 in 1:num_features) { # log = DEBUG
       col = order (target = X[,i1], by = 1, decreasing = FALSE);
       [col_bins, num_bins_defined] = binning (col, bin_size, num_bins);
       count_thresholds[,i1] = num_bins_defined;
       thresholds[,i1] = col_bins;	
 }
-t_binning_end = time (1);
 log_str = "...binning finished " + (t_binning_end - t_binning_start) + " (ms)";
 print (log_str);
 
-/*
-print ("threshold");
-[success] = print_result2 (thresholds);	
-print ("count_threshold");
-[success] = print_result2 (count_thresholds);
-*/
 
 # --- preprocessing --- 
-t_pre_start = time (1);
 min_num_bins = min (count_thresholds);
 max_num_bins = max (count_thresholds);
 total_num_bins = sum (count_thresholds);
@@ -110,34 +104,22 @@ cum_count_thresholds = t (cumsum (t (count_thresholds)));
 log_str = "min no. bins: " + (min_num_bins + 1) + " max no. bins: " + (max_num_bins + 1) + " total no. bins: " + (total_num_bins + num_features);
 print (log_str);
 
-
 X_ext_left = matrix (0, rows = num_rows, cols = total_num_bins);
 print ("Computing preprocessed dataset...");
-parfor (i2 in 1:num_features, check = 0, log = DEBUG, opt = CONSTRAINED, mode = REMOTE_MR) {
-# parfor (i2 in 1:num_features, check = 0) {
+parfor (i2 in 1:num_features, check = 0) { #, log = DEBUG, opt = CONSTRAINED, mode = REMOTE_MR) {
+# for (i2 in 1:num_features, check = 0) {
 	Xi2 = X[,i2];
 	count_threshold = as.scalar (count_thresholds[,i2]);
-	offset_feature = 0;
-	if (i2 > 1) offset_feature = as.integer (as.scalar (cum_count_thresholds[, (i2 - 1)]));
-	parfor (i3 in 0:(count_threshold - 1), check = 0) {
-		cur_threshold = count_threshold - i3;
-		I = ppred (Xi2, as.scalar(thresholds[cur_threshold, i2]), "<");
-		X_ext_left[,(offset_feature + cur_threshold)] = I;
+	offset_feature = 1;
+	if (i2 > 1) {
+		offset_feature = offset_feature + as.integer (as.scalar (cum_count_thresholds[, (i2 - 1)]));
 	}
+	# print ("offset_feature " + offset_feature + " count_threshold " + count_threshold);
+	ti2 = t(thresholds[1:count_threshold, i2]);
+	X_ext_left[,offset_feature:(offset_feature + count_threshold - 1)] = outer(Xi2, ti2, "<");
 }
-t_pre_end = time (1);
-log_str = "...preprocessing finished " + (t_pre_end - t_pre_start) + " (ms)";
-print (log_str);
+print ("...preprocessing finished " + (t_pre_end - t_pre_start) + " (ms)");
 
-# write (X_ext_left, "/user/biadmin/fmakari/mnist_train.data.processed.mtx", format = "binary");
-# stop (" ");
-
-# X_ext_left = read ("/user/biadmin/fmakari/mnist_train.data.processed.mtx");
-
-/*
-print ("X_ext_left");
-[success] = print_result (X_ext_left, cum_count_thresholds, 1);
-*/
 
 # --- initialization ---
 L = matrix (1, rows = num_rows, cols = 1); # last visited
@@ -181,17 +163,11 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	}
 		
 	# loop over large nodes
-	t_start_large = time (1);
-	parfor (i6 in 1:num_cur_nodes_large, check = 0, log = DEBUG) { 
+	parfor (i6 in 1:num_cur_nodes_large, check = 0) { # log = DEBUG
 	# for (i6 in 1:num_cur_nodes_large) {
 				
 		cur_node = as.scalar (cur_nodes_large[,i6]);	
 		# print (" Expanding LARGE node: " + cur_node);
-			
-		/*
-		print ("cur_nodes_large");
-		[success] = print_result2 (cur_nodes_large);
-		*/
 			
 		# --- find best split ---
 		# samples that reach cur_node 
@@ -230,31 +206,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
 		Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
 		I_gain = I_gain * (1 - Ix_label_sum_zero);		
-		
-		/*
-		print ("label_counts_left at node "); 
-		[success] = print_result (label_counts_left, cum_count_thresholds, num_classes);
-		print ("label_counts_right at node ");
-		[success] = print_result (label_counts_right, cum_count_thresholds, num_classes);
-		print ("label_counts_overall at node ");
-		[success] = print_result (label_counts_overall, cum_count_thresholds, num_classes);
-		print ("label_dist_left at node ");
-		[success] = print_result (label_dist_left, cum_count_thresholds, num_classes);
-		print ("label_dist_right at node ");
-		[success] = print_result (label_dist_right, cum_count_thresholds, num_classes);	
-		print ("label_dist_overall at node ");		
-		[success] = print_result (label_dist_overall, cum_count_thresholds, num_classes);
-		
-		log_str = "no. of sample at node " + cur_node + " : " + label_sum_overall;
-		print (log_str);
-		
-		print ("I gain at node ");
-		[success] = print_result (I_gain, cum_count_thresholds, 1);	
-		print ("entropy_left at node ");
-		[success] = print_result (entropy_left, cum_count_thresholds, 1);
-		print ("entropy_right at node ");
-		[success] = print_result (entropy_right, cum_count_thresholds, 1);
-		*/
+
 			
 		# determine best feature to split on and the split value
 		max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
@@ -265,11 +217,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (feature != 1) {
 			split = split - as.scalar(cum_count_thresholds[,(feature - 1)]);
 		}
-			
-		/*	
-		log_str = " feature: " + feature + " split: " + split + " max_I_gain_ind: " + max_I_gain_ind;
-		print (log_str);	
-		*/	
 			
 		# --- update model ---
 		cur_F_large[1,i6] = feature;
@@ -283,15 +230,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		Ix_left = Ix * Ix_left;
 					
 		Ix_right = Ix * (1 - Ix_left);
-			
-		/*
-		print ("Ix");
-		[success] = print_result2 (Ix);
-		print ("Ix_left");
-		[success] = print_result2 (Ix_left);
-		print ("Ix_right");
-		[success] = print_result2 (Ix_right);			
-		*/	
 				
 		L[,1] = L[,1] * (1 - Ix_left) + (Ix_left * left_child);
 		L[,1] = L[,1] * (1 - Ix_right) + (Ix_right * right_child);				
@@ -360,7 +298,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (as.scalar (cur_Q_large[1,1]) != 0) Q_large = append (Q_large, cur_Q_large);
 		cur_NC_large = removeEmpty (target = cur_NC_large, margin = "cols");
 		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = append (NC_large, cur_NC_large);
-	
 		F_large = append (F_large, cur_F_large);
 		S_large = append (S_large, cur_S_large);
 	
@@ -372,7 +309,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			num_cur_nodes_large = ncol (cur_Q_large);
 		}	
 	}
-	t_end_large = time (1);
 		
 	# -----------------------------------------------------	
 	if (num_cur_nodes_small > 0) { # small nodes to process		
@@ -383,9 +319,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_S_small = cur_Q_small;
 	}
 	
-	t_start_small_all = time (1);
 	# process small nodes
-	parfor (i7 in 1:num_cur_nodes_small, check = 0, log = DEBUG) {
+	parfor (i7 in 1:num_cur_nodes_small, check = 0) { # log = DEBUG
 		  
 		cur_node_small = as.scalar (cur_nodes_small_nonzero[1,i7]);
 			
@@ -404,13 +339,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			start_ind = start_ind + as.scalar (offsets[(i7 - 1),]);
 		}
 		end_ind = as.scalar (offsets[i7,]);
-			
-		/*
-		print ("cur_nodes_small_nonzero");
-		[success] = print_result2 (cur_nodes_small_nonzero);			
-		print ("offsets");
-		[success] = print_result2 (offsets);
-		*/
 			
 		Q = matrix (cur_node_small, rows = 1, cols = 1); 
 		NC = matrix (0, rows = 2, cols = 1);
@@ -434,8 +362,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_S = cur_F;
 		
 			# loop over large nodes
-			t_start_small = time (1);
-			parfor (i8 in 1:num_cur_nodes, check = 0, log = DEBUG) { #, opt = CONSTRAINED, mode = LOCAL) { 
+			parfor (i8 in 1:num_cur_nodes, check = 0) { # log = DEBUG, opt = CONSTRAINED, mode = LOCAL) { 
 			# for (i8 in 1:num_cur_nodes) {
 			
 				cur_node = as.scalar (cur_nodes_[,i8]);	
@@ -483,33 +410,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
 				Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
 				I_gain = I_gain * (1 - Ix_label_sum_zero);
-			
-		
-				/*
-				print ("label_counts_left at node "); 
-				[success] = print_result (label_counts_left, cum_count_thresholds, num_classes);
-				print ("label_counts_right at node ");
-				[success] = print_result (label_counts_right, cum_count_thresholds, num_classes);
-				print ("label_counts_overall at node ");
-				[success] = print_result (label_counts_overall, cum_count_thresholds, num_classes);
-				print ("label_dist_left at node ");
-				[success] = print_result (label_dist_left, cum_count_thresholds, num_classes);
-				print ("label_dist_right at node ");
-				[success] = print_result (label_dist_right, cum_count_thresholds, num_classes);	
-				print ("label_dist_overall at node ");		
-				[success] = print_result (label_dist_overall, cum_count_thresholds, num_classes);
-		
-				log_str = "no. of sample at node " + cur_node + " : " + label_sum_overall;
-				print (log_str);
-		
-				print ("I gain at node ");
-				[success] = print_result (I_gain, cum_count_thresholds, 1);	
-				print ("entropy_left at node ");
-				[success] = print_result (entropy_left, cum_count_thresholds, 1);
-				print ("entropy_right at node ");
-				[success] = print_result (entropy_right, cum_count_thresholds, 1);
-				*/
-			
+				
 
 				# determine best feature to split on and the split value
 				max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
@@ -521,10 +422,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					split = split - as.scalar(cum_count_thresholds[,(feature - 1)]);
 				}
 			
-				/*	
-				log_str = " feature: " + feature + " split: " + split + " max_I_gain_ind: " + max_I_gain_ind;
-				print (log_str);	
-				*/
 			
 				# --- update model ---
 				cur_F[1,i8] = feature; 
@@ -540,14 +437,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 				Ix_right = Ix * (1 - Ix_left);
 			
-				/*
-				print ("Ix");
-				[success] = print_result2 (Ix);
-				print ("Ix_left");
-				[success] = print_result2 (Ix_left);
-				print ("Ix_right");
-				[success] = print_result2 (Ix_right);			
-				*/	
 				
 				L_small[,1] = L_small[,1] * (1 - Ix_left) + (Ix_left * left_child);
 				L_small[,1] = L_small[,1] * (1 - Ix_right) + (Ix_right * right_child);				
@@ -605,25 +494,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
 			cur_NC = removeEmpty (target = cur_NC, margin = "cols");
 			if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
-	
+			
 			F = append (F, cur_F);
 			S = append (S, cur_S);
-		
-			/*
-			log_str = " --- summary of SMALL nodes at level " + level_ + " --- ";
-			print (log_str);
-	
-			print ("Q");
-			[success] = print_result2 (Q);	
-			print ("NC");
-			[success] = print_result2 (NC);
-			print ("F");
-			[success] = print_result2 (F);
-			print ("S");
-			[success] = print_result2 (S);		
-			print ("L_small");
-			[success] = print_result2 (L_small);
-			*/
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {
@@ -633,7 +506,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				num_cur_nodes = ncol (cur_Q);
 			}
 		
-			t_end_small = time (1);
 			# log_str = "    === end level " + level_ + " for SMALL nodes, remaining no. of SMALL nodes to expand " + num_cur_nodes + "  " + (t_end_small - t_start_small) + " (ms) --- ";
 			# print (log_str);
 
@@ -670,108 +542,87 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (as.scalar (cur_nodes_small_nonzero[1,1]) != 0) { # if small nodes exist
 			num_cur_nodes_small = ncol (cur_nodes_small_nonzero);
 		}		
-		# print ("cur_nodes_small");
-		# [success] = print_result2 (cur_nodes_small);
-		# print ("cur_nodes_small_nonzero");
-		# [success] = print_result2 (cur_nodes_small_nonzero);
 	}
-	t_end_small_all = time (1);
-	
-	/*
-	log_str = " --- summary of SMALL nodes at level " + level + " --- ";
-	print (log_str);
-	
-	print ("Q_small");
-	[success] = print_result2 (Q_small);	
-	print ("NC_small");
-	[success] = print_result2 (NC_small);
-	print ("F_small");
-	[success] = print_result2 (F_small);
-	print ("S_small");
-	[success] = print_result2 (S_small);		
-	*/
-	
-	/*
-	print ("Q_large");
-	[success] = print_result2 (Q_large);	
-	print ("cur_Q_large nrow " + nrow (cur_Q_large) + " ncol " + ncol (cur_Q_large));
-	[success] = print_result2 (cur_Q_large);	
-	print ("NC_large");
-	[success] = print_result2 (NC_large);	
-	print ("cur_NC_large");
-	[success] = print_result2 (cur_NC_large);	
-	print ("F_large");
-	[success] = print_result2 (F_large);	
-	print ("cur_F_large");
-	[success] = print_result2 (cur_F_large);	
-	print ("S_large");
-	[success] = print_result2 (S_large);	
-	print ("cur_S_large");
-	[success] = print_result2 (cur_S_large);	
-	*/
-	
-	
-	/*
-	log_str = " --- summary of LARGE nodes at level " + level + " --- ";
-	print (log_str);
-	
-	print ("Q_large");
-	[success] = print_result2 (Q_large);	
-	print ("NC_large");
-	[success] = print_result2 (NC_large);
-	print ("F_large");
-	[success] = print_result2 (F_large);
-	print ("S_large");
-	[success] = print_result2 (S_large);	
-	print ("L_small");
-	[success] = print_result2 (L_small);	
-	*/
-		
 
-	log_str = " --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + "  remaining no. of SMALL nodes to expand " + num_cur_nodes_small + "  time for LARGE nodes " + (t_end_large - t_start_large) + " (ms) and time for SMALL nodes " + (t_end_small_all - t_start_small_all) + " (ms) --- ";
+	log_str = " --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + "  remaining no. of SMALL nodes to expand " + num_cur_nodes_small);
 	print (log_str);
 
 }
 
-
-# printing functions
-print_result = function (Matrix[Double] X, Matrix[Double] cum_count_thresholds, Integer num_classes) return (Boolean success) {
-	out_str = " =";
-	for (i in 1:nrow(X)) {
-		out_line = i+ " : ";
-		ix = 1;
-		for (j in 1:ncol(X)) {
-			if (j == as.scalar (cum_count_thresholds[1,ix]) * num_classes) {
-				out_line = out_line + as.double (castAsScalar (X[i, j])) + " | ";
-				ix = ix + 1;
-			} else {
-				out_line = out_line + as.double (castAsScalar (X[i, j])) + " ";
-			}
-		}
-		out_str = append (out_str, out_line);	
-	}
-	print (out_str);
-	success = TRUE;
+# prepare model
+if (as.scalar (Q_large[1,1]) == 0 & ncol (Q_large) > 1) {
+	Q_large = Q_large[,2:ncol (Q_large)];
+}
+if (as.scalar (NC_large[1,1]) == 0 & ncol (NC_large) > 1) {
+	NC_large = NC_large[,2:ncol (NC_large)];
+}
+if (as.scalar (S_large[1,1]) == 0 & ncol (S_large) > 1) {
+	S_large = S_large[,2:ncol (S_large)];
+}
+if (as.scalar (F_large[1,1]) == 0 & ncol (F_large) > 1) {
+	F_large = F_large[,2:ncol (F_large)];
+}
+#--------------------------
+if (as.scalar (Q_small[1,1]) == 0 & ncol (Q_small) > 1) {
+	Q_small = Q_small[,2:ncol (Q_small)];
+}
+if (as.scalar (NC_small[1,1]) == 0 & ncol (NC_small) > 1) {
+	NC_small = NC_small[,2:ncol (NC_small)];
+}
+if (as.scalar (S_small[1,1]) == 0 & ncol (S_small) > 1) {
+	S_small = S_small[,2:ncol (S_small)];
+}
+if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
+	F_small = F_small[,2:ncol (F_small)];
 }
 
-print_result2 = function (Matrix[Double] X) return (Boolean success) {
-	out_str = " =";
-	for (i in 1:nrow(X)) {
-		out_line = i+ " : ";
-		level = 1;
-		for (j in 1:ncol(X)) {
-			if (j == level) {
-				out_line = out_line + as.double (castAsScalar (X[i, j])) + " | ";
-				level = level + 1;
-				level = (2 * level) - 1 ;
-			} else {
-				out_line = out_line + as.double (castAsScalar (X[i, j])) + " ";
-			}
-		}
-		out_str = append (out_str, out_line);	
-	}
-	print (out_str);
-	success = TRUE;
+num_large_internal = ncol (Q_large);
+
+M1_large = matrix (0, rows = 5, cols = num_large_internal);
+M1_large[1,] = Q_large;
+M1_large[3,] = F_large;
+M1_large[4,] = matrix (1, rows = 1, cols = num_large_internal);
+M1_large[5,] = S_large;
+
+num_small_internal = ncol (Q_small);
+M1_small = matrix (0, rows = 5, cols = num_small_internal);
+M1_small[1,] = Q_small;
+M1_small[3,] = F_small;
+M1_small[4,] = matrix (1, rows = 1, cols = num_small_internal);
+M1_small[5,] = S_small;
+
+num_large_leaf = ncol (NC_large);
+M2_large = matrix (0, rows = 5, cols = num_large_leaf);
+M2_large[1,] = NC_large[1,];
+M2_large[4,] = NC_large[2,];
+
+num_small_leaf = ncol (NC_small);
+M2_small = matrix (0, rows = 5, cols = num_small_leaf);
+M2_small[1,] = NC_small[1,];
+M2_small[4,] = NC_small[2,];
+
+M = append (append (M1_large, M1_small), append (M2_large, M2_small));
+M = t (order (target = t (M), by = 1));
+
+parfor (it in 1:ncol (Q_large), check = 0) {
+# for (it in 1:ncol (Q_large), check = 0) {
+	a1 = as.scalar (Q_large[1,it]);
+	pos_a1 = sum (ppred (M[1,], a1, "<="));
+	a2 = 2 * a1;
+	pos_a2 = sum (ppred (M[1,], a2, "<="));
+	M[2,pos_a1] = pos_a2 - pos_a1;
 }
+
+
+parfor (it2 in 1:ncol (Q_small), check = 0) {
+# for (it2 in 1:ncol (Q_small), check = 0) {
+	b1 = as.scalar (Q_small[1,it2]);
+	pos_b1 = sum (ppred (M[1,], b1, "<="));
+	b2 = 2 * b1;
+	pos_b2 = sum (ppred (M[1,], b2, "<="));
+	M[2,pos_b1] = pos_b2 - pos_b1;
+}
+
+write (M, fileM, fmtO);
 
 

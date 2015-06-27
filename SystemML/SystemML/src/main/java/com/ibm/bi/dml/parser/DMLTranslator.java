@@ -2573,6 +2573,15 @@ public class DMLTranslator
 			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
 			break;
 			
+		case SAMPLE:
+			// default value replace=FALSE
+			if ( expr3 == null ) 
+				expr3 = new LiteralOp(String.valueOf(false), false);
+			currBuiltinOp = new TernaryOp(target.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp3.SAMPLE, expr, expr2, expr3);
+			// Force the execution type of this HOP since distributed computation of sample without replacement is not yet implemented.
+			currBuiltinOp.setForcedExecType(ExecType.CP);
+			break;
+			
 		case SOLVE:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
 			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.

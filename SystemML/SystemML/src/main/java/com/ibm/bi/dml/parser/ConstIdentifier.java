@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.parser;
 
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
+
 public abstract class ConstIdentifier extends Identifier 
 {
 	@SuppressWarnings("unused")
@@ -21,7 +23,7 @@ public abstract class ConstIdentifier extends Identifier
 		if ( this instanceof IntIdentifier )
 			return ((IntIdentifier)this).getValue();
 		else if ( this instanceof DoubleIdentifier ) 
-			return (long) ((DoubleIdentifier) this).getValue();
+			return UtilFunctions.toLong(((DoubleIdentifier) this).getValue());
 		else
 			throw new LanguageException("Invalid variable type");
 	}

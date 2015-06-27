@@ -34,6 +34,7 @@ public class Ternary extends Lop
 		CTABLE_TRANSFORM_HISTOGRAM, 
 		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, 
 		CTABLE_EXPAND_SCALAR_WEIGHT, 
+		SAMPLE,
 		INVALID };	
 	
 	OperationTypes operation;
@@ -66,7 +67,9 @@ public class Ternary extends Lop
 			//lps.addCompatibility(JobType.DATAGEN); MB: disabled due to piggybacking issues
 			//lps.addCompatibility(JobType.REBLOCK); MB: disabled since no runtime support
 			
-			if( operation==OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+			if( operation == OperationTypes.SAMPLE ) 
+				this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, false, aligner, definesMRJob );
+			else if( operation==OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
 				this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 				//TODO create runtime for ctable in gmr mapper and switch to maporreduce.
 				//this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
@@ -121,80 +124,99 @@ public class Ternary extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		if( operation != Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
-			sb.append( "ctable" );
-		else
-			sb.append( "ctableexpand" );
-		sb.append( OPERAND_DELIMITOR );
-		
-		if ( getInputs().get(0).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(0).prepScalarInputOperand(getExecType()) );
+		if ( operation == OperationTypes.SAMPLE) 
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( "sample" );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1) );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input2) );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input3) );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output) );
+			
+			return sb.toString();
 		}
-		else {
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-		}
-		sb.append( OPERAND_DELIMITOR );
-		
-		if ( getInputs().get(1).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(1).prepScalarInputOperand(getExecType()) );
-		}
-		else {
-			sb.append( getInputs().get(1).prepInputOperand(input2));
-		}
-		sb.append( OPERAND_DELIMITOR );
-		
-		if ( getInputs().get(2).getDataType() == DataType.SCALAR ) {
-			sb.append ( getInputs().get(2).prepScalarInputOperand(getExecType()) );
-		}
-		else {
-			sb.append( getInputs().get(2).prepInputOperand(input3));
-		}
-		sb.append( OPERAND_DELIMITOR );
-		
-		if ( this.getInputs().size() > 3 ) {
-			sb.append(getInputs().get(3).getOutputParameters().getLabel());
-			sb.append(LITERAL_PREFIX);
-			sb.append((getInputs().get(3).getType() == Type.Data && ((Data)getInputs().get(3)).isLiteral()) );
-			sb.append( OPERAND_DELIMITOR );
-
-			sb.append(getInputs().get(4).getOutputParameters().getLabel());
-			sb.append(LITERAL_PREFIX);
-			sb.append((getInputs().get(4).getType() == Type.Data && ((Data)getInputs().get(4)).isLiteral()) );
-			sb.append( OPERAND_DELIMITOR );
-		}
-		else {
-			sb.append(-1);
-			sb.append(LITERAL_PREFIX);
-			sb.append(true);
+		else 
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			if( operation != Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
+				sb.append( "ctable" );
+			else
+				sb.append( "ctableexpand" );
 			sb.append( OPERAND_DELIMITOR );
 			
-			sb.append(-1);
-			sb.append(LITERAL_PREFIX);
-			sb.append(true);
-			sb.append( OPERAND_DELIMITOR ); 
+			if ( getInputs().get(0).getDataType() == DataType.SCALAR ) {
+				sb.append ( getInputs().get(0).prepScalarInputOperand(getExecType()) );
+			}
+			else {
+				sb.append( getInputs().get(0).prepInputOperand(input1));
+			}
+			sb.append( OPERAND_DELIMITOR );
+			
+			if ( getInputs().get(1).getDataType() == DataType.SCALAR ) {
+				sb.append ( getInputs().get(1).prepScalarInputOperand(getExecType()) );
+			}
+			else {
+				sb.append( getInputs().get(1).prepInputOperand(input2));
+			}
+			sb.append( OPERAND_DELIMITOR );
+			
+			if ( getInputs().get(2).getDataType() == DataType.SCALAR ) {
+				sb.append ( getInputs().get(2).prepScalarInputOperand(getExecType()) );
+			}
+			else {
+				sb.append( getInputs().get(2).prepInputOperand(input3));
+			}
+			sb.append( OPERAND_DELIMITOR );
+			
+			if ( this.getInputs().size() > 3 ) {
+				sb.append(getInputs().get(3).getOutputParameters().getLabel());
+				sb.append(LITERAL_PREFIX);
+				sb.append((getInputs().get(3).getType() == Type.Data && ((Data)getInputs().get(3)).isLiteral()) );
+				sb.append( OPERAND_DELIMITOR );
+	
+				sb.append(getInputs().get(4).getOutputParameters().getLabel());
+				sb.append(LITERAL_PREFIX);
+				sb.append((getInputs().get(4).getType() == Type.Data && ((Data)getInputs().get(4)).isLiteral()) );
+				sb.append( OPERAND_DELIMITOR );
+			}
+			else {
+				sb.append(-1);
+				sb.append(LITERAL_PREFIX);
+				sb.append(true);
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append(-1);
+				sb.append(LITERAL_PREFIX);
+				sb.append(true);
+				sb.append( OPERAND_DELIMITOR ); 
+			}
+			sb.append( this.prepOutputOperand(output));
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _ignoreZeros );
+			
+			return sb.toString();
 		}
-		sb.append( this.prepOutputOperand(output));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _ignoreZeros );
-		
-		return sb.toString();
 	}
 
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		switch(operation) {
-		/* Arithmetic */
-		case CTABLE_TRANSFORM:
-			// F = ctable(A,B,W)
-			sb.append( "ctabletransform" );
+		if ( operation == OperationTypes.SAMPLE )
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+				
+			sb.append( "sample" );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(0).prepInputOperand(input_index1));
 			sb.append( OPERAND_DELIMITOR );
@@ -202,133 +224,155 @@ public class Ternary extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output_index) );
 			
-			break;
-		
-		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
-			// F = ctable(A,B) or F = ctable(A,B,1)
-			// third input must be a scalar, and hence input_index3 == -1
-			if ( input_index3 != -1 ) {
-				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
+			return sb.toString();
+		}
+		else 
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			switch(operation) {
+			/* Arithmetic */
+			case CTABLE_TRANSFORM:
+				// F = ctable(A,B,W)
+				sb.append( "ctabletransform" );
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( getInputs().get(0).prepInputOperand(input_index1));
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( getInputs().get(1).prepInputOperand(input_index2));
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( getInputs().get(2).prepInputOperand(input_index3));
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			
+			case CTABLE_TRANSFORM_SCALAR_WEIGHT:
+				// F = ctable(A,B) or F = ctable(A,B,1)
+				// third input must be a scalar, and hence input_index3 == -1
+				if ( input_index3 != -1 ) {
+					throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
+				}
+				
+				// parse the third input (scalar)
+				// if it is a literal, copy val, else surround with the label with
+				// ## symbols. these will be replaced at runtime.
+				
+				int scalarIndex = 2; // index of the scalar input
+				
+				sb.append( "ctabletransformscalarweight" );
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(0).prepInputOperand(input_index1));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(1).prepInputOperand(input_index2));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			
+			case CTABLE_EXPAND_SCALAR_WEIGHT:
+				// F = ctable(seq,B) or F = ctable(seq,B,1)
+				// second and third inputs must be scalars, and hence input_index2 == -1, input_index3 == -1
+				if ( input_index3 != -1 ) {
+					throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
+				}
+				
+				// parse the third input (scalar)
+				// if it is a literal, copy val, else surround with the label with
+				// ## symbols. these will be replaced at runtime.
+				
+				int scalarIndex2 = 1; // index of the scalar input
+				int scalarIndex3 = 2; // index of the scalar input
+				
+				sb.append( "ctableexpandscalarweight" );
+				sb.append( OPERAND_DELIMITOR );
+				//get(0) because input under group
+				sb.append( getInputs().get(0).prepInputOperand(input_index1));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(scalarIndex2).prepScalarInputOperand(getExecType()));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(scalarIndex3).prepScalarInputOperand(getExecType()));
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			
+			case CTABLE_TRANSFORM_HISTOGRAM:
+				// F=ctable(A,1) or F = ctable(A,1,1)
+				if ( input_index2 != -1 || input_index3 != -1)
+					throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
+				
+				// 2nd and 3rd inputs are scalar inputs 
+				
+				sb.append( "ctabletransformhistogram" );
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(0).prepInputOperand(input_index1));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()) );
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()) );
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			
+			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
+				// F=ctable(A,1,W)
+				if ( input_index2 != -1 )
+					throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
+				
+				// 2nd input is the scalar input
+				
+				sb.append( "ctabletransformweightedhistogram" );
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(0).prepInputOperand(input_index1));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( getInputs().get(2).prepInputOperand(input_index3));
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+				
+			default:
+				throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Tertiary operation: " + operation);
 			}
 			
-			// parse the third input (scalar)
-			// if it is a literal, copy val, else surround with the label with
-			// ## symbols. these will be replaced at runtime.
-			
-			int scalarIndex = 2; // index of the scalar input
-			
-			sb.append( "ctabletransformscalarweight" );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(0).prepInputOperand(input_index1));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(1).prepInputOperand(input_index2));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
-			sb.append( OPERAND_DELIMITOR );
-			
-			break;
-		
-		case CTABLE_EXPAND_SCALAR_WEIGHT:
-			// F = ctable(seq,B) or F = ctable(seq,B,1)
-			// second and third inputs must be scalars, and hence input_index2 == -1, input_index3 == -1
-			if ( input_index3 != -1 ) {
-				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
+			long outputDim1=-1, outputDim2=-1;
+			if ( getInputs().size() > 3 ) {
+				sb.append(getInputs().get(3).prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+	
+				sb.append(getInputs().get(4).prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+				/*if ( input3 instanceof Data && ((Data)input3).isLiteral() 
+						&& input4 instanceof Data && ((Data)input4).isLiteral() ) {
+					outputDim1 = ((Data)input3).getLongValue();
+					outputDim2 = ((Data)input4).getLongValue();
+				}*/
 			}
+			else {
+				sb.append( outputDim1 );
+				sb.append( OPERAND_DELIMITOR );
+				
+				sb.append( outputDim2 );
+				sb.append( OPERAND_DELIMITOR ); 
+			}
+			sb.append( this.prepOutputOperand(output_index));
 			
-			// parse the third input (scalar)
-			// if it is a literal, copy val, else surround with the label with
-			// ## symbols. these will be replaced at runtime.
-			
-			int scalarIndex2 = 1; // index of the scalar input
-			int scalarIndex3 = 2; // index of the scalar input
-			
-			sb.append( "ctableexpandscalarweight" );
-			sb.append( OPERAND_DELIMITOR );
-			//get(0) because input under group
-			sb.append( getInputs().get(0).prepInputOperand(input_index1));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(scalarIndex2).prepScalarInputOperand(getExecType()));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(scalarIndex3).prepScalarInputOperand(getExecType()));
-			sb.append( OPERAND_DELIMITOR );
-			
-			break;
-		
-		case CTABLE_TRANSFORM_HISTOGRAM:
-			// F=ctable(A,1) or F = ctable(A,1,1)
-			if ( input_index2 != -1 || input_index3 != -1)
-				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
-			
-			// 2nd and 3rd inputs are scalar inputs 
-			
-			sb.append( "ctabletransformhistogram" );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(0).prepInputOperand(input_index1));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()) );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()) );
-			sb.append( OPERAND_DELIMITOR );
-			
-			break;
-		
-		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
-			// F=ctable(A,1,W)
-			if ( input_index2 != -1 )
-				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
-			
-			// 2nd input is the scalar input
-			
-			sb.append( "ctabletransformweightedhistogram" );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(0).prepInputOperand(input_index1));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(2).prepInputOperand(input_index3));
-			sb.append( OPERAND_DELIMITOR );
-			
-			break;
-			
-		default:
-			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Tertiary operation: " + operation);
+			return sb.toString();
 		}
-		
-		long outputDim1=-1, outputDim2=-1;
-		if ( getInputs().size() > 3 ) {
-			sb.append(getInputs().get(3).prepScalarLabel());
-			sb.append( OPERAND_DELIMITOR );
-
-			sb.append(getInputs().get(4).prepScalarLabel());
-			sb.append( OPERAND_DELIMITOR );
-			/*if ( input3 instanceof Data && ((Data)input3).isLiteral() 
-					&& input4 instanceof Data && ((Data)input4).isLiteral() ) {
-				outputDim1 = ((Data)input3).getLongValue();
-				outputDim2 = ((Data)input4).getLongValue();
-			}*/
-		}
-		else {
-			sb.append( outputDim1 );
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( outputDim2 );
-			sb.append( OPERAND_DELIMITOR ); 
-		}
-		sb.append( this.prepOutputOperand(output_index));
-		
-		return sb.toString();
 	}
 
 	/**
@@ -370,6 +414,8 @@ public class Ternary extends Lop
 			op = OperationTypes.CTABLE_TRANSFORM_HISTOGRAM;
 		else if( opcode.equals("ctabletransformweightedhistogram") )
 			op = OperationTypes.CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM;
+		else if( opcode.equals("sample") )
+			op = OperationTypes.SAMPLE;
 		else
 			throw new UnsupportedOperationException("Tertiary operation code is not defined: " + opcode);
 		

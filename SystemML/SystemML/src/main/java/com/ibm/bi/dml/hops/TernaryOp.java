@@ -129,6 +129,10 @@ public class TernaryOp extends Hop
 					constructLopsCtable();
 					break;
 					
+				case SAMPLE:
+					constructLopsSample();
+					break;
+					
 				default:
 					throw new HopsException(this.printErrorLocation() + "Unknown TernaryOp (" + _op + ") while constructing Lops \n");
 
@@ -616,6 +620,16 @@ public class TernaryOp extends Hop
 		}
 	}
 	
+	private void constructLopsSample() throws HopsException, LopsException 
+	{
+		Lop[] inputLops = new Lop[getInput().size()];
+		for(int i=0; i < getInput().size(); i++) {
+			inputLops[i] = getInput().get(i).constructLops();
+		}
+		Ternary lop = new Ternary(inputLops, Ternary.OperationTypes.SAMPLE, DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
+		setLops( lop );
+	}
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -660,6 +674,9 @@ public class TernaryOp extends Hop
 			case QUANTILE:
 				// This part of the code is executed only when a vector of quantiles are computed
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
+				
+			case SAMPLE:
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 				
 			default:
@@ -737,6 +754,15 @@ public class TernaryOp extends Hop
 					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 				break;
 			
+			case SAMPLE:
+				// second argument to sample() defines the size of output
+				// also, the output is always a vector
+				if( getInput().get(1) instanceof LiteralOp ) 
+				{
+					_dim1 = HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(1));
+					_dim2 = 1;
+					return new long[]{_dim1, _dim2, _dim1};
+				}
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
@@ -837,6 +863,12 @@ public class TernaryOp extends Hop
 					// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 					// TODO qx1
 					break;	
+					
+				case SAMPLE:
+					if ( getInput().get(1) instanceof LiteralOp ) 
+						setDim1(HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(1)));
+					setDim2(1);
+					break;
 					
 				default:
 					throw new RuntimeException("Size information for operation (" + _op + ") can not be updated.");

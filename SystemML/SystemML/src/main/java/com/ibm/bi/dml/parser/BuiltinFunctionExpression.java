@@ -754,6 +754,37 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			break;
 			
+		case SAMPLE:
+			checkScalarParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			
+			if (getFirstExpr().getOutput().getValueType() != ValueType.DOUBLE && getFirstExpr().getOutput().getValueType() != ValueType.INT) 
+				throw new LanguageException("First arugment to sample() must be a number.");
+			if (getSecondExpr().getOutput().getValueType() != ValueType.DOUBLE && getSecondExpr().getOutput().getValueType() != ValueType.INT) 
+				throw new LanguageException("Second arugment to sample() must be a number.");
+			if(getThirdExpr() != null) 
+			{
+				checkNumParameters(3);
+				checkScalarParam(getThirdExpr());
+				if (getThirdExpr().getOutput().getValueType() != ValueType.BOOLEAN) 
+					throw new LanguageException("Third arugment to sample() must be a boolean value.");
+			}
+			else
+				checkNumParameters(2);
+			
+			// Output is a column vector
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			if ( isConstant(getSecondExpr()) )
+			{
+	 			output.setDimensions(((ConstIdentifier)getSecondExpr()).getLongValue(), 1);
+			}
+			else
+				output.setDimensions(-1, -1);
+ 			setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
+			
+			break;
+			
 		case SEQ:
 			
 			checkScalarParam(getFirstExpr());
@@ -1271,6 +1302,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.MEDIAN;
 		else if (functionName.equals("inv"))
 			bifop = Expression.BuiltinFunctionOp.INVERSE;
+		else if (functionName.equals("sample"))
+			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )
 			bifop = Expression.BuiltinFunctionOp.OUTER;
 		else

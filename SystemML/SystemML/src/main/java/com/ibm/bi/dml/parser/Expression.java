@@ -96,7 +96,8 @@ public abstract class Expression
 		CEIL,
 		FLOOR,
 		MEDIAN,
-		INVERSE
+		INVERSE,
+		SAMPLE
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {

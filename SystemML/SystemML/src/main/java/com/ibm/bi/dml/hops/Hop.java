@@ -944,7 +944,7 @@ public abstract class Hop
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, SAMPLE, INVALID 
 	};
 	
 	// Operations that require 4 operands

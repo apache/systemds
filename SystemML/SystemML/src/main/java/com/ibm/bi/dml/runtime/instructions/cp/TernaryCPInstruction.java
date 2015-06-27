@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import java.util.Random;
+
 import com.ibm.bi.dml.lops.Ternary;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -20,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 public class TernaryCPInstruction extends ComputationCPInstruction
@@ -35,6 +38,12 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 	private boolean _isExpand;
 	private boolean _ignoreZeros;
 	
+	public TernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String opcode, String istr) 
+	{
+		super(op, in1, in2, in3, out, opcode, istr);
+	}
+
 	public TernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
 							 String outputDim1, boolean dim1Literal,String outputDim2, boolean dim2Literal, 
 							 boolean isExpand, boolean ignoreZeros, String opcode, String istr )
@@ -50,31 +59,44 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 
 	public static TernaryCPInstruction parseInstruction(String inst) throws DMLRuntimeException{
 		
-		InstructionUtils.checkNumFields ( inst, 7 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
 		
-		//handle opcode
-		if ( !(opcode.equalsIgnoreCase("ctable") || opcode.equalsIgnoreCase("ctableexpand")) ) {
-			throw new DMLRuntimeException("Unexpected opcode in TertiaryCPInstruction: " + inst);
+		if ( opcode.equals("sample") )
+		{
+			InstructionUtils.checkNumFields ( inst, 4 );
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
+			return new TernaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, opcode, inst);
+					
 		}
-		boolean isExpand = opcode.equalsIgnoreCase("ctableexpand");
+		else 
+		{
+			InstructionUtils.checkNumFields ( inst, 7 );
 		
-		//handle operands
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand in3 = new CPOperand(parts[3]);
-		
-		//handle known dimension information
-		String[] dim1Fields = parts[4].split(Instruction.LITERAL_PREFIX);
-		String[] dim2Fields = parts[5].split(Instruction.LITERAL_PREFIX);
-
-		CPOperand out = new CPOperand(parts[6]);
-		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-		
-		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new TernaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+			//handle opcode
+			if ( !(opcode.equalsIgnoreCase("ctable") || opcode.equalsIgnoreCase("ctableexpand")) ) {
+				throw new DMLRuntimeException("Unexpected opcode in TertiaryCPInstruction: " + inst);
+			}
+			boolean isExpand = opcode.equalsIgnoreCase("ctableexpand");
+			
+			//handle operands
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			
+			//handle known dimension information
+			String[] dim1Fields = parts[4].split(Instruction.LITERAL_PREFIX);
+			String[] dim2Fields = parts[5].split(Instruction.LITERAL_PREFIX);
+	
+			CPOperand out = new CPOperand(parts[6]);
+			boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
+			
+			// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
+			return new TernaryCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+		}
 	}
 
 	private Ternary.OperationTypes findCtableOperation() {
@@ -88,6 +110,76 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
+		MatrixBlock result = null;
+				
+		if(InstructionUtils.getOpCode(instString).equals("sample"))
+			result = performSample(ec);
+		else
+			result = performCtable(ec);
+		
+		ec.setMatrixOutput(output.getName(), result);
+	}	
+	
+	// modified version of java.util.nextInt
+    public long nextLong(Random r, long n) {
+        if (n <= 0)
+            throw new IllegalArgumentException("n must be positive");
+
+        //if ((n & -n) == n)  // i.e., n is a power of 2
+        //    return ((n * (long)r.nextLong()) >> 31);
+
+        long bits, val;
+        do {
+            bits = (r.nextLong() << 1) >>> 1;
+            val = bits % n;
+        } while (bits - val + (n-1) < 0L);
+        return val;
+    }
+
+    /**
+     * Generates a sample of size <code>size</code> from a range of values [1,range].
+     * <code>replace</code> defines if sampling is done with or without replacement.
+     * 
+     * @param ec
+     * @return
+     * @throws DMLRuntimeException
+     */
+	private MatrixBlock performSample(ExecutionContext ec) throws DMLRuntimeException 
+	{
+		long range = (input1.isLiteral() ? UtilFunctions.toLong(Double.parseDouble(input1.getName())) : (ec.getScalarInput(input1.getName(), ValueType.DOUBLE, false)).getLongValue());
+		int size =   (input2.isLiteral() ? UtilFunctions.toInt(Double.parseDouble(input2.getName()))  : (int) (ec.getScalarInput(input2.getName(), ValueType.DOUBLE, false)).getLongValue());
+		boolean replace = (input3.isLiteral() ? Boolean.parseBoolean(input3.getName()) : (ec.getScalarInput(input3.getName(), ValueType.BOOLEAN, false)).getBooleanValue());
+		
+		MatrixBlock resultBlock = new MatrixBlock((int)size, 1, false); 
+		resultBlock.allocateDenseBlock();
+		
+		if ( replace == false ) 
+		{
+			// reservoir sampling
+			
+			for(int i=1; i <= size; i++) 
+				resultBlock.setValueDenseUnsafe(i-1, 0, i );
+			
+			Random rand = new Random(System.nanoTime());
+			for(int i=size+1; i <= range; i++) 
+			{
+				if(rand.nextInt(i) < size)
+					resultBlock.setValueDenseUnsafe( rand.nextInt(size), 0, i );
+			}
+		}
+		else 
+		{
+			Random r = new Random(System.nanoTime());
+			for(int i=0; i < size; i++) 
+				resultBlock.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
+				//resultBlock.setValueDenseUnsafe(i, 0, (1 + r.nextLong()%range) );
+		}
+		
+		resultBlock.recomputeNonZeros();
+		return resultBlock;
+	}
+	
+	private MatrixBlock performCtable(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
@@ -169,6 +261,6 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		else
 			resultBlock.examSparsity();
 		
-		ec.setMatrixOutput(output.getName(), resultBlock);
-	}	
+		return resultBlock;
+	}
 }

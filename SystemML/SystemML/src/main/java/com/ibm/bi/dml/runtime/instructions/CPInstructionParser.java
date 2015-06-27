@@ -185,8 +185,10 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SEQ_OPCODE  , CPINSTRUCTION_TYPE.Rand);
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPINSTRUCTION_TYPE.StringInit);
 		
-		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Ternary);
-		String2CPInstructionType.put( "ctableexpand", CPINSTRUCTION_TYPE.Ternary);
+		String2CPInstructionType.put( "ctable", 		CPINSTRUCTION_TYPE.Ternary);
+		String2CPInstructionType.put( "ctableexpand", 	CPINSTRUCTION_TYPE.Ternary);
+		String2CPInstructionType.put( "sample", 		CPINSTRUCTION_TYPE.Ternary);
+		
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);

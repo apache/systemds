@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
@@ -181,6 +182,15 @@ public class Explain
 					firstFunction = false;
 				}
 				
+				//show function call dag
+				sb.append("----FUNCTION CALL DAG\n");
+				sb.append("------MAIN PROGRAM\n");
+				HashSet<String> fstack = new HashSet<String>();
+				HashSet<String> lfset = new HashSet<String>();
+				for( StatementBlock sblk : prog.getStatementBlocks() )
+					sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
+				
+				//show individual functions
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
 				FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 				
@@ -207,8 +217,10 @@ public class Explain
 	 * 
 	 * @param rtprog
 	 * @return
+	 * @throws HopsException 
 	 */
 	public static String explain( Program rtprog ) 
+		throws HopsException 
 	{
 		StringBuilder sb = new StringBuilder();		
 	
@@ -233,6 +245,21 @@ public class Explain
 		if( funcMap != null && !funcMap.isEmpty() )
 		{
 			sb.append("--FUNCTIONS\n");
+			
+			//show function call dag
+			if( !rtprog.getProgramBlocks().isEmpty() &&
+				rtprog.getProgramBlocks().get(0).getStatementBlock() != null )
+			{
+				sb.append("----FUNCTION CALL DAG\n");
+				sb.append("------MAIN PROGRAM\n");
+				DMLProgram prog = rtprog.getProgramBlocks().get(0).getStatementBlock().getDMLProg();
+				HashSet<String> fstack = new HashSet<String>();
+				HashSet<String> lfset = new HashSet<String>();
+				for( StatementBlock sblk : prog.getStatementBlocks() )
+					sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
+			}
+			
+			//show individual functions
 			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
 			{
 				String fkey = e.getKey();
@@ -979,4 +1006,71 @@ public class Explain
 		return ret;
 	}
 	
+	private static String explainFunctionCallDag(StatementBlock sb, HashSet<String> fstack, HashSet<String> lfset, int level) 
+		throws HopsException 
+	{
+		StringBuilder builder = new StringBuilder();
+		
+		if (sb instanceof WhileStatementBlock) {
+			WhileStatement ws = (WhileStatement)sb.getStatement(0);
+			for (StatementBlock current : ws.getBody())
+				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
+		} 
+		else if (sb instanceof IfStatementBlock) {
+			IfStatement ifs = (IfStatement) sb.getStatement(0);
+			for (StatementBlock current : ifs.getIfBody())
+				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
+			for (StatementBlock current : ifs.getElseBody())
+				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
+		} 
+		else if (sb instanceof ForStatementBlock) {
+			ForStatement fs = (ForStatement)sb.getStatement(0);
+			for (StatementBlock current : fs.getBody())
+				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
+		} 
+		else if (sb instanceof FunctionStatementBlock) {
+			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
+			for (StatementBlock current : fsb.getBody())
+				builder.append(explainFunctionCallDag(current, fstack, lfset, level));
+		} 
+		else {
+			// For generic StatementBlock
+			ArrayList<Hop> hopsDAG = sb.get_hops();
+			if( hopsDAG != null && !hopsDAG.isEmpty() ) {
+				//function ops can only occur as root nodes of the dag
+				for( Hop h : hopsDAG )
+					if( h instanceof FunctionOp ){
+						FunctionOp fop = (FunctionOp) h;
+						String fkey = DMLProgram.constructFunctionKey(fop.getFunctionNamespace(), fop.getFunctionName());
+						//prevent redundant call edges
+						if( !lfset.contains(fkey) )
+						{
+							//recursively explain function call dag
+							if( !fstack.contains(fkey) ) {
+								fstack.add(fkey);
+								String offset = createOffset(level);
+								builder.append(offset + "--" + fkey + "\n");
+								FunctionStatementBlock fsb = sb.getDMLProg()
+										.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+								FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+								HashSet<String> lfset2 = new HashSet<String>(); 
+								for( StatementBlock csb : fs.getBody() )
+									builder.append(explainFunctionCallDag(csb, fstack, lfset2, level+1));
+								fstack.remove(fkey);
+							}
+							//recursive function call
+							else {
+								String offset = createOffset(level);
+								builder.append(offset + "-->" + fkey + " (recursive)\n");
+							}
+							
+							//mark as visited for current function call context
+							lfset.add( fkey );
+						}
+					}
+			}
+		}
+
+		return builder.toString();
+	}
 }

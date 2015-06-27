@@ -2403,6 +2403,9 @@ public class DMLTranslator
 		case CEIL:
 		case FLOOR:
 		case CUMSUM:
+		case CUMPROD:
+		case CUMMIN:
+		case CUMMAX:
 			Hop.OpOp1 mathOp1;
 			switch (source.getOpCode()) {
 			case ABS:
@@ -2443,6 +2446,15 @@ public class DMLTranslator
 				break;
 			case CUMSUM:
 				mathOp1 = Hop.OpOp1.CUMSUM;
+				break;
+			case CUMPROD:
+				mathOp1 = Hop.OpOp1.CUMPROD;
+				break;
+			case CUMMIN:
+				mathOp1 = Hop.OpOp1.CUMMIN;
+				break;
+			case CUMMAX:
+				mathOp1 = Hop.OpOp1.CUMMAX;
 				break;
 			default:
 				

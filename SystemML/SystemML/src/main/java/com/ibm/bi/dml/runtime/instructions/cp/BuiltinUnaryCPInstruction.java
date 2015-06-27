@@ -68,28 +68,6 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, opcode, str);
 		}
 		
-		/*
-	    int _arity = parts.length - 2;
-		boolean b = ((Builtin) func).checkArity(arity);
-		if ( !b ) {
-			throw new DMLRuntimeException("Invalid number of inputs to builtin function: " 
-										  + ((Builtin) func).bFunc);
-		}
-		*/
-		
-		// TODO: VALUE TYPE CHECKING
-		/*
-		ValueType vt1, vt2, vt3;
-		vt1 = vt2 = vt3 = null;
-		vt1 = in1.getValueType();
-		if ( in2 != null )
-			vt2 = in2.getValueType();
-		vt3 = out.getValueType();
-		if ( vt1 != ValueType.BOOLEAN || vt3 != ValueType.BOOLEAN 
-				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
-			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
-		*/
-		
 		return null;
 	}
 }

@@ -319,6 +319,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		
 		case CUMSUM:
+		case CUMPROD:
+		case CUMMIN:
+		case CUMMAX:
 			// cumsum(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1255,6 +1258,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
 		else if (functionName.equals("colMeans"))
 			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
+		else if (functionName.equals("cummax"))
+			 bifop = Expression.BuiltinFunctionOp.CUMMAX;
+		else if (functionName.equals("cummin"))
+			 bifop = Expression.BuiltinFunctionOp.CUMMIN;
+		else if (functionName.equals("cumprod"))
+			 bifop = Expression.BuiltinFunctionOp.CUMPROD;
 		else if (functionName.equals("cumsum"))
 			 bifop = Expression.BuiltinFunctionOp.CUMSUM;
 		//'castAsScalar' for backwards compatibility

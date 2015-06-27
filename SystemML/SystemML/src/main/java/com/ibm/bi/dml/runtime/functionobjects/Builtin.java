@@ -41,7 +41,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, INVERSE, SPROP, SIGMOID };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -75,6 +75,9 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "ceil"   , BuiltinFunctionCode.CEIL);
 		String2BuiltinFunctionCode.put( "floor"  , BuiltinFunctionCode.FLOOR);
 		String2BuiltinFunctionCode.put( "ucumk+" , BuiltinFunctionCode.CUMSUM);
+		String2BuiltinFunctionCode.put( "ucum*"  , BuiltinFunctionCode.CUMPROD);
+		String2BuiltinFunctionCode.put( "ucummin", BuiltinFunctionCode.CUMMIN);
+		String2BuiltinFunctionCode.put( "ucummax", BuiltinFunctionCode.CUMMAX);
 		String2BuiltinFunctionCode.put( "inverse", BuiltinFunctionCode.INVERSE);
 		String2BuiltinFunctionCode.put( "sprop",   BuiltinFunctionCode.SPROP);
 		String2BuiltinFunctionCode.put( "sigmoid",   BuiltinFunctionCode.SIGMOID);
@@ -85,7 +88,8 @@ public class Builtin extends ValueFunction
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
-	private static Builtin inverseObj=null, cumsumObj=null, stopObj = null, spropObj = null, sigmoidObj = null;
+	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
+	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
@@ -201,6 +205,18 @@ public class Builtin extends ValueFunction
 			if ( cumsumObj == null )
 				cumsumObj = new Builtin(BuiltinFunctionCode.CUMSUM);
 			return cumsumObj;	
+		case CUMPROD:
+			if ( cumprodObj == null )
+				cumprodObj = new Builtin(BuiltinFunctionCode.CUMPROD);
+			return cumprodObj;	
+		case CUMMIN:
+			if ( cumminObj == null )
+				cumminObj = new Builtin(BuiltinFunctionCode.CUMMIN);
+			return cumminObj;	
+		case CUMMAX:
+			if ( cummaxObj == null )
+				cummaxObj = new Builtin(BuiltinFunctionCode.CUMMAX);
+			return cummaxObj;	
 		case INVERSE:
 			if ( inverseObj == null )
 				inverseObj = new Builtin(BuiltinFunctionCode.INVERSE);
@@ -345,9 +361,11 @@ public class Builtin extends ValueFunction
 		 * <code>Double.equals()</code> and <code>Double.comapreTo()</code>.
 		 */
 		case MAX:
+		case CUMMAX:
 			//return (Double.compare(in1, in2) >= 0 ? in1 : in2);
 			return (in1 >= in2 ? in1 : in2);
 		case MIN:
+		case CUMMIN:
 			//return (Double.compare(in1, in2) <= 0 ? in1 : in2);
 			return (in1 <= in2 ? in1 : in2);
 			
@@ -409,9 +427,11 @@ public class Builtin extends ValueFunction
 	{
 		switch(bFunc) {		
 			case MAX:
+			case CUMMAX:
 				//return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
 				return (in1 >= in2 ? in1 : in2);
 			case MIN:
+			case CUMMIN:
 				//return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
 				return (in1 <= in2 ? in1 : in2);
 			case MAXINDEX: 
@@ -428,10 +448,15 @@ public class Builtin extends ValueFunction
 	public double execute (int in1, int in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
-		case MAX:    return (in1 >= in2 ? in1 : in2); 
-		case MIN:    return (in1 <= in2 ? in1 : in2); 
+		case MAX:    
+		case CUMMAX:   return (in1 >= in2 ? in1 : in2); 
+		
+		case MIN:    
+		case CUMMIN:   return (in1 <= in2 ? in1 : in2); 
+		
 		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
 		case MININDEX: return (in1 <= in2) ? 1 : 0;
+		
 		case LOG:
 			//if ( in1 <= 0 )
 			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");

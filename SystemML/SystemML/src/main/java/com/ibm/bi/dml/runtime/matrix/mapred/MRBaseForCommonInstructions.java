@@ -29,8 +29,8 @@ import com.ibm.bi.dml.runtime.instructions.mr.AppendGInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumSplitInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeSplitInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
@@ -186,16 +186,16 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
-				|| ins instanceof RangeBasedReIndexInstruction || ins instanceof CumsumSplitInstruction)
+				|| ins instanceof RangeBasedReIndexInstruction || ins instanceof CumulativeSplitInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
-			if( ins instanceof CumsumAggregateInstruction )
-				((CumsumAggregateInstruction)ins).setMatrixCharacteristics(dim);
-			if( ins instanceof CumsumSplitInstruction )
-				((CumsumSplitInstruction)ins).setMatrixCharacteristics(dim);
+			if( ins instanceof CumulativeAggregateInstruction )
+				((CumulativeAggregateInstruction)ins).setMatrixCharacteristics(dim);
+			if( ins instanceof CumulativeSplitInstruction )
+				((CumulativeSplitInstruction)ins).setMatrixCharacteristics(dim);
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.getRowsPerBlock(), dim.getColsPerBlock());
 		}
 		else if( ins instanceof ReorgInstruction )

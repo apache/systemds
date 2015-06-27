@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
  * 
  * 
  */
-public class CumsumSplitInstruction extends UnaryInstruction 
+public class CumulativeSplitInstruction extends UnaryInstruction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -32,10 +32,12 @@ public class CumsumSplitInstruction extends UnaryInstruction
 	
 	private MatrixCharacteristics _mcIn = null;
 	private long _lastRowBlockIndex = -1;
+	private double _initValue = 0;
 	
-	public CumsumSplitInstruction(byte in, byte out, String istr)
+	public CumulativeSplitInstruction(byte in, byte out, double init, String istr)
 	{
 		super(null, in, out, istr);
+		_initValue = init;
 	}
 
 	public void setMatrixCharacteristics( MatrixCharacteristics mcIn )
@@ -47,14 +49,15 @@ public class CumsumSplitInstruction extends UnaryInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields ( str, 2 );
+		InstructionUtils.checkNumFields ( str, 3 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
+		double init = Double.parseDouble(parts[3]);
 		
-		return new CumsumSplitInstruction(in, out, str);
+		return new CumulativeSplitInstruction(in, out, init, str);
 	}
 	
 	@Override
@@ -76,10 +79,14 @@ public class CumsumSplitInstruction extends UnaryInstruction
 			boolean firstBlk = (inix.getRowIndex() == 1);
 			boolean lastBlk = (inix.getRowIndex() == _lastRowBlockIndex );
 			
-			//introduce empty offsets for first row 
+			//introduce offsets w/ init value for first row 
 			if( firstBlk ) { 
 				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 				((MatrixBlock) out.getValue()).reset(1,blk.getNumColumns());
+				if( _initValue != 0 ){
+					for( int j=0; j<blk.getNumColumns(); j++ )
+						((MatrixBlock) out.getValue()).appendValue(0, j, _initValue);
+				}
 				out.getIndexes().setIndexes(1, inix.getColumnIndex());
 			}	
 			

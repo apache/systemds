@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MMTSJMRInstruction;
@@ -209,7 +209,7 @@ public class MatrixCharacteristics
 			MatrixCharacteristics in_dim2 = dims.get(realIns.input2);
 			dimOut.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
 		}
-		else if(ins instanceof CumsumAggregateInstruction)
+		else if(ins instanceof CumulativeAggregateInstruction)
 		{
 			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;
 			MatrixCharacteristics in = dims.get(realIns.input);

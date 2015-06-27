@@ -16,21 +16,19 @@ import com.ibm.bi.dml.parser.Expression.*;
 /**
  * 
  */
-public class CumsumSplitAggregate extends Lop 
+public class CumulativeSplitAggregate extends Lop 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-	//NOTE: implicitly used types
-	//private Aggregate.OperationTypes operation = OperationTypes.KahanSum;
-	//private PartialAggregate.DirectionTypes direction = DirectionTypes.Col;
-	//private CorrectionLocationType correction = CorrectionLocationType.LASTROW;
+	private double _initValue = 0;
 	
-	public CumsumSplitAggregate(Lop input, DataType dt, ValueType vt)
+	public CumulativeSplitAggregate(Lop input, DataType dt, ValueType vt, double init)
 		throws LopsException 
 	{
-		super(Lop.Type.CumsumSplitAggregate, dt, vt);
+		super(Lop.Type.CumulativeSplitAggregate, dt, vt);
+		_initValue = init;
 		init(input, dt, vt, ExecType.MR);
 	}
 	
@@ -51,11 +49,11 @@ public class CumsumSplitAggregate extends Lop
 		
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.DATAGEN);
-		this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+		lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 	}
 
 	public String toString() {
-		return "Cumsum Split Aggregate";
+		return "CumulativeSplitAggregate";
 	}
 	
 	private String getOpcode() {
@@ -73,7 +71,9 @@ public class CumsumSplitAggregate extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index) );
+		sb.append( prepOutputOperand(output_index) );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( String.valueOf(_initValue) );
 
 		return sb.toString();
 	}

@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -21,7 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 
 
-public class CumsumOffsetInstruction extends BinaryInstruction 
+public class CumulativeOffsetInstruction extends BinaryInstruction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -30,12 +31,26 @@ public class CumsumOffsetInstruction extends BinaryInstruction
 	private BinaryOperator _bop = null;
 	private UnaryOperator _uop = null;
 	
-	public CumsumOffsetInstruction(byte in1, byte in2, byte out, String istr)
+	public CumulativeOffsetInstruction(byte in1, byte in2, byte out, String opcode, String istr)
 	{
 		super(null, in1, in2, out, istr);
-		
-		_bop = new BinaryOperator(Plus.getPlusFnObject());
-		_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
+
+		if( "bcumoffk+".equals(opcode) ) {
+			_bop = new BinaryOperator(Plus.getPlusFnObject());
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
+		}
+		else if( "bcumoff*".equals(opcode) ){
+			_bop = new BinaryOperator(Multiply.getMultiplyFnObject());
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));	
+		}
+		else if( "bcumoffmin".equals(opcode) ){
+			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));	
+		}
+		else if( "bcumoffmax".equals(opcode) ){
+			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("max"));
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));	
+		}
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -45,11 +60,12 @@ public class CumsumOffsetInstruction extends BinaryInstruction
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
+		String opcode = parts[0];
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		byte out = Byte.parseByte(parts[3]);
 		
-		return new CumsumOffsetInstruction(in1, in2, out, str);
+		return new CumulativeOffsetInstruction(in1, in2, out, opcode, str);
 	}
 	
 	@Override
@@ -76,7 +92,7 @@ public class CumsumOffsetInstruction extends BinaryInstruction
 		MatrixBlock fdata2 = (MatrixBlock) data2.sliceOperations(1, 1, 1, data2.getNumColumns(), new MatrixBlock()); //1-based
 		fdata2.binaryOperationsInPlace(_bop, offset); //sum offset to first row
 		data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
-		data2.unaryOperations(_uop, blk); //compute columnwise prefix sums
+		data2.unaryOperations(_uop, blk); //compute columnwise prefix sums/prod/min/max
 
 		//set output indexes
 		out.getIndexes().setIndexes(in1.getIndexes());		

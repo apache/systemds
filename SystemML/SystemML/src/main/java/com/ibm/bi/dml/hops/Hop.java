@@ -926,7 +926,9 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, CUMSUM, MEDIAN, INVERSE,
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE,
+		//cumulative sums, products, extreme values
+		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
@@ -1127,6 +1129,9 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.CEIL, com.ibm.bi.dml.lops.Unary.OperationTypes.CEIL);
 		HopsOpOp1LopsU.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.Unary.OperationTypes.FLOOR);
 		HopsOpOp1LopsU.put(OpOp1.CUMSUM, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMSUM);
+		HopsOpOp1LopsU.put(OpOp1.CUMPROD, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMPROD);
+		HopsOpOp1LopsU.put(OpOp1.CUMMIN, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMMIN);
+		HopsOpOp1LopsU.put(OpOp1.CUMMAX, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMMAX);
 		HopsOpOp1LopsU.put(OpOp1.INVERSE, com.ibm.bi.dml.lops.Unary.OperationTypes.INVERSE);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);

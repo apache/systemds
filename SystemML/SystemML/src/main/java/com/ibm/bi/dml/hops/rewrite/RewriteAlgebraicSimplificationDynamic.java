@@ -132,7 +132,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryRightIndexing(hop, hi, i);  //e.g., X[,1] -> X, if output == input size 
 			hi = removeEmptyLeftIndexing(hop, hi, i);         //e.g., X[,1]=Y -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0 and nnz(Y)==0 
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input dims 
-			hi = removeUnnecessaryCumSum(hop, hi, i);         //e.g., cumsum(X) -> X, if nrow(X)==1;
+			hi = removeUnnecessaryCumulativeOp(hop, hi, i);   //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,max=1)) -> rand(rows=1,max=10), if one dim=1
@@ -301,22 +301,24 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos
 	 * @return
 	 */
-	private Hop removeUnnecessaryCumSum(Hop parent, Hop hi, int pos)
+	private Hop removeUnnecessaryCumulativeOp(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof UnaryOp && ((UnaryOp)hi).getOp()==OpOp1.CUMSUM  )
+		if( hi instanceof UnaryOp && ((UnaryOp)hi).isCumulativeUnaryOperation()  )
 		{
 			Hop input = hi.getInput().get(0); //input matrix
 			
 			if(   HopRewriteUtils.isDimsKnown(input)  //dims input known
 		       && input.getDim1()==1 ) //1 row
 			{
+				OpOp1 op = ((UnaryOp)hi).getOp();
+				
 				//remove unnecessary unary cumsum operator
 				HopRewriteUtils.removeChildReference(parent, hi);				
 				HopRewriteUtils.addChildReference(parent, input, pos);
 				parent.refreshSizeInformation();
 				hi = input;
 				
-				LOG.debug("Applied removeUnnecessaryCumSum");
+				LOG.debug("Applied removeUnnecessaryCumulativeOp: "+op);
 			}			
 		}
 		

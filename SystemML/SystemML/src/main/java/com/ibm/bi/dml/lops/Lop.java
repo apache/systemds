@@ -44,7 +44,7 @@ public abstract class Lop
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 
-		CumsumPartialAggregate, CumsumSplitAggregate, CumsumOffsetBinary, //MR cumsum
+		CumulativePartialAggregate, CumulativeSplitAggregate, CumulativeOffsetBinary, //MR cumsum/cumprod/cummin/cummax
 		WeightedSquaredLoss,
 		SortKeys, PickValues,
 		Checkpoint, 										//Spark persist into storage level

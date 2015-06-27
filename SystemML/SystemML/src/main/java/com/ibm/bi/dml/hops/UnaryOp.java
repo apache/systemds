@@ -10,10 +10,11 @@ package com.ibm.bi.dml.hops;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.CombineUnary;
-import com.ibm.bi.dml.lops.CumsumOffsetBinary;
-import com.ibm.bi.dml.lops.CumsumPartialAggregate;
-import com.ibm.bi.dml.lops.CumsumSplitAggregate;
+import com.ibm.bi.dml.lops.CumulativeOffsetBinary;
+import com.ibm.bi.dml.lops.CumulativePartialAggregate;
+import com.ibm.bi.dml.lops.CumulativeSplitAggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
@@ -127,10 +128,10 @@ public class UnaryOp extends Hop
 			{
 				ExecType et = optFindExecType();
 				
-				if( _op == Hop.OpOp1.CUMSUM && et==ExecType.MR )  //special handling MR-cumsum
+				if( isCumulativeUnaryOperation() && et==ExecType.MR )  //special handling MR-cumsum/cumprod/cummin/cumsum
 				{
 					//TODO additional physical operation if offsets fit in memory
-					Lop cumsumLop = constructLopsMRCumsum();
+					Lop cumsumLop = constructLopsMRCumulativeUnary();
 					setLops(cumsumLop);
 				}
 				else //default unary 
@@ -346,7 +347,7 @@ public class UnaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop constructLopsMRCumsum() 
+	private Lop constructLopsMRCumulativeUnary() 
 		throws HopsException, LopsException 
 	{
 		Hop input = getInput().get(0);
@@ -354,7 +355,8 @@ public class UnaryOp extends Hop
 		long clen = input.getDim2();
 		long brlen = input.getRowsInBlock();
 		long bclen = input.getColsInBlock();
-		boolean unknownSize = !dimsKnown();
+		boolean force = !dimsKnown() || _etypeForced == ExecType.MR;
+		OperationTypes aggtype = getCumulativeAggType();
 		
 		Lop X = input.constructLops();
 		Lop TEMP = X;
@@ -364,13 +366,13 @@ public class UnaryOp extends Hop
 		//recursive preaggregation until aggregates fit into CP memory budget
 		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
 				 > OptimizerUtils.getLocalMemBudget()
-			   && TEMP.getOutputParameters().getNumRows()>1) || unknownSize )
+			   && TEMP.getOutputParameters().getNumRows()>1) || force )
 		{
 			DATA.add(TEMP);
 	
 			//preaggregation per block
 			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
-			Lop preagg = new CumsumPartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE);
+			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype);
 			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			setLineNumbers(preagg);
 			
@@ -384,7 +386,7 @@ public class UnaryOp extends Hop
 			setLineNumbers(agg);
 			TEMP = agg;	
 			level++;
-			unknownSize = false; //in case of unknowns, generate one level
+			force = false; //in case of unknowns, generate one level
 		}
 		
 		//in-memory cum sum (of partial aggregates)
@@ -397,7 +399,8 @@ public class UnaryOp extends Hop
 		
 		//split, group and mr cumsum
 		while( level-- > 0  ) {
-			CumsumSplitAggregate split = new CumsumSplitAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE);
+			double init = getCumulativeInitValue();
+			CumulativeSplitAggregate split = new CumulativeSplitAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, init);
 			split.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(split);
 			
@@ -409,7 +412,7 @@ public class UnaryOp extends Hop
 			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(group2);
 			
-			CumsumOffsetBinary binary = new CumsumOffsetBinary(group1, group2, DataType.MATRIX, ValueType.DOUBLE);
+			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(group1, group2, DataType.MATRIX, ValueType.DOUBLE, aggtype);
 			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(binary);
 			TEMP = binary;
@@ -417,6 +420,37 @@ public class UnaryOp extends Hop
 		
 		return TEMP;
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private OperationTypes getCumulativeAggType()
+	{
+		switch( _op ) {
+			case CUMSUM: 	return OperationTypes.KahanSum;
+			case CUMPROD: 	return OperationTypes.Product;
+			case CUMMIN: 	return OperationTypes.Min;
+			case CUMMAX: 	return OperationTypes.Max;
+			default: 		return null;
+		}
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private double getCumulativeInitValue()
+	{
+		switch( _op ) {
+			case CUMSUM: 	return 0;
+			case CUMPROD: 	return 1;
+			case CUMMIN: 	return Double.MAX_VALUE;
+			case CUMMAX: 	return -Double.MAX_VALUE;
+			default: 		return Double.NaN;
+		}
+	}
+	
 		
 	@Override
 	public void computeMemEstimate(MemoTable memo)
@@ -481,13 +515,25 @@ public class UnaryOp extends Hop
 		return true;
 	}
 	
-	private boolean isInMemoryOperation() {
-		switch(_op) {
-		case INVERSE:
-			return true;
-		default:
-			return false;
-		}
+	/**
+	 * 
+	 * @return
+	 */
+	private boolean isInMemoryOperation() 
+	{
+		return ( _op == OpOp1.INVERSE );
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isCumulativeUnaryOperation() 
+	{
+		return (   _op == OpOp1.CUMSUM 
+				|| _op == OpOp1.CUMPROD
+				|| _op == OpOp1.CUMMIN
+				|| _op == OpOp1.CUMMAX  );
 	}
 	
 	@Override

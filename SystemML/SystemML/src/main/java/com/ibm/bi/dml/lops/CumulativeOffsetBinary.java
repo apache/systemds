@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -17,16 +18,27 @@ import com.ibm.bi.dml.parser.Expression.*;
  * 
  * 
  */
-public class CumsumOffsetBinary extends Lop 
+public class CumulativeOffsetBinary extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CumsumOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt)
+	private OperationTypes _op;
+	
+	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, OperationTypes op)
 		throws LopsException 
 	{
-		super(Lop.Type.CumsumOffsetBinary, dt, vt);
+		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
+	
+		//sanity check for supported aggregates
+		if( !(op == OperationTypes.KahanSum || op == OperationTypes.Product ||
+			  op == OperationTypes.Min || op == OperationTypes.Max) )
+		{
+			throw new LopsException("Unsupported aggregate operation type: "+op);
+		}
+		_op = op;
+	
 		init(data, offsets, dt, vt, ExecType.MR);
 	}
 	
@@ -50,15 +62,21 @@ public class CumsumOffsetBinary extends Lop
 		
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.DATAGEN);
-		this.lps.setProperties(inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob);
+		lps.setProperties(inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob);
 	}
 
 	public String toString() {
-		return "Cumsum Offset Binary";
+		return "CumulativeOffsetBinary";
 	}
 	
 	private String getOpcode() {
-		return "bcumoffk+";
+		switch( _op ) {
+			case KahanSum: 	return "bcumoffk+";
+			case Product: 	return "bcumoff*";
+			case Min:		return "bcumoffmin";
+			case Max: 		return "bcumoffmax";
+			default: 		return null;
+		}
 	}
 	
 	@Override

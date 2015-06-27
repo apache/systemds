@@ -139,6 +139,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ceil"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "floor" , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "ucumk+", CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ucum*" , CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ucummin", CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "ucummax", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "inverse", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sprop", CPINSTRUCTION_TYPE.BuiltinUnary);

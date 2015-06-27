@@ -61,6 +61,9 @@ public class LibMatrixAgg
 	private enum AggType {
 		KAHAN_SUM,
 		CUM_KAHAN_SUM,
+		CUM_MIN,
+		CUM_MAX,
+		CUM_PROD,
 		MIN,
 		MAX,
 		MEAN,
@@ -176,9 +179,9 @@ public class LibMatrixAgg
 		
 		AggType aggtype = getAggType(uop);
 		if( !in.sparse )
-			aggregateUnaryMatrixDense(in, out, aggtype, null, null);
+			aggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null);
 		else
-			aggregateUnaryMatrixSparse(in, out, aggtype, null, null);
+			aggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null);
 		
 		//System.out.println("uop ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
@@ -279,11 +282,18 @@ public class LibMatrixAgg
 	private static AggType getAggType( UnaryOperator op )
 	{
 		ValueFunction vfn = op.fn;
-	
-		//cumsum
-		if( vfn instanceof Builtin && ((Builtin) vfn).bFunc == BuiltinFunctionCode.CUMSUM )
-		{
-			return AggType.CUM_KAHAN_SUM;
+
+		//cumsum/cumprod/cummin/cummax
+		if( vfn instanceof Builtin ) {
+			BuiltinFunctionCode bfunc = ((Builtin) vfn).bFunc;
+			switch( bfunc )
+			{
+				case CUMSUM: 	return AggType.CUM_KAHAN_SUM;
+				case CUMPROD:	return AggType.CUM_PROD;
+				case CUMMIN:	return AggType.CUM_MIN;
+				case CUMMAX: 	return AggType.CUM_MAX;
+				default: 		return AggType.INVALID;
+			}
 		}
 		
 		return AggType.INVALID;
@@ -692,8 +702,20 @@ public class LibMatrixAgg
 				d_ucumkp(a, c, m, n, kbuff, kplus);
 				break;
 			}
-			case MAX: 
-			case MIN: //MAX/MIN
+			case CUM_PROD: //CUMPROD
+			{
+				d_ucumm(a, c, m, n);
+				break;
+			}
+			case CUM_MIN:
+			case CUM_MAX:
+			{
+				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				d_ucummxx(a, c, m, n, init, (Builtin)vFn);
+				break;
+			}
+			case MIN: 
+			case MAX: //MAX/MIN
 			{
 				double init = Double.MAX_VALUE * ((optype==AggType.MAX)?-1:1);
 				
@@ -804,6 +826,18 @@ public class LibMatrixAgg
 				s_ucumkp(a, c, m, n, kbuff, kplus);
 				break;
 			}
+			case CUM_PROD: //CUMPROD
+			{
+				s_ucumm(a, c, m, n);
+				break;
+			}
+			case CUM_MIN:
+			case CUM_MAX:
+			{
+				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				s_ucummxx(a, c, m, n, init, (Builtin)vFn);
+				break;
+			}
 			case MIN:
 			case MAX: //MAX/MIN
 			{
@@ -875,7 +909,8 @@ public class LibMatrixAgg
 	{
 		//do nothing for pseudo sparse-safe operations
 		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD 
-			|| optype == AggType.CUM_KAHAN_SUM )
+			|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD || optype == AggType.CUM_MIN
+			|| optype == AggType.CUM_MAX )
 		{
 			return;
 		}
@@ -990,9 +1025,9 @@ public class LibMatrixAgg
 	 */
 	private static void d_ucumkp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
 	{
-		//init current sum/correction arrays 
+		//init current row sum/correction arrays w/ neutral 0
 		double[] csums = new double[ 2*n ]; 
-		Arrays.fill(csums, 0);
+		Arrays.fill(csums, 0); 
 		
 		//scan once and compute prefix sums
 		for( int i=0, aix=0; i<m; i++, aix+=n ) {
@@ -1001,6 +1036,50 @@ public class LibMatrixAgg
 		}			
 	}
 	
+	/**
+	 * CUMPROD, opcode: ucum*, dense input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param kbuff
+	 * @param kplus
+	 */
+	private static void d_ucumm( double[] a, double[] c, int m, int n ) 
+	{	
+		//init current row product array w/ neutral 1
+		double[] cprods = new double[ n ]; 
+		Arrays.fill(cprods, 1);
+		
+		//scan once and compute prefix products
+		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+			productAgg( a, cprods, aix, 0, n );
+			System.arraycopy(cprods, 0, c, aix, n);
+		}			
+	}
+	
+	/**
+	 * CUMMIN/CUMMAX, opcode: ucummin/ucummax, dense input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param builtin
+	 */
+	private static void d_ucummxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	{
+		//init current row min/max array w/ extreme value 
+		double[] cmxx = new double[ n ]; 
+		Arrays.fill(cmxx, init);
+				
+		//scan once and compute prefix min/max
+		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+			builtinAgg( a, cmxx, aix, n, builtin );
+			System.arraycopy(cmxx, 0, c, aix, n);
+		}
+	}
 	/**
 	 * TRACE, opcode: uaktrace 
 	 * 
@@ -1273,6 +1352,7 @@ public class LibMatrixAgg
 	}
 	
 	/**
+	 * CUMSUM, opcode: ucumk+, sparse input.
 	 * 
 	 * @param a
 	 * @param c
@@ -1283,7 +1363,7 @@ public class LibMatrixAgg
 	 */
 	private static void s_ucumkp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus )
 	{
-		//init current sum/correction arrays 
+		//init current row sum/correction arrays w/ neutral 0
 		double[] csums = new double[ 2*n ]; 
 		Arrays.fill(csums, 0);
 		
@@ -1300,6 +1380,93 @@ public class LibMatrixAgg
 			}
 			//always copy current sum (not sparse-safe)
 			System.arraycopy(csums, 0, c, ix, n);
+		}
+	}
+	
+	/**
+	 * CUMPROD, opcode: ucum*, sparse input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 */
+	private static void s_ucumm( SparseRow[] a, double[] c, int m, int n )
+	{
+		//init current row prod arrays w/ neutral 1
+		double[] cprod = new double[ n ]; 
+		Arrays.fill(cprod, 1);
+		
+		//init count arrays (helper, see correction)
+		int[] cnt = new int[ n ]; 
+		Arrays.fill(cnt, 0); //init count array
+				
+		//scan once and compute prefix products
+		for( int i=0, ix=0; i<m; i++, ix+=n )
+		{
+			SparseRow arow = a[i];
+			
+			//multiply row of non-zero elements
+			if( arow!=null && !arow.isEmpty() ) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				productAgg( avals, cprod, aix, 0, alen );
+				countAgg( avals, cnt, aix, alen );
+			}
+
+			//correction (not sparse-safe and cumulative)
+			//note: we need to determine if there are only nnz in a column
+			for( int j=0; j<n; j++ )
+				if( cnt[j] < i+1 ) //no dense column
+					cprod[j] *= 0;
+			
+			//always copy current sum (not sparse-safe)
+			System.arraycopy(cprod, 0, c, ix, n);
+		}	
+	}
+	
+	/**
+	 * CUMMIN/CUMMAX, opcode: ucummin/ucummax, sparse input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param init
+	 * @param builtin
+	 */
+	private static void s_ucummxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	{
+		//init current row min/max array w/ extreme value 
+		double[] cmxx = new double[ n ]; 
+		Arrays.fill(cmxx, init);
+				
+		//init count arrays (helper, see correction)
+		int[] cnt = new int[ n ]; 
+		Arrays.fill(cnt, 0); //init count array
+		
+		//compute column aggregates min/max
+		for( int i=0, ix=0; i<m; i++, ix+=n )
+		{
+			SparseRow arow = a[i];
+			if( arow!=null && !arow.isEmpty() )
+			{
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				builtinAgg( avals, cmxx, aix, alen, builtin );
+				countAgg( avals, cnt, aix, alen );
+			}
+			
+			//correction (not sparse-safe and cumulative)
+			//note: we need to determine if there are only nnz in a column
+			for( int j=0; j<n; j++ )
+				if( cnt[j] < i+1 ) //no dense column
+					cmxx[j] = builtin.execute2(cmxx[j], 0);
+			
+			//always copy current sum (not sparse-safe)
+			System.arraycopy(cmxx, 0, c, ix, n);
 		}
 	}
 	
@@ -1715,6 +1882,7 @@ public class LibMatrixAgg
 		}
 	}
 	
+	
 	/**
 	 * 
 	 * @param a
@@ -1741,6 +1909,40 @@ public class LibMatrixAgg
 		}
 		
 		return val;
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
+	private static void productAgg( double[] a, double[] c, int ai, int ci, final int len )
+	{
+		//always w/ NAN_AWARENESS: product without early abort; 
+		//even if val is 0, it might turn into NaN.
+		//(early abort would require column-flags and branches)
+		for( int i=0; i<len; i++, ai++, ci++ )
+			c[ ci ] *= a[ ai ];	
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
+	private static void productAgg( double[] a, double[] c, int[] ai, int ci, final int len )
+	{
+		//always w/ NAN_AWARENESS: product without early abort; 
+		//even if val is 0, it might turn into NaN.
+		//(early abort would require column-flags and branches)
+		for( int i=0; i<len; i++ )
+			c[ ci + ai[i] ] *= a[ i ];	
 	}
 	
 	/**
@@ -1968,54 +2170,5 @@ public class LibMatrixAgg
 			c[ ci+ai[ i+7 ] ] --;
 		}
 	}
-	
-	
-	/*
-	NOTE: those low level optimizations improved performance after JIT by 2x-3x.
-	However, the runtime BEFORE JIT compile was significantly increased (e.g.
-	8kx8k sum, 6s before JIT, 130ms after JIT). NON-CONCLUSIVE.
-	
-	private static KahanObject[] createBuffers( int num )
-	{
-		KahanObject[] buff = new KahanObject[ num ];
-		
-		for( int i=0; i<num; i++ )
-			buff[i] = new KahanObject(0,0);
-		
-		return buff;
-	}
-	
-	private static void resetBuffers( KahanObject[] buff)
-	{
-		int num = buff.length;
-		for( int i=0; i<num; i++ )
-			buff[i].set(0, 0);
-	}
-	
-	private static void sum8( double[] a, int ai, int len, KahanObject kbuff, KahanObject[] lbuff8, KahanPlus kplus )
-	{
-		final int bn = len%8;
-		
-		for( int i=0; i<bn; i++, ai++ )
-			kplus.execute2(kbuff, a[ai]);
-		
-		//unrolled 8-block (for better instruction level parallelism)
-		for( int i=bn; i<len; i+=8, ai+=8 )
-		{
-			kplus.execute2( lbuff8[0], a[ ai+0 ] );
-			kplus.execute2( lbuff8[1], a[ ai+1 ] );
-			kplus.execute2( lbuff8[2], a[ ai+2 ] );
-			kplus.execute2( lbuff8[3], a[ ai+3 ] );
-			kplus.execute2( lbuff8[4], a[ ai+4 ] );
-			kplus.execute2( lbuff8[5], a[ ai+5 ] );
-			kplus.execute2( lbuff8[6], a[ ai+6 ] );
-			kplus.execute2( lbuff8[7], a[ ai+7 ] );
-		}
-		
-		//merge local buffers into return buffer
-		for( int i=0; i<8; i++ )
-			kplus.execute2(kbuff, lbuff8[i]._sum+lbuff8[i]._correction);
-	}
-	*/
 }
 

@@ -30,9 +30,9 @@ import com.ibm.bi.dml.runtime.instructions.mr.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumOffsetInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumsumSplitInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeOffsetInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.CumulativeSplitInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataPartitionMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
@@ -231,10 +231,16 @@ public class MRInstructionParser extends InstructionParser
 		//partitioning
 		String2MRInstructionType.put( "partition", MRINSTRUCTION_TYPE.Partition);
 		
-		//cumsum
-		String2MRInstructionType.put( "ucumack+", MRINSTRUCTION_TYPE.CumsumAggregate);
-		String2MRInstructionType.put( "ucumsplit", MRINSTRUCTION_TYPE.CumsumSplit);
-		String2MRInstructionType.put( "bcumoffk+", MRINSTRUCTION_TYPE.CumsumOffset);
+		//cumsum/cumprod/cummin/cummax
+		String2MRInstructionType.put( "ucumack+"  , MRINSTRUCTION_TYPE.CumsumAggregate);
+		String2MRInstructionType.put( "ucumac*"   , MRINSTRUCTION_TYPE.CumsumAggregate);
+		String2MRInstructionType.put( "ucumacmin" , MRINSTRUCTION_TYPE.CumsumAggregate);
+		String2MRInstructionType.put( "ucumacmax" , MRINSTRUCTION_TYPE.CumsumAggregate);
+		String2MRInstructionType.put( "ucumsplit" , MRINSTRUCTION_TYPE.CumsumSplit);
+		String2MRInstructionType.put( "bcumoffk+" , MRINSTRUCTION_TYPE.CumsumOffset);
+		String2MRInstructionType.put( "bcumoff*"  , MRINSTRUCTION_TYPE.CumsumOffset);
+		String2MRInstructionType.put( "bcumoffmin", MRINSTRUCTION_TYPE.CumsumOffset);
+		String2MRInstructionType.put( "bcumoffmax", MRINSTRUCTION_TYPE.CumsumOffset);
 		
 		//dummy (pseudo instructions)
 		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
@@ -377,13 +383,13 @@ public class MRInstructionParser extends InstructionParser
 			return (MRInstruction)DataPartitionMRInstruction.parseInstruction(str);
 			
 		case CumsumAggregate:
-			return (MRInstruction)CumsumAggregateInstruction.parseInstruction(str);
+			return (MRInstruction)CumulativeAggregateInstruction.parseInstruction(str);
 			
 		case CumsumSplit:
-			return (MRInstruction)CumsumSplitInstruction.parseInstruction(str);
+			return (MRInstruction)CumulativeSplitInstruction.parseInstruction(str);
 		
 		case CumsumOffset:
-			return (MRInstruction)CumsumOffsetInstruction.parseInstruction(str);
+			return (MRInstruction)CumulativeOffsetInstruction.parseInstruction(str);
 		
 		case INVALID:
 		

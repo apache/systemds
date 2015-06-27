@@ -2821,8 +2821,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			ret.reset(rlen, clen, sp);
 		
 		//core execute
-		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) //e.g., cumsum
+		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) 
 		{
+			//e.g., cumsum/cumprod/cummin/cumax
 			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
 		}
 		else

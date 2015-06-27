@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -28,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class CumsumAggregateInstruction extends AggregateUnaryInstruction 
+public class CumulativeAggregateInstruction extends AggregateUnaryInstruction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -36,7 +38,7 @@ public class CumsumAggregateInstruction extends AggregateUnaryInstruction
 	
 	private MatrixCharacteristics _mcIn = null;
 	
-	public CumsumAggregateInstruction(Operator op, byte in, byte out, String istr)
+	public CumulativeAggregateInstruction(Operator op, byte in, byte out, String istr)
 	{
 		super(op, in, out, true, istr);
 	}
@@ -53,14 +55,29 @@ public class CumsumAggregateInstruction extends AggregateUnaryInstruction
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
+		String opcode = parts[0];
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
 		
-		//ucumack+
-		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
-		AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		AggregateUnaryOperator aggun = null;
+		if( "ucumack+".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumac*".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Multiply.getMultiplyFnObject(), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumacmin".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumacmax".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
 		
-		return new CumsumAggregateInstruction(aggun, in, out, str);
+		return new CumulativeAggregateInstruction(aggun, in, out, str);
 	}
 	
 	@Override
@@ -84,7 +101,8 @@ public class CumsumAggregateInstruction extends AggregateUnaryInstruction
 			//process instruction
 			OperationsOnMatrixValues.performAggregateUnary( inix, in1.getValue(), out.getIndexes(), out.getValue(), 
 					                            ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
-			((MatrixBlock)out.getValue()).dropLastRowsOrColums(((AggregateUnaryOperator)optr).aggOp.correctionLocation);
+			if( ((AggregateUnaryOperator)optr).aggOp.correctionExists )
+				((MatrixBlock)out.getValue()).dropLastRowsOrColums(((AggregateUnaryOperator)optr).aggOp.correctionLocation);
 			
 			//cumsum expand partial aggregates
 			long rlenOut = (long)Math.ceil((double)_mcIn.getRows()/blockRowFactor);

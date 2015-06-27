@@ -594,33 +594,23 @@ public class ParameterizedBuiltinOp extends Hop
 		Hop input = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));	
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 
-		if (   _op == ParamBuiltinOp.GROUPEDAGG ) {
+		if (   _op == ParamBuiltinOp.GROUPEDAGG ) 
+		{
 			// Get the number of groups provided as part of aggregate() invocation, whenever available.
 			if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
 				Hop ngroups = getInput().get(_paramIndexMap.get(Statement.GAGG_NUM_GROUPS));
 				if(ngroups != null && ngroups instanceof LiteralOp) {
-					try {
-						long m = ((LiteralOp)ngroups).getLongValue();
-						//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): m="+m);
-						return new long[]{m,1,m};
-					} catch (HopsException e) {
-						throw new RuntimeException(e);
-					}
+					long m = HopRewriteUtils.getIntValueSafe((LiteralOp)ngroups);
+					return new long[]{m,1,m};
 				}
-				/*else {
-					System.out.println("WARN: dimensions are not inferred: " + (ngroups == null ? "null" : ngroups.getKind()) );
-				}*/
 			}
 			
 			// Output dimensions are completely data dependent. In the worst case, 
 			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
 			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
-			// get the size of longer dimension
-			long m = (mc.getRows() > 1 ? mc.getRows() : mc.getCols()); 
-			if ( m > 1 )
-			{
-				//System.out.println("ParamBuiltinOp.inferOutputCharacteristics(): worstcase m="+m);
+			long m = mc.getRows(); 
+			if ( m >= 1 ) {
 				ret = new long[]{m, 1, m};
 			}
 		}
@@ -700,7 +690,16 @@ public class ParameterizedBuiltinOp extends Hop
 				break;
 			
 			case GROUPEDAGG:  
-				//output dimension dim1 is completely data dependent 
+				// output dimension dim1 is completely data dependent 
+				long ldim1 = -1;
+				if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
+					Hop ngroups = getInput().get(_paramIndexMap.get(Statement.GAGG_NUM_GROUPS));
+					if(ngroups != null && ngroups instanceof LiteralOp) {
+						ldim1 = HopRewriteUtils.getIntValueSafe((LiteralOp)ngroups);
+					}
+				}
+				
+				setDim1( ldim1 );
 				setDim2( 1 );
 				break;
 			

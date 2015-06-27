@@ -27,6 +27,9 @@ import org.junit.runners.Suite;
 	TransposeTest.class,
 	
 	EigenFactorizeTest.class,
+	FullCumminTest.class,
+	FullCummaxTest.class,
+	FullCumprodTest.class,
 	FullCumsumTest.class,
 	LUFactorizeTest.class,
 	RemoveEmptyTest.class,

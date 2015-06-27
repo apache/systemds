@@ -25,13 +25,13 @@ import com.ibm.bi.dml.utils.Statistics;
  * 
  * 
  */
-public class FullCumsumTest extends AutomatedTestBase 
+public class FullCumminTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME = "Cumsum";
+	private final static String TEST_NAME = "Cummin";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	
 	private final static double eps = 1e-10;
@@ -56,56 +56,56 @@ public class FullCumsumTest extends AutomatedTestBase
 	// -----------------------------------------------------------------
 	
 	@Test
-	public void testCumsumColVectorDenseSP() 
+	public void testCumminColVectorDenseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseSP() 
+	public void testCumminRowVectorDenseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseNoRewritesSP() 
+	public void testCumminRowVectorDenseNoRewritesSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixDenseSP() 
+	public void testCumminMatrixDenseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumColVectorSparseSP() 
+	public void testCumminColVectorSparseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseSP() 
+	public void testCumminRowVectorSparseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseNoRewritesSP() 
+	public void testCumminRowVectorSparseNoRewritesSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixSparseSP() 
+	public void testCumminMatrixSparseSP() 
 	{
 		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
@@ -115,91 +115,91 @@ public class FullCumsumTest extends AutomatedTestBase
 	// -----------------------------------------------------------------
 	
 	@Test
-	public void testCumsumColVectorDenseCP() 
+	public void testCumminColVectorDenseCP() 
 	{
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseCP() 
+	public void testCumminRowVectorDenseCP() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseNoRewritesCP() 
+	public void testCumminRowVectorDenseNoRewritesCP() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixDenseCP() 
+	public void testCumminMatrixDenseCP() 
 	{
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumColVectorSparseCP() 
+	public void testCumminColVectorSparseCP() 
 	{
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseCP() 
+	public void testCumminRowVectorSparseCP() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseNoRewritesCP() 
+	public void testCumminRowVectorSparseNoRewritesCP() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixSparseCP() 
+	public void testCumminMatrixSparseCP() 
 	{
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumColVectorDenseMR() 
+	public void testCumminColVectorDenseMR() 
 	{
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseMR() 
+	public void testCumminRowVectorDenseMR() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseNoRewritesMR() 
+	public void testCumminRowVectorDenseNoRewritesMR() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.MR, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixDenseMR() 
+	public void testCumminMatrixDenseMR() 
 	{
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testCumsumColVectorSparseMR() 
+	public void testCumminColVectorSparseMR() 
 	{
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseNoRewritesMR() 
+	public void testCumminRowVectorSparseNoRewritesMR() 
 	{
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.MR, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixSparseMR() 
+	public void testCumminMatrixSparseMR() 
 	{
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.MR);
 	}

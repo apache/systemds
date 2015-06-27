@@ -341,7 +341,7 @@ parfor (s in 1:num_strata, check = 0) {
 			n_time = nrow (time);
 			
 			######## ESTIMATE SERVIVOR FUNCTION SURV, ITS STANDARD ERROR SE_SURV, AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL	
-			[surv] = cumulative_product ((n_risk - n_event) / n_risk);
+			surv = cumprod ((n_risk - n_event) / n_risk);
 			tmp = n_event / (n_risk * (n_risk - n_event));
 			se_surv = sqrt (cumsum (tmp)) * surv; 
 			if (err_type == "peto") {
@@ -545,19 +545,6 @@ if (num_groups > 1 & test_type != "none") {
 	} else {
 		print (str);
 	}	
-}
-
-######## UDF FOR COMPUTING CUMULATIVE PRODUCT
-
-cumulative_product = function (Matrix[Double] X) return (Matrix[Double] result) {
-	n = nrow (X);
-	it = ceil (log(n)/log(2));
-	result = X;
-	for (i in 0:(it-1)) {
-		Y = matrix (1, rows=n, cols=1);
-		Y[((2^i)+1):n,1] = result[1:(n-(2^i)),1];
-		result = Y * result;
-	}
 }
 
 

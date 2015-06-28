@@ -470,13 +470,12 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				sCount++;
 			
-				if( s instanceof ForStatement && !(s instanceof ParForStatement) )
+				if( s instanceof ForStatement ) //incl parfor
 				{
+					//despite separate dependency analysis for each nested parfor, we need to 
+					//recursively check nested parfor as well in order to ensure correcteness
+					//of constantChecks with regard to outer indexes
 					rDetermineCandidates(((ForStatement)s).getBody(), C, sCount);
-				}
-				else if( s instanceof ParForStatement )
-				{
-					//do nothing, investigated in separate dependency analysis
 				}
 				else if( s instanceof WhileStatement ) 
 				{
@@ -715,8 +714,11 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				sCount++; 
 			
-				if( s instanceof ForStatement && !(s instanceof ParForStatement) )
+				if( s instanceof ForStatement ) //incl parfor
 				{
+					//despite separate dependency analysis for each nested parfor, we need to 
+					//recursively check nested parfor as well in order to ensure correcteness
+					//of constantChecks with regard to outer indexes
 					rCheckCandidates(c, cdt, ((ForStatement)s).getBody(), sCount, dep);
 				}
 				else if( s instanceof WhileStatement ) 

@@ -39,7 +39,7 @@ parfor(i1 in 1:num_features) { # this parfor works fine!
 max_num_bins = max (count_thresholds);
 X_ext_left = matrix (0, rows = num_rows, cols = num_features * num_classes * max_num_bins);
 X_ext_right = matrix (0, rows = num_rows, cols = num_features * num_classes * max_num_bins);
-parfor (i2 in 1:num_features) { # The following parfors need check=0!
+parfor (i2 in 1:num_features, check=0) { # The following parfors need check=0!
 	parfor (i3 in 1:num_rows) {
 		count_threshold = count_thresholds[,i2];
 		for (i4 in 0:(as.scalar(count_threshold) - 1)) {

@@ -1211,8 +1211,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( !CONSERVATIVE_CHECK && ret ) //only if not already no dependency
 		{
 			//NOTE: cases both and none negligible already covered (constant check, general case) 
-			boolean ignoreRow = isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
-			boolean ignoreCol = isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ixid = (dat1 instanceof IndexedIdentifier && dat2 instanceof IndexedIdentifier); 
+			boolean ignoreRow = ixid && isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ignoreCol = ixid && isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
 	
 			LinearFunction f1p = null, f2p = null;
 			if( ignoreRow )
@@ -1399,8 +1400,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( !CONSERVATIVE_CHECK && !ret ) //only if not already equal
 		{
 			//NOTE: cases both and none negligible already covered (constant check, general case) 
-			boolean ignoreRow = isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
-			boolean ignoreCol = isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ixid = (dat1 instanceof IndexedIdentifier && dat2 instanceof IndexedIdentifier); 
+			boolean ignoreRow = ixid && isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ignoreCol = ixid && isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
 	
 			LinearFunction f1p = null, f2p = null;
 			if( ignoreRow )

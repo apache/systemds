@@ -10,9 +10,15 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.utils.Explain;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of
@@ -27,6 +33,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	private static final Log LOG = LogFactory.getLog(RewriteMatrixMultChainOptimization.class.getName());
+	private static final boolean LDEBUG = false;
+	
+	static
+	{
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("com.ibm.bi.dml.hops.rewrite.RewriteMatrixMultChainOptimization")
+				  .setLevel((Level) Level.TRACE);
+		}
+	}
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
@@ -81,6 +99,117 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 
+	
+	/**
+	 * optimizeMMChain(): It optimizes the matrix multiplication chain in which
+	 * the last Hop is "this". Step-1) Identify the chain (mmChain). (Step-2) clear all
+	 * links among the Hops that are involved in mmChain. (Step-3) Find the
+	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
+	 * mmChain.
+	 */
+	private void optimizeMMChain( Hop hop ) throws HopsException 
+	{
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("MM Chain Optimization for HOP: (" + " " + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ", "
+						+ hop.getName() + ")");
+		}
+		
+		ArrayList<Hop> mmChain = new ArrayList<Hop>();
+		ArrayList<Hop> mmOperators = new ArrayList<Hop>();
+		ArrayList<Hop> tempList;
+
+		// Step 1: Identify the chain (mmChain) & clear all links among the Hops
+		// that are involved in mmChain.
+
+		mmOperators.add(hop);
+		// Initialize mmChain with my inputs
+		for (Hop hi : hop.getInput()) {
+			mmChain.add(hi);
+		}
+
+		// expand each Hop in mmChain to find the entire matrix multiplication
+		// chain
+		int i = 0;
+		while (i < mmChain.size()) {
+
+			boolean expandable = false;
+
+			Hop h = mmChain.get(i);
+			/*
+			 * Check if mmChain[i] is expandable: 
+			 * 1) It must be MATMULT 
+			 * 2) It must not have been visited already 
+			 *    (one MATMULT should get expanded only in one chain)
+			 * 3) Its output should not be used in multiple places
+			 *    (either within chain or outside the chain)
+			 */
+
+			if (    h instanceof AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
+			     && !((AggBinaryOp)hop).hasLeftPMInput() 
+				 && h.getVisited() != Hop.VisitStatus.DONE ) 
+			{
+				// check if the output of "h" is used at multiple places. If yes, it can
+				// not be expanded.
+				if (h.getParent().size() > 1 || inputCount( (Hop) ((h.getParent().toArray())[0]), h) > 1 ) {
+					expandable = false;
+					break;
+				}
+				else 
+					expandable = true;
+			}
+
+			h.setVisited(Hop.VisitStatus.DONE);
+
+			if ( !expandable ) {
+				i = i + 1;
+			} else {
+				tempList = mmChain.get(i).getInput();
+				if (tempList.size() != 2) {
+					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
+				}
+
+				// add current operator to mmOperators, and its input nodes to mmChain
+				mmOperators.add(mmChain.get(i));
+				mmChain.set(i, tempList.get(0));
+				mmChain.add(i + 1, tempList.get(1));
+			}
+		}
+
+		// print the MMChain
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Identified MM Chain: ");
+			for (Hop h : mmChain) {
+				logTraceHop(h, 1);
+			}
+		}
+
+		if (mmChain.size() == 2) {
+			// If the chain size is 2, then there is nothing to optimize.
+			return;
+		} 
+		else 
+		{
+			// Step 2: construct dims array
+			double[] dimsArray = new double[mmChain.size() + 1];
+			boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
+			
+			if( dimsKnown ) {
+				// Step 3: clear the links among Hops within the identified chain
+				clearLinksWithinChain ( hop, mmOperators );
+				
+				// Step 4: Find the optimal ordering via dynamic programming.
+				
+				// Invoke Dynamic Programming
+				int size = mmChain.size();
+				int[][] split = mmChainDP(dimsArray, mmChain.size());
+				
+				 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
+				LOG.trace("Optimal MM Chain: ");
+				mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
+			}
+		}
+	}
+	
 	/**
 	 * mmChainDP(): Core method to perform dynamic programming on a given array
 	 * of matrix dimensions.
@@ -117,6 +246,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 						split[i][j] = k;
 					}
 				}
+
+				if( LOG.isTraceEnabled() ){
+					LOG.trace("mmchainopt [i="+(i+1)+",j="+(j+1)+"]: costs = "+dpMatrix[i][j]+", split = "+(split[i][j]+1));
+				}
 			}
 		}
 
@@ -133,19 +266,24 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * %*%) .
 	 */
 	private void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
-			int opIndex, int[][] split) 
+			int opIndex, int[][] split, int level) 
 	{
-		if (i == j)
+		//single matrix - end of recursion
+		if (i == j) {
+			logTraceHop(h, level);
 			return;
+		}
 
-		Hop input1, input2;
+		if( LOG.isTraceEnabled() ){
+			String offset = Explain.getIdentation(level);
+			LOG.trace(offset + "(");
+		}
+		
 		// Set Input1 for current Hop h
 		if (i == split[i][j]) {
-			input1 = mmChain.get(i);
 			h.getInput().add(mmChain.get(i));
 			mmChain.get(i).getParent().add(h);
 		} else {
-			input1 = mmOperators.get(opIndex);
 			h.getInput().add(mmOperators.get(opIndex));
 			mmOperators.get(opIndex).getParent().add(h);
 			opIndex = opIndex + 1;
@@ -153,26 +291,25 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Set Input2 for current Hop h
 		if (split[i][j] + 1 == j) {
-			input2 = mmChain.get(j);
 			h.getInput().add(mmChain.get(j));
 			mmChain.get(j).getParent().add(h);
 		} else {
-			input2 = mmOperators.get(opIndex);
 			h.getInput().add(mmOperators.get(opIndex));
 			mmOperators.get(opIndex).getParent().add(h);
 			opIndex = opIndex + 1;
 		}
 
 		// Find children for both the inputs
-		mmChainRelinkHops(h.getInput().get(0), i, split[i][j], mmChain, mmOperators, opIndex, split);
-		mmChainRelinkHops(h.getInput().get(1), split[i][j] + 1, j, mmChain, mmOperators, opIndex, split);
+		mmChainRelinkHops(h.getInput().get(0), i, split[i][j], mmChain, mmOperators, opIndex, split, level+1);
+		mmChainRelinkHops(h.getInput().get(1), split[i][j] + 1, j, mmChain, mmOperators, opIndex, split, level+1);
 
 		// Propagate properties of input hops to current hop h
-		h.setDim1(input1.getDim1());
-		h.setRowsInBlock(input1.getRowsInBlock());
-		h.setDim2(input2.getDim2());
-		h.setColsInBlock(input2.getColsInBlock());
-
+		h.refreshSizeInformation();
+		
+		if( LOG.isTraceEnabled() ){
+			String offset = Explain.getIdentation(level);
+			LOG.trace(offset + ")");
+		}
 	}
 
 	/**
@@ -264,116 +401,16 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	}
 	
 	/**
-	 * optimizeMMChain(): It optimizes the matrix multiplication chain in which
-	 * the last Hop is "this". Step-1) Identify the chain (mmChain). (Step-2) clear all
-	 * links among the Hops that are involved in mmChain. (Step-3) Find the
-	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
-	 * mmChain.
+	 * 
+	 * @param hop
+	 * @param level
 	 */
-	private void optimizeMMChain( Hop hop ) throws HopsException 
+	private void logTraceHop( Hop hop, int level )
 	{
-		LOG.trace("MM Chain Optimization for HOP: (" + " " + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ", "
-					+ hop.getName() + ")");
-		
-		ArrayList<Hop> mmChain = new ArrayList<Hop>();
-		ArrayList<Hop> mmOperators = new ArrayList<Hop>();
-		ArrayList<Hop> tempList;
-
-		/*
-		 * Step-1: Identify the chain (mmChain) & clear all links among the Hops
-		 * that are involved in mmChain.
-		 */
-
-		mmOperators.add(hop);
-		// Initialize mmChain with my inputs
-		for (Hop hi : hop.getInput()) {
-			mmChain.add(hi);
-		}
-
-		// expand each Hop in mmChain to find the entire matrix multiplication
-		// chain
-		int i = 0;
-		while (i < mmChain.size()) {
-
-			boolean expandable = false;
-
-			Hop h = mmChain.get(i);
-			/*
-			 * Check if mmChain[i] is expandable: 
-			 * 1) It must be MATMULT 
-			 * 2) It must not have been visited already 
-			 *    (one MATMULT should get expanded only in one chain)
-			 * 3) Its output should not be used in multiple places
-			 *    (either within chain or outside the chain)
-			 */
-
-			if (    h instanceof AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
-			     && !((AggBinaryOp)hop).hasLeftPMInput() 
-				 && h.getVisited() != Hop.VisitStatus.DONE ) 
-			{
-				// check if the output of "h" is used at multiple places. If yes, it can
-				// not be expanded.
-				if (h.getParent().size() > 1 || inputCount( (Hop) ((h.getParent().toArray())[0]), h) > 1 ) {
-					expandable = false;
-					break;
-				}
-				else 
-					expandable = true;
-			}
-
-			h.setVisited(Hop.VisitStatus.DONE);
-
-			if ( !expandable ) {
-				i = i + 1;
-			} else {
-				tempList = mmChain.get(i).getInput();
-				if (tempList.size() != 2) {
-					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
-				}
-
-				// add current operator to mmOperators, and its input nodes to mmChain
-				mmOperators.add(mmChain.get(i));
-				mmChain.set(i, tempList.get(0));
-				mmChain.add(i + 1, tempList.get(1));
-			}
-		}
-
-		// print the MMChain
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("Identified MM Chain: ");
-			//System.out.print("MMChain_" + getHopID() + " (" + mmChain.size() + "): ");
-			for (Hop h : mmChain) {
-				LOG.trace("Hop " + h.getName() + "(" + h.getClass().getSimpleName() + ", " + h.getHopID() + ")" + " "
-						+ h.getDim1() + "x" + h.getDim2());
-				//System.out.print("[" + h.getName() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " " + h.getDim1() + "x" + h.getDim2() + "]  ");
-			}
-			//System.out.println("");
-			LOG.trace("--End of MM Chain--");
-		}
-
-		if (mmChain.size() == 2) {
-			// If the chain size is 2, then there is nothing to optimize.
-			return;
-		} 
-		else 
-		{
-			// Step-2: construct dims array
-			double[] dimsArray = new double[mmChain.size() + 1];
-			boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
-			
-			if( dimsKnown ) {
-				// Step-3: clear the links among Hops within the identified chain
-				clearLinksWithinChain ( hop, mmOperators );
-				
-				// Step-4: Find the optimal ordering via dynamic programming.
-				
-				// Invoke Dynamic Programming
-				int size = mmChain.size();
-				int[][] split = mmChainDP(dimsArray, mmChain.size());
-				
-				 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
-				mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);
-			}
+		if( LOG.isTraceEnabled() ) {
+			String offset = Explain.getIdentation(level);
+			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ")" + " "
+					+ hop.getDim1() + "x" + hop.getDim2());
 		}
 	}
 }

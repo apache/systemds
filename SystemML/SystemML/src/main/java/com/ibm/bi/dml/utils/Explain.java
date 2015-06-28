@@ -469,6 +469,14 @@ public class Explain
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param level
+	 * @return
+	 */
+	public static String getIdentation( int level ) {
+		return createOffset(level);
+	}
 	
 	//////////////
 	// internal explain HOPS

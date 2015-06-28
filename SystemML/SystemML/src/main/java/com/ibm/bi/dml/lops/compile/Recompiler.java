@@ -1543,14 +1543,17 @@ public class Recompiler
 		{
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
-			if ( d.getOp() == DataGenMethod.RAND || d.getOp()==DataGenMethod.SINIT ) {
+			if (   d.getOp() == DataGenMethod.RAND || d.getOp()==DataGenMethod.SINIT 
+				|| d.getOp() == DataGenMethod.SAMPLE ) 
+			{
 				int ix1 = params.get(DataExpression.RAND_ROWS);
 				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
 				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
 			} 
-			else if ( d.getOp() == DataGenMethod.SEQ ) {
+			else if ( d.getOp() == DataGenMethod.SEQ ) 
+			{
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
@@ -1573,7 +1576,7 @@ public class Recompiler
 				}
 			}
 			else {
-				throw new DMLRuntimeException("Unexpect data generation method: " + d.getOp());
+				throw new DMLRuntimeException("Unexpected data generation method: " + d.getOp());
 			}
 		}
 		//update size expression for reshape according to symbol table entries

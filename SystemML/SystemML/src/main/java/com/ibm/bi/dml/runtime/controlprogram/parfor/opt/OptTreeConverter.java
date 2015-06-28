@@ -56,7 +56,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -783,9 +783,9 @@ public class OptTreeConverter
 		
 		if( PerfTestTool.isRegisteredInstruction(instName) )
 		{	
-			if( inst instanceof RandCPInstruction )
+			if( inst instanceof DataGenCPInstruction )
 			{
-				RandCPInstruction linst = (RandCPInstruction) inst;
+				DataGenCPInstruction linst = (DataGenCPInstruction) inst;
 				DataFormat df = (   MatrixBlock.evalSparseFormatInMemory(linst.getRows(), linst.getCols(), (long)(linst.getSparsity()*linst.getRows()*linst.getCols())) ? 
 						            DataFormat.SPARSE : DataFormat.DENSE ); 
 				ret = new OptNodeStatistics(linst.getRows(), linst.getCols(), -1, -1, linst.getSparsity(), df);

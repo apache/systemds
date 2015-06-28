@@ -571,6 +571,9 @@ public class UnaryOp extends Hop
 				setRequiresRecompile();
 		}
 		
+		if( _op == OpOp1.PRINT || _op == OpOp1.STOP || _op == OpOp1.INVERSE )
+			_etype = ExecType.CP;
+		
 		return _etype;
 	}
 	

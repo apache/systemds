@@ -403,7 +403,6 @@ public class LibMatrixDatagen
 		if (neg != (incr < 0))
 			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq(): from="+from+", to="+to+ ", incr="+incr);
 		
-		//System.out.println(System.nanoTime() + ": begin of seq()");
 		int rows = 1 + (int)Math.floor((to-from)/incr);
 		int cols = 1;
 		out.sparse = false; // sequence matrix is always dense
@@ -424,22 +423,59 @@ public class LibMatrixDatagen
 		//System.out.println(System.nanoTime() + ": end of seq()");
 	}
 	
-
-	public static void main(String[] args) throws DMLRuntimeException {
-		long nrow = 150093;
-		long ncol = 298900;
-		double sparsity = 9.44796E-07;
+	/**
+     * Generates a sample of size <code>size</code> from a range of values [1,range].
+     * <code>replace</code> defines if sampling is done with or without replacement.
+     * 
+     * @param ec
+     * @return
+     * @throws DMLRuntimeException
+     */
+	public static void generateSample(MatrixBlock out, long range, int size, boolean replace)
+		throws DMLRuntimeException 
+	{
+		//set meta data and allocate dense block
+		out.reset(size, 1, false);
+		out.allocateDenseBlock();
 		
-		long[] blockNNZs = computeNNZperBlock(nrow, ncol, 1000, 1000, sparsity);
-		
-		System.out.println("Number of blocks = " + blockNNZs.length);
-		long nnz = 0;
-		for(int i=0; i < blockNNZs.length; i++){
-			System.out.print(blockNNZs[i] + ",");
-			nnz += blockNNZs[i];
+		if ( !replace ) 
+		{
+			// reservoir sampling
+			
+			for(int i=1; i <= size; i++) 
+				out.setValueDenseUnsafe(i-1, 0, i );
+			
+			Random rand = new Random(System.nanoTime());
+			for(int i=size+1; i <= range; i++) 
+			{
+				if(rand.nextInt(i) < size)
+					out.setValueDenseUnsafe( rand.nextInt(size), 0, i );
+			}
 		}
-		System.out.println("\n" + "Total NNZ = " + nnz + " (expected = " + (nrow*(ncol*sparsity)) + ")");
+		else 
+		{
+			Random r = new Random(System.nanoTime());
+			for(int i=0; i < size; i++) 
+				out.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
+		}
 		
+		out.recomputeNonZeros();
+		out.examSparsity();
 	}
-	
+
+	// modified version of java.util.nextInt
+    private static long nextLong(Random r, long n) {
+        if (n <= 0)
+            throw new IllegalArgumentException("n must be positive");
+
+        //if ((n & -n) == n)  // i.e., n is a power of 2
+        //    return ((n * (long)r.nextLong()) >> 31);
+
+        long bits, val;
+        do {
+            bits = (r.nextLong() << 1) >>> 1;
+            val = bits % n;
+        } while (bits - val + (n-1) < 0L);
+        return val;
+    }	
 }

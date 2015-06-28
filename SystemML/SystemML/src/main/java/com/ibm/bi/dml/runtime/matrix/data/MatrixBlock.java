@@ -5871,6 +5871,22 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return this;
 	}
 	
+	/**
+	 * 
+	 * @param range
+	 * @param size
+	 * @param replace
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock sampleOperations(long range, int size, boolean replace) 
+		throws DMLRuntimeException 
+	{
+		MatrixBlock out = new MatrixBlock();
+		LibMatrixDatagen.generateSample( out, range, size, replace );
+		
+		return out;
+	}
 	
 	////////
 	// Misc methods

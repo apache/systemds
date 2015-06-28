@@ -43,11 +43,11 @@ import com.ibm.bi.dml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.UnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
@@ -341,8 +341,8 @@ public abstract class CostEstimator
 				stats.remove(varname);
 			}
 		}	
-		else if( inst instanceof RandCPInstruction ){
-			RandCPInstruction randInst = (RandCPInstruction) inst;
+		else if( inst instanceof DataGenCPInstruction ){
+			DataGenCPInstruction randInst = (DataGenCPInstruction) inst;
 			String varname = randInst.output.getName();
 			long rlen = randInst.getRows();
 			long clen = randInst.getCols();
@@ -503,9 +503,9 @@ public abstract class CostEstimator
 
 		if( inst instanceof UnaryCPInstruction )
 		{
-			if( inst instanceof RandCPInstruction )
+			if( inst instanceof DataGenCPInstruction )
 			{
-				RandCPInstruction rinst = (RandCPInstruction) inst;
+				DataGenCPInstruction rinst = (DataGenCPInstruction) inst;
 				vs[0] = _unknownStats;
 				vs[1] = _unknownStats;
 				vs[2] = stats.get( rinst.output.getName() );

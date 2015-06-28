@@ -29,9 +29,10 @@ public class DataGen extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final String RAND_OPCODE = "rand"; //rand
-	public static final String SEQ_OPCODE = "seq"; //sequence
-	public static final String SINIT_OPCODE = "sinit"; //string initialize
+	public static final String RAND_OPCODE   = "rand"; //rand
+	public static final String SEQ_OPCODE    = "seq"; //sequence
+	public static final String SINIT_OPCODE  = "sinit"; //string initialize
+	public static final String SAMPLE_OPCODE = "sample"; //sample.int
 	
 	/** base dir for rand input */
 	private String baseDir;
@@ -103,15 +104,20 @@ public class DataGen extends Lop
 	 * passed from piggybacking as the function argument <code>output</code>. 
 	 */
 	@Override
-	public String getInstructions(String output) throws LopsException {
-		switch(method) {
+	public String getInstructions(String output) 
+		throws LopsException 
+	{
+		switch( method ) 
+		{
 			case RAND:
 				return getCPInstruction_Rand(output);
 			case SINIT:
 				return getCPInstruction_SInit(output);
 			case SEQ:
 				return getCPInstruction_Seq(output);
-			
+			case SAMPLE:
+				return getCPInstruction_Sample(output);
+				
 			default:
 				throw new LopsException("Unknown data generation method: " + method);
 		}
@@ -265,6 +271,51 @@ public class DataGen extends Lop
 		sb.append(OPERAND_DELIMITOR);
 		sb.append( this.prepOutputOperand(output));
 
+		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param output
+	 * @return
+	 * @throws LopsException
+	 */
+	private String getCPInstruction_Sample(String output) 
+		throws LopsException
+	{
+		if ( method != DataGenMethod.SAMPLE )
+			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		
+		//prepare instruction parameters
+		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
+		String size = lsize.prepScalarLabel();
+		
+		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
+		String range = lrange.prepScalarLabel();
+		
+		Lop lreplace = _inputParams.get(DataExpression.RAND_PDF.toString());
+		String replace = lreplace.prepScalarLabel();
+		
+		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
+		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( "sample" );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( range );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( size );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( replace );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( rowsInBlockString );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( colsInBlockString );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( prepOutputOperand(output) );
+		
 		return sb.toString();
 	}
 	

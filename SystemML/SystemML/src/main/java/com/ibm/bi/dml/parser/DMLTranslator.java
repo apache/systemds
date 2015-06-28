@@ -46,7 +46,6 @@ import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
@@ -1040,7 +1039,6 @@ public class DMLTranslator
 				try {
 					Hop.OpOp1 op = (ptype == PRINTTYPE.PRINT ? Hop.OpOp1.PRINT : Hop.OpOp1.STOP);
 					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
-					printHop.setForcedExecType(ExecType.CP);
 					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 					output.add(printHop);
 				} catch ( HopsException e ) {
@@ -2585,26 +2583,27 @@ public class DMLTranslator
 			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
 			break;
 			
-		case SAMPLE:
-			// default value replace=FALSE
+		case SAMPLE: 
+			// arguments: range/size/replace; defaults: replace=FALSE
 			if ( expr3 == null ) 
 				expr3 = new LiteralOp(String.valueOf(false), false);
-			currBuiltinOp = new TernaryOp(target.getName(), DataType.MATRIX, ValueType.DOUBLE, OpOp3.SAMPLE, expr, expr2, expr3);
-			// Force the execution type of this HOP since distributed computation of sample without replacement is not yet implemented.
-			currBuiltinOp.setForcedExecType(ExecType.CP);
+			
+			HashMap<String,Hop> tmpparams = new HashMap<String, Hop>();
+			tmpparams.put(DataExpression.RAND_MAX, expr); //range
+			tmpparams.put(DataExpression.RAND_ROWS, expr2);
+			tmpparams.put(DataExpression.RAND_COLS, new LiteralOp("1",1));
+			tmpparams.put(DataExpression.RAND_PDF, expr3);
+			
+			currBuiltinOp = new DataGenOp(DataGenMethod.SAMPLE, target, tmpparams);
 			break;
 			
 		case SOLVE:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
-			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
-			currBuiltinOp.setForcedExecType(ExecType.CP);
 			break;
 			
 		case INVERSE:
 			currBuiltinOp=new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 					Hop.OpOp1.INVERSE, expr);
-			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
-			currBuiltinOp.setForcedExecType(ExecType.CP);
 			break;
 		
 		case OUTER:

@@ -64,8 +64,8 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
 import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -875,9 +875,9 @@ public class PerfTestTool
 		
 		//instruction-specific configurations
 		Instruction inst = pb.getInstruction(0); //always exactly one instruction
-		if( inst instanceof RandCPInstruction )
+		if( inst instanceof DataGenCPInstruction )
 		{
-			RandCPInstruction rand = (RandCPInstruction) inst;
+			DataGenCPInstruction rand = (DataGenCPInstruction) inst;
 			rand.setRows((long)dim1);
 			rand.setCols((long)dim2);
 			rand.setSparsity(sparsity);

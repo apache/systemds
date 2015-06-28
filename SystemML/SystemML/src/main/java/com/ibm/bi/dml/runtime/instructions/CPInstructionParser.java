@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.BooleanUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DataPartitionCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -35,7 +36,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.PMMJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.QuaternaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ReorgCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.SortCPInstruction;
@@ -184,13 +184,14 @@ public class CPInstructionParser extends InstructionParser
 
 		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
-		String2CPInstructionType.put( DataGen.RAND_OPCODE  , CPINSTRUCTION_TYPE.Rand);
-		String2CPInstructionType.put( DataGen.SEQ_OPCODE  , CPINSTRUCTION_TYPE.Rand);
+		// data generation opcodes
+		String2CPInstructionType.put( DataGen.RAND_OPCODE   , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( DataGen.SEQ_OPCODE    , CPINSTRUCTION_TYPE.Rand);
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPINSTRUCTION_TYPE.StringInit);
+		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPINSTRUCTION_TYPE.Rand);
 		
 		String2CPInstructionType.put( "ctable", 		CPINSTRUCTION_TYPE.Ternary);
 		String2CPInstructionType.put( "ctableexpand", 	CPINSTRUCTION_TYPE.Ternary);
-		String2CPInstructionType.put( "sample", 		CPINSTRUCTION_TYPE.Ternary);
 		
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
@@ -291,7 +292,7 @@ public class CPInstructionParser extends InstructionParser
 			return (CPInstruction) VariableCPInstruction.parseInstruction(str);
 			
 		case Rand:
-			return (CPInstruction) RandCPInstruction.parseInstruction(str);
+			return (CPInstruction) DataGenCPInstruction.parseInstruction(str);
 			
 		case StringInit:
 			return (CPInstruction) StringInitCPInstruction.parseInstruction(str);

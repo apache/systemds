@@ -762,9 +762,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkScalarParam(getSecondExpr());
 			
 			if (getFirstExpr().getOutput().getValueType() != ValueType.DOUBLE && getFirstExpr().getOutput().getValueType() != ValueType.INT) 
-				throw new LanguageException("First arugment to sample() must be a number.");
+				throw new LanguageException("First argument to sample() must be a number.");
 			if (getSecondExpr().getOutput().getValueType() != ValueType.DOUBLE && getSecondExpr().getOutput().getValueType() != ValueType.INT) 
-				throw new LanguageException("Second arugment to sample() must be a number.");
+				throw new LanguageException("Second argument to sample() must be a number.");
 			if(getThirdExpr() != null) 
 			{
 				checkNumParameters(3);
@@ -779,13 +779,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			if ( isConstant(getSecondExpr()) )
-			{
 	 			output.setDimensions(((ConstIdentifier)getSecondExpr()).getLongValue(), 1);
-			}
 			else
-				output.setDimensions(-1, -1);
+				output.setDimensions(-1, 1);
  			setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
-			
 			break;
 			
 		case SEQ:

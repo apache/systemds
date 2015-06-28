@@ -946,7 +946,7 @@ public abstract class Hop
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, SAMPLE, INVALID 
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
 	};
 	
 	// Operations that require 4 operands
@@ -968,7 +968,7 @@ public abstract class Hop
 	};
 	
 	public enum DataGenMethod {
-		RAND, SEQ, SINIT, INVALID
+		RAND, SEQ, SINIT, SAMPLE, INVALID
 	};
 
 	public enum ParamBuiltinOp {

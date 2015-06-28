@@ -19,8 +19,9 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
-public class RandCPInstruction extends UnaryCPInstruction
+public class DataGenCPInstruction extends UnaryCPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -37,25 +38,20 @@ public class RandCPInstruction extends UnaryCPInstruction
 	private double sparsity;
 	private String pdf;
 	private long seed=0;
+	
+	//sequence specific attributes
 	private double seq_from;
 	private double seq_to; 
 	private double seq_incr;
 	
+	//sample specific attributes
+	private boolean replace;
 	
-	public RandCPInstruction (Operator op, 
-							  DataGenMethod mthd,
-							  CPOperand in, 
-							  CPOperand out, 
-							  long rows, 
-							  long cols,
-							  int rpb, int cpb,
-							  double minValue, 
-							  double maxValue,
-							  double sparsity, 
-							  long seed,
-							  String probabilityDensityFunction,
-							  String opcode,
-							  String istr) {
+	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
+							  long rows, long cols, int rpb, int cpb,
+							  double minValue, double maxValue, double sparsity, long seed,
+							  String probabilityDensityFunction, String opcode, String istr) 
+	{
 		super(op, in, out, opcode, istr);
 		
 		this.method = mthd;
@@ -68,13 +64,29 @@ public class RandCPInstruction extends UnaryCPInstruction
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
-
 	}
 
-	public RandCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
-			long rows, long cols, int rpb, int cpb, double seqFrom,
-			double seqTo, double seqIncr, String opcode, String istr) {
+	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
+			  					long rows, long cols, int rpb, int cpb, double maxValue,
+			  					boolean replace, String opcode, String istr) 
+	{
 		super(op, in, out, opcode, istr);
+		
+		this.method = mthd;
+		this.rows = rows;
+		this.cols = cols;
+		this.rowsInBlock = rpb;
+		this.colsInBlock = cpb;
+		this.maxValue = maxValue;
+		this.replace = replace;
+	}
+	
+	public DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
+							long rows, long cols, int rpb, int cpb, double seqFrom,
+							double seqTo, double seqIncr, String opcode, String istr) 
+	{
+		super(op, in, out, opcode, istr);
+		
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
@@ -145,6 +157,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 	{
 		String opcode = InstructionUtils.getOpCode(str);
 		DataGenMethod method = DataGenMethod.INVALID;
+		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
 			InstructionUtils.checkNumFields ( str, 10 );
@@ -154,13 +167,19 @@ public class RandCPInstruction extends UnaryCPInstruction
 			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( str, 8 ); 
 		}
+		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
+			method = DataGenMethod.SAMPLE;
+			// 6 operands: range, size, replace, rpb, cpb, outvar
+			InstructionUtils.checkNumFields ( str, 6 ); 
+		}
 		
 		Operator op = null;
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		out.split(s[s.length-1]); // ouput is specified by the last operand
 
-		if ( method == DataGenMethod.RAND ) {
+		if ( method == DataGenMethod.RAND ) 
+		{
 			long rows = -1, cols = -1;
 	        if (!s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 			   	rows = Double.valueOf(s[1]).longValue();
@@ -184,9 +203,10 @@ public class RandCPInstruction extends UnaryCPInstruction
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
 			
-			return new RandCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, opcode, str);
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, opcode, str);
 		}
-		else if ( method == DataGenMethod.SEQ) {
+		else if ( method == DataGenMethod.SEQ) 
+		{
 			// Example Instruction: CP:seq:11:1:1000:1000:1:0:-0.1:scratch_space/_p7932_192.168.1.120//_t0/:mVar1
 			long rows = Double.valueOf(s[1]).longValue();
 			long cols = Double.valueOf(s[2]).longValue();
@@ -205,8 +225,19 @@ public class RandCPInstruction extends UnaryCPInstruction
 				incr = Double.valueOf(s[7]);
 	        }
 			
-			CPOperand in = null;
-			return new RandCPInstruction(op, method, in, out, rows, cols, rpb, cpb, from, to, incr, opcode, str);
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, from, to, incr, opcode, str);
+		}
+		else if ( method == DataGenMethod.SAMPLE) 
+		{
+			// Example Instruction: CP:sample:10:100:false:1000:1000:_mVar2·MATRIX·DOUBLE
+			double max = Double.valueOf(s[1]);
+			long rows = Double.valueOf(s[2]).longValue();
+			long cols = 1;
+			boolean replace = Boolean.valueOf(s[3]);
+			int rpb = Integer.parseInt(s[4]);
+			int cpb = Integer.parseInt(s[5]);
+			
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, opcode, str);
 		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
@@ -223,22 +254,32 @@ public class RandCPInstruction extends UnaryCPInstruction
 			throw new DMLRuntimeException("RandCPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
 		
 		//process specific datagen operator
-		if ( this.method == DataGenMethod.RAND ) {
+		if ( method == DataGenMethod.RAND ) {
 			//generate pseudo-random seed (because not specified) 
 			long lSeed = seed; //seed per invocation
 			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
 				lSeed = DataGenOp.generateRandomSeed();
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandCPInstruction rand with seed = "+lSeed+".");
+				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 			
 			soresBlock = MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed);
 		}
-		else if ( this.method == DataGenMethod.SEQ ) {
+		else if ( method == DataGenMethod.SEQ ) 
+		{
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
+				LOG.trace("Process DataGenCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
 			
 			soresBlock = MatrixBlock.seqOperations(seq_from, seq_to, seq_incr);
+		}
+		else if ( method == DataGenMethod.SAMPLE ) 
+		{
+			long range = UtilFunctions.toLong(maxValue);
+			
+			if( LOG.isTraceEnabled() )
+				LOG.trace("Process DataGenCPInstruction sample with range="+range+", size="+rows+", replace"+replace);
+			
+			soresBlock = MatrixBlock.sampleOperations(range, (int)rows, replace);
 		}
 		
 		//release created output

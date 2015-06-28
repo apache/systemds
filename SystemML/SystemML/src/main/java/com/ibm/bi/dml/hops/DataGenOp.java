@@ -272,7 +272,8 @@ public class DataGenOp extends Hop
 		}
 		
 		//always force string initialization into CP (not supported in MR)
-		if( _op == DataGenMethod.SINIT )
+		//similarly, sample is currently not supported in MR either
+		if( _op == DataGenMethod.SINIT || _op == DataGenMethod.SAMPLE )
 			_etype = ExecType.CP;
 		
 		return _etype;

@@ -63,7 +63,7 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 			return;
 		
-		if(    (hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD)
+		if(    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD)
 			|| (hop.requiresReblock()) )
 		{
 			//make given hop for checkpointing (w/ default storage level)

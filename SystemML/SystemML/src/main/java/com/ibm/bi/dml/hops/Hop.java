@@ -217,6 +217,20 @@ public abstract class Hop
 		_requiresReblock = flag;
 	}
 	
+	public boolean hasMatrixInputWithDifferentBlocksizes()
+	{
+		for( Hop c : getInput() ) {
+			if(    c.getDataType()==DataType.MATRIX
+			    &&(getRowsInBlock() != c.getRowsInBlock()
+			    || getColsInBlock() != c.getColsInBlock()) )
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	public void setOutputBlocksizes( long brlen, long bclen )
 	{
 		setRowsInBlock( brlen );
@@ -237,6 +251,7 @@ public abstract class Hop
 	{
 		return _requiresCheckpoint;
 	}
+	
 	
 	/**
 	 * 
@@ -276,7 +291,7 @@ public abstract class Hop
 			try
 			{
 				if(    this instanceof DataOp  // CSV
-					&& ((DataOp)this).get_dataop() == DataOpTypes.PERSISTENTREAD
+					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
 					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV )
 				
 				{

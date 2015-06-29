@@ -326,11 +326,6 @@ public class DataOp extends Hop
 		}
 	}
 
-	public DataOpTypes get_dataop() {
-		return _dataop;
-	}
-
-
 	@Override
 	public boolean allowsAllExecTypes()
 	{

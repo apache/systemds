@@ -55,7 +55,7 @@ public class RewriteTransientWriteParentHandling extends HopRewriteRule
 	private void rule_RehangTransientWriteParents(Hop hop, ArrayList<Hop> sbHops) 
 		throws HopsException 
 	{
-		if (hop instanceof DataOp && ((DataOp) hop).get_dataop() == DataOpTypes.TRANSIENTWRITE
+		if (hop instanceof DataOp && ((DataOp) hop).getDataOpType() == DataOpTypes.TRANSIENTWRITE
 				&& !hop.getParent().isEmpty()) {
 
 			// update parents inputs with data op input

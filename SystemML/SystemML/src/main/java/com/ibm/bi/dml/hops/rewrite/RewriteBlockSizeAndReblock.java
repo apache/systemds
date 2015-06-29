@@ -82,13 +82,13 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			if(    canReblock && hop.getDataType() != DataType.SCALAR
 				&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE) ) 
 			{
-				if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) 
+				if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
 				{
 					// insert reblock after the hop
 					hop.setRequiresReblock(true);
 					hop.setOutputBlocksizes(GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 				} 
-				else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) 
+				else if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.PERSISTENTWRITE) 
 				{
 					if (hop.getRowsInBlock() == -1 && hop.getColsInBlock() == -1) 
 					{
@@ -110,8 +110,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						hop.setOutputBlocksizes(GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					}
 				} 
-				else if (((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
-						|| ((DataOp) hop).get_dataop() == DataOp.DataOpTypes.TRANSIENTREAD) {
+				else if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE
+						|| ((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD) {
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
 						// simply copy the values from its input
 						hop.setRowsInBlock(hop.getInput().get(0).getRowsInBlock());

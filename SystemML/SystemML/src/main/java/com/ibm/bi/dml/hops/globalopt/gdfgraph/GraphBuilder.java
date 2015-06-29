@@ -165,7 +165,7 @@ public class GraphBuilder
 						throw new HopsException( "GDFGraphBuilder: failed to constuct dag root for: "+Explain.explain(hop) );
 					
 					//create cross block nodes for all transient writes
-					if( hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTWRITE )
+					if( hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
 						root = new GDFCrossBlockNode(hop, pb, root, hop.getName());
 					
 					//add GDF root node to global roots 
@@ -195,7 +195,7 @@ public class GraphBuilder
 			inputs.add( constructGDFGraph(c, pb, lmemo, roots) );
 		
 		//connect transient reads to existing roots of data flow graph 
-		if( hop instanceof DataOp && ((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTREAD ){
+		if( hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTREAD ){
 			inputs.add(roots.get(hop.getName()));
 		}
 		

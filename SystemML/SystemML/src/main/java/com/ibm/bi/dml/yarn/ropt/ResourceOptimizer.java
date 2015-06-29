@@ -518,8 +518,8 @@ public class ResourceOptimizer
 		
 		//investigate hop exec type and known dimensions
 		if(    hop instanceof DataOp && hop.getDataType()==DataType.MATRIX
-			&& (((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTREAD
-			||  ((DataOp)hop).get_dataop()==DataOpTypes.PERSISTENTREAD) ) 
+			&& (((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTREAD
+			||  ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD) ) 
 		{
 			String varname = hop.getName();
 			MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 

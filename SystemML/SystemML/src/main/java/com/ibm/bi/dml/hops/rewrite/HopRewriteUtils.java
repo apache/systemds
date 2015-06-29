@@ -18,6 +18,7 @@ import com.ibm.bi.dml.hops.Hop.AggOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
@@ -641,18 +642,30 @@ public class HopRewriteUtils
 		for( Hop p : parents )
 		{
 			if( inclTransient && inclPersistent )
-				ret &= ( p instanceof DataOp && (((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE
-				|| ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE));
+				ret &= ( p instanceof DataOp && (((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE
+				|| ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE));
 			else if(inclTransient)
-				ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.TRANSIENTWRITE);
+				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
 			else if(inclPersistent)
-				ret &= ( p instanceof DataOp && ((DataOp)p).get_dataop()==DataOpTypes.PERSISTENTWRITE);
+				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
 		}
 			
 				
 		return ret;
 	}
-
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean alwaysRequiresReblock(Hop hop)
+	{
+		return (    hop instanceof DataOp 
+				 && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD
+				 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
+	}
+	
 	//////////////////////////////////////
 	// utils for lookup tables
 	

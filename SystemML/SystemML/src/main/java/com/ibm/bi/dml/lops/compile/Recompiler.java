@@ -1513,7 +1513,7 @@ public class Recompiler
 		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
 		if(     hop instanceof DataOp 
-			&& ((DataOp)hop).get_dataop() != DataOpTypes.PERSISTENTREAD )
+			&& ((DataOp)hop).getDataOpType() != DataOpTypes.PERSISTENTREAD )
 		{
 			DataOp d = (DataOp) hop;
 			String varName = d.getName();
@@ -1531,7 +1531,7 @@ public class Recompiler
 		}
 		//special case for persistent reads with unknown size (read-after-write)
 		else if( hop instanceof DataOp 
-				&& ((DataOp)hop).get_dataop() == DataOpTypes.PERSISTENTREAD
+				&& ((DataOp)hop).getDataOpType() == DataOpTypes.PERSISTENTREAD
 				&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV )
 		{
 			//update hop with read meta data
@@ -1629,7 +1629,7 @@ public class Recompiler
 				Hop c = hop.getInput().get(i);
 				
 				//scalar read - literal replacement
-				if( c instanceof DataOp && ((DataOp)c).get_dataop() != DataOpTypes.PERSISTENTREAD 
+				if( c instanceof DataOp && ((DataOp)c).getDataOpType() != DataOpTypes.PERSISTENTREAD 
 					&& c.getDataType()==DataType.SCALAR )
 				{
 					Data dat = vars.get(c.getName());

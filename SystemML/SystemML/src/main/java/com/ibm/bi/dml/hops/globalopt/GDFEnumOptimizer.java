@@ -57,15 +57,17 @@ public class GDFEnumOptimizer extends GlobalOptimizer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private static final Log LOG = LogFactory.getLog(GDFEnumOptimizer.class);
-
+	
 	//internal configuration parameters 
 	//note: that branch and bound pruning is invalid if we cost entire programs
 	public static final boolean BRANCH_AND_BOUND_PRUNING = true; 
 	public static final boolean PREFERRED_PLAN_SELECTION = true;
 	public static final boolean COST_FULL_PROGRAMS       = false;
 	
-	//internal configuration parameters //TODO remove -1 
-	public static final int[] BLOCK_SIZES         = new int[]{1000/*-1,2000,4000*/};
+	//internal configuration parameters 
+	public static final int[] BLOCK_SIZES         = new int[]{ 1 * DMLTranslator.DMLBlockSize,
+															   2 * DMLTranslator.DMLBlockSize,
+															   4 * DMLTranslator.DMLBlockSize};
 	public static final int[] REPLICATION_FACTORS = new int[]{1,3,5};
 			
 	private MemoStructure _memo = null; //plan memoization table
@@ -202,7 +204,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		{
 			//create cp plan, if allowed (note: most interesting properties are irrelevant for CP)
 			if( node.getHop().getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
-				RewriteConfig rccp = new RewriteConfig(ExecType.CP, -1, FileFormatTypes.BINARY);
+				RewriteConfig rccp = new RewriteConfig(ExecType.CP, BLOCK_SIZES[0], FileFormatTypes.BINARY);
 				InterestingProperties ipscp = rccp.deriveInterestingProperties();
 				Plan cpplan = new Plan(node, ipscp, rccp, null);
 				plans.add( cpplan );
@@ -224,22 +226,37 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		{
 			DataOp dhop = (DataOp)node.getHop();
 			
-			if(    dhop.get_dataop()==DataOpTypes.PERSISTENTREAD
-				|| dhop.get_dataop()==DataOpTypes.PERSISTENTWRITE )
+			if( dhop.getDataOpType()==DataOpTypes.PERSISTENTREAD )
 			{
-				//for persistent read/write the interesting properties are fixed by the input (read)
-				//and default configuration or specification (write)
+				//for persistent read the interesting properties are fixed by the input
+				//but we can decide on output properties
+				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()
+						      || HopRewriteUtils.alwaysRequiresReblock(dhop)) ? 
+						       ExecType.MR : ExecType.CP;
+				
+				int[] blocksizes = (et == ExecType.MR) ? BLOCK_SIZES : new int[]{BLOCK_SIZES[0]};
+				for( Integer bs : blocksizes )
+				{
+					RewriteConfig rcmr = new RewriteConfig(et, bs, FileFormatTypes.BINARY);
+					InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
+					Plan mrplan = new Plan(node, ipsmr, rcmr, null);
+					plans.add( mrplan );	
+				}
+			}
+			else if( dhop.getDataOpType()==DataOpTypes.PERSISTENTWRITE )
+			{
+				//for persistent write the interesting properties are fixed by the given
+				//write specification
 				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()) ? 
 						       ExecType.MR : ExecType.CP;
-				int blocksize = dhop.getInputFormatType() == FileFormatTypes.BINARY ? 
-						       DMLTranslator.DMLBlockSize : -1; //e.g., -1 for text
-				RewriteConfig rcmr = new RewriteConfig(et, blocksize, dhop.getInputFormatType());
+				
+				RewriteConfig rcmr = new RewriteConfig(et, (int)dhop.getRowsInBlock(), dhop.getInputFormatType());
 				InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
 				Plan mrplan = new Plan(node, ipsmr, rcmr, null);
 				plans.add( mrplan );	
 			}
-			else if(   dhop.get_dataop()==DataOpTypes.TRANSIENTREAD
-					|| dhop.get_dataop()==DataOpTypes.TRANSIENTWRITE)
+			else if(   dhop.getDataOpType()==DataOpTypes.TRANSIENTREAD
+					|| dhop.getDataOpType()==DataOpTypes.TRANSIENTWRITE)
 			{
 				//do nothing for transient read/write (leads to pass-through on cross product)			
 			}
@@ -468,9 +485,21 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		
 		//set plan configuration
 		Hop hop = p.getNode().getHop();
-		if( hop!=null ) {
-			hop.setForcedExecType(p.getRewriteConfig().getExecType());
-			//TODO extend as needed
+		if( hop!=null ) 
+		{
+			RewriteConfig rc = p.getRewriteConfig();
+			//set exec type
+			hop.setForcedExecType(rc.getExecType());
+			//set blocksizes and reblock
+			hop.setRowsInBlock(rc.getBlockSize());
+			hop.setColsInBlock(rc.getBlockSize());
+			if( rc.getExecType()==ExecType.MR ) //after blocksize update
+			{
+				hop.setRequiresReblock( hop.hasMatrixInputWithDifferentBlocksizes() 
+						|| HopRewriteUtils.alwaysRequiresReblock(hop));
+			}
+			else
+				hop.setRequiresReblock(false);
 		}
 		
 		//process childs
@@ -491,9 +520,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		
 		//release forced plan configuration
 		Hop hop = p.getNode().getHop();
-		if( hop!=null ) {
+		if( hop!=null ) 
+		{
 			hop.setForcedExecType(null);
-			//TODO extend as needed
+			hop.setRowsInBlock(DMLTranslator.DMLBlockSize);
+			hop.setColsInBlock(DMLTranslator.DMLBlockSize);
+			if( !HopRewriteUtils.alwaysRequiresReblock(hop) ) {
+				hop.setRequiresReblock(false);
+			}
 		}
 		
 		//process childs

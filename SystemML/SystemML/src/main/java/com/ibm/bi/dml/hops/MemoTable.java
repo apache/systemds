@@ -65,7 +65,7 @@ public class MemoTable
 		//extract all transient writes (must be dag root)
 		for( Hop hop : hops ) {
 			if(    hop instanceof DataOp 
-				&& ((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTWRITE )
+				&& ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
 			{
 				String varname = hop.getName();
 				Hop input = hop.getInput().get(0); //child
@@ -167,7 +167,7 @@ public class MemoTable
 		
 		//determine if hop itself has worst-case stats (this is important
 		//for transient read with cross-dag worst-case estimates)
-		if( h instanceof DataOp && ((DataOp)h).get_dataop()==DataOpTypes.TRANSIENTREAD ){
+		if( h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD ){
 			return true;
 		}
 			
@@ -186,7 +186,7 @@ public class MemoTable
 		
 		//probe status of previous twrites
 		if(    hop instanceof DataOp && hop.getDataType() == DataType.MATRIX
-			&& ((DataOp)hop).get_dataop()==DataOpTypes.TRANSIENTREAD )
+			&& ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTREAD )
 		{
 			String varname = hop.getName();
 			MatrixCharacteristics mc = status.getTWriteStats().get(varname);

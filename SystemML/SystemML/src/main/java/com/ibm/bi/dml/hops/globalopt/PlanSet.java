@@ -100,8 +100,11 @@ public class PlanSet
 		
 		ArrayList<Plan> Pnew = new ArrayList<Plan>();  
 		for( Plan p : _plans )
-			if( p.getNode().getHop().getName().equals(varname) )
+			if( p.getNode().getHop()!=null 
+			   &&p.getNode().getHop().getName().equals(varname) )
+			{
 				Pnew.add( p );
+			}
 		
 		return new PlanSet(Pnew);
 	}

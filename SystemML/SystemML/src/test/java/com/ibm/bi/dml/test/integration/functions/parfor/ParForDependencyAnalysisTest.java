@@ -45,7 +45,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * * scoping (create object in loop, but used afterwards)
  *    44: dep   
  * * application testcases
- *    45: no, 46: no, 47 no, 50: no (w/ check=0 on i2), 51: dep       
+ *    45: no, 46: no, 47 no, 50: no (w/ check=0 on i2), 51: dep, 52: dep       
  * * general parfor validate (e.g., expressions)
  *    48: no, 48b: err, 48c: no   
  * * functions
@@ -293,6 +293,9 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	
 	@Test
 	public void testDependencyAnalysis51() { runTest("parfor51.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis52() { runTest("parfor52.dml", true); }
 	
 	/**
 	 * 

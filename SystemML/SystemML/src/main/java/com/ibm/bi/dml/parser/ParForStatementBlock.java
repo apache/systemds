@@ -803,13 +803,22 @@ public class ParForStatementBlock extends ForStatementBlock
 								else if(   cdt == DataType.MATRIX 
 										&& dat2dt == DataType.MATRIX  )
 								{
-									if( /*c._pos < sCount &&*/ runEqualsCheck(c._dat, dat2) )
+									if( runEqualsCheck(c._dat, dat2) )
 									{
 										//read after write on same index, and not constant (checked for output) 
 										//is OK
 									}
 									else if( runBanerjeeGCDTest( c._dat, dat2 ) )
 									{
+										LOG.trace("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
+										dep[1] = true;
+										dep[2] = true;
+										if( ABORT_ON_FIRST_DEPENDENCY )
+											return;
+									}
+									else if( !(dat2 instanceof IndexedIdentifier) )
+									{
+										//non-indexed access to candidate result variable -> always a dependency
 										LOG.trace("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
 										dep[1] = true;
 										dep[2] = true;
@@ -1385,6 +1394,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		LOG.trace("PARFOR: runEqualsCheck.");
 		
+		//check if both data identifiers of same type
+		if(dat1 instanceof IndexedIdentifier != dat2 instanceof IndexedIdentifier)
+			return false;
+			
 		//general case function comparison
 		boolean ret = true; //true if equal index functions
 		LinearFunction f1 = getLinearFunction(dat1);

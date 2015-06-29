@@ -7,15 +7,15 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-V = read($1);
+V = matrix(0, rows=2, cols=2);
 print(sum(V)); 
-parfor( i in 1:1 )
+parfor( i in 1:2 )
 {
-   print(sum(V[i,])); 
+   print(sum(V));
    
-   parfor( j in 1:1 )
+   parfor( j in 1:2 )
    {
-      V[i,j] = $2; 
+      V[i,j] = 7; 
    }
 }  
-write(V, $3);       
+print(sum(V));       

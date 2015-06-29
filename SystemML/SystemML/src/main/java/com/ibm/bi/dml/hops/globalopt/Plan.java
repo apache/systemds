@@ -3,6 +3,7 @@ package com.ibm.bi.dml.hops.globalopt;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.FunctionOp;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -92,8 +93,9 @@ public class Plan
 	public boolean checkValidBlocksizesInMR()
 	{
 		boolean ret = true;
+		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if(    _conf.getExecType()==ExecType.MR 
+		if(    _conf.getExecType()==CLUSTER 
 			&& _childs != null && _childs.size() > 1 ) 
 		{
 			int size0 = _childs.get(0)._conf.getBlockSize();
@@ -118,8 +120,9 @@ public class Plan
 	public boolean checkValidFormatInMR()
 	{
 		boolean ret = true;
+		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _conf.getExecType()==ExecType.MR ) 
+		if( _conf.getExecType()==CLUSTER ) 
 		{
 			if( _childs != null )
 				for( Plan c : _childs )

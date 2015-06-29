@@ -207,6 +207,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Plan> plans = new ArrayList<Plan>();
+		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		//ENUMERATE HOP PLANS
 		// CASE 1: core hop enumeration (other than persistent/transient read/write) 
@@ -224,7 +225,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			if( node.requiresMREnumeration() ) {
 				for( Integer bs : BLOCK_SIZES )
 				{
-					RewriteConfig rcmr = new RewriteConfig(ExecType.MR, bs, FileFormatTypes.BINARY);
+					RewriteConfig rcmr = new RewriteConfig(CLUSTER, bs, FileFormatTypes.BINARY);
 					InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
 					Plan mrplan = new Plan(node, ipsmr, rcmr, null);
 					plans.add( mrplan );			
@@ -242,9 +243,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				//but we can decide on output properties
 				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()
 						      || HopRewriteUtils.alwaysRequiresReblock(dhop)) ? 
-						       ExecType.MR : ExecType.CP;
+						       CLUSTER : ExecType.CP;
 				
-				int[] blocksizes = (et == ExecType.MR) ? BLOCK_SIZES : new int[]{BLOCK_SIZES[0]};
+				int[] blocksizes = (et == CLUSTER) ? BLOCK_SIZES : new int[]{BLOCK_SIZES[0]};
 				for( Integer bs : blocksizes )
 				{
 					RewriteConfig rcmr = new RewriteConfig(et, bs, FileFormatTypes.BINARY);
@@ -258,7 +259,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 				//for persistent write the interesting properties are fixed by the given
 				//write specification
 				ExecType et = (dhop.getMemEstimate()>OptimizerUtils.getLocalMemBudget()) ? 
-						       ExecType.MR : ExecType.CP;
+						       CLUSTER : ExecType.CP;
 				
 				RewriteConfig rcmr = new RewriteConfig(et, (int)dhop.getRowsInBlock(), dhop.getInputFormatType());
 				InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
@@ -481,6 +482,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	
 	private static void rSetRuntimePlanConfig( Plan p, HashMap<Long, Plan> memo )
 	{
+		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
 		//basic memoization including containment check 
 		if( memo.containsKey(p.getNode().getID()) ) {
 			Plan pmemo = memo.get(p.getNode().getID());
@@ -509,7 +512,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			//set blocksizes and reblock
 			hop.setRowsInBlock(rc.getBlockSize());
 			hop.setColsInBlock(rc.getBlockSize());
-			if( rc.getExecType()==ExecType.MR ) //after blocksize update
+			if( rc.getExecType()==CLUSTER ) //after blocksize update
 			{
 				hop.setRequiresReblock( hop.hasMatrixInputWithDifferentBlocksizes() 
 						|| HopRewriteUtils.alwaysRequiresReblock(hop));

@@ -8,8 +8,10 @@
 package com.ibm.bi.dml.test.integration.functions.gdfo;
 
 import java.util.HashMap;
+
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -72,6 +74,21 @@ public class GDFOLinregDS extends AutomatedTestBase
 		runGDFOTest(TEST_NAME1, true, ExecType.MR);
 	}
 	
+	/* TODO spark backend currently fails w/ wrong blocksizes (see reblock)
+	 * need to fix, but optimizer already works fine.
+	@Test
+	public void testGDFOLinregDSDenseSpark() 
+	{
+		runGDFOTest(TEST_NAME1, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGDFOLinregDSSparseSpark() 
+	{
+		runGDFOTest(TEST_NAME1, true, ExecType.SPARK);
+	}
+	*/
+	
 	/**
 	 * 
 	 * @param sparseM1
@@ -82,7 +99,15 @@ public class GDFOLinregDS extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try
 		{
@@ -124,6 +149,7 @@ public class GDFOLinregDS extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

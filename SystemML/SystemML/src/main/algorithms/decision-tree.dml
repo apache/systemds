@@ -27,8 +27,9 @@
 # depth         Int 	 25			  Maximum depth of the learnt tree
 # num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
 # num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# impurity      String   "entropy"    Impurity measure: entropy (the default) or Gini 
+# impurity      String   "Gini"    	  Impurity measure: entropy (the default) or Gini 
 # M             String 	 ---	   	  Location to write matrix M containing the learnt tree
+# O     		String   " "          Location to write the training accuracy; by default is standard output
 # fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
@@ -53,11 +54,12 @@ binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) r
 	
 fileI = ifdef($I, " ");
 fileT = ifdef ($T, " ");	
+fileO = ifdef ($O, " ");
 num_bins = ifdef($bins, 20); 
 depth = ifdef($depth, 25); 
 num_leaf = ifdef($leaf, 10); 
 threshold = ifdef ($num_samples, 3000); 
-impurity = ifdef($impurity, "entropy");
+impurity = ifdef($impurity, "Gini");
 fmtO = ifdef($fmt, "text");
 
 X = read($X)

@@ -25,6 +25,9 @@ import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFLoopNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import com.ibm.bi.dml.hops.globalopt.gdfresolve.GDFMismatchHeuristic;
+import com.ibm.bi.dml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchHeuristicType;
+import com.ibm.bi.dml.hops.globalopt.gdfresolve.MismatchHeuristicFactory;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -60,17 +63,19 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	
 	//internal configuration parameters 
 	//note: that branch and bound pruning is invalid if we cost entire programs
-	public static final boolean BRANCH_AND_BOUND_PRUNING = true; 
-	public static final boolean PREFERRED_PLAN_SELECTION = true;
-	public static final boolean COST_FULL_PROGRAMS       = false;
+	private static final boolean BRANCH_AND_BOUND_PRUNING = true; 
+	private static final boolean PREFERRED_PLAN_SELECTION = true;
+	private static final boolean COST_FULL_PROGRAMS       = false;
+	private static final MismatchHeuristicType DEFAULT_MISMATCH_HEURISTIC = MismatchHeuristicType.FIRST;
 	
 	//internal configuration parameters 
-	public static final int[] BLOCK_SIZES         = new int[]{ 1 * DMLTranslator.DMLBlockSize,
-															   2 * DMLTranslator.DMLBlockSize,
-															   4 * DMLTranslator.DMLBlockSize};
-	public static final int[] REPLICATION_FACTORS = new int[]{1,3,5};
+	private static final int[] BLOCK_SIZES = new int[]{ 1 * DMLTranslator.DMLBlockSize,
+													    2 * DMLTranslator.DMLBlockSize,
+														4 * DMLTranslator.DMLBlockSize};
+	//private static final int[] REPLICATION_FACTORS = new int[]{1,3,5};
 			
 	private MemoStructure _memo = null; //plan memoization table
+	private static GDFMismatchHeuristic _resolve = null;
 	private static long _enumeratedPlans = 0;
 	private static long _prunedInvalidPlans = 0;
 	private static long _prunedSuboptimalPlans = 0;
@@ -80,9 +85,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 
 	
 	public GDFEnumOptimizer( ) 
+		throws DMLRuntimeException 
 	{
 		//init internal memo structure
 		_memo = new MemoStructure();
+		
+		//init mismatch heuristic
+		_resolve = MismatchHeuristicFactory.createMismatchHeuristic(
+				DEFAULT_MISMATCH_HEURISTIC);
 	}
 
 	@Override
@@ -474,8 +484,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		//basic memoization including containment check 
 		if( memo.containsKey(p.getNode().getID()) ) {
 			Plan pmemo = memo.get(p.getNode().getID());
-			if( !p.getInterestingProperties().equals( pmemo.getInterestingProperties()) ) {
-				LOG.warn("Configuration mismatch on shared node ("+p.getNode().getHop().getHopID()+"). Falling back to heuristic 'FIRST'.");
+			if( !p.getInterestingProperties().equals( pmemo.getInterestingProperties()) ) 
+			{
+				//replace plan in memo with new plan
+				//TODO this would require additional cleanup in special cases
+				if( _resolve.resolveMismatch(pmemo.getRewriteConfig(), p.getRewriteConfig()) )
+					memo.put(p.getNode().getID(), p);
+				//logging of encounter plan mismatch
+				LOG.warn("Configuration mismatch on shared node ("+p.getNode().getHop().getHopID()+"). Falling back to heuristic '"+_resolve.getName()+"'.");
 				LOG.warn(p.getInterestingProperties().toString());
 				LOG.warn(memo.get(p.getNode().getID()).getInterestingProperties());
 				_planMismatches++;

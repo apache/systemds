@@ -101,9 +101,10 @@ public class GlobalOptimizerWrapper
 	 * @param graphCreator
 	 * @return
 	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
 	 */
 	private static GlobalOptimizer createGlobalOptimizer( GlobalOptimizerType type ) 
-		throws HopsException
+		throws HopsException, DMLRuntimeException
 	{
 		GlobalOptimizer optimizer = null;
 		

@@ -35,4 +35,9 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
+   
+   <!-- CP singlenode execution, parallelism config -->
+   <MultiThreadedCP>true</MultiThreadedCP>
+   <MultiThreadedCPReadWrite>false</MultiThreadedCPReadWrite>
+   
 </root>

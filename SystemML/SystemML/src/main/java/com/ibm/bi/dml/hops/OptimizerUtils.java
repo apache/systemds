@@ -180,7 +180,7 @@ public class OptimizerUtils
 	 * Enables multi-threaded matrix multiply for mm, mmchain, and tsmm.
 	 * 
 	 */
-	public static final boolean PARALLEL_CP_MATRIX_MULTIPLY = true;
+	public static boolean PARALLEL_CP_MATRIX_MULTIPLY = true;
 	
 	/**
 	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 
@@ -479,6 +479,20 @@ public class OptimizerUtils
 		return (int) Math.round(dop);
 	}
 	
+	/**
+	 * Returns the degree of parallelism used for parallel matrixMult
+	 * 
+	 * @return
+	 */
+	public static int getParallelMatrixMultParallelism()
+	{
+		if( !PARALLEL_CP_MATRIX_MULTIPLY )
+			return 1; // sequential execution
+
+		//compute degree of parallelism for parallel matrix mult
+		double dop = InfrastructureAnalyzer.getLocalParallelism(); // may need a parallelism multiplier
+		return (int) Math.round(dop);
+	}
 	
 	////////////////////////
 	// Memory Estimates   //

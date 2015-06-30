@@ -233,7 +233,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * @param sec
 	 * @throws DMLRuntimeException
 	 */
-	protected void updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec) 
+	protected void updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
 		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
@@ -244,7 +244,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
 			else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
 				throw new DMLRuntimeException("Incompatible block sizes for BinarySPInstruction.");
-			else if(mc1.getCols() != mc2.getRows())
+			else if(checkCommonDim && mc1.getCols() != mc2.getRows())
 				throw new DMLRuntimeException("Incompatible dimensions for BinarySPInstruction");
 			else {
 				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());

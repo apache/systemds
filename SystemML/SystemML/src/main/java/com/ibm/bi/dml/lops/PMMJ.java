@@ -123,6 +123,12 @@ public class PMMJ extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( this.prepOutputOperand(output_index));
 		
+		if( getExecType() == ExecType.SPARK ) 
+		{
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_cacheType);
+		}
+		
 		return sb.toString();
 	}
 

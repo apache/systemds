@@ -125,7 +125,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 			sec.addLineageRDD(output.getName(), input2.getName());		
 			
 			//update output statistics if not inferred
-			updateBinaryMMOutputMatrixCharacteristics(sec);
+			updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		}
 	}
 	

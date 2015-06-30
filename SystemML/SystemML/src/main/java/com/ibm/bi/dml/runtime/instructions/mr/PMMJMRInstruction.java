@@ -116,12 +116,12 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 			IndexedMatrixValue out2 = multipleOuts ? cachedValues.holdPlace(output, valueClass) : null;
 			out1.getValue().reset(blockRowFactor, mb2.getNumColumns(), sparse);
 			if( out2 != null )
-				out2.getValue().reset(computeBlockSize(_rlen, blockRowFactor, rowIX2), mb2.getNumColumns(), sparse);
+				out2.getValue().reset(UtilFunctions.computeBlockSize(_rlen, rowIX2, blockRowFactor), mb2.getNumColumns(), sparse);
 			
 			//compute core matrix permutation (assumes that out1 has default blocksize, 
 			//hence we do a meta data correction afterwards)
 			mb1.permutationMatrixMultOperations(mb2, out1.getValue(), (out2!=null)?out2.getValue():null);
-			((MatrixBlock)out1.getValue()).setNumRows(computeBlockSize(_rlen, blockRowFactor, rowIX1));
+			((MatrixBlock)out1.getValue()).setNumRows(UtilFunctions.computeBlockSize(_rlen, rowIX1, blockRowFactor));
 			out1.getIndexes().setIndexes(rowIX1, in2.getIndexes().getColumnIndex());
 			if( out2 != null )
 				out2.getIndexes().setIndexes(rowIX2, in2.getIndexes().getColumnIndex());
@@ -164,18 +164,5 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 		String[] parts = inst.split(Instruction.OPERAND_DELIM);
 		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
 		indexes.add(in1);
-	}
-	
-	/**
-	 * 
-	 * @param rlen
-	 * @param brlen
-	 * @param rowIX
-	 * @return
-	 */
-	private static int computeBlockSize( long rlen, long brlen, long rowIX )
-	{
-		long remain = rlen - (rowIX-1)*brlen;
-		return (int)Math.min(brlen, remain);
 	}
 }

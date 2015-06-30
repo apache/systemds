@@ -29,7 +29,7 @@ public abstract class SPInstruction extends Instruction
 	
 	// public enum SPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, Ternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, Sort, MatrixIndexing, MMTSJ, PMMJ, MatrixReshape, Partition, StringInit }; 
 	public enum SPINSTRUCTION_TYPE { 
-		MAPMM, MAPMMCHAIN, TSMM, CPMM, RMM, //matrix multiplication instructions  
+		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, PMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, Reblock, CSVReblock, 
 		Builtin, BuiltinUnary, BuiltinBinary, Sort, Variable, Checkpoint,
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 

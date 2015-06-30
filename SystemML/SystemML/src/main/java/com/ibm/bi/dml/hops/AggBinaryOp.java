@@ -163,7 +163,8 @@ public class AggBinaryOp extends Hop
 				//matrix mult operation selection part 3 (SPARK type)
 				MMultMethod method = optFindMMultMethodSpark ( 
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
-						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), mmtsj, chain);
+						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), 
+						mmtsj, chain, _hasLeftPMInput );
 			
 				//dispatch SPARK lops construction 
 				switch( method )
@@ -183,6 +184,9 @@ public class AggBinaryOp extends Hop
 						break;
 					case RMM:	
 						constructSparkLopsRMM();
+						break;
+					case PMM:
+						constructSparkLopsPMM(); 
 						break;
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing SPARK lops.");	
@@ -769,6 +773,73 @@ public class AggBinaryOp extends Hop
 		setLineNumbers( rmm );
 		setLops(rmm);
 	}
+	
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsPMM() 
+		throws HopsException, LopsException
+	{
+		//PMM has two potential modes (a) w/ full permutation matrix input, and 
+		//(b) w/ already condensed input vector of target row positions.
+		
+		Hop pmInput = getInput().get(0);
+		Hop rightInput = getInput().get(1);
+		long brlen = pmInput.getRowsInBlock();
+		long bclen = pmInput.getColsInBlock();
+		
+		//a) full permutation matrix input (potentially without empty block materialized)
+		Lop lpmInput = pmInput.constructLops();
+		if( pmInput.getDim2() != 1 ) //not a vector
+		{
+			//compute condensed permutation matrix vector input			
+			//v = rowMaxIndex(t(pm)) * rowMax(t(pm)) 
+			ReorgOp transpose = HopRewriteUtils.createTranspose(pmInput);
+			transpose.setForcedExecType(ExecType.SPARK);
+			HopRewriteUtils.copyLineNumbers(this, transpose);	
+			
+			AggUnaryOp agg1 = new AggUnaryOp("tmp2a", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAXINDEX, Direction.Row, transpose);
+			HopRewriteUtils.setOutputBlocksizes(agg1, brlen, bclen);
+			agg1.refreshSizeInformation();
+			agg1.setForcedExecType(ExecType.SPARK);
+			HopRewriteUtils.copyLineNumbers(this, agg1);
+			
+			AggUnaryOp agg2 = new AggUnaryOp("tmp2b", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, Direction.Row, transpose);
+			HopRewriteUtils.setOutputBlocksizes(agg2, brlen, bclen);
+			agg2.refreshSizeInformation();
+			agg2.setForcedExecType(ExecType.SPARK);
+			HopRewriteUtils.copyLineNumbers(this, agg2);
+			
+			BinaryOp mult = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, agg1, agg2);
+			HopRewriteUtils.setOutputBlocksizes(mult, brlen, bclen); 
+			mult.refreshSizeInformation();
+			mult.setForcedExecType(ExecType.SPARK);
+			//mult.computeMemEstimate(memo); //select exec type
+			HopRewriteUtils.copyLineNumbers(this, mult);
+			
+			lpmInput = mult.constructLops();
+			
+			HopRewriteUtils.removeChildReference(pmInput, transpose);
+		}
+		
+		//b) condensed permutation matrix vector input (target rows)
+		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
+		HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+		nrow.setForcedExecType(ExecType.CP);
+		HopRewriteUtils.copyLineNumbers(this, nrow);
+		Lop lnrow = nrow.constructLops();
+		
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), false, _outputEmptyBlocks, ExecType.SPARK);
+		setOutputDimensions(pmm);
+		setLineNumbers(pmm);
+		setLops(pmm);
+		
+		HopRewriteUtils.removeChildReference(pmInput, nrow);		
+	} 
+
 	
 	//////////////////////////
 	// MR Lops generation
@@ -1539,7 +1610,7 @@ public class AggBinaryOp extends Hop
 	 * @return
 	 */
 	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType ) 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
 	{	
 		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
 		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
@@ -1581,7 +1652,17 @@ public class AggBinaryOp extends Hop
 			}
 		}		
 		
-		// Step 3: check MapMM
+		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
+		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
+		double footprintPM1 = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM2 = footprintInMapper(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
+			&& leftPMInput ) 
+		{
+			return MMultMethod.PMM;
+		}
+		
+		// Step 4: check MapMM
 		// If the size of one input is small, choose a method that uses broadcast variables
 		// (currently we only apply this if a single output block)
 		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
@@ -1604,7 +1685,7 @@ public class AggBinaryOp extends Hop
 		//currently always RMM because CPMM pure CP right now
 		return MMultMethod.RMM;
 		
-		// Step 4: fallback strategy MMCJ
+		// Step 5: fallback strategy MMCJ
 		//return MMultMethod.CPMM;
 	}
 	

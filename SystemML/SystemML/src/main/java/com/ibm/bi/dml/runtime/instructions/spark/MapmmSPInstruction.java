@@ -138,7 +138,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			sec.addLineageBroadcast(output.getName(), bcastVar);
 			
 			//update output statistics if not inferred
-			updateBinaryMMOutputMatrixCharacteristics(sec);
+			updateBinaryMMOutputMatrixCharacteristics(sec, true);
 		}
 	}
 	

@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.PmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RandSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
@@ -58,6 +59,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
 		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
 		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
+		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
 		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
@@ -185,14 +187,16 @@ public class SPInstructionParser extends InstructionParser {
 			// Matrix multiplication
 			case CPMM:
 				return CpmmSPInstruction.parseInstruction(str);
+			case RMM:
+				return RmmSPInstruction.parseInstruction(str);
 			case MAPMM:
 				return MapmmSPInstruction.parseInstruction(str);
 			case MAPMMCHAIN:
 				return MapmmChainSPInstruction.parseInstruction(str);
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
-			case RMM:
-				return RmmSPInstruction.parseInstruction(str);
+			case PMM:
+				return PmmSPInstruction.parseInstruction(str);
 				
 				
 			case AggregateUnary:

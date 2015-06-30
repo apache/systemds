@@ -1016,9 +1016,6 @@ if (as.scalar (Q_large[1,1]) != 0) {
 		offset = as.scalar (F_large[3,it]);
 		M1_large[6:(6 + offset - 1),it] = t (S_large[1,start_ind:(start_ind + offset - 1)]); 
 	}	
-
-	print ("M1_large");
-	success= print_result2 (M1_large);
 } else {
 	print ("No LARGE internal nodes available");
 	no_large_internal_node = TRUE;

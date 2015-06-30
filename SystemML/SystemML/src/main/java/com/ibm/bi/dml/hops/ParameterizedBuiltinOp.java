@@ -225,7 +225,7 @@ public class ParameterizedBuiltinOp extends Hop
 			} 
 			else 
 			{
-				Lop append = BinaryOp.constructAppendLop(
+				Lop append = BinaryOp.constructMRAppendLop(
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
 						DataType.MATRIX, getValueType(), 

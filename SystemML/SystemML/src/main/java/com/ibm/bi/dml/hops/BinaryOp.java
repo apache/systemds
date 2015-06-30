@@ -482,57 +482,58 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void constructLopsAppend(ExecType et) throws HopsException, LopsException {
+	/**
+	 * 
+	 * @param et
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsAppend(ExecType et) 
+		throws HopsException, LopsException 
+	{
 		DataType dt1 = getInput().get(0).getDataType();
 		DataType dt2 = getInput().get(1).getDataType();
 		ValueType vt1 = getInput().get(0).getValueType();
 		ValueType vt2 = getInput().get(1).getValueType();
+		
+		//sanity check for input data types
 		if( !((dt1==DataType.MATRIX && dt2==DataType.MATRIX)
 			 ||(dt1==DataType.SCALAR && dt2==DataType.SCALAR
 			   && vt1==ValueType.STRING && vt2==ValueType.STRING )) )
+		{
 			throw new HopsException("Append can only apply to two matrices or two scalar strings!");
-				
-		if( et == ExecType.MR )
-		{
-			Lop lop = constructAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
-			setLops( lop );						
 		}
-		else if(et == ExecType.SPARK) {
-			
-			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) {
-				Lop lop = constructAppendSPLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
-				setLops( lop );
-				lop.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
-						                                getRowsInBlock(), getColsInBlock(), getNnz());
-				lop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				
-			}
-			else { //SCALAR STRING append
-				AppendCP app = null;
-				app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-				app.getOutputParameters().setDimensions(0,0,-1,-1,-1);
-				app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				setLops(app);
-			}
-		}
-		else //CP
+		Lop append = null;
+		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
 		{
-			AppendCP app = null;
-			if( dt1==DataType.MATRIX && dt2==DataType.MATRIX ) {
+			if( et == ExecType.MR )
+			{
+				append = constructMRAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);				
+			}
+			else if(et == ExecType.SPARK) {
+				
+				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
+				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
+							                                getRowsInBlock(), getColsInBlock(), getNnz());
+			}
+			else //CP
+			{
 				Lop offset = createOffsetLop( getInput().get(0), true ); //offset 1st input
-				app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType());
-				app.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
-						                                getRowsInBlock(), getColsInBlock(), getNnz());
+				append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType());
+				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
+							                                getRowsInBlock(), getColsInBlock(), getNnz());
 			}
-			else { //SCALAR STRING append
-				app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-				app.getOutputParameters().setDimensions(0,0,-1,-1,-1);
-			}
-			app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			setLops(app);
 		}
+		else //SCALAR-STRING and SCALAR-STRING (always CP)
+		{
+			append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+			append.getOutputParameters().setDimensions(0,0,-1,-1,-1);
+		}
+		
+		setLineNumbers(append);
+		setLops(append);
 	}
 	
 	private void constructLopsBinaryDefault() throws HopsException, LopsException {
@@ -944,7 +945,7 @@ public class BinaryOp extends Hop
 	 * @throws HopsException 
 	 * @throws LopsException 
 	 */
-	public static Lop constructAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
 		throws HopsException, LopsException
 	{
 		Lop ret = null;
@@ -1029,52 +1030,52 @@ public class BinaryOp extends Hop
 		return ret;
 	}
 	
-	public Lop constructAppendSPLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
-			throws HopsException, LopsException
-		{
-			Lop ret = null;
-			
-			long m1_dim1 = left.getDim1();
-			long m1_dim2 = left.getDim2();		
-			long m2_dim1 = right.getDim1();
-			long m2_dim2 = right.getDim2();
-			long brlen = left.getRowsInBlock();
-			long bclen = left.getColsInBlock();
-			
-			AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+	public Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+		throws HopsException, LopsException
+	{
+		Lop ret = null;
 		
-			switch( am )
+		long m1_dim1 = left.getDim1();
+		long m1_dim2 = left.getDim2();		
+		long m2_dim1 = right.getDim1();
+		long m2_dim2 = right.getDim2();
+		long brlen = left.getRowsInBlock();
+		long bclen = left.getColsInBlock();
+		
+		AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+	
+		switch( am )
+		{
+			case MR_MAPPEND: //special case map-only append
 			{
-				case MR_MAPPEND: //special case map-only append
-				{
-					ret = new AppendMSP(left.constructLops(), right.constructLops(), 
-							     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-					break;
-				}
-				case MR_RAPPEND: //special case reduce append w/ one column block
-				{
-					ret = new AppendRSP(left.constructLops(), right.constructLops(), 
+				ret = new AppendMSP(left.constructLops(), right.constructLops(), 
 						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-					break;
-				}	
-				case MR_GAPPEND:
-				{
-					ret = new AppendGSP(left.constructLops(), right.constructLops(), 
-						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-					break;
-				}
-				case SP_GAlignedAppend:
-				{
-					ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), 
-						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
-					break;
-				}
-				default:
-					throw new HopsException("Invalid SP append method: "+am);
+				break;
 			}
-			
-			return ret;
+			case MR_RAPPEND: //special case reduce append w/ one column block
+			{
+				ret = new AppendRSP(left.constructLops(), right.constructLops(), 
+					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				break;
+			}	
+			case MR_GAPPEND:
+			{
+				ret = new AppendGSP(left.constructLops(), right.constructLops(), 
+					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				break;
+			}
+			case SP_GAlignedAppend:
+			{
+				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), 
+					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				break;
+			}
+			default:
+				throw new HopsException("Invalid SP append method: "+am);
 		}
+		
+		return ret;
+	}
 	
 	/**
 	 * Special case tertiary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND

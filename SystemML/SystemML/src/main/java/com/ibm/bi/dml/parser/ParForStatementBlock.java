@@ -70,7 +70,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	//internal parameter values
 	private static final boolean NORMALIZE                 = false; //normalize FOR from to incr
-	private static final boolean USE_FN_CACHE              = true; //useful for larger scripts (due to O(n^2))
+	private static final boolean USE_FN_CACHE              = false; //useful for larger scripts (due to O(n^2))
 	private static final boolean ABORT_ON_FIRST_DEPENDENCY = true;
 	private static final boolean CONSERVATIVE_CHECK        = false; //include FOR into dep analysis, reject unknown vars (otherwise use internal vars for whole row or column)
 	

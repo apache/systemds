@@ -55,6 +55,7 @@ import com.ibm.bi.dml.runtime.matrix.SortMR;
 import com.ibm.bi.dml.runtime.matrix.WriteCSVMR;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.transform.DataTransform;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
 
@@ -293,6 +294,24 @@ public class RunMRJobs
 				ret = DataPartitionMR.runJob(inst, inputMatrices, shuffleInst, inst.getIv_resultIndices(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
 				break;
 				
+			case TRANSFORM:
+				
+				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION
+						&& OptimizerUtils.ALLOW_TRANSFORM_RECOMPILE
+						&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
+						&& Recompiler.checkCPTransform( inst, inputMatrices ) ) 
+					{
+						// transform the data and generate output in CSV format
+						ret = executeInMemoryTransform(inst, inputMatrices, outputMatrices);
+						Statistics.decrementNoOfExecutedMRJobs();
+						execCP = true;
+					}
+					else 
+					{
+						ret = DataTransform.mrDataTransform(inst, inputMatrices, shuffleInst, otherInst, inst.getIv_resultIndices(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
+					}
+				break;
+				
 			default:
 				throw new DMLRuntimeException("Invalid jobtype: " + inst.getJobType());
 			}
@@ -329,7 +348,7 @@ public class RunMRJobs
 						
 						outputMatrices[i].setFileExists(true);
 						
-						if ( inst.getJobType() != JobType.CSV_WRITE ) {
+						if ( inst.getJobType() != JobType.CSV_WRITE && inst.getJobType() != JobType.TRANSFORM) {
 							// write out metadata file
 							// Currently, valueType information in not stored in MR instruction, 
 							// since only DOUBLE matrices are supported ==> hard coded the value type information for now
@@ -542,5 +561,12 @@ public class RunMRJobs
 		}
 		
 		return  new JobReturn( mc, inst.getOutputInfos(), true);
+	}
+	
+	private static JobReturn executeInMemoryTransform( MRJobInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException {
+		return DataTransform.cpDataTransform(
+									inst.getIv_shuffleInstructions(), 
+									inputMatrices, 
+									outputMatrices);
 	}
 }

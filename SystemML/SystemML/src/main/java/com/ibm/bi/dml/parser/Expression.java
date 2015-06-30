@@ -107,6 +107,7 @@ public abstract class Expression
 		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
 		// Distribution Functions
 		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
+		TRANSFORM, 
 		INVALID
 	};
 	
@@ -135,7 +136,7 @@ public abstract class Expression
 	//};
 
 	public enum DataType {
-		MATRIX, SCALAR, OBJECT, UNKNOWN
+		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN
 	};
 
 	public enum ValueType {

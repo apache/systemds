@@ -23,6 +23,12 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private ParameterizedBuiltinFunctionOp _opcode;
 	private HashMap<String,Expression> _varParams;
 	
+	public static final String TF_FN_PARAM_DATA = "target";
+	public static final String TF_FN_PARAM_TXMTD = "transformPath";
+	public static final String TF_FN_PARAM_TXSPEC = "transformSpec";
+	public static final String TF_FN_PARAM_APPLYMTD = "applyTransformPath";
+	
+	
 	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
 	static {
 		opcodeMap = new HashMap<String, Expression.ParameterizedBuiltinFunctionOp>();
@@ -46,6 +52,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("qf",		Expression.ParameterizedBuiltinFunctionOp.QF);
 		opcodeMap.put("qchisq",	Expression.ParameterizedBuiltinFunctionOp.QCHISQ);
 		opcodeMap.put("qexp",	Expression.ParameterizedBuiltinFunctionOp.QEXP);
+
+		// data transformation functions
+		opcodeMap.put("transform",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORM);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -179,99 +188,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		switch (this.getOpCode()) {
 		
 		case GROUPEDAGG:
-			int colwise = -1;
-			if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
-				raiseValidateError("Must define both target and groups and both must have same dimensions", conditional);
-			}
-			if (getVarParam(Statement.GAGG_TARGET) instanceof DataIdentifier && getVarParam(Statement.GAGG_GROUPS) instanceof DataIdentifier && (getVarParam(Statement.GAGG_WEIGHTS) == null || getVarParam(Statement.GAGG_WEIGHTS) instanceof DataIdentifier))
-			{
-				
-				DataIdentifier targetid = (DataIdentifier)getVarParam(Statement.GAGG_TARGET);
-				DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
-				DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
-			
-				if ( targetid.dimsKnown() ) {
-					colwise = targetid.getDim1() > targetid.getDim2() ? 1 : 0;
-				}
-				else if ( groupsid.dimsKnown() ) {
-					colwise = groupsid.getDim1() > groupsid.getDim2() ? 1 : 0;
-				}
-				else if ( weightsid != null && weightsid.dimsKnown() ) {
-					colwise = weightsid.getDim1() > weightsid.getDim2() ? 1 : 0;
-				}
-				
-				//precompute number of rows and columns because target can be row or column vector
-				long rowsTarget = Math.max(targetid.getDim1(),targetid.getDim2());
-				long colsTarget = Math.min(targetid.getDim1(),targetid.getDim2());
-				
-				if( targetid.dimsKnown() && groupsid.dimsKnown() &&
-					(rowsTarget != groupsid.getDim1() || colsTarget != groupsid.getDim2()) )
-				{					
-					raiseValidateError("target and groups must have same dimensions -- " 
-							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols ", conditional);
-				}
-				
-				if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
-					(rowsTarget != weightsid.getDim1() || colsTarget != weightsid.getDim2() ))
-				{		
-					raiseValidateError("target and weights must have same dimensions -- "
-							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols ", conditional);
-				}
-			}
-			
-			
-			if (getVarParam(Statement.GAGG_FN) == null){
-				raiseValidateError("must define function name (fn=<function name>) for aggregate()", conditional);
-			}
-			
-			Expression functParam = getVarParam(Statement.GAGG_FN);
-			
-			if (functParam instanceof Identifier)
-			{
-				// standardize to lowercase and dequote fname
-				String fnameStr = getVarParam(Statement.GAGG_FN).toString();
-				
-				
-				// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4 
-				// check ELSE IF fname is allowed
-				if(fnameStr.equals(Statement.GAGG_FN_CM)){
-					String orderStr = getVarParam(Statement.GAGG_FN_CM_ORDER) == null ? null : getVarParam(Statement.GAGG_FN_CM_ORDER).toString();
-					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4"))){
-						raiseValidateError("for centralmoment, must define order.  Order must be equal to 2,3, or 4", conditional);
-					}
-				}
-				else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
-						|| fnameStr.equals(Statement.GAGG_FN_SUM) 
-						|| fnameStr.equals(Statement.GAGG_FN_MEAN)
-						|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
-				else { 
-					raiseValidateError("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance", conditional);
-				}
-			}
-			
-			Expression ngroupsParam = getVarParam(Statement.GAGG_NUM_GROUPS);
-			long outputDim1 = -1, outputDim2 = -1;
-			if( ngroupsParam != null && ngroupsParam instanceof Identifier ) 
-			{
-				Identifier numGroups = (Identifier) ngroupsParam;
-				if ( numGroups != null && numGroups instanceof ConstIdentifier) {
-					long ngroups = ((ConstIdentifier)numGroups).getLongValue();
-					if ( colwise == 1 ) {
-						outputDim1 = ngroups;
-						outputDim2 = 1;
-					}
-					else if ( colwise == 0 ) {
-						outputDim1 = 1;
-						outputDim2 = ngroups;
-					}
-				}
-			}
-			
-			// Output is a matrix with unknown dims
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(outputDim1, outputDim2);
-
+			validateGroupedAgg(output, conditional);
 			break; 
 			
 		case CDF:
@@ -290,124 +207,274 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		case RMEMPTY:
-		{
-			//check existence and correctness of arguments
-			Expression target = getVarParam("target");
-			if( target==null ) {
-				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( target.getOutput().getDataType() != DataType.MATRIX ){
-				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			Expression margin = getVarParam("margin");
-			if( margin==null ){
-				raiseValidateError("Named parameter 'margin' missing. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( !(margin instanceof DataIdentifier) && !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
-				raiseValidateError("Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			// Output is a matrix with unknown dims
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(-1, -1);
-			
+			validateRemoveEmpty(output, conditional);
 			break;
-		}
 		
 		case REPLACE:
-		{
-			//check existence and correctness of arguments
-			Expression target = getVarParam("target");
-			if( target==null ) {				
-				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( target.getOutput().getDataType() != DataType.MATRIX ){
-				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}	
-			
-			Expression pattern = getVarParam("pattern");
-			if( pattern==null ) {
-				raiseValidateError("Named parameter 'pattern' missing. Please specify the replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( pattern.getOutput().getDataType() != DataType.SCALAR ){				
-				raiseValidateError("Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}	
-			
-			Expression replacement = getVarParam("replacement");
-			if( replacement==null ) {
-				raiseValidateError("Named parameter 'replacement' missing. Please specify the replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( replacement.getOutput().getDataType() != DataType.SCALAR ){	
-				raiseValidateError("Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}	
-			
-			// Output is a matrix with same dims as input
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
-			
+			validateReplace(output, conditional);
 			break;
-		}
 		
 		case ORDER:
-		{
-			//check existence and correctness of arguments
-			Expression target = getVarParam("target"); //[MANDATORY] TARGET
-			if( target==null ) {				
-				raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			else if( target.getOutput().getDataType() != DataType.MATRIX ){
-				raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}	
-			
-			//check for unsupported parameters
-			for(String param : getVarParams().keySet())
-				if( !(param.equals("target") || param.equals("by") || param.equals("decreasing") || param.equals("index.return")) )
-					raiseValidateError("Unsupported order parameter: '"+param+"'", false);
-			
-			Expression orderby = getVarParam("by"); //[OPTIONAL] BY
-			if( orderby == null ) { //default first column, good fit for vectors
-				orderby = new IntIdentifier(1, "1", -1, -1, -1, -1);
-				addVarParam("by", orderby);
-			}
-			else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
-				raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}	
-			
-			Expression decreasing = getVarParam("decreasing"); //[OPTIONAL] DECREASING
-			if( decreasing == null ) { //default: ascending
-				addVarParam("decreasing", new BooleanIdentifier(false, "false", -1, -1, -1, -1));
-			}
-			else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){				
-				raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			
-			Expression indexreturn = getVarParam("index.return"); //[OPTIONAL] DECREASING
-			if( indexreturn == null ) { //default: sorted data
-				indexreturn = new BooleanIdentifier(false, "false", -1, -1, -1, -1);
-				addVarParam("index.return", indexreturn);
-			}
-			else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
-				raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-			long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
-					((BooleanIdentifier)indexreturn).getValue() ? 1: target.getOutput().getDim2() : -1; 
-			
-			// Output is a matrix with same dims as input
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
-			output.setDimensions(target.getOutput().getDim1(), dim2 );
-			
+			validateOrder(output, conditional);
 			break;
-		}
 
+		case TRANSFORM:
+			validateTransform(output, conditional);
+			break;
 			
 		default: //always unconditional (because unsupported operation)
 			raiseValidateError("Unsupported parameterized function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		return;
+	}
+	
+	// example: A = transform(data=D, txmtd="", txspec="")
+	private void validateTransform(DataIdentifier output, boolean conditional) throws LanguageException {
+		Expression data = getVarParam(TF_FN_PARAM_DATA);
+		if( data==null ) {				
+			raiseValidateError("Named parameter '" + TF_FN_PARAM_DATA + "' missing. Please specify the input data set.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( data.getOutput().getDataType() != DataType.FRAME ){
+			raiseValidateError("Input to tansform() must be of type 'table'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		Expression txmtd = getVarParam(TF_FN_PARAM_TXMTD);
+		if( txmtd==null ) {
+			raiseValidateError("Named parameter '" + TF_FN_PARAM_TXMTD + "' missing. Please specify the transformation metadata file path.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( txmtd.getOutput().getDataType() != DataType.SCALAR || txmtd.getOutput().getValueType() != ValueType.STRING ){				
+			raiseValidateError("Transformation metadata file '" + TF_FN_PARAM_TXMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
+		Expression txspec = getVarParam(TF_FN_PARAM_TXSPEC);
+		Expression applyMTD = getVarParam(TF_FN_PARAM_APPLYMTD);
+		if( txspec==null ) {
+			if ( applyMTD == null )
+				raiseValidateError("Named parameter '" + TF_FN_PARAM_TXSPEC + "' missing. Please specify the transformation specification file (in JSON format).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( txspec.getOutput().getDataType() != DataType.SCALAR  || txspec.getOutput().getValueType() != ValueType.STRING ){	
+			raiseValidateError("Transformation specification file '" + TF_FN_PARAM_TXSPEC + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		if ( applyMTD != null ) {
+			if( applyMTD.getOutput().getDataType() != DataType.SCALAR  || applyMTD.getOutput().getValueType() != ValueType.STRING ){	
+				raiseValidateError("Apply transformation metadata file'" + TF_FN_PARAM_APPLYMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
+			if(txspec != null ) {
+				raiseValidateError("transform(): Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_TXSPEC + "' can be specified.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
+		}
+		
+		// Output is a matrix with same dims as input
+		output.setDataType(DataType.MATRIX);
+		output.setFormatType(FormatType.CSV);
+		output.setValueType(ValueType.DOUBLE);
+		// Output dimensions may not be known at compile time, for example when dummycoding.
+		output.setDimensions(-1, -1);
+	}
+	
+	private void validateReplace(DataIdentifier output, boolean conditional) throws LanguageException {
+		//check existence and correctness of arguments
+		Expression target = getVarParam("target");
+		if( target==null ) {				
+			raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( target.getOutput().getDataType() != DataType.MATRIX ){
+			raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		Expression pattern = getVarParam("pattern");
+		if( pattern==null ) {
+			raiseValidateError("Named parameter 'pattern' missing. Please specify the replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( pattern.getOutput().getDataType() != DataType.SCALAR ){				
+			raiseValidateError("Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		Expression replacement = getVarParam("replacement");
+		if( replacement==null ) {
+			raiseValidateError("Named parameter 'replacement' missing. Please specify the replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( replacement.getOutput().getDataType() != DataType.SCALAR ){	
+			raiseValidateError("Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		// Output is a matrix with same dims as input
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
+	}
+
+	private void validateOrder(DataIdentifier output, boolean conditional) throws LanguageException {
+		//check existence and correctness of arguments
+		Expression target = getVarParam("target"); //[MANDATORY] TARGET
+		if( target==null ) {				
+			raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( target.getOutput().getDataType() != DataType.MATRIX ){
+			raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		//check for unsupported parameters
+		for(String param : getVarParams().keySet())
+			if( !(param.equals("target") || param.equals("by") || param.equals("decreasing") || param.equals("index.return")) )
+				raiseValidateError("Unsupported order parameter: '"+param+"'", false);
+		
+		Expression orderby = getVarParam("by"); //[OPTIONAL] BY
+		if( orderby == null ) { //default first column, good fit for vectors
+			orderby = new IntIdentifier(1, "1", -1, -1, -1, -1);
+			addVarParam("by", orderby);
+		}
+		else if( orderby !=null && orderby.getOutput().getDataType() != DataType.SCALAR ){				
+			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, specify a scalar order by column index.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}	
+		
+		Expression decreasing = getVarParam("decreasing"); //[OPTIONAL] DECREASING
+		if( decreasing == null ) { //default: ascending
+			addVarParam("decreasing", new BooleanIdentifier(false, "false", -1, -1, -1, -1));
+		}
+		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){				
+			raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
+		Expression indexreturn = getVarParam("index.return"); //[OPTIONAL] DECREASING
+		if( indexreturn == null ) { //default: sorted data
+			indexreturn = new BooleanIdentifier(false, "false", -1, -1, -1, -1);
+			addVarParam("index.return", indexreturn);
+		}
+		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){				
+			raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
+				((BooleanIdentifier)indexreturn).getValue() ? 1: target.getOutput().getDim2() : -1; 
+		
+		// Output is a matrix with same dims as input
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(target.getOutput().getDim1(), dim2 );
+		
+	}
+
+	private void validateRemoveEmpty(DataIdentifier output, boolean conditional) throws LanguageException {
+		//check existence and correctness of arguments
+		Expression target = getVarParam("target");
+		if( target==null ) {
+			raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( target.getOutput().getDataType() != DataType.MATRIX ){
+			raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
+		Expression margin = getVarParam("margin");
+		if( margin==null ){
+			raiseValidateError("Named parameter 'margin' missing. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( !(margin instanceof DataIdentifier) && !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
+			raiseValidateError("Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
+		// Output is a matrix with unknown dims
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(-1, -1);
+		
+	}
+	
+	private void validateGroupedAgg(DataIdentifier output, boolean conditional) throws LanguageException {
+		int colwise = -1;
+		if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
+			raiseValidateError("Must define both target and groups and both must have same dimensions", conditional);
+		}
+		if (getVarParam(Statement.GAGG_TARGET) instanceof DataIdentifier && getVarParam(Statement.GAGG_GROUPS) instanceof DataIdentifier && (getVarParam(Statement.GAGG_WEIGHTS) == null || getVarParam(Statement.GAGG_WEIGHTS) instanceof DataIdentifier))
+		{
+			
+			DataIdentifier targetid = (DataIdentifier)getVarParam(Statement.GAGG_TARGET);
+			DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
+			DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
+		
+			if ( targetid.dimsKnown() ) {
+				colwise = targetid.getDim1() > targetid.getDim2() ? 1 : 0;
+			}
+			else if ( groupsid.dimsKnown() ) {
+				colwise = groupsid.getDim1() > groupsid.getDim2() ? 1 : 0;
+			}
+			else if ( weightsid != null && weightsid.dimsKnown() ) {
+				colwise = weightsid.getDim1() > weightsid.getDim2() ? 1 : 0;
+			}
+			
+			//precompute number of rows and columns because target can be row or column vector
+			long rowsTarget = Math.max(targetid.getDim1(),targetid.getDim2());
+			long colsTarget = Math.min(targetid.getDim1(),targetid.getDim2());
+			
+			if( targetid.dimsKnown() && groupsid.dimsKnown() &&
+				(rowsTarget != groupsid.getDim1() || colsTarget != groupsid.getDim2()) )
+			{					
+				raiseValidateError("target and groups must have same dimensions -- " 
+						+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols ", conditional);
+			}
+			
+			if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
+				(rowsTarget != weightsid.getDim1() || colsTarget != weightsid.getDim2() ))
+			{		
+				raiseValidateError("target and weights must have same dimensions -- "
+						+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols ", conditional);
+			}
+		}
+		
+		
+		if (getVarParam(Statement.GAGG_FN) == null){
+			raiseValidateError("must define function name (fn=<function name>) for aggregate()", conditional);
+		}
+		
+		Expression functParam = getVarParam(Statement.GAGG_FN);
+		
+		if (functParam instanceof Identifier)
+		{
+			// standardize to lowercase and dequote fname
+			String fnameStr = getVarParam(Statement.GAGG_FN).toString();
+			
+			
+			// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4 
+			// check ELSE IF fname is allowed
+			if(fnameStr.equals(Statement.GAGG_FN_CM)){
+				String orderStr = getVarParam(Statement.GAGG_FN_CM_ORDER) == null ? null : getVarParam(Statement.GAGG_FN_CM_ORDER).toString();
+				if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4"))){
+					raiseValidateError("for centralmoment, must define order.  Order must be equal to 2,3, or 4", conditional);
+				}
+			}
+			else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
+					|| fnameStr.equals(Statement.GAGG_FN_SUM) 
+					|| fnameStr.equals(Statement.GAGG_FN_MEAN)
+					|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
+			else { 
+				raiseValidateError("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance", conditional);
+			}
+		}
+		
+		Expression ngroupsParam = getVarParam(Statement.GAGG_NUM_GROUPS);
+		long outputDim1 = -1, outputDim2 = -1;
+		if( ngroupsParam != null && ngroupsParam instanceof Identifier ) 
+		{
+			Identifier numGroups = (Identifier) ngroupsParam;
+			if ( numGroups != null && numGroups instanceof ConstIdentifier) {
+				long ngroups = ((ConstIdentifier)numGroups).getLongValue();
+				if ( colwise == 1 ) {
+					outputDim1 = ngroups;
+					outputDim2 = 1;
+				}
+				else if ( colwise == 0 ) {
+					outputDim1 = 1;
+					outputDim2 = ngroups;
+				}
+			}
+		}
+		
+		// Output is a matrix with unknown dims
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(outputDim1, outputDim2);
 	}
 	
 	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) throws LanguageException {

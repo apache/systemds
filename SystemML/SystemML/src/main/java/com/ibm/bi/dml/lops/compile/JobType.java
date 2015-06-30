@@ -10,7 +10,9 @@ package com.ibm.bi.dml.lops.compile;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin.ParameterizedBuiltinCode;
 
 
 /**
@@ -50,18 +52,27 @@ public enum JobType
 	MMCJ			(4, "MMCJ", 			false, 			true, 								false), 
 	MMRJ			(5, "MMRJ", 			false, 			false, 								false), 
 	COMBINE			(6, "COMBINE", 			false, 			false, 								true), 
-	SORT			(7, "SORT", 			false, 			true, 								true),  		// allows only "InstructionsBeforeSort" and nothing else. 
+	SORT			(7, "SORT", 			false, 			true, 								true),  	// allows only "InstructionsBeforeSort" and nothing else. 
 	CM_COV			(8, "CM_COV", 			false, 			false, 								false),  	// allows only instructions in the mapper 
 	GROUPED_AGG		(9, "GROUPED_AGG", 		false, 			false, 								false), 
 	//PARTITION		(10, "PARTITION", false, false, true),	// MB: meta learning removed
 	DATA_PARTITION	(11, "DATAPARTITION", 	false, 			false, 								true),
 	CSV_REBLOCK		(12, "CSV_REBLOCK", 	false, 			false, 								false),
-	CSV_WRITE		(13, "CSV_WRITE", 		false, 			false, 								true);
+	CSV_WRITE		(13, "CSV_WRITE", 		false, 			false, 								true),
+	TRANSFORM		(14, "TRANSFORM", 		false, 			true, 								false);
 
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	private static int maxJobID = -1;
+	static {
+		for(JobType jt : JobType.values()) 
+		{
+			if(jt.getId() > maxJobID)
+				maxJobID = jt.getId();
+		}
+	}
 	/* Following code should not be edited when adding a new job type */
 
 	private final int id;
@@ -119,6 +130,8 @@ public enum JobType
 				return Lop.Type.MMRJ;
 			else if ( getName().equals("SORT") )
 				return Lop.Type.SortKeys;
+			else if ( getName().equals("TRANSFORM"))
+				return Lop.Type.ParameterizedBuiltin;
 			else 
 				throw new DMLRuntimeException("Shuffle Lop Type is not defined for a job (" + getName() + ") that allows a single shuffle instruction.");
 		}
@@ -155,6 +168,10 @@ public enum JobType
 		
 		case CSVReBlock:	return JobType.CSV_REBLOCK;
 		
+		case ParameterizedBuiltin:		
+				if( ((ParameterizedBuiltin)node).getOp() == ParameterizedBuiltin.OperationTypes.TRANSFORM )
+					return JobType.TRANSFORM;
+		
 		case Data:
 			/*
 			 * Only Write LOPs with external data formats (except MatrixMarket) produce MR Jobs
@@ -166,7 +183,7 @@ public enum JobType
 				return null;
 			
 		default:
-			return null;
+			return null; 
 		}
 	}
 	
@@ -176,9 +193,9 @@ public enum JobType
 		if ( !allowsSingleShuffleInstruction )
 			throw new DMLRuntimeException("isCompatibleWithParentNodes() can not be invoked for a job (" + getName() + ") with allowsSingleShuffleInstruction=false.");
 		else {
-			if ( getName().equals("MMCJ")  )
+			if ( getName().equals("MMCJ") )
 				return false;
-			else if ( getName().equals("MMRJ") || getName().equals("SORT") )
+			else if ( getName().equals("MMRJ") || getName().equals("SORT")  || getName().equals("TRANSFORM"))
 				return true;
 			else 
 				throw new DMLRuntimeException("Implementation for isCompatibleWithParentNodes() is missing for a job (" + getName() + ") that allows a single shuffle instruction.");
@@ -199,7 +216,7 @@ public enum JobType
 			// for ANY, return the bit vector with x number of 1's, 
 			//   where x = number of actual job types (i.e., excluding INVALID,ANY)
 			//System.out.println("ANY --> " + JobType.values().length + ", " + (Math.pow(2, JobType.values().length-2)-1) + ", " + (Math.pow(2,13-2)-1));
-			return (int) Math.pow(2, JobType.values().length-2)-1;
+			return (int) Math.pow(2, maxJobID)-1;
 		}
 		else 
 			return (int) Math.pow(2, id-1);

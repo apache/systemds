@@ -14,7 +14,11 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 
@@ -70,7 +74,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	{
 		// Go to the source(s) of the DAG
 		for (Hop hi : hop.getInput()) {
-			if (hop.getVisited() != Hop.VisitStatus.DONE)
+			if (hi.getVisited() != Hop.VisitStatus.DONE)
 				rule_BlockSizeAndReblock(hi, GLOBAL_BLOCKSIZE);
 		}
 
@@ -79,7 +83,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if (hop instanceof DataOp) 
 		{
 			// if block size does not match
-			if(    canReblock && hop.getDataType() != DataType.SCALAR
+			if(    canReblock && hop.getDataType() == DataType.MATRIX
 				&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE) ) 
 			{
 				if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
@@ -128,6 +132,26 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				}
 			}
 		} 
+		else if ( (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp() == ParamBuiltinOp.TRANSFORM) ) {
+			
+			// check if there exists a non-csv-write output. If yes, add reblock
+			boolean rblk = false;
+			for(Hop out : hop.getParent()) 
+			{
+				if ( !(out instanceof DataOp 
+						&& ((DataOp)out).getDataOpType() == DataOpTypes.PERSISTENTWRITE 
+						&& ((DataOp)out).getInputFormatType() == FileFormatTypes.CSV) )
+				{
+					rblk = true;
+					break;
+				}
+			}
+			if ( rblk )
+			{
+				hop.setRequiresReblock(true);
+				hop.setOutputBlocksizes(GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
+			}
+		}
 		else //NO DATAOP 
 		{
 			// TODO: following two lines are commented, and the subsequent hack is used instead!
@@ -157,10 +181,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			}
 			
 			// Constraint C1:
-			//else if ( (this instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)this)._op == ParamBuiltinOp.GROUPEDAGG) ) {
-			//	setRowsInBlock(-1);
-			//	setColsInBlock(-1);
-			//}
 			
 			// Constraint C2:
 			else if ( hop.getDataType() == DataType.SCALAR ) {

@@ -690,6 +690,7 @@ public class MapReduceTool
 		//similarly setting dfs.datanode.data.dir.perm as no effect either.
 	}
 	
+	
 	/**
 	 * 
 	 * @param filename

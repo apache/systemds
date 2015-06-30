@@ -10,9 +10,11 @@ package com.ibm.bi.dml.lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
+import com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin.ParameterizedBuiltinCode;
 
 
 /**
@@ -48,24 +50,18 @@ public class ReBlock extends Lop
 		
 		_outputEmptyBlocks = outputEmptyBlocks;
 		
-		/*
-		 * This lop can be executed only in REBLOCK job.
-		 */
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = true;
+		
 		lps.addCompatibility(JobType.REBLOCK);
 		
-		if(et == ExecType.MR) {
+		if(et == ExecType.MR) 
 			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else if(et == ExecType.SPARK) {
+		else if(et == ExecType.SPARK) 
 			this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
-		else {
+		else 
 			throw new LopsException("Incorrect execution type for Reblock:" + et);
-		}
-		
 	}
 
 	@Override

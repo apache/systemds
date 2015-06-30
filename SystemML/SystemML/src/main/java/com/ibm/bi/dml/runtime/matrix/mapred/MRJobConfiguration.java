@@ -205,7 +205,7 @@ public class MRJobConfiguration
 	private static final String INTERMEDIATE_INDEXES_CONFIG="rdiag.indexes";
 	
 	//output matrices and their formats
-	private static final String OUTPUT_MATRICES_DIRS_CONFIG="output.matrices.dirs";
+	public static final String OUTPUT_MATRICES_DIRS_CONFIG="output.matrices.dirs";
 	private static final String OUTPUT_CONVERTER_CLASS_PREFIX_CONFIG="output.converter.class.for.";
 	
 	private static final String DIMS_UNKNOWN_FILE_PREFIX = "dims.unknown.file.prefix";
@@ -234,6 +234,33 @@ public class MRJobConfiguration
 	
 	public static final String PARFOR_NUMTASKS="numtasks";
 	public static final String PARFOR_NUMITERATOINS="numiterations";
+	
+	public static final String TF_NUM_COLS 		= "transform.num.columns";
+	public static final String TF_HAS_HEADER 	= "transform.has.header";
+	public static final String TF_DELIM 		= "transform.field.delimiter";
+	public static final String TF_NA_STRINGS 	= "transform.na.strings";
+	public static final String TF_HEADER		= "transform.header.line";
+	public static final String TF_SPEC_FILE 	= "transform.specification.file";
+	public static final String TF_TMP_LOC    	= "transform.temp.location";
+	
+	public static final String TF_SMALLEST_FILE= "transform.smallest.file";
+	public static final String TF_OFFSETS_FILE = "transform.offsets.file";
+	public static final String TF_TXMTD_PATH   = "transform.txmtd.path";
+	
+	/*public static enum DataTransformJobProperty 
+	{
+		RCD_NUM_COLS("recode.num.columns");
+		
+		private final String name;
+		private DataTransformJobProperty(String n) {
+			name = n;
+		}
+	}*/
+	
+	public static enum DataTransformCounters { 
+		TRANSFORMED_NUM_ROWS, 
+		TRANSFORMED_NUM_COLS // Number of columns in the transformed data
+	};
 	
 	public static final int getMiscMemRequired(JobConf job)
 	{

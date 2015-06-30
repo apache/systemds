@@ -16,10 +16,11 @@ import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
+import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
@@ -167,6 +168,21 @@ public class ParameterizedBuiltinOp extends Hop
 			setLineNumbers(pbilop);
 			setLops(pbilop);
 		} 
+		else if ( _op == ParamBuiltinOp.TRANSFORM ) 
+		{
+			ExecType et = optFindExecType();
+			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+					et, inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+			// output of transform is always in CSV format
+			// to produce a blocked output, this lop must be 
+			// fed into CSV Reblock lop.
+			pbilop.getOutputParameters().setFormat(Format.CSV);
+			setLops(pbilop);
+		}
 
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
@@ -656,6 +672,13 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 		else 
 		{
+			if( _op == ParamBuiltinOp.TRANSFORM )
+			{
+				// force MR execution type here.
+				// At runtime, cp-side transform is triggered for small files.
+				return ExecType.MR;
+			}
+			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}

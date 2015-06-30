@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -42,13 +43,81 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 	private boolean first=true;
 	private long num=0;
 	private HashMap<Long, Long> offsetMap=new HashMap<Long, Long>();
-	private TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
-	private BlockRow row;
+	//private TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
+	//private BlockRow row;
 	private String delim=" ";
 	private boolean ignoreFirstLine=false;
 	private boolean headerFile=false;
 	private Pattern _compiledDelim = null;
 
+	private IndexedBlockRow idxRow = null;
+	
+	public static class IndexedBlockRow 
+	{
+		private BlockRow row=null;
+		private TaggedFirstSecondIndexes outIndexes=null;
+		
+		public IndexedBlockRow() {
+			row = new BlockRow();
+			row.data = new MatrixBlock();
+			outIndexes=new TaggedFirstSecondIndexes();
+		}
+		
+		public BlockRow getRow() { return row; }
+		public TaggedFirstSecondIndexes getIndexes() { return outIndexes; }
+	}
+	
+	
+	public static IndexedBlockRow processRow(IndexedBlockRow row, String[] cells, long rowOffset, long num, byte outTag, int brlen, int bclen, boolean fill, double fillValue, OutputCollector<TaggedFirstSecondIndexes, BlockRow> out) throws IOException
+	{
+		int start=0;
+		row.getIndexes().setTag(outTag);
+		long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, brlen);
+		row.getRow().indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, brlen);
+		
+		long col=0;
+		for(; col<cells.length/bclen; col++)
+		{
+			row.getRow().data.reset(1, bclen);
+			row.getIndexes().setIndexes(rowIndex, col+1);
+			for(int k=0;k<bclen; k++)
+			{
+				if(cells[k+start] != null && cells[k+start].contains("NA")) {
+					throw new IOException("error: start=" +  start + ", k=" + k + ", " + cells[k+start] + ", " + cells[0] + ", " + num);
+				}
+				if(cells[k+start] == null || cells[k+start].isEmpty())
+				{
+					if(!fill)
+						throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
+					row.getRow().data.appendValue(0, k, fillValue);
+				}
+				else
+					row.getRow().data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
+			}
+			out.collect(row.getIndexes(), row.getRow());
+			start+=bclen;
+		}
+		row.getIndexes().setIndexes(rowIndex, col+1);
+		int lastBclen=cells.length%bclen;
+		if(lastBclen!=0)
+		{
+			row.getRow().data.reset(1, lastBclen);
+			for(int k=0;k<lastBclen; k++)
+			{
+				if(cells[k+start] == null || cells[k+start].isEmpty())
+				{
+					if(!fill)
+						throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
+					row.getRow().data.appendValue(0, k, fillValue);
+				}
+				else
+					row.getRow().data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
+			}
+			out.collect(row.getIndexes(), row.getRow());
+		}
+		return row;
+	}
+	
 	@Override
 	public void map(LongWritable key, Text value,
 			OutputCollector<TaggedFirstSecondIndexes, BlockRow> out, Reporter reporter)
@@ -68,48 +137,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		for(int i=0; i<representativeMatrixes.size(); i++)
 			for(CSVReblockInstruction ins: csv_reblock_instructions.get(i))
 			{
-				int start=0;
-				outIndexes.setTag(ins.output);
-				long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, ins.brlen);
-				row.indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, ins.brlen);
-				
-				long col=0;
-				for(; col<cells.length/ins.bclen; col++)
-				{
-					row.data.reset(1, ins.bclen);
-					outIndexes.setIndexes(rowIndex, col+1);
-					for(int k=0;k<ins.bclen; k++)
-					{
-						if(cells[k+start].isEmpty())
-						{
-							if(!ins.fill)
-								throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
-							row.data.appendValue(0, k, ins.fillValue);
-						}
-						else
-							row.data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
-					}
-					out.collect(outIndexes, row);
-					start+=ins.bclen;
-				}
-				outIndexes.setIndexes(rowIndex, col+1);
-				int lastBclen=cells.length%ins.bclen;
-				if(lastBclen!=0)
-				{
-					row.data.reset(1, lastBclen);
-					for(int k=0;k<lastBclen; k++)
-					{
-						if(cells[k+start].isEmpty())
-						{
-							if(!ins.fill)
-								throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
-							row.data.appendValue(0, k, ins.fillValue);
-						}
-						else
-							row.data.appendValue(0, k, UtilFunctions.parseToDouble(cells[k+start]));
-					}
-					out.collect(outIndexes, row);
-				}
+				idxRow = processRow(idxRow, cells, rowOffset, num, ins.output, ins.brlen, ins.bclen, ins.fill, ins.fillValue, out);
 			}
 		
 		num++;
@@ -150,8 +178,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
 		delim = Pattern.quote(ins.delim);
 		ignoreFirstLine=ins.hasHeader;
-		row = new BlockRow();
-		row.data = new MatrixBlock();
+		
+		idxRow = new IndexedBlockRow();
 		int maxBclen=0;
 	
 		for(ArrayList<CSVReblockInstruction> insv: csv_reblock_instructions)
@@ -161,9 +189,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 					maxBclen=in.bclen;
 			}
 		
-		
 		//always dense since common csv usecase
-		row.data.reset(1, maxBclen, false);		
+		idxRow.getRow().data.reset(1, maxBclen, false);		
 	
 		//precompile regex pattern for better efficiency
 		_compiledDelim = Pattern.compile(delim);

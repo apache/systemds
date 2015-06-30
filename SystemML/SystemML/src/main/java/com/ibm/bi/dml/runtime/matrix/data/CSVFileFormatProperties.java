@@ -19,6 +19,7 @@ public class CSVFileFormatProperties extends FileFormatProperties
 	private String delim;
 	private boolean fill;
 	private double fillValue;
+	private String naStrings;
 	
 	private boolean sparse;
 	
@@ -31,15 +32,17 @@ public class CSVFileFormatProperties extends FileFormatProperties
 		this.fill = DataExpression.DEFAULT_DELIM_FILL;
 		this.fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 		this.sparse = DataExpression.DEFAULT_DELIM_SPARSE;
+		this.naStrings = null;
 	}
 	
-	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean fill, double fillValue) {
+	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
 		super(FileFormat.CSV);
 		
 		this.header = hasHeader;
 		this.delim = delim;
 		this.fill = fill;
 		this.fillValue = fillValue;
+		this.naStrings = naStrings;
 	}
 
 	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean sparse) {
@@ -60,6 +63,10 @@ public class CSVFileFormatProperties extends FileFormatProperties
 
 	public String getDelim() {
 		return delim;
+	}
+	
+	public String getNAStrings() { 
+		return naStrings;
 	}
 
 	public void setDelim(String delim) {

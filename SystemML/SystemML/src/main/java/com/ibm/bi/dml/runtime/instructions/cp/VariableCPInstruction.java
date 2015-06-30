@@ -304,7 +304,7 @@ public class VariableCPInstruction extends CPInstruction
 				 * 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				 * 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				 */
-				if ( parts.length != 13 && parts.length != 14 )
+				if ( parts.length < 13 || parts.length > 15 )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
@@ -347,8 +347,11 @@ public class VariableCPInstruction extends CPInstruction
 					boolean hasHeader = Boolean.parseBoolean(parts[10]);
 					String delim = parts[11];
 					boolean fill = Boolean.parseBoolean(parts[12]);
-					double fillValue = Double.parseDouble(parts[13]);
-					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue) ;
+					double fillValue = UtilFunctions.parseToDouble(parts[13]);
+					String naStrings = null;
+					if ( parts.length == 15 )
+						naStrings = parts[14];
+					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, fmtProperties, opcode, str);
 			}

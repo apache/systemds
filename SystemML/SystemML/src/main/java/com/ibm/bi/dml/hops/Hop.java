@@ -290,12 +290,12 @@ public abstract class Hop
 			
 			try
 			{
-				if(    this instanceof DataOp  // CSV
-					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
-					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV )
-				
+				if(    (this instanceof DataOp  // CSV
+							&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
+							&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV ) 
+					|| (this instanceof ParameterizedBuiltinOp 
+							&& ((ParameterizedBuiltinOp)this).getOp() == ParamBuiltinOp.TRANSFORM) )
 				{
-					// NOTE: only persistent reads can have CSV format
 					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
 							getDataType(), getValueType(), et);
 				}
@@ -987,7 +987,7 @@ public abstract class Hop
 	};
 
 	public enum ParamBuiltinOp {
-		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE
+		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, TRANSFORM
 	};
 
 	/**
@@ -1219,6 +1219,7 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.INVCDF);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
 	}
 
 	protected static final HashMap<Hop.OpOp2, String> HopsOpOp2String;

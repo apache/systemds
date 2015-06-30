@@ -34,6 +34,7 @@ import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
 import com.ibm.bi.dml.lops.FunctionCallCP;
@@ -49,6 +50,7 @@ import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.Unary;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression;
+import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -116,18 +118,6 @@ public class Dag<N extends Lop>
 	private HashMap<Long, Integer> IDMap = null;
 
 
-	/*public static class PiggyProfiler {
-		public static long setupTime=0;
-		public static long topoTime=0, groupingTime=0;
-		public static long topoSetup=0, topoFindSrcs=0, topoSetLevels=0, topoSort=0, topoCopy=0, topoSanity=0;
-		
-		public static void print() {
-			System.out.print("Piggybacking: setup = " + setupTime + ", topo = " + topoTime + ", grouping = " + groupingTime);
-			System.out.println(" --> Total = " + (setupTime + topoTime + groupingTime) + " msec.");
-			System.out.println("TOPO: " + topoSetup + "   " +  topoFindSrcs + "   " +  topoSetLevels + "   " +  topoSort + "   " +  topoCopy + "   " +  topoSanity);
-		}
-	}*/
-	
 	private class NodeOutput {
 		String fileName;
 		String varName;
@@ -773,7 +763,7 @@ public class Dag<N extends Lop>
 		for(N n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
-					&& n.getDataType() == DataType.MATRIX) {
+					&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME) ) {
 				
 				if ( !((Data)n).isLiteral() ) {
 					try {
@@ -2871,7 +2861,45 @@ public class Dag<N extends Lop>
 					currInstr.setLineNum(node._beginLine);
 				}
 				out.addLastInstruction(currInstr);
-			} 
+			}
+			else if(node instanceof ParameterizedBuiltin 
+					&& ((ParameterizedBuiltin)node).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM) {
+				
+				ParameterizedBuiltin pbi = (ParameterizedBuiltin)node;
+				Lop input = pbi.getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+				if(input.getDataType()== DataType.FRAME) {
+					
+					// Output of transform is in CSV format, which gets subsequently reblocked 
+					// TODO: change it to output binaryblock
+					
+					Data dataInput = (Data) input;
+					oparams.setFile_name(getFilePath() + "temp" + job_id.getNextID());
+					oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
+
+					// generate an instruction that creates a symbol table entry for the new variable in CSV format
+					Instruction createvarInst = VariableCPInstruction.parseInstruction( 
+													dataInput.getCreateVarInstructions(
+															oparams.getFile_name(), oparams.getLabel()) );
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						createvarInst.setLineNum(node._beginLine);
+					}
+					out.addPreInstruction(createvarInst);
+
+					// temp file as well as the variable has to be deleted at the end
+					Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						currInstr.setLineNum(node._beginLine);
+					}
+					out.addLastInstruction(currInstr);
+
+					// finally, add the generated filename and variable name to the list of outputs
+					out.setFileName(oparams.getFile_name());
+					out.setVarName(oparams.getLabel());
+				}
+				else {
+					throw new LopsException("Input to transform() has an invalid type: " + input.getDataType() + ", it must be FRAME.");
+				}
+			}
 			else if(!(node instanceof FunctionCallCP)) //general case
 			{
 				// generate temporary filename and a variable name to hold the
@@ -3357,7 +3385,7 @@ public class Dag<N extends Lop>
 		 */
 		
 		// 
-		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN ) {
+		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN && jt != JobType.TRANSFORM) {
 			for (int i=0; i < inputInfos.size(); i++)
 				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
 					cellModeOverride = true;
@@ -3434,7 +3462,8 @@ public class Dag<N extends Lop>
 		}
 		
 		if (LOG.isTraceEnabled()) {
-			LOG.trace("    Shuffle/Aggregate Instructions: " + getCSVString(aggInstructionsReducer));
+			LOG.trace("    Shuffle Instructions: " + getCSVString(shuffleInstructions));
+			LOG.trace("    Aggregate Instructions: " + getCSVString(aggInstructionsReducer));
 			LOG.trace("    Other instructions =" + getCSVString(otherInstructionsReducer));
 			LOG.trace("    Output strings: " + outputs.toString());
 			LOG.trace("    ResultIndices = " + resultIndices.toString());
@@ -3592,7 +3621,7 @@ public class Dag<N extends Lop>
 		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
 
 		// recurse
-		// Leo: For WRITE, since the first element from input is the real input (the other elements
+		// For WRITE, since the first element from input is the real input (the other elements
 		// are parameters for the WRITE operation), so we only need to take care of the
 		// first element.
 		if (node.getType() == Lop.Type.Data && ((Data)node).getOperationType() == Data.OperationTypes.WRITE) {
@@ -3612,9 +3641,10 @@ public class Dag<N extends Lop>
 			}
 		}
 
-		// have to verify if this is needed
 		if (node.getExecLocation() == ExecLocation.Data ) {
-			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV ) {
+			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV 
+					&& !(node.getInputs().get(0) instanceof ParameterizedBuiltin 
+							&& ((ParameterizedBuiltin)node.getInputs().get(0)).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM)) {
 				// Generate write instruction, which goes into CSV_WRITE Job
 				int output_index = start_index[0];
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
@@ -3650,6 +3680,15 @@ public class Dag<N extends Lop>
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
 				if(DMLScript.ENABLE_DEBUG_MODE) {
 					MRJobLineNumbers.add(node._beginLine);
+				}
+				break;
+				
+			case ParameterizedBuiltin:
+				if( ((ParameterizedBuiltin)node).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
+					shuffleInstructions.add(node.getInstructions(output_index));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						MRJobLineNumbers.add(node._beginLine);
+					}
 				}
 				break;
 				
@@ -4114,7 +4153,7 @@ public class Dag<N extends Lop>
 				|| (!execNodes.contains(node)
 						&& node.getExecLocation() == ExecLocation.Data
 						&& ((Data) node).getOperationType() == Data.OperationTypes.READ
-						&& ((Data) node).getDataType() == DataType.MATRIX && !nodeIndexMapping
+						&& ((Data) node).getDataType() != DataType.SCALAR && !nodeIndexMapping
 						.containsKey(node))) {
 			if (node.getOutputParameters().getFile_name() != null) {
 				inputStrings.add(node.getOutputParameters().getFile_name());
@@ -4143,7 +4182,7 @@ public class Dag<N extends Lop>
 				if (node.getOutputParameters().getFormat() == Format.BINARY)
 					nodeInputInfo = InputInfo.BinaryBlockInputInfo;
 				else 
-					throw new LopsException("Invalid format (" + node.getOutputParameters().getFormat() + ") encountered for a node/lop with blocked output.");
+					throw new LopsException("Invalid format (" + node.getOutputParameters().getFormat() + ") encountered for a node/lop (ID=" + node.getID() + ") with blocked output.");
 				// inputInfos.add(InputInfo.BinaryBlockInputInfo);
 			} else {
 				if (node.getOutputParameters().getFormat() == Format.TEXT)

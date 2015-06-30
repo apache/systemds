@@ -392,16 +392,6 @@ public abstract class Lop
 	}
 
 	/**
-	 * Method should be overridden if needed
-	 * 
-	 * @throws LopsException
-	 **/
-	public String getInstructions(int input_index, int output_index) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
-
-	}
-
-	/**
 	 * Method to get output parameters
 	 * 
 	 * @return
@@ -431,6 +421,19 @@ public abstract class Lop
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 	
+	public String getInstructions(int output_index) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
+	}
+
+	public String getInstructions(int input_index, int output_index) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
+	}
+
+	/** Method should be overridden if needed **/
+	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+
 	/** Method should be overridden if needed **/
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
@@ -443,11 +446,6 @@ public abstract class Lop
 
 	/** Method should be overridden if needed **/
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
-	/** Method should be overridden if needed **/
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 

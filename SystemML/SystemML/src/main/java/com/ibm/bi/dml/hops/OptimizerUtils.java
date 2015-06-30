@@ -129,6 +129,11 @@ public class OptimizerUtils
 	public static boolean ALLOW_RAND_JOB_RECOMPILE = true;
 	
 	/**
+	 * Enables CP-side data transformation for small files.
+	 */
+	public static boolean ALLOW_TRANSFORM_RECOMPILE = true;
+
+	/**
 	 * Enables parfor runtime piggybacking of MR jobs into the packed jobs for
 	 * scan sharing.
 	 */
@@ -151,7 +156,7 @@ public class OptimizerUtils
 	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 
 	 * unknown size in order to allow for recompile.
 	 */
-	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
+	public static boolean ALLOW_SPLIT_HOP_DAGS = false;
 	
 	
 	/**

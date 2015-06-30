@@ -44,6 +44,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		return arity;
 	}
 	
+	public HashMap<String,String> getParameterMap() { return params; }
+	
 	public static HashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
 		HashMap<String,String> paramMap = new HashMap<String,String>();
@@ -104,6 +106,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+		}
+		else if ( opcode.equals("transform")) {
+			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");

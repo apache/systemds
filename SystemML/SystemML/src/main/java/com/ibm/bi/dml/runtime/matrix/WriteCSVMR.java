@@ -152,7 +152,7 @@ public class WriteCSVMR
 	 * @param numRedGroups
 	 * @return
 	 */
-	protected static int determineNumReducers( long[] rlen, long[] clen, int defaultNumRed, long numRedGroups )
+	public static int determineNumReducers( long[] rlen, long[] clen, int defaultNumRed, long numRedGroups )
 	{
 		//init return with default value
 		int ret = defaultNumRed;

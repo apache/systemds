@@ -1958,6 +1958,13 @@ public class DMLTranslator
 			
 			break;
 			
+		case TRANSFORM:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
+									paramHops);
+			break;	
+			
 		default:
 			
 			LOG.error(source.printErrorLocation() + 

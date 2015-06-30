@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 
 
 /**
@@ -29,7 +30,8 @@ public class ParameterizedBuiltin extends Lop
 	
 	public enum OperationTypes { 
 		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, 
-		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP
+		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
+		TRANSFORM
 	};
 	
 	private OperationTypes _operation;
@@ -109,6 +111,11 @@ public class ParameterizedBuiltin extends Lop
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
 		}
+		else if ( _operation == OperationTypes.TRANSFORM && et == ExecType.MR ) {
+			definesMRJob = true;
+			eloc = ExecLocation.MapAndReduce;
+			lps.addCompatibility(JobType.TRANSFORM);
+		}
 		else //executed in CP / CP_FILE
 		{
 			eloc = ExecLocation.ControlProgram;
@@ -117,6 +124,20 @@ public class ParameterizedBuiltin extends Lop
 		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
 	}
 
+	public OperationTypes getOp() { return _operation; }
+	
+	public int getInputIndex(String name) { 
+		Lop n = _inputParams.get(name);
+		for(int i=0; i<getInputs().size(); i++) 
+			if(getInputs().get(i) == n)
+				return i;
+		return -1;
+	}
+	
+	public Lop getNamedInput(String name) {
+		return _inputParams.get(name);
+	}
+	
 	@Override
 	public String getInstructions(String output) 
 		throws LopsException 
@@ -286,6 +307,60 @@ public class ParameterizedBuiltin extends Lop
 		return sb.toString();
 	}
 	
+	@Override 
+	public String getInstructions(int output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		switch(_operation) 
+		{
+			case TRANSFORM:
+			{
+				int inputIndex = getInputIndex("target");
+				
+				sb.append( "transform" );
+				sb.append( OPERAND_DELIMITOR );
+		
+				Lop iLop = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+				sb.append(iLop.prepInputOperand(inputIndex));
+				sb.append( OPERAND_DELIMITOR );
+				
+				Lop iLop2 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXMTD);
+				sb.append(iLop2.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+				
+				// either applyTransformPath or transformSpec should be specified
+				boolean isApply = false;
+				Lop iLop3 = null;
+				if ( _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD) != null ) {
+					// apply transform
+					isApply = true;
+					iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+				}
+				else {
+					iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
+				}
+				
+				sb.append(iLop3.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+
+				sb.append(isApply);
+				sb.append( OPERAND_DELIMITOR );
+				break;
+			}	
+				
+			default:
+				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+		}
+		
+		sb.append( prepOutputOperand(output_index));
+		
+		return sb.toString();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

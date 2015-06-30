@@ -598,10 +598,10 @@ public class DMLScript
 		dmlt.validateParseTree(prog);
 		dmlt.constructHops(prog);
 		
-		if( VISUALIZE ) { // HOPs before rewrite
-//			DotGraph gt = new DotGraph();
-//			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
-//			dmlt.resetHopsDAGVisitStatus(prog);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("\n********************** HOPS DAG (Before Rewrite) *******************");
+			dmlt.printHops(prog);
+			DMLTranslator.resetHopsDAGVisitStatus(prog);
 		}
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)

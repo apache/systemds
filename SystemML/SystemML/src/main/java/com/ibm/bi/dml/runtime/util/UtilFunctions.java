@@ -162,4 +162,27 @@ public class UtilFunctions
 			ret = (array[i]>ret)?array[i]:ret;
 		return ret;	
 	}
+	
+	public static String unquote(String s) {
+		if (s != null
+				&& ((s.startsWith("\"") && s.endsWith("\"")) 
+					|| (s.startsWith("'") && s.endsWith("'")))) {
+			s = s.substring(1, s.length() - 1);
+		}
+		return s;
+	}
+	
+	public static String quote(String s) {
+		return "\"" + s + "\"";
+	}
+
+	public static String toString(int[] list) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(list[0]);
+		for(int i=1; i<list.length; i++) {
+			sb.append(",");
+			sb.append(list[i]);
+		}
+		return sb.toString();
+	}
 }

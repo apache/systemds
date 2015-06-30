@@ -14,7 +14,7 @@ public class FileFormatProperties
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
-	enum FileFormat { PARTITIONED, CSV, NATIVE };
+	public enum FileFormat { PARTITIONED, CSV, NATIVE };
 	
 	FileFormat fmt;
 	

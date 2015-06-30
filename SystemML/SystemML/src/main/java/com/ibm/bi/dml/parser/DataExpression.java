@@ -21,9 +21,9 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
-import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
 
@@ -71,6 +71,10 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_HAS_HEADER_ROW = "header";
 	public static final String DELIM_FILL = "fill";
 	public static final String DELIM_FILL_VALUE = "default";
+	//public static final String DELIM_RECODE = "recode";
+	public static final String DELIM_NA_STRINGS = "na.strings";
+	public static final String DELIM_NA_STRING_SEP = "\u00b7";
+	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
@@ -84,13 +88,13 @@ public class DataExpression extends DataIdentifier
 		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE, 
 			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 		}; 
 
 	public static final String[] READ_VALID_PARAM_NAMES = 
 	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW 
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 	}; 
 		
 	/* Default Values for delimited (CSV) files */
@@ -586,7 +590,9 @@ public class DataExpression extends DataIdentifier
 						|| getVarParam(DELIM_DELIMITER) != null	
 						|| getVarParam(DELIM_HAS_HEADER_ROW) != null
 						|| getVarParam(DELIM_FILL) != null
-						|| getVarParam(DELIM_FILL_VALUE) != null)
+						|| getVarParam(DELIM_FILL_VALUE) != null
+						|| getVarParam(DELIM_NA_STRINGS) != null
+						)
 				{
 					raiseValidateError("Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + VALUETYPEPARAM + " is allowed.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -841,10 +847,15 @@ public class DataExpression extends DataIdentifier
 			} 
 	        dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
-			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
+			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
+					|| dataTypeString.equalsIgnoreCase(Statement.FRAME_DATA_TYPE)) {
+				
+				boolean isMatrix = false;
+				if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE))
+						isMatrix = true;
 				
 				// set data type
-		        getOutput().setDataType(DataType.MATRIX);
+		        getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
 		        
 		        // set number non-zeros
 		        Expression ennz = this.getVarParam("nnz");
@@ -878,6 +889,11 @@ public class DataExpression extends DataIdentifier
 					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
 						raiseValidateError("Partial dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
+				}
+				
+				// Table must be in CSV format
+				if ( !isMatrix && !getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("csv") ) {
+					raiseValidateError("Input data of type 'table' must be in CSV format. Invalid format '" + getVarParam(FORMAT_TYPE)+ "' in statement: " + this.toString(), conditional);
 				}
 				
 				// initialize block dimensions to UNKNOWN 
@@ -914,12 +930,13 @@ public class DataExpression extends DataIdentifier
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( (format == 1 && (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1))	){
+				if ( ( (format == 1 || !isMatrix) 
+						&& (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1)
+					 ) ){
 					raiseValidateError("Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			
 			}
-			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
 				getOutput().setDataType(DataType.SCALAR);
 				getOutput().setNnz(-1L);
@@ -1792,7 +1809,8 @@ public class DataExpression extends DataIdentifier
 						
 						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
 								|| key.toString().equalsIgnoreCase(DELIM_FILL)
-								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)) {
+								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
+								) {
 							// parse these parameters as boolean values
 							BooleanIdentifier boolId = null; 
 							if ( strId.toString().equalsIgnoreCase("true") ) {
@@ -1820,6 +1838,27 @@ public class DataExpression extends DataIdentifier
 									this.getEndLine(), this.getEndColumn());
 							removeVarParam(key.toString());
 							addVarParam(key.toString(), doubleId);
+						}
+						else if (key.toString().equalsIgnoreCase(DELIM_NA_STRINGS)) {
+							String naStrings = null;
+							if ( val instanceof String) {
+								naStrings = val.toString();
+							}
+							else {
+								StringBuilder sb = new StringBuilder();
+								JSONArray valarr = (JSONArray)val;
+								for(int naid=0; naid < valarr.size(); naid++ ) {
+									sb.append( (String) valarr.get(naid) );
+									if ( naid < valarr.size()-1)
+										sb.append( DELIM_NA_STRING_SEP );
+								}
+								naStrings = sb.toString();
+							}
+							StringIdentifier sid = new StringIdentifier( naStrings,
+									this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
+									this.getEndLine(), this.getEndColumn());
+							removeVarParam(key.toString());
+							addVarParam(key.toString(), sid);
 						}
 						else {
 							// by default, treat a parameter as a string

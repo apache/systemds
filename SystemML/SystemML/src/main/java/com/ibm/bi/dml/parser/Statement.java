@@ -29,6 +29,7 @@ public abstract class Statement
 	public static final String SETWD 	= "setwd";
 
 	public static final String MATRIX_DATA_TYPE = "matrix";
+	public static final String FRAME_DATA_TYPE = "frame";
 	public static final String SCALAR_DATA_TYPE = "scalar";
 	
 	public static final String DOUBLE_VALUE_TYPE = "double";

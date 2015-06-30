@@ -129,8 +129,18 @@ public class Data extends Lop
 		
 
 		if ( getFileFormatType() == FileFormatTypes.CSV ) {
-			lps.addCompatibility(JobType.CSV_WRITE);
-			definesMRJob = true;
+			Lop input = getInputs().get(0);
+			// If the input is data transform, then csv write can be piggybacked onto TRANSFORM job.
+			// Otherwise, the input must be converted to csv format via WriteCSV MR job.
+			if ( input instanceof ParameterizedBuiltin 
+					&& ((ParameterizedBuiltin)input).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
+				lps.addCompatibility(JobType.TRANSFORM);
+				definesMRJob = false;
+			}
+			else {
+				lps.addCompatibility(JobType.CSV_WRITE);
+				definesMRJob = true;
+			}
 		}
 		else {
 			/*
@@ -199,7 +209,7 @@ public class Data extends Lop
 	@Override
 	public String toString() {
 		
-		return "File_Name: " + this.getOutputParameters().getFile_name() + " " + 
+		return getID() + ":" + "File_Name: " + this.getOutputParameters().getFile_name() + " " + 
 		"Label: " + this.getOutputParameters().getLabel() + " " + "Operation: = " + operation + " " + 
 		"Format: " + this.outParams.getFormat() +  " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + this.getOutputParameters().getNumRows() + " num_cols = " + 
 		this.getOutputParameters().getNumCols();
@@ -339,15 +349,15 @@ public class Data extends Lop
 			if (headerLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
 						+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
-						+ " must be a literal for a seq operation.");
+						+ " must be a literal.");
 			if (delimLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
 						+ "Parameter " + DataExpression.DELIM_DELIMITER
-						+ " must be a literal for a seq operation.");
+						+ " must be a literal.");
 			if (sparseLop.isVariable())
 				throw new LopsException(this.printErrorLocation()
 						+ "Parameter " + DataExpression.DELIM_SPARSE
-						+ " must be a literal for a seq operation.");
+						+ " must be a literal.");
 
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(headerLop.getBooleanValue());
@@ -450,7 +460,6 @@ public class Data extends Lop
 				sb.append(delimLop.getStringValue());
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(sparseLop.getBooleanValue());
-				
 			}
 			
 		}
@@ -464,11 +473,15 @@ public class Data extends Lop
 	 * @throws LopsException 
 	 */
 	public String getInstructions() throws LopsException {
-		return getInstructions(getOutputParameters().getFile_name());
+		return getCreateVarInstructions(getOutputParameters().getFile_name(), getOutputParameters().getLabel());
 	}
 	
 	public String getInstructions(String outputFileName) throws LopsException {
-		if ( getDataType() == DataType.MATRIX ) {
+		return getCreateVarInstructions(outputFileName, getOutputParameters().getLabel() );
+	}
+	
+	public String getCreateVarInstructions(String outputFileName, String outputLabel) throws LopsException {
+		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
 			
 			if ( isTransient() )
 				throw new LopsException("getInstructions() should not be called for transient nodes.");
@@ -494,7 +507,7 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( "createvar" );
 			sb.append( OPERAND_DELIMITOR ); 
-			sb.append( oparams.getLabel() );
+			sb.append( outputLabel );
 			sb.append( OPERAND_DELIMITOR ); 
 			sb.append( outputFileName );
 			sb.append( OPERAND_DELIMITOR );
@@ -539,6 +552,7 @@ public class Data extends Lop
 			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
 			Data fillLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL); 
 			Data fillValueLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
+			Data naLop = (Data) getNamedInputLop(DataExpression.DELIM_NA_STRINGS);
 			
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
@@ -547,6 +561,10 @@ public class Data extends Lop
 			sb.append(fillLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(fillValueLop.getDoubleValue());
+			if ( naLop != null ) {
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(naLop.getStringValue());
+			}
 		}
 		else { // (operation == OperationTypes.WRITE) 
 			Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);

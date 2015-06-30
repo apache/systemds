@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.runtime.instructions.mr;
 
+import java.util.Arrays;
+
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -31,6 +33,25 @@ public class CSVReblockInstruction extends ReblockInstruction
 		this.hasHeader=hasHeader;
 	}
 
+	public Instruction clone(byte in) 
+	{
+		// modify the input operand in the CSVReblock instruction
+		String[] parts = this.instString.split(Instruction.OPERAND_DELIM);
+		String[] in1f = parts[2].split(Instruction.DATATYPE_PREFIX);
+		in1f[0] = Byte.toString(in);
+		
+		parts[2] = in1f[0] + Instruction.DATATYPE_PREFIX + in1f[1] + Instruction.VALUETYPE_PREFIX + in1f[2];
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(parts[0]);
+		for(int i=1; i<parts.length; i++) {
+			sb.append(Instruction.OPERAND_DELIM);
+			sb.append(parts[i]);
+		}
+		
+		return parseInstruction(sb.toString());
+		
+	}
 	public static Instruction parseInstruction(String str) {
 		Operator op = null;
 		byte input, output;

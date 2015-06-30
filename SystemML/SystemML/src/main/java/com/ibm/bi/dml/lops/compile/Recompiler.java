@@ -23,40 +23,40 @@ import org.apache.hadoop.mapred.JobConf;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.CSVReBlock;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -112,6 +112,7 @@ public class Recompiler
 	//note that we scale this threshold up by the degree of available parallelism
 	private static final long CP_REBLOCK_THRESHOLD_SIZE = (long)1024*1024*1024; 
 	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
+	private static final long CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
 	
 	//reused rewriter for dynamic rewrites during recompile
 	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
@@ -1940,6 +1941,32 @@ public class Recompiler
 		return ret;
 	}
 
+	public static boolean checkCPTransform(MRJobInstruction inst, MatrixObject[] inputs) throws DMLRuntimeException, DMLUnsupportedOperationException, IOException {
+		boolean ret = true;
+		
+		MatrixObject input = inputs[0]; // there can only be one input in TRANSFORM job
+		
+		if ( input.getNumRows() == -1 || input.getNumColumns() == -1 )  {
+			Path path = new Path(input.getFileName());
+			long size = MapReduceTool.getFilesizeOnHDFS(path);
+			if( size > CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE || CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
+				ret = false;
+		}
+		else {
+			long nnz = input.getNnz();
+			double sp = OptimizerUtils.getSparsity(input.getNumRows(), input.getNumColumns(), nnz);
+			double mem = MatrixBlock.estimateSizeInMemory(input.getNumRows(), input.getNumColumns(), sp);			
+			if(    !OptimizerUtils.isValidCPDimensions(input.getNumRows(), input.getNumColumns())
+				|| !OptimizerUtils.isValidCPMatrixSize(input.getNumRows(), input.getNumColumns(), sp)
+				|| mem >= OptimizerUtils.getLocalMemBudget() ) 
+			{
+				ret = false;
+			}
+		}
+
+		return ret;
+	}
+	
 	/**
 	 * 
 	 * @param inst

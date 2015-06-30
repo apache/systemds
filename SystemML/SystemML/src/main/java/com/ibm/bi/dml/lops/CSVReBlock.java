@@ -9,10 +9,12 @@ package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
 
 
 /**
@@ -45,7 +47,17 @@ public class CSVReBlock extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		
-		lps.addCompatibility(JobType.CSV_REBLOCK);
+		// If the input to reblock is a tranform, then piggyback it along with transform
+		if ( input instanceof ParameterizedBuiltin 
+				&& ((ParameterizedBuiltin)input).getOp() == OperationTypes.TRANSFORM ) 
+		{
+			definesMRJob = false;
+			lps.addCompatibility(JobType.TRANSFORM);
+		}
+		else 
+		{
+			lps.addCompatibility(JobType.CSV_REBLOCK);
+		}
 		
 		if(et == ExecType.MR) {
 			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
@@ -63,6 +75,50 @@ public class CSVReBlock extends Lop
 	
 		return "CSVReblock - rows per block = " + rows_per_block + " cols per block  " + cols_per_block ;
 	}
+	
+	private String prepCSVProperties() throws LopsException {
+		StringBuilder sb = new StringBuilder();
+
+		Data dataInput = null;
+		if(getInputs().get(0).getType() == Type.Data)
+			dataInput = (Data)getInputs().get(0);
+		else if ( getInputs().get(0).getType() == Type.ParameterizedBuiltin && ((ParameterizedBuiltin)getInputs().get(0)).getOp() == OperationTypes.TRANSFORM) {
+			Lop x = ((ParameterizedBuiltin)getInputs().get(0)).getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+			dataInput = (Data) ((ParameterizedBuiltin)getInputs().get(0)).getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+		}
+		
+		Lop headerLop = dataInput.getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
+		Lop delimLop = dataInput.getNamedInputLop(DataExpression.DELIM_DELIMITER);
+		Lop fillLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL); 
+		Lop fillValueLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
+		
+		if (headerLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
+					+ " must be a literal.");
+		if (delimLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + DataExpression.DELIM_DELIMITER
+					+ " must be a literal.");
+		if (fillLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + DataExpression.DELIM_FILL
+					+ " must be a literal.");
+		if (fillValueLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + DataExpression.DELIM_FILL_VALUE
+					+ " must be a literal.");
+
+		sb.append( ((Data)headerLop).getBooleanValue() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( ((Data)delimLop).getStringValue() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( ((Data)fillLop).getBooleanValue() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( ((Data)fillValueLop).getDoubleValue() );
+		
+		return sb.toString();
+}
 
 	@Override
 	public String getInstructions(int input_index, int output_index) throws LopsException
@@ -86,35 +142,7 @@ public class CSVReBlock extends Lop
 		sb.append( cols_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		
-		Lop headerLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
-		Lop delimLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_DELIMITER);
-		Lop fillLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL); 
-		Lop fillValueLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
-		
-		if (headerLop.isVariable())
-			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
-					+ " must be a literal for a seq operation.");
-		if (delimLop.isVariable())
-			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + DataExpression.DELIM_DELIMITER
-					+ " must be a literal for a seq operation.");
-		if (fillLop.isVariable())
-			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + DataExpression.DELIM_FILL
-					+ " must be a literal for a seq operation.");
-		if (fillValueLop.isVariable())
-			throw new LopsException(this.printErrorLocation()
-					+ "Parameter " + DataExpression.DELIM_FILL_VALUE
-					+ " must be a literal for a seq operation.");
-
-		sb.append( ((Data)headerLop).getBooleanValue() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( ((Data)delimLop).getStringValue() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( ((Data)fillLop).getBooleanValue() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( ((Data)fillValueLop).getDoubleValue() );
+		sb.append( prepCSVProperties() );
 		
 		return sb.toString();
 	}
@@ -130,7 +158,7 @@ public class CSVReBlock extends Lop
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			sb.append( Lop.OPERAND_DELIMITOR );
-			sb.append( "csvrblk" );
+			sb.append( OPCODE );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(0).prepInputOperand(input1));
 			sb.append( OPERAND_DELIMITOR );
@@ -141,38 +169,7 @@ public class CSVReBlock extends Lop
 			sb.append( cols_per_block );
 			sb.append( OPERAND_DELIMITOR );
 			
-			Lop input = getInputs().get(0);
-			
-			Lop headerLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
-			Lop delimLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_DELIMITER);
-			Lop fillLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL); 
-			Lop fillValueLop = ((Data)input).getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
-			
-			if (headerLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.DELIM_HAS_HEADER_ROW
-						+ " must be a literal for a seq operation.");
-			if (delimLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.DELIM_DELIMITER
-						+ " must be a literal for a seq operation.");
-			if (fillLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.DELIM_FILL
-						+ " must be a literal for a seq operation.");
-			if (fillValueLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.DELIM_FILL_VALUE
-						+ " must be a literal for a seq operation.");
-
-			sb.append( ((Data)headerLop).getBooleanValue() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( ((Data)delimLop).getStringValue() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( ((Data)fillLop).getBooleanValue() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( ((Data)fillValueLop).getDoubleValue() );
-			
+			sb.append( prepCSVProperties() );
 			
 			return sb.toString();
 

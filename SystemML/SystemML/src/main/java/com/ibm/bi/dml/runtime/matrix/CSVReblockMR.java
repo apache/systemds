@@ -10,8 +10,10 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Scanner;
 
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileStatus;
@@ -21,12 +23,12 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.mapred.Counters.Group;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
@@ -190,6 +192,42 @@ public class CSVReblockMR
 		}
 	}
 	
+	/**
+	 * Method to find the first (part)file in the order given by <code>fs.listStatus()</code> among all (part)files in <code>inpathPath</code>.
+	 * 
+	 * @param job
+	 * @param inputPath
+	 * @return
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 */
+	public static String findSmallestFile(JobConf job, String inputPath) throws FileNotFoundException, IOException {
+		
+		String smallestFile = null;
+		
+		Path p=new Path(inputPath);
+		FileSystem fs = p.getFileSystem(job);
+		if(!fs.isDirectory(p))
+			smallestFile=p.makeQualified(fs).toString();
+		else
+		{
+			FileStatus[] stats=fs.listStatus(p, hiddenFileFilter);
+			if(stats.length==0)
+				smallestFile="";
+			else
+			{
+				smallestFile=stats[0].getPath().toString();
+				for(int j=1; j<stats.length; j++)
+				{
+					String f=stats[j].getPath().toString();
+					if(f.compareTo(smallestFile)<0)
+						smallestFile=f;
+				}
+			}
+		}
+		return smallestFile;
+	}
+	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String reblockInstructions, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
@@ -197,6 +235,11 @@ public class CSVReblockMR
 	{
 		String[] smallestFiles=new String[inputs.length];
 		JobConf job=new JobConf();
+		for(int i=0; i<inputs.length; i++)
+		{
+			smallestFiles[i] = findSmallestFile(job, inputs[i]);
+		}
+		
 		for(int i=0; i<inputs.length; i++)
 		{
 			Path p=new Path(inputs[i]);
@@ -231,7 +274,7 @@ public class CSVReblockMR
 		return ret;
 	}
 	
-	private static AssignRowIDMRReturn runAssignRowIDMRJob(String[] inputs, InputInfo[] inputInfos, int[] brlens, int[] bclens, 
+	public static AssignRowIDMRReturn runAssignRowIDMRJob(String[] inputs, InputInfo[] inputInfos, int[] brlens, int[] bclens, 
 			String reblockInstructions, int replication, String[] smallestFiles) 
 	throws Exception
 	{
@@ -387,16 +430,6 @@ public class CSVReblockMR
 	
 		//turn off adaptivemr
 		job.setBoolean("adaptivemr.map.enable", false);
-		
-		
-		// By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
-		
-		// at this point, both reblock_binary and reblock_text are similar
-		MatrixCharacteristics[] inputStats = new MatrixCharacteristics[inputs.length];
-		for ( int i=0; i < inputs.length; i++ ) {
-			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
-		}
 		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job);

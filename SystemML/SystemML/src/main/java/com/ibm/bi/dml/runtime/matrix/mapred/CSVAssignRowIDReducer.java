@@ -47,7 +47,6 @@ public class CSVAssignRowIDReducer extends MapReduceBase implements Reducer<Byte
 			long count=oc.count;
 			oc.count=lineOffset;
 			out.collect(key, oc);
-			//System.out.println(key+": "+oc);
 			lineOffset+=count;
 		}
 		report.incrCounter(CSVReblockMR.NUM_ROWS_IN_MATRIX, key.toString(), lineOffset);

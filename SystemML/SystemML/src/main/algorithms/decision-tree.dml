@@ -22,7 +22,7 @@
 # depth         Int 	 25			  Maximum depth of the learnt tree
 # num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
 # num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# impurity      String   "Gini"    Impurity measure: entropy (the default) or Gini 
+# impurity      String   "Gini"    	  Impurity measure: entropy (the default) or Gini 
 # M             String 	 ---	   	  Location to write matrix M containing the learnt tree
 # O     		String   " "          Location to write the training accuracy; by default is standard output
 # fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
@@ -52,6 +52,7 @@ binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) r
 # Default values of some parameters	
 fileT = ifdef ($T, " ");	
 fileO = ifdef ($O, " ");
+fileM = $M;
 num_bins = ifdef($bins, 20);  
 depth = ifdef($depth, 25); 
 num_leaf = ifdef($leaf, 10); 
@@ -154,7 +155,7 @@ S_small = matrix (0, rows = 1, cols = 1); # split points for SMALL internal node
 
 # temp matrices 
 cur_nodes_large = matrix (1, rows = 1, cols = 1);
-cur_nodes_small_nonzero = matrix (0, rows = 2, cols = 2); # first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
+# cur_nodes_small_nonzero = matrix (0, rows = 2, cols = 2); # first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
 
 
 num_cur_nodes_large = 1;
@@ -172,7 +173,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_NC_large = matrix (0, rows = 3, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
 		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
-		cur_nodes_small = cur_NC_large; 
+		cur_nodes_small = matrix (0, rows = 2, cols = num_cur_nodes_large); # cur_NC_large; 
 	}
 
 	##### LOOP OVER LARGE NODES...

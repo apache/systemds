@@ -46,17 +46,23 @@
 # 2- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
 #	,i.e., ncol(GI) and t denotes the number of factors used for stratifying, i.e., ncol(SI))
 #	M[,1:k]: unique combination of values in the k factors used for grouping 
-#   M[,(k+1):(k+t)]: unique combination of values in the t factors used for stratifying
+#	M[,(k+1):(k+t)]: unique combination of values in the t factors used for stratifying
 #	M[,k+t+1]: total number of events
-#	M[,k+t+2]: median of surv
-#	M[,k+t+3]: lower 100*(1-alpha)% confidence interval of the median of surv 
-#	M[,k+t+4]: upper 100*(1-alpha)% confidence interval of the median of surv
+#	M[,k+t+2]: total number of uncensored events
+#	M[,k+t+3]: median of surv
+#	M[,k+t+4]: lower 100*(1-alpha)% confidence interval of the median of surv 
+#	M[,k+t+5]: upper 100*(1-alpha)% confidence interval of the median of surv
 #	If the number of groups and/or the number of strata is greater than 1, M will have 3 columns with 
 #	M[,1]: total number of events
 #	M[,2]: median of surv
 #	M[,3]: lower 100*(1-alpha)% confidence interval of the median of surv 
 #	M[,4]: upper 100*(1-alpha)% confidence interval of the median of surv
-# 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T with	
+# 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T_GROUPS_OE and a nx5 T  and with
+#	T_GROUPS_OE[,1] = no. of events	
+#	T_GROUPS_OE[,2] = observed value
+#	T_GROUPS_OE[,3] = expected value
+#	T_GROUPS_OE[,4] = (O-E)^2/E
+#	T_GROUPS_OE[,5] = (O-E)^2/V 	 
 #	T[1,1] = no. of groups
 #	T[1,2] = degree of freedom for Chi-squared distributed test statistic
 #	T[1,3] = test statistic 
@@ -68,13 +74,14 @@
 
 fileX = $X;
 fileTE = $TE;
-fileGI = $GI;
-fileSI = $SI;
+fileGI = ifdef ($GI, " ");
+fileSI = ifdef ($SI, " ");
 fileO = $O;
 fileM = $M;
 
 # Default values of some parameters
-fileT = ifdef ($T, " ");                 # $T=" "
+fileT = ifdef ($T, " ");                  # $T=" "
+
 fileG = ifdef ($G, " ");                 # $G=" "
 fileS = ifdef ($S, " ");                 # $S=" "
 fmtO = ifdef ($fmt, "text");             # $fmt="text"
@@ -85,9 +92,23 @@ test_type = ifdef ($ttype, "none");      # $ttype="none"
 
 X = read (fileX);
 TE = read (fileTE, format = "csv");
-GI = read (fileGI, format = "csv");
-SI = read (fileSI, format = "csv");
+if (fileGI != " "){
+        GI = read (fileGI, format = "csv");
+}else{
+        GI = matrix(0,rows=1,cols=1);
+}
 
+if (fileSI != " "){
+        SI = read (fileSI, format = "csv");
+}else{
+        SI = matrix(0,rows=1,cols=1);
+}
+
+
+# TODO add checks for row vectors
+TE = t(TE);
+GI = t(GI);
+SI = t(SI);
 		
 # check arguments for validity
 if (err_type != "greenwood" & err_type != "peto") { 
@@ -153,7 +174,7 @@ if (n_group_cols > 0) {
 	Idx = matrix (1, rows = num_records, cols = 1);
 	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),3:(2 + n_group_cols)], X[2:num_records,3:(2 + n_group_cols)], "!="));
 	num_groups = sum (Idx);
-	
+
 	XG = replace (target = XG, pattern = 0, replacement = "Infinity");
 	XG = XG * Idx;
 	XG = replace (target = XG, pattern = "NaN", replacement = 0);	
@@ -185,17 +206,17 @@ if (n_stratum_cols > 0) {
 	for (s in 1:n_stratum_cols) { # sort columns corresponding to strata sequentially
 		X = order (target = X, by = s_offset + s);		
 	}
-	XS = X[,(s_offset + 1):(s_offset + n_stratum_cols)];	
+	XS = X[,(s_offset + 1):(s_offset + n_stratum_cols)];
 	Idx = matrix (1, rows = num_records, cols = 1);
 	Idx[2:num_records,] = rowMaxs (ppred (X[1:(num_records - 1),(s_offset + 1):(s_offset + n_stratum_cols)], X[2:num_records,(s_offset + 1):(s_offset + n_stratum_cols)], "!="));
 	num_strata = sum (Idx);
-	
+
 	XS = replace (target = XS, pattern = 0, replacement = "Infinity");
 	XS = XS * Idx;
 	XS = replace (target = XS, pattern = "NaN", replacement = 0);	
 	S_cols = removeEmpty (target = XS, margin = "rows"); 
-	S_cols = replace (target = S_cols, pattern = "Infinity", replacement = 0);
-	
+	S_cols = replace (target = S_cols, pattern = "Infinity", replacement = 0);	
+
 	SB = removeEmpty (target = seq (1,num_records) * Idx, margin = "rows"); # indices of stratum boundaries
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {
@@ -225,15 +246,20 @@ KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
 KM_cols = seq (1, num_groups * num_strata * 7);
 GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
-M = matrix (a, rows = num_groups * num_strata, cols = 4);
+M = matrix (a, rows = num_groups * num_strata, cols = 5);
 M_cols = seq (1, num_groups * num_strata);
 z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
 
 if (num_groups > 1 & test_type != "none") { 
 	str = "";
-	TEST = matrix (0, rows = 1, cols = 4);
-	U = matrix (0, rows = num_groups - 1, cols = num_strata);
-	V_sum = matrix (0, rows = num_groups - 1, cols = num_groups - 1);
+	TEST = matrix (0, rows = num_groups, cols = 5);
+	TEST_GROUPS_OE = matrix (0, rows = 1, cols = 4);
+	U = matrix (0, rows = num_groups, cols = num_strata);
+	U_OE = matrix (0, rows = num_groups, cols = num_strata);
+	OBS = matrix (0, rows = num_groups, cols = num_strata);
+	EXP = matrix (0, rows = num_groups, cols = num_strata);
+	V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
+	n_event_all_global = matrix(1, rows=num_groups, cols=num_strata);
 } else if (num_groups == 1 & test_type != "none") {
 	stop ("Data contains only one group or no groups, at least two groups are required for test!");
 }
@@ -302,7 +328,7 @@ parfor (s in 1:num_strata, check = 0) {
 
 			GSI_offset = (s - 1) * num_groups + g; 
 			GSI[GSI_offset,1] = g;
-			GSI[GSI_offset,2] = s;
+			GSI[GSI_offset,2] = s;		
 			E_cur = E * group_ind;
 
 			######## COMPUTE NO. AT RISK AND NO.OF EVENTS FOR EACH TIMESTAMP
@@ -323,6 +349,7 @@ parfor (s in 1:num_strata, check = 0) {
 			if (n_time_all2 > 1) {
 				n_event_all_agg[2:n_time_all2,] = Idx1[1:(n_time_all2 - 1),]; 
 			}
+				
 			n_risk = sum (group_ind) - n_event_all_agg; # no. at risk per stratum per group
 			
 			if (num_groups > 1 & test_type != "none") {
@@ -369,6 +396,7 @@ parfor (s in 1:num_strata, check = 0) {
 			}	
 		
 			n_event_sum = sum (n_event);
+			n_event_sum_all = sum(n_event_all);
 			if (n_event_sum > 0) {
 				# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
 				KM[1:n_time,KM_offset + 1] = time;
@@ -378,15 +406,17 @@ parfor (s in 1:num_strata, check = 0) {
 				KM[1:n_time,KM_offset + 5] = se_surv;
 				KM[1:n_time,KM_offset + 6] = CI_l;
 				KM[1:n_time,KM_offset + 7] = CI_r;
-			}
+			}	
+		
 			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
 			p_5 = ppred (surv, 0.5, "<="); 
 			pn_5 = sum (p_5);
-			# M_offset = (s - 1) * num_groups + g;
+			#M_offset = (s - 1) * num_groups + g;
 			# if the estimated survivor function is larger than 0.5 for all timestamps median does not exist! 
 			p_5_exists = (pn_5 != 0);
-			M[M_offset,1] = n_event_sum;
+			M[M_offset,2] = n_event_sum;
+			M[M_offset,1] = n_event_sum_all; 
 			if (p_5_exists) {
 				if ( as.scalar (surv[n_time - pn_5 + 1,1]) == 0.5 ) { # if the estimated survivor function is exactly equal to 0.5
 					if (pn_5 > 1) {
@@ -407,9 +437,9 @@ parfor (s in 1:num_strata, check = 0) {
 				if (l_min_ind == n_time) {
 					if (l_ind_sum > 0) {
 						if (as.scalar (l_ind[n_time,1]) == 0) { # NA at last position
-							M[M_offset,3] = time[n_time - l_ind_sum,1];
+							M[M_offset,4] = time[n_time - l_ind_sum,1];
 						} else {
-							M[M_offset,3] = time[1,1];
+							M[M_offset,4] = time[1,1];
 						}
 					}
 				} else {
@@ -419,15 +449,18 @@ parfor (s in 1:num_strata, check = 0) {
 				if (r_min_ind == n_time) {
 					if (r_ind_sum > 0) {
 						if (as.scalar (r_ind[n_time,1]) == 0) { # NA at last position
-							M[M_offset,4] = time[n_time - r_ind_sum,1];
+							M[M_offset,5] = time[n_time - r_ind_sum,1];
 						} else {
-							M[M_offset,4] = time[1,1];
+							M[M_offset,5] = time[1,1];
 						}
 					}
 				} else {
-					M[M_offset,4] = time[r_min_ind + 1,1];
+					M[M_offset,5] = time[r_min_ind + 1,1];
 				}
-				M[M_offset,2] = t_5;
+				M[M_offset,3] = t_5;
+				if (test_type != "none"){
+					n_event_all_global[g,s] = n_event_sum_all; 
+				}
 			}
 		} else {
 			print ("group " + g + " is not present in the stratum " + s);
@@ -441,8 +474,8 @@ parfor (s in 1:num_strata, check = 0) {
 		
 	if (num_groups > 1 & test_type != "none") {
 
-		V = matrix (0, rows = num_groups - 1, cols = num_groups - 1);
-		parfor (g in 0:(num_groups - 2), check = 0) {
+		V = matrix (0, rows = num_groups-1, cols = num_groups-1);
+		parfor (g in 0:(num_groups-1), check = 0) {
 		# for (g in 0:(num_groups - 2), check = 0) {
 		
 			n_risk = n_risk_n_event_stratum[,g * 2 + 1];			
@@ -456,6 +489,9 @@ parfor (s in 1:num_strata, check = 0) {
 				E = n_risk * n_event_stratum / range;
 			}			
 			U[(g + 1),s] = sum (O - E);
+			U_OE[g + 1, s] = (sum (O - E)*sum (O - E))/sum(E);
+			OBS[g + 1, s] = sum(O);
+			EXP[g + 1, s] = sum(E);
 		}
 		
 		# parfor (i1 in 0:(num_groups - 2), check = 0) {
@@ -487,25 +523,33 @@ parfor (s in 1:num_strata, check = 0) {
 	}
 }
 
-
 if (num_groups > 1 & test_type != "none") {
 
 	U_sum = rowSums (U);
-	test_st = as.scalar (t(U_sum) %*% inv(V_sum) %*% U_sum);
-	p_val = 1 - cdf (target = test_st, dist = "chisq", df = num_groups - 1);
-	if (test_type == "log-rank") {
-		TEST[,1] = num_groups;
-		TEST[,2] = num_groups - 1;
-		TEST[,3] = test_st;
-		TEST[,4] = p_val;
-		str = append (str, "Logrank test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");	
-	} else { # test_type == "wilcoxon"
-		str = append (str, "Wilcoxon test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");		
-	}
+
+	test_st = as.scalar (t(U_sum[1:(num_groups-1),1]) %*% inv(V_sum) %*% U_sum[1:(num_groups-1),1]);
+	p_val = 1 - cdf (target = test_st, dist = "chisq", df = num_groups-1 );
+	if (test_type != "none") {
+		U_OE_sum = rowSums(U_OE);
+		V_OE =rowSums((U*U) /sum(V_sum));
+		TEST_GROUPS_OE[1,1] = num_groups;
+		TEST_GROUPS_OE[1,2] = num_groups - 1;
+		TEST_GROUPS_OE[1,3] = test_st;
+		TEST_GROUPS_OE[1,4] = p_val;
+		TEST[,1] = rowSums(n_event_all_global);
+		TEST[,2] = rowSums(OBS);
+		TEST[,3] = rowSums(EXP);
+		TEST[,4] = rowSums(U_OE_sum);
+		TEST[,5] = rowSums(V_OE);
+		str = append (str, test_type + "test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");	
+	} 
 }
 
 GSI = removeEmpty (target = GSI, margin = "rows");
 if (n_group_cols > 0) {
+	# making a copy of unique groups before adding new rows depending on strata
+	G_cols_original = G_cols;
+
 	GSI_1 = GSI[,1];
 	tab_G = table (seq (1, nrow (GSI_1)), GSI_1, nrow (GSI_1), nrow (G_cols));
 	G_cols = tab_G %*% G_cols;
@@ -523,10 +567,17 @@ tab_M = table (seq (1, nrow (M_cols)), M_cols, nrow (M_cols), nrow (M));
 M = tab_M %*% M;
 M = replace (target = M, pattern = "Infinity", replacement = "NaN");
 
+# pull out non-empty rows from TEST
 if (n_group_cols > 0 & n_stratum_cols > 0) {
 	M = append (append (G_cols, S_cols), M);
+	if (test_type != "none") {
+		TEST = append (G_cols_original, TEST);
+	}
 } else if (n_group_cols > 0) {
 	M = append (G_cols, M);
+	if (test_type != "none") {	
+		TEST = append (G_cols_original, TEST);
+	}
 } else if (n_stratum_cols > 0) {
 	M = append (S_cols, M);
 }
@@ -537,14 +588,14 @@ tab_KM = table (KM_cols, seq (1, nrow (KM_cols)), ncol (KM), nrow (KM_cols));
 KM = removeEmpty (target = KM %*% tab_KM, margin = "rows");
 
 # write output matrices
-write (M, fileM, fmtO);
-write (KM, fileO, fmtO);
-if (num_groups > 1 & test_type != "none") {
-	if (fileT != " ") { 
-		write (TEST, fileT, fmtO);
+write (M, fileM, format=fmtO);
+write (KM, fileO, format=fmtO);
+
+if (test_type != "none") {
+	if (num_groups > 1 & fileT != " ") { 
+		write (TEST, fileT, format=fmtO);
+		write (TEST_GROUPS_OE, fileT+".groups.oe", format=fmtO);
 	} else {
 		print (str);
 	}	
 }
-
-

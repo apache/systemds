@@ -8,4 +8,6 @@
 <SowerWaitInterval>1000</SowerWaitInterval>
 <ReaperWaitInterval>1000</ReaperWaitInterval>
 <NimbleScratch>nimbleoutput</NimbleScratch>
+<cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+<cp.parallel.textio>false</cp.parallel.textio>
 </root>

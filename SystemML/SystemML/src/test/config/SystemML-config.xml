@@ -37,7 +37,7 @@ The source code for this program is not published or otherwise divested of its t
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
    
    <!-- CP singlenode execution, parallelism config -->
-   <MultiThreadedCP>true</MultiThreadedCP>
-   <MultiThreadedCPReadWrite>false</MultiThreadedCPReadWrite>
+   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   <cp.parallel.textio>false</cp.parallel.textio>
    
 </root>

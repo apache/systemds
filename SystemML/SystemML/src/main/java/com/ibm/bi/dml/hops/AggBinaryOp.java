@@ -531,6 +531,11 @@ public class AggBinaryOp extends Hop
 		Lop lnrow = nrow.constructLops();
 		
 		PMMJ pmm = new PMMJ(pmInput.constructLops(), rightInput.constructLops(), lnrow, getDataType(), getValueType(), false, false, ExecType.CP);
+		
+		//set degree of parallelism
+		int k = getConstrainedNumThreads();
+		pmm.setNumThreads(k);
+		
 		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(pmm);
 		

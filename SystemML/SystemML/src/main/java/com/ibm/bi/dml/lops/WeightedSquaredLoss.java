@@ -24,6 +24,7 @@ public class WeightedSquaredLoss extends Lop
 
 	public static final String OPCODE = "mapwsloss";
 	public static final String OPCODE_CP = "wsloss";
+	private int _numThreads = 1;
 
 	public enum WeightsType {
 		POST, 
@@ -141,6 +142,12 @@ public class WeightedSquaredLoss extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_weightsType);
 		
+		//append degree of parallelism
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
+		
 		return sb.toString();
 	}
 	
@@ -160,5 +167,9 @@ public class WeightedSquaredLoss extends Lop
 			return new int[]{2,3};
 		else
 			return new int[]{-1};
+	}
+	
+	public void setNumThreads(int k) {
+		_numThreads = k;
 	}
 }

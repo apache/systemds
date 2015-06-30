@@ -35,4 +35,8 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
+   
+   <!-- CP singlenode execution, parallelism config -->
+   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   <cp.parallel.textio>false</cp.parallel.textio>
 </root>

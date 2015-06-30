@@ -27,9 +27,12 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	private int _numThreads = -1;
+	
+	public PMMJCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int k, String opcode, String istr)
 	{
 		super(op, in1, in2, in3, out, opcode, istr);
+		_numThreads = k;
 	}
 	
 	/**
@@ -46,7 +49,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		InstructionUtils.checkNumFields ( str, 4 );
+		InstructionUtils.checkNumFields ( str, 5 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -54,11 +57,12 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		in2.split(parts[2]);
 		in3.split(parts[3]);
 		out.split(parts[4]);
+		int k = Integer.parseInt(parts[5]);
 		
 		if(!opcode.equalsIgnoreCase("pmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an PMMJCPInstruction: " + str);
 		else
-			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, opcode, str);
+			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, k, opcode, str);
 	}
 	
 	@Override
@@ -72,7 +76,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction
 		
 		//execute operations
 		MatrixBlock ret = new MatrixBlock(rlen, matBlock2.getNumColumns(), matBlock2.isInSparseFormat());
-		matBlock1.permutationMatrixMultOperations(matBlock2, ret, null);
+		matBlock1.permutationMatrixMultOperations(matBlock2, ret, null, _numThreads);
 		
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), ret);

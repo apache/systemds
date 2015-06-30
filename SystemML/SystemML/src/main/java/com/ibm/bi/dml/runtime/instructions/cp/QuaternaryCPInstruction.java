@@ -29,21 +29,22 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 	
 	private WeightsType wtype = null;
 	private CPOperand input4 = null;
- 	
+ 	private int _numThreads = -1;
 	
 	public QuaternaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, 
-							       WeightsType wt, String opcode, String istr )
+							       WeightsType wt, int k, String opcode, String istr )
 	{
 		super(op, in1, in2, in3, out, opcode, istr);
 		
 		input4 = in4;
 		wtype = wt;
+		k = _numThreads;
 	}
 
 	public static QuaternaryCPInstruction parseInstruction(String inst) 
 		throws DMLRuntimeException
 	{	
-		InstructionUtils.checkNumFields ( inst, 6 );
+		InstructionUtils.checkNumFields ( inst, 7 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
@@ -61,8 +62,9 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		CPOperand out = new CPOperand(parts[5]);
 		
 		WeightsType wtype = WeightsType.valueOf(parts[6]);
+		int k = Integer.parseInt(parts[7]);
 		
-		return new QuaternaryCPInstruction(new SimpleOperator(null), in1, in2, in3, in4, out, wtype, opcode, inst);
+		return new QuaternaryCPInstruction(new SimpleOperator(null), in1, in2, in3, in4, out, wtype, k, opcode, inst);
 	}
 
 	
@@ -78,7 +80,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			matBlock4 = ec.getMatrixInput(input4.getName());
 		
 		//core execute
-		MatrixValue out = matBlock1.quaternaryOperations(_optr, matBlock2, matBlock3, matBlock4, new MatrixBlock(), wtype);
+		MatrixValue out = matBlock1.quaternaryOperations(_optr, matBlock2, matBlock3, matBlock4, new MatrixBlock(), wtype, _numThreads);
 		DoubleObject ret = new DoubleObject(out.getValue(0, 0));
 		
 		//release inputs and output

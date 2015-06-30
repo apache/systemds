@@ -57,8 +57,8 @@ public class DMLConfig
 	public static final String YARN_APPMASTERMEM    = "dml.yarn.appmaster.mem"; 
 	public static final String YARN_MAPREDUCEMEM    = "dml.yarn.mapreduce.mem"; 
 	public static final String YARN_APPQUEUE    	= "dml.yarn.app.queue"; 
-	public static final String MULTITHREADED_CP     = "MultiThreadedCP";
-	public static final String MULTITHREADED_CP_RW  = "MultiThreadedCPReadWrite";
+	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
+	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 
 	//obsolete nimble configuration (removed 06/24/2015)
 	//public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
@@ -97,8 +97,8 @@ public class DMLConfig
 		//_defaultVals.put(SOWER_WAIT_INTERVAL,  "1000" );
 		//_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
 		//_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
-		_defaultVals.put(MULTITHREADED_CP,       "true" );
-		_defaultVals.put(MULTITHREADED_CP_RW,    "false" );
+		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
+		_defaultVals.put(CP_PARALLEL_TEXTIO,     "false" );
 	}
 	
 	public DMLConfig()
@@ -398,7 +398,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM,
 				//NUM_MERGE_TASKS, NUM_SOW_THREADS,NUM_REAP_THREADS,
 				//SOWER_WAIT_INTERVAL,REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH 
-				MULTITHREADED_CP, MULTITHREADED_CP_RW
+				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

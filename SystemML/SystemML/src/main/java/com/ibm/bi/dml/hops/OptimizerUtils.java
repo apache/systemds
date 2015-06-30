@@ -327,6 +327,15 @@ public class OptimizerUtils
 				break;
 		}
 		setDefaultSize();
+		
+		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
+			PARALLEL_CP_READ_TEXTFORMATS = false;
+			PARALLEL_CP_WRITE_TEXTFORMATS = false;
+		}
+
+		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT))
+			PARALLEL_CP_MATRIX_MULTIPLY = false;
+		
 	}
 	
 	/**
@@ -472,7 +481,7 @@ public class OptimizerUtils
 	{
 		if( !PARALLEL_CP_WRITE_TEXTFORMATS )
 			return 1; // sequential execution
-			
+
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
 				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;

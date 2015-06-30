@@ -31,6 +31,7 @@ public class PMMJ extends Lop
 	
 	private CacheType _cacheType = null;
 	private boolean _outputEmptyBlocks = true;
+	private int _numThreads = 1;
 	
 	/**
 	 * Constructor to setup a Permutation Matrix Multiplication
@@ -128,6 +129,11 @@ public class PMMJ extends Lop
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_cacheType);
 		}
+		else if( getExecType()==ExecType.CP ) {
+			//append degree of parallelism
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		
 		return sb.toString();
 	}
@@ -143,5 +149,9 @@ public class PMMJ extends Lop
 	{	
 		//always left cached selection vector
 		return new int[]{1};
+	}
+	
+	public void setNumThreads(int k) {
+		_numThreads = k;
 	}
 }

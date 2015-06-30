@@ -24,6 +24,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 
 /** 
@@ -41,6 +42,7 @@ public class QuaternaryOp extends Hop
 	
 	private OpOp4 _op = null;
 	private boolean _postWeights = false;
+	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	private QuaternaryOp() {
 		//default constructor for clone
@@ -138,12 +140,16 @@ public class QuaternaryOp extends Hop
 	private void constructCPLopsWeightedSquaredLoss(WeightsType wtype) 
 		throws HopsException, LopsException
 	{
-		Lop wsloss = new WeightedSquaredLoss(
+		WeightedSquaredLoss wsloss = new WeightedSquaredLoss(
 				getInput().get(0).constructLops(),
 				getInput().get(1).constructLops(),
 				getInput().get(2).constructLops(),
 				getInput().get(3).constructLops(),
 				getDataType(), getValueType(), wtype, ExecType.CP);
+		
+		//set degree of parallelism
+		int k = getConstrainedNumThreads();
+		wsloss.setNumThreads(k);
 		
 		setOutputDimensions( wsloss );
 		setLineNumbers( wsloss );
@@ -444,6 +450,26 @@ public class QuaternaryOp extends Hop
 		//compare parameters
 		ret &= _postWeights == that2._postWeights;
 		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+		
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+			
 		return ret;
 	}
 }

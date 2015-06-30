@@ -3526,6 +3526,21 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		permutationMatrixMultOperations(m2Val, out1Val, out2Val, 1);
+	}
+	
+	/**
+	 * 
+	 * @param m1Val
+	 * @param m2Val
+	 * @param out1Val
+	 * @param out2Val
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val, int k ) 	
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		//check input types and dimensions
 		MatrixBlock m2 = checkType(m2Val);
 		MatrixBlock ret1 = checkType(out1Val);
@@ -3535,7 +3550,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			throw new RuntimeException("Dimensions do not match for permutation matrix multiplication ("+this.rlen+"!="+m2.rlen+").");
 
 		//compute permutation matrix multiplication
-		LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
+		if (k > 1)
+			LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2, k);
+		else
+			LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
+
 	}
 	
 	/**
@@ -5704,27 +5723,36 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		//check input dimensions
-		if( getNumRows() != um.getNumRows() )
-			throw new DMLRuntimeException("Dimension mismatch rows on wsloss: "+getNumRows()+"!="+um.getNumRows());
-		if( getNumColumns() != vm.getNumRows() )
-			throw new DMLRuntimeException("Dimension mismatch columns on wsloss: "+getNumRows()+"!="+vm.getNumRows());
-		
-		//check input data types
-		MatrixBlock X = this;
-		MatrixBlock W = (wt!=WeightsType.NONE)?checkType(wm):null;
-		MatrixBlock U = checkType(um);
-		MatrixBlock V = checkType(vm);
-		MatrixBlock R = checkType(out);
-		
-		//prepare intermediates and output
-		R.reset(1, 1, false);
-	
-		//core block computation
-		LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt);
-		
-		return R;
+		return quaternaryOperations(op, um, vm, wm, out, wt, 1);
 	}
+	
+	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt, int k)
+			throws DMLUnsupportedOperationException, DMLRuntimeException
+		{
+			//check input dimensions
+			if( getNumRows() != um.getNumRows() )
+				throw new DMLRuntimeException("Dimension mismatch rows on wsloss: "+getNumRows()+"!="+um.getNumRows());
+			if( getNumColumns() != vm.getNumRows() )
+				throw new DMLRuntimeException("Dimension mismatch columns on wsloss: "+getNumRows()+"!="+vm.getNumRows());
+			
+			//check input data types
+			MatrixBlock X = this;
+			MatrixBlock W = (wt!=WeightsType.NONE)?checkType(wm):null;
+			MatrixBlock U = checkType(um);
+			MatrixBlock V = checkType(vm);
+			MatrixBlock R = checkType(out);
+			
+			//prepare intermediates and output
+			R.reset(1, 1, false);
+		
+			//core block computation
+			if( k > 1 )
+				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt, k);
+			else
+				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt);
+			
+			return R;
+		}
 	
 	////////
 	// Data Generation Methods

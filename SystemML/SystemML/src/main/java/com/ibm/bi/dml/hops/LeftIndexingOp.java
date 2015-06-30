@@ -235,7 +235,7 @@ public class LeftIndexingOp  extends Hop
 		{ 
 			// unless second input is single cell / row vector / column vector
 			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
-			double subSize = -1;
+			double subSize = -1;	
 			if( _rowLowerEqualsUpper && _colLowerEqualsUpper )
 				subSize = OptimizerUtils.estimateSize(1, 1);	
 			else if( _rowLowerEqualsUpper )
@@ -268,9 +268,24 @@ public class LeftIndexingOp  extends Hop
 	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
+	{	
+		double sparsity = 1.0;
+		if( nnz < 0 ) //check for exactly known nnz
+		{
+			Hop input1 = getInput().get(0);
+			Hop input2 = getInput().get(1);
+			if( input1.dimsKnown() ) {
+				sparsity = OptimizerUtils.getLeftIndexingSparsity(
+						input1.getDim1(), input1.getDim2(), input1.getNnz(), 
+						input2.getDim1(), input2.getDim2(), input2.getNnz());
+			}
+		}
+		else
+		{
+			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		}
+		
 		// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -291,8 +306,12 @@ public class LeftIndexingOp  extends Hop
 		MatrixCharacteristics mc2 = memo.getAllInputStats(input2);
 		
 		if( mc1.dimsKnown() ) {
-			ret = new long[]{mc1.getRows(), mc1.getCols(), 
-				            (mc1.getNonZeros()>0&&mc2.getNonZeros()>0)?mc1.getNonZeros()+mc2.getNonZeros():-1};
+			double sparsity = OptimizerUtils.getLeftIndexingSparsity(
+					mc1.getRows(), mc1.getCols(), mc1.getNonZeros(), 
+					mc2.getRows(), mc2.getCols(), mc2.getNonZeros());
+			long lnnz = (long)(sparsity * mc1.getRows() * mc1.getCols());
+			        
+			ret = new long[]{mc1.getRows(), mc1.getCols(), lnnz};
 		}
 		
 		return ret;
@@ -337,9 +356,21 @@ public class LeftIndexingOp  extends Hop
 	public void refreshSizeInformation()
 	{
 		Hop input1 = getInput().get(0);	//original matrix	
+		Hop input2 = getInput().get(1); //rhs matrix
+		
+		//refresh output dimensions based on original matrix
 		setDim1( input1.getDim1() );
 		setDim2( input1.getDim2() );
-		setNnz(-1); //TODO enhanced propagation
+		
+		//refresh output nnz if exactly known; otherwise later inference
+		if( input1.getNnz() == 0 )  {
+			if( input2.getDataType()==DataType.SCALAR )
+				setNnz(1);
+			else 
+				setNnz(input2.getNnz());
+		}
+		else
+			setNnz(-1);
 	}
 	
 	/**

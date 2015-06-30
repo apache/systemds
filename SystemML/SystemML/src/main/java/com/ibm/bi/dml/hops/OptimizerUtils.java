@@ -668,6 +668,33 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * 
+	 * @param rlen1
+	 * @param clen1
+	 * @param nnz1
+	 * @param rlen2
+	 * @param clen2
+	 * @param nnz2
+	 * @return
+	 */
+	public static double getLeftIndexingSparsity( long rlen1, long clen1, long nnz1, long rlen2, long clen2, long nnz2 )
+	{
+		boolean scalarRhs = (rlen2==0 && clen2==0);
+		
+		//infer output worstcase output nnz
+		long lnnz = -1;
+		if( nnz1>=0 && scalarRhs )
+			lnnz = nnz1+1;             // nnz(left) + scalar
+		else if( nnz1>=0 && nnz2>0 )
+			lnnz = nnz1 + nnz2;        // nnz(left) + nnz(right)
+		else if( nnz1>=0 && rlen2>0 && clen2>0 )
+			lnnz = nnz1 + rlen2*clen2; // nnz(left) + nnz(right_dense)
+		lnnz = Math.min(lnnz, rlen1*clen1);
+		
+		return getSparsity(rlen1, clen1, (lnnz>=0) ? lnnz : rlen1*clen1);
+	}
+	
+	/**
 	 * Determines if a given binary op is potentially conditional sparse safe. 
 	 * 
 	 * @param op

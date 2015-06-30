@@ -62,10 +62,10 @@ fmtO = ifdef($fmt, "text");
 
 X = read($X)
 Y = read($Y)
-
-Y_bin = table (seq (1, num_rows), Y); # Y in binary representation
-num_classes = ncol (Y_bin);
 num_records = nrow (X);
+Y_bin = table (seq (1, num_records), Y); # Y in binary representation
+num_classes = ncol (Y_bin);
+
 
 if (fileT != " ") {
 	T = read (fileT);
@@ -136,7 +136,7 @@ if (num_cat_features > 0) {
 
 
 ##### INITIALIZATION
-L = matrix (1, rows = num_rows, cols = 1); # last visited
+L = matrix (1, rows = num_records, cols = 1); # last visited
 
 # model
 # leaf nodes

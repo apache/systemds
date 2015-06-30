@@ -29,13 +29,14 @@
 # M       String   ---          Location to store results of Cox regression analysis including estimated regression parameters of the fitted 
 #								Cox model (the betas), their standard errors and confidence intervals and p-values 
 # S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including			
-#								log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare; by default is standard output  
+#								no. of records, no. of events, log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare; 
+#								by default is standard output  
 # T       String   " "          Location to store the results of Likelihood ratio test, Wald test, and Score (log-rank) test of the fitted model;
 #								by default is standard output 
 # COV	  String   ---			Location to store the variance-covariance matrix of the betas
 # RT      String   ---			Location to store matrix RT containing the order-preserving recoded timestamps from X 
 # XO      String   ---			Location to store sorted input matrix by the timestamps 
-# BF      String   " "          If factors available in the input matrix X, location to store column indices of X excluding the baseline factors
+# MF      String   " "          If factors available in the input matrix X, location to store column indices of X excluding the baseline factors
 # alpha   Double   0.05         Parameter to compute a 100*(1-alpha)% confidence interval for the betas  
 # tol     Double   0.000001     Tolerance ("epsilon")
 # moi     Int      100     		Max. number of outer (Newton) iterations
@@ -54,10 +55,12 @@
 #
 # Two log files containing a summary of some statistics of the fitted model in CSV format:
 # 1- File S with the following format 
-#   - line 1: log-likelihood 
-#	- line 2: AIC
-#	- line 3: Rsquare (Cox & Snell)
-#	- line 4: max possible Rsquare
+#	- line 1: no. of records
+#	- line 2: no.of events
+#   - line 3: log-likelihood 
+#	- line 4: AIC
+#	- line 5: Rsquare (Cox & Snell)
+#	- line 6: max possible Rsquare
 # 2- File T with the following format
 #	- line 1: Likelihood ratio test statistic, degree of freedom, p-value
 #	- line 2: Wald test statistic, degree of freedom, p-value
@@ -67,12 +70,12 @@
 # 1- A column matrix RT that contains the order-preserving recoded timestamps from X 
 # 2- Matrix XO which is matrix X sorted according to timestamps  
 # 3- Variance-covariance matrix of the betas COV
-# 4- A column matrix BF that contains the column indices of X excluding the baseline factors if available
+# 4- A column matrix MF that contains the column indices of X excluding the baseline factors if available
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X F=INPUT_DIR/F M=OUTPUT_DIR/M S=OUTPUT_DIR/S 
 #									  T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT XO=OUTPUT_DIR/XO 
-#									  BF=OUTPUT/BF alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
+#									  MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
 
 fileX = $X;
 fileM = $M;
@@ -83,7 +86,7 @@ fileCOV = $COV;
 fileF = ifdef ($F, " ");         	 # $F=" " 
 fileS = ifdef ($S, " ");         	 # $S=" " 
 fileT = ifdef ($T, " ");         	 # $T=" " 
-fileBF = ifdef ($BF, " ");         	 # $BF=" " 
+fileMF = ifdef ($MF, " ");         	 # $MF=" " 
 fmtO = ifdef ($fmt, "text");         # $fmt="text" 
 alpha = ifdef ($alpha, 0.05);        # $alpha=0.05
 lambda = ifdef ($lambda, 0.0);       # $lambda=0.0;
@@ -111,8 +114,8 @@ if (fileF != " ") {
 	col_ind = removeEmpty (target = col_ind, margin = "rows");
 	# pull out the remaining cols from X_orig
 	X_orig = X_orig %*% table (col_ind, seq (1, nrow (col_ind)), ncol (X_orig), nrow (col_ind));
-	if (fileBF != " ") {
-		write (col_ind, fileBF, fmtO);
+	if (fileMF != " ") {
+		write (col_ind, fileMF, fmtO);
 	} else {
 		stop ("Please provide argument IF!");
 	}
@@ -203,7 +206,8 @@ exit_g2 = initial_g2 * tol ^ 2;
 maxiter = 100; 
 maxinneriter = min (D, 100); 
 i = 0;
-while (sum (g ^ 2) > exit_g2 & i < maxiter) {  
+sum_g2 = sum (g ^ 2);
+while (sum_g2 > exit_g2 & i < maxiter) {  
 	i = i + 1;
     sb = zeros_D;  
     r = g;  
@@ -289,7 +293,12 @@ while (sum (g ^ 2) > exit_g2 & i < maxiter) {
 		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
 		g_2 = t (colSums ((X_exp_Xb_rev_agg / D_r_rev) * d_r_rev));
 		g = g0_1 + g_2 + (lambda * b);
+		sum_g2 = sum (g ^ 2);
     }
+}
+
+if (sum_g2 > exit_g2 & i >= maxiter) {
+	print ("Trust region Newton method did not converge!");
 }
 
 print ("COMPUTING HESSIAN...");
@@ -344,6 +353,12 @@ CI_r = b - se_b + z_alpha_2;
 
 ######## SOME STATISTICS AND TESTS
 S_str = "";
+# no. of records
+S_str = append (S_str, "no. of records " + N);
+
+# no.of events
+S_str = append (S_str, "no. of events " + sum (E));
+
 # log-likelihood
 loglik = -o;
 S_str = append (S_str, "loglik " + loglik + " ");

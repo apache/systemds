@@ -12,7 +12,6 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin.ParameterizedBuiltinCode;
 
 
 /**

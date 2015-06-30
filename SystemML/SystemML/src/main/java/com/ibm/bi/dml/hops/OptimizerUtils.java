@@ -156,7 +156,7 @@ public class OptimizerUtils
 	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 
 	 * unknown size in order to allow for recompile.
 	 */
-	public static boolean ALLOW_SPLIT_HOP_DAGS = false;
+	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
 	
 	
 	/**

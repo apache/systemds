@@ -599,6 +599,7 @@ public abstract class Hop
 			}
 			case OBJECT:
 			case UNKNOWN:
+			case FRAME:	
 			{
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				break;

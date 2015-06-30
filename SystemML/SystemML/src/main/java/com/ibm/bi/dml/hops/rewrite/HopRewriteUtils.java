@@ -20,9 +20,11 @@ import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
@@ -648,6 +650,28 @@ public class HopRewriteUtils
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
 			else if(inclPersistent)
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
+		}
+			
+				
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean hasTransformParents( Hop hop )
+	{
+		boolean ret = true;
+		
+		ArrayList<Hop> parents = hop.getParent();
+		for( Hop p : parents )
+		{
+			if(    p instanceof ParameterizedBuiltinOp 
+				&& ((ParameterizedBuiltinOp)p).getOp()==ParamBuiltinOp.TRANSFORM) {
+				ret = true;
+			}
 		}
 			
 				

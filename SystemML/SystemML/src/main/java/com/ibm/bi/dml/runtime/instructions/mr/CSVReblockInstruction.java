@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.mr;
 
-import java.util.Arrays;
-
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;

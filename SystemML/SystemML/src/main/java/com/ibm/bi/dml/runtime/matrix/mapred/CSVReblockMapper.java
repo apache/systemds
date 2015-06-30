@@ -9,7 +9,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 

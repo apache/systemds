@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.transform;
 import java.util.HashSet;
 
@@ -37,6 +44,10 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMR {
 	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static JobReturn runJob(String inputPath, String rblkInst, String otherInst, String specPath, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numRows, long numColsBefore, long numColsAfter, int replication, String headerLine) throws Exception {
 		
 		CSVReblockInstruction rblk = (CSVReblockInstruction) InstructionParser.parseSingleInstruction(rblkInst);
@@ -55,7 +66,7 @@ public class ApplyTfBBMR {
 		job.setJarByClass(ApplyTfBBMR.class);
 		
 		// set relevant classes
-		job.setMapperClass(ApplyTxBBMapperOLD.class);
+		job.setMapperClass(ApplyTfBBMapper.class);
 	
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, new String[]{inputPath}, new InputInfo[]{InputInfo.CSVInputInfo}, brlens, bclens, false, ConvertTarget.CELL);
 

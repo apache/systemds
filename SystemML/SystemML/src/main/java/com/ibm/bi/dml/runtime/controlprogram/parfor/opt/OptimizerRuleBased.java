@@ -30,6 +30,7 @@ import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopProperties;
@@ -1472,6 +1473,16 @@ public class OptimizerRuleBased extends Optimizer
 					{ 
 						AggBinaryOp ba = (AggBinaryOp) h;
 						ba.setMaxNumThreads(par); //set max constraint in hop
+						c.setK(par); //set optnode k (for explain)
+						//need to recompile SB, if changed constraint
+						recompileSB = true;
+					}
+					
+					if(OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
+							&& h instanceof QuaternaryOp  )
+					{ 
+						QuaternaryOp q = (QuaternaryOp) h;
+						q.setMaxNumThreads(par); //set max constraint in hop
 						c.setK(par); //set optnode k (for explain)
 						//need to recompile SB, if changed constraint
 						recompileSB = true;

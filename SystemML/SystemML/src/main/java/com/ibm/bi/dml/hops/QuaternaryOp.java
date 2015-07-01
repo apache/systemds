@@ -472,4 +472,8 @@ public class QuaternaryOp extends Hop
 			
 		return ret;
 	}
+	
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
 }

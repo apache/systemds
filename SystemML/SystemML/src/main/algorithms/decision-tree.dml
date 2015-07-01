@@ -16,7 +16,7 @@
 # X             String   ---          Location to read feature matrix X; note that X needs to be recoded and dummy coded 
 # Y 			String   ---		  Location to read label matrix Y
 # T             String   " "          If X contains categorical features, location to read column matrix T denoting the types of the features in X: 
-#									  0 for scale, 1 for categorical 
+#									  1 for scale, 2 for categorical 
 #									  If T is not provided all features are assumed to be scale
 # bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
 # depth         Int 	 25			  Maximum depth of the learnt tree
@@ -68,15 +68,16 @@ num_classes = ncol (Y_bin);
 
 
 if (fileT != " ") {
-	T = read (fileT);
-	T_min = min (T);
-	T_max = max (T);
-	if (T_min != 0 & T_max != 1) {
-		stop ("Types must be 0 or 1!");
+	TYPES = read (fileT);
+	TYPES_min = min (TYPES);
+	TYPES_max = max (TYPES);
+	if (TYPES_min != 1 & TYPES_max != 2) {
+		stop ("Types must be 1 for scale or 2 for categorical features!");
 	} else {
-		if (sum (T) != ncol (X)) { # both scale and categorical features exist
-			col_ind_cat = removeEmpty (target = seq (1, ncol (X)) * T, margin = "rows");
-			col_ind_scale = removeEmpty (targte = seq (1, ncol (X)) * (1 - T), margin = "rows");
+		TYPES = TYPES - 1;
+		if (sum (TYPES) != ncol (X)) { # both scale and categorical features exist
+			col_ind_cat = removeEmpty (target = seq (1, ncol (X)) * TYPES, margin = "rows");
+			col_ind_scale = removeEmpty (targte = seq (1, ncol (X)) * (1 - TYPES), margin = "rows");
 			X_cat = X %*% table (col_ind_cat, seq (1, nrow (col_ind_cat)), ncol (X), nrow (col_ind_cat));
 			X_scale = X %*% table (col_ind_scale, seq (1, nrow (col_ind_scale)), ncol (X), nrow (col_ind_scale));
 			num_cat_features = ncol (X_cat);
@@ -113,7 +114,7 @@ if (num_scale_features > 0) {
 	total_num_bins = sum (count_thresholds);
 	cum_count_thresholds = t (cumsum (t (count_thresholds)));
 	# print ("min no. bins: " + (min_num_bins + 1) + " max no. bins: " + (max_num_bins + 1) + " total no. bins: " + (total_num_bins + num_scale_features));
-	X_ext_left = matrix (0, rows = num_records, cols = total_num_bins);
+	X_scale_ext = matrix (0, rows = num_records, cols = total_num_bins);
 	parfor (i2 in 1:num_scale_features, check = 0) { 
 		Xi2 = X_scale[,i2];
 		count_threshold = as.scalar (count_thresholds[,i2]);
@@ -123,7 +124,7 @@ if (num_scale_features > 0) {
 		}
 		# print ("offset_feature " + offset_feature + " count_threshold " + count_threshold);
 		ti2 = t(thresholds[1:count_threshold, i2]);
-		X_ext_left[,offset_feature:(offset_feature + count_threshold - 1)] = outer (Xi2, ti2, "<");
+		X_scale_ext[,offset_feature:(offset_feature + count_threshold - 1)] = outer (Xi2, ti2, "<");
 	}
 }
 
@@ -173,7 +174,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_NC_large = matrix (0, rows = 3, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
 		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
-		cur_nodes_small = matrix (0, rows = 2, cols = num_cur_nodes_large); # cur_NC_large; 
+		cur_nodes_small = matrix (0, rows = 2, cols = 2 * num_cur_nodes_large); 
 	}
 
 	##### LOOP OVER LARGE NODES...
@@ -203,7 +204,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (num_scale_features > 0) {
 			
 			# main operation	
-			label_counts_left_scale = t (t (cur_Y_bin) %*% X_ext_left); 
+			label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext); 
 		
 			# compute left and right label distribution
 			label_sum_left = rowSums (label_counts_left_scale);
@@ -256,7 +257,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 		
 			# main operation
-			label_counts = t (t (cur_Y_bin) %*% X_ext);  
+			label_counts = t (t (cur_Y_bin) %*% X_cat);  
 		
 			parfor (i9 in 1:num_cat_features, check = 0){
 			
@@ -368,7 +369,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 			# samples going to the left subtree
-			Ix_left = X_ext_left[, max_I_gain_ind_scale];
+			Ix_left = X_scale_ext[, max_I_gain_ind_scale];
 											
 			Ix_left = Ix * Ix_left;		
 			Ix_right = Ix * (1 - Ix_left);
@@ -439,7 +440,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 			# samples going to the left subtree
-			Ix_left = rowSums (X_ext[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
+			Ix_left = rowSums (X_cat[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
 			Ix_left = ppred (Ix_left, 1, ">=");
 											  
 			Ix_left = Ix * Ix_left;		
@@ -500,18 +501,20 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			if (left_child_size > threshold) {
 				cur_Q_large[1,(2 * (i6 - 1)+ 1)] = left_child; 
 			} else {
+				# first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
 				cur_nodes_small[1,(2 * (i6 - 1)+ 1)] = left_child;
 				cur_nodes_small[2,(2 * (i6 - 1)+ 1)] = left_child_size;
-				print (left_child + " with size " + left_child_size + " added to cur_nodes_small");
+				# print (left_child + " with size " + left_child_size + " added to cur_nodes_small");
 			}
 		}
 		if (!right_pure) {
 			if (right_child_size > threshold) {
 				cur_Q_large[1,(2 * i6)] = right_child;
 			} else{
+				# first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
 				cur_nodes_small[1,(2 * i6)] = right_child;
 				cur_nodes_small[2,(2 * i6)] = right_child_size;	
-				print (right_child + " with size " + right_child_size + " added to cur_nodes_small");				
+				# print (right_child + " with size " + right_child_size + " added to cur_nodes_small");				
 			}	
 		}
 	}
@@ -560,10 +563,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		# build dataset for SMALL node
 		Ix = ppred (L[,1], cur_node_small, "==");	
 		if (num_scale_features > 0) {
-			X_ext_left_small = removeEmpty (target = X_ext_left * Ix, margin = "rows");
+			X_scale_ext_small = removeEmpty (target = X_scale_ext * Ix, margin = "rows");
 		}
 		if (num_cat_features > 0) {
-			X_ext_small = removeEmpty (target = X_ext * Ix, margin = "rows");
+			X_cat_small = removeEmpty (target = X_cat * Ix, margin = "rows");
 		}
 		L_small = removeEmpty (target = L * Ix, margin = "rows");
 		Y_bin_small = removeEmpty (target = Y_bin * Ix, margin = "rows");
@@ -617,7 +620,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				if (num_scale_features > 0) {
 					
 					# main operation	
-					label_counts_left_scale = t (t (cur_Y_bin) %*% X_ext_left_small); 
+					label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext_small); 
 		
 					# compute left and right label distribution
 					label_sum_left = rowSums (label_counts_left_scale);
@@ -669,7 +672,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 		
 					# main operation
-					label_counts = t (t (cur_Y_bin) %*% X_ext_small); # X_ext_small 
+					label_counts = t (t (cur_Y_bin) %*% X_cat_small); # X_cat_small 
 		
 					parfor (i9 in 1:num_cat_features, check = 0){
 			
@@ -780,7 +783,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 					# samples going to the left subtree
-					Ix_left = X_ext_left_small[, max_I_gain_ind_scale];
+					Ix_left = X_scale_ext_small[, max_I_gain_ind_scale];
 														
 					Ix_left = Ix * Ix_left;		
 					Ix_right = Ix * (1 - Ix_left);
@@ -851,7 +854,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 					# samples going to the left subtree
-					Ix_left = rowSums (X_ext_small[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
+					Ix_left = rowSums (X_cat_small[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
 					Ix_left = ppred (Ix_left, 1, ">=");
 					
 					Ix_left = Ix * Ix_left;		

@@ -663,7 +663,7 @@ public class HopRewriteUtils
 	 */
 	public static boolean hasTransformParents( Hop hop )
 	{
-		boolean ret = true;
+		boolean ret = false;
 		
 		ArrayList<Hop> parents = hop.getParent();
 		for( Hop p : parents )

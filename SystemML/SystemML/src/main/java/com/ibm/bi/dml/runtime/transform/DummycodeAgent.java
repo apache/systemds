@@ -109,10 +109,13 @@ public class DummycodeAgent extends TransformationAgent {
 		_numBins = numbins;
 	}
 	
-	public int generateDummycodeMaps(FileSystem fs, String txMtdDir, int numCols) throws IOException {
+	public int generateDummycodeMaps(FileSystem fs, String txMtdDir, int numCols, String header, String delim) throws IOException {
 		if ( _dcdList == null ) 
 			return numCols;
 		
+		Pattern _delim = Pattern.compile(Pattern.quote(delim));
+		String[] names = _delim.split(header, -1);
+
 		Path pt=new Path(txMtdDir+"/Dummycode/" + DCD_FILE_NAME);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		
@@ -122,13 +125,13 @@ public class DummycodeAgent extends TransformationAgent {
 		{
 			if ( idx < _dcdList.length && _dcdList[idx] == colID )
 			{
-				br.write(colID + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
+				br.write(colID + "," + UtilFunctions.quote(names[colID-1]) + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
 				sum += _domainSizes[idx];
 				idx++;
 			}
 			else 
 			{
-				br.write(colID + "," + sum + "," + sum + "\n");
+				br.write(colID + "," + UtilFunctions.quote(names[colID-1]) + "," + "0" + "," + sum + "," + sum + "\n");
 				sum += 1;
 			}
 				

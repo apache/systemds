@@ -81,9 +81,6 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 			row.getIndexes().setIndexes(rowIndex, col+1);
 			for(int k=0;k<bclen; k++)
 			{
-				if(cells[k+start] != null && cells[k+start].contains("NA")) {
-					throw new IOException("error: start=" +  start + ", k=" + k + ", " + cells[k+start] + ", " + cells[0] + ", " + num);
-				}
 				if(cells[k+start] == null || cells[k+start].isEmpty())
 				{
 					if(!fill)

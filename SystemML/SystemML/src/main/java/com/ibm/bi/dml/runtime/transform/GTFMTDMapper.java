@@ -154,6 +154,8 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 		
 		// reset global variables, required when the jvm is reused.
 		_firstRecordInSplit = true;
-		
+		_offsetInPartFile = -1;
+		_numRecordsInPartFile = 0;
+		_partFileWithHeader = false;
 	}
 }

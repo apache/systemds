@@ -123,7 +123,7 @@ public class ApplyTfHelper {
 			header = _rJob.get(MRJobConfiguration.TF_HEADER);
 		
 		String dcdHeader = _da.constructDummycodedHeader(header, _delimString);
-		_da.generateDummycodeMaps(FileSystem.get(_rJob), _tmpPath, (int) _numCols);
+		_da.generateDummycodeMaps(FileSystem.get(_rJob), _tmpPath, (int) _numCols, header, _delimString);
 		
 		// write header information (before and after transformation) to temporary path
 		// these files are copied into txMtdPath, once the ApplyTf job is complete.

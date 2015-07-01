@@ -332,6 +332,8 @@ public class DataTransform {
 		fs.rename( new Path(tmpPath + "/" + "column.names.transformed"), new Path(txMtdPath + "/" + "column.names.transformed"));
 		if(fs.exists(new Path(tmpPath +"/Dummycode/" + "dummyCodeMaps.csv")))
 			fs.rename( new Path(tmpPath + "/Dummycode/" + "dummyCodeMaps.csv"), new Path(txMtdPath + "/Dummycode/" + "dummyCodeMaps.csv"));
+		
+		MapReduceTool.deleteFileIfExistOnHDFS(tmpPath);
 	}
 	
 	/**
@@ -372,7 +374,7 @@ public class DataTransform {
 			if ( TransformationAgent.checkValidInputFile(fs, binpath, false ) )
 			{
 				br = new BufferedReader(new InputStreamReader(fs.open(binpath)));
-				int nbins = UtilFunctions.parseToInt(br.readLine().split(TransformationAgent.TXMTD_SEP)[3]);
+				int nbins = UtilFunctions.parseToInt(br.readLine().split(TransformationAgent.TXMTD_SEP)[4]);
 				br.close();
 				ret += (nbins-1);
 			}
@@ -479,6 +481,8 @@ public class DataTransform {
 											partOffsetsFile, oprnds.inputCSVProperties, 
 											numRows, numColumns, numColumnsTf, 
 											replication, headerLine);
+			
+			MapReduceTool.deleteFileIfExistOnHDFS(new Path(partOffsetsFile), job);
 				
 		}
 		else {
@@ -686,7 +690,11 @@ public class DataTransform {
 		Pattern _delim = Pattern.compile(Pattern.quote(prop.getDelim()));
 
 		// Initialize transformation agents
-		String[] _naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(prop.getNAStrings(), -1);
+		String[] _naStrings = null;
+		
+		if ( prop.getNAStrings() != null )
+			_naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(prop.getNAStrings(), -1);
+		
 		TransformationAgent.init(_naStrings, headerLine, prop.getDelim());
 		MVImputeAgent _mia = new MVImputeAgent(spec);
 		RecodeAgent _ra = new RecodeAgent(spec);
@@ -782,12 +790,13 @@ public class DataTransform {
 			br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
 			if(fileNo==0 && prop.hasHeader() ) { 
 				String header = br.readLine();
+				
 				String dcdHeader = _da.constructDummycodedHeader(header, prop.getDelim());
-				//numColumnsTf = _da.generateDummycodeMaps(fs, txMtdPath, ncols);
+				numColumnsTf = _da.generateDummycodeMaps(fs, txMtdPath, ncols, header, prop.getDelim());
 				DataTransform.generateHeaderFiles(fs, txMtdPath, header, dcdHeader);
 				
-				if ( isCSV )
-					out.write(dcdHeader + "\n");
+				//if ( isCSV )
+				//	out.write(dcdHeader + "\n");
 			}
 			
 			line = null;
@@ -818,7 +827,9 @@ public class DataTransform {
 				{
 					for(int c=0; c<words.length; c++)
 					{
-						if(words[c] != null)
+						if(words[c] == null || words[c].isEmpty())
+							mb.setValueDenseUnsafe(r, c, 0);
+						else 
 							mb.setValueDenseUnsafe(r, c, UtilFunctions.parseToDouble(words[c]));
 					}
 				}

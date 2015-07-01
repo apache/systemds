@@ -5921,7 +5921,18 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 
 	@Override
 	public boolean equals(Object arg0) {
-		throw new RuntimeException("Equals should never be called for matrix blocks.");
+		MatrixBlock that = (MatrixBlock) arg0;
+		
+		if(this.rlen != that.rlen || this.clen != that.clen || this.nonZeros != that.nonZeros )
+			return false;
+		
+		// TODO: this implementation is to be optimized for different block representations
+		for(int i=0; i < this.rlen; i++) 
+			for(int j=0; j < this.clen; j++ )
+				if(this.getValue(i, j) != that.getValue(i,j)) 
+					return false;
+		
+		return true;
 	}
 	
 	@Override

@@ -92,7 +92,6 @@ public class GenTfMtdMR {
 		Counters c = runjob.getCounters();
 		long tx_numRows = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS).getCounter();
 
-		
 		return tx_numRows;
 	}
 	

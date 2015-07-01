@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -21,6 +22,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
+import com.google.common.collect.Ordering;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -128,8 +130,11 @@ public class RecodeAgent extends TransformationAgent {
 			throw new RuntimeException("Can not proceed since the column id " + colID + " contains only the missing values, and not a single valid value.");
 		}
 		
-		for(String w : map.keySet()) {
-			//if ( !MVImputeAgent.isNA(w, TransformationAgent.NAstrings)) {
+		// Order entries by category (string) value
+		Ordering<String> valueComparator = Ordering.natural();
+		List<String> newNames = valueComparator.sortedCopy(map.keySet());
+
+		for(String w : newNames) { //map.keySet()) {
 				count = map.get(w);
 				++rcdIndex;
 				
@@ -144,7 +149,6 @@ public class RecodeAgent extends TransformationAgent {
 				
 				// Replace count with recode index (useful when invoked from CP)
 				map.put(w, (long)rcdIndex);
-			//}
 		}
 		br.close();
 		

@@ -347,7 +347,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			
 			MatrixBlock retVal = new MatrixBlock(firstBlock.getNumRows(), firstBlock.getNumColumns(), firstBlock.isInSparseFormat());
 			for(MatrixBlock miniBlock : kv._2) {
-				retVal.merge(miniBlock, true);
+				retVal.merge(miniBlock, true); // its ok to do append only here because we are doing sort after.
 			}
 			retVal.sortSparseRows();
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, retVal);

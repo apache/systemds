@@ -847,7 +847,7 @@ public class Explain
 			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
 		else {
 			if(inst.getDebugString() != null && PRINT_EXPLAIN_WITH_LINEAGE) {
-				tmp = inst.toString() + "\n" + inst.getDebugString();
+				tmp = inst.toString() + "\n" + inst.getSparkInfo() + "\n" +  inst.getDebugString();
 				//tmp = inst.toString() + entrySeparator + inst.getDebugString().replaceAll("\n", lineSeparator);
 			}
 			else

@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Explain;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -62,6 +63,7 @@ public class SparkExecutionContext extends ExecutionContext
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
 	// This limitation may eventually be removed; see SPARK-2243 for more details.
 	private static JavaSparkContext _singletonSpctx = null;
+	protected static SparkListener _sparkListener = null;
 	
 	private JavaSparkContext _spctx = null; 
 	
@@ -107,6 +109,10 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 	
+	public SparkListener getSparkListener() {
+		return _sparkListener;
+	}
+
 	public void close() {
 		synchronized(SparkExecutionContext.class) {
 			_spctx.stop();
@@ -515,6 +521,9 @@ public class SparkExecutionContext extends ExecutionContext
 			JavaPairRDD<?, ?> in1, String in1Name, 
 			JavaPairRDD<?, ?> in2, String in2Name) throws DMLRuntimeException {
 		if(inst.getDebugString() == null && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
+			
+			// RDDInfo outInfo = org.apache.spark.storage.RDDInfo.fromRdd(out.rdd());
+			
 			// First fetch start lines from input RDDs
 			String startLine1 = null; 
 			String startLine2 = null;
@@ -559,6 +568,7 @@ public class SparkExecutionContext extends ExecutionContext
 			// outDebugString += "\n{" + startLine1 + "}\n{" + startLine2 + "}";
 			
 			inst.setDebugString(outDebugString + "\n");
+			
 		}
 	}
 	

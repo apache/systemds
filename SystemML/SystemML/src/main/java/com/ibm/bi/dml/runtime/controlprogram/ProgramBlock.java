@@ -384,9 +384,14 @@ public class ProgramBlock
 				if (tmp instanceof CPInstruction) 
 					((CPInstruction) tmp).processInstruction(ec);
 				else {
+					if(tmp instanceof ComputationSPInstruction && Explain.PRINT_EXPLAIN_WITH_LINEAGE && ec instanceof SparkExecutionContext) {
+						((SparkExecutionContext) ec).getSparkListener().addCurrentInstruction(tmp);
+					}
 					((SPInstruction) tmp).processInstruction(ec);
 					if(tmp instanceof ComputationSPInstruction && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
 						((SparkExecutionContext) ec).setDebugString(tmp, ((ComputationSPInstruction) tmp).getOutputVariableName());
+						
+						((SparkExecutionContext) ec).getSparkListener().removeCurrentInstruction(tmp);
 					}
 				}
 				

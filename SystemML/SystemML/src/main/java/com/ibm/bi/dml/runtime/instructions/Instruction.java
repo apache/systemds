@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.runtime.instructions;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,9 +34,27 @@ public abstract class Instruction
 	
 	protected INSTRUCTION_TYPE type;
 	protected String           instString;
-	protected String           debugString;
 	protected int              lineNum;
 	private long instID;
+	
+	// Fields that help monitor spark execution
+	protected String           debugString;
+	public ArrayList<Integer> stageSubmittedIds = new ArrayList<Integer>();
+	public ArrayList<Integer> stageCompletedIds = new ArrayList<Integer>();
+	private String getStringFromArrayList(ArrayList<Integer> al) {
+		String retVal = "";
+		for(Integer i : al) {
+			if(retVal.compareTo("") != 0) {
+				retVal += ", ";
+			}
+			retVal += i;
+		}
+		return retVal;
+	}
+	public String getSparkInfo() {
+		return "\nStage Submitted IDs:[" + getStringFromArrayList(stageSubmittedIds) + "]" +
+				"\nStage Completed IDs:[" + getStringFromArrayList(stageCompletedIds) + "]";
+	}
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;

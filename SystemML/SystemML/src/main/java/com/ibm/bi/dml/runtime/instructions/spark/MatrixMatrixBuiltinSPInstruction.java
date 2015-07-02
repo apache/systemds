@@ -41,56 +41,30 @@ public class MatrixMatrixBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
-
-		String opcode = getOpcode();
-        
-		if(opcode.compareTo("min") == 0 || opcode.compareTo("max") == 0) {
-			SparkExecutionContext sec = (SparkExecutionContext) ec;
-			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			if(!mcOut.dimsKnown() && !mc1.dimsKnown() && !mc2.dimsKnown()) {
-				throw new DMLRuntimeException("The output dimensions are not specified for MatrixMatrixBuiltinSPInstruction");
-			}
-			else if(mc1.getRows() != mc2.getRows() || mc1.getCols() != mc2.getCols()) {
-				throw new DMLRuntimeException("Incorrect dimensions specified for MatrixMatrixBuiltinSPInstruction");
-			}
-			else if(!mcOut.dimsKnown()) {
-				mcOut.set(mc1);
-				// mcOut.setDimension(mc1.getRows(), mc1.getCols());
-			}
-			
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-			BinaryOperator bop = (BinaryOperator) _optr;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.cogroup(in2).mapToPair(new StreamableMMBuiltin(bop));
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-			sec.addLineageRDD(output.getName(), input2.getName());
+		
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown() && !mc1.dimsKnown() && !mc2.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions are not specified for MatrixMatrixBuiltinSPInstruction");
 		}
-		else {
-			throw new DMLRuntimeException("ERROR: The MatrixMatrixBuiltinSPInstruction not implemented for opcode:" + opcode);
+		else if(mc1.getRows() != mc2.getRows() || mc1.getCols() != mc2.getCols()) {
+			throw new DMLRuntimeException("Incorrect dimensions specified for MatrixMatrixBuiltinSPInstruction");
+		}
+		else if(!mcOut.dimsKnown()) {
+			mcOut.set(mc1);
+			// mcOut.setDimension(mc1.getRows(), mc1.getCols());
 		}
 		
-//        if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
-//        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations((MatrixObject)ec.getVariable(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
-//    		ec.setMatrixOutput(output.getName(), solution);
-//        	return;
-//        }
-//		
-//        /* Default behavior of this instruction */
-//		String output_name = output.getName();
-//		BinaryOperator bop = (BinaryOperator) _optr;
-//		
-//        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-//        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-//		
-//        MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
-//		
-//		ec.setMatrixOutput(output_name, resultBlock);
-//		
-//		ec.releaseMatrixInput(input1.getName());
-//		ec.releaseMatrixInput(input2.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		BinaryOperator bop = (BinaryOperator) _optr;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.cogroup(in2).mapToPair(new StreamableMMBuiltin(bop));
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.addLineageRDD(output.getName(), input2.getName());
+		
 	}
 	
 	public static class StreamableMMBuiltin implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> {

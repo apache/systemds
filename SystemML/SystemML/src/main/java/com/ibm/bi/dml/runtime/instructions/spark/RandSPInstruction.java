@@ -268,7 +268,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			// For load balancing: degree of parallelism such that ~128MB per partition
 			double avgNumBytesOfRandomBlock = meanNNz*8 + 16;
-			int numPartitions = (int) Math.max(avgNumBytesOfRandomBlock*numBlocks / (128 * 10^6), 1);
+			int numPartitions = (int) Math.max(Math.min(avgNumBytesOfRandomBlock*numBlocks / (128 * 10^6), numBlocks), 1);
 			
 			JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf)); 

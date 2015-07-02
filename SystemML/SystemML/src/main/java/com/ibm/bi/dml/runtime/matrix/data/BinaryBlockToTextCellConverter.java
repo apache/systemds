@@ -47,6 +47,9 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		thisBlockWidth=0;
 	}
 	
+	/**
+	 * Before calling convert, please make sure to setBlockSize(brlen, bclen);
+	 */
 	@Override
 	public void convert(MatrixIndexes k1, MatrixBlock v1) {
 		reset();

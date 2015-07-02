@@ -381,15 +381,11 @@ public class TernaryOp extends Hop
 		}
 		
 		ExecType et = optFindExecType();
-		if ( et == ExecType.SPARK )  {
-			// TODO implement Spark support
-			et = ExecType.CP;
-		}
 		
 		//reset reblock requirement (see MR ctable / construct lops)
 		setRequiresReblock( false );
 		
-		if ( et == ExecType.CP ) 
+		if ( et == ExecType.CP  || et == ExecType.SPARK) 
 		{	
 			//for CP we support only ctable expand left
 			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;

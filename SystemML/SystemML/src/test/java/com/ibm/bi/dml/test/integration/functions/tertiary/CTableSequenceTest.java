@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -53,6 +54,54 @@ public class CTableSequenceTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   ); 
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "B" })   ); 
+	}
+	
+	@Test
+	public void testCTableSequenceLeftNoRewriteSP() 
+	{
+		runCTableSequenceTest(false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftRewriteSP() 
+	{
+		runCTableSequenceTest(true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceRightNoRewriteSP() 
+	{
+		runCTableSequenceTest(false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceRightRewriteSP() 
+	{
+		runCTableSequenceTest(true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftNoRewriteAggSP() 
+	{
+		runCTableSequenceTest(false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceLeftRewriteAggSP() 
+	{
+		runCTableSequenceTest(true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceRightNoRewriteAggSP() 
+	{
+		runCTableSequenceTest(false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableSequenceRightRewriteAggSP() 
+	{
+		runCTableSequenceTest(true, false, true, ExecType.SPARK);
 	}
 
 	
@@ -168,7 +217,16 @@ public class CTableSequenceTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewrite;
 		
 		try
@@ -204,13 +262,16 @@ public class CTableSequenceTest extends AutomatedTestBase
 			
 			//5 instead of 4 for rewrite because we dont pull it into the map task yet.
 			//2 for CP due to reblock jobs for input and table
-			int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 5 : 6))+(withAgg ? 1 : 0);
-			checkNumCompiledMRJobs(expectedNumCompiled); 
+			if(et != ExecType.SPARK) {
+				int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 5 : 6))+(withAgg ? 1 : 0);
+				checkNumCompiledMRJobs(expectedNumCompiled);
+			}
 			
 		}
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
 		}
 	}

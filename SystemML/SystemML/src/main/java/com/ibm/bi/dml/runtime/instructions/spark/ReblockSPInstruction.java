@@ -80,14 +80,14 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		return new ReblockSPInstruction(op, in, out, brlen, bclen, outputEmptyBlocks, opcode, str);
 	}
 	
-	private void processBinaryCellReblock(SparkExecutionContext sec, JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells) throws DMLRuntimeException {
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> processBinaryCellReblock(SparkExecutionContext sec, JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells,
+			MatrixCharacteristics mc, MatrixCharacteristics mcOut, boolean outputEmptyBlocks,
+			int brlen, int bclen) throws DMLRuntimeException {
 		
 		long numRows = -1;
 		long numColumns = -1;
 		if(!mcOut.dimsKnown() && !mc.dimsKnown()) {
-			throw new DMLRuntimeException("Unknown dimensions in reblock instruction for text format");
+			throw new DMLRuntimeException("Unknown dimensions while reblock into binary cell format");
 		}
 		else if(mc.dimsKnown()) {
 			numRows = mc.getRows();
@@ -128,10 +128,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
 		}
 		
-		// SparkUtils.setLineageInfoForExplain(this, binaryBlocksWithEmptyBlocks, output.getName());
-		
-		//put output RDD handle into symbol table
-		sec.setRDDHandleForVariable(output.getName(), binaryBlocksWithEmptyBlocks);
+		return binaryBlocksWithEmptyBlocks;
 	}
 	
 	public void processTextCellReblock(SparkExecutionContext sec, JavaPairRDD<LongWritable, Text> lines) throws DMLRuntimeException {
@@ -161,7 +158,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				.filter(new DropEmptyBinaryCells());
 				
 		
-		processBinaryCellReblock(sec, binaryCells);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = processBinaryCellReblock(sec, binaryCells, mc, mcOut, outputEmptyBlocks, brlen, bclen);
+		
+		//put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -222,7 +222,9 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			}
 			else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) {
 				JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-				processBinaryCellReblock(sec, binaryCells);
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out = processBinaryCellReblock(sec, binaryCells, mc, mcOut, outputEmptyBlocks, brlen, bclen);
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
 			}
 			else if(iimd.getInputInfo()==InputInfo.BinaryBlockInputInfo) {
 				/// HACK ALERT: Workaround for MLContext 

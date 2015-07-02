@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -53,6 +54,29 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   ); 
 	}
 
+	@Test
+	public void testCTableMatrixIgnoreZerosRewriteDenseSP() 
+	{
+		runCTableTest(true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableMatrixIgnoreZerosRewriteSparseSP() 
+	{
+		runCTableTest(true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableMatrixIgnoreZerosNoRewriteDenseSP() 
+	{
+		runCTableTest(false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCTableMatrixIgnoreZerosNoRewriteSparseSP() 
+	{
+		runCTableTest(false, true, ExecType.SPARK);
+	}
 	
 	@Test
 	public void testCTableMatrixIgnoreZerosRewriteDenseCP() 
@@ -101,7 +125,16 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+	
 		TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewrite;
 		
 		double sparsity = sparse ? sparsity2: sparsity1;
@@ -137,6 +170,7 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES = rewriteOld;
 		}
 	}

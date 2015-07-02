@@ -10,9 +10,9 @@ package com.ibm.bi.dml.test.integration.functions.tertiary;
 import java.util.HashMap;
 
 import org.junit.Assert;
-
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -39,6 +39,24 @@ public class TableOutputTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "F" })   ); 
 	}
 
+	@Test
+	public void testTableOutputSP1() 
+	{
+		runTableOutputTest(ExecType.SPARK, 0);
+	}
+	
+	@Test
+	public void testTableOutputSP2() 
+	{
+		runTableOutputTest(ExecType.SPARK, 5);
+	}
+	
+	@Test
+	public void testTableOutputSP3() 
+	{
+		runTableOutputTest(ExecType.SPARK, -5);
+	}
+	
 	
 	@Test
 	public void testTableOutputCP1() 
@@ -88,7 +106,15 @@ public class TableOutputTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -167,6 +193,7 @@ public class TableOutputTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

@@ -190,6 +190,11 @@ public class MapReduceTool
 			throw new FileNotFoundException(originalDir);
 		}
 	}
+	
+	public static void mergeIntoSingleFile(String originalDir, String newFile) throws IOException {
+		FileSystem fs = FileSystem.get(_rJob);
+		FileUtil.copyMerge(fs, new Path(originalDir), fs, new Path(newFile), true, _rJob, null);
+	}
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {
 		Path originalPath = new Path(originalDir);

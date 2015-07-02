@@ -3225,7 +3225,7 @@ public class Dag<N extends Lop>
 					else { //CP PERSISTENT WRITE
 						// generate a write instruction that writes matrix to HDFS
 						Lop fname = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
-						CPInstruction currInstr = null;
+						Instruction currInstr = null;
 						Lop inputLop = node.getInputs().get(0);
 						
 						// Case of a transient read feeding into only one output persistent binaryblock write
@@ -3243,10 +3243,17 @@ public class Dag<N extends Lop>
 											"binaryblock" );
 						}
 						else {
+							
 							String io_inst = node.getInstructions(
 									node.getInputs().get(0).getOutputParameters().getLabel(), 
 									fname.getOutputParameters().getLabel());
-							currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
+							
+							if(node.getExecType() == ExecType.SPARK)
+								// This will throw an exception if the exectype of hop is set incorrectly
+								// Note: the exec type and exec location of lops needs to be set to SPARK and ControlProgram respectively
+								currInstr = SPInstructionParser.parseSingleInstruction(io_inst);
+							else
+								currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
 						}
 
 						if(DMLScript.ENABLE_DEBUG_MODE) {

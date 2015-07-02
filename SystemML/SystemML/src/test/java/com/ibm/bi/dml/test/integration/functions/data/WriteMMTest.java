@@ -10,6 +10,7 @@ package com.ibm.bi.dml.test.integration.functions.data;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -69,6 +70,12 @@ public class WriteMMTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testWriteMMSP() 
+	{
+		runWriteMMTest(ExecType.SPARK, TEST_NAME1);
+	}
+	
+	@Test
 	public void testWriteMMMR() 
 	{
 		runWriteMMTest(ExecType.MR, TEST_NAME1);
@@ -98,7 +105,16 @@ public class WriteMMTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 	
 		try
 		{
@@ -107,7 +123,7 @@ public class WriteMMTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
+			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "A" ,
 					                        Integer.toString(rows),
 					                        Integer.toString(cols),
 					                        HOME + OUTPUT_DIR + "B"  };
@@ -125,6 +141,7 @@ public class WriteMMTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

@@ -385,7 +385,10 @@ public class Data extends Lop
 			throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + getDataType());
 			
 		StringBuilder sb = new StringBuilder();
-		sb.append( "CP" );
+		if(this.getExecType() == ExecType.SPARK)  
+			sb.append( "SPARK" );
+		else
+			sb.append( "CP" );
 		sb.append( OPERAND_DELIMITOR );
 		if ( operation == OperationTypes.READ ) 
 		{

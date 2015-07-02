@@ -294,7 +294,6 @@ public class TestUtils
 			FSDataInputStream fsout = fs.open(outDirectory);
 			BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
 			
-			
 			//skip MM header
 			line = outIn.readLine();
 			
@@ -317,7 +316,8 @@ public class TestUtils
 					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 							.parseDouble(rcv[2]));
 			}
-			outIn.close();
+		
+			
 
 			int countErrors = 0;
 			for (CellIndex index : expectedValues.keySet()) {

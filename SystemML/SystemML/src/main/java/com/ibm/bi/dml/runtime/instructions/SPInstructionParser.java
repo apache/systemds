@@ -41,8 +41,10 @@ import com.ibm.bi.dml.runtime.instructions.spark.ReorgSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.spark.TernarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.TsmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SortSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.WriteSPInstruction;
 
 
 public class SPInstructionParser extends InstructionParser {
@@ -138,6 +140,9 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "ucumk+", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ucum*" , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ucummin", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "ucummax", SPINSTRUCTION_TYPE.BuiltinUnary);
 		// String2SPInstructionType.put( "stop"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "inverse", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
@@ -158,8 +163,12 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE  , SPINSTRUCTION_TYPE.Rand);
 		
+		String2SPInstructionType.put( "ctable", SPINSTRUCTION_TYPE.Ternary);
+		String2SPInstructionType.put( "ctableexpand", SPINSTRUCTION_TYPE.Ternary);
+		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
+		String2SPInstructionType.put( "write" 		, SPINSTRUCTION_TYPE.Variable);
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -211,6 +220,9 @@ public class SPInstructionParser extends InstructionParser {
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);
 				
+			case Ternary:
+				return TernarySPInstruction.parseInstruction(str);
+				
 			// Reblock instructions	
 			case Reblock:
 				return ReblockSPInstruction.parseInstruction(str);
@@ -241,8 +253,9 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case BuiltinUnary:
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("ucumk+") || parts[0].equals("inverse") ) {
-					// For now, ucumk+, inverse are not implemented
+				if ( parts[0].equals("ucumk+") || parts[0].equals("ucum*") || parts[0].equals("ucummin") || parts[0].equals("ucummax") 
+						|| parts[0].equals("inverse") ) {
+					// For now, ucumk+ and similar alternatives, inverse are not implemented
 					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
 				}
 				else {
@@ -274,7 +287,13 @@ public class SPInstructionParser extends InstructionParser {
 				return (SPInstruction) SortSPInstruction.parseInstruction(str);
 				
 			case Variable:
-				return (CPInstruction) VariableCPInstruction.parseInstruction(str);
+				parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if ( parts[0].compareTo("write") == 0 ) {
+					// TODO: Some bug while writing in case of CTable test suite
+					return (SPInstruction) WriteSPInstruction.parseInstruction(str);
+				}
+				else
+					return (CPInstruction) VariableCPInstruction.parseInstruction(str);
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);

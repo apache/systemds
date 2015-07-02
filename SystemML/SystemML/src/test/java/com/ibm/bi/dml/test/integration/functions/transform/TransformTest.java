@@ -124,8 +124,8 @@ public class TransformTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-nvargs", 
-											"DATA=" + HOME + INPUT_DIR + DATASET,
-											"TFSPEC=" + HOME + INPUT_DIR + SPEC,
+											"DATA=" + HOME + "input/" + DATASET,
+											"TFSPEC=" + HOME + "input/" + SPEC,
 											"TFMTD=" + HOME + OUTPUT_DIR + "tfmtd",
 											"TFDATA=" + HOME + OUTPUT_DIR + "tfout",
 											"OFMT=" + ofmt
@@ -138,7 +138,7 @@ public class TransformTest extends AutomatedTestBase
 			
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[]{"-nvargs", 
-											"DATA=" + HOME + INPUT_DIR + DATASET,
+											"DATA=" + HOME + "input/" + DATASET,
 											"APPLYMTD=" + HOME + OUTPUT_DIR + "tfmtd",  // generated above
 											"TFMTD=" + HOME + OUTPUT_DIR + "test_tfmtd",
 											"TFDATA=" + HOME + OUTPUT_DIR + "test_tfout",
@@ -154,7 +154,7 @@ public class TransformTest extends AutomatedTestBase
 			
 			try {
 				ReaderTextCSV csvReader=  new ReaderTextCSV(new CSVFileFormatProperties(true, ",", true, 0, null));
-				MatrixBlock exp = csvReader.readMatrixFromHDFS(HOME+INPUT_DIR+ TFDATA, -1, -1, -1, -1, -1);
+				MatrixBlock exp = csvReader.readMatrixFromHDFS(HOME+"input/"+ TFDATA, -1, -1, -1, -1, -1);
 				
 				MatrixBlock out = null, out2=null;
 				if(ofmt.equals("csv"))

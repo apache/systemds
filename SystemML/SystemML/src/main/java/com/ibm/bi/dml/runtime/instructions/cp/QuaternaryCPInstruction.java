@@ -38,7 +38,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		
 		input4 = in4;
 		wtype = wt;
-		k = _numThreads;
+		_numThreads = k;
 	}
 
 	public static QuaternaryCPInstruction parseInstruction(String inst) 

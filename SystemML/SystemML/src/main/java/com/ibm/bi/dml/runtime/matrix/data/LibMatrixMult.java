@@ -2409,8 +2409,8 @@ public class LibMatrixMult
 			_mV = mV;
 			_mW = mW;
 			_wt = wt;
-			_ru = rl;
-			_rl = ru;
+			_rl = rl;
+			_ru = ru;
 			
 			//allocate local result for partial aggregation
 			_ret = new MatrixBlock(1, 1, false);
@@ -2423,13 +2423,13 @@ public class LibMatrixMult
 			if( !_mX.sparse && !_mU.sparse && !_mV.sparse && (_mW==null || !_mW.sparse) 
 				&& !_mX.isEmptyBlock() && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() 
 				&& (_mW==null || !_mW.isEmptyBlock()))
-				matrixMultWSLossDense(_mX, _mU, _mV, _mW, _ret, _wt, _mX.clen, _mU.clen, _ru, _rl);
+				matrixMultWSLossDense(_mX, _mU, _mV, _mW, _ret, _wt, _mX.clen, _mU.clen, _rl, _ru);
 			else if( _mX.sparse && !_mU.sparse && !_mV.sparse && (_mW==null || _mW.sparse)
 				    && !_mX.isEmptyBlock() && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() 
 				    && (_mW==null || !_mW.isEmptyBlock()))
-				matrixMultWSLossSparseDense(_mX, _mU, _mV, _mW, _ret, _wt, _ru, _rl);
+				matrixMultWSLossSparseDense(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 			else
-				matrixMultWSLossGeneric(_mX, _mU, _mV, _mW, _ret, _wt, _ru, _rl);
+				matrixMultWSLossGeneric(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 
 			return null;
 		}

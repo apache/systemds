@@ -99,10 +99,24 @@ public class Builtin extends ValueFunction
 		return bFunc;
 	}
 	
-	public static Builtin getBuiltinFnObject (String str) {
-		
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static Builtin getBuiltinFnObject (String str) 
+	{
 		BuiltinFunctionCode code = String2BuiltinFunctionCode.get(str);
-		
+		return getBuiltinFnObject( code );
+	}
+	
+	/**
+	 * 
+	 * @param code
+	 * @return
+	 */
+	public static Builtin getBuiltinFnObject(BuiltinFunctionCode code) 
+	{	
 		if ( code == null ) 
 			return null; 
 			
@@ -240,8 +254,6 @@ public class Builtin extends ValueFunction
 			// Unknown code --> return null
 			return null;
 		}
-		
-		
 	}
 	
 	public Object clone() throws CloneNotSupportedException {

@@ -967,7 +967,9 @@ public abstract class Hop
 	
 	// Operations that require 4 operands
 	public enum OpOp4 {
-		WSLOSS, INVALID 
+		WSLOSS, //weighted sloss mm
+		WSIGMOID, //wweighted sigmoid mm
+		INVALID 
 	};
 	
 	
@@ -1277,6 +1279,7 @@ public abstract class Hop
 	static {
 		HopsOpOp4String = new HashMap<Hop.OpOp4, String>();
 		HopsOpOp4String.put(OpOp4.WSLOSS, "wsloss");
+		HopsOpOp4String.put(OpOp4.WSIGMOID, "wsigmoid");
 	}
 
 	protected static final HashMap<Hop.Direction, String> HopsDirection2String;

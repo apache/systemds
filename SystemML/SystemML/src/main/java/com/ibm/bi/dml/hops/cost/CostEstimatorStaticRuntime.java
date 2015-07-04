@@ -21,6 +21,8 @@ import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
+import com.ibm.bi.dml.lops.WeightedSigmoid;
+import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -649,6 +651,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		else if( inst.contains(WeightedSquaredLoss.OPCODE) )
 			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
 		else if( inst.contains(WeightedSquaredLossR.OPCODE) )
+			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(WeightedSigmoid.OPCODE) )
+			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
+		else if( inst.contains(WeightedSigmoidR.OPCODE) )
 			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
 		
 		if( !indexes.isEmpty() )

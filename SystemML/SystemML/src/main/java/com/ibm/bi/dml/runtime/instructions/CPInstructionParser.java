@@ -217,8 +217,9 @@ public class CPInstructionParser extends InstructionParser
 		
 		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
 	
-		String2CPInstructionType.put( "wsloss", CPINSTRUCTION_TYPE.Quaternary);
-		
+		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);
+		String2CPInstructionType.put( "wsigmoid", CPINSTRUCTION_TYPE.Quaternary);
+			
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 

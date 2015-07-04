@@ -28,6 +28,8 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.WeightedSigmoid;
+import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -345,7 +347,11 @@ public class GMR
 					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
 				else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
 					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
-
+				else if( tmp.contains(WeightedSigmoid.OPCODE) )
+					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
+				else if( tmp.contains(WeightedSigmoidR.OPCODE) )
+					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
+				
 				//copy distinct indexes only (prevent redundant add to distcache)
 				for( Byte tmpix : tmpindexList )
 					if( !indexList.contains(tmpix) )
@@ -421,6 +427,11 @@ public class GMR
 							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
 						else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
 							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(WeightedSigmoid.OPCODE) )
+							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(WeightedSigmoidR.OPCODE) )
+							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);
 					}

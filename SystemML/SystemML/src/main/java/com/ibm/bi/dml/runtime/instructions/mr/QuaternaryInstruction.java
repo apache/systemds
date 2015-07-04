@@ -9,6 +9,9 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.WeightedSigmoid;
+import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
+import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
@@ -25,8 +28,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
 /**
  * 
@@ -36,8 +39,6 @@ public class QuaternaryInstruction extends MRInstruction
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	private WeightsType _wType = null;
 	
 	private byte _input1 = -1;
 	private byte _input2 = -1;
@@ -55,13 +56,11 @@ public class QuaternaryInstruction extends MRInstruction
 	 * @param out
 	 * @param istr
 	 */
-	public QuaternaryInstruction(Operator op, WeightsType type, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU, boolean cacheV, String istr)
+	public QuaternaryInstruction(Operator op, byte in1, byte in2, byte in3, byte in4, byte out, boolean cacheU, boolean cacheV, String istr)
 	{
 		super(op, out);
 		mrtype = MRINSTRUCTION_TYPE.Quaternary;
 		instString = istr;
-		
-		_wType = type;
 		
 		_input1 = in1;
 		_input2 = in2;
@@ -70,11 +69,6 @@ public class QuaternaryInstruction extends MRInstruction
 		
 		_cacheU = cacheU;
 		_cacheV = cacheV;
-	}
-	
-	public WeightsType getWeightsType()
-	{
-		return _wType;
 	}
 	
 	public byte getInput1() {
@@ -105,35 +99,67 @@ public class QuaternaryInstruction extends MRInstruction
 		String opcode = InstructionUtils.getOpCode(str);
 		
 		//validity check
-		if (   !WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //mapwsloss
-			&& !WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) ) //redwsloss
+		if (   !WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)   //mapwsloss
+			&& !WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)  //redwsloss
+			&& !WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //mapwsigmoid
+			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) ) //redwsigmoid
 		{
 			throw new DMLRuntimeException("Unexpected opcode in QuaternaryInstruction: " + str);
 		}
 		
-		boolean isRed = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode);
-		
-		//check number of fields (4 inputs, output, type)
-		if( isRed )
-			InstructionUtils.checkNumFields ( str, 8 );
-		else
-			InstructionUtils.checkNumFields ( str, 6 );
+		//instruction parsing
+		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //wsloss
+			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) )
+		{
+			boolean isRed = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode);
 			
-		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionParts(str);
-		
-		byte in1 = Byte.parseByte(parts[1]);
-		byte in2 = Byte.parseByte(parts[2]);
-		byte in3 = Byte.parseByte(parts[3]);
-		byte in4 = Byte.parseByte(parts[4]);
-		byte out = Byte.parseByte(parts[5]);
-		WeightsType wtype = WeightsType.valueOf(parts[6]);
-		
-		//in mappers always through distcache, in reducers through distcache/shuffle
-		boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
-		boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
-		
-		return new QuaternaryInstruction(new SimpleOperator(null), wtype, in1, in2, in3, in4, out, cacheU, cacheV, str);
+			//check number of fields (4 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 8 );
+			else
+				InstructionUtils.checkNumFields ( str, 6 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionParts(str);
+			
+			byte in1 = Byte.parseByte(parts[1]);
+			byte in2 = Byte.parseByte(parts[2]);
+			byte in3 = Byte.parseByte(parts[3]);
+			byte in4 = Byte.parseByte(parts[4]);
+			byte out = Byte.parseByte(parts[5]);
+			WeightsType wtype = WeightsType.valueOf(parts[6]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
+			
+			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, str);	
+		}
+		else //wsigmoid
+		{
+			boolean isRed = WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode);
+			
+			//check number of fields (3 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 7 );
+			else
+				InstructionUtils.checkNumFields ( str, 5 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionParts(str);
+			
+			byte in1 = Byte.parseByte(parts[1]);
+			byte in2 = Byte.parseByte(parts[2]);
+			byte in3 = Byte.parseByte(parts[3]);
+			byte out = Byte.parseByte(parts[4]);
+			WSigmoidType wtype = WSigmoidType.valueOf(parts[5]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			
+			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
+		}	
 	}
 	
 	/**
@@ -153,13 +179,18 @@ public class QuaternaryInstruction extends MRInstruction
 		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in3 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in4 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		if( WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) ) {
+		
+		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) 
+			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode) ) 
+		{
 			ret = (index==in2 && index!=in1 && index!=in4) 
 				|| (index==in3 && index!=in1 && index!=in4);
 		}
-		else {
-			boolean cacheU = Boolean.parseBoolean(parts[8]);
-			boolean cacheV = Boolean.parseBoolean(parts[9]);
+		else 
+		{
+			int off = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) ? 8 : 7;
+			boolean cacheU = Boolean.parseBoolean(parts[off]);
+			boolean cacheV = Boolean.parseBoolean(parts[off+1]);
 			ret = (cacheU && index==in2 && index!=in1 && index!=in4) 
 				|| (cacheV && index==in3 && index!=in1 && index!=in4);
 		}
@@ -167,6 +198,11 @@ public class QuaternaryInstruction extends MRInstruction
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param inst
+	 * @param indexes
+	 */
 	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
 		//parse instruction parts (with exec type)
@@ -174,14 +210,18 @@ public class QuaternaryInstruction extends MRInstruction
 		String opcode = parts[1];
 		byte in1 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in2 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-		if( WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) ) {
+		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) 
+			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode) ) 
+		{
 			indexes.add(in1);
 			indexes.add(in2);
 		}
-		else{
-			if( Boolean.parseBoolean(parts[8]) )
+		else
+		{
+			int off = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) ? 8 : 7;
+			if( Boolean.parseBoolean(parts[off]) )
 				indexes.add(in1);
-			if( Boolean.parseBoolean(parts[9]) )
+			if( Boolean.parseBoolean(parts[off+1]) )
 				indexes.add(in2);
 		}
 	}
@@ -189,7 +229,8 @@ public class QuaternaryInstruction extends MRInstruction
 	@Override
 	public byte[] getInputIndexes() 
 	{
-		if( _wType==WeightsType.NONE )
+		QuaternaryOperator qop = (QuaternaryOperator)optr;
+		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
 			return new byte[]{_input1, _input2, _input3};
 		else
 			return new byte[]{_input1, _input2, _input3, _input4};
@@ -198,7 +239,8 @@ public class QuaternaryInstruction extends MRInstruction
 	@Override
 	public byte[] getAllIndexes() 
 	{
-		if( _wType==WeightsType.NONE )
+		QuaternaryOperator qop = (QuaternaryOperator)optr;
+		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
 			return new byte[]{_input1, _input2, _input3, output};
 		else
 			return new byte[]{_input1, _input2, _input3, _input4, output};
@@ -233,7 +275,7 @@ public class QuaternaryInstruction extends MRInstruction
 				//Step 2: get remaining inputs: Wij, Ui, Vj		
 				MatrixValue Xij = inVal;
 				
-				//get Wij if existing (null of WeightsType.NONE)
+				//get Wij if existing (null of WeightsType.NONE or WSigmoid any type)
 				IndexedMatrixValue iWij = cachedValues.getFirst(_input4); 
 				MatrixValue Wij = (iWij!=null) ? iWij.getValue() : null;
 				
@@ -250,8 +292,11 @@ public class QuaternaryInstruction extends MRInstruction
 				}
 				
 				//Step 3: process instruction
-				Xij.quaternaryOperations(optr, Ui, Vj, Wij, outVal, _wType);
-				outIx.setIndexes(1, 1);
+				Xij.quaternaryOperations(optr, Ui, Vj, Wij, outVal, (QuaternaryOperator)optr);
+				if( ((QuaternaryOperator)optr).wtype1 != null ) 
+					outIx.setIndexes(1, 1); //wsloss
+				else
+					outIx.setIndexes(inIx); //wsigmoid
 				
 				//put the output value in the cache
 				if(iout==tempValue)

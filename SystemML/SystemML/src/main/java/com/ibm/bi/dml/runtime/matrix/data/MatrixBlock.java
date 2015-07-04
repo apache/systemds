@@ -61,6 +61,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
@@ -5720,39 +5721,65 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	@Override
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt)
+	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		return quaternaryOperations(op, um, vm, wm, out, wt, 1);
+		return quaternaryOperations(op, um, vm, wm, out, qop, 1);
 	}
 	
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, WeightsType wt, int k)
-			throws DMLUnsupportedOperationException, DMLRuntimeException
-		{
-			//check input dimensions
-			if( getNumRows() != um.getNumRows() )
-				throw new DMLRuntimeException("Dimension mismatch rows on wsloss: "+getNumRows()+"!="+um.getNumRows());
-			if( getNumColumns() != vm.getNumRows() )
-				throw new DMLRuntimeException("Dimension mismatch columns on wsloss: "+getNumRows()+"!="+vm.getNumRows());
-			
-			//check input data types
-			MatrixBlock X = this;
-			MatrixBlock W = (wt!=WeightsType.NONE)?checkType(wm):null;
-			MatrixBlock U = checkType(um);
-			MatrixBlock V = checkType(vm);
-			MatrixBlock R = checkType(out);
-			
-			//prepare intermediates and output
-			R.reset(1, 1, false);
+	/**
+	 * 
+	 * @param op
+	 * @param um
+	 * @param vm
+	 * @param wm
+	 * @param out
+	 * @param wt
+	 * @param k
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop, int k)
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//check input dimensions
+		if( getNumRows() != um.getNumRows() )
+			throw new DMLRuntimeException("Dimension mismatch rows on wsloss: "+getNumRows()+"!="+um.getNumRows());
+		if( getNumColumns() != vm.getNumRows() )
+			throw new DMLRuntimeException("Dimension mismatch columns on wsloss: "+getNumRows()+"!="+vm.getNumRows());
 		
-			//core block computation
+		//check input data types
+		MatrixBlock X = this;
+		MatrixBlock U = checkType(um);
+		MatrixBlock V = checkType(vm);
+		MatrixBlock R = checkType(out);
+		
+		//prepare intermediates and output
+		if( qop.wtype1 != null )
+			R.reset(1, 1, false);
+		else
+			R.reset(rlen, clen, sparse);
+		
+		//core block operation
+		if( qop.wtype1 != null ) //wsloss
+		{
+			MatrixBlock W = (qop.wtype1!=WeightsType.NONE) ? checkType(wm) : null;
 			if( k > 1 )
-				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt, k);
+				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1, k);
 			else
-				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, wt);
-			
-			return R;
+				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1);
 		}
+		else //wsigmoid
+		{
+			if( k > 1 )
+				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2, k);
+			else
+				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2);
+		}	
+		
+		return R;
+	}
 	
 	////////
 	// Data Generation Methods

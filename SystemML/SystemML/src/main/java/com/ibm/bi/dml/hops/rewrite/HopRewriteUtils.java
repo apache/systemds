@@ -467,6 +467,21 @@ public class HopRewriteUtils
 	
 	/**
 	 * 
+	 * @param input
+	 * @return
+	 */
+	public static BinaryOp createMinus(Hop input)
+	{
+		BinaryOp minus = new BinaryOp(input.getName(), input.getDataType(), input.getValueType(), OpOp2.MINUS, new LiteralOp("0", 0), input);
+		HopRewriteUtils.setOutputBlocksizes(minus, input.getRowsInBlock(), input.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(input, minus);
+		minus.refreshSizeInformation();	
+		
+		return minus;
+	}
+	
+	/**
+	 * 
 	 * @param left
 	 * @param right
 	 * @return

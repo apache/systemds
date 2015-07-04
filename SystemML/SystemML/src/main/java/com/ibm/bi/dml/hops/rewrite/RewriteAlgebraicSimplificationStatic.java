@@ -139,6 +139,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			hi = simplifyWeightedSquaredLoss(hop, hi, i);        //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true)
+			hi = simplifyWeightedSigmoidMMChains(hop, hi, i);    //e.g., W * sigmoid(Y%*%t(X)) -> wsigmoid(W, Y, t(X), type)
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
@@ -791,19 +792,39 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					UnaryOp uop = (UnaryOp) right2;
 					Hop uopin = uop.getInput().get(0);
 					
-					if( uop.getOp()==OpOp1.EXP && uopin instanceof BinaryOp && ((BinaryOp)uopin).getOp()==OpOp2.MINUS ) 
+					if( uop.getOp()==OpOp1.EXP ) 
 					{
-						BinaryOp bop3 = (BinaryOp) uopin;
-						Hop left3 = bop3.getInput().get(0);
-						Hop right3 = bop3.getInput().get(1);
+						UnaryOp unary = null;
 						
-						if( left3 instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left3)==0 )
+						//Pattern 1: (1/(1 + exp(-X)) 
+						if( uopin instanceof BinaryOp && ((BinaryOp)uopin).getOp()==OpOp2.MINUS )
 						{
-							UnaryOp unary = new UnaryOp(bop.getName(), bop.getDataType(), bop.getValueType(), OpOp1.SIGMOID, right3);
+							BinaryOp bop3 = (BinaryOp) uopin;
+							Hop left3 = bop3.getInput().get(0);
+							Hop right3 = bop3.getInput().get(1);
+							
+							if( left3 instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)left3)==0 )
+							{
+								unary = new UnaryOp(bop.getName(), bop.getDataType(), bop.getValueType(), OpOp1.SIGMOID, right3);
+								HopRewriteUtils.setOutputBlocksizes(unary, bop.getRowsInBlock(), bop.getColsInBlock());
+								HopRewriteUtils.copyLineNumbers(bop, unary);
+								unary.refreshSizeInformation();
+							}	
+						}						
+						//Pattern 2: (1/(1 + exp(X)), e.g., where -(-X) has been removed by 
+						//the 'remove unnecessary minus' rewrite --> reintroduce the minus
+						else
+						{
+							BinaryOp minus = HopRewriteUtils.createMinus(uopin);
+							
+							unary = new UnaryOp(bop.getName(), bop.getDataType(), bop.getValueType(), OpOp1.SIGMOID, minus);
 							HopRewriteUtils.setOutputBlocksizes(unary, bop.getRowsInBlock(), bop.getColsInBlock());
 							HopRewriteUtils.copyLineNumbers(bop, unary);
 							unary.refreshSizeInformation();
-							
+						}	
+					
+						if( unary != null )
+						{
 							HopRewriteUtils.removeChildReferenceByPos(parent, bop, pos);
 							HopRewriteUtils.addChildReference(parent, unary, pos);
 							
@@ -814,13 +835,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 								HopRewriteUtils.removeAllChildReferences(bop2);	
 							if( uop.getParent().isEmpty() )
 								HopRewriteUtils.removeAllChildReferences(uop);	
-							if( bop3.getParent().isEmpty() )
-								HopRewriteUtils.removeAllChildReferences(bop3);	
 							
 							hi = unary;
 							
 							LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sigmoid1");
-						}	
+						}				
 					}
 				}		
 			}
@@ -1238,6 +1257,152 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyWeightedSigmoidMMChains(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		Hop hnew = null;
+		
+		if(    hi instanceof BinaryOp //all patterns subrooted by W *
+			&& ((BinaryOp) hi).getOp()==OpOp2.MULT
+			&& hi.getInput().get(0).getDataType()==DataType.MATRIX 
+			&& hi.getInput().get(1) instanceof UnaryOp ) //sigmoid/log
+		{
+			UnaryOp uop = (UnaryOp) hi.getInput().get(1);
+			boolean appliedPattern = false;
+			
+			//Pattern 1) W * sigmoid(Y%*%t(X)) (basic)
+			if(    uop.getOp() == OpOp1.SIGMOID 
+				&& uop.getInput().get(0) instanceof AggBinaryOp
+				&& HopRewriteUtils.isSingleBlock(uop.getInput().get(0).getInput().get(0),true) )
+			{
+				Hop W = hi.getInput().get(0); 
+				Hop Y = uop.getInput().get(0).getInput().get(0);
+				Hop tX = uop.getInput().get(0).getInput().get(1);
+				
+				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
+					tX = HopRewriteUtils.createTranspose(tX);
+				}
+				else 
+					tX = tX.getInput().get(0);
+				
+				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+						  OpOp4.WSIGMOID, W, Y, tX, false, false);
+				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+
+				appliedPattern = true;
+				LOG.debug("Applied simplifyWeightedSigmoid1 (line "+hi.getBeginLine()+")");	
+			}
+			
+			//Pattern 2) W * sigmoid(-(Y%*%t(X))) (minus)
+			if(    !appliedPattern 
+				&& uop.getOp() == OpOp1.SIGMOID 
+				&& uop.getInput().get(0) instanceof BinaryOp
+				&& ((BinaryOp)uop.getInput().get(0)).getOp()==OpOp2.MINUS
+				&& uop.getInput().get(0).getInput().get(0) instanceof LiteralOp
+				&& HopRewriteUtils.getDoubleValueSafe(
+				   (LiteralOp)uop.getInput().get(0).getInput().get(0))==0
+				&& uop.getInput().get(0).getInput().get(1) instanceof AggBinaryOp
+				&& HopRewriteUtils.isSingleBlock(uop.getInput().get(0).getInput().get(1).getInput().get(0),true))
+			{
+				Hop W = hi.getInput().get(0); 
+				Hop Y = uop.getInput().get(0).getInput().get(1).getInput().get(0);
+				Hop tX = uop.getInput().get(0).getInput().get(1).getInput().get(1);
+				
+				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
+					tX = HopRewriteUtils.createTranspose(tX);
+				}
+				else 
+					tX = tX.getInput().get(0);
+				
+				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+						  OpOp4.WSIGMOID, W, Y, tX, false, true);
+				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+
+				appliedPattern = true;
+				LOG.debug("Applied simplifyWeightedSigmoid2 (line "+hi.getBeginLine()+")");	
+			}
+			
+			//Pattern 3) W * log(sigmoid(Y%*%t(X))) (log)			
+			if(    !appliedPattern 
+				&& uop.getOp() == OpOp1.LOG
+				&& uop.getInput().get(0) instanceof UnaryOp
+				&& ((UnaryOp)uop.getInput().get(0)).getOp() == OpOp1.SIGMOID 
+				&& uop.getInput().get(0).getInput().get(0) instanceof AggBinaryOp
+				&& HopRewriteUtils.isSingleBlock(uop.getInput().get(0).getInput().get(0).getInput().get(0),true) )
+			{
+				Hop W = hi.getInput().get(0); 
+				Hop Y = uop.getInput().get(0).getInput().get(0).getInput().get(0);
+				Hop tX = uop.getInput().get(0).getInput().get(0).getInput().get(1);
+				
+				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
+					tX = HopRewriteUtils.createTranspose(tX);
+				}
+				else 
+					tX = tX.getInput().get(0);
+				
+				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+						  OpOp4.WSIGMOID, W, Y, tX, true, false);
+				HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+
+				appliedPattern = true;
+				LOG.debug("Applied simplifyWeightedSigmoid3 (line "+hi.getBeginLine()+")");	
+			}			
+			
+			//Pattern 4) W * log(sigmoid(-(Y%*%t(X)))) (log_minus)
+			if(    !appliedPattern 
+				&& uop.getOp() == OpOp1.LOG
+				&& uop.getInput().get(0) instanceof UnaryOp
+				&& ((UnaryOp)uop.getInput().get(0)).getOp() == OpOp1.SIGMOID 
+				&& uop.getInput().get(0).getInput().get(0) instanceof BinaryOp )
+			{
+				BinaryOp bop = (BinaryOp) uop.getInput().get(0).getInput().get(0);
+				
+				if(    bop.getOp() == OpOp2.MINUS 
+					&& bop.getInput().get(0) instanceof LiteralOp
+					&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)bop.getInput().get(0))==0
+					&& bop.getInput().get(1) instanceof AggBinaryOp
+					&& HopRewriteUtils.isSingleBlock(bop.getInput().get(1).getInput().get(0),true))
+				{
+					Hop W = hi.getInput().get(0); 
+					Hop Y = bop.getInput().get(1).getInput().get(0);
+					Hop tX = bop.getInput().get(1).getInput().get(1);
+					
+					if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
+						tX = HopRewriteUtils.createTranspose(tX);
+					}
+					else 
+						tX = tX.getInput().get(0);
+					
+					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+							  OpOp4.WSIGMOID, W, Y, tX, true, true);
+					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+	
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedSigmoid4 (line "+hi.getBeginLine()+")");	
+				}
+			}
+		}
+		
+		//relink new hop into original position
+		if( hnew != null ) {
+			HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+			HopRewriteUtils.addChildReference(parent, hnew, pos);
+			hi = hnew;
+		}
+		
+		return hi;
+	}
+
+
 	
 	/**
 	 * 

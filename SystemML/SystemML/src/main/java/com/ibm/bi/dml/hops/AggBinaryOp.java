@@ -470,8 +470,9 @@ public class AggBinaryOp extends Hop
 	private void constructCPLopsTSMM( MMTSJType mmtsj ) 
 		throws HopsException, LopsException
 	{
+		int k = getConstrainedNumThreads();
 		Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
-				                 getDataType(), getValueType(), ExecType.CP, mmtsj);
+				                 getDataType(), getValueType(), ExecType.CP, mmtsj, k);
 	
 		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );

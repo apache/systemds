@@ -191,7 +191,7 @@ public class LibMatrixMult
 
 		//Timing time = new Timing(true);
 				
-		//pre-processing
+		//pre-processing: output allocation
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
@@ -233,7 +233,7 @@ public class LibMatrixMult
 			return;
 
 		//check too high additional memory requirements (fallback to sequential)
-		if( mV.rlen * 8 * k > 256*1024 ) { //256KB
+		if( mV.rlen * 8 * k > 1024*1024 ) { //1MB
 			matrixMultChain(mX, mV, mW, ret, ct);
 			return;
 		}
@@ -282,14 +282,78 @@ public class LibMatrixMult
 	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
+		//check inputs / outputs
+		if( m1.isEmptyBlock(false) )
+			return;
+		
 		//Timing time = new Timing(true);
 		
-		if( m1.sparse )
-			matrixMultTransposeSelfSparse(m1, ret, leftTranspose);
-		else 
-			matrixMultTransposeSelfDense(m1, ret, leftTranspose);
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
 
+		if( m1.sparse )
+			matrixMultTransposeSelfSparse(m1, ret, leftTranspose, 0, ret.rlen);
+		else 
+			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
+
+		//post-processing
+		copyUpperToLowerTriangle( ret );		
+		ret.recomputeNonZeros();
+		ret.examSparsity();	
+		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
+	}
+
+	/**
+	 * 
+	 * @param m1
+	 * @param ret
+	 * @param leftTranspose
+	 * @param k
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int k )
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//check inputs / outputs
+		if( m1.isEmptyBlock(false) )
+			return;
+		
+		//check no parallelization benefit (fallback to sequential)
+		if( ret.rlen == 1 ) { 
+			matrixMultTransposeSelf(m1, ret, leftTranspose);
+			return;
+		}
+		
+		//Timing time = new Timing(true);
+		
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
+	
+		//core multi-threaded matrix mult computation
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
+			//load balance via #tasks=2k due to triangular shape 
+			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
+			for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
+				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i*blklen, Math.min((i+1)*blklen, ret.rlen)));
+			pool.invokeAll(tasks);	
+			pool.shutdown();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//post-processing
+		copyUpperToLowerTriangle( ret );		
+		ret.recomputeNonZeros();
+		ret.examSparsity();	
+		
+		//System.out.println("TSMM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
 	}
 	
 	/**
@@ -658,9 +722,6 @@ public class LibMatrixMult
 		}
 		else
 		{
-			//init empty result
-			Arrays.fill(c, 0, c.length, 0);
-			
 			double val;
 			for( int i = rl, aix=rl*cd, cix=rl*n; i < ru; i++, cix+=n) 
 				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
@@ -829,9 +890,6 @@ public class LibMatrixMult
 		}
 		else
 		{
-			//init empty result
-			Arrays.fill(c, 0, c.length, 0);
-			
 			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
@@ -1136,18 +1194,9 @@ public class LibMatrixMult
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private static void matrixMultTransposeSelfDense( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+	private static void matrixMultTransposeSelfDense( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) 
+		throws DMLRuntimeException
 	{
-		//1) allocate output block
-		ret.rlen = leftTranspose ? m1.clen : m1.rlen;
-		ret.clen = leftTranspose ? m1.clen : m1.rlen;
-		ret.sparse = false;
-		ret.allocateDenseBlock();
-	
-		if( m1.denseBlock == null )
-			return;
-		
 		//2) transpose self matrix multiply dense
 		// (compute only upper-triangular matrix due to symmetry)
 		double[] a = m1.denseBlock;
@@ -1165,9 +1214,6 @@ public class LibMatrixMult
 				}
 				else //MATRIX
 				{	
-					//init empty result
-					Arrays.fill(c, 0, c.length, 0);
-
 					//1) Unrolled inner loop (for better instruction-level parallelism)
 					//2) Blocked execution (for less cache trashing in parallel exec) 	
 					//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
@@ -1180,12 +1226,12 @@ public class LibMatrixMult
 					double[] ta = new double[ blocksizeK ];
 					int[]  tbi  = new int[ blocksizeK ];
 					
-					final int mx = n;
+					final int mx = ru;
 					final int cdx = m;
 					final int nx = n;
 					
 					//blocked execution
-					for( int bi = 0; bi < mx; bi+=blocksizeI ) //from bi due to symmetry
+					for( int bi = rl; bi < mx; bi+=blocksizeI ) //from bi due to symmetry
 						for( int bk = 0, bimin = Math.min(mx, bi+blocksizeI); bk < cdx; bk+=blocksizeK ) 
 							for( int bj = bi, bkmin = Math.min(cdx, bk+blocksizeK); bj < nx; bj+=blocksizeJ ) 
 							{
@@ -1220,11 +1266,8 @@ public class LibMatrixMult
 			}
 			else
 			{	
-				//init empty result
-				Arrays.fill(c, 0, c.length, 0);
-				
 				for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
-					for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+					for(int i = rl, ix3 = 0; i < ru; i++, ix3+=n) 
 					{
 						double val = a[ ix1+i ];
 						if( val != 0 )
@@ -1245,9 +1288,6 @@ public class LibMatrixMult
 				}
 				else //MATRIX
 				{
-					//init empty result
-					Arrays.fill(c, 0, c.length, 0);
-					
 					//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
 				
 					//1) Unrolled inner loop, for better ILP
@@ -1255,10 +1295,10 @@ public class LibMatrixMult
 					//   (smaller block sizes would be slightly better, but consistent as is)
 					//3) Single write in inner loop (transient intermediates)
 					int blocksize = 64;
-					for( int bi = 0; bi<m; bi+=blocksize )
+					for( int bi = rl; bi<ru; bi+=blocksize )
 						for( int bj = bi; bj<m; bj+=blocksize ) 
 						{
-							final int bimin = Math.min(m, bi+blocksize);
+							final int bimin = Math.min(ru, bi+blocksize);
 							final int bjmin = Math.min(m, bj+blocksize);	
 							
 							for(int i = bi, ix1 = bi*n, ix3 = bi*m; i < bimin; i++, ix1+=n, ix3+=m)
@@ -1274,7 +1314,7 @@ public class LibMatrixMult
 			}
 			else
 			{
-				for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
+				for(int i = rl, ix1 = 0, ix3 = 0; i < ru; i++, ix1+=n, ix3+=m)
 					for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
 					{
 						double val = 0;
@@ -1284,12 +1324,6 @@ public class LibMatrixMult
 					}
 			}
 		}
-
-		//3) copy symmetric values
-		copyUpperToLowerTriangle( ret );
-		
-		ret.recomputeNonZeros();
-		ret.examSparsity();	
 	}
 	
 	/**
@@ -1299,17 +1333,9 @@ public class LibMatrixMult
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	private static void matrixMultTransposeSelfSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+	private static void matrixMultTransposeSelfSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) 
+		throws DMLRuntimeException
 	{
-		//1) allocate output block
-		ret.rlen = leftTranspose ? m1.clen : m1.rlen;
-		ret.clen = leftTranspose ? m1.clen : m1.rlen;
-		ret.sparse = false;  //assumption dense output
-		if( m1.sparseRows == null )
-			return;
-		ret.allocateDenseBlock();
-		
 		//2) transpose self matrix multiply sparse
 		// (compute only upper-triangular matrix due to symmetry)		
 		double[] c = ret.denseBlock;
@@ -1318,9 +1344,6 @@ public class LibMatrixMult
 
 		if( leftTranspose ) // t(X)%*%X 
 		{
-			//init empty result
-			Arrays.fill(c, 0, c.length, 0);
-			
 			//only general case (because vectors always dense)
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
@@ -1331,18 +1354,18 @@ public class LibMatrixMult
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();					
+						int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+						rlix = (rlix>=0) ? rlix : alen;
 						
-						for(int i = 0; i < alen; i++) 
+						for(int i = rlix; i < alen && aix[i]<ru; i++) 
 						{
 							double val = avals[i];
-							if( val != 0 )
-							{
+							if( val != 0 ) {
 								int ix2 = aix[i]*n;
 								vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
-								
 							}
 						}
-					}	
+					}
 			}
 			else
 			{
@@ -1352,8 +1375,10 @@ public class LibMatrixMult
 						int alen = arow.size();
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();					
+						int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+						rlix = (rlix>=0) ? rlix : alen;
 						
-						for(int i = 0; i < alen; i++) 
+						for(int i = rlix; i < alen && aix[i]<ru; i++) 
 						{
 							double val = avals[i];
 							if( val != 0 )
@@ -1376,19 +1401,14 @@ public class LibMatrixMult
 				}
 			}
 			else //MATRIX
-			{	
-				//init empty result
-				Arrays.fill(c, 0, c.length, 0);
-				
+			{			
 				//note: reorg to similar layout as t(X)%*%X because faster than 
 				//direct computation with IJK (no dependencies/branches in inner loop)
-				MatrixBlock tmpBlock = new MatrixBlock(n,m,m1.sparse);
-				m1.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
-						       tmpBlock, 0, 0, -1);
-			
-				if( tmpBlock.sparseRows == null )
-					return;
 				
+				//directly via LibMatrixReorg in order to prevent sparsity change
+				MatrixBlock tmpBlock = new MatrixBlock(n,m,m1.sparse);
+				LibMatrixReorg.reorg(m1, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
+			
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
@@ -1398,12 +1418,13 @@ public class LibMatrixMult
 							int alen = arow.size();
 							int[] aix = arow.getIndexContainer();
 							double[] avals = arow.getValueContainer();					
+							int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+							rlix = (rlix>=0) ? rlix : alen;
 							
-							for(int i = 0; i < alen; i++) 
+							for(int i = rlix; i < alen && aix[i]<ru; i++) 
 							{
 								double val = avals[i];
-								if( val != 0 )
-								{
+								if( val != 0 ) {
 									int ix2 = aix[i]*m;
 									vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
 								}
@@ -1418,8 +1439,10 @@ public class LibMatrixMult
 							int alen = arow.size();
 							int[] aix = arow.getIndexContainer();
 							double[] avals = arow.getValueContainer();					
+							int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+							rlix = (rlix>=0) ? rlix : alen;
 							
-							for(int i = 0; i < alen; i++) 
+							for(int i = rlix; i < alen && aix[i]<ru; i++) 
 							{
 								double val = avals[i];
 								if( val != 0 )
@@ -1430,12 +1453,6 @@ public class LibMatrixMult
 				}
 			}
 		}
-	
-		//3) copy symmetric values
-		copyUpperToLowerTriangle( ret );
-		
-		ret.recomputeNonZeros(); 
-		ret.examSparsity();	
 	}
 	
 	/**
@@ -2597,6 +2614,35 @@ public class LibMatrixMult
 		}
 	}
 
+	private static class MatrixMultTransposeTask implements Callable<Object> 
+	{
+		private MatrixBlock _m1  = null;
+		private MatrixBlock _ret = null;
+		private boolean _left = true;
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected MatrixMultTransposeTask( MatrixBlock m1, MatrixBlock ret, boolean left, int rl, int ru )
+		{
+			_m1 = m1;
+			_ret = ret;
+			_left = left;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			if( _m1.sparse )
+				matrixMultTransposeSelfSparse(_m1, _ret, _left, _rl, _ru);
+			else
+				matrixMultTransposeSelfDense(_m1, _ret, _left, _rl, _ru);
+				
+			return null;
+		}
+	}
+	
 	/**
 	 * 
 	 * 

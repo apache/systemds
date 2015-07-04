@@ -29,12 +29,14 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private MMTSJType _type = null;
+	private int _numThreads = 1;
 	
-	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, String opcode, String istr)
+	public MMTSJCPInstruction(Operator op, CPOperand in1, MMTSJType type, CPOperand out, int k, String opcode, String istr)
 	{
 		super(op, in1, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.MMTSJ;
 		_type = type;
+		_numThreads = k;
 	}
 	
 	/**
@@ -49,18 +51,19 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		InstructionUtils.checkNumFields ( str, 3 );
+		InstructionUtils.checkNumFields ( str, 4 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		out.split(parts[2]);
 		MMTSJType titype = MMTSJType.valueOf(parts[3]);
-		 
+		int k = Integer.parseInt(parts[4]);
+		
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJCPInstruction: " + str);
 		else
-			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, opcode, str);
+			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, k, opcode, str);
 	}
 	
 	@Override
@@ -71,7 +74,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 
 		//execute operations 
-		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type );
+		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type, _numThreads );
 		
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), ret);

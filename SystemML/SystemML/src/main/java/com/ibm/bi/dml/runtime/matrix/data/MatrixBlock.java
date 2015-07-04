@@ -3304,7 +3304,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex || op.fn instanceof SortIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
@@ -3448,13 +3448,39 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public MatrixValue transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		return transposeSelfMatrixMultOperations(out, tstype, 1);
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @param tstype
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k ) 	
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		//check for transpose type
 		if( !(tstype == MMTSJType.LEFT || tstype == MMTSJType.RIGHT) )
 			throw new DMLRuntimeException("Invalid MMTSJ type '"+tstype.toString()+"'.");
 		
-		//compute matrix mult
+		//setup meta data
 		boolean leftTranspose = ( tstype == MMTSJType.LEFT );
-		LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
+		int dim = leftTranspose ? clen : rlen;
+		
+		//create output matrix block
+		if( out == null )
+			out = new MatrixBlock(dim, dim, false);
+		else
+			out.reset(dim, dim, false);
+		
+		//compute matrix mult
+		if( k > 1 )
+			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose, k);
+		else
+			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
 		
 		return out;
 	}

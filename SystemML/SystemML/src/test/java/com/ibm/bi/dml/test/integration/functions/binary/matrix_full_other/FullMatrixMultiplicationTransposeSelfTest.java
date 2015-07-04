@@ -108,49 +108,49 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	@Test
 	public void testVVLeftDenseCP() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
 	}
 	
 	@Test
 	public void testVVRightDenseCP() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
 	}
 
 	@Test
 	public void testVVLeftSparseCP() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testVVRightSparseCP() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
 	@Test
 	public void testVVLeftDenseMR() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
 	}
 	
 	@Test
 	public void testVVRightDenseMR() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
 	}
 
 	@Test
 	public void testVVLeftSparseMR() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
 	}
 	
 	@Test
 	public void testVVRightSparseMR() 
 	{
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
+		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
 	}
 
 	/**
@@ -234,7 +234,6 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	 * @param instType
 	 * @param sparse
 	 */
-	@SuppressWarnings("unused")
 	private void runTransposeSelfVectorMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols

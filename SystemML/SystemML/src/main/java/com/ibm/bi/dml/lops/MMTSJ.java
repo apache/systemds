@@ -31,13 +31,20 @@ public class MMTSJ extends Lop
 	}
 	
 	private MMTSJType _type = null;
-	
+	private int _numThreads = 1;
+
 	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) 
+	{
+		this(input1, dt, vt, et, type, -1);
+	}
+	
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type, int k) 
 	{
 		super(Lop.Type.MMTSJ, dt, vt);		
 		addInput(input1);
 		input1.addOutput(this);
 		_type = type;
+		_numThreads = k;
 		 
 		boolean breaksAlignment = true; //if result keys (matrix indexes) different 
 		boolean aligner = false; //if groups multiple inputs by key (e.g., group)
@@ -89,6 +96,12 @@ public class MMTSJ extends Lop
 		sb.append( this.prepOutputOperand(output_index));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _type );
+		
+		//append degree of parallelism for matrix multiplications
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		
 		return sb.toString();
 	}

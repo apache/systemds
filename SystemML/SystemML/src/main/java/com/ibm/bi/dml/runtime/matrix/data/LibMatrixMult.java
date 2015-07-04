@@ -289,6 +289,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing
+		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 
@@ -330,6 +331,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing
+		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 	
@@ -1404,15 +1406,14 @@ public class LibMatrixMult
 			{			
 				//note: reorg to similar layout as t(X)%*%X because faster than 
 				//direct computation with IJK (no dependencies/branches in inner loop)
+				//see preprocessMatrixMultTransposeSelf m1<-tmpBlock
+				m = m1.clen;
+				n = m1.rlen;
 				
-				//directly via LibMatrixReorg in order to prevent sparsity change
-				MatrixBlock tmpBlock = new MatrixBlock(n,m,m1.sparse);
-				LibMatrixReorg.reorg(m1, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
-			
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					for( SparseRow arow : tmpBlock.sparseRows )
+					for( SparseRow arow : m1.sparseRows )
 						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
@@ -1433,7 +1434,7 @@ public class LibMatrixMult
 				}
 				else
 				{
-					for( SparseRow arow : tmpBlock.sparseRows )
+					for( SparseRow arow : m1.sparseRows )
 						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
@@ -2468,6 +2469,29 @@ public class LibMatrixMult
 		for( int i=0, uix=0; i<m; i++, uix+=n )
 			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
 				c[ lix ] = c[ uix+j ];
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param leftTranspose
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static MatrixBlock prepMatrixMultTransposeSelfInput( MatrixBlock m1, boolean leftTranspose ) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock ret = m1;
+		
+		if( !leftTranspose && m1.sparse && m1.rlen > 1) //X%*%t(X) SPARSE MATRIX
+		{	
+			//directly via LibMatrixReorg in order to prevent sparsity change
+			MatrixBlock tmpBlock = new MatrixBlock(m1.clen, m1.rlen, m1.sparse);
+			LibMatrixReorg.reorg(m1, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
+			ret = tmpBlock;
+		}
+		
+		return ret;
 	}
 
 	/**

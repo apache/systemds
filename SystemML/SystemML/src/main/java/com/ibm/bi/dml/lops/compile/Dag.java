@@ -3823,6 +3823,17 @@ public class Dag<N extends Lop>
 					}
 					nodeIndexMapping.put(node, output_index);
 				}
+				else
+				{
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1),
+							inputIndices.get(2), output_index));
+					if(DMLScript.ENABLE_DEBUG_MODE) {
+						MRJobLineNumbers.add(node._beginLine);
+					}
+					nodeIndexMapping.put(node, output_index);
+					return output_index;
+				}
 
 				return output_index;
 

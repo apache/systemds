@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -420,31 +421,33 @@ public class TestUtils
 	 */
 	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) 
 	{
+		HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+		
 		try 
 		{
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
-			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
-				while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-							.parseDouble(rcv[2]));
+				BufferedReader reader = new BufferedReader(new InputStreamReader(outIn));
+				while ((line = reader.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					expectedValues.put(new CellIndex(i,j), v);
 				}
 				outIn.close();
 			}
-
-			return expectedValues;
 		} 
 		catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
 
-		return null;
+		return expectedValues;
 	}
 
 	/**
@@ -460,15 +463,17 @@ public class TestUtils
 	// TODO: we must use http://www.inf.uni-konstanz.de/algo/lehre/ws05/pp/mtj/mvio/MatrixVectorReader.html
 	// to read matrices from R
 	
-	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) {
-		BufferedReader compareIn = null;
-		try {
-			compareIn = new BufferedReader(new FileReader(filePath));
+	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) 
+	{
+		HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+		BufferedReader reader = null;
+		
+		try 
+		{
+			reader = new BufferedReader(new FileReader(filePath));
 
-			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
-			String line;
-			/** skip both R header lines */
-			line = compareIn.readLine();
+			// skip both R header lines
+			String line = reader.readLine();
 			
 			int matrixType = -1;
 			if ( line.endsWith(" general") )
@@ -479,32 +484,31 @@ public class TestUtils
 			if ( matrixType == -1 )
 				throw new RuntimeException("unknown matrix type while reading R matrix: ." + line);
 			
-			line = compareIn.readLine(); // header line with dimension and nnz information
+			line = reader.readLine(); // header line with dimension and nnz information
 			
-			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				if(rcv.length==3) {
-					if(Double.parseDouble(rcv[2])==0.0) continue;
-					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-								.parseDouble(rcv[2]));
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				if( st.hasMoreTokens() ) {
+					double v = Double.parseDouble(st.nextToken());
+					if( v==0.0 ) continue;
+					expectedValues.put(new CellIndex(i, j), v);
 					if ( matrixType == 2 )
-						expectedValues.put(new CellIndex(Integer.parseInt(rcv[1]), Integer.parseInt(rcv[0])), Double
-								.parseDouble(rcv[2]));
+						expectedValues.put(new CellIndex(j, i), v);
 				}
 				else
-					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), 1.0);
+					expectedValues.put(new CellIndex(i, j), 1.0);
 			}
-			compareIn.close();
-			return expectedValues;
 		} 
 		catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(compareIn);
+			IOUtilFunctions.closeSilently(reader);
 		}
 		
-		return null;
+		return expectedValues;
 	}
 	
 	/**

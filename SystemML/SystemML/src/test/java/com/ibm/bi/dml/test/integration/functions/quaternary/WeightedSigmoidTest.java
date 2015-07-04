@@ -16,7 +16,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -27,20 +27,20 @@ import com.ibm.bi.dml.utils.Statistics;
  * 
  * 
  */
-public class WeightedSquaredLossTest extends AutomatedTestBase 
+public class WeightedSigmoidTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "WeightedSquaredLossPost";
-	private final static String TEST_NAME2 = "WeightedSquaredLossPre";
-	private final static String TEST_NAME3 = "WeightedSquaredLossNo";
+	private final static String TEST_NAME1 = "WeightedSigmoidP1";
+	private final static String TEST_NAME2 = "WeightedSigmoidP2";
+	private final static String TEST_NAME3 = "WeightedSigmoidP3";
+	private final static String TEST_NAME4 = "WeightedSigmoidP4";
 
-	
 	private final static String TEST_DIR = "functions/quaternary/";
 	
-	private final static double eps = 1e-6;
+	private final static double eps = 1e-10;
 	
 	private final static int rows = 1201;
 	private final static int cols = 1103;
@@ -51,184 +51,260 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
+		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"R"}));
 	}
 
 	
 	@Test
-	public void testSquaredLossDensePostWeightsNoRewritesCP() 
+	public void testSigmoidDenseBasicNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossDensePreWeightsNoRewritesCP() 
+	public void testSigmoidDenseLogNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossDenseNoWeightsNoRewritesCP() 
+	public void testSigmoidDenseMinusNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePostWeightsNoRewritesCP() 
+	public void testSigmoidDenseLogMinusNoRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testSigmoidSparseBasicNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePreWeightsNoRewritesCP() 
+	public void testSigmoidSparseLogNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparseNoWeightsNoRewritesCP() 
+	public void testSigmoidSparseMinusNoRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossDensePostWeightsNoRewritesMR() 
+	public void testSigmoidSparseLogMinusNoRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testSigmoidDenseBasicNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDensePreWeightsNoRewritesMR() 
+	public void testSigmoidDenseLogNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDenseNoWeightsNoRewritesMR() 
+	public void testSigmoidDenseMinusNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePostWeightsNoRewritesMR() 
+	public void testSigmoidDenseLogMinusNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, false, ExecType.MR);
+	}
+
+	@Test
+	public void testSigmoidSparseBasicNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePreWeightsNoRewritesMR() 
+	public void testSigmoidSparseLogNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparseNoWeightsNoRewritesMR() 
+	public void testSigmoidSparseMinusNoRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.MR);
 	}
 	
-	//with rewrites
-	
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesCP() 
+	public void testSigmoidSparseLogMinusNoRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, false, ExecType.MR);
+	}
+	
+	//with rewrites
+
+	@Test
+	public void testSigmoidDenseBasicRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesCP() 
+	public void testSigmoidDenseLogRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossDenseNoWeightsRewritesCP() 
+	public void testSigmoidDenseMinusRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesCP() 
+	public void testSigmoidDenseLogMinusRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testSigmoidSparseBasicRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesCP() 
+	public void testSigmoidSparseLogRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testSquaredLossSparseNoWeightsRewritesCP() 
+	public void testSigmoidSparseMinusRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.CP);
 	}
+	
+	@Test
+	public void testSigmoidSparseLogMinusRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.CP);
+	}
 
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesMR() 
+	public void testSigmoidDenseBasicRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesMR() 
+	public void testSigmoidDenseLogRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDenseNoWeightsRewritesMR() 
+	public void testSigmoidDenseMinusRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesMR() 
+	public void testSigmoidDenseLogMinusRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.MR);
+	}
+
+	@Test
+	public void testSigmoidSparseBasicRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesMR() 
+	public void testSigmoidSparseLogRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparseNoWeightsRewritesMR() 
+	public void testSigmoidSparseMinusRewritesMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
 	}
-
-	//the following 4 tests force the replication based mr operator because
+	
+	@Test
+	public void testSigmoidSparseLogMinusRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.MR);
+	}
+	
+	//the following 8 tests force the replication based mr operator because
 	//otherwise we would always choose broadcasts for this small input data
 	
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesRepMR() 
+	public void testSigmoidSparseBasicRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesRepMR() 
+	public void testSigmoidSparseLogRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesRepMR() 
+	public void testSigmoidSparseMinusRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSigmoidSparseLogMinusRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSigmoidDenseBasicRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesRepMR() 
+	public void testSigmoidDenseLogRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.MR);
 	}
+	
+	@Test
+	public void testSigmoidDenseMinusRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSigmoidDenseLogMinusRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, true, ExecType.MR);
+	}
+	
+	
 	
 	/**
 	 * 
@@ -290,10 +366,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("U", U, true);
 			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 312); 
 			writeInputMatrixWithMTD("V", V, true);
-			if( !TEST_NAME.equals(TEST_NAME3) ) {
-				double[][] W = getRandomMatrix(rows, cols, 1, 1, sparsity, 1467); 
-				writeInputMatrixWithMTD("W", W, true);
-			}
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
@@ -305,7 +377,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			
 			//check statistics for right operator in cp
 			if( instType == ExecType.CP && rewrites )
-				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE_CP));
+				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(WeightedSigmoid.OPCODE_CP));
 		}
 		finally
 		{

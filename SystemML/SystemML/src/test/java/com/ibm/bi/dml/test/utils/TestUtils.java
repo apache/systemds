@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1461,41 +1462,58 @@ public class TestUtils
 	 *            when true, writes a R matrix to disk
 	 * 
 	 */
-	public static void writeTestMatrix(String file, double[][] matrix, boolean isR) {
-		try {
+	public static void writeTestMatrix(String file, double[][] matrix, boolean isR) 
+	{
+		try 
+		{
+			//create outputstream to HDFS / FS and writer
 			DataOutputStream out = null;
 			if (!isR) {
 				FileSystem fs = FileSystem.get(conf);
-				Path inFile = new Path(file);
-
-				fs.createNewFile(inFile);
-				out = fs.create(inFile);
-
-			} else {
+				out = fs.create(new Path(file), true);
+			} 
+			else {
 				out = new DataOutputStream(new FileOutputStream(file));
 			}
-
-			PrintWriter pw = new PrintWriter(out);
-			int nzcount = countNNZ(matrix);
-			if (isR) {
+			
+			BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out));
+			
+			//write header
+			if( isR ) {
 				/** add R header */
-				pw.println("%%MatrixMarket matrix coordinate real general");
-				pw.println("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length);
+				pw.append("%%MatrixMarket matrix coordinate real general\n");
+				pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
 			}
-			if (nzcount > 0) {
-				for (int i = 0; i < matrix.length; i++) {
-					for (int j = 0; j < matrix[i].length; j++) {
-						if ( matrix[i][j] == 0 ) 
-							continue;
-						pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
-					}
+			
+			//writer actual matrix
+			StringBuilder sb = new StringBuilder();
+			boolean emptyOutput = true;
+			for (int i = 0; i < matrix.length; i++) {
+				for (int j = 0; j < matrix[i].length; j++) {
+					if ( matrix[i][j] == 0 ) 
+						continue;
+					sb.append(i + 1);
+					sb.append(' ');
+					sb.append(j + 1);
+					sb.append(' ');
+					sb.append(matrix[i][j]);
+					sb.append('\n');
+					pw.append(sb.toString());
+					sb.setLength(0);
+					emptyOutput = false;
 				}
-			} else {
-				pw.println("1 1 " + matrix[0][0]);
 			}
+			
+			//writer dummy entry if empty
+			if( emptyOutput )
+				pw.append("1 1 " + matrix[0][0]);
+			
+			//close writer and streams
 			pw.close();
 			out.close();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
 			fail("unable to write test matrix (" + file + "): " + e.getMessage());
 		}
 	}

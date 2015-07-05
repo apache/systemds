@@ -12,7 +12,7 @@ The source code for this program is not published or otherwise divested of its t
    <!-- hdfs tmp working directory--> 
    <scratch>scratch_space</scratch> 
 
-   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3, default: 2 -->
+   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
    <optlevel>2</optlevel>  
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
@@ -35,16 +35,10 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
-
-   <!-- CP singlenode execution, parallelism config -->
-   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
-   <cp.parallel.textio>false</cp.parallel.textio>
    
-   <!-- configuration properties for Nimble external package support -->
-   <NumMergeTasks>4</NumMergeTasks>
-   <NumberOfSowThreads>1</NumberOfSowThreads>
-   <NumberOfReapThreads>1</NumberOfReapThreads>
-   <SowerWaitInterval>1000</SowerWaitInterval>
-   <ReaperWaitInterval>1000</ReaperWaitInterval>
-   <NimbleScratch>nimbleoutput</NimbleScratch>
+   <!-- enables multi-threaded matrix multiplications in singlenode control program -->
+   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   
+   <!-- enables multi-threaded read/write of text formats in singlenode control program -->
+   <cp.parallel.textio>false</cp.parallel.textio>
 </root>

@@ -36,7 +36,9 @@ The source code for this program is not published or otherwise divested of its t
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
    <dml.yarn.app.queue>default</dml.yarn.app.queue>
    
-   <!-- CP singlenode execution, parallelism config -->
+   <!-- enables multi-threaded matrix multiplications in singlenode control program -->
    <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   
+   <!-- enables multi-threaded read/write of text formats in singlenode control program -->
    <cp.parallel.textio>false</cp.parallel.textio>
 </root>

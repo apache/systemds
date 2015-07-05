@@ -14,14 +14,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.math3.util.FastMath;
+
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -489,7 +489,7 @@ public class LibMatrixMult
 			matrixMultWSLossGeneric(mX, mU, mV, mW, ret, wt, 0, mX.rlen);
 		
 		//System.out.println("MMWSLoss " +wt.toString()+ " ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
-		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//                  "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 	
 	/**
@@ -577,7 +577,7 @@ public class LibMatrixMult
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 		
-		//System.out.println("MMWSigmoid "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
+		//System.out.println("MMWSig "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
 		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
@@ -622,7 +622,7 @@ public class LibMatrixMult
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 
-		//System.out.println("MMWSigmoid "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
+		//System.out.println("MMWSig "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
 		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop() + ".");
 	}
 	
@@ -1614,39 +1614,51 @@ public class LibMatrixMult
 		final int cd = mU.clen;
 		double wsloss = 0;
 		
-		// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
-		if( wt==WeightsType.POST )
-		{
-			for( int i=rl, ix=rl*n, uix=rl*cd; i<ru; i++, uix+=cd )
-				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
-					double wij = w[ix];
-					if( wij != 0 ) {
-						double uvij = dotProduct(u, v, uix, vix, cd);
-						wsloss += (wij*(x[ix]-uvij))*(wij*(x[ix]-uvij)); //^2
-					}
-				}	
-		}
-		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
-		else if( wt==WeightsType.PRE )
-		{
-			// approach: iterate over all cells of X maybe sparse and dense
-			for( int i=rl, ix=rl*n, uix=rl*cd; i<ru; i++, uix+=cd )
-				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
-					double wij = w[ix];
-					double uvij = 0;
-					if( wij != 0 )
-						uvij = dotProduct(u, v, uix, vix, cd);
-					wsloss += (x[ix]-wij*uvij)*(x[ix]-wij*uvij); //^2
+		// approach: iterate over all cells of X 
+		//cache-conscious blocking: due to blocksize constraint (default 1000),
+		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
+					
+		final int blocksizeIJ = 16; //u/v block (max at typical L2 size) 
+		
+
+		//blocked execution
+		for( int bi = rl; bi < ru; bi+=blocksizeIJ )
+			for( int bj = 0, bimin = Math.min(ru, bi+blocksizeIJ); bj < n; bj+=blocksizeIJ ) 
+			{
+				int bjmin = Math.min(n, bj+blocksizeIJ);
+								
+				// Pattern 1) sum (W * (X - U %*% t(V)) ^ 2) (post weighting)
+				if( wt==WeightsType.POST )
+				{
+					for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+						for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+							double wij = w[ix+j];
+							if( wij != 0 ) {
+								double uvij = dotProduct(u, v, uix, vix, cd);
+								wsloss += (wij*(x[ix+j]-uvij))*(wij*(x[ix+j]-uvij)); //^2
+							}
+						}	
 				}
-		}
-		// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
-		else if( wt==WeightsType.NONE )
-		{
-			// approach: iterate over all cells of X and 
-			for( int i=rl, ix=rl*n, uix=rl*cd; i<ru; i++, uix+=cd )
-				for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
-					double uvij = dotProduct(u, v, uix, vix, cd);
-					wsloss += (x[ix]-uvij)*(x[ix]-uvij); //^2
+				// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
+				else if( wt==WeightsType.PRE )
+				{
+					for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+						for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+							double wij = w[ix+j];
+							double uvij = 0;
+							if( wij != 0 )
+								uvij = dotProduct(u, v, uix, vix, cd);
+							wsloss += (x[ix+j]-wij*uvij)*(x[ix+j]-wij*uvij); //^2
+						}
+				}
+				// Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
+				else if( wt==WeightsType.NONE )
+				{
+					for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+						for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+							double uvij = dotProduct(u, v, uix, vix, cd);
+							wsloss += (x[ix+j]-uvij)*(x[ix+j]-uvij); //^2
+						}
 				}
 		}
 		
@@ -1850,10 +1862,7 @@ public class LibMatrixMult
 	 */
 	private static void matrixMultWSigmoidDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 		throws DMLRuntimeException 
-	{
-		Builtin sfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.SIGMOID);
-		Builtin lfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.LOG);
-		
+	{	
 		double[] w = mW.denseBlock;
 		double[] c = ret.denseBlock;
 		double[] u = mU.denseBlock;
@@ -1866,18 +1875,27 @@ public class LibMatrixMult
 	
 		boolean flagminus = (wt==WSigmoidType.MINUS || wt==WSigmoidType.LOG_MINUS); 
 		boolean flaglog = (wt==WSigmoidType.LOG || wt==WSigmoidType.LOG_MINUS);
-	
+		
 		//approach: iterate over non-zeros of w, selective mm computation
-		for( int i=rl, ix=rl*n, uix=rl*cd; i<ru; i++, uix+=cd )
-			for( int j=0, vix=0; j<n; j++, ix++, vix+=cd) {
-				double wij = w[ix];
-				if( wij != 0 ) {
-					double uvij = dotProduct(u, v, uix, vix, cd);
-					uvij *= (flagminus) ? -1 : 1; 
-					double cval = sfn.execute( uvij );
-					cval = (flaglog) ? lfn.execute( cval ) : cval;
-					c[ix] = wij * cval;
-				}
+		//cache-conscious blocking: due to blocksize constraint (default 1000),
+		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
+		
+		final int blocksizeIJ = 16; //u/v block (max at typical L2 size) 
+		
+		//blocked execution
+		for( int bi = rl; bi < ru; bi+=blocksizeIJ )
+			for( int bj = 0, bimin = Math.min(ru, bi+blocksizeIJ); bj < n; bj+=blocksizeIJ ) 
+			{
+				int bjmin = Math.min(n, bj+blocksizeIJ);
+						
+				//core wsigmoid computation
+				for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+					for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+						double wij = w[ix+j];
+						if( wij != 0 ) {
+							c[ix+j] = wsigmoid(wij, u, v, uix, vix, flagminus, flaglog, cd);
+						}
+					}
 			}
 	}
 	
@@ -1896,9 +1914,6 @@ public class LibMatrixMult
 	private static void matrixMultWSigmoidSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		Builtin sfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.SIGMOID);
-		Builtin lfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.LOG);
-		
 		SparseRow[] w = mW.sparseRows;
 		SparseRow[] c = ret.sparseRows;
 		double[] u = mU.denseBlock;
@@ -1916,12 +1931,10 @@ public class LibMatrixMult
 				int[] wix = w[i].getIndexContainer();
 				double[] wval = w[i].getValueContainer();
 				c[i] = new SparseRow(wlen, n);
+				
 				for( int k=0; k<wlen; k++ ) {
-					double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-					uvij *= (flagminus) ? -1 : 1; 
-					double cval = sfn.execute( uvij );
-					cval = (flaglog) ? lfn.execute( cval ) : cval;
-					c[i].append(wix[k], wval[k] * cval);
+					double cval = wsigmoid(wval[k], u, v, uix, wix[k]*cd, flagminus, flaglog, cd);
+					c[i].append(wix[k], cval);
 				}
 			}
 	}
@@ -1941,9 +1954,6 @@ public class LibMatrixMult
 	private static void matrixMultWSigmoidGeneric (MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		Builtin sfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.SIGMOID);
-		Builtin lfn = Builtin.getBuiltinFnObject(BuiltinFunctionCode.LOG);
-		
 		final int n = mW.clen; 
 		final int cd = mU.clen;
 	
@@ -1963,14 +1973,10 @@ public class LibMatrixMult
 					int[] wix = w[i].getIndexContainer();
 					double[] wval = w[i].getValueContainer();
 					c[i] = new SparseRow(wlen, n);
+					
 					for( int k=0; k<wlen; k++ ) {
-						double uvij = 0;
-						for( int k2=0; k2<cd; k2++ )
-							uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(wix[k], k2);
-						uvij *= (flagminus) ? -1 : 1; 
-						double cval = sfn.execute( uvij );
-						cval = (flaglog) ? lfn.execute( cval ) : cval;
-						c[i].append(wix[k], wval[k] * cval);
+						double cval = wsigmoid(wval[k], mU, mV, i, wix[k], flagminus, flaglog, cd);
+						c[i].append(wix[k], cval);
 					}
 				}	
 		}
@@ -1984,13 +1990,7 @@ public class LibMatrixMult
 				for( int j=0; j<n; j++, ix++) {
 					double wij = w[ix];
 					if( wij != 0 ) {
-						double uvij = 0;
-						for( int k=0; k<cd; k++ )
-							uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
-						uvij *= (flagminus) ? -1 : 1; 
-						double cval = sfn.execute( uvij );
-						cval = (flaglog) ? lfn.execute( cval ) : cval;
-						c[ix] = wij * cval;
+						c[ix] = wsigmoid(wij, mU, mV, i, j, flagminus, flaglog, cd);
 					}
 				}
 		}
@@ -2450,6 +2450,61 @@ public class LibMatrixMult
 			c[ ci+6 ] += a[ ai+6 ];
 			c[ ci+7 ] += a[ ai+7 ];
 		}
+	}
+	
+
+	/**
+	 * 
+	 * @param wij
+	 * @param u
+	 * @param v
+	 * @param uix
+	 * @param vix
+	 * @param flagminus
+	 * @param flaglog
+	 * @param len
+	 * @return
+	 */
+	private static double wsigmoid( final double wij, double[] u, double[] v, final int uix, final int vix, final boolean flagminus, final boolean flaglog, final int len )
+	{
+		//compute dot product over ui vj 
+		double uvij = dotProduct(u, v, uix, vix, len);
+		
+		//compute core sigmoid function  
+		double cval = flagminus ?
+				1 / (1 + FastMath.exp(uvij)) :
+				1 / (1 + FastMath.exp(-uvij));
+				
+		//compute weighted output
+		return wij * ((flaglog) ? FastMath.log(cval) : cval);
+	}
+	
+	/**
+	 * 
+	 * @param wij
+	 * @param u
+	 * @param v
+	 * @param uix
+	 * @param vix
+	 * @param flagminus
+	 * @param flaglog
+	 * @param len
+	 * @return
+	 */
+	private static double wsigmoid( final double wij, MatrixBlock u, MatrixBlock v, final int uix, final int vix, final boolean flagminus, final boolean flaglog, final int len )
+	{
+		//compute dot product over ui vj 
+		double uvij = 0;
+		for( int k2=0; k2<len; k2++ )
+			uvij += u.quickGetValue(uix, k2) * v.quickGetValue(vix, k2);
+		
+		//compute core sigmoid function  
+		double cval = flagminus ?
+				1 / (1 + FastMath.exp(uvij)) :
+				1 / (1 + FastMath.exp(-uvij));
+				
+		//compute weighted output
+		return wij * ((flaglog) ? FastMath.log(cval) : cval);
 	}
 	
 	/**

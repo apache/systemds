@@ -202,9 +202,11 @@ public class TestUtils
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-						.parseDouble(rcv[2]));
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				expectedValues.put(new CellIndex(i, j), v);
 			}
 			compareIn.close();
 
@@ -217,9 +219,11 @@ public class TestUtils
 				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
 				
 				while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-							.parseDouble(rcv[2]));
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					actualValues.put(new CellIndex(i, j), v);
 				}
 				outIn.close();
 			}
@@ -275,19 +279,20 @@ public class TestUtils
 			BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin));
 			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
-			String line;
 			
 			// skip the header of Matrix Market file
-			line = compareIn.readLine();
+			String line = compareIn.readLine();
 			
 			// rows, cols and nnz
 			line = compareIn.readLine();
 			String [] expRcn = line.split(" ");
 			
 			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-						.parseDouble(rcv[2]));
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				expectedValues.put(new CellIndex(i, j), v);
 			}
 			compareIn.close();
 
@@ -314,9 +319,11 @@ public class TestUtils
 			}
 			
 			while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-							.parseDouble(rcv[2]));
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				actualValues.put(new CellIndex(i, j), v);
 			}
 		
 			
@@ -367,9 +374,11 @@ public class TestUtils
 			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-						.parseDouble(rcv[2]));
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				expectedValues.put(new CellIndex(i, j), v);
 			}
 			compareIn.close();
 
@@ -382,9 +391,11 @@ public class TestUtils
 				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
 				
 				while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-							.parseDouble(rcv[2]));
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					actualValues.put(new CellIndex(i, j), v);
 				}
 				outIn.close();
 			}
@@ -837,7 +848,7 @@ public class TestUtils
 	public static HashMap<CellIndex, Double> convert2DDoubleArrayToHashMap(double[][] matrix) {
 		HashMap<CellIndex, Double> hmMatrix = new HashMap<CellIndex, Double>();
 		for (int i = 0; i < matrix.length; i++) {
-			for (int j = 0; j < matrix[0].length; j++) {
+			for (int j = 0; j < matrix[i].length; j++) {
 				if (matrix[i][j] != 0)
 					hmMatrix.put(new CellIndex(i + 1, j + 1), matrix[i][j]);
 			}
@@ -974,9 +985,11 @@ public class TestUtils
 			compareIn.readLine();
 			compareIn.readLine();
 			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-						.parseDouble(rcv[2]));
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				expectedValues.put(new CellIndex(i, j), v);
 			}
 			compareIn.close();
 
@@ -987,9 +1000,11 @@ public class TestUtils
 				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
 				
 				while ((line = outIn.readLine()) != null) {
-					String[] rcv = line.split(" ");
-					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
-							.parseDouble(rcv[2]));
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					double v = Double.parseDouble(st.nextToken());
+					actualValues.put(new CellIndex(i, j), v);
 				}
 				outIn.close();
 			}
@@ -1007,64 +1022,6 @@ public class TestUtils
 					countErrors++;
 			}
 			assertTrue("for file " + hdfsDir + " " + countErrors + " values are not in equal", countErrors == 0);
-		} catch (IOException e) {
-			fail("unable to read file: " + e.getMessage());
-		}
-	}
-
-	/**
-	 * <p>
-	 * Compares two files in text format for which the values may be in
-	 * different order.
-	 * </p>
-	 * 
-	 * @param expectedFile
-	 *            file with expected values
-	 * @param actualDir
-	 *            file with actual values
-	 * @param rows
-	 *            number of rows
-	 * @param cols
-	 *            number of columns
-	 * @param epsilon
-	 *            tolerance for value comparison
-	 */
-	@Deprecated
-	public static void compareFilesInDifferentOrder(String expectedFile, String actualDir, int rows, int cols,
-			double epsilon) {
-		try {
-			FileSystem fs = FileSystem.get(conf);
-			Path expectedFilePath = new Path(expectedFile);
-			Path actualDirPath = new Path(actualDir);
-			assertTrue(actualDir + " is no directory", fs.getFileStatus(actualDirPath).isDirectory());
-			FileStatus[] actualFiles = fs.listStatus(actualDirPath);
-			assertEquals("number of files in directory not 1", 1, actualFiles.length);
-
-			FSDataInputStream outIn = fs.open(actualFiles[0].getPath());
-			FSDataInputStream compareIn = fs.open(expectedFilePath);
-
-			double[][] expectedMatrix = new double[rows][cols];
-			double[][] actualMatrix = new double[rows][cols];
-
-			String line;
-			while ((line = outIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				actualMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
-			}
-			outIn.close();
-
-			while ((line = compareIn.readLine()) != null) {
-				String[] rcv = line.split(" ");
-				expectedMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
-			}
-			compareIn.close();
-
-			for (int i = 0; i < rows; i++) {
-				for (int j = 0; j < cols; j++) {
-					assertEquals("value not equal for " + i + "," + j, expectedMatrix[i][j], actualMatrix[i][j],
-							epsilon);
-				}
-			}
 		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
 		}

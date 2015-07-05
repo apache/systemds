@@ -1106,42 +1106,6 @@ public abstract class AutomatedTestBase
 			}
 		}
 	}
-
-	/**
-	 * <p>
-	 * Compares the results of the computation with the expected ones which can
-	 * be in different order in the file.
-	 * </p>
-	 * 
-	 * @param rows
-	 *            number of rows
-	 * @param cols
-	 *            number of columns
-	 */
-	@Deprecated
-	protected void compareResultsInDifferentOrder(int rows, int cols) {
-		compareResultsInDifferentOrder(rows, cols, 0);
-	}
-
-	/**
-	 * <p>
-	 * Compares the results of the computation with the expected ones which can
-	 * be in different order in the file with a specified tolerance.
-	 * </p>
-	 * 
-	 * @param rows
-	 *            number of rows
-	 * @param cols
-	 *            number of columns
-	 * @param epsilon
-	 *            tolerance
-	 */
-	@Deprecated
-	protected void compareResultsInDifferentOrder(int rows, int cols, double epsilon) {
-		for (int i = 0; i < comparisonFiles.length; i++) {
-			TestUtils.compareFilesInDifferentOrder(comparisonFiles[i], outputDirectories[i], rows, cols, epsilon);
-		}
-	}
 	
 	/**
 	 * Checks that the number of map-reduce jobs that the current test case has

@@ -28,10 +28,11 @@ import scala.collection.Seq;
 import scala.collection.immutable.List;
 import scala.xml.Node;
 
-import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
  * This class is only used by MLContext for now. It is used to provide UI data for Python notebook.
+ *
  */
 public class SparkListener extends JavaSparkListener {
 	
@@ -45,19 +46,19 @@ public class SparkListener extends JavaSparkListener {
 	}
 	// protected SparkExecutionContext sec = null;
 	protected SparkContext _sc = null;
-	protected Set<Instruction> currentInstructions = new HashSet<Instruction>();
+	protected Set<SPInstruction> currentInstructions = new HashSet<SPInstruction>();
 	private HashMap<Integer, ArrayList<TaskUIData>> stageTaskMapping = new HashMap<Integer, ArrayList<TaskUIData>>();  
 	
 	public HashMap<Integer, Seq<Node>> stageDAGs = new HashMap<Integer, Seq<Node>>();
 	public HashMap<Integer, Seq<Node>> stageTimeline = new HashMap<Integer, Seq<Node>>();
 	
-	public void addCurrentInstruction(Instruction inst) {
+	public void addCurrentInstruction(SPInstruction inst) {
 		synchronized(currentInstructions) {
 			currentInstructions.add(inst);
 		}
 	}
 	
-	public void removeCurrentInstruction(Instruction inst) {
+	public void removeCurrentInstruction(SPInstruction inst) {
 		synchronized(currentInstructions) {
 			currentInstructions.remove(inst);
 		}
@@ -88,7 +89,7 @@ public class SparkListener extends JavaSparkListener {
 		// Seq<RDDInfo> rddsInvolved = stageSubmitted.stageInfo().rddInfos();
 		
 		synchronized(currentInstructions) {
-			for(Instruction inst : currentInstructions) {
+			for(SPInstruction inst : currentInstructions) {
 				inst.stageSubmittedIds.add(stageSubmitted.stageInfo().stageId());
 			}
 		}
@@ -115,7 +116,7 @@ public class SparkListener extends JavaSparkListener {
 		super.onStageCompleted(stageCompleted);
 		Integer stageID = stageCompleted.stageInfo().stageId();
 		synchronized(currentInstructions) {
-			for(Instruction inst : currentInstructions) {
+			for(SPInstruction inst : currentInstructions) {
 				inst.stageCompletedIds.add(stageID);
 			}
 			

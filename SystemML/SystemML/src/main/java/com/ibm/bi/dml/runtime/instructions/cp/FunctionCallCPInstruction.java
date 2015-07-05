@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -91,6 +92,23 @@ public class FunctionCallCPInstruction extends CPInstruction
 		}
 		
 		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
+	}
+
+	
+	
+	@Override
+	public Instruction preprocessInstruction(ExecutionContext ec)
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//default pre-process behavior
+		Instruction tmp = super.preprocessInstruction(ec);
+		
+		//maintain debug state (function call stack) 
+		if( DMLScript.ENABLE_DEBUG_MODE ) {
+			ec.handleDebugFunctionEntry((FunctionCallCPInstruction) tmp);
+		}
+
+		return tmp;
 	}
 
 	@Override
@@ -214,10 +232,18 @@ public class FunctionCallCPInstruction extends CPInstruction
 		}
 	}
 
-	//
-	//public String getOutputVariableName() {
-	//	return null; //output.getName();
-	//}
+	@Override
+	public void postprocessInstruction(ExecutionContext ec)
+		throws DMLRuntimeException 
+	{
+		//maintain debug state (function call stack) 
+		if (DMLScript.ENABLE_DEBUG_MODE ) {
+			ec.handleDebugFunctionExit( this );
+		}
+		
+		//default post-process behavior
+		super.postprocessInstruction(ec);
+	}
 
 	@Override
 	public void printMe() {

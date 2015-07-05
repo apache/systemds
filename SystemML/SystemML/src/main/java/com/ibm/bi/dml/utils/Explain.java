@@ -67,7 +67,10 @@ public class Explain
 	private static final boolean SHOW_LITERAL_HOPS          = false;
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
-	
+
+	//temporary spark-sepcific constant
+	public static boolean PRINT_EXPLAIN_WITH_LINEAGE = false;
+
 
 	//different explain levels
 	public enum ExplainType { 
@@ -832,9 +835,6 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static boolean PRINT_EXPLAIN_WITH_LINEAGE = false;
-//	public static String lineSeparator = "\u00b5";
-//	public static String entrySeparator = "\u00b6";
 	/**
 	 * 
 	 * @param inst
@@ -845,14 +845,16 @@ public class Explain
 		String tmp = null;
 		if( inst instanceof MRJobInstruction )
 			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
-		else {
-			if(inst.getDebugString() != null && PRINT_EXPLAIN_WITH_LINEAGE) {
-				tmp = inst.toString() + "\n" + inst.getSparkInfo() + "\n" +  inst.getDebugString();
-				//tmp = inst.toString() + entrySeparator + inst.getDebugString().replaceAll("\n", lineSeparator);
-			}
+		else if ( inst instanceof SPInstruction )
+		{
+			SPInstruction spinst = (SPInstruction) inst;
+			if( spinst.getDebugString() != null && PRINT_EXPLAIN_WITH_LINEAGE )
+				tmp = inst.toString() + "\n" + spinst.getSparkInfo() + "\n" +  spinst.getDebugString();
 			else
 				tmp = inst.toString();
 		}
+		else //CP
+			tmp = inst.toString();
 		
 		if( REPLACE_SPECIAL_CHARACTERS ){
 			tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");

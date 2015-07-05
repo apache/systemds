@@ -41,7 +41,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
@@ -1741,18 +1740,18 @@ public class MRJobConfiguration
 		dataGenIns = MRInstructionParser.parseDataGenInstructions(randInstructions);
 		getIndexes(dataGenIns, indexesInMapper);
 		
-		Instruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
+		MRInstruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
 		getIndexes(insMapper, indexesInMapper);
 		
 		ReblockInstruction[] reblockIns = null;
 		reblockIns = MRInstructionParser.parseReblockInstructions(reblockInstructions);
 		getIndexes(reblockIns, indexesInMapper);
 		
-		Instruction[] insReducer = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
+		MRInstruction[] insReducer = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
 		HashSet<Byte> indexesInReducer=new HashSet<Byte>();
 		getIndexes(insReducer, indexesInReducer);
 		
-		insReducer = InstructionParser.parseMixedInstructions(otherInstructionsInReducer);
+		insReducer = MRInstructionParser.parseMixedInstructions(otherInstructionsInReducer);
 		getIndexes(insReducer, indexesInReducer);
 	
 		for(byte ind: resultIndexes)
@@ -1791,12 +1790,12 @@ public class MRJobConfiguration
 		
 	}
 	
-	private static void getIndexes(Instruction[] instructions, HashSet<Byte> indexes) 
+	private static void getIndexes(MRInstruction[] instructions, HashSet<Byte> indexes) 
 		throws DMLRuntimeException
 	{
 		if(instructions==null)
 			return;
-		for(Instruction ins: instructions)
+		for(MRInstruction ins: instructions)
 		{
 			for(byte i: ins.getAllIndexes())
 				indexes.add(i);

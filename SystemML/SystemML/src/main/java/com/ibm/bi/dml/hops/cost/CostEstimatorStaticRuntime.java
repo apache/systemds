@@ -509,8 +509,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		if( mapInst!=null && mapInst.length()>0 ) {
 			mapInst = replaceInstructionPatch(mapInst);
-			Instruction[] ins = MRInstructionParser.parseMixedInstructions(mapInst);
-			for( Instruction inst : ins )
+			MRInstruction[] ins = MRInstructionParser.parseMixedInstructions(mapInst);
+			for( MRInstruction inst : ins )
 				for( byte ix : inst.getAllIndexes() )
 					ixMap.add(ix);
 		}
@@ -523,24 +523,24 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 
 		if( shfInst!=null && shfInst.length()>0 ) {
 			shfInst = replaceInstructionPatch(shfInst);
-			Instruction[] ins = MRInstructionParser.parseMixedInstructions(shfInst);
-			for( Instruction inst : ins )
+			MRInstruction[] ins = MRInstructionParser.parseMixedInstructions(shfInst);
+			for( MRInstruction inst : ins )
 				for( byte ix : inst.getAllIndexes() )
 					ixRed.add(ix);
 		}
 		
 		if( aggInst!=null && aggInst.length()>0 ) {
 			aggInst = replaceInstructionPatch(aggInst);
-			Instruction[] ins = MRInstructionParser.parseAggregateInstructions(aggInst);
-			for( Instruction inst : ins )
+			MRInstruction[] ins = MRInstructionParser.parseAggregateInstructions(aggInst);
+			for( MRInstruction inst : ins )
 				for( byte ix : inst.getAllIndexes() )
 					ixRed.add(ix);
 		}
 		
 		if( otherInst!=null && otherInst.length()>0 ) {
 			otherInst = replaceInstructionPatch(otherInst);
-			Instruction[] ins = MRInstructionParser.parseMixedInstructions(otherInst);
-			for( Instruction inst : ins )
+			MRInstruction[] ins = MRInstructionParser.parseMixedInstructions(otherInst);
+			for( MRInstruction inst : ins )
 				for( byte ix : inst.getAllIndexes() )
 					ixRed.add(ix);
 		}

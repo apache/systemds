@@ -7,9 +7,11 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -56,33 +58,31 @@ public abstract class CPInstruction extends Instruction
 	{
 		return _opcode;
 	}
-	
-	@Override
-	public byte[] getAllIndexes() throws DMLRuntimeException {
-		return null;
-	}
-
-	@Override
-	public byte[] getInputIndexes() throws DMLRuntimeException {
-		return null;
-	}
 
 	@Override
 	public String getGraphString() {
 		return getOpcode();
 	}
 
-	
-	
-	/**
-	 * This method should be used to execute the instruction. It's abstract to force 
-	 * subclasses to override it. 
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
-	 */
-	public abstract void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException;
+	@Override
+	public Instruction preprocessInstruction(ExecutionContext ec)
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//default preprocess behavior (e.g., debug state)
+		Instruction tmp = super.preprocessInstruction(ec);
+		
+		//instruction patching
+		if( tmp.requiresLabelUpdate() ) //update labels only if required
+		{
+			//note: no exchange of updated instruction as labels might change in the general case
+			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
+			tmp = CPInstructionParser.parseSingleInstruction(updInst);
+		}
 
+		return tmp;
+	}
+
+	@Override 
+	public abstract void processInstruction(ExecutionContext ec)
+			throws DMLRuntimeException, DMLUnsupportedOperationException;
 }

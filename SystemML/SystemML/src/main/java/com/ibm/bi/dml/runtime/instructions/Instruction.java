@@ -1,13 +1,11 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.instructions;
-
-import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,12 +13,13 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 
 
 public abstract class Instruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT, SPARK };
@@ -32,54 +31,28 @@ public abstract class Instruction
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	
-	protected INSTRUCTION_TYPE type;
-	protected String           instString;
-	protected int              lineNum;
-	private long instID;
-	
-	// Fields that help monitor spark execution
-	protected String           debugString;
-	public ArrayList<Integer> stageSubmittedIds = new ArrayList<Integer>();
-	public ArrayList<Integer> stageCompletedIds = new ArrayList<Integer>();
-	private String getStringFromArrayList(ArrayList<Integer> al) {
-		String retVal = "";
-		for(Integer i : al) {
-			if(retVal.compareTo("") != 0) {
-				retVal += ", ";
-			}
-			retVal += i;
-		}
-		return retVal;
-	}
-	public String getSparkInfo() {
-		return "\nStage Submitted IDs:[" + getStringFromArrayList(stageSubmittedIds) + "]" +
-				"\nStage Completed IDs:[" + getStringFromArrayList(stageCompletedIds) + "]";
-	}
+	protected INSTRUCTION_TYPE type = null;
+	protected String instString = null;
+	protected String instOpcode = null;
+	private int lineNum = -1;
+	private long instID = -1;
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;
+	}
+	
+	public INSTRUCTION_TYPE getType() {
+		return type;
 	}
 	
 	/**
 	 * Setter for instruction line number 
 	 * @param ln Exact (or approximate) DML script line number
 	 */
-	public void setLineNum (int ln ) {
+	public void setLineNum ( int ln ) {
 		lineNum = ln;
 	}
 	
-	/**
-	 * Setter for instruction unique identifier 
-	 * @param id Instruction unique identifier
-	 */
-	public void setInstID (long id ) {
-		instID = id;
-	}
-	
-	public INSTRUCTION_TYPE getType() {
-		return type;
-	}
-
 	/**
 	 * Getter for instruction line number
 	 * @return lineNum Instruction approximate DML script line number
@@ -87,7 +60,15 @@ public abstract class Instruction
 	public int getLineNum() {
 		return lineNum;
 	}
-	
+
+	/**
+	 * Setter for instruction unique identifier 
+	 * @param id Instruction unique identifier
+	 */
+	public void setInstID ( long id ) {
+		instID = id;
+	}
+		
 	/**
 	 * Getter for instruction unique identifier
 	 * @return instID Instruction unique identifier
@@ -95,39 +76,24 @@ public abstract class Instruction
 	public long getInstID() {
 		return instID;
 	}
-	
-	protected static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException{
-		throw new DMLRuntimeException("parseInstruction(): should not be invoked from the base class.");
-	}
 
-	public abstract byte[] getInputIndexes() throws DMLRuntimeException;
-	
-	public abstract byte[] getAllIndexes() throws DMLRuntimeException;
-	
 	public void printMe() {
 		LOG.debug(instString);
 	}
+	
 	public String toString() {
 		return instString;
-	}
-	
-	/**
-	 * Donot call this method directly, instead go through SparkUtils.setLineageInfoForExplain
-	 */
-	public void setDebugString(String debugString) {
-		if(this.debugString == null) {
-			this.debugString = debugString;
-		}
-	}
-	
-	public String getDebugString() {
-		return debugString;
 	}
 	
 	public String getGraphString() {
 		return null;
 	}
 
+	public String getOpcode()
+	{
+		return instOpcode;
+	}
+	
 	/**
 	 * 
 	 * @return
@@ -147,6 +113,49 @@ public abstract class Instruction
 	 * @throws DMLRuntimeException 
 	 */
 	public void updateInstructionThreadID(String pattern, String replace) 
+		throws DMLRuntimeException
+	{
+		//do nothing
+	}
+	
+	/**
+	 * This method should be used for any setup before executing this instruction.
+	 * Overwriting methods should first call the super method and subsequently do
+	 * their custom setup.
+	 * 
+	 * @param ec
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	public Instruction preprocessInstruction(ExecutionContext ec)
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//update debug status
+		ec.updateDebugState( this );
+		
+		//return instruction ifself
+		return this;
+	}
+	
+	/**
+	 * This method should be used to execute the instruction. 
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public abstract void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException;
+	
+	/**
+	 * This method should be used for any tear down after executing this instruction.
+	 * Overwriting methods should first do their custom tear down and subsequently 
+	 * call the super method.
+	 * 
+	 * @param ec
+	 */
+	public void postprocessInstruction(ExecutionContext ec)
 		throws DMLRuntimeException
 	{
 		//do nothing

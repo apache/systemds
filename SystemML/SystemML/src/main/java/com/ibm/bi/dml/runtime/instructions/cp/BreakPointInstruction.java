@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.debug.DebugState;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -85,23 +86,12 @@ public class BreakPointInstruction extends Instruction
 	public boolean isBPInstructionEnabled() {
 		return (bpStatus == BPINSTRUCTION_STATUS.ENABLED);
 	}
-	
-	@Override
-	public byte[] getInputIndexes() throws DMLRuntimeException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
-	public byte[] getAllIndexes() throws DMLRuntimeException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	//@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException
 	{
-		if( isBPInstructionEnabled()) {
+		if( DMLScript.ENABLE_DEBUG_MODE && isBPInstructionEnabled()) {
 			DebugState dbState = ec.getDebugState();
 			
 			System.out.format("Breakpoint reached at %s.\n", dbState.getPC().toString());					

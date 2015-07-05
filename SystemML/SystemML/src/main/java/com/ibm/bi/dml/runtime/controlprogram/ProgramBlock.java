@@ -13,12 +13,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -26,29 +23,16 @@ import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.ComputationSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
 
@@ -304,123 +288,40 @@ public class ProgramBlock
 		throws DMLRuntimeException
 	{	
 		try 
-		{			
-			ec.updateDebugState( currInst );
-						
-			long t0 = 0, t1 = 0;
-			if( LOG.isTraceEnabled() )
-			{
-				t0 = System.nanoTime();
-				LOG.trace("\n Variables: " + ec.getVariables().toString());
-				LOG.trace("Instruction: " + currInst.toString());
-			}
-		
-			long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		{	
+			// start time measurement for statistics
+			long t0 = (DMLScript.STATISTICS || LOG.isTraceEnabled()) ? 
+					System.nanoTime() : 0;
 			
-			if (currInst instanceof MRJobInstruction) 
-			{
-				if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
-					throw new DMLRuntimeException("MapReduce jobs cannot be executed when execution mode = singlenode");
-				
-				//execute MR job
-				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
-				JobReturn jb = RunMRJobs.prepareAndSubmitJob(currMRInst, ec);
-				
-				//specific post processing
-				if ( currMRInst.getJobType() == JobType.SORT && jb.getMetaData().length > 0 ) 
-				{
-					/* Populate returned stats into symbol table of matrices */
-					for ( int index=0; index < jb.getMetaData().length; index++) {
-						String varname = currMRInst.getOutputVars()[index];
-						ec.setMetaData(varname, jb.getMetaData()[index]);
-					}
-				}
-				else if ( jb.getMetaData().length > 0 ) 
-				{
-					/* Populate returned stats into symbol table of matrices */
-					for ( int index=0; index < jb.getMetaData().length; index++) {
-						String varname = currMRInst.getOutputVars()[index];
-						MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
-						ec.getVariable(varname).updateMatrixCharacteristics(mc);
-					}
-				}
-				
-				Statistics.incrementNoOfExecutedMRJobs();
-				
-				if (LOG.isTraceEnabled()){					
-					t1 = System.nanoTime();
-					LOG.trace("MRJob: " + currMRInst.getJobType() + ", duration = " + (t1-t0)/1000000);
-				}
-				
-				if( DMLScript.STATISTICS){
-					long t3 = System.nanoTime();
-					String opcode = Statistics.getCPHeavyHitterCode(currMRInst);
-					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
-				}
-				
-				//System.out.println("MRJob: " + currMRInst.getJobType() );
-			} 
-			else if (currInst instanceof CPInstruction || currInst instanceof SPInstruction) 
-			{
-				Instruction tmp = currInst;
-				
-				if( tmp.requiresLabelUpdate() ) //update labels only if required
-				{
-					//update labels if required
-					//note: no exchange of updated instruction as labels might change in the general case
-					String updInst = RunMRJobs.updateLabels(currInst.toString(), ec.getVariables());
-					if (tmp instanceof CPInstruction)
-						tmp = CPInstructionParser.parseSingleInstruction(updInst);
-					else
-						tmp = SPInstructionParser.parseSingleInstruction(updInst);
-				}
-
-				//check if function call 
-				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {
-					ec.handleDebugFunctionEntry((FunctionCallCPInstruction) tmp);
-				}
-
-				//execute original or updated instruction
-				if (tmp instanceof CPInstruction) 
-					((CPInstruction) tmp).processInstruction(ec);
-				else {
-					if(tmp instanceof ComputationSPInstruction && Explain.PRINT_EXPLAIN_WITH_LINEAGE && ec instanceof SparkExecutionContext) {
-						((SparkExecutionContext) ec).getSparkListener().addCurrentInstruction(tmp);
-					}
-					((SPInstruction) tmp).processInstruction(ec);
-					if(tmp instanceof ComputationSPInstruction && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
-						((SparkExecutionContext) ec).setDebugString(tmp, ((ComputationSPInstruction) tmp).getOutputVariableName());
-						
-						((SparkExecutionContext) ec).getSparkListener().removeCurrentInstruction(tmp);
-					}
-				}
-				
-				//check if function returned
-				if (DMLScript.ENABLE_DEBUG_MODE && tmp instanceof FunctionCallCPInstruction) {
-					ec.handleDebugFunctionExit((FunctionCallCPInstruction) tmp);
-				}
-				
-				if (LOG.isTraceEnabled()){	
-					t1 = System.nanoTime();
-					LOG.trace("CP Instruction: " + currInst.toString() + ", duration = " + (t1-t0)/1000000);
-				}
-
-				if( DMLScript.STATISTICS) {
-					long t3 = System.nanoTime();
-					if (tmp instanceof CPInstruction) 
-						Statistics.maintainCPHeavyHitters(((CPInstruction) tmp).getOpcode(), t3-t2);
-					else 
-						Statistics.maintainCPHeavyHitters(((SPInstruction) tmp).getOpcode(), t3-t2);
-				}
-				
-				if( CHECK_MATRIX_SPARSITY )
-					checkSparsity( tmp, ec.getVariables() );
+					
+			// pre-process instruction (debug state, inst patching, listeners)
+			Instruction tmp = currInst.preprocessInstruction( ec );
+			
+			// process actual instruction
+			tmp.processInstruction( ec );
+			
+			// post-process instruction (debug) 
+			tmp.postprocessInstruction( ec );
+			
+			
+			// maintain aggregate statistics
+			if( DMLScript.STATISTICS) {
+				long t1 = System.nanoTime();
+				Statistics.maintainCPHeavyHitters(tmp.getOpcode(), t1-t0);
 			}
-			//check if breakpoint instruction 
-			else if (DMLScript.ENABLE_DEBUG_MODE && currInst instanceof BreakPointInstruction)
-			{
-				((BreakPointInstruction)currInst).processInstruction(ec);
+				
+			// optional trace information (instruction and runtime)
+			if( LOG.isTraceEnabled() ) {
+				long t1 = System.nanoTime();
+				String time = String.format("%.3f",((double)t1-t0)/1000000000);
+				LOG.trace("Instruction: "+ tmp + " (executed in " + time + "s).");
 			}
+			
+			// optional check for correct nnz and sparse/dense representation of all 
+			// variables in symbol table (for tracking source of wrong representation)
+			if( CHECK_MATRIX_SPARSITY ) {
+				checkSparsity( tmp, ec.getVariables() );
+			}			
 		}
 		catch (Exception e)
 		{
@@ -436,6 +337,11 @@ public class ProgramBlock
 		}
 	}
 	
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
 	private boolean isRemoveVariableInstruction(Instruction inst)
 	{
 		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );

@@ -12,17 +12,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -31,6 +35,7 @@ import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.utils.Statistics;
 
 /*
 ---------------------------------------------------------------------------------------
@@ -123,6 +128,7 @@ public class MRJobInstruction extends Instruction
 	{
 		setType(Instruction.INSTRUCTION_TYPE.MAPREDUCE_JOB);
 		jobType = type;	
+		instOpcode = "MR-Job_"+getJobType();
 	}
 	
 	/**
@@ -929,16 +935,6 @@ public class MRJobInstruction extends Instruction
 		return sb.toString();
 	}
 
-	@Override
-	public byte[] getAllIndexes() throws DMLRuntimeException {
-		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
-	}
-
-	@Override
-	public byte[] getInputIndexes() throws DMLRuntimeException {
-		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
-	}
-
 	public boolean isMapOnly()
 	{
 		return (   (_shuffleInstructions == null || _shuffleInstructions.trim().length()==0)
@@ -1483,5 +1479,36 @@ public class MRJobInstruction extends Instruction
 		
 		return ret;
 	}
-	
+
+	@Override
+	public void processInstruction(ExecutionContext ec)
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
+			throw new DMLRuntimeException("MapReduce jobs cannot be executed when execution mode = singlenode");
+		
+		//execute MR job
+		JobReturn jb = RunMRJobs.prepareAndSubmitJob(this, ec);
+		
+		//specific post processing
+		if ( getJobType() == JobType.SORT && jb.getMetaData().length > 0 ) 
+		{
+			/* Populate returned stats into symbol table of matrices */
+			for ( int index=0; index < jb.getMetaData().length; index++) {
+				String varname = getOutputVars()[index];
+				ec.setMetaData(varname, jb.getMetaData()[index]);
+			}
+		}
+		else if ( jb.getMetaData().length > 0 ) 
+		{
+			/* Populate returned stats into symbol table of matrices */
+			for ( int index=0; index < jb.getMetaData().length; index++) {
+				String varname = getOutputVars()[index];
+				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
+				ec.getVariable(varname).updateMatrixCharacteristics(mc);
+			}
+		}
+		
+		Statistics.incrementNoOfExecutedMRJobs();
+	}
 }

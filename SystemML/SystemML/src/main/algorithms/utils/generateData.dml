@@ -1,0 +1,38 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to generate random data for a matrix 
+#
+# Parameters:
+#    R       : (input) number of rows for the generated matrix 
+#    C	     : (input) number of columns for the generated matrix
+#    S       : (input) sparsity of the data 
+#    Min     : (input) minimum value of the data
+#    Max     : (input) maximum value of the data
+#    Pdf     : (input) probability distribution function for the data
+#    Path    : (input) path on HDFS where the matrix will be stored
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/project.dml -nvargs X="/tmp/M.mtx" P="/tmp/P.mtx" o="/tmp/PX.mtx" 
+#
+# Assumptions:
+# The order of colIDs in P is preserved. Order of columns in result is same as order of columns in P.
+#      i.e. projecting columns 4 and 2 of X results in a matrix with columns 4 and 2.
+# If P specifies the exclude list, then projected columns are order preserved.
+
+numRows = ifdef($R, 5)
+numCols = ifdef($C, 5)
+sparsityParam = ifdef($S, 0.2)
+minVal = ifdef($Min, 0)
+maxVal = ifdef($Max, 10)
+pdFunc = ifdef($Pdf, "uniform")
+pathUse = ifdef($Path, "/user/bigr/randomData")
+
+A = rand(rows=numRows, cols=numCols, sparsity=sparsityParam, min=minVal, max=maxVal, pdf="uniform");
+write(A, pathUse, format="csv");

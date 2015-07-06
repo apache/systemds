@@ -19,13 +19,15 @@
 # 								 - X[,1]: timestamps 
 #								 - X[,2]: whether an event occurred (1) or data is censored (0)
 #								 - X[,3:]: feature vectors 	
-# F   	  String   " "	        If factors (categorical variables) available in the input matrix X, location to read the matrix F containing 
-#								the start and end indices of the factors in X
-#								 - F[,1]: start indices
-#								 - F[,2]: end indices	
-#								Alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from X; 
-#								in this case the start and end indices corresponding to the baseline level need to be the same;
-#								if F is not provided by default all variables are considered to be continuous   	
+# TE	  String   ---          Column indices of X as a column vector which contain timestamp (first row) and event information (second row)
+# F 	  String   ---			Column indices of X as a column vector which are to be used for fitting the Cox model
+# R   	  String   " "	      	Location to read the matrix R which depending on whether a baseline level for each factor is specified or not 
+#								has one of the following forms: 
+#								 1- If baseline levels are specified R is a column matrix that contains the indices of baseline levels
+#								 2- If baseline levels for factor are not specified R has 2 columns with the following information for each factor: 	
+#								 	- R[,1]: start indices 
+#								 	- R[,2]: end indices 
+#								if R is not provided by default all variables are considered to be continuous   	
 # M       String   ---          Location to store results of Cox regression analysis including estimated regression parameters of the fitted 
 #								Cox model (the betas), their standard errors and confidence intervals and p-values 
 # S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including			
@@ -78,12 +80,14 @@
 #									  MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
 
 fileX = $X;
+fileTE = $TE;
+fileF = $F;
 fileM = $M;
 fileXO = $XO;
 fileCOV = $COV;
 
 # Default values of some parameters
-fileF = ifdef ($F, " ");         	 # $F=" " 
+fileR = ifdef ($R, " ");         	 # $R=" " 
 fileS = ifdef ($S, " ");         	 # $S=" " 
 fileT = ifdef ($T, " ");         	 # $T=" " 
 fileMF = ifdef ($MF, " ");         	 # $MF=" " 
@@ -96,30 +100,35 @@ maxinneriter = ifdef ($mii, 0);      # $mii=0;
 
 X_orig = read (fileX);
 
+TE = read (fileTE);
+F = read (fileF);
+TE_F = t (append (t (TE), t (F)));
+
 ######## CHECK FOR FACTORS AND REMOVE THE BASELINE OF EACH FACTOR FROM THE DATASET
 
-if (fileF != " ") {
-	F = read (fileF);
+if (fileR != " ") { # factors available
+	R = read (fileR);
+	if (ncol (R) == 1) {
+		R = append (R,R);
+	}
 	print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
-	# remove the baseline columns from X_orig
-	col_ind = seq (1, ncol(X_orig));
+	# identify baseline columns to be removed from X_orig
 	col_sum = colSums (X_orig);
-	F = order (target = F, by = 1); # sort according to start index
-	parfor (i in 1:nrow (F), check = 0) {
-		start_ind = as.scalar (F[i,1]);
-		end_ind = as.scalar (F[i,2]);
+	parfor (i in 1:nrow (R), check = 0) {
+		start_ind = as.scalar (R[i,1]);
+		end_ind = as.scalar (R[i,2]);
 		baseline_ind = as.scalar (rowIndexMax (col_sum[1, start_ind:end_ind])) + start_ind - 1;
-		col_ind[baseline_ind,] = 0;
+		TE_F[baseline_ind,] = 0;
 	}
-	col_ind = removeEmpty (target = col_ind, margin = "rows");
-	# pull out the remaining cols from X_orig
-	X_orig = X_orig %*% table (col_ind, seq (1, nrow (col_ind)), ncol (X_orig), nrow (col_ind));
+	TE_F = removeEmpty (target = TE_F, margin = "rows");
 	if (fileMF != " ") {
-		write (col_ind, fileMF, fmtO);
+		write (TE_F, fileMF, fmtO);
 	} else {
-		stop ("Please provide argument IF!");
-	}
-}
+		stop ("Please provide argument MF!");
+	}	
+} 
+
+X_orig = X_orig %*% table (TE_F, seq (1, nrow (TE_F)), ncol (X_orig), nrow (TE_F));
 
 ######## RECODING TIMESTAMPS PRESERVING THE ORDER
 print ("RECODING TIMESTAMPS...");

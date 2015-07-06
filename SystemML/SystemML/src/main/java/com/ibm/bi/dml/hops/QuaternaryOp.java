@@ -627,6 +627,8 @@ public class QuaternaryOp extends Hop
 		}
 		else
 		{	
+			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -636,13 +638,13 @@ public class QuaternaryOp extends Hop
 					&& getInput().get(3).areDimsBelowThreshold()) )
 				_etype = ExecType.CP;
 			else
-				_etype = ExecType.MR;
+				_etype = REMOTE;
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
 				setRequiresRecompile();
 		}
 		

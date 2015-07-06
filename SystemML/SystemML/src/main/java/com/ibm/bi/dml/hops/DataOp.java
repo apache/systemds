@@ -410,6 +410,7 @@ public class DataOp extends Hop
 		//for example for sum(X) where the memory consumption is solely determined by the DataOp
 		
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
@@ -436,21 +437,21 @@ public class DataOp extends Hop
 				}
 				else
 				{
-					_etype = ExecType.MR;
+					_etype = REMOTE;
 				}
 			
 				//check for valid CP dimensions and matrix size
 				checkAndSetInvalidCPDimsAndSize();
 				
 				//mark for recompile (forever)
-				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
+				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
 					setRequiresRecompile();
 			}
 		}
 	    else //READ
 		{
 	    	//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==ExecType.MR && _recompileRead )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==REMOTE && _recompileRead )
 				setRequiresRecompile();
 	    	
 			_etype = letype;

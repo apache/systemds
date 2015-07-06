@@ -753,6 +753,8 @@ public class TernaryOp extends Hop
 		}
 		else
 		{	
+			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -763,7 +765,7 @@ public class TernaryOp extends Hop
 				)
 				_etype = ExecType.CP;
 			else
-				_etype = ExecType.MR;
+				_etype = REMOTE;
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
@@ -773,7 +775,7 @@ public class TernaryOp extends Hop
 			// When execType=CP, it is marked for recompilation only when additional
 			// dimension inputs are provided (and those values are unknown at initial compile time).
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) ) {
-				if ( _etype==ExecType.MR || (_etype == ExecType.CP && _dimInputsPresent))
+				if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
 					setRequiresRecompile();
 			}
 		}

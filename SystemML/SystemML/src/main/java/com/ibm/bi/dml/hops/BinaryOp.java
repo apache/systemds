@@ -878,6 +878,8 @@ public class BinaryOp extends Hop
 		}
 		else 
 		{
+			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 			{
 				_etype = findExecTypeByMemEstimate();
@@ -915,14 +917,14 @@ public class BinaryOp extends Hop
 				
 				//if no CP condition applied
 				if( _etype == null )
-					_etype = ExecType.MR;
+					_etype = REMOTE;
 			}
 		
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) 
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==REMOTE) 
 				|| (op == OpOp2.APPEND && getDataType()!=DataType.SCALAR) ) )
 			{
 				setRequiresRecompile();

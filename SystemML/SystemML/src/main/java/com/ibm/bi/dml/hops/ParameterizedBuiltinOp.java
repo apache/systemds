@@ -672,11 +672,13 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 		else 
 		{
+			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			
 			if( _op == ParamBuiltinOp.TRANSFORM )
 			{
 				// force MR execution type here.
 				// At runtime, cp-side transform is triggered for small files.
-				return ExecType.MR;
+				return REMOTE;
 			}
 			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -689,14 +691,14 @@ public class ParameterizedBuiltinOp extends Hop
 			}
 			else
 			{
-				_etype = ExecType.MR;
+				_etype = REMOTE;
 			}
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 			
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==ExecType.MR )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
 				setRequiresRecompile();
 		}
 		return _etype;

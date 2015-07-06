@@ -351,8 +351,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					else //if( bop.getOp()==OpOp2.PLUS )		
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
 						
+					//rewire parents
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, gen, pos);
+					
+					//propagate potentially updated nnz=0
+					parent.refreshSizeInformation(); 
 					
 					hi = gen;
 					
@@ -379,8 +383,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					else //if( bop.getOp()==OpOp2.PLUS )		
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
 						
+					//rewire parents
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, gen, pos);
+
+					//propagate potentially updated nnz=0
+					parent.refreshSizeInformation(); 
 					
 					hi = gen;
 					

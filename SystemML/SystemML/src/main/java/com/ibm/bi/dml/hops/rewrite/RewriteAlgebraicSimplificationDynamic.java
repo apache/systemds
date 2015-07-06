@@ -1252,7 +1252,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					Hop lparent = parents.get(i);
 					int lpos = parentspos.get(i);
 					HopRewriteUtils.addChildReference(lparent, hi, lpos);
-				}				
+				}	
+				
+				LOG.debug("Applied pushdownBinaryOperationOnDiag.");
 			}
 		}
 		

@@ -358,8 +358,9 @@ public class HopRewriteUtils
 		datagen.setRowsInBlock(inputGen.getRowsInBlock());
 		datagen.setColsInBlock(inputGen.getColsInBlock());
 		
-		if( smin==0 && smax==0 )
+		if( smin==0 && smax==0 ) {
 			datagen.setNnz(0);
+		}
 			
 		return datagen;
 	}

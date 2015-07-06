@@ -354,13 +354,13 @@ public class ReorgOp extends Hop
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
 				if( k == 1 )
-					ret = new long[]{k, k, ((mc.getNonZeros()>0) ? mc.getNonZeros() : k)};
+					ret = new long[]{k, k, ((mc.getNonZeros()>=0) ? mc.getNonZeros() : k)};
 				
 				// CASE b) DIAG M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)		
 				if( k > 1 )
-					ret = new long[]{k, 1, ((mc.getNonZeros()>0) ? Math.min(k,mc.getNonZeros()) : k) };
+					ret = new long[]{k, 1, ((mc.getNonZeros()>=0) ? Math.min(k,mc.getNonZeros()) : k) };
 				
 				break;		
 			}
@@ -468,7 +468,7 @@ public class ReorgOp extends Hop
 				// #nnz in output is in the worst case k => sparsity = 1/k
 				if( input1.getDim2()==1 ) {
 					setDim2(k);
-					setNnz( (input1.getNnz()>0) ? input1.getNnz() : k );
+					setNnz( (input1.getNnz()>=0) ? input1.getNnz() : k );
 				}
 				
 				// CASE b) DIAG_M2V
@@ -476,7 +476,7 @@ public class ReorgOp extends Hop
 				// #nnz in the output is likely to be k (a dense matrix)		
 				if( input1.getDim2()>1 ){
 					setDim2(1);	
-					setNnz( (input1.getNnz()>0) ? Math.min(k,input1.getNnz()) : k );
+					setNnz( (input1.getNnz()>=0) ? Math.min(k,input1.getNnz()) : k );
 				}
 				
 				break;		
@@ -515,6 +515,7 @@ public class ReorgOp extends Hop
 					_dim2 = -1;
 					_nnz = -1;
 				}
+				break;
 			}
 		}	
 	}

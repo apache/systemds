@@ -670,7 +670,7 @@ public class TernaryOp extends Hop
 		if( _op == OpOp3.CTABLE ) {
 			if ( _dim1 > 0 && _dim2 > 0 ) {
 				// output dimensions are known, and hence a MatrixBlock is allocated
-				double sp = OptimizerUtils.getSparsity(_dim1, _dim2, nnz);
+				double sp = OptimizerUtils.getSparsity(_dim1, _dim2, Math.min(nnz, _dim1));
 				ret = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, sp );
 			}
 			else {

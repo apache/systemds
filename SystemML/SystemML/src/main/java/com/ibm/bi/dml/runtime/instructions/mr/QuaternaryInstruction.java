@@ -292,7 +292,7 @@ public class QuaternaryInstruction extends MRInstruction
 				}
 				
 				//Step 3: process instruction
-				Xij.quaternaryOperations(optr, Ui, Vj, Wij, outVal, (QuaternaryOperator)optr);
+				Xij.quaternaryOperations((QuaternaryOperator)optr, Ui, Vj, Wij, outVal);
 				if( ((QuaternaryOperator)optr).wtype1 != null ) 
 					outIx.setIndexes(1, 1); //wsloss
 				else

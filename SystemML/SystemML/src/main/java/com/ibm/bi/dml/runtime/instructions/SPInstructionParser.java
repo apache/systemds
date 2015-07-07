@@ -11,6 +11,10 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.DataGen;
+import com.ibm.bi.dml.lops.WeightedSigmoid;
+import com.ibm.bi.dml.lops.WeightedSigmoidR;
+import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
@@ -34,6 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.PmmSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.QuaternarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RandSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RelationalBinarySPInstruction;
@@ -163,8 +168,16 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE  , SPINSTRUCTION_TYPE.Rand);
 		
+		//ternary instruction opcodes
 		String2SPInstructionType.put( "ctable", SPINSTRUCTION_TYPE.Ternary);
 		String2SPInstructionType.put( "ctableexpand", SPINSTRUCTION_TYPE.Ternary);
+		
+		//quaternary instruction opcodes
+		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedSquaredLossR.OPCODE, SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedSigmoid.OPCODE,      SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedSigmoidR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
+
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -219,9 +232,14 @@ public class SPInstructionParser extends InstructionParser {
 				return ArithmeticBinarySPInstruction.parseInstruction(str);
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);
-				
+			
+			//ternary instructions
 			case Ternary:
 				return TernarySPInstruction.parseInstruction(str);
+				
+			//quaternary instructions
+			case Quaternary:
+				return QuaternarySPInstruction.parseInstruction(str);
 				
 			// Reblock instructions	
 			case Reblock:

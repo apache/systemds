@@ -17,6 +17,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -27,6 +28,58 @@ public class SparkUtils {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	/**
+	 * 
+	 * @param mb
+	 * @param blen
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static MatrixBlock[] partitionIntoRowBlocks( MatrixBlock mb, int blen ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//in-memory rowblock partitioning (according to bclen of rdd)
+		int lrlen = mb.getNumRows();
+		int numBlocks = (int)Math.ceil((double)lrlen/blen);				
+		MatrixBlock[] partBlocks = new MatrixBlock[numBlocks];
+		for( int i=0; i<numBlocks; i++ )
+		{
+			MatrixBlock tmp = new MatrixBlock();
+			mb.sliceOperations(i*blen+1, Math.min((i+1)*blen, lrlen), 
+					1, mb.getNumColumns(), tmp);
+			partBlocks[i] = tmp;
+		}			
+		
+		return partBlocks;
+	}
+	
+	/**
+	 * 
+	 * @param mb
+	 * @param brlen
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static MatrixBlock[] partitionIntoColumnBlocks( MatrixBlock mb, int blen ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//in-memory colblock partitioning (according to brlen of rdd)
+		int lclen = mb.getNumColumns();
+		int numBlocks = (int)Math.ceil((double)lclen/blen);				
+		MatrixBlock[] partBlocks = new MatrixBlock[numBlocks];
+		for( int i=0; i<numBlocks; i++ )
+		{
+			MatrixBlock tmp = new MatrixBlock();
+			mb.sliceOperations(1, mb.getNumRows(), 
+					i*blen+1, Math.min((i+1)*blen, lclen),  tmp);
+			partBlocks[i] = tmp;
+		}
+		
+		return partBlocks;
+	}
 	
 	
 	// This returns RDD with identifier as well as location

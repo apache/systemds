@@ -329,7 +329,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 	
 	@Override
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop)
+	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");

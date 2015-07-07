@@ -26,6 +26,7 @@ import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
@@ -139,6 +140,8 @@ public class QuaternaryOp extends Hop
 						constructCPLopsWeightedSquaredLoss(wtype);
 					else if( et == ExecType.MR )
 						constructMRLopsWeightedSquaredLoss(wtype);
+					else if( et == ExecType.SPARK )
+						constructSparkLopsWeightedSquaredLoss(wtype);
 					else
 						throw new HopsException("Unsupported quaternaryop-wsloss exec type: "+et);
 					break;
@@ -151,6 +154,8 @@ public class QuaternaryOp extends Hop
 						constructCPLopsWeightedSigmoid(wtype);
 					else if( et == ExecType.MR )
 						constructMRLopsWeightedSigmoid(wtype);
+					else if( et == ExecType.SPARK )
+						constructSparkLopsWeightedSigmoid(wtype);
 					else
 						throw new HopsException("Unsupported quaternaryop-wsigmoid exec type: "+et);
 					break;
@@ -379,6 +384,57 @@ public class QuaternaryOp extends Hop
 		}
 	}
 	
+	/**
+	 * 
+	 * @param wtype
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsWeightedSquaredLoss(WeightsType wtype) 
+		throws HopsException, LopsException
+	{
+		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
+		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
+		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		
+		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
+		double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
+		
+		Hop X = getInput().get(0);
+		Hop U = getInput().get(1);
+		Hop V = getInput().get(2);
+		Hop W = getInput().get(3);
+		
+		//MR operator selection, part1
+		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
+		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
+		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < memBudget); 
+		
+		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		{
+			//map-side wsloss always with broadcast
+			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
+					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
+			setOutputDimensions(wsloss);
+			setLineNumbers(wsloss);
+			setLops(wsloss);
+		}
+		else //general case
+		{
+			//MR operator selection part 2
+			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudget);
+			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudget) 
+					        || (cacheU && m1Size+m2Size < memBudget));
+			
+			//reduce-side wsloss w/ or without broadcast
+			Lop wsloss = new WeightedSquaredLossR( 
+					X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
+					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+			setOutputDimensions(wsloss);
+			setLineNumbers(wsloss);
+			setLops(wsloss);
+		}
+	}
 
 	/**
 	 * 
@@ -529,6 +585,57 @@ public class QuaternaryOp extends Hop
 			setLops(wsigmoid);
 			
 			//in contrast to wsloss no aggregation required 	
+		}
+	}
+	
+	/**
+	 * 
+	 * @param wtype
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsWeightedSigmoid( WSigmoidType wtype ) 
+		throws HopsException, LopsException
+	{
+		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
+		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
+		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+
+		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
+		double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
+
+		Hop X = getInput().get(0);
+		Hop U = getInput().get(1);
+		Hop V = getInput().get(2);
+		
+		//MR operator selection, part1
+		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
+		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
+		boolean isMapWsloss = (m1Size+m2Size < memBudget); 
+		
+		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		{
+			//map-side wsloss always with broadcast
+			Lop wsigmoid = new WeightedSigmoid( X.constructLops(), U.constructLops(), V.constructLops(),  
+					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
+			setOutputDimensions(wsigmoid);
+			setLineNumbers(wsigmoid);
+			setLops( wsigmoid );
+		}
+		else //general case
+		{
+			//MR operator selection part 2
+			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudget);
+			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudget) 
+					        || (cacheU && m1Size+m2Size < memBudget));
+			
+			//reduce-side wsloss w/ or without broadcast
+			Lop wsigmoid = new WeightedSigmoidR( 
+					X.constructLops(), U.constructLops(), V.constructLops(), 
+					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+			setOutputDimensions(wsigmoid);
+			setLineNumbers(wsigmoid);
+			setLops(wsigmoid);
 		}
 	}
 	

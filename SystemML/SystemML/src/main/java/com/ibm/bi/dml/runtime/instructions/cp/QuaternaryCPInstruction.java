@@ -101,7 +101,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			matBlock4 = ec.getMatrixInput(input4.getName());
 		
 		//core execute
-		MatrixValue out = matBlock1.quaternaryOperations(_optr, matBlock2, matBlock3, matBlock4, new MatrixBlock(), qop, _numThreads);
+		MatrixValue out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
 		
 		//release inputs and output
 		ec.releaseMatrixInput(input1.getName());

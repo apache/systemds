@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.QuaternaryOp;
@@ -252,8 +253,57 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.MR);
 	}
+
+	@Test
+	public void testSigmoidDenseBasicRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.SPARK);
+	}
 	
-	//the following 8 tests force the replication based mr operator because
+	@Test
+	public void testSigmoidDenseLogRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseMinusRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseLogMinusRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testSigmoidSparseBasicRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseLogRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseMinusRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseLogMinusRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.SPARK);
+	}
+	
+	
+	//the following tests force the replication based mr operator because
 	//otherwise we would always choose broadcasts for this small input data
 	
 	@Test
@@ -304,6 +354,54 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME4, false, true, true, ExecType.MR);
 	}
 	
+
+	@Test
+	public void testSigmoidSparseBasicRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseLogRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseMinusRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidSparseLogMinusRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseBasicRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseLogRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseMinusRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSigmoidDenseLogMinusRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, true, ExecType.SPARK);
+	}
 	
 	
 	/**
@@ -326,14 +424,21 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	 */
 	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
 	{
-		//keep old flags
 		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean forceOld = QuaternaryOp.FORCE_REPLICATION;
 		
-		//set test-specific flags
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		QuaternaryOp.FORCE_REPLICATION = rep;
 	    
 		try
@@ -382,6 +487,7 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			QuaternaryOp.FORCE_REPLICATION = forceOld;
 		}

@@ -57,16 +57,25 @@ public class WeightedSquaredLossR extends Lop
 	private void setupLopProperties( ExecType et ) 
 		throws LopsException
 	{
-		if( et != ExecType.MR )
-			throw new LopsException("Execution type other than MR (currently not supported for this lop): "+et);
-		
-		//setup MR parameters 
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		if( et == ExecType.MR )
+		{
+			//setup MR parameters 
+			boolean breaksAlignment = true;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else //Spark/CP
+		{
+			//setup Spark parameters 
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	public String toString() {
@@ -110,6 +119,42 @@ public class WeightedSquaredLossR extends Lop
 		return sb.toString();
 	}
 
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String output)
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(getExecType());
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(OPCODE);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(0).prepInputOperand(input1));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(1).prepInputOperand(input2));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(2).prepInputOperand(input3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(3).prepInputOperand(input4));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( this.prepOutputOperand(output));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_weightsType);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
+		
+		return sb.toString();
+	}
 	
 	@Override
 	public boolean usesDistributedCache() 

@@ -122,7 +122,10 @@ public class WeightedSquaredLoss extends Lop
 		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE_CP);
+		if( getExecType() == ExecType.CP )
+			sb.append(OPCODE_CP);
+		else
+			sb.append(OPCODE);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));

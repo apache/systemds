@@ -17,7 +17,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
+
 
 
 
@@ -39,6 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBinaryBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -129,7 +130,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 
 			//execute transpose reorg operation
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDReorgMapFunction(opcode));
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new ReorgMapFunction(opcode));
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -152,7 +153,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			}
 			else { // diagM2V
 				//execute diagM2V operation
-				out = in1.filter(new RDDFilterM2VFunction()).mapToPair(new RDDReorgMapFunction("rdiag"));
+				out = in1.filter(new RDDFilterM2VFunction()).mapToPair(new ReorgMapFunction("rdiag"));
 			}
 			
 			//store output rdd handle
@@ -371,46 +372,6 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			else {
 				return false;
 			}
-		}
-		
-	}
-	
-	private static class RDDReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
-	{
-		private static final long serialVersionUID = 31065772250744103L;
-		
-		private ReorgOperator _reorgOp = null;
-		private IndexFunction _indexFnObject = null;
-		
-		public RDDReorgMapFunction(String opcode) throws DMLRuntimeException {
-			if(opcode.equalsIgnoreCase("r'")) {
-				_indexFnObject = SwapIndex.getSwapIndexFnObject();
-			}
-			else if(opcode.equalsIgnoreCase("rdiag")) {
-				_indexFnObject = DiagIndex.getDiagIndexFnObject();
-			}
-			else {
-				throw new DMLRuntimeException("Incorrect opcode for RDDReorgMapFunction:" + opcode);
-			}
-			_reorgOp = new ReorgOperator(_indexFnObject);
-		}
-		
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
-			MatrixIndexes ixIn = arg0._1();
-			MatrixBlock blkIn = arg0._2();
-
-			//swap the matrix indexes
-			MatrixIndexes ixOut = new MatrixIndexes(ixIn);
-			_indexFnObject.execute(ixIn, ixOut);
-			
-			//swap the matrix block data
-			MatrixBlock blkOut = (MatrixBlock) blkIn.reorgOperations(_reorgOp, new MatrixBlock(), -1, -1, -1);
-			
-			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut);
 		}
 		
 	}

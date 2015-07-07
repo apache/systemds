@@ -486,7 +486,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 	
 	@Override
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop)
+	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		throw new DMLRuntimeException("operation not supported fro MatrixCell");

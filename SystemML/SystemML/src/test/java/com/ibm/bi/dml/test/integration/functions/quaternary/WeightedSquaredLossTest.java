@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.QuaternaryOp;
@@ -202,8 +203,44 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
 	}
-
-	//the following 4 tests force the replication based mr operator because
+	
+	@Test
+	public void testSquaredLossDensePostWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDensePreWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDenseNoWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePreWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparseNoWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.SPARK);
+	}
+	
+	//the following tests force the replication based mr operator because
 	//otherwise we would always choose broadcasts for this small input data
 	
 	@Test
@@ -219,6 +256,12 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testSquaredLossSparseNoWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.MR);
+	}
+	
+	@Test
 	public void testSquaredLossDensePostWeightsRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.MR);
@@ -228,6 +271,48 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	public void testSquaredLossDensePreWeightsRewritesRepMR() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDenseNoWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePreWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparseNoWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDensePostWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDensePreWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDenseNoWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.SPARK);
 	}
 	
 	/**
@@ -249,15 +334,22 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	 * @param instType
 	 */
 	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
-	{
-		//keep old flags
+	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean forceOld = QuaternaryOp.FORCE_REPLICATION;
-		
-		//set test-specific flags
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+
+		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		QuaternaryOp.FORCE_REPLICATION = rep;
 	    
 		try
@@ -310,6 +402,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			QuaternaryOp.FORCE_REPLICATION = forceOld;
 		}

@@ -160,7 +160,7 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 
-	public abstract MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop)
+	public abstract MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
 		throws DMLUnsupportedOperationException, DMLRuntimeException;
 		
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 

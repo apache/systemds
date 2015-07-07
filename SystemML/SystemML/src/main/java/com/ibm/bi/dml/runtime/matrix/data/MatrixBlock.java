@@ -5747,10 +5747,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	@Override
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop)
+	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		return quaternaryOperations(op, um, vm, wm, out, qop, 1);
+		return quaternaryOperations(qop, um, vm, wm, out, 1);
 	}
 	
 	/**
@@ -5766,14 +5766,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixValue quaternaryOperations(Operator op, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, QuaternaryOperator qop, int k)
+	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, int k)
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//check input dimensions
 		if( getNumRows() != um.getNumRows() )
-			throw new DMLRuntimeException("Dimension mismatch rows on wsloss: "+getNumRows()+"!="+um.getNumRows());
+			throw new DMLRuntimeException("Dimension mismatch rows on quaternary operation: "+getNumRows()+"!="+um.getNumRows());
 		if( getNumColumns() != vm.getNumRows() )
-			throw new DMLRuntimeException("Dimension mismatch columns on wsloss: "+getNumRows()+"!="+vm.getNumRows());
+			throw new DMLRuntimeException("Dimension mismatch columns quaternary operation: "+getNumColumns()+"!="+vm.getNumRows());
 		
 		//check input data types
 		MatrixBlock X = this;

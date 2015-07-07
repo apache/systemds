@@ -14,7 +14,7 @@
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
 # X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
-# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be recoded
+# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
 # R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
 #										- R[,1]: column ids
 #										- R[,2]: start indices 
@@ -63,10 +63,9 @@ threshold = ifdef ($num_samples, 3000);
 imp = ifdef($impurity, "Gini");
 fmtO = ifdef($fmt, "text");
 
-X = read($X)
-Y = read($Y)
+X = read($X);
+Y_bin = read($Y);
 num_records = nrow (X);
-Y_bin = table (seq (1, num_records), Y); # Y in binary representation
 num_classes = ncol (Y_bin);
 
 # split data into X_scale and X_cat

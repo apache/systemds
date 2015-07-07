@@ -16,7 +16,6 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.DMLException; 
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.lops.PMMJ;
@@ -31,6 +30,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -135,7 +135,8 @@ public class PmmSPInstruction extends BinarySPInstruction
 		
 		private MatrixBlock[] _partBlocks = null;
 		
-		public RDDPMMFunction( CacheType type, Broadcast<MatrixBlock> binput, long rlen, int brlen )
+		public RDDPMMFunction( CacheType type, Broadcast<MatrixBlock> binput, long rlen, int brlen ) 
+			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
 			_brlen = brlen;
 			_rlen = rlen;
@@ -143,26 +144,9 @@ public class PmmSPInstruction extends BinarySPInstruction
 			//get the broadcast vector
 			MatrixBlock mb = binput.value();
 			
-			//partition vector for fast in memory lookup
-			try
-			{
-				// right now always CacheType.LEFT 
-				//in-memory colblock partitioning (according to brlen of rdd)
-				int lrlen = mb.getNumRows();
-				int numBlocks = (int)Math.ceil((double)lrlen/_brlen);	
-				
-				_partBlocks = new MatrixBlock[numBlocks];
-				for( int i=0; i<numBlocks; i++ )
-				{
-					MatrixBlock tmp = new MatrixBlock();
-					mb.sliceOperations( i*_brlen+1, Math.min((i+1)*_brlen, mb.getNumRows()), 1, 1, tmp);
-					_partBlocks[i] = tmp;
-				}
-			}
-			catch(DMLException ex)
-			{
-				LOG.error("Failed partitioning of broadcast variable input.", ex);
-			}
+			//partition vector for fast in memory lookup (right now always CacheType.LEFT) 
+			//in-memory colblock partitioning (according to brlen of rdd)
+			_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
 		}
 		
 		@Override

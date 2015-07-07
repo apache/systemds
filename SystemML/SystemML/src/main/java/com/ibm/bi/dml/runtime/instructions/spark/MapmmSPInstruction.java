@@ -30,6 +30,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -172,30 +173,12 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				if( _type == CacheType.LEFT )
 				{
 					//in-memory colblock partitioning (according to brlen of rdd)
-					int lclen = mb.getNumColumns();
-					int numBlocks = (int)Math.ceil((double)lclen/_brlen);				
-					_partBlocks = new MatrixBlock[numBlocks];
-					for( int i=0; i<numBlocks; i++ )
-					{
-						MatrixBlock tmp = new MatrixBlock();
-						mb.sliceOperations(1, mb.getNumRows(), 
-								i*_brlen+1, Math.min((i+1)*_brlen, lclen),  tmp);
-						_partBlocks[i] = tmp;
-					}
+					_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
 					//in-memory rowblock partitioning (according to bclen of rdd)
-					int lrlen = mb.getNumRows();
-					int numBlocks = (int)Math.ceil((double)lrlen/_bclen);				
-					_partBlocks = new MatrixBlock[numBlocks];
-					for( int i=0; i<numBlocks; i++ )
-					{
-						MatrixBlock tmp = new MatrixBlock();
-						mb.sliceOperations(i*_bclen+1, Math.min((i+1)*_bclen, lrlen), 
-								1, mb.getNumColumns(), tmp);
-						_partBlocks[i] = tmp;
-					}						
+					_partBlocks = SparkUtils.partitionIntoColumnBlocks(mb, _bclen);
 				}
 			}
 			catch(DMLException ex)

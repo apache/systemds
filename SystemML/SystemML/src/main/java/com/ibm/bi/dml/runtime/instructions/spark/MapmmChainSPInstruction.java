@@ -14,7 +14,6 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -26,6 +25,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -153,15 +153,16 @@ public class MapmmChainSPInstruction extends SPInstruction
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private ChainType _type = null;
-		private int _bclen = -1;
+		private int _brlen = -1;
 		
 		private MatrixBlock _mV = null;
 		private MatrixBlock[] _mW = null;
 		
-		public RDDMapMMChainFunction( ChainType type, Broadcast<MatrixBlock> bV, Broadcast<MatrixBlock> bW, int brlen, int bclen )
+		public RDDMapMMChainFunction( ChainType type, Broadcast<MatrixBlock> bV, Broadcast<MatrixBlock> bW, int brlen, int bclen ) 
+			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
 			_type = type;
-			_bclen = bclen;
+			_brlen = brlen;
 			
 			//get first broadcast vector (always single block)
 			_mV = bV.value();
@@ -171,24 +172,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 			{
 				MatrixBlock mb = bW.value();
 				
-				try
-				{
-					//in-memory rowblock partitioning (according to bclen of rdd)
-					int lrlen = mb.getNumRows();
-					int numBlocks = (int)Math.ceil((double)lrlen/_bclen);				
-					_mW = new MatrixBlock[numBlocks];
-					for( int i=0; i<numBlocks; i++ ) 
-					{
-						MatrixBlock tmp = new MatrixBlock();
-						mb.sliceOperations(i*_bclen+1, Math.min((i+1)*_bclen, lrlen), 
-								1, mb.getNumColumns(), tmp);
-						_mW[i] = tmp;
-					}						
-				}
-				catch(DMLException ex)
-				{
-					LOG.error("Failed partitioning of broadcast variable input.", ex);
-				}
+				//in-memory rowblock partitioning (according to bclen of rdd)
+				_mW = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
 			}
 		}
 		

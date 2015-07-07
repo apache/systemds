@@ -7,9 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 #  
-# THIS SCRIPT FITS A COX PROPORTIONAL HAZARD REGRESSION MODEL.
-# the Breslow method is used for handling ties and the regression parameters 
-# are computed using trust region newton method with conjugate gradient 
+# THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF A COX PROPORTIONAL HAZARD REGRESSION MODEL TO A NEW (TEST) DATASET
 # 
 # INPUT   PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -18,7 +16,7 @@
 # X       String   ---          Location to read the input matrix containing the survival data with the following schema:
 # 								 - X[,1]: timestamps 
 #								 - X[,2]: whether an event occurred (1) or data is censored (0)
-#								 - X[,3:]: feature vectors (with baseline fact)	 
+#								 - X[,3:]: feature vectors (excluding the baseline columns) used for model fitting	 
 # RT      String   ---			Location to read column matrix RT containing the (order preserving) recoded timestamps from X 	
 # M       String   ---			Location to read matrix M containing the fitted Cox model with the following schema:
 #								 - M[,1]: betas	
@@ -28,7 +26,7 @@
 #								 - M[,5]: p-value
 #								 - M[,6]: lower 100*(1-alpha)% confidence interval of betas
 #								 - M[,7]: upper 100*(1-alpha)% confidence interval of betas
-# Y       String   --- 			Location to read matrix Y with the same schema as X used for prediction  
+# Y       String   --- 			Location to read matrix Y used for prediction  
 # COV	  String   ---			Location to read the variance-covariance matrix of the betas	
 # MF      String   " "			If factors available in the input matrix X, location to read the column indices the non-baseline factors of X
 # P       String   ---          Location to store matrix P containing the results of prediction

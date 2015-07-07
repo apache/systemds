@@ -21,13 +21,13 @@
 #								 - X[,3:]: feature vectors 	
 # TE	  String   ---          Column indices of X as a column vector which contain timestamp (first row) and event information (second row)
 # F 	  String   ---			Column indices of X as a column vector which are to be used for fitting the Cox model
-# R   	  String   " "	      	Location to read the matrix R which depending on whether a baseline level for each factor is specified or not 
-#								has one of the following forms: 
-#								 1- If baseline levels are specified R is a column matrix that contains the indices of baseline levels
-#								 2- If baseline levels for factor are not specified R has 2 columns with the following information for each factor: 	
-#								 	- R[,1]: start indices 
-#								 	- R[,2]: end indices 
-#								if R is not provided by default all variables are considered to be continuous   	
+# R   	  String   " "	        If factors (categorical variables) are available in the input matrix X, location to read the matrix R containing 
+#								the start and end indices of the factors in X
+#								 - R[,1]: start indices
+#								 - R[,2]: end indices	
+#								Alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from X; 
+#								in this case the start and end indices corresponding to the baseline level need to be the same;
+#								if R is not provided by default all variables are considered to be continuous 
 # M       String   ---          Location to store results of Cox regression analysis including estimated regression parameters of the fitted 
 #								Cox model (the betas), their standard errors and confidence intervals and p-values 
 # S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including			
@@ -108,8 +108,8 @@ TE_F = t (append (t (TE), t (F)));
 
 if (fileR != " ") { # factors available
 	R = read (fileR);
-	if (ncol (R) == 1) {
-		R = append (R,R);
+	if (ncol (R) != 2) {
+		stop ("Matrix R has wrong dimensions!");
 	}
 	print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
 	# identify baseline columns to be removed from X_orig

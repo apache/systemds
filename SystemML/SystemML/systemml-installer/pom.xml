@@ -68,6 +68,7 @@
 					</execution>
 				</executions>
 				<configuration>
+				    <name>IBM-BigR-SystemML-${project.version}</name>
 					<group>Application/BigInsights</group>
 					<needarch>false</needarch>
 					<mappings>

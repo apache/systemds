@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -106,28 +107,24 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	@Test
 	public void testSampleProportionVectorDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSampleProportionVectorSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSampleProportionMatrixDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSampleProportionMatrixSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, true, ExecType.SPARK);
 	}
 	
@@ -159,28 +156,24 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	@Test
 	public void testSigmoidVectorDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSigmoidVectorSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSigmoidMatrixDenseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testSigmoidMatrixSparseSP() 
 	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.SPARK);
 	}
 	
@@ -220,12 +213,16 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		try
 		{
 			int rows = rowsMatrix;
@@ -264,6 +261,7 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}	
 }

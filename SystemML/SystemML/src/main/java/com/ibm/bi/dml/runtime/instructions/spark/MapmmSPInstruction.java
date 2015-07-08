@@ -173,12 +173,12 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				if( _type == CacheType.LEFT )
 				{
 					//in-memory colblock partitioning (according to brlen of rdd)
-					_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
+					_partBlocks = SparkUtils.partitionIntoColumnBlocks(mb, _brlen);
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
 					//in-memory rowblock partitioning (according to bclen of rdd)
-					_partBlocks = SparkUtils.partitionIntoColumnBlocks(mb, _bclen);
+					_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _bclen);
 				}
 			}
 			catch(DMLException ex)

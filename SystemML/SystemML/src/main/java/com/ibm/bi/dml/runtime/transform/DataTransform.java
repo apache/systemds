@@ -712,7 +712,8 @@ public class DataTransform {
 		String line = null;
 		String[] words  = null;
 		
-		int numRows = 0, numColumnsTf=0;
+		int numColumnsTf=0;
+		TransformationAgent._numRecordsInPartFile = 0;
 		
 		if (!isApply) {
 			for(int fileNo=0; fileNo<files.size(); fileNo++)
@@ -730,14 +731,14 @@ public class DataTransform {
 					_ra.prepare(words);
 					_ba.prepare(words);
 					
-					numRows++;
+					TransformationAgent._numRecordsInPartFile++;
 				}
 				br.close();
 			}
 			
 			_mia.outputTransformationMetadata(txMtdPath, fs);
 			_ba.outputTransformationMetadata(txMtdPath, fs);
-			_ra.outputTransformationMetadata(txMtdPath, fs);
+			_ra.outputTransformationMetadata(txMtdPath, fs, _mia);
 		
 			// prepare agents for the subsequent phase of applying transformation metadata
 			
@@ -752,7 +753,7 @@ public class DataTransform {
 		}
 		else {
 			// Count the number of rows
-			numRows = countNumRows(files, prop, fs);
+			TransformationAgent._numRecordsInPartFile = countNumRows(files, prop, fs);
 			
 			// Load transformation metadata
 			// prepare agents for the subsequent phase of applying transformation metadata
@@ -779,7 +780,7 @@ public class DataTransform {
 		MatrixBlock mb = null; 
 		if ( isBB ) 
 		{
-			mb = new MatrixBlock(numRows, numColumnsTf, false );
+			mb = new MatrixBlock((int)TransformationAgent._numRecordsInPartFile, numColumnsTf, false );
 			mb.allocateDenseBlock();
 		}
 
@@ -837,6 +838,7 @@ public class DataTransform {
 			}
 			br.close();
 		}
+		out.close();
 		
 		if(mb != null)
 		{
@@ -847,10 +849,10 @@ public class DataTransform {
 			result.release();
 			result.exportData();
 		}
-		out.close();
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(numRows, numColumnsTf, (int) result.getNumRowsPerBlock(), (int) result.getNumColumnsPerBlock());
+		MatrixCharacteristics mc = new MatrixCharacteristics(TransformationAgent._numRecordsInPartFile, numColumnsTf, (int) result.getNumRowsPerBlock(), (int) result.getNumColumnsPerBlock());
 		JobReturn ret = new JobReturn(new MatrixCharacteristics[]{mc}, true);
+		TransformationAgent._numRecordsInPartFile = 0;
 
 		return ret;
 	}

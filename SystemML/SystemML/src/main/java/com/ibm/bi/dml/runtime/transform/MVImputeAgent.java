@@ -38,8 +38,9 @@ public class MVImputeAgent extends TransformationAgent {
 	public static final String CORRECTION_PREFIX = "correction";
 	public static final String COUNT_PREFIX = "count";
 	
-	private int[] _mvList = null;
+	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT };
 	
+	private int[] _mvList = null;
 	/* 
 	 * Imputation Methods:
 	 * 1 - global_mean
@@ -122,23 +123,23 @@ public class MVImputeAgent extends TransformationAgent {
 			return;
 		
 		try {
+			String w = null;
 			for(int i=0; i <_mvList.length; i++) {
 				int colID = _mvList[i];
 				
-				String w = null;
-				double d = 0;
-				if(_mvMethodList[i] == 1) {
-					// global_mean
-					w = UtilFunctions.unquote(words[colID-1].trim());
-					if(!isNA(w)) {
-						d = UtilFunctions.parseToDouble(w);
-						_countList[i]++;
-						_meanFn.execute2(_meanList[i], d, _countList[i]);
+				w = UtilFunctions.unquote(words[colID-1].trim());
+				
+				if(!isNA(w)) {
+					_countList[i]++;
+					
+					if(_mvMethodList[i] == 1) {
+						// global_mean
+						_meanFn.execute2(_meanList[i], UtilFunctions.parseToDouble(w), _countList[i]);
 					}
-				}
-				else {
-					// global_mode or constant
-					// Nothing to do here. Mode is computed using recode maps.
+					else {
+						// global_mode or constant
+						// Nothing to do here. Mode is computed using recode maps.
+					}
 				}
 			}
 		} catch(Exception e) {
@@ -154,7 +155,7 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
 		if ( _mvList == null )
 			return;
 		try { 
@@ -391,6 +392,59 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 			
 		return words;
+	}
+	
+	/**
+	 * Check if the given column ID is subjected to this transformation.
+	 * 
+	 */
+	@Override
+	public int isTransformed(int colID)
+	{
+		if(_mvList == null)
+			return -1;
+		
+		for(int i=0; i < _mvList.length; i++)
+			if( _mvList[i] == colID )
+				return i;
+		
+		return -1;
+	}
+	
+	public MVMethod getMethod(int colID) 
+	{
+		int idx = isTransformed(colID);
+		
+		if(idx == -1)
+			return MVMethod.INVALID;
+		
+		switch(_mvMethodList[idx])
+		{
+			case 1: return MVMethod.GLOBAL_MEAN;
+			case 2: return MVMethod.GLOBAL_MODE;
+			case 3: return MVMethod.CONSTANT;
+			default: return MVMethod.INVALID;
+		}
+		
+	}
+	
+	public long getNonMVCount(int colID) 
+	{
+		int idx = isTransformed(colID);
+		if(idx == -1)
+			return 0;
+		else
+			return _countList[idx];
+	}
+	
+	public String getReplacement(int colID) 
+	{
+		int idx = isTransformed(colID);
+		
+		if(idx == -1)
+			return null;
+		else
+			return _replacementList[idx];
 	}
 	
 	public void print() {

@@ -67,12 +67,16 @@ public abstract class TransformationAgent {
 	protected static final String TXMTD_SEP 	= ",";
 	protected static final String DCD_NAME_SEP 	= "_";
 	
+	protected static long _numRecordsInPartFile = 0;
+
 	abstract public void print();
-	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID) throws IOException;
+	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException;
 	abstract public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job) throws IOException;
 	
 	abstract public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException;
 	abstract public String[] apply(String[] words);
+	
+	abstract int isTransformed(int colID);
 	
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {

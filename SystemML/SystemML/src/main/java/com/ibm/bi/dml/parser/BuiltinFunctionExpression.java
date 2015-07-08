@@ -961,7 +961,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	private boolean isConstant(Expression expr) {
-		return ( expr instanceof ConstIdentifier );
+		
+		return ( expr != null && expr instanceof ConstIdentifier );
 	}
 	
 	private double getDoubleValue(Expression expr) throws LanguageException {

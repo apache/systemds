@@ -82,7 +82,7 @@ public class DummycodeAgent extends TransformationAgent {
 	 * 
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
 		// There is no metadata required for dummycode.
 		// Required information is output from RecodeAgent.
 		
@@ -281,6 +281,7 @@ public class DummycodeAgent extends TransformationAgent {
 			}
 			else {
 				// binned column
+				if ( _binList != null )
 				for(int j=0; j<_binList.length; j++) {
 					if (colID == _binList[j]) {
 						_domainSizes[i] = _numBins[j];
@@ -330,6 +331,23 @@ public class DummycodeAgent extends TransformationAgent {
 		}
 		
 		return nwords;
+	}
+	
+	/**
+	 * Check if the given column ID is subjected to this transformation.
+	 * 
+	 */
+	@Override
+	public int isTransformed(int colID)
+	{
+		if(_dcdList == null)
+			return -1;
+		
+		for(int i=0; i < _dcdList.length; i++)
+			if( _dcdList[i] == colID )
+				return i;
+		
+		return -1;
 	}
 	
 	@Override

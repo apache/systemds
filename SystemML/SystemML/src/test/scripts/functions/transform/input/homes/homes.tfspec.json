@@ -2,9 +2,9 @@
     "impute": [
                  { "name": "zipcode"     , "method": "global_mode" }
                 ,{ "name": "district"    , "method": "constant", "value": "south" }
-                ,{ "name": "numbedrooms" , "method": "constant", "value": 2 }
-                ,{ "name": "numbathrooms", "method": "constant", "value": 1 }
-                ,{ "name": "floors"	     , "method": "constant", "value": 1 }
+                ,{ "name": "numbedrooms" , "method": "constant", "value": "2" }
+                ,{ "name": "numbathrooms", "method": "constant", "value": "1" }
+                ,{ "name": "floors"	     , "method": "constant", "value": "1" }
                 ,{ "name": "view"	     , "method": "global_mode" }
                 ,{ "name": "askingprice"     , "method": "global_mean" }
               ]

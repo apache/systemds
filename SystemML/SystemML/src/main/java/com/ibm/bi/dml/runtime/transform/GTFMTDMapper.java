@@ -54,7 +54,6 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	private static boolean _firstRecordInSplit = true;
 	private static String _partFileName = null;
 	private static long _offsetInPartFile = -1;
-	private static long _numRecordsInPartFile = 0;
 	
 	/*private int[] str2intArray(String s) {
 		String[] fields = s.split(",");
@@ -139,23 +138,23 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 		_ra.prepare(words);
 		_ba.prepare(words);
 		
-		_numRecordsInPartFile++;
+		TransformationAgent._numRecordsInPartFile++;
 	}
 
 	@Override
 	public void close() throws IOException {
-		_mia.mapOutputTransformationMetadata(_collector, _mapTaskID);
-		_ra.mapOutputTransformationMetadata(_collector, _mapTaskID);
-		_ba.mapOutputTransformationMetadata(_collector, _mapTaskID);
+		_mia.mapOutputTransformationMetadata(_collector, _mapTaskID, _mia);
+		_ra.mapOutputTransformationMetadata(_collector, _mapTaskID, _mia);
+		_ba.mapOutputTransformationMetadata(_collector, _mapTaskID, _mia);
 		
 		// Output part-file offsets to create OFFSETS_FILE, which is to be used in csv reblocking.
 		// OffsetCount is denoted as a DistinctValue by concatenating parfile name and offset within partfile.
-		_collector.collect(new IntWritable((int)_numCols+1), new DistinctValue(new OffsetCount(_partFileName, _offsetInPartFile, _numRecordsInPartFile)));
+		_collector.collect(new IntWritable((int)_numCols+1), new DistinctValue(new OffsetCount(_partFileName, _offsetInPartFile, TransformationAgent._numRecordsInPartFile)));
 		
 		// reset global variables, required when the jvm is reused.
 		_firstRecordInSplit = true;
 		_offsetInPartFile = -1;
-		_numRecordsInPartFile = 0;
+		TransformationAgent._numRecordsInPartFile = 0;
 		_partFileWithHeader = false;
 	}
 }

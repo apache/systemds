@@ -105,7 +105,7 @@ public class BinAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
 		if ( _binList == null )
 			return;
 		
@@ -269,6 +269,24 @@ public class BinAgent extends TransformationAgent {
 		return words;
 	}
 	
+	/**
+	 * Check if the given column ID is subjected to this transformation.
+	 * 
+	 */
+	@Override
+	public int isTransformed(int colID)
+	{
+		if(_binList == null)
+			return -1;
+		
+		for(int i=0; i < _binList.length; i++)
+			if( _binList[i] == colID )
+				return i;
+		
+		return -1;
+	}
+
+
 	@Override
 	public void print() {
 		System.out.print("Binning List (Equi-width): \n    ");

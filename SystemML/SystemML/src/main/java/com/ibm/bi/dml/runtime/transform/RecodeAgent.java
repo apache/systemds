@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
 import com.google.common.collect.Ordering;
+import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -33,8 +34,8 @@ public class RecodeAgent extends TransformationAgent {
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public int[] _rcdList = null;	// List of attributes to recode
-	
+	private int[] _rcdList = null;
+
 	// HashMap< columnID, HashMap<distinctValue, count> >
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	
@@ -76,6 +77,25 @@ public class RecodeAgent extends TransformationAgent {
 		}
 	}
 	
+	private HashMap<String, Long> handleMVConstant(int colID, MVImputeAgent mvagent, HashMap<String, Long> map)
+	{
+		if ( mvagent.getMethod(colID) == MVMethod.CONSTANT ) 
+		{
+			// check if the "replacement" is part of the map. If not, add it.
+			String repValue = mvagent.getReplacement(colID);
+			if(repValue == null)
+				throw new RuntimeException("Expecting a constant replacement value for column ID " + colID);
+			
+			repValue = UtilFunctions.unquote(repValue);
+			if(map.get(repValue) == null)
+			{
+				long mvCount = TransformationAgent._numRecordsInPartFile - mvagent.getNonMVCount(colID);
+				map.put(repValue, mvCount);
+			}
+		}
+		return map;
+	}
+	
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
@@ -84,12 +104,14 @@ public class RecodeAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
 		if ( _rcdList == null )
 			return;
 		
 		try 
 		{ 
+			MVImputeAgent mvagent = (MVImputeAgent) agent;
+			
 			for(int i=0; i < _rcdList.length; i++) 
 			{
 				int colID = _rcdList[i];
@@ -97,6 +119,9 @@ public class RecodeAgent extends TransformationAgent {
 				
 				if(map != null) 
 				{
+					
+					map = handleMVConstant(colID, mvagent,  map);
+
 					IntWritable iw = new IntWritable(colID);
 					for(String s : map.keySet()) 
 						out.collect(iw, new DistinctValue(s, map.get(s)));
@@ -107,7 +132,7 @@ public class RecodeAgent extends TransformationAgent {
 		}
 	}
 	
-	private void writeMetadata(HashMap<String,Long> map, String outputDir, int colID, FileSystem fs) throws IOException {
+	private void writeMetadata(HashMap<String,Long> map, String outputDir, int colID, FileSystem fs, MVImputeAgent mvagent) throws IOException {
 		// output recode maps and mode
 		
 		String mode = null;
@@ -125,9 +150,15 @@ public class RecodeAgent extends TransformationAgent {
 				map.remove(naword);
 		}
 		
+		if(mvagent != null)
+		{
+			// called from CP
+			map = handleMVConstant(colID, mvagent,  map);
+		}
+		
 		if ( map.size() == 0 ) 
 		{
-			throw new RuntimeException("Can not proceed since the column id " + colID + " contains only the missing values, and not a single valid value.");
+			throw new RuntimeException("Can not proceed since \"" + columnNames[colID-1] + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
 		}
 		
 		// Order entries by category (string) value
@@ -170,12 +201,12 @@ public class RecodeAgent extends TransformationAgent {
 		br.close();
 	}
 	
-	public void outputTransformationMetadata(String outputDir, FileSystem fs) throws IOException {
+	public void outputTransformationMetadata(String outputDir, FileSystem fs, MVImputeAgent mvagent) throws IOException {
 		if(_rcdList == null)
 			return;
 		for(int i=0; i<_rcdList.length; i++) {
 			int colID = _rcdList[i];
-			writeMetadata(_rcdMaps.get(colID), outputDir, colID, fs);
+			writeMetadata(_rcdMaps.get(colID), outputDir, colID, fs, mvagent);
 		}
 		
 	}
@@ -208,7 +239,7 @@ public class RecodeAgent extends TransformationAgent {
 				map.put(word, val+count);
 		}
 		
-		writeMetadata(map, outputDir, colID, FileSystem.get(job));
+		writeMetadata(map, outputDir, colID, FileSystem.get(job), null);
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -297,7 +328,23 @@ public class RecodeAgent extends TransformationAgent {
 		return words;
 	}
 	
-	
+	/**
+	 * Check if the given column ID is subjected to this transformation.
+	 * 
+	 */
+	@Override
+	public int isTransformed(int colID)
+	{
+		if(_rcdList == null)
+			return -1;
+		
+		for(int i=0; i < _rcdList.length; i++)
+			if( _rcdList[i] == colID )
+				return i;
+		
+		return -1;
+	}
+
 	public String[] cp_apply(String[] words) {
 		if ( _rcdList == null )
 			return words;

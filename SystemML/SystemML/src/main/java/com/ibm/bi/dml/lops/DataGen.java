@@ -180,6 +180,9 @@ public class DataGen extends Lop
 				throw new LopsException(this.printErrorLocation()
 						+ "Parameter " + DataExpression.RAND_PDF
 						+ " must be a literal for a Rand operation.");
+			
+			iLop = _inputParams.get(DataExpression.RAND_MEAN.toString());
+			String pdfParams = (iLop == null ? "" : iLop.prepScalarLabel() );
 
 			sb.append(RAND_OPCODE);
 			sb.append(OPERAND_DELIMITOR);
@@ -203,12 +206,14 @@ public class DataGen extends Lop
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(seedString);
 			sb.append(OPERAND_DELIMITOR);
-			sb.append(pdfString);
-			sb.append(OPERAND_DELIMITOR);
 			if ( et == ExecType.MR ) {
 				sb.append(baseDir);
 				sb.append(OPERAND_DELIMITOR);
 			}
+			sb.append(pdfString);
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(pdfParams);
+			sb.append(OPERAND_DELIMITOR);
 			sb.append( this.prepOutputOperand(output));
 
 			return sb.toString();
@@ -289,12 +294,16 @@ public class DataGen extends Lop
 		//prepare instruction parameters
 		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
 		String size = lsize.prepScalarLabel();
+
 		
 		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
 		String range = lrange.prepScalarLabel();
 		
 		Lop lreplace = _inputParams.get(DataExpression.RAND_PDF.toString());
 		String replace = lreplace.prepScalarLabel();
+		
+		Lop lseed = _inputParams.get(DataExpression.RAND_SEED.toString());
+		String seed = lseed.prepScalarLabel();
 		
 		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
 		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
@@ -309,6 +318,8 @@ public class DataGen extends Lop
 		sb.append( size );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( replace );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( seed );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( rowsInBlockString );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -438,6 +449,9 @@ public class DataGen extends Lop
 				throw new LopsException(this.printErrorLocation() + "Parameter " 
 						+ DataExpression.RAND_PDF + " must be a literal for a Rand operation.");
 			
+			iLop = _inputParams.get(DataExpression.RAND_MEAN.toString());
+			String pdfParams = (iLop == null ? "" : iLop.getOutputParameters().getLabel());
+
 			sb.append( RAND_OPCODE );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( inputIndex );
@@ -460,9 +474,11 @@ public class DataGen extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( seedString );
 			sb.append( OPERAND_DELIMITOR );
+			sb.append( baseDir );
+			sb.append( OPERAND_DELIMITOR );
 			sb.append( pdfString );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( baseDir );
+			sb.append( pdfParams );
 
 			return sb.toString();
 			

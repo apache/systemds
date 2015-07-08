@@ -34,14 +34,14 @@ public class NormalPRNGenerator extends PRNGenerator
 	
 	public NormalPRNGenerator(long sd) {
 		super();
-		init(sd);
+		setSeed(sd);
 	}
 	
 	/*public NormalPRNGenerator(Random random) {
 		init(random);
 	}*/
 	
-	public void init(long sd) {
+	public void setSeed(long sd) {
 		//seed = s;
 		seed = sd;
 		r = new Random(seed);

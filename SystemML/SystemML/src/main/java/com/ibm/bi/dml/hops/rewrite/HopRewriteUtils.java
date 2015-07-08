@@ -296,6 +296,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_MEAN, new LiteralOp("-1.0",-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
 		
@@ -328,6 +329,7 @@ public class HopRewriteUtils
 		Hop min = inputGen.getInput().get(params.get(DataExpression.RAND_MIN));
 		Hop max = inputGen.getInput().get(params.get(DataExpression.RAND_MAX));
 		Hop pdf = inputGen.getInput().get(params.get(DataExpression.RAND_PDF));
+		Hop mean = inputGen.getInput().get(params.get(DataExpression.RAND_MEAN));
 		Hop sparsity = inputGen.getInput().get(params.get(DataExpression.RAND_SPARSITY));
 		Hop seed = inputGen.getInput().get(params.get(DataExpression.RAND_SEED));
 		
@@ -350,6 +352,7 @@ public class HopRewriteUtils
 		params2.put(DataExpression.RAND_MIN, sminHop);
 		params2.put(DataExpression.RAND_MAX, smaxHop);
 		params2.put(DataExpression.RAND_PDF, pdf);
+		params2.put(DataExpression.RAND_MEAN, mean);
 		params2.put(DataExpression.RAND_SPARSITY, sparsity);		
 		params2.put(DataExpression.RAND_SEED, seed );
 		
@@ -380,6 +383,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_MEAN, new LiteralOp("-1.0",-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
 		
@@ -412,6 +416,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_MEAN,new LiteralOp("-1.0",-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
 		
@@ -437,6 +442,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_MEAN, new LiteralOp("-1.0",-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
 		

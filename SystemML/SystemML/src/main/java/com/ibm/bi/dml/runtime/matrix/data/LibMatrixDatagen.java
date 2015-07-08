@@ -17,7 +17,6 @@ import org.apache.commons.math3.random.Well1024a;
 
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
 import com.ibm.bi.dml.runtime.util.PRNGenerator;
 import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
 
@@ -34,6 +33,7 @@ public class LibMatrixDatagen
 	
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	public static final String RAND_PDF_NORMAL = "normal";
+	public static final String RAND_PDF_POISSON = "poisson";
 	
 	private LibMatrixDatagen() {
 		//prevent instantiation via private constructor
@@ -199,7 +199,9 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateRandomMatrix(MatrixBlock out, String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, long[] nnzInBlocks, double sparsity, double min, double max, Well1024a bigrand, long bSeed) throws DMLRuntimeException
+	public static void generateRandomMatrix( MatrixBlock out,
+			                RandomMatrixGenerator rgen, long[] nnzInBlocks, 
+							Well1024a bigrand, long bSeed ) throws DMLRuntimeException
 	{
 		boolean invokedFromCP = true;
 		if(bigrand == null && nnzInBlocks!=null)
@@ -211,10 +213,18 @@ public class LibMatrixDatagen
 		 * (max-min)*prng.nextDouble() is still valid. This is done primarily to
 		 * share the same code across different distributions.
 		 */
-		if ( pdf.equalsIgnoreCase(RAND_PDF_NORMAL) ) {
-			min=0;
-			max=1;
+		double min=0, max=1;
+		if ( rgen._pdf.equalsIgnoreCase(RAND_PDF_UNIFORM) ) {
+			min=rgen._min;
+			max=rgen._max;
 		}
+		
+		int rows = rgen._rows;
+		int cols = rgen._cols;
+		int rpb = rgen._rowsPerBlock;
+		int cpb = rgen._colsPerBlock;
+		double sparsity = rgen._sparsity;
+		PRNGenerator valuePRNG = rgen._valuePRNG;
 		
 		// Determine the sparsity of output matrix
 		// if invoked from CP: estimated NNZ is for entire matrix (nnz=0, if 0 initialized)
@@ -225,7 +235,7 @@ public class LibMatrixDatagen
 		out.reset(rows, cols, lsparse);
 		
 		// Special case shortcuts for efficiency
-		if ( pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)) {
+		if ( rgen._pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)) {
 			//specific cases for efficiency
 			if ( min == 0.0 && max == 0.0 ) { //all zeros
 				// nothing to do here
@@ -239,15 +249,6 @@ public class LibMatrixDatagen
 				return;
 			}
 		}
-		
-		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
-		PRNGenerator valuePRNG = null;
-		if ( pdf.equalsIgnoreCase(RAND_PDF_UNIFORM)) 
-			valuePRNG = new UniformPRNGenerator();
-		else if ( pdf.equalsIgnoreCase(RAND_PDF_NORMAL))
-			valuePRNG = new NormalPRNGenerator();
-		else
-			throw new DMLRuntimeException("Unsupported distribution function for Rand: " + pdf);
 		
 		// Allocate memory
 		if ( out.sparse ) {
@@ -264,19 +265,19 @@ public class LibMatrixDatagen
 		final int clen = out.clen;
 		final int estimatedNNzsPerRow = out.estimatedNNzsPerRow;
 		
-		int nrb = (int) Math.ceil((double)rows/rowsInBlock);
-		int ncb = (int) Math.ceil((double)cols/colsInBlock);
+		int nrb = (int) Math.ceil((double)rows/rpb);
+		int ncb = (int) Math.ceil((double)cols/cpb);
 		int blockrows, blockcols, rowoffset, coloffset;
 		int blockID = 0;
 		// loop through row-block indices
 		for(int rbi=0; rbi < nrb; rbi++) {
-			blockrows = (rbi == nrb-1 ? (rows-rbi*rowsInBlock) : rowsInBlock);
-			rowoffset = rbi*rowsInBlock;
+			blockrows = (rbi == nrb-1 ? (rows-rbi*rpb) : rpb);
+			rowoffset = rbi*rpb;
 			
 			// loop through column-block indices
 			for(int cbj=0; cbj < ncb; cbj++, blockID++) {
-				blockcols = (cbj == ncb-1 ? (cols-cbj*colsInBlock) : colsInBlock);
-				coloffset = cbj*colsInBlock;
+				blockcols = (cbj == ncb-1 ? (cols-cbj*cpb) : cpb);
+				coloffset = cbj*cpb;
 				
 				// Generate a block (rbi,cbj) 
 				
@@ -291,7 +292,7 @@ public class LibMatrixDatagen
 					seed = bigrand.nextLong();
 				}
 				// Initialize the PRNGenerator for cell values
-				valuePRNG.init(seed);
+				valuePRNG.setSeed(seed);
 				
 				// Initialize the PRNGenerator for determining cells that contain a non-zero value
 				// Note that, "pdf" parameter applies only to cell values and the individual cells 
@@ -431,12 +432,13 @@ public class LibMatrixDatagen
      * @return
      * @throws DMLRuntimeException
      */
-	public static void generateSample(MatrixBlock out, long range, int size, boolean replace)
+	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed)
 		throws DMLRuntimeException 
 	{
 		//set meta data and allocate dense block
 		out.reset(size, 1, false);
 		out.allocateDenseBlock();
+		seed = (seed == -1 ? System.nanoTime() : seed);
 		
 		if ( !replace ) 
 		{
@@ -445,16 +447,29 @@ public class LibMatrixDatagen
 			for(int i=1; i <= size; i++) 
 				out.setValueDenseUnsafe(i-1, 0, i );
 			
-			Random rand = new Random(System.nanoTime());
+			Random rand = new Random(seed);
 			for(int i=size+1; i <= range; i++) 
 			{
 				if(rand.nextInt(i) < size)
 					out.setValueDenseUnsafe( rand.nextInt(size), 0, i );
 			}
+			
+			// randomize the sample (Algorithm P from Knuth's ACP)
+			// -- needed especially when the differnce between range and size is small)
+			double tmp;
+			int idx;
+			for(int i=size-1; i >= 1; i--) 
+			{
+				idx = rand.nextInt(i);
+				// swap i^th and idx^th entries
+				tmp = out.getValueDenseUnsafe(idx, 0);
+				out.setValueDenseUnsafe(idx, 0, out.getValueDenseUnsafe(i, 0));
+				out.setValueDenseUnsafe(i, 0, tmp);
+			}
 		}
 		else 
 		{
-			Random r = new Random(System.nanoTime());
+			Random r = new Random(seed);
 			for(int i=0; i < size; i++) 
 				out.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
 		}
@@ -477,5 +492,28 @@ public class LibMatrixDatagen
             val = bits % n;
         } while (bits - val + (n-1) < 0L);
         return val;
-    }	
+    }
+    
+    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) throws DMLRuntimeException
+    {
+    	RandomMatrixGenerator rgen = null;
+    	
+    	if ( pdf.equalsIgnoreCase(RAND_PDF_UNIFORM))
+    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max);
+    	else if ( pdf.equalsIgnoreCase(RAND_PDF_NORMAL))
+    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp);
+    	else if ( pdf.equalsIgnoreCase(RAND_PDF_POISSON))
+    	{
+    		double mean = Double.NaN;
+    		try {
+    			mean = Double.parseDouble(distParams);
+    		} catch(NumberFormatException e) {
+    			throw new DMLRuntimeException("Failed to parse Poisson distribution parameter: " + distParams);
+    		}
+    		rgen = new PoissonRandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, mean);
+    	}
+    	else
+    		throw new DMLRuntimeException("Unsupported probability distribution \"" + pdf + "\" in rand() -- it must be one of \"uniform\", \"normal\", or \"poisson\"");
+    	return rgen;
+    }
 }

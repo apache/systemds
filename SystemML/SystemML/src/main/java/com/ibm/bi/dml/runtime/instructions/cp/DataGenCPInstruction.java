@@ -17,7 +17,9 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -36,7 +38,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	private double minValue;
 	private double maxValue;
 	private double sparsity;
-	private String pdf;
+	private String pdf, pdfParams;
 	private long seed=0;
 	
 	//sequence specific attributes
@@ -50,7 +52,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
 							  long rows, long cols, int rpb, int cpb,
 							  double minValue, double maxValue, double sparsity, long seed,
-							  String probabilityDensityFunction, String opcode, String istr) 
+							  String probabilityDensityFunction, String pdfParams, String opcode, String istr) 
 	{
 		super(op, in, out, opcode, istr);
 		
@@ -64,11 +66,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
+		this.pdfParams = pdfParams;
 	}
 
 	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
 			  					long rows, long cols, int rpb, int cpb, double maxValue,
-			  					boolean replace, String opcode, String istr) 
+			  					boolean replace, long seed, String opcode, String istr) 
 	{
 		super(op, in, out, opcode, istr);
 		
@@ -79,6 +82,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.colsInBlock = cpb;
 		this.maxValue = maxValue;
 		this.replace = replace;
+		this.seed = seed;
 	}
 	
 	public DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out,
@@ -160,7 +164,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 10 );
+			InstructionUtils.checkNumFields ( str, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -169,8 +173,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
 			method = DataGenMethod.SAMPLE;
-			// 6 operands: range, size, replace, rpb, cpb, outvar
-			InstructionUtils.checkNumFields ( str, 6 ); 
+			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
+			InstructionUtils.checkNumFields ( str, 7 ); 
 		}
 		
 		Operator op = null;
@@ -202,8 +206,11 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	        double sparsity = Double.parseDouble(s[7]);
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
-			
-			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, opcode, str);
+			String pdfParams = null;
+	        if (!s[10].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+	        	pdfParams = s[10];
+	        }
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) 
 		{
@@ -230,14 +237,24 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		else if ( method == DataGenMethod.SAMPLE) 
 		{
 			// Example Instruction: CP:sample:10:100:false:1000:1000:_mVar2·MATRIX·DOUBLE
-			double max = Double.valueOf(s[1]);
-			long rows = Double.valueOf(s[2]).longValue();
-			long cols = 1;
-			boolean replace = Boolean.valueOf(s[3]);
-			int rpb = Integer.parseInt(s[4]);
-			int cpb = Integer.parseInt(s[5]);
+			double max = 0;
+			long rows = 0, cols;
+			boolean replace = false;
 			
-			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, opcode, str);
+			if (!s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				max = Double.valueOf(s[1]);
+			if (!s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				rows = Double.valueOf(s[2]).longValue();
+			cols = 1;
+			
+			if (!s[3].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				replace = Boolean.valueOf(s[3]);
+			
+			long seed = Long.parseLong(s[4]);
+			int rpb = Integer.parseInt(s[5]);
+			int cpb = Integer.parseInt(s[6]);
+			
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, seed, opcode, str);
 		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
@@ -263,7 +280,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 			
-			soresBlock = MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, seed);
+			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(pdf, (int) rows, (int) cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
+			soresBlock = MatrixBlock.randOperations(rgen, seed);
 		}
 		else if ( method == DataGenMethod.SEQ ) 
 		{
@@ -277,9 +295,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 			long range = UtilFunctions.toLong(maxValue);
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process DataGenCPInstruction sample with range="+range+", size="+rows+", replace"+replace);
+				LOG.trace("Process DataGenCPInstruction sample with range="+range+", size="+rows+", replace"+replace + ", seed=" + seed);
 			
-			soresBlock = MatrixBlock.sampleOperations(range, (int)rows, replace);
+			if ( range < rows && replace == false)
+				throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + range + ") can only be generated with replacement.");
+			
+			soresBlock = MatrixBlock.sampleOperations(range, (int)rows, replace, seed);
 		}
 		
 		//release created output

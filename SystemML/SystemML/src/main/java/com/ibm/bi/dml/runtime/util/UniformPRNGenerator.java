@@ -14,14 +14,14 @@ public class UniformPRNGenerator extends PRNGenerator {
 
 	Random runif = null;
 	
-	public void init(long sd) {
+	public void setSeed(long sd) {
 		seed = sd;
 		runif = new Random(seed);
 	}
 	
 	public UniformPRNGenerator(long sd) {
 		super();
-		init(sd);
+		setSeed(sd);
 	}
 
 	public UniformPRNGenerator() {

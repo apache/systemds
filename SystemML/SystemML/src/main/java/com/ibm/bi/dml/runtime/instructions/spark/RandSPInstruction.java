@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.math3.random.Well1024a;
@@ -26,6 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -45,6 +45,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	private double maxValue;
 	private double sparsity;
 	private String pdf;
+	private String pdfParams;
 	private long seed=0;
 	private double seq_from;
 	private double seq_to; 
@@ -63,6 +64,7 @@ public class RandSPInstruction extends UnarySPInstruction
 							  double sparsity, 
 							  long seed,
 							  String probabilityDensityFunction,
+							  String pdfParams,
 							  String opcode,
 							  String istr) {
 		super(op, in, out, opcode, istr);
@@ -77,6 +79,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
+		this.pdfParams = pdfParams;
 
 	}
 
@@ -156,7 +159,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 10 );
+			InstructionUtils.checkNumFields ( str, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -192,8 +195,9 @@ public class RandSPInstruction extends UnarySPInstruction
 	        double sparsity = Double.parseDouble(s[7]);
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
+			String pdfParams = s[10];
 			
-			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, opcode, str);
+			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			// Example Instruction: CP:seq:11:1:1000:1000:1:0:-0.1:scratch_space/_p7932_192.168.1.120//_t0/:mVar1
@@ -271,7 +275,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			int numPartitions = (int) Math.max(Math.min(avgNumBytesOfRandomBlock*numBlocks / (128 * 10^6), numBlocks), 1);
 			
 			JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf)); 
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, pdfParams)); 
 			
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			if(!mcOut.dimsKnown()) {
@@ -357,9 +361,9 @@ public class RandSPInstruction extends UnarySPInstruction
 
 		private static final long serialVersionUID = 1616346120426470173L;
 		
-		int brlen; int bclen; double sparsity; double min; double max; String pdf;
+		int brlen; int bclen; double sparsity; double min; double max; String pdf; String pdfParams;
 		long rlen; long clen;
-		public GenerateRandomBlock(long rlen, long clen, int brlen, int bclen, double sparsity, double min, double max, String pdf) {
+		public GenerateRandomBlock(long rlen, long clen, int brlen, int bclen, double sparsity, double min, double max, String pdf, String pdfParams) {
 			this.rlen = rlen;
 			this.clen = clen;
 			this.brlen = brlen;
@@ -368,6 +372,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			this.min = min;
 			this.max = max;
 			this.pdf = pdf;
+			this.pdfParams = pdfParams;
 		}
 
 		@Override
@@ -385,16 +390,12 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			MatrixBlock blk = new MatrixBlock();
 			
-			if( LibMatrixDatagen.RAND_PDF_NORMAL.equals(pdf) ) {
-				blk.randOperationsInPlace(pdf, lrlen, lclen, lrlen, lclen, new long[]{blockNNZ}, sparsity, Double.NaN, Double.NaN, null, seed); 
-			}
-			else if( LibMatrixDatagen.RAND_PDF_UNIFORM.equals(pdf) ) {
-				blk.randOperationsInPlace(pdf, lrlen, lclen, lrlen, lclen, new long[]{blockNNZ}, sparsity, min, max, null, seed);
-			}
-			else {
-				throw new IOException("Unsupported rand pdf function: "+pdf);
-			}
-			
+			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
+					pdf, lrlen, lclen, lrlen, lclen,   
+					sparsity, min, max, pdfParams );
+
+			blk.randOperationsInPlace(rgen, new long[]{blockNNZ}, null, seed);
+
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, blk);
 		}
 		

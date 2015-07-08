@@ -10,6 +10,7 @@ package com.ibm.bi.dml.test.integration.functions.data;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Random;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -126,6 +127,35 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				{_dim6, _dim6, _sp1, _seed, "normal"},
 				{_dim6, _dim6, _sp2, _seed, "normal"},
 				{_dim6, _dim6, _sp3, _seed, "normal"},
+				
+				// ---- Poisson distribution ----
+				{_dim1, _dim1, _sp2, _seed, "poisson"},
+				{_dim1, _dim1, _sp3, _seed, "poisson"},
+				// vectors
+				{_dim5, _dim1, _sp1, _seed, "poisson"}, 
+				{_dim5, _dim1, _sp2, _seed, "poisson"}, 
+				{_dim5, _dim1, _sp3, _seed, "poisson"},
+				// single block data
+				{_dim3, _dim2, _sp1, _seed, "poisson"}, 
+				{_dim3, _dim2, _sp2, _seed, "poisson"}, 
+				{_dim3, _dim2, _sp3, _seed, "poisson"}, 
+				{_dim3, _dim3, _sp1, _seed, "poisson"}, 
+				{_dim3, _dim3, _sp2, _seed, "poisson"}, 
+				{_dim3, _dim3, _sp3, _seed, "poisson"},
+				// multi-block data
+				{_dim4, _dim4, _sp1, _seed, "poisson"},
+				{_dim4, _dim4, _sp2, _seed, "poisson"},
+				{_dim4, _dim4, _sp3, _seed, "poisson"},
+				{_dim4, _dim6, _sp1, _seed, "poisson"},
+				{_dim4, _dim6, _sp2, _seed, "poisson"},
+				{_dim4, _dim6, _sp3, _seed, "poisson"},
+				{_dim6, _dim4, _sp1, _seed, "poisson"},
+				{_dim6, _dim4, _sp2, _seed, "poisson"},
+				{_dim6, _dim4, _sp3, _seed, "poisson"},
+				{_dim6, _dim6, _sp1, _seed, "poisson"},
+				{_dim6, _dim6, _sp2, _seed, "poisson"},
+				{_dim6, _dim6, _sp3, _seed, "poisson"},
+				
 				// Ultra-sparse data
 				{_dim7, _dim7, _sp4, _seed, "uniform"}
 				
@@ -150,31 +180,48 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        Double.toString(sparsity),
-					                        Long.toString(seed),
-					                        pdf,
-					                        HOME + OUTPUT_DIR + "A_CP"    };
+			
+			if ( !pdf.equalsIgnoreCase("poisson"))
+			{
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[]{"-args", Integer.toString(rows),
+						                        Integer.toString(cols),
+						                        Double.toString(sparsity),
+						                        Long.toString(seed),
+						                        pdf,
+						                        HOME + OUTPUT_DIR + "A_CP"    };
+			}
+			else 
+			{
+				Random r = new Random(System.nanoTime());
+				double mean = r.nextDouble()*100;
+				fullDMLScriptName = HOME + TEST_NAME + "Poisson" + ".dml";
+				programArgs = new String[]{"-args", Integer.toString(rows),
+						                        Integer.toString(cols),
+						                        Double.toString(sparsity),
+						                        Long.toString(seed),
+						                        pdf,
+						                        Double.toString(mean),
+						                        HOME + OUTPUT_DIR + "A_CP"    };
+			}
 			loadTestConfiguration(config);
 	
 			boolean exceptionExpected = false;
 			
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-			programArgs[6] = HOME + OUTPUT_DIR + "A_SN"; // data file generated from CP
+			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_SN"; // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 						
 			
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
-			programArgs[6] = HOME + OUTPUT_DIR + "A_CP"; // data file generated from CP
+			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_CP"; // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 			
 			// Generate Data in MR
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
-			programArgs[6] = HOME + OUTPUT_DIR + "A_MR"; // data file generated from MR
+			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_MR"; // data file generated from MR
 			runTest(true, exceptionExpected, null, -1); 
 			
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -182,7 +229,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				// Generate Data in Spark
 				rtplatform = RUNTIME_PLATFORM.SPARK;
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-				programArgs[6] = HOME + OUTPUT_DIR + "A_SPARK"; // data file generated from MR
+				programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_SPARK"; // data file generated from MR
 				runTest(true, exceptionExpected, null, -1); 
 			}
 			finally {

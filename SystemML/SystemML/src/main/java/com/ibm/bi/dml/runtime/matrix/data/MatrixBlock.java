@@ -2610,7 +2610,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 * @param nrows
 	 * @param ncols
-	 * @param sparsity
+	 * @param nnz
 	 * @return
 	 */
 	public static long estimateSizeOnDisk( long nrows, long ncols, long nnz )
@@ -2631,7 +2631,6 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 * @param nrows
 	 * @param ncols
-	 * @param sparsity
 	 * @return
 	 */
 	private static long estimateSizeDenseOnDisk( long nrows, long ncols)
@@ -2648,7 +2647,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 * @param nrows
 	 * @param ncols
-	 * @param sparsity
+	 * @param nnz
 	 * @return
 	 */
 	private static long estimateSizeSparseOnDisk( long nrows, long ncols, long nnz )
@@ -2667,7 +2666,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 * @param nrows
 	 * @param ncols
-	 * @param sparsity
+	 * @param nnz
 	 * @return
 	 */
 	private static long estimateSizeUltraSparseOnDisk( long nrows, long ncols, long nnz )
@@ -5830,9 +5829,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		DMLConfig conf = ConfigurationManager.getConfig();
 		int blocksize = (conf!=null) ? ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE)
 				                     : DMLTranslator.DMLBlockSize;
-		return randOperations(
-				rows, cols, blocksize, blocksize, 
-				sparsity, min, max, pdf, seed);
+		
+		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, blocksize, blocksize, sparsity, min, max);
+		
+		return randOperations(rgen, seed);
 	}
 	
 	/**
@@ -5849,7 +5849,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlock randOperations(int rows, int cols, int rowsInBlock, int colsInBlock, double sparsity, double min, double max, String pdf, long seed) 
+	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed) 
 		throws DMLRuntimeException 
 	{
 		MatrixBlock out = new MatrixBlock();
@@ -5857,19 +5857,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		long[] nnzInBlock = null;
 
 		//setup seeds and nnz per block
-		if( !LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, pdf) ){
+		if( !LibMatrixDatagen.isShortcutRandOperation(rgen._min, rgen._max, rgen._sparsity, rgen._pdf) ){
 			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-			nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+			nnzInBlock = LibMatrixDatagen.computeNNZperBlock(rgen._rows, rgen._cols, rgen._rowsPerBlock, rgen._colsPerBlock, rgen._sparsity);
 		}
 		
 		//generate rand data
-		if ( pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) {
-			// for normally distributed values, min and max are specified as an invalid value NaN.
-			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, nnzInBlock, sparsity, Double.NaN, Double.NaN, bigrand, -1);
-		}
-		else {
-			out.randOperationsInPlace(pdf, rows, cols, rowsInBlock, colsInBlock, nnzInBlock, sparsity, min, max, bigrand, -1);
-		}
+		out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1);
 		
 		return out;
 	}
@@ -5901,11 +5895,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlock randOperationsInPlace(String pdf, int rows, int cols, int rowsInBlock, int colsInBlock, long[] nnzInBlock, double sparsity, double min, double max, Well1024a bigrand, long bSeed) 
+	public MatrixBlock randOperationsInPlace(
+								RandomMatrixGenerator rgen, long[] nnzInBlock, 
+								Well1024a bigrand, long bSeed ) 
 		throws DMLRuntimeException
 	{
-		LibMatrixDatagen.generateRandomMatrix( this, pdf, rows, cols, rowsInBlock, colsInBlock, 
-				                               nnzInBlock, sparsity, min, max, bigrand, bSeed );
+		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, bigrand, bSeed );
 		return this;
 	}
 	
@@ -5960,11 +5955,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlock sampleOperations(long range, int size, boolean replace) 
+	public static MatrixBlock sampleOperations(long range, int size, boolean replace, long seed) 
 		throws DMLRuntimeException 
 	{
 		MatrixBlock out = new MatrixBlock();
-		LibMatrixDatagen.generateSample( out, range, size, replace );
+		LibMatrixDatagen.generateSample( out, range, size, replace, seed );
 		
 		return out;
 	}

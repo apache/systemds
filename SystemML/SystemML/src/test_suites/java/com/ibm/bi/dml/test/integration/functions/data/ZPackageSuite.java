@@ -17,6 +17,7 @@ import org.junit.runners.Suite;
 	RandVarMinMaxTest.class,
 	ReadMMTest.class,
 	ReblockTest.class,
+	SampleTest.class,
 	SequenceTest.class,
 	VariableTest.class,
 	WriteMMTest.class,

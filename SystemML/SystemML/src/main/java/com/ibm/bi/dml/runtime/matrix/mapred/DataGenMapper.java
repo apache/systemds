@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 
 
 public class DataGenMapper extends GMRMapper 
@@ -68,15 +69,12 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				//rand data generation
 				try {
 					indexes[i].setIndexes(blockRowNumber, blockColNumber);
-					if( LibMatrixDatagen.RAND_PDF_NORMAL.equals(pdf) ) {
-						block[i].randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, Double.NaN, Double.NaN, null, seed); 
-					}
-					else if( LibMatrixDatagen.RAND_PDF_UNIFORM.equals(pdf) ) {
-						block[i].randOperationsInPlace(pdf, blockRowSize, blockColSize, blockRowSize, blockColSize, new long[]{blockNNZ}, sparsity, minValue, maxValue, null, seed);
-					}
-					else {
-						throw new IOException("Unsupported rand pdf function: "+pdf);
-					}
+					
+					RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
+																		pdf, blockRowSize, blockColSize, blockRowSize, blockColSize,   
+																		sparsity, minValue, maxValue, randInst.getPdfParams() );
+
+					block[i].randOperationsInPlace(rgen, new long[]{blockNNZ}, null, seed); 
 				} 
 				catch(DMLRuntimeException e) {
 					throw new IOException(e);

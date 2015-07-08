@@ -2591,19 +2591,49 @@ public class DMLTranslator
 			break;
 			
 		case SAMPLE: 
-			// arguments: range/size/replace; defaults: replace=FALSE
-			if ( expr3 == null ) 
-				expr3 = new LiteralOp(String.valueOf(false), false);
+		{
+			Expression[] in = source.getAllExpr();
 			
+			// arguments: range/size/replace/seed; defaults: replace=FALSE
+				
 			HashMap<String,Hop> tmpparams = new HashMap<String, Hop>();
 			tmpparams.put(DataExpression.RAND_MAX, expr); //range
 			tmpparams.put(DataExpression.RAND_ROWS, expr2);
 			tmpparams.put(DataExpression.RAND_COLS, new LiteralOp("1",1));
-			tmpparams.put(DataExpression.RAND_PDF, expr3);
+			
+			if ( in.length == 4 ) 
+			{
+				tmpparams.put(DataExpression.RAND_PDF, expr3);
+				Hop seed = processExpression(in[3], null, hops);
+				tmpparams.put(DataExpression.RAND_SEED, seed);
+			}
+			else if ( in.length == 3 )
+			{
+				// check if the third argument is "replace" or "seed"
+				if ( expr3.getValueType() == ValueType.BOOLEAN ) 
+				{
+					tmpparams.put(DataExpression.RAND_PDF, expr3);
+					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+				}
+				else if ( expr3.getValueType() == ValueType.INT ) 
+				{
+					tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(String.valueOf(false), false));
+					tmpparams.put(DataExpression.RAND_SEED, expr3 );
+				}
+				else 
+					throw new HopsException("Invalid input type " + expr3.getValueType() + " in sample().");
+				
+			}
+			else if ( in.length == 2 )
+			{
+				tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(String.valueOf(false), false));
+				tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+			}
 			
 			currBuiltinOp = new DataGenOp(DataGenMethod.SAMPLE, target, tmpparams);
 			break;
-			
+		}
+		
 		case SOLVE:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
 			break;

@@ -16,7 +16,7 @@ public abstract class PRNGenerator
 	
 	long seed = -1;
 	
-	public abstract void init(long sd);
+	public abstract void setSeed(long sd);
 	
 	public PRNGenerator() {
 		seed = -1;

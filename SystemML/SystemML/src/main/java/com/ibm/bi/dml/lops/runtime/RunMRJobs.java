@@ -53,8 +53,10 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
 import com.ibm.bi.dml.runtime.matrix.WriteCSVMR;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 import com.ibm.bi.dml.runtime.transform.DataTransform;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
@@ -535,9 +537,16 @@ public class RunMRJobs
 			{
 				//CP Rand block operation 
 				RandInstruction lrand = (RandInstruction)ldgInst; 
+				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
+																	lrand.getProbabilityDensityFunction(), 
+																	(int)lrand.getRows(), (int)lrand.getCols(), 
+																	lrand.getRowsInBlock(), lrand.getColsInBlock(), 
+																	lrand.getSparsity(), lrand.getMinValue(), lrand.getMaxValue(), 
+																	lrand.getPdfParams());
 				
-				//MatrixBlock mb = MatrixBlock.randOperationsOLD((int)lrand.rows, (int)lrand.cols, lrand.sparsity, lrand.minValue, lrand.maxValue, lrand.probabilityDensityFunction, lrand.seed);
-				MatrixBlock mb = MatrixBlock.randOperations((int)lrand.getRows(), (int)lrand.getCols(), lrand.getRowsInBlock(), lrand.getColsInBlock(), lrand.getSparsity(), lrand.getMinValue(), lrand.getMaxValue(), lrand.getProbabilityDensityFunction(), lrand.getSeed());
+				
+				MatrixBlock mb = MatrixBlock.randOperations(rgen, lrand.getSeed());
+				
 				for( int i=0; i<results.length; i++ )
 					if( lrand.output == results[i] )
 					{

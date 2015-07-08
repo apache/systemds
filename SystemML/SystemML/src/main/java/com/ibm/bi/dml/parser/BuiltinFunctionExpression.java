@@ -758,33 +758,62 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 			
 		case SAMPLE:
-			checkScalarParam(getFirstExpr());
-			checkScalarParam(getSecondExpr());
+		{
+			Expression[] in = getAllExpr(); 
 			
-			if (getFirstExpr().getOutput().getValueType() != ValueType.DOUBLE && getFirstExpr().getOutput().getValueType() != ValueType.INT) 
+			for(Expression e : in)
+				checkScalarParam(e);
+			
+			if (in[0].getOutput().getValueType() != ValueType.DOUBLE && in[0].getOutput().getValueType() != ValueType.INT) 
 				throw new LanguageException("First argument to sample() must be a number.");
-			if (getSecondExpr().getOutput().getValueType() != ValueType.DOUBLE && getSecondExpr().getOutput().getValueType() != ValueType.INT) 
+			if (in[1].getOutput().getValueType() != ValueType.DOUBLE && in[1].getOutput().getValueType() != ValueType.INT) 
 				throw new LanguageException("Second argument to sample() must be a number.");
-			if(getThirdExpr() != null) 
+			
+			boolean check = false;
+			if ( isConstant(in[0]) && isConstant(in[1]) )
+			{
+				long range = ((ConstIdentifier)in[0]).getLongValue();
+				long size = ((ConstIdentifier)in[1]).getLongValue();
+				if ( range < size )
+					check = true;
+			}
+			
+			if(in.length == 4 )
+			{
+				checkNumParameters(4);
+				if (in[3].getOutput().getValueType() != ValueType.INT) 
+					throw new LanguageException("Fourth arugment, seed, to sample() must be an integer value.");
+				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN ) 
+					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
+			}
+			else if(in.length == 3) 
 			{
 				checkNumParameters(3);
-				checkScalarParam(getThirdExpr());
-				if (getThirdExpr().getOutput().getValueType() != ValueType.BOOLEAN) 
-					throw new LanguageException("Third arugment to sample() must be a boolean value.");
+				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN 
+						&& in[2].getOutput().getValueType() != ValueType.INT ) 
+					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
-			else
-				checkNumParameters(2);
+			
+			if ( check && in.length >= 3 
+					&& isConstant(in[2]) 
+					&& in[2].getOutput().getValueType() == ValueType.BOOLEAN  
+					&& ((BooleanIdentifier)in[2]).getValue() != true )
+				throw new LanguageException("Sample (size=" + ((ConstIdentifier)in[0]).getLongValue() 
+						+ ") larger than population (size=" + ((ConstIdentifier)in[1]).getLongValue() 
+						+ ") can only be generated with replacement.");
 			
 			// Output is a column vector
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
-			if ( isConstant(getSecondExpr()) )
-	 			output.setDimensions(((ConstIdentifier)getSecondExpr()).getLongValue(), 1);
+			
+			if ( isConstant(in[1]) )
+	 			output.setDimensions(((ConstIdentifier)in[1]).getLongValue(), 1);
 			else
 				output.setDimensions(-1, 1);
  			setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
+ 			
 			break;
-			
+		}
 		case SEQ:
 			
 			checkScalarParam(getFirstExpr());

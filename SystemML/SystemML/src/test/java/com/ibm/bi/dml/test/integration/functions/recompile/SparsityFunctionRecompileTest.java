@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,7 +28,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class SparsityFunctionRecompileTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_DIR = "functions/recompile/";
@@ -193,17 +193,19 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			
-			//CHECK compiled MR jobs
-			int expectNumCompiled = 4 + ((testname.equals(TEST_NAME4))?2:0) //reblock,GMR,GMR,GMR, (+2 resultmerge)
-					                  + (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+), 2x for if
+			//CHECK compiled MR jobs (changed 07/2015 due to better sparsity inference)
+			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
+					                 + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge)
+					                 + (IPA ? 0 : (testname.equals(TEST_NAME2)?3:1)); //GMR ua(+), 3x for if
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
-			//CHECK executed MR jobs
+			//CHECK executed MR jobs (changed 07/2015 due to better sparsity inference)
 			int expectNumExecuted = -1;
-			if( recompile ) expectNumExecuted = 1 + ((testname.equals(TEST_NAME4))?2:0); //GMR (indexing), (+2 resultmerge) 
-			else            expectNumExecuted = 4 + ((testname.equals(TEST_NAME4))?2:0) //reblock,GMR,GMR,GMR, (+2 resultmerge) 
-					                              + (IPA ? 0 : 1); //GMR ua(+)
+			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(2x resultmerge) 
+			else            expectNumExecuted = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
+					                              + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge) 
+					                              + (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+)
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 

@@ -708,7 +708,7 @@ public class OptimizerUtils
 		long lnnz = -1;
 		if( nnz1>=0 && scalarRhs )
 			lnnz = nnz1+1;             // nnz(left) + scalar
-		else if( nnz1>=0 && nnz2>0 )
+		else if( nnz1>=0 && nnz2>=0 )
 			lnnz = nnz1 + nnz2;        // nnz(left) + nnz(right)
 		else if( nnz1>=0 && rlen2>0 && clen2>0 )
 			lnnz = nnz1 + rlen2*clen2; // nnz(left) + nnz(right_dense)

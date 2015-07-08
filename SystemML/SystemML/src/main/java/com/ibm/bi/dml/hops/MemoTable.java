@@ -33,6 +33,11 @@ public class MemoTable
 		_memo = new HashMap<Long, MatrixCharacteristics>();
 	}
 	
+	/**
+	 * 
+	 * @param hops
+	 * @param status
+	 */
 	public void init( ArrayList<Hop> hops, RecompileStatus status)
 	{
 		//check existing status
@@ -125,6 +130,11 @@ public class MemoTable
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
 	public MatrixCharacteristics getAllInputStats( Hop input )
 	{
 		MatrixCharacteristics ret = null;
@@ -133,7 +143,7 @@ public class MemoTable
 		long dim2 = input.getDim2();
 		long nnz = input.getNnz();
 		
-		if( input.dimsKnown() ) //all dims known
+		if( input.dimsKnown(true) ) //all dims known
 		{
 			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
 		}
@@ -145,7 +155,7 @@ public class MemoTable
 				//enrich exact information with worst-case stats
 				dim1 = (dim1<=0) ? tmp.getRows() : dim1;
 				dim2 = (dim2<=0) ? tmp.getCols() : dim2;
-				nnz = (nnz<=0) ? tmp.getNonZeros() : nnz;
+				nnz = (nnz<0) ? tmp.getNonZeros() : nnz;
 			}
 			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
 		}
@@ -153,21 +163,25 @@ public class MemoTable
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param h
+	 * @return
+	 */
 	public boolean hasInputStatistics(Hop h) 
 	{
 		boolean ret = false;
 		
 		//determine if any input has useful exact/worst-case stats
 		for( Hop in : h.getInput() )
-			if( in.dimsKnown() || _memo.containsKey(in.getHopID()) ) 
-			{
+			if( in.dimsKnownAny() || _memo.containsKey(in.getHopID()) ) {
 				ret = true;
 				break;
 			}
 		
 		//determine if hop itself has worst-case stats (this is important
 		//for transient read with cross-dag worst-case estimates)
-		if( h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD ){
+		if( h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD ) {
 			return true;
 		}
 			

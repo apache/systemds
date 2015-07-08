@@ -553,72 +553,99 @@ public abstract class Hop
 	{
 		long[] wstats = null; 
 		
-		//output size estimate
+		////////
+		//Step 1) Compute hop output memory estimate (incl size inference) 
+		
 		switch( getDataType() )
 		{
 			case SCALAR:
 			{
+				//memory estimate always known
 				if( getValueType()== ValueType.DOUBLE) //default case
 					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 				else //literalops, dataops
-					_outputMemEstimate = computeOutputMemEstimate(_dim1, _dim2, _nnz);
+					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
 				break;
 			}
 			case MATRIX:
 			{
-				if( dimsKnown() ) { //nnz should be known as well, if applicable (see refreshSizeInformation)
-					//1) compute mem estimate based on known dimensions/sparsity (dense if sparsity unknown)
-					long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2); 
-					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				//1a) mem estimate based on exactly known dimensions and sparsity
+				if( dimsKnown(true) ) { 
+					//nnz always exactly known (see dimsKnown(true))
+					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
 				}
+				//1b) infer output statistics and mem estimate based on these statistics
 				else if( memo.hasInputStatistics(this) )
 				{
-					//2) infer the output stats
+					//infer the output stats
 					wstats = inferOutputCharacteristics(memo);
-					if( wstats != null )
-					{
-						//2a) use worst case characteristics to estimate mem
+					
+					if( wstats != null ) {
+						//use worst case characteristics to estimate mem
 						long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
 						_outputMemEstimate = computeOutputMemEstimate( wstats[0], wstats[1], lnnz );
 						
 						//propagate worst-case estimate
 						memo.memoizeStatistics(getHopID(), wstats[0], wstats[1], wstats[2]);
 					}
-					else
-					{
-						//System.out.println("could not infer output characteristics for "+this.getOpString());
-						
-						//2b) unknown output size
+					else if( dimsKnown() ) {
+						//nnz unknown, estimate mem as dense
+						long lnnz = _dim1*_dim2;
+						_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+					}
+					else {
+						//unknown output size
 						_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 					}
 				}
+				//1c) mem estimate based on exactly known dimensions and unknown sparsity
+				//(required e.g., for datagenops w/o any input statistics)
+				else if( dimsKnown() ) {
+					//nnz unknown, estimate mem as dense
+					long lnnz = _dim1*_dim2;
+					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				}
+				//1d) fallback: unknown output size
 				else {
-					//System.out.println("no stats for "+this.getOpString());
-					
-					//3) unknown output size 
 					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				}
+				
 				break;
 			}
 			case OBJECT:
 			case UNKNOWN:
 			case FRAME:	
 			{
+				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				break;
 			}
 		}
 		
-		//intermediate size estimate
-		if( dimsKnown() ) { //incl scalar output
-			long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2);
-			_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+		////////
+		//Step 2) Compute hop intermediate memory estimate  
+		
+		//note: ensure consistency w/ step 1 (for simplified debugging)	
+		
+		if( dimsKnown(true) ) { //incl scalar output
+			//nnz always exactly known (see dimsKnown(true))
+			_processingMemEstimate = computeIntermediateMemEstimate( _dim1, _dim2, _nnz );
 		}
 		else if( wstats!=null ) {
+			//use worst case characteristics to estimate mem
 			long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
 			_processingMemEstimate = computeIntermediateMemEstimate( wstats[0], wstats[1], lnnz );
 		}
+		else if( dimsKnown() ){
+			//nnz unknown, estimate mem as dense
+			long lnnz = _dim1 * _dim2;
+			_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+		}
 		
+		
+		////////
+		//Step 3) Compute final hop memory estimate  
+			
 		//final estimate (sum of inputs/intermediates/output)
 		_memEstimate = getInputOutputSize();
 	}
@@ -788,6 +815,10 @@ public abstract class Hop
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)) );
 	}
 
+	public boolean dimsKnownAny() {
+		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && (_dim1 > 0 || _dim2 > 0)) );
+	}
+	
 	public static void resetVisitStatus( ArrayList<Hop> hops )
 	{
 		if( hops != null )

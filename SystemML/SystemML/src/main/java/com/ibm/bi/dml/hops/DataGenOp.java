@@ -229,7 +229,15 @@ public class DataGenOp extends Hop
 			if(    from instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)from)==1
 				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==1 )
 			{
-				long toVal = computeDimParameterInformation(getInput().get(_paramIndexMap.get(Statement.SEQ_TO)), memo);
+				long toVal = computeDimParameterInformation(to, memo);
+				if( toVal > 0 )	
+					return new long[]{ toVal, 1, -1 };
+			}
+			//here, we check for the common case of seq(1,x,?), i.e., from=1, to=x, b(seqincr) operator
+			if(    from instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)from)==1
+				&& incr instanceof BinaryOp && ((BinaryOp)incr).getOp() == Hop.OpOp2.SEQINCR ) //implicit 1
+			{
+				long toVal = computeDimParameterInformation(to, memo);
 				if( toVal > 0 )	
 					return new long[]{ toVal, 1, -1 };
 			}
@@ -237,7 +245,7 @@ public class DataGenOp extends Hop
 			if(    to instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)to)==1
 				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==-1 )
 			{
-				long fromVal = computeDimParameterInformation(getInput().get(_paramIndexMap.get(Statement.SEQ_FROM)), memo);
+				long fromVal = computeDimParameterInformation(from, memo);
 				if( fromVal > 0 )	
 					return new long[]{ fromVal, 1, -1 };
 			}

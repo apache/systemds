@@ -780,8 +780,14 @@ public class DataTransform {
 		MatrixBlock mb = null; 
 		if ( isBB ) 
 		{
-			mb = new MatrixBlock((int)TransformationAgent._numRecordsInPartFile, numColumnsTf, false );
-			mb.allocateDenseBlock();
+			int numRows = (int)TransformationAgent._numRecordsInPartFile;
+			int estNNZ = numRows * ncols;
+			mb = new MatrixBlock(numRows, numColumnsTf, estNNZ );
+			
+			if ( mb.isInSparseFormat() )
+				mb.allocateSparseRowsBlock();
+			else
+				mb.allocateDenseBlock();
 		}
 
 		int r = 0; // rowid to be used in filling the matrix block
@@ -829,9 +835,10 @@ public class DataTransform {
 					for(int c=0; c<words.length; c++)
 					{
 						if(words[c] == null || words[c].isEmpty())
-							mb.setValueDenseUnsafe(r, c, 0);
+							;//mb.setValueDenseUnsafe(r, c, 0);
 						else 
-							mb.setValueDenseUnsafe(r, c, UtilFunctions.parseToDouble(words[c]));
+							mb.appendValue(r, c, UtilFunctions.parseToDouble(words[c]));
+							//mb.setValueDenseUnsafe(r, c, UtilFunctions.parseToDouble(words[c]));
 					}
 				}
 				r++;

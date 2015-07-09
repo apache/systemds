@@ -92,8 +92,7 @@ public class DummycodeAgent extends TransformationAgent {
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values,
 			String outputDir, int colID, JobConf job) throws IOException {
-		// TODO Auto-generated method stub
-		
+		// Nothing to do here
 	}
 
 	public void setRecodeMaps(HashMap<Integer, HashMap<String,String>> maps) {
@@ -113,8 +112,8 @@ public class DummycodeAgent extends TransformationAgent {
 		if ( _dcdList == null ) 
 			return numCols;
 		
-		Pattern _delim = Pattern.compile(Pattern.quote(delim));
-		String[] names = _delim.split(header, -1);
+		//Pattern _delim = Pattern.compile(Pattern.quote(delim));
+		//String[] names = _delim.split(header, -1);
 
 		Path pt=new Path(txMtdDir+"/Dummycode/" + DCD_FILE_NAME);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
@@ -125,13 +124,14 @@ public class DummycodeAgent extends TransformationAgent {
 		{
 			if ( idx < _dcdList.length && _dcdList[idx] == colID )
 			{
-				br.write(colID + "," + UtilFunctions.quote(names[colID-1]) + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
+				//br.write(colID + "," + UtilFunctions.quote(names[colID-1]) + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
+				br.write(colID + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
 				sum += _domainSizes[idx];
 				idx++;
 			}
 			else 
 			{
-				br.write(colID + "," + UtilFunctions.quote(names[colID-1]) + "," + "0" + "," + sum + "," + sum + "\n");
+				br.write(colID + "," + "0" + "," + sum + "," + sum + "\n");
 				sum += 1;
 			}
 				

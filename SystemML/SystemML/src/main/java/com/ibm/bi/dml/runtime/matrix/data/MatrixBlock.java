@@ -139,6 +139,17 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		maxcolumn = 0;
 	}
 	
+	public MatrixBlock(int rl, int cl, long estnnzs) 
+	{
+		this(rl, cl, false, estnnzs);
+		
+		// Adjust sparsity based on estimated non-zeros
+		double denseSize = estimateSizeDenseInMemory(rl, cl);
+		double sparseSize = estimateSizeSparseInMemory(rl, cl, (double)estnnzs/(rl*cl));
+		this.sparse = (denseSize < sparseSize ? false : true);
+		
+	}
+	
 	public MatrixBlock(int rl, int cl, boolean sp, long estnnzs)
 	{
 		this(rl, cl, sp);
@@ -2563,7 +2574,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @param ncols
 	 * @return
 	 */
-	private static long estimateSizeDenseInMemory(long nrows, long ncols)
+	public static long estimateSizeDenseInMemory(long nrows, long ncols)
 	{
 		// basic variables and references sizes
 		long size = 44;
@@ -2581,7 +2592,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @param sparsity
 	 * @return
 	 */
-	private static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
 	{
 		// basic variables and references sizes
 		long size = 44;
@@ -5997,18 +6008,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 
 	@Override
 	public boolean equals(Object arg0) {
-		MatrixBlock that = (MatrixBlock) arg0;
-		
-		if(this.rlen != that.rlen || this.clen != that.clen || this.nonZeros != that.nonZeros )
-			return false;
-		
-		// TODO: this implementation is to be optimized for different block representations
-		for(int i=0; i < this.rlen; i++) 
-			for(int j=0; j < this.clen; j++ )
-				if(this.getValue(i, j) != that.getValue(i,j)) 
-					return false;
-		
-		return true;
+		throw new RuntimeException("equals should never be called for matrix blocks.");
 	}
 	
 	@Override

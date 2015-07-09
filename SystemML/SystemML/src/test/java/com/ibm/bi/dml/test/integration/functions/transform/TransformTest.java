@@ -178,8 +178,8 @@ public class TransformTest extends AutomatedTestBase
 							-1);
 				}
 				
-				assertTrue("Incorrect output from data transform.", out.equals(exp));
-				assertTrue("Incorrect output from apply transform.", out2.equals(exp));
+				assertTrue("Incorrect output from data transform.", equals(out,exp));
+				assertTrue("Incorrect output from apply transform.", equals(out2,exp));
 					
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -189,6 +189,20 @@ public class TransformTest extends AutomatedTestBase
 		{
 			rtplatform = rtold;
 		}
+	}
+	
+	private static boolean equals(MatrixBlock mb1, MatrixBlock mb2)
+	{
+		if(mb1.getNumRows() != mb2.getNumRows() || mb1.getNumColumns() != mb2.getNumColumns() || mb1.getNonZeros() != mb2.getNonZeros() )
+			return false;
+		
+		// TODO: this implementation is to be optimized for different block representations
+		for(int i=0; i < mb1.getNumRows(); i++) 
+			for(int j=0; j < mb1.getNumColumns(); j++ )
+				if(mb1.getValue(i, j) != mb2.getValue(i,j)) 
+					return false;
+		
+		return true;
 	}
 	
 }

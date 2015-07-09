@@ -3636,7 +3636,17 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			result.copy(this, sp);
 		}
 		else //update in-place
+		{
+			//use current block as in-place result
 			result = this;
+			
+			//ensure that the current block adheres to the sparsity estimate
+			//and thus implicitly the memory budget used by the compiler
+			if( result.sparse && !sp )
+				result.sparseToDense();
+			else if( !result.sparse && sp )
+				result.denseToSparse();	
+		}
 		
 		//NOTE conceptually we could directly use a zeroout and copy(..., false) but
 		//     since this was factors slower, we still use a full copy and subsequently

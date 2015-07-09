@@ -116,17 +116,12 @@ e_r_rev_agg = cumsum (I_rev %*% e_r);
 select = t (colSums (table (seq (1, num_distinct), e_r_rev_agg))); 
 
 min_event_time = min (event_times);
-T_X_event = T_X + (min_event_time * ppred (T_X, min_event_time, "<"));
 max_event_time = max (event_times);
-T_X_event = T_X_event + (max_event_time * ppred (T_X, max_event_time, ">"));
 T_Y = T_Y + (min_event_time * ppred (T_Y, min_event_time, "<"));
 T_Y = T_Y + (max_event_time * ppred (T_Y, max_event_time, ">"));
 
-Ind = outer  (T_Y, t(all_times), ">=");
-
-if (nrow (Ind) > 1) {
-	Ind[,1:(nrow (Ind) - 1)] = Ind[,1:(nrow (Ind) - 1)] - Ind[,2:nrow (Ind)];
-}
+Ind = outer (T_Y, t (event_times), ">=");
+Ind = table (seq (1, nrow (T_Y)), rowIndexMax (Ind), nrow (T_Y), num_distinct_event);
 
 exp_Xb = exp (X %*% b);
 exp_Xb_agg = aggregate (target = exp_Xb, groups = RT_X, fn = "sum");
@@ -167,6 +162,7 @@ P[,1] = LP;
 P[,2] = se_LP;
 P[,3] = R; 
 P[,4] = se_R;
-P[,5:6] = H;
-write (O, fileO, fmtO);
+P[,5] = H;
+P[,6] = se_H;
+write (P, fileP, fmtO);
 

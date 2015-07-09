@@ -1953,10 +1953,9 @@ public class Recompiler
 		// after transformations (with potential dummycoding) are typically unknown.
 		
 		if( sizeOnHDFS > CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE 
-				|| CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() 
 				|| sizeOnHDFS*4 > OptimizerUtils.getLocalMemBudget() )
 			ret = false;
-
+		LOG.info("checkCPTransform(): size = " + sizeOnHDFS + ", recompile to CP = " + ret);
 		return ret;
 	}
 	

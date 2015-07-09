@@ -63,6 +63,7 @@ public abstract class TransformationAgent {
 	protected static final String MODE_FILE_SUFFIX 		= ".mode";
 	protected static final String BIN_FILE_SUFFIX 		= ".bin";
 	protected static final String DCD_FILE_NAME 		= "dummyCodeMaps.csv";
+	protected static final String COLTYPES_FILE_NAME 	= "coltypes.csv";
 	
 	protected static final String TXMTD_SEP 	= ",";
 	protected static final String DCD_NAME_SEP 	= "_";
@@ -95,8 +96,8 @@ public abstract class TransformationAgent {
 				return false;
 		
 		return true;
-
 	}
 	
+	protected enum ColumnTypes { SCALE, NOMINAL, ORDINAL, DUMMYCODED, INVALID }
 
 }

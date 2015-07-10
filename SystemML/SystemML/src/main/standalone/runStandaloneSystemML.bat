@@ -10,8 +10,10 @@ SET HADOOP_HOME=%CD%/lib/hadoop
 
 set CLASSPATH=./lib/*
 echo !CLASSPATH!
- 
-java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% com.ibm.bi.dml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %2
+
+for /f "tokens=1,* delims= " %%a in ("%*") do set ALLBUTFIRST=%%b
+
+java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% com.ibm.bi.dml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %ALLBUTFIRST%
 GOTO End
 
 :Err

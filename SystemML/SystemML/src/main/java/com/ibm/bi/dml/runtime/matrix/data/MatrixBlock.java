@@ -4476,16 +4476,30 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 	}
 		
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public CM_COV_Object cmOperations(CMOperator op) 
 		throws DMLRuntimeException 
 	{
-		/* this._data must be a 1 dimensional vector */
+		// dimension check for input column vectors
 		if ( this.getNumColumns() != 1) {
 			throw new DMLRuntimeException("Central Moment can not be computed on [" 
 					+ this.getNumRows() + "," + this.getNumColumns() + "] matrix.");
 		}
 		
 		CM_COV_Object cmobj = new CM_COV_Object();
+		
+		// empty block handling (important for result corretness, otherwise
+		// we get a NaN due to 0/0 on reading out the required result)
+		if( isEmptyBlock(false) ) {
+			op.fn.execute(cmobj, 0.0, getNumRows());
+			return cmobj;
+		}
+		
 		int nzcount = 0;
 		if(sparse && sparseRows!=null) //SPARSE
 		{

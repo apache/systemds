@@ -1224,15 +1224,11 @@ get_trust_boundary_point =
       f_extra = 0.5 * sum (z * (r + g));
       f_change_1 = f_extra + (0.5 * tau_1 * pq + zq + gp) * tau_1;
       f_change_2 = f_extra + (0.5 * tau_2 * pq + zq + gp) * tau_2;
-      if (f_change_1 < f_change_2) {
-        new_z = z + (tau_1 * p);
-        f_change = f_change_1;
-      }
-      else {
-        new_z = z + (tau_2 * p);
-        f_change = f_change_2;
-      }
-    }
+      ind1 = as.integer(f_change_1 < f_change_2);
+      ind2 = as.integer(f_change_1 >= f_change_2);
+      new_z = z + ((ind1 * tau_1 + ind2 * tau_2) * p);
+      f_change = ind1 * f_change_1 + ind2 * f_change_2;
+}
 
 
 # Computes vector w such that  ||X %*% w - 1|| -> MIN  given  avg(X %*% w) = 1

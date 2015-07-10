@@ -370,9 +370,6 @@ public class LibMatrixDatagen
 			//note: individual sparse rows are allocated on demand,
 			//for consistency with memory estimates and prevent OOMs.
 			out.allocateSparseRowsBlock();
-			for (int i=0; i < out.rlen; i++){
-				out.sparseRows[i] = new SparseRow(SparseRow.initialCapacity);
-			}
 		}
 		else{
 			out.allocateDenseBlock();	

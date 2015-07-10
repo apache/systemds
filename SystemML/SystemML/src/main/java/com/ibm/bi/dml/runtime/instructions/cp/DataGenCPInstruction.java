@@ -214,10 +214,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	        	pdfParams = s[10];
 	        }
 	        
-			int k = 1;
-	        if (!s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
-	        	k = Integer.parseInt(s[11]);
-	        }
+			int k = Integer.parseInt(s[11]);
 			
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}

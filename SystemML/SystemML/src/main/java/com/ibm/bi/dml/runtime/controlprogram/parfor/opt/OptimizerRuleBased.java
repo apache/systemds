@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.AggBinaryOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -1482,6 +1483,16 @@ public class OptimizerRuleBased extends Optimizer
 							&& h instanceof QuaternaryOp  )
 					{ 
 						QuaternaryOp q = (QuaternaryOp) h;
+						q.setMaxNumThreads(par); //set max constraint in hop
+						c.setK(par); //set optnode k (for explain)
+						//need to recompile SB, if changed constraint
+						recompileSB = true;
+					}
+					
+					if(OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
+							&& h instanceof DataGenOp)
+					{ 
+						DataGenOp q = (DataGenOp) h;
 						q.setMaxNumThreads(par); //set max constraint in hop
 						c.setK(par); //set optnode k (for explain)
 						//need to recompile SB, if changed constraint

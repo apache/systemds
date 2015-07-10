@@ -26,6 +26,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
  * 
@@ -38,6 +39,7 @@ public class DataGenOp extends Hop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final long UNSPECIFIED_SEED = -1;
+	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	 // defines the specific data generation method
 	private DataGenMethod _op;
@@ -136,7 +138,10 @@ public class DataGenOp extends Hop
 		}
 		
 		DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
-				getDataType(), getValueType(), et);
+								getDataType(), getValueType(), et);
+		
+		int k = getConstrainedNumThreads();
+		rnd.setNumThreads(k);
 		
 		rnd.getOutputParameters().setDimensions(
 				getDim1(), getDim2(),
@@ -486,4 +491,29 @@ public class DataGenOp extends Hop
 		
 		return ret;
 	}
+	
+/**
+ * 
+ * @return
+ */
+	public int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+
+		return ret;
+	}
+
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+
 }

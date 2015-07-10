@@ -5861,13 +5861,48 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed) 
 		throws DMLRuntimeException
 	{
+		return randOperations(rows, cols, sparsity, min, max, pdf, seed, 1);
+	}
+	
+	/**
+	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
+	 *  
+	 * @param rows
+	 * @param cols
+	 * @param sparsity
+	 * @param min
+	 * @param max
+	 * @param pdf
+	 * @param seed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) 
+		throws DMLRuntimeException
+	{
 		DMLConfig conf = ConfigurationManager.getConfig();
 		int blocksize = (conf!=null) ? ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE)
 				                     : DMLTranslator.DMLBlockSize;
 		
 		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, blocksize, blocksize, sparsity, min, max);
 		
-		return randOperations(rgen, seed);
+		if (k > 1)
+			return randOperations(rgen, seed, k);
+		else
+			return randOperations(rgen, seed);
+	}
+	
+	/**
+	 * Function to generate the random matrix with specified dimensions and block dimensions.
+	 * @param rgen
+	 * @param seed
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed) 
+		throws DMLRuntimeException 
+	{
+		return randOperations(rgen, seed, 1);
 	}
 	
 	/**
@@ -5884,7 +5919,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed) 
+	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed, int k)
 		throws DMLRuntimeException 
 	{
 		MatrixBlock out = new MatrixBlock();
@@ -5898,7 +5933,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		
 		//generate rand data
-		out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1);
+		if (k > 1)
+			out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1, k);
+		else
+			out.randOperationsInPlace(rgen, nnzInBlock, bigrand, -1);
 		
 		return out;
 	}
@@ -5917,14 +5955,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * distribution N(0,1). The range of generated values will always be
 	 * (-Inf,+Inf).
 	 * 
-	 * @param pdf
-	 * @param rows
-	 * @param cols
-	 * @param rowsInBlock
-	 * @param colsInBlock
-	 * @param sparsity
-	 * @param min
-	 * @param max
+	 * @param rgen
+	 * @param nnzInBlock
 	 * @param bigrand
 	 * @param bSeed
 	 * @return
@@ -5936,6 +5968,37 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		throws DMLRuntimeException
 	{
 		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, bigrand, bSeed );
+		return this;
+	}
+	
+	/**
+	 * Function to generate a matrix of random numbers. This is invoked both
+	 * from CP as well as from MR. In case of CP, it generates an entire matrix
+	 * block-by-block. A <code>bigrand</code> is passed so that block-level
+	 * seeds are generated internally. In case of MR, it generates a single
+	 * block for given block-level seed <code>bSeed</code>.
+	 * 
+	 * When pdf="uniform", cell values are drawn from uniform distribution in
+	 * range <code>[min,max]</code>.
+	 * 
+	 * When pdf="normal", cell values are drawn from standard normal
+	 * distribution N(0,1). The range of generated values will always be
+	 * (-Inf,+Inf).
+	 * 
+	 * @param rgen
+	 * @param nnzInBlock
+	 * @param bigrand
+	 * @param bSeed
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, 
+			long[] nnzInBlock, Well1024a bigrand, long bSeed, int k) 
+		throws DMLRuntimeException
+	{
+		LibMatrixDatagen.generateRandomMatrix( this, rgen, nnzInBlock, 
+				bigrand, bSeed, k );
 		return this;
 	}
 	

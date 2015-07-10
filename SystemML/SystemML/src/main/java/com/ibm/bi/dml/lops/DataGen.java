@@ -34,6 +34,8 @@ public class DataGen extends Lop
 	public static final String SINIT_OPCODE  = "sinit"; //string initialize
 	public static final String SAMPLE_OPCODE = "sample"; //sample.int
 	
+	private int _numThreads = 1;
+	
 	/** base dir for rand input */
 	private String baseDir;
 	
@@ -214,6 +216,11 @@ public class DataGen extends Lop
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(pdfParams);
 			sb.append(OPERAND_DELIMITOR);
+			if( et == ExecType.CP ) {
+				//append degree of parallelism
+				sb.append( _numThreads );
+				sb.append( OPERAND_DELIMITOR );
+			}
 			sb.append( this.prepOutputOperand(output));
 
 			return sb.toString();
@@ -294,7 +301,6 @@ public class DataGen extends Lop
 		//prepare instruction parameters
 		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
 		String size = lsize.prepScalarLabel();
-
 		
 		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
 		String range = lrange.prepScalarLabel();
@@ -566,5 +572,9 @@ public class DataGen extends Lop
 		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
 		sb.append(" ; dir=" + this.baseDir);
 		return sb.toString();
+	}
+	
+	public void setNumThreads(int k) {
+		_numThreads = k;
 	}
 }

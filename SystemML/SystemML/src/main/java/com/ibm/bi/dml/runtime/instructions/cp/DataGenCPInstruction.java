@@ -48,11 +48,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	
 	//sample specific attributes
 	private boolean replace;
+ 	private int numThreads = -1;
 	
 	public DataGenCPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
 							  long rows, long cols, int rpb, int cpb,
 							  double minValue, double maxValue, double sparsity, long seed,
-							  String probabilityDensityFunction, String pdfParams, String opcode, String istr) 
+							  String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) 
 	{
 		super(op, in, out, opcode, istr);
 		
@@ -66,6 +67,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
+		this.numThreads = k;
 		this.pdfParams = pdfParams;
 	}
 
@@ -164,7 +166,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 11 );
+			InstructionUtils.checkNumFields ( str, 12 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -206,11 +208,18 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	        double sparsity = Double.parseDouble(s[7]);
 			long seed = Long.parseLong(s[8]);
 			String pdf = s[9];
+
 			String pdfParams = null;
 	        if (!s[10].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 	        	pdfParams = s[10];
 	        }
-			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, opcode, str);
+	        
+			int k = 1;
+	        if (!s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+	        	k = Integer.parseInt(s[11]);
+	        }
+			
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) 
 		{
@@ -281,7 +290,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 			
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(pdf, (int) rows, (int) cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
-			soresBlock = MatrixBlock.randOperations(rgen, seed);
+			soresBlock = MatrixBlock.randOperations(rgen, seed, numThreads);
 		}
 		else if ( method == DataGenMethod.SEQ ) 
 		{

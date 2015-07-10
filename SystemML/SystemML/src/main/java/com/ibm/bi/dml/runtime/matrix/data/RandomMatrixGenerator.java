@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
 import com.ibm.bi.dml.runtime.util.PRNGenerator;
+import com.ibm.bi.dml.runtime.util.PoissonPRNGenerator;
 import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
 
 public class RandomMatrixGenerator {
@@ -20,7 +21,7 @@ public class RandomMatrixGenerator {
 	
 	String _pdf;
 	int _rows, _cols, _rowsPerBlock, _colsPerBlock;
-	double _sparsity; 
+	double _sparsity, _mean; 
 	double _min, _max; 
 	PRNGenerator _valuePRNG;
 	//Well1024a _bigrand; Long _bSeed;
@@ -32,6 +33,7 @@ public class RandomMatrixGenerator {
 		_sparsity = 0.0;
 		_min = _max = Double.NaN;
 		_valuePRNG = null;
+		_mean = 1.0;
 	}
 	
 	public RandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp) throws DMLRuntimeException 
@@ -58,11 +60,36 @@ public class RandomMatrixGenerator {
 		setupValuePRNG();
 	}
 	
+	public RandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) throws DMLRuntimeException 
+	{
+		init(pdf, r, c, rpb, cpb, sp, min, max, mean);
+	}
+	
+	public void init(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) throws DMLRuntimeException 
+	{
+		_pdf = pdf;
+		_rows = r;
+		_cols = c;
+		_rowsPerBlock = rpb;
+		_colsPerBlock = cpb;
+		_sparsity = sp;
+		_min = min;
+		_max = max;
+		_mean = mean;
+		setupValuePRNG();
+	}
+	
 	protected void setupValuePRNG() throws DMLRuntimeException 
 	{
 		if ( _pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_NORMAL) ) 
 			_valuePRNG = new NormalPRNGenerator();
 		else if ( _pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_UNIFORM) ) 
 			_valuePRNG = new UniformPRNGenerator();
+		else if ( _pdf.equalsIgnoreCase(LibMatrixDatagen.RAND_PDF_POISSON) ) 
+		{
+			if(_mean <= 0)
+				throw new DMLRuntimeException("Invalid parameter (" + _mean + ") for Poisson distribution.");
+			_valuePRNG = new PoissonPRNGenerator(_mean);
+		}
 	}
 }

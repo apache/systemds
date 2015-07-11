@@ -853,6 +853,12 @@ public class MatrixObject extends CacheableData
 		
 		try
 		{
+			//ensure input file is persistent on hdfs
+			if( getRDDHandle() != null ) { //pending RDD operations
+				writeMatrixFromRDDtoHDFS(getRDDHandle(), _hdfsFileName, outputFormat);
+			}
+			
+			//export or rename to target file on hdfs
 			if( isDirty() || (!isEqualOutputFormat(outputFormat) && isEmpty())) 
 			{
 				exportData(fName, outputFormat);

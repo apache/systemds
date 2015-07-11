@@ -21,37 +21,51 @@ public class PartitionedBroadcast implements Serializable
 
 	private static final long serialVersionUID = -6941992543059285034L;
 
-	//private Broadcast<MatrixBlock> _bc = null;
+	//internal configuration parameters
+	private static final boolean LAZY_BROADCAST_PARTITIONING = true;
+	
+	private Broadcast<MatrixBlock> _bc = null;
 	private MatrixBlock[] _partBlocks = null; 
 	private int _nrblks = -1;
 	private int _ncblks = -1;
+	private int _brlen = -1;
+	private int _bclen = -1;
 	
 	public PartitionedBroadcast(Broadcast<MatrixBlock> bc, int brlen, int bclen) 
 	{
 		//get the input matrix block
-		//_bc = bc;
 		MatrixBlock mb = bc.value();
 		int rlen = mb.getNumRows();
 		int clen = mb.getNumColumns();
 		
 		//partitioning input broadcast
-		try
-		{
-			_nrblks = (int)Math.ceil((double)rlen/brlen);
-			_ncblks = (int)Math.ceil((double)clen/bclen);
-			_partBlocks = new MatrixBlock[_nrblks * _ncblks];
+		_nrblks = (int)Math.ceil((double)rlen/brlen);
+		_ncblks = (int)Math.ceil((double)clen/bclen);
+		_partBlocks = new MatrixBlock[_nrblks * _ncblks];
 			
-			for( int i=0, ix=0; i<_nrblks; i++ )
-				for( int j=0; j<_ncblks; j++, ix++ )
-				{
-					MatrixBlock tmp = new MatrixBlock();
-					mb.sliceOperations(i*brlen+1, Math.min((i+1)*brlen, rlen), 
-							           j*bclen+1, Math.min((j+1)*bclen, clen), tmp);
-					_partBlocks[ix] = tmp;
-				}
+		if( !LAZY_BROADCAST_PARTITIONING )
+		{
+			try
+			{
+				for( int i=0, ix=0; i<_nrblks; i++ )
+					for( int j=0; j<_ncblks; j++, ix++ )
+					{
+						MatrixBlock tmp = new MatrixBlock();
+						mb.sliceOperations(i*brlen+1, Math.min((i+1)*brlen, rlen), 
+								           j*bclen+1, Math.min((j+1)*bclen, clen), tmp);
+						_partBlocks[ix] = tmp;
+					}
+			}
+			catch(Exception ex) {
+				throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+			}		
 		}
-		catch(Exception ex) {
-			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		else
+		{
+			//keep required information for lazy partitioning
+			_bc = bc;
+			_brlen = brlen;
+			_bclen = bclen;
 		}
 	}
 	
@@ -65,6 +79,27 @@ public class PartitionedBroadcast implements Serializable
 	
 	public MatrixBlock getMatrixBlock(int rowIndex, int colIndex) 
 	{
-		return _partBlocks[(rowIndex-1)*_ncblks + (colIndex-1)];
+		int rix = rowIndex - 1;
+		int cix = colIndex - 1;
+		
+		if( LAZY_BROADCAST_PARTITIONING ) {
+			//create matrix block partition on demand
+			if( _partBlocks[rix*_ncblks + cix] == null )
+			{
+				try
+				{
+					MatrixBlock mb = _bc.value();
+					MatrixBlock tmp = new MatrixBlock();
+					mb.sliceOperations(rix*_brlen+1, Math.min((rix+1)*_brlen, mb.getNumRows()), 
+						           cix*_bclen+1, Math.min((cix+1)*_bclen, mb.getNumColumns()), tmp);	
+					_partBlocks[rix*_ncblks + cix] = tmp;
+				}
+				catch(Exception ex) {
+					throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+				}
+			}
+		}
+		
+		return _partBlocks[rix*_ncblks + cix];
 	}
 }

@@ -34,8 +34,8 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -45,7 +45,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
 /**
  * 
  */
-public class QuaternarySPInstruction extends ComputationSPInstruction {
+public class QuaternarySPInstruction extends ComputationSPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -258,8 +259,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		private QuaternaryOperator _qop = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
-		private MatrixBlock[] _partBlocksU = null;
-		private MatrixBlock[] _partBlocksV = null;
+		private PartitionedBroadcast _pbcU = null;
+		private PartitionedBroadcast _pbcV = null;
 		
 		public RDDQuaternaryFunction1( QuaternaryOperator qop, Broadcast<MatrixBlock> bcU, Broadcast<MatrixBlock> bcV, int brlen, int bclen ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
@@ -270,12 +271,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			//get the broadcast matrices and partition on demand
 			if( bcU != null ) {
-				MatrixBlock mbU = bcU.value();
-				_partBlocksU = SparkUtils.partitionIntoRowBlocks(mbU, _bclen);
+				_pbcU = new PartitionedBroadcast(bcU, _bclen, bclen);
 			}
 			if( bcV != null ) {
-				MatrixBlock mbV = bcV.value();
-				_partBlocksV = SparkUtils.partitionIntoRowBlocks(mbV, _brlen);
+				_pbcV = new PartitionedBroadcast(bcV, _brlen, brlen);
 			}
 		}
 	
@@ -287,8 +286,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock blkIn = arg0._2();
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			MatrixBlock mbU = _partBlocksU[ (int)ixIn.getRowIndex()-1 ];
-			MatrixBlock mbV = _partBlocksV[ (int)ixIn.getColumnIndex()-1 ];
+			MatrixBlock mbU = _pbcU.getMatrixBlock((int)ixIn.getRowIndex(), 1);
+			MatrixBlock mbV = _pbcV.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
 			
 			//execute core operation
 			blkIn.quaternaryOperations(_qop, mbU, mbV, null, blkOut);
@@ -306,8 +305,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		private QuaternaryOperator _qop = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
-		private MatrixBlock[] _partBlocksU = null;
-		private MatrixBlock[] _partBlocksV = null;
+		private PartitionedBroadcast _pbcU = null;
+		private PartitionedBroadcast _pbcV = null;
 		
 		public RDDQuaternaryFunction2( QuaternaryOperator qop, Broadcast<MatrixBlock> bcU, Broadcast<MatrixBlock> bcV, int brlen, int bclen ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
@@ -318,12 +317,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			//get the broadcast matrices and partition on demand
 			if( bcU != null ) {
-				MatrixBlock mbU = bcU.value();
-				_partBlocksU = SparkUtils.partitionIntoRowBlocks(mbU, _bclen);
+				_pbcU = new PartitionedBroadcast(bcU, _bclen, bclen);
 			}
 			if( bcV != null ) {
-				MatrixBlock mbV = bcV.value();
-				_partBlocksV = SparkUtils.partitionIntoRowBlocks(mbV, _brlen);
+				_pbcV = new PartitionedBroadcast(bcV, _brlen, brlen);
 			}
 		}
 
@@ -337,8 +334,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock blkIn2 = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			MatrixBlock mbU = (_partBlocksU!=null)?_partBlocksU[ (int)ixIn.getRowIndex()-1 ] : blkIn2;
-			MatrixBlock mbV = (_partBlocksV!=null)?_partBlocksV[ (int)ixIn.getColumnIndex()-1 ] : blkIn2;
+			MatrixBlock mbU = (_pbcU!=null)?_pbcU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
+			MatrixBlock mbV = (_pbcV!=null)?_pbcU.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
 			MatrixBlock mbW = (_qop.wtype1!=null&&_qop.wtype1!=WeightsType.NONE)? blkIn2 : null;
 			
 			//execute core operation
@@ -357,8 +354,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		private QuaternaryOperator _qop = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
-		private MatrixBlock[] _partBlocksU = null;
-		private MatrixBlock[] _partBlocksV = null;
+		private PartitionedBroadcast _pbcU = null;
+		private PartitionedBroadcast _pbcV = null;
 		
 		public RDDQuaternaryFunction3( QuaternaryOperator qop, Broadcast<MatrixBlock> bcU, Broadcast<MatrixBlock> bcV, int brlen, int bclen ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
@@ -369,12 +366,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			//get the broadcast matrices and partition on demand
 			if( bcU != null ) {
-				MatrixBlock mbU = bcU.value();
-				_partBlocksU = SparkUtils.partitionIntoRowBlocks(mbU, _bclen);
+				_pbcU = new PartitionedBroadcast(bcU, _bclen, bclen);
 			}
 			if( bcV != null ) {
-				MatrixBlock mbV = bcV.value();
-				_partBlocksV = SparkUtils.partitionIntoRowBlocks(mbV, _brlen);
+				_pbcV = new PartitionedBroadcast(bcV, _brlen, brlen);
 			}
 		}
 
@@ -390,9 +385,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			MatrixBlock mbU = (_partBlocksU!=null)?_partBlocksU[ (int)ixIn.getRowIndex()-1 ] : blkIn2;
-			MatrixBlock mbV = (_partBlocksV!=null)?_partBlocksV[ (int)ixIn.getColumnIndex()-1 ] : 
-				              (_partBlocksU!=null)? blkIn2 : blkIn3;
+			MatrixBlock mbU = (_pbcU!=null)?_pbcU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
+			MatrixBlock mbV = (_pbcV!=null)?_pbcV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : 
+				              (_pbcU!=null)? blkIn2 : blkIn3;
 			MatrixBlock mbW = (_qop.wtype1!=null&&_qop.wtype1!=WeightsType.NONE)? blkIn3 : null;
 			
 			//execute core operation

@@ -1408,7 +1408,7 @@ public abstract class Hop
 		else if( "<".equals(op) ) return OpOp2.LESS;
 		else if( ">=".equals(op) ) return OpOp2.GREATEREQUAL;
 		else if( ">".equals(op) ) return OpOp2.GREATER;
-		else if( "=".equals(op) ) return OpOp2.EQUAL;
+		else if( "==".equals(op) ) return OpOp2.EQUAL;
 		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
 		else if( "|".equals(op) ) return OpOp2.OR;
 		else if( "&".equals(op) ) return OpOp2.AND;

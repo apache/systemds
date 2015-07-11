@@ -20,18 +20,16 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopProperties;
@@ -1470,33 +1468,13 @@ public class OptimizerRuleBased extends Optimizer
 					//set degree of parallelism for multi-threaded leaf nodes
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
 					if(    OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
-						&& h instanceof AggBinaryOp  )
-					{ 
-						AggBinaryOp ba = (AggBinaryOp) h;
-						ba.setMaxNumThreads(par); //set max constraint in hop
+						&& h instanceof MultiThreadedHop ) //abop, datagenop, qop
+					{
+						MultiThreadedHop mhop = (MultiThreadedHop) h;
+						mhop.setMaxNumThreads(par); //set max constraint in hop
 						c.setK(par); //set optnode k (for explain)
 						//need to recompile SB, if changed constraint
-						recompileSB = true;
-					}
-					
-					if(OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
-							&& h instanceof QuaternaryOp  )
-					{ 
-						QuaternaryOp q = (QuaternaryOp) h;
-						q.setMaxNumThreads(par); //set max constraint in hop
-						c.setK(par); //set optnode k (for explain)
-						//need to recompile SB, if changed constraint
-						recompileSB = true;
-					}
-					
-					if(OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
-							&& h instanceof DataGenOp)
-					{ 
-						DataGenOp q = (DataGenOp) h;
-						q.setMaxNumThreads(par); //set max constraint in hop
-						c.setK(par); //set optnode k (for explain)
-						//need to recompile SB, if changed constraint
-						recompileSB = true;
+						recompileSB = true;	
 					}
 				}
 				else

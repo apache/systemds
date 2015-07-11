@@ -15,6 +15,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopsException;
@@ -32,17 +33,17 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
  * 
  * 
  */
-public class DataGenOp extends Hop
+public class DataGenOp extends Hop implements MultiThreadedHop
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final long UNSPECIFIED_SEED = -1;
-	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	 // defines the specific data generation method
 	private DataGenMethod _op;
+	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -115,6 +116,11 @@ public class DataGenOp extends Hop
 	
 	public DataGenMethod getOp() {
 		return _op;
+	}
+	
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
 	}
 	
 	@Override
@@ -433,10 +439,30 @@ public class DataGenOp extends Hop
 	{
 		return System.nanoTime();
 	}
-	
 
-	@SuppressWarnings("unchecked")
+
+	/**
+	 * 
+	 * @return
+	 */
+	public int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+
+		return ret;
+	}
+
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException 
 	{
 		DataGenOp ret = new DataGenOp();	
@@ -450,6 +476,7 @@ public class DataGenOp extends Hop
 		ret._sparsity = _sparsity;
 		ret._baseDir = _baseDir;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
+		ret._maxNumThreads = _maxNumThreads;
 		//note: no deep cp of params since read-only 
 		
 		return ret;
@@ -465,7 +492,8 @@ public class DataGenOp extends Hop
 		boolean ret = (  _op == that2._op
 				      && _sparsity == that2._sparsity
 				      && _baseDir.equals(that2._baseDir)
-					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+					  && _paramIndexMap!=null && that2._paramIndexMap!=null
+					  && _maxNumThreads == that2._maxNumThreads );
 		
 		if( ret )
 		{
@@ -491,29 +519,4 @@ public class DataGenOp extends Hop
 		
 		return ret;
 	}
-	
-/**
- * 
- * @return
- */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-
-		return ret;
-	}
-
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-
 }

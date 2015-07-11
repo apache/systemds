@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
@@ -35,7 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
  * however, since there does not exist a real QuaternaryOp yet - we can leave it as is for now. 
  */
-public class QuaternaryOp extends Hop 
+public class QuaternaryOp extends Hop implements MultiThreadedHop
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -118,6 +119,11 @@ public class QuaternaryOp extends Hop
 	
 	public OpOp4 getOp(){
 		return _op;
+	}
+
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
 	}
 	
 	@Override
@@ -673,6 +679,26 @@ public class QuaternaryOp extends Hop
 			return WSigmoidType.BASIC;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+		
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+			
+		return ret;
+	}
+	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{
@@ -792,7 +818,7 @@ public class QuaternaryOp extends Hop
 		ret._postWeights = _postWeights;
 		ret._logout = _logout;
 		ret._minusin = _minusin;
-		
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -816,31 +842,8 @@ public class QuaternaryOp extends Hop
 		ret &= _postWeights == that2._postWeights;
 		ret &= _logout      == that2._logout;
 		ret &= _minusin 	== that2._minusin;
+		ret &= _maxNumThreads == that2._maxNumThreads;
 		
 		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-		
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-		
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-			
-		return ret;
-	}
-	
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
 	}
 }

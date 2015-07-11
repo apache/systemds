@@ -12,6 +12,7 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
@@ -45,7 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
 
-public class AggBinaryOp extends Hop 
+public class AggBinaryOp extends Hop implements MultiThreadedHop
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -103,7 +104,8 @@ public class AggBinaryOp extends Hop
 	public boolean hasLeftPMInput(){
 		return _hasLeftPMInput;
 	}
-	
+
+	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
 	}

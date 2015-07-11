@@ -21,7 +21,6 @@ import org.apache.commons.math3.random.Well1024a;
 
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
 import com.ibm.bi.dml.runtime.util.PRNGenerator;
 import com.ibm.bi.dml.runtime.util.PoissonPRNGenerator;
@@ -179,6 +178,44 @@ public class LibMatrixDatagen
 		}
 		return ret;
 	}
+
+    /**
+     * 
+     * @param pdf
+     * @param r
+     * @param c
+     * @param rpb
+     * @param cpb
+     * @param sp
+     * @param min
+     * @param max
+     * @param distParams
+     * @return
+     * @throws DMLRuntimeException
+     */
+    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) 
+    	throws DMLRuntimeException
+    {
+    	RandomMatrixGenerator rgen = null;
+    	
+    	if ( pdf.equalsIgnoreCase(RAND_PDF_UNIFORM))
+    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max);
+    	else if ( pdf.equalsIgnoreCase(RAND_PDF_NORMAL))
+    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp);
+    	else if ( pdf.equalsIgnoreCase(RAND_PDF_POISSON))
+    	{
+    		double mean = Double.NaN;
+    		try {
+    			mean = Double.parseDouble(distParams);
+    		} catch(NumberFormatException e) {
+    			throw new DMLRuntimeException("Failed to parse Poisson distribution parameter: " + distParams);
+    		}
+    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max, mean);
+    	}
+    	else
+    		throw new DMLRuntimeException("Unsupported probability distribution \"" + pdf + "\" in rand() -- it must be one of \"uniform\", \"normal\", or \"poisson\"");
+    	return rgen;
+    }
 	
 	/**
 	 * Function to generate a matrix of random numbers. This is invoked both
@@ -208,7 +245,8 @@ public class LibMatrixDatagen
 	 */
 	public static void generateRandomMatrix( MatrixBlock out,
 			                RandomMatrixGenerator rgen, long[] nnzInBlocks, 
-							Well1024a bigrand, long bSeed ) throws DMLRuntimeException
+							Well1024a bigrand, long bSeed ) 
+		throws DMLRuntimeException
 	{
 		boolean invokedFromCP = true;
 		if(bigrand == null && nnzInBlocks!=null)
@@ -267,21 +305,14 @@ public class LibMatrixDatagen
 		}
 
 		int nrb = (int) Math.ceil((double)rows/rpb);
-
-		//Timing time = new Timing(true);
-
+		int ncb = (int) Math.ceil((double)cols/cpb);
+	
 		long[] seeds = null;
-		if ( invokedFromCP ) {
-			int numBlocks = nrb * (int)Math.ceil((double)cols/cpb);
-			seeds = new long[numBlocks];
-			for (int l = 0; l < numBlocks; l++ ) {
-				// case of CP: generate a block-level seed from matrix-level Well1024a seed
-				seeds[l] = bigrand.nextLong();
-			}
-		}
-		computeRand(invokedFromCP, 0, nrb, out, rgen, nnzInBlocks, bSeed, seeds);
+		if ( invokedFromCP ) 
+			seeds = generateSeedsForCP(bigrand, nrb, ncb);
 		
-		//System.out.println("Rand -Seq: " + time.stop());
+		genRandomNumbers(invokedFromCP, 0, nrb, out, rgen, nnzInBlocks, bSeed, seeds);
+		
 		out.recomputeNonZeros();
 	}
 	
@@ -313,8 +344,9 @@ public class LibMatrixDatagen
 	 */
 	public static void generateRandomMatrix( MatrixBlock out,
             RandomMatrixGenerator rgen, long[] nnzInBlocks, 
-			Well1024a bigrand, long bSeed, int k ) throws DMLRuntimeException	{
-		
+			Well1024a bigrand, long bSeed, int k ) 
+		throws DMLRuntimeException	
+	{	
 		int rows = rgen._rows;
 		int cols = rgen._cols;
 		int rpb = rgen._rowsPerBlock;
@@ -374,60 +406,170 @@ public class LibMatrixDatagen
 		else{
 			out.allocateDenseBlock();	
 		}
-
-		int numThreads = k;
+		
 		int nrb = (int) Math.ceil((double)rows/rpb);
-		int nrb_incr = 0;
+		int ncb = (int) Math.ceil((double)cols/cpb);
 		
-		if (nrb < numThreads) {
-			numThreads = nrb;
-		}
-
-		//Timing time = new Timing(true);
-		
-		int rl = 0, ru = 0;
-
-		ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-		ArrayList<computeRandTask> tasks = new ArrayList<computeRandTask>();
-		
-		for (int i = 0; i < numThreads; i++) {
-			nrb_incr = (int) Math.ceil((double)(nrb - rl)/(numThreads - i));
-			ru = rl + nrb_incr;
-			if (nrb < ru) ru = nrb;
-			long[] seeds = null;
-			if ( invokedFromCP ) {
-				int numBlocks = nrb_incr * (int)Math.ceil((double)cols/cpb);
-				seeds = new long[numBlocks];
-				for (int l = 0; l < numBlocks; l++ ) {
-					// case of CP: generate a block-level seed from matrix-level Well1024a seed
-					seeds[l] = bigrand.nextLong();
-				}
+		try 
+		{
+			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ArrayList<RandTask> tasks = new ArrayList<RandTask>();
+			int blklen = ((int)(Math.ceil((double)nrb/k)));
+			for( int i=0; i<k & i*blklen<nrb; i++ ) {
+				long[] seeds = generateSeedsForCP(bigrand, blklen, ncb);
+				tasks.add(new RandTask(invokedFromCP, i*blklen, Math.min((i+1)*blklen, nrb), 
+						               out, rgen, nnzInBlocks, bSeed, seeds) );	
 			}
-
-			computeRandTask t = new computeRandTask(invokedFromCP, rl, ru, out, rgen, nnzInBlocks, bSeed, seeds);
-			tasks.add(t);
-			rl = ru;
-		}
-		
-		try {
 			pool.invokeAll(tasks);
 			pool.shutdown();
-		} catch (Exception e) {
-			throw new DMLRuntimeException("Threadpool issue, while invoking parallel RandGen.", e);
+			
+			//early error notify in case not all tasks successful
+			for(RandTask rt : tasks) 
+				if( !rt.getReturnCode() ) 
+					throw new DMLRuntimeException("RandGen task failed: " + rt.getErrMsg());
+		} 
+		catch (Exception e) {
+			throw new DMLRuntimeException(e);
 		}	
 		
-		//early error notify in case not all tasks successful
-		for(computeRandTask rt : tasks) {
-			if( !rt.getReturnCode() ) {
-				throw new DMLRuntimeException("RandGen task failed: " + rt.getErrMsg());
-			}
-		}
-		//System.out.println("Rand -Par: " + time.stop() + " with " + tasks.size() + " threads");
 		out.recomputeNonZeros();
 	}
 	
-	public static void computeRand(boolean invokedFromCP, int rl, int ru, MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, long bSeed, long[] seeds) throws DMLRuntimeException {
+	/**
+	 * Method to generate a sequence according to the given parameters. The
+	 * generated sequence is always in dense format.
+	 * 
+	 * Both end points specified <code>from</code> and <code>to</code> must be
+	 * included in the generated sequence i.e., [from,to] both inclusive. Note
+	 * that, <code>to</code> is included only if (to-from) is perfectly
+	 * divisible by <code>incr</code>.
+	 * 
+	 * For example, seq(0,1,0.5) generates (0.0 0.5 1.0) 
+	 *      whereas seq(0,1,0.6) generates (0.0 0.6) but not (0.0 0.6 1.0)
+	 * 
+	 * @param from
+	 * @param to
+	 * @param incr
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
+		throws DMLRuntimeException 
+	{
+		boolean neg = (from > to);
+		if (neg != (incr < 0))
+			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq(): from="+from+", to="+to+ ", incr="+incr);
+		
+		int rows = 1 + (int)Math.floor((to-from)/incr);
+		int cols = 1;
+		out.sparse = false; // sequence matrix is always dense
+		out.reset(rows, cols, out.sparse);
+		
+		out.allocateDenseBlock();
+		
+		//System.out.println(System.nanoTime() + ": MatrixBlockDSM.seq(): seq("+from+","+to+","+incr+") rows = " + rows);
+		double[] c = out.denseBlock; 
+		
+		c[0] = from;
+		for(int i=1; i < rows; i++) {
+			from += incr;
+			c[i] = from;
+		}
+		
+		out.recomputeNonZeros();
+		//System.out.println(System.nanoTime() + ": end of seq()");
+	}
 
+	
+		
+	/**
+     * Generates a sample of size <code>size</code> from a range of values [1,range].
+     * <code>replace</code> defines if sampling is done with or without replacement.
+     * 
+     * @param ec
+     * @return
+     * @throws DMLRuntimeException
+     */
+	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed)
+		throws DMLRuntimeException 
+	{
+		//set meta data and allocate dense block
+		out.reset(size, 1, false);
+		out.allocateDenseBlock();
+		seed = (seed == -1 ? System.nanoTime() : seed);
+		
+		if ( !replace ) 
+		{
+			// reservoir sampling
+			
+			for(int i=1; i <= size; i++) 
+				out.setValueDenseUnsafe(i-1, 0, i );
+			
+			Random rand = new Random(seed);
+			for(int i=size+1; i <= range; i++) 
+			{
+				if(rand.nextInt(i) < size)
+					out.setValueDenseUnsafe( rand.nextInt(size), 0, i );
+			}
+			
+			// randomize the sample (Algorithm P from Knuth's ACP)
+			// -- needed especially when the differnce between range and size is small)
+			double tmp;
+			int idx;
+			for(int i=size-1; i >= 1; i--) 
+			{
+				idx = rand.nextInt(i);
+				// swap i^th and idx^th entries
+				tmp = out.getValueDenseUnsafe(idx, 0);
+				out.setValueDenseUnsafe(idx, 0, out.getValueDenseUnsafe(i, 0));
+				out.setValueDenseUnsafe(i, 0, tmp);
+			}
+		}
+		else 
+		{
+			Random r = new Random(seed);
+			for(int i=0; i < size; i++) 
+				out.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
+		}
+		
+		out.recomputeNonZeros();
+		out.examSparsity();
+	}
+
+	/**
+	 * 
+	 * @param bigrand
+	 * @param nrb
+	 * @param ncb
+	 * @return
+	 */
+	private static long[] generateSeedsForCP(Well1024a bigrand, int nrb, int ncb)
+	{
+		int numBlocks = nrb * ncb;
+		long[] seeds = new long[numBlocks];
+		for (int l = 0; l < numBlocks; l++ ) {
+			// case of CP: generate a block-level seed from matrix-level Well1024a seed
+			seeds[l] = bigrand.nextLong();
+		}
+		
+		return seeds;
+	}
+	
+	/**
+	 * 
+	 * @param invokedFromCP
+	 * @param rl
+	 * @param ru
+	 * @param out
+	 * @param rgen
+	 * @param nnzInBlocks
+	 * @param bSeed
+	 * @param seeds
+	 * @throws DMLRuntimeException
+	 */
+	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, long bSeed, long[] seeds) 
+		throws DMLRuntimeException 
+	{
 		int rows = rgen._rows;
 		int cols = rgen._cols;
 		int rpb = rgen._rowsPerBlock;
@@ -570,58 +712,28 @@ public class LibMatrixDatagen
 		} // rbi	
 	}
 	
-	/**
-	 * Method to generate a sequence according to the given parameters. The
-	 * generated sequence is always in dense format.
-	 * 
-	 * Both end points specified <code>from</code> and <code>to</code> must be
-	 * included in the generated sequence i.e., [from,to] both inclusive. Note
-	 * that, <code>to</code> is included only if (to-from) is perfectly
-	 * divisible by <code>incr</code>.
-	 * 
-	 * For example, seq(0,1,0.5) generates (0.0 0.5 1.0) 
-	 *      whereas seq(0,1,0.6) generates (0.0 0.6) but not (0.0 0.6 1.0)
-	 * 
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
-		throws DMLRuntimeException 
-	{
-		boolean neg = (from > to);
-		if (neg != (incr < 0))
-			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq(): from="+from+", to="+to+ ", incr="+incr);
-		
-		int rows = 1 + (int)Math.floor((to-from)/incr);
-		int cols = 1;
-		out.sparse = false; // sequence matrix is always dense
-		out.reset(rows, cols, out.sparse);
-		
-		out.allocateDenseBlock();
-		
-		//System.out.println(System.nanoTime() + ": MatrixBlockDSM.seq(): seq("+from+","+to+","+incr+") rows = " + rows);
-		double[] c = out.denseBlock; 
-		
-		c[0] = from;
-		for(int i=1; i < rows; i++) {
-			from += incr;
-			c[i] = from;
-		}
-		
-		out.recomputeNonZeros();
-		//System.out.println(System.nanoTime() + ": end of seq()");
-	}
+	// modified version of java.util.nextInt
+    private static long nextLong(Random r, long n) {
+        if (n <= 0)
+            throw new IllegalArgumentException("n must be positive");
 
-	
-	
+        //if ((n & -n) == n)  // i.e., n is a power of 2
+        //    return ((n * (long)r.nextLong()) >> 31);
+
+        long bits, val;
+        do {
+            bits = (r.nextLong() << 1) >>> 1;
+            val = bits % n;
+        } while (bits - val + (n-1) < 0L);
+        return val;
+    }
+    
+
 	/**
 	 * 
 	 * 
 	 */
-	public static class computeRandTask implements Callable<Object> 
+	private static class RandTask implements Callable<Object> 
 	{
 		private boolean _rc = true;
 		private String _errMsg = null;
@@ -634,8 +746,7 @@ public class LibMatrixDatagen
 		private long _bSeed = 0;
 		private long[] _seeds = null;
 		
-	
-		public computeRandTask(boolean invokedFromCP, int rl, int ru, MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, long bSeed, long[] seeds) throws DMLRuntimeException 
+		public RandTask(boolean invokedFromCP, int rl, int ru, MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, long bSeed, long[] seeds) throws DMLRuntimeException 
 		{
 			_invokedFromCP = invokedFromCP;
 			_rl = rl;
@@ -658,102 +769,10 @@ public class LibMatrixDatagen
 		@Override		
 		public Object call() throws Exception
 		{
-			computeRand(_invokedFromCP, _rl, _ru, _out, _rgen, _nnzInBlocks, _bSeed, _seeds);
+			genRandomNumbers(_invokedFromCP, _rl, _ru, _out, _rgen, _nnzInBlocks, _bSeed, _seeds);
 			return null;
 		}
 
 	}
-	
-	/**
-     * Generates a sample of size <code>size</code> from a range of values [1,range].
-     * <code>replace</code> defines if sampling is done with or without replacement.
-     * 
-     * @param ec
-     * @return
-     * @throws DMLRuntimeException
-     */
-	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed)
-		throws DMLRuntimeException 
-	{
-		//set meta data and allocate dense block
-		out.reset(size, 1, false);
-		out.allocateDenseBlock();
-		seed = (seed == -1 ? System.nanoTime() : seed);
-		
-		if ( !replace ) 
-		{
-			// reservoir sampling
-			
-			for(int i=1; i <= size; i++) 
-				out.setValueDenseUnsafe(i-1, 0, i );
-			
-			Random rand = new Random(seed);
-			for(int i=size+1; i <= range; i++) 
-			{
-				if(rand.nextInt(i) < size)
-					out.setValueDenseUnsafe( rand.nextInt(size), 0, i );
-			}
-			
-			// randomize the sample (Algorithm P from Knuth's ACP)
-			// -- needed especially when the differnce between range and size is small)
-			double tmp;
-			int idx;
-			for(int i=size-1; i >= 1; i--) 
-			{
-				idx = rand.nextInt(i);
-				// swap i^th and idx^th entries
-				tmp = out.getValueDenseUnsafe(idx, 0);
-				out.setValueDenseUnsafe(idx, 0, out.getValueDenseUnsafe(i, 0));
-				out.setValueDenseUnsafe(i, 0, tmp);
-			}
-		}
-		else 
-		{
-			Random r = new Random(seed);
-			for(int i=0; i < size; i++) 
-				out.setValueDenseUnsafe(i, 0, 1+nextLong(r, range) );
-		}
-		
-		out.recomputeNonZeros();
-		out.examSparsity();
-	}
 
-	// modified version of java.util.nextInt
-    private static long nextLong(Random r, long n) {
-        if (n <= 0)
-            throw new IllegalArgumentException("n must be positive");
-
-        //if ((n & -n) == n)  // i.e., n is a power of 2
-        //    return ((n * (long)r.nextLong()) >> 31);
-
-        long bits, val;
-        do {
-            bits = (r.nextLong() << 1) >>> 1;
-            val = bits % n;
-        } while (bits - val + (n-1) < 0L);
-        return val;
-    }
-    
-    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) throws DMLRuntimeException
-    {
-    	RandomMatrixGenerator rgen = null;
-    	
-    	if ( pdf.equalsIgnoreCase(RAND_PDF_UNIFORM))
-    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max);
-    	else if ( pdf.equalsIgnoreCase(RAND_PDF_NORMAL))
-    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp);
-    	else if ( pdf.equalsIgnoreCase(RAND_PDF_POISSON))
-    	{
-    		double mean = Double.NaN;
-    		try {
-    			mean = Double.parseDouble(distParams);
-    		} catch(NumberFormatException e) {
-    			throw new DMLRuntimeException("Failed to parse Poisson distribution parameter: " + distParams);
-    		}
-    		rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max, mean);
-    	}
-    	else
-    		throw new DMLRuntimeException("Unsupported probability distribution \"" + pdf + "\" in rand() -- it must be one of \"uniform\", \"normal\", or \"poisson\"");
-    	return rgen;
-    }
 }

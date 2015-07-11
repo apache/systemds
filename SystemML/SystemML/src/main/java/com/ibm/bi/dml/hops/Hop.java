@@ -51,6 +51,13 @@ public abstract class Hop
 		VISITING, 
 		NOTVISITED,
 	}
+	
+	/**
+	 * Optional hop interface, to be implemented by multi-threaded hops.
+	 */
+	public interface MultiThreadedHop {
+		public abstract void setMaxNumThreads( int k );
+	}
 
 	// static variable to assign an unique ID to every hop that is created
 	private static IDSequence _seqHopID = new IDSequence();

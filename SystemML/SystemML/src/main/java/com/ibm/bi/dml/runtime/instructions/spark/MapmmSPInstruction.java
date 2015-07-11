@@ -8,13 +8,15 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 
+import java.util.ArrayList;
+
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.DMLException; 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
@@ -28,9 +30,10 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RemoveEmptyBlockFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -40,10 +43,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 /**
- * TODO: pre-filter and post-filter of empty blocks (if applicable) via rdd.filter()
- * TODO: generalized mapmult for multiple output blocks per input block
- * TODO: destroy (cleanup) of broadcast variables; we cannot clean them up right away, because no computation
- *       has been triggered yet 
  * TODO: we need to reason about multiple broadcast variables for chains of mapmults (sum of operations until cleanup) 
  * 
  */
@@ -54,7 +53,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private CacheType _type = null;
-	//private boolean _outputEmpty = true;
+	private boolean _outputEmpty = true;
 	private SparkAggType _aggtype;
 	
 	public MapmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, CacheType type, 
@@ -64,7 +63,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.MAPMM;
 		
 		_type = type;
-		//_outputEmpty = outputEmpty;
+		_outputEmpty = outputEmpty;
 		_aggtype = aggtype;
 	}
 
@@ -109,14 +108,27 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
 		String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		MatrixCharacteristics mcBc = sec.getMatrixCharacteristics(bcastVar);
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 		Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
 		
+		//empty input block filter
+		if( !_outputEmpty )
+			in1 = in1.filter(new RemoveEmptyBlockFunction());
+			
 		//execute mapmult instruction
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair( new RDDMapMMFunction(_type, in2, mc.getRowsPerBlock(), mc.getColsPerBlock()) );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		if( requiresFlatMapFunction(_type, mcBc) ) 
+			out = in1.flatMapToPair( new RDDFlatMapMMFunction(_type, in2, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()) );
+		else
+			out = in1.mapToPair( new RDDMapMMFunction(_type, in2, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()) );
+		
+		//empty output block filter
+		if( !_outputEmpty )
+			in1 = in1.filter(new RemoveEmptyBlockFunction());
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
@@ -143,6 +155,19 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		}
 	}
 	
+	
+	/**
+	 * 
+	 * @param type
+	 * @param mcBc
+	 * @return
+	 */
+	private static boolean requiresFlatMapFunction( CacheType type, MatrixCharacteristics mcBc)
+	{
+		return    (type == CacheType.LEFT && mcBc.getRows() > mcBc.getRowsPerBlock())
+			   || (type == CacheType.RIGHT && mcBc.getCols() > mcBc.getColsPerBlock());
+	}
+	
 	/**
 	 * 
 	 * 
@@ -152,39 +177,15 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private CacheType _type = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
-		
 		private AggregateBinaryOperator _op = null;
-		private MatrixBlock[] _partBlocks = null;
+		private PartitionedBroadcast _pbc = null;
 		
 		public RDDMapMMFunction( CacheType type, Broadcast<MatrixBlock> binput, int brlen, int bclen )
 		{
 			_type = type;
-			_brlen = brlen;
-			_bclen = bclen;
-			
-			//get the broadcast vector
-			MatrixBlock mb = binput.value();
 			
 			//partition vector for fast in memory lookup
-			try
-			{
-				if( _type == CacheType.LEFT )
-				{
-					//in-memory colblock partitioning (according to brlen of rdd)
-					_partBlocks = SparkUtils.partitionIntoColumnBlocks(mb, _brlen);
-				}
-				else //if( _type == CacheType.RIGHT )
-				{
-					//in-memory rowblock partitioning (according to bclen of rdd)
-					_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _bclen);
-				}
-			}
-			catch(DMLException ex)
-			{
-				LOG.error("Failed partitioning of broadcast variable input.", ex);
-			}
+			_pbc = new PartitionedBroadcast(binput, brlen, bclen);
 			
 			//created operator for reuse
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -204,7 +205,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _type == CacheType.LEFT )
 			{
 				//get the right hand side matrix
-				MatrixBlock left = _partBlocks[(int)ixIn.getRowIndex()-1];
+				MatrixBlock left = _pbc.getMatrixBlock(1, (int)ixIn.getRowIndex());
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 
@@ -213,7 +214,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			else //if( _type == CacheType.RIGHT )
 			{
 				//get the right hand side matrix
-				MatrixBlock right = _partBlocks[(int)ixIn.getColumnIndex()-1];
+				MatrixBlock right = _pbc.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary(
@@ -226,4 +227,74 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		}
 	}
 	
+	/**
+	 * 
+	 * 
+	 */
+	private static class RDDFlatMapMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -6076256569118957281L;
+		
+		private CacheType _type = null;
+		private AggregateBinaryOperator _op = null;
+		private PartitionedBroadcast _pbc = null;
+		
+		public RDDFlatMapMMFunction( CacheType type, Broadcast<MatrixBlock> binput, int brlen, int bclen )
+		{
+			_type = type;
+			
+			//partition vector for fast in memory lookup
+			_pbc = new PartitionedBroadcast(binput, brlen, bclen);
+			
+			//created operator for reuse
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+		}
+		
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			
+			MatrixIndexes ixIn = arg0._1();
+			MatrixBlock blkIn = arg0._2();
+
+			if( _type == CacheType.LEFT )
+			{
+				//for all matching left-hand-side blocks
+				for( int i=0; i<_pbc.getNumRowBlocks(); i++ ) 
+				{
+					MatrixBlock left = _pbc.getMatrixBlock(i, (int)ixIn.getRowIndex());
+					MatrixIndexes ixOut = new MatrixIndexes();
+					MatrixBlock blkOut = new MatrixBlock();
+					
+					//execute matrix-vector mult
+					OperationsOnMatrixValues.performAggregateBinary( 
+							new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);	
+					
+					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+				}
+			}
+			else //if( _type == CacheType.RIGHT )
+			{
+				//for all matching right-hand-side blocks
+				for( int j=0; j<_pbc.getNumColumnBlocks(); j++ ) 
+				{
+					//get the right hand side matrix
+					MatrixBlock right = _pbc.getMatrixBlock((int)ixIn.getColumnIndex(), j);
+					MatrixIndexes ixOut = new MatrixIndexes();
+					MatrixBlock blkOut = new MatrixBlock();
+					
+					//execute matrix-vector mult
+					OperationsOnMatrixValues.performAggregateBinary(
+							ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),j), right, ixOut, blkOut, _op);					
+				
+					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut));
+				}
+			}
+			
+			return ret;
+		}
+	}
 }

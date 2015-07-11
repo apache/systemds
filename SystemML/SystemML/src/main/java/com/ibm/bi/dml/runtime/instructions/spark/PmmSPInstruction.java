@@ -29,8 +29,8 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -130,10 +130,9 @@ public class PmmSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = -1696560050436469140L;
 		
+		private PartitionedBroadcast _pbc = null;
 		private long _rlen = -1;
 		private int _brlen = -1;
-		
-		private MatrixBlock[] _partBlocks = null;
 		
 		public RDDPMMFunction( CacheType type, Broadcast<MatrixBlock> binput, long rlen, int brlen ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
@@ -141,12 +140,9 @@ public class PmmSPInstruction extends BinarySPInstruction
 			_brlen = brlen;
 			_rlen = rlen;
 			
-			//get the broadcast vector
-			MatrixBlock mb = binput.value();
-			
 			//partition vector for fast in memory lookup (right now always CacheType.LEFT) 
 			//in-memory colblock partitioning (according to brlen of rdd)
-			_partBlocks = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
+			_pbc = new PartitionedBroadcast(binput, brlen, brlen);
 		}
 		
 		@Override
@@ -158,7 +154,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 			MatrixBlock mb2 = arg0._2();
 			
 			//get the right hand side matrix
-			MatrixBlock mb1 = _partBlocks[(int)ixIn.getRowIndex()-1];
+			MatrixBlock mb1 = _pbc.getMatrixBlock((int)ixIn.getRowIndex()-1, 1);
 			
 			//compute target block indexes
 			long minPos = UtilFunctions.toLong( mb1.minNonZero() );

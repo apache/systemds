@@ -24,8 +24,8 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -156,7 +156,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		private int _brlen = -1;
 		
 		private MatrixBlock _mV = null;
-		private MatrixBlock[] _mW = null;
+		private PartitionedBroadcast _pmW = null;
 		
 		public RDDMapMMChainFunction( ChainType type, Broadcast<MatrixBlock> bV, Broadcast<MatrixBlock> bW, int brlen, int bclen ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
@@ -170,10 +170,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 			//get second broadcast vector (partitioning for fast in memory lookup)
 			if( _type == ChainType.XtwXv )
 			{
-				MatrixBlock mb = bW.value();
-				
 				//in-memory rowblock partitioning (according to bclen of rdd)
-				_mW = SparkUtils.partitionIntoRowBlocks(mb, _brlen);
+				_pmW = new PartitionedBroadcast(bW, _brlen, _brlen);
 			}
 		}
 		
@@ -183,8 +181,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 		{
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
-			int rowIx = (int) ixIn.getRowIndex()-1;
-
+			int rowIx = (int)ixIn.getRowIndex();
+			
 			MatrixIndexes ixOut = new MatrixIndexes(1,1);
 			MatrixBlock blkOut = new MatrixBlock();
 			
@@ -192,7 +190,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			if( _type == ChainType.XtXv )
 				blkIn.chainMatrixMultOperations(_mV, null, blkOut, _type);
 			else if ( _type == ChainType.XtwXv )
-				blkIn.chainMatrixMultOperations(_mV, _mW[rowIx], blkOut, _type);
+				blkIn.chainMatrixMultOperations(_mV, _pmW.getMatrixBlock(rowIx,1), blkOut, _type);
 				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);

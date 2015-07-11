@@ -1411,7 +1411,7 @@ public class AggBinaryOp extends Hop
 	 * This function is called by <code>optFindMMultMethod()</code> to decide the execution strategy, as well as by 
 	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
 	 */
-	public static double footprintInMapper (long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex, boolean pmm) 
+	public static double getMapmmMemEstimate(long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex, boolean pmm) 
 	{
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
@@ -1495,8 +1495,8 @@ public class AggBinaryOp extends Hop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		double footprintPM2 = footprintInMapper(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
 		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
 			&& leftPMInput ) 
 		{
@@ -1507,9 +1507,9 @@ public class AggBinaryOp extends Hop
 		// If the size of one input is small, choose a method that uses distributed cache
 		// (with awareness of output size because one input block might generate many output blocks)		
 		// memory footprint if left input is put into cache
-		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
 		// memory footprint if right input is put into cache
-		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
@@ -1517,7 +1517,7 @@ public class AggBinaryOp extends Hop
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0) //FIXME
+			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0)
 				return MMultMethod.MAPMM_L;
 			else
 				return MMultMethod.MAPMM_R;
@@ -1660,8 +1660,8 @@ public class AggBinaryOp extends Hop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = footprintInMapper(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		double footprintPM2 = footprintInMapper(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
 		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
 			&& leftPMInput ) 
 		{
@@ -1671,17 +1671,17 @@ public class AggBinaryOp extends Hop
 		// Step 4: check MapMM
 		// If the size of one input is small, choose a method that uses broadcast variables
 		// (currently we only apply this if a single output block)
-		double footprint1 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
-		double footprint2 = footprintInMapper(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
 		
-		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0 && m1_rows<=m1_rpb)
-			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0 && m2_cols<=m2_cpb) ) 
+		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
+			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0) //FIXME
+			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0)
 				return MMultMethod.MAPMM_L;
 			else
 				return MMultMethod.MAPMM_R;

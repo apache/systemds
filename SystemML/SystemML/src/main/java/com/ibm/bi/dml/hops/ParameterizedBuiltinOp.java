@@ -397,7 +397,7 @@ public class ParameterizedBuiltinOp extends Hop
 			HopRewriteUtils.copyLineNumbers(this, cumsum);	
 		
 			Lop loutput = null;
-			double mest = AggBinaryOp.footprintInMapper(input.getDim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
+			double mest = AggBinaryOp.getMapmmMemEstimate(input.getDim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
 			double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
 			if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
 			{

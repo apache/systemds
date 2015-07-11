@@ -851,14 +851,14 @@ public class Dag<N extends Lop>
 		double footprint = 0;
 		if ( node instanceof MapMult ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
-			footprint = AggBinaryOp.footprintInMapper(
+			footprint = AggBinaryOp.getMapmmMemEstimate(
 					in1dims.getNumRows(), in1dims.getNumCols(), in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
 					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
 					dcInputIndex, false);
 		}
 		else if ( node instanceof PMMJ ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
-			footprint = AggBinaryOp.footprintInMapper(
+			footprint = AggBinaryOp.getMapmmMemEstimate(
 					in1dims.getNumRows(), 1, in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
 					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
 					dcInputIndex, true);

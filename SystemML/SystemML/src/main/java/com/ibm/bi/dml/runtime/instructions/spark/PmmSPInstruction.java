@@ -154,7 +154,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 			MatrixBlock mb2 = arg0._2();
 			
 			//get the right hand side matrix
-			MatrixBlock mb1 = _pbc.getMatrixBlock((int)ixIn.getRowIndex()-1, 1);
+			MatrixBlock mb1 = _pbc.getMatrixBlock((int)ixIn.getRowIndex(), 1);
 			
 			//compute target block indexes
 			long minPos = UtilFunctions.toLong( mb1.minNonZero() );

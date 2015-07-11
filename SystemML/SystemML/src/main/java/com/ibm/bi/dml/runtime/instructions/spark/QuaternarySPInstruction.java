@@ -335,7 +335,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			MatrixBlock mbU = (_pbcU!=null)?_pbcU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
-			MatrixBlock mbV = (_pbcV!=null)?_pbcU.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
+			MatrixBlock mbV = (_pbcV!=null)?_pbcV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
 			MatrixBlock mbW = (_qop.wtype1!=null&&_qop.wtype1!=WeightsType.NONE)? blkIn2 : null;
 			
 			//execute core operation

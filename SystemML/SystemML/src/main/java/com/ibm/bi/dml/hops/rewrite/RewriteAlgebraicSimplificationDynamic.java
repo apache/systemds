@@ -1609,7 +1609,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 		
 			//apply rewrite if known nnz 
-			if( X.getNnz() > 0 ){
+			if( X != null && X.getNnz() > 0 ){
 				Hop hnew = new LiteralOp(String.valueOf(X.getNnz()), X.getNnz());
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, hnew, pos);

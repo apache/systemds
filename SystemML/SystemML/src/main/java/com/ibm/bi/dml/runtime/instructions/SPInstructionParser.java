@@ -33,6 +33,8 @@ import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CumulativeOffsetSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
@@ -178,6 +180,16 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( WeightedSigmoid.OPCODE,      SPINSTRUCTION_TYPE.Quaternary);
 		String2SPInstructionType.put( WeightedSigmoidR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
 
+		//cumsum/cumprod/cummin/cummax
+		String2SPInstructionType.put( "ucumack+"  , SPINSTRUCTION_TYPE.CumsumAggregate);
+		String2SPInstructionType.put( "ucumac*"   , SPINSTRUCTION_TYPE.CumsumAggregate);
+		String2SPInstructionType.put( "ucumacmin" , SPINSTRUCTION_TYPE.CumsumAggregate);
+		String2SPInstructionType.put( "ucumacmax" , SPINSTRUCTION_TYPE.CumsumAggregate);
+		String2SPInstructionType.put( "bcumoffk+" , SPINSTRUCTION_TYPE.CumsumOffset);
+		String2SPInstructionType.put( "bcumoff*"  , SPINSTRUCTION_TYPE.CumsumOffset);
+		String2SPInstructionType.put( "bcumoffmin", SPINSTRUCTION_TYPE.CumsumOffset);
+		String2SPInstructionType.put( "bcumoffmax", SPINSTRUCTION_TYPE.CumsumOffset);
+		
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -305,13 +317,19 @@ public class SPInstructionParser extends InstructionParser {
 				return (SPInstruction) SortSPInstruction.parseInstruction(str);
 				
 			case Variable:
-				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].compareTo("write") == 0 ) {
+				String lopcode = InstructionUtils.getOpCode(str);
+				if ( "write".equals(lopcode) ) {
 					// TODO: Some bug while writing in case of CTable test suite
 					return (SPInstruction) WriteSPInstruction.parseInstruction(str);
 				}
 				else
 					return (CPInstruction) VariableCPInstruction.parseInstruction(str);
+				
+			case CumsumAggregate:
+				return CumulativeAggregateSPInstruction.parseInstruction(str);
+				
+			case CumsumOffset:
+				return CumulativeOffsetSPInstruction.parseInstruction(str); 
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);

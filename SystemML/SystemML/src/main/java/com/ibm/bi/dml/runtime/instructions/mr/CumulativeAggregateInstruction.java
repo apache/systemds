@@ -9,13 +9,8 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -25,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -59,23 +53,7 @@ public class CumulativeAggregateInstruction extends AggregateUnaryInstruction
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
 		
-		AggregateUnaryOperator aggun = null;
-		if( "ucumack+".equals(opcode) ) { 
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
-			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-		}
-		else if ( "ucumac*".equals(opcode) ) { 
-			AggregateOperator agg = new AggregateOperator(0, Multiply.getMultiplyFnObject(), false, CorrectionLocationType.NONE);
-			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-		}
-		else if ( "ucumacmin".equals(opcode) ) { 
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), false, CorrectionLocationType.NONE);
-			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-		}
-		else if ( "ucumacmax".equals(opcode) ) { 
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), false, CorrectionLocationType.NONE);
-			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-		}
+		AggregateUnaryOperator aggun = InstructionUtils.parseCumulativeAggregateUnaryOperator(opcode);
 		
 		return new CumulativeAggregateInstruction(aggun, in, out, str);
 	}

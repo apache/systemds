@@ -30,7 +30,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 /**
  * 
  */
-public class TsmmSPInstruction extends UnarySPInstruction {
+public class TsmmSPInstruction extends UnarySPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -51,7 +52,8 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 	 * @throws DMLRuntimeException
 	 */
 	public static TsmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 

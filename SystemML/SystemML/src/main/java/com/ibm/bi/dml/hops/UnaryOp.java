@@ -128,10 +128,15 @@ public class UnaryOp extends Hop
 			{
 				ExecType et = optFindExecType();
 				
-				if( isCumulativeUnaryOperation() && et==ExecType.MR )  //special handling MR-cumsum/cumprod/cummin/cumsum
+				//special handling cumsum/cumprod/cummin/cumsum
+				if( isCumulativeUnaryOperation() && et != ExecType.CP )  
 				{
 					//TODO additional physical operation if offsets fit in memory
-					Lop cumsumLop = constructLopsMRCumulativeUnary();
+					Lop cumsumLop = null;
+					if( et == ExecType.MR )
+						cumsumLop = constructLopsMRCumulativeUnary();
+					else
+						cumsumLop = constructLopsSparkCumulativeUnary();
 					setLops(cumsumLop);
 				}
 				else //default unary 
@@ -372,7 +377,7 @@ public class UnaryOp extends Hop
 	
 			//preaggregation per block
 			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
-			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype);
+			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.MR);
 			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			setLineNumbers(preagg);
 			
@@ -412,7 +417,72 @@ public class UnaryOp extends Hop
 			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(group2);
 			
-			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(group1, group2, DataType.MATRIX, ValueType.DOUBLE, aggtype);
+			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(group1, group2, 
+					DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.MR);
+			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(binary);
+			TEMP = binary;
+		}
+		
+		return TEMP;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructLopsSparkCumulativeUnary() 
+		throws HopsException, LopsException 
+	{
+		Hop input = getInput().get(0);
+		long rlen = input.getDim1();
+		long clen = input.getDim2();
+		long brlen = input.getRowsInBlock();
+		long bclen = input.getColsInBlock();
+		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
+		OperationTypes aggtype = getCumulativeAggType();
+		
+		Lop X = input.constructLops();
+		Lop TEMP = X;
+		ArrayList<Lop> DATA = new ArrayList<Lop>();
+		int level = 0;
+		
+		//recursive preaggregation until aggregates fit into CP memory budget
+		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
+				 > OptimizerUtils.getLocalMemBudget()
+			   && TEMP.getOutputParameters().getNumRows()>1) || force )
+		{
+			DATA.add(TEMP);
+	
+			//preaggregation per block (for spark, the CumulativePartialAggregate subsumes both
+			//the preaggregation and subsequent block aggregation)
+			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
+			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.SPARK);
+			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			setLineNumbers(preagg);
+			
+			TEMP = preagg;	
+			level++;
+			force = false; //in case of unknowns, generate one level
+		}
+		
+		//in-memory cum sum (of partial aggregates)
+		if( TEMP.getOutputParameters().getNumRows()!=1 ){
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
+			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
+			setLineNumbers(unary1);
+			TEMP = unary1;
+		}
+		
+		//split, group and mr cumsum
+		while( level-- > 0  ) {
+			//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
+			//the subsequent offset binary apply of split aggregates against the original data)
+			double initValue = getCumulativeInitValue();
+			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP, 
+					DataType.MATRIX, ValueType.DOUBLE, initValue, aggtype, ExecType.SPARK);
 			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(binary);
 			TEMP = binary;

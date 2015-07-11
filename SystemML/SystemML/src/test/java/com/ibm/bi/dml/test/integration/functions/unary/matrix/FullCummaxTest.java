@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -53,67 +54,6 @@ public class FullCummaxTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
-	// -----------------------------------------------------------------
-	
-	@Test
-	public void testCummaxColVectorDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCummaxRowVectorDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCummaxRowVectorDenseNoRewritesSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
-	}
-	
-	@Test
-	public void testCummaxMatrixDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCummaxColVectorSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCummaxRowVectorSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCummaxRowVectorSparseNoRewritesSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
-	}
-	
-	@Test
-	public void testCummaxMatrixSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
-	}
-	
-	
-	// -----------------------------------------------------------------
-	
 	@Test
 	public void testCummaxColVectorDenseCP() 
 	{
@@ -203,6 +143,55 @@ public class FullCummaxTest extends AutomatedTestBase
 	{
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.MR);
 	}
+
+	@Test
+	public void testCummaxColVectorDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCummaxRowVectorDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCummaxRowVectorDenseNoRewritesSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCummaxMatrixDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCummaxColVectorSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCummaxRowVectorSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCummaxRowVectorSparseNoRewritesSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCummaxMatrixSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
+	}
+
 	
 	/**
 	 * 
@@ -224,14 +213,16 @@ public class FullCummaxTest extends AutomatedTestBase
 	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType, boolean rewrites)
 	{
-		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -261,7 +252,7 @@ public class FullCummaxTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 	
 			runTest(true, false, null, -1); 
-			if( instType==ExecType.CP ) //in CP no MR jobs should be executed
+			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
 			
 			runRScript(true); 
@@ -274,6 +265,7 @@ public class FullCummaxTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
 	}	

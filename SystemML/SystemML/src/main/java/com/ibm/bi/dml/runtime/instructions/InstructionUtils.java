@@ -351,4 +351,32 @@ public class InstructionUtils
 		return aggun;
 	}
 	
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(String opcode)
+	{
+		AggregateUnaryOperator aggun = null;
+		if( "ucumack+".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumac*".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Multiply.getMultiplyFnObject(), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumacmin".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		else if ( "ucumacmax".equals(opcode) ) { 
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), false, CorrectionLocationType.NONE);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
+		
+		return aggun;
+	}
+	
 }

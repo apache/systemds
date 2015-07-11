@@ -21,6 +21,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 
 
+
 import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -38,7 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBinaryBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocks;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -209,7 +210,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				// Later, this will be replaced by PMMJ
 				List<Double> materializedSortedIndexes = sortedIndexes.collect();
 				out = in1.flatMapToPair(new ExtractSortedRows(materializedSortedIndexes, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()))
-						.reduceByKey(new MergeBlocks());
+						.reduceByKey(new MergeBlocksFunction());
 			}
 			
 			//store output rdd handle

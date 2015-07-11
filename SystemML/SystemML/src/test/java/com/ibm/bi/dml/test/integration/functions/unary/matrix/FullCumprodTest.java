@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -53,67 +54,7 @@ public class FullCumprodTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
-	// -----------------------------------------------------------------
-	
-	@Test
-	public void testCumprodColVectorDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCumprodRowVectorDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCumprodRowVectorDenseNoRewritesSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
-	}
-	
-	@Test
-	public void testCumprodMatrixDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCumprodColVectorSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCumprodRowVectorSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testCumprodRowVectorSparseNoRewritesSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
-	}
-	
-	@Test
-	public void testCumprodMatrixSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
-	}
-	
-	
-	// -----------------------------------------------------------------
-	
+		
 	@Test
 	public void testCumprodColVectorDenseCP() 
 	{
@@ -204,6 +145,55 @@ public class FullCumprodTest extends AutomatedTestBase
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.MR);
 	}
 	
+	@Test
+	public void testCumprodColVectorDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumprodRowVectorDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumprodRowVectorDenseNoRewritesSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCumprodMatrixDenseSP() 
+	{
+		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumprodColVectorSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumprodRowVectorSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCumprodRowVectorSparseNoRewritesSP() 
+	{
+		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testCumprodMatrixSparseSP() 
+	{
+		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
+	}
+	
+	
 	/**
 	 * 
 	 * @param type
@@ -224,15 +214,17 @@ public class FullCumprodTest extends AutomatedTestBase
 	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType, boolean rewrites)
 	{
-		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
-		
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+	
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
@@ -261,7 +253,7 @@ public class FullCumprodTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 	
 			runTest(true, false, null, -1); 
-			if( instType==ExecType.CP ) //in CP no MR jobs should be executed
+			if( instType==ExecType.CP || instType==ExecType.SPARK  ) //in CP no MR jobs should be executed
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
 			
 			runRScript(true); 
@@ -274,6 +266,7 @@ public class FullCumprodTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
 	}	

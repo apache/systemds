@@ -10,7 +10,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;

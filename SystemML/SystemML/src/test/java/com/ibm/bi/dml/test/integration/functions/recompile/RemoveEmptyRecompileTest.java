@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,7 +30,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class RemoveEmptyRecompileTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "remove_empty_recompile";
@@ -233,7 +233,6 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	{	
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
-		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -276,7 +275,9 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			//(for minus_left we replace X-Y with 0-Y and hence still execute -)
 			if( type != OpType.MINUS_LEFT ){
 				String opcode = getOpcode(type);
-				Assert.assertEquals(empty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				//sum subject to literal replacement (no-op for empty) which happens before the rewrites
+				boolean lempty = (type == OpType.SUM && empty) ? false : empty;
+				Assert.assertEquals(lempty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 			
 			//compare matrices
@@ -294,7 +295,9 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	private static String getOpcode( OpType type )
 	{
 		switch(type){
-			case SUM: 		  return "uak+";
+		    //for sum, literal replacement of unary aggregates applies
+			case SUM: 		  return "rlit";//return "uak+";
+			
 			case ROUND: 	  return "round";
 			case TRANSPOSE:   return "r'";
 			case MULT_LEFT:

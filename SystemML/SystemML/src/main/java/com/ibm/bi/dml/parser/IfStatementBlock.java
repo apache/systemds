@@ -15,8 +15,8 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 
 

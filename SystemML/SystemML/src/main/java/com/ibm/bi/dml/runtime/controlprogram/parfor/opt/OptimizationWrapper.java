@@ -26,7 +26,7 @@ import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.rewrite.RewriteConstantFolding;
 import com.ibm.bi.dml.hops.rewrite.RewriteRemoveUnnecessaryBranches;
 import com.ibm.bi.dml.hops.rewrite.StatementBlockRewriteRule;
-import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;

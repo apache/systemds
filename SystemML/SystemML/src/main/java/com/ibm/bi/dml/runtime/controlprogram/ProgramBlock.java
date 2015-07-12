@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;

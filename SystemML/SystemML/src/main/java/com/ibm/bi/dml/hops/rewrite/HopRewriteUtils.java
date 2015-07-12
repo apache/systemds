@@ -219,6 +219,7 @@ public class HopRewriteUtils
 		
 		return ret;
 	}
+	
 
 	///////////////////////////////////
 	// hop dag transformations

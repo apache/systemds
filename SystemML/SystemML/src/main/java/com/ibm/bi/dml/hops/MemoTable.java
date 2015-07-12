@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.lops.compile.RecompileStatus;
+import com.ibm.bi.dml.hops.recompile.RecompileStatus;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 

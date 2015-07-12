@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.lops.compile;
+package com.ibm.bi.dml.hops.recompile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,6 +48,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
@@ -1613,6 +1614,7 @@ public class Recompiler
 	}
 
 	/**
+	 * public interface to package local literal replacement
 	 * 
 	 * @param hop
 	 * @param vars
@@ -1621,177 +1623,8 @@ public class Recompiler
 	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
-		if( hop.getVisited() == VisitStatus.DONE )
-			return;
-
-		if( hop.getInput() != null )
-			for( int i=0; i<hop.getInput().size(); i++ )
-			{
-				Hop c = hop.getInput().get(i);
-				
-				//scalar read - literal replacement
-				if( c instanceof DataOp && ((DataOp)c).getDataOpType() != DataOpTypes.PERSISTENTREAD 
-					&& c.getDataType()==DataType.SCALAR )
-				{
-					Data dat = vars.get(c.getName());
-					if( dat != null ) //required for selective constant propagation
-					{
-						ScalarObject sdat = (ScalarObject)dat;
-						Hop literal = null;
-						switch( sdat.getValueType() ) {
-							case INT:
-								literal = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
-								break;
-							case DOUBLE:
-								literal = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());		
-								break;						
-							case BOOLEAN:
-								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
-								break;
-							default:	
-								//otherwise: do nothing
-						}
-						
-						//replace on demand 
-						if( literal != null )
-						{
-							HopRewriteUtils.removeChildReference(hop, c);
-							HopRewriteUtils.addChildReference(hop, literal, i);
-						}
-					}
-				}
-				//as.double/as.integer/as.boolean over scalar read - literal replacement
-				else if( c instanceof UnaryOp && (((UnaryOp)c).getOp() == OpOp1.CAST_AS_DOUBLE
-					|| ((UnaryOp)c).getOp() == OpOp1.CAST_AS_INT || ((UnaryOp)c).getOp() == OpOp1.CAST_AS_BOOLEAN )	
-						&& c.getInput().get(0) instanceof DataOp && c.getDataType()==DataType.SCALAR )
-				{
-					Data dat = vars.get(c.getInput().get(0).getName());
-					if( dat != null ) //required for selective constant propagation
-					{
-						ScalarObject sdat = (ScalarObject)dat;
-						UnaryOp cast = (UnaryOp) c;
-						Hop literal = null;
-						switch( cast.getOp() ) {
-							case CAST_AS_INT:
-								literal = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
-								break;
-							case CAST_AS_DOUBLE:
-								literal = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());		
-								break;						
-							case CAST_AS_BOOLEAN:
-								literal = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
-								break;
-							default:	
-								//otherwise: do nothing
-						}
-						
-						//replace on demand 
-						if( literal != null )
-						{
-							HopRewriteUtils.removeChildReference(hop, c);
-							HopRewriteUtils.addChildReference(hop, literal, i);
-						}
-					}
-				}
-				//as.scalar/matrix read - literal replacement
-				else if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
-					&& c.getInput().get(0) instanceof DataOp )
-				{
-					Data dat = vars.get(c.getInput().get(0).getName());
-					if( dat != null ) //required for selective constant propagation
-					{
-						//cast as scalar (see VariableCPInstruction)
-						MatrixObject mo = (MatrixObject)dat;
-						MatrixBlock mBlock = mo.acquireRead();
-						if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-							throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
-						double value = mBlock.getValue(0,0);
-						mo.release();
-						
-						//literal substitution (always double)
-						Hop literal = new LiteralOp(String.valueOf(value), value);
-						
-						//replace on demand 
-						HopRewriteUtils.removeChildReference(hop, c);
-						HopRewriteUtils.addChildReference(hop, literal, i);	
-					}
-				}
-				//as.scalar/right indexing w/ literals/vars and matrix less than 10^6 cells
-				else if( c instanceof UnaryOp && ((UnaryOp)c).getOp() == OpOp1.CAST_AS_SCALAR 
-						&& c.getInput().get(0) instanceof IndexingOp )
-				{
-					IndexingOp rix = (IndexingOp)c.getInput().get(0);
-					Hop data = rix.getInput().get(0);
-					Hop rl = rix.getInput().get(1);
-					Hop ru = rix.getInput().get(2);
-					Hop cl = rix.getInput().get(3);
-					Hop cu = rix.getInput().get(4);
-					if( rix.dimsKnown() && rix.getDim1()==1 && rix.getDim2()==1
-						&& data instanceof DataOp && vars.keySet().contains(data.getName())
-						&& ((rl instanceof DataOp && vars.keySet().contains(rl.getName())) || rl instanceof LiteralOp) 
-						&& ((ru instanceof DataOp && vars.keySet().contains(ru.getName())) || ru instanceof LiteralOp)
-						&& ((cl instanceof DataOp && vars.keySet().contains(cl.getName())) || cl instanceof LiteralOp)
-						&& ((cu instanceof DataOp && vars.keySet().contains(cu.getName())) || cu instanceof LiteralOp)
-						&& data.dimsKnown() && data.getDim1()*data.getDim2()<1000000 ) //8MB
-					{
-						long rlvalue = getIntValueDataLiteral(rl, vars);
-						long clvalue = getIntValueDataLiteral(cl, vars);
-	
-						MatrixObject mo = (MatrixObject)vars.get(data.getName());
-						MatrixBlock mBlock = mo.acquireRead();
-						double value = mBlock.getValue((int)rlvalue-1,(int)clvalue-1);
-						mo.release();
-						
-						
-						//literal substitution (always double)
-						Hop literal = new LiteralOp(String.valueOf(value), value);
-						
-						//replace on demand 
-						HopRewriteUtils.removeChildReference(hop, c);
-						HopRewriteUtils.addChildReference(hop, literal, i);	
-					
-					}
-				}
-				//recursively process childs
-				else 
-				{
-					rReplaceLiterals(c, vars);	
-				}
-			}
-		
-		hop.setVisited(VisitStatus.DONE);
-	}
-	
-	/**
-	 * 
-	 * @param hop
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public static long getIntValueDataLiteral(Hop hop, LocalVariableMap vars) 
-		throws DMLRuntimeException
-	{
-		long value = -1;
-		
-		try 
-		{
-			if( hop instanceof LiteralOp )
-			{
-				value = HopRewriteUtils.getIntValue((LiteralOp)hop);
-			}
-			else
-			{
-				ScalarObject sdat = (ScalarObject) vars.get(hop.getName());
-				value = sdat.getLongValue();
-			}
-		}
-		catch(HopsException ex)
-		{
-			throw new DMLRuntimeException("Failed to get int value for literal replacement", ex);
-		}
-		
-		return value;
+		//public interface 
+		LiteralReplacement.rReplaceLiterals(hop, vars);
 	}
 	
 	/**

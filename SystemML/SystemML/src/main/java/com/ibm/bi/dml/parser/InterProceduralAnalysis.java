@@ -28,7 +28,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -73,7 +73,7 @@ import com.ibm.bi.dml.udf.lib.OrderWrapper;
  *     If ALLOW_MULTIPLE_FUNCTION_CALLS is enabled we treat multiple calls with the same sizes
  *     as one call and hence, propagate those statistics into the function as well.
  *   * Output size inference happens for DML-bodied functions that are invoked exactly once
- *     and for external functions that are known in advance (see UDFs in packagesupport).
+ *     and for external functions that are known in advance (see UDFs in com.ibm.bi.dml.udf).
  *   * Size propagation across DAGs requires control flow awareness:
  *     - Generic statement blocks: updated variables -> old stats in; new stats out
  *     - While/for statement blocks: updated variables -> old stats in/out if loop insensitive; otherwise unknown
@@ -97,7 +97,7 @@ public class InterProceduralAnalysis
 	private static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //removed unused functions (inlined or never called)
 	private static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
 	
-	static{
+	static {
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("com.ibm.bi.dml.parser.InterProceduralAnalysis")

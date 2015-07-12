@@ -1063,6 +1063,26 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		return out.quickGetValue(0, 0);
 	}
+	
+	/**
+	 * Wrapper method for reduceall-sum of a matrix.
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double sum() 
+		throws DMLRuntimeException
+	{
+		//construct operator
+		AggregateOperator aop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
+		
+		//execute operation
+		MatrixBlock out = new MatrixBlock(1, 2, false);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
+		
+		return out.quickGetValue(0, 0);
+	}
 
 	////////
 	// sparsity handling functions
@@ -3722,9 +3742,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixValue sliceOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue ret) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+	public MatrixBlock sliceOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixBlock ret) 
+		throws DMLRuntimeException 
+	{	
 		// check the validity of bounds
 		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
 				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {

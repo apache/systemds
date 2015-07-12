@@ -141,7 +141,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			MatrixBlock rhsMatBlock = binput.getValue();
 			long rowLower = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), left_brlen, 0);
 			long rowUpper = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), left_brlen, kv._2.getNumRows()-1);
-			MatrixBlock slicedRhsMatBlock = (MatrixBlock) rhsMatBlock.sliceOperations(rowLower, rowUpper, 1, rhsMatBlock.getNumColumns(), new MatrixBlock());
+			MatrixBlock slicedRhsMatBlock = rhsMatBlock.sliceOperations(rowLower, rowUpper, 1, rhsMatBlock.getNumColumns(), new MatrixBlock());
 			return slicedRhsMatBlock;
 		}
 		
@@ -161,10 +161,8 @@ public class AppendMSPInstruction extends BinarySPInstruction
 				else {
 					MatrixBlock retBlk = kv._2.appendOperations(rhsMatBlock, new MatrixBlock());
 					if(retBlk.getNumColumns() > left_bclen) {
-						MatrixBlock blk1 = (MatrixBlock) 
-								retBlk.sliceOperations(1, retBlk.getNumRows(), 1, left_bclen, new MatrixBlock());
-						MatrixBlock blk2 = (MatrixBlock) 
-								retBlk.sliceOperations(1, retBlk.getNumRows(), left_bclen+1, retBlk.getNumColumns(), new MatrixBlock());
+						MatrixBlock blk1 = retBlk.sliceOperations(1, retBlk.getNumRows(), 1, left_bclen, new MatrixBlock());
+						MatrixBlock blk2 = retBlk.sliceOperations(1, retBlk.getNumRows(), left_bclen+1, retBlk.getNumColumns(), new MatrixBlock());
 						retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
 								new MatrixIndexes(kv._1.getRowIndex(), kv._1.getColumnIndex()), blk1));
 						retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(

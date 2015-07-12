@@ -241,11 +241,11 @@ public class AppendGSPInstruction extends BinarySPInstruction
 			}
 			else {
 				// Since merge requires the dimensions matching, shifting = slicing + left indexing
-				MatrixBlock firstSlicedBlk = (MatrixBlock) kv._2.sliceOperations(1, kv._2.getNumRows(), 1, cutAt, new MatrixBlock());
+				MatrixBlock firstSlicedBlk = kv._2.sliceOperations(1, kv._2.getNumRows(), 1, cutAt, new MatrixBlock());
 				MatrixBlock firstBlk = new MatrixBlock(kv._2.getNumRows(), lclen1, true);
 				firstBlk = (MatrixBlock) firstBlk.leftIndexingOperations(firstSlicedBlk, 1, kv._2.getNumRows(), shiftBy+1, bclen, new MatrixBlock(), true);
 				
-				MatrixBlock secondSlicedBlk = (MatrixBlock) kv._2.sliceOperations(1, kv._2.getNumRows(), cutAt+1, kv._2.getNumColumns(), new MatrixBlock());
+				MatrixBlock secondSlicedBlk = kv._2.sliceOperations(1, kv._2.getNumRows(), cutAt+1, kv._2.getNumColumns(), new MatrixBlock());
 				int lclen2 = UtilFunctions.computeBlockSize(clenOutput, secondIndex.getColumnIndex(), bclen);
 				MatrixBlock secondBlk = new MatrixBlock(kv._2.getNumRows(), lclen2, true);
 				secondBlk = (MatrixBlock) secondBlk.leftIndexingOperations(secondSlicedBlk, 1, kv._2.getNumRows(), 1, secondSlicedBlk.getNumColumns(), new MatrixBlock(), true);

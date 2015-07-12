@@ -139,7 +139,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 			else //via slicing the in-memory matrix
 			{
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());	
+				resultBlock = matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());	
 				ec.releaseMatrixInput(input1.getName());
 			}	
 			

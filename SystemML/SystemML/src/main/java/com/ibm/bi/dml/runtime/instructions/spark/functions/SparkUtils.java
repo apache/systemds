@@ -38,7 +38,7 @@ public class SparkUtils {
 	 * @throws DMLUnsupportedOperationException
 	 */
 	public static MatrixBlock[] partitionIntoRowBlocks( MatrixBlock mb, int blen ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//in-memory rowblock partitioning (according to bclen of rdd)
 		int lrlen = mb.getNumRows();
@@ -64,7 +64,7 @@ public class SparkUtils {
 	 * @throws DMLUnsupportedOperationException
 	 */
 	public static MatrixBlock[] partitionIntoColumnBlocks( MatrixBlock mb, int blen ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//in-memory colblock partitioning (according to brlen of rdd)
 		int lclen = mb.getNumColumns();

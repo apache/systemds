@@ -65,10 +65,6 @@ public class DummycodeAgent extends TransformationAgent {
 		}
 	}
 	
-	public boolean isDummycoded() {
-		return (_dcdList != null);
-	}
-	
 	public int[] dcdList() {
 		return _dcdList;
 	}
@@ -110,28 +106,29 @@ public class DummycodeAgent extends TransformationAgent {
 	
 	/**
 	 * Method to generate dummyCodedMaps.csv, with the range of column IDs for each variable in the original data.
+	 * 
+	 * Each line in dummyCodedMaps.csv file is of the form: [ColID, 1/0, st, end]
+	 * 		1/0 indicates if ColID is dummycoded or not
+	 * 		[st,end] is the range of dummycoded column numbers for the given ColID
+	 * 
 	 * It also generates coltypes.csv, with the type (scale, nominal, etc.) of columns in the output.
+	 * Recoded columns are of type nominal, binner columns are of type ordinal, dummycoded columns are of type 
+	 * dummycoded, and the remaining are of type scale.
 	 * 
 	 * @param fs
 	 * @param txMtdDir
 	 * @param numCols
 	 * @param ra
 	 * @param ba
-	 * @return
+	 * @return Number of columns in the transformed data
 	 * @throws IOException
 	 */
-	public int generateDummycodeMaps(FileSystem fs, String txMtdDir, int numCols, RecodeAgent ra, BinAgent ba) throws IOException {
-		if ( _dcdList == null ) 
-			return numCols;
+	public int genDcdMapsAndColTypes(FileSystem fs, String txMtdDir, int numCols, RecodeAgent ra, BinAgent ba) throws IOException {
 		
-		// initialize all column types to SCALE
+		// initialize all column types in the transformed data to SCALE
 		ColumnTypes[] ctypes = new ColumnTypes[(int) _dummycodedLength];
 		for(int i=0; i < _dummycodedLength; i++)
 			ctypes[i] = ColumnTypes.SCALE;
-		
-		// Each line in this file is of the form: [ColID, 1/0, st, end]
-		//    1/0 indicates if ColID is dummycoded or not
-		//    [st,end] is the range of dummycoded column numbers for the given ColID
 		
 		Path pt=new Path(txMtdDir+"/Dummycode/" + DCD_FILE_NAME);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
@@ -140,7 +137,7 @@ public class DummycodeAgent extends TransformationAgent {
 		int idx = 0;
 		for(int colID=1; colID <= numCols; colID++) 
 		{
-			if ( idx < _dcdList.length && _dcdList[idx] == colID )
+			if ( _dcdList != null && idx < _dcdList.length && _dcdList[idx] == colID )
 			{
 				br.write(colID + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
 
@@ -154,9 +151,10 @@ public class DummycodeAgent extends TransformationAgent {
 			{
 				br.write(colID + "," + "0" + "," + sum + "," + sum + "\n");
 				
-				if ( ba.isTransformed(colID) != -1 )
+				if ( ba.isBinned(colID) != -1 )
 					ctypes[sum-1] = ColumnTypes.ORDINAL;	// binned variable results in an ordinal column
-				if ( ra.isTransformed(colID) != -1 )
+				
+				if ( ra.isRecoded(colID) != -1 )
 					ctypes[sum-1] = ColumnTypes.NOMINAL;
 				
 				sum += 1;
@@ -164,32 +162,13 @@ public class DummycodeAgent extends TransformationAgent {
 		}
 		br.close();
 
+		// Write coltypes.csv
 		pt=new Path(txMtdDir+"/" + COLTYPES_FILE_NAME);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		int type=-1;
-		switch(ctypes[0]) 
-		{
-		case SCALE: type=1; break;
-		case NOMINAL: type=2; break;
-		case ORDINAL: type=3; break;
-		case DUMMYCODED: type=4; break;
-		default:
-			throw new IOException("Invalid Column Type: " + ctypes[0]);
-		}
-		br.write(type+"");
 		
-		for(int i = 1; i < _dummycodedLength; i++) {
-			switch(ctypes[i]) 
-			{
-			case SCALE: type=1; break;
-			case NOMINAL: type=2; break;
-			case ORDINAL: type=3; break;
-			case DUMMYCODED: type=4; break;
-			default:
-				throw new IOException("Invalid Column Type: " + ctypes[i]);
-			}
-			br.write("," + type);
-		}
+		br.write(columnTypeToID(ctypes[0]) + "");
+		for(int i = 1; i < _dummycodedLength; i++) 
+			br.write( "," + columnTypeToID(ctypes[i]));
 		br.close();
 		
 		return sum-1;
@@ -197,7 +176,7 @@ public class DummycodeAgent extends TransformationAgent {
 	
 	public String constructDummycodedHeader(String header, String delim) {
 		
-		if(_dcdList == null)
+		if(_dcdList == null && _binList == null )
 			// none of the columns are dummycoded, simply return the given header
 			return header;
 		
@@ -207,10 +186,10 @@ public class DummycodeAgent extends TransformationAgent {
 
 		StringBuilder sb = new StringBuilder();
 		
-		// Dummycoding can be performed on either a recoded column or a binned column
+		// Dummycoding can be performed on either on a recoded column or on a binned column
 		
 		// process recoded columns
-		if(_finalMapsCP != null) 
+		if(_finalMapsCP != null && _dcdList != null) 
 		{
 			for(int i=0; i <_dcdList.length; i++) 
 			{
@@ -234,11 +213,10 @@ public class DummycodeAgent extends TransformationAgent {
 							sb.append( delim + colName + DCD_NAME_SEP + newNames.get(idx));
 					}
 					names[colID-1] = sb.toString();			// replace original column name with dcd name
-					//newColumnLengths[colID-1] = newNames.size();
 				}
 			}
 		}
-		else if(_finalMaps != null) {
+		else if(_finalMaps != null && _dcdList != null) {
 			for(int i=0; i <_dcdList.length; i++) {
 				int colID = _dcdList[i];
 				HashMap<String,String> map = _finalMaps.get(colID);
@@ -265,7 +243,6 @@ public class DummycodeAgent extends TransformationAgent {
 							sb.append( delim + colName + DCD_NAME_SEP + newNames.get(idx));
 					}
 					names[colID-1] = sb.toString();			// replace original column name with dcd name
-					//newColumnLengths[colID-1] = newNames.size();
 				}
 			}
 		}
@@ -275,21 +252,24 @@ public class DummycodeAgent extends TransformationAgent {
 			for(int i=0; i < _binList.length; i++) 
 			{
 				int colID = _binList[i];
+				
+				// need to consider only binned and dummycoded columns
+				if(isDummyCoded(colID) == -1)
+					continue;
+				
 				int numBins = _numBins[i];
 				String colName = UtilFunctions.unquote(names[colID-1]);
 				
 				sb.setLength(0);
 				for(int idx=0; idx < numBins; idx++) 
-				{
 					if(idx==0) 
 						sb.append( colName + DCD_NAME_SEP + "Bin" + (idx+1) );
 					else
 						sb.append( delim + colName + DCD_NAME_SEP + "Bin" + (idx+1) );
-				}
 				names[colID-1] = sb.toString();			// replace original column name with dcd name
-				//newColumnLengths[colID-1] = numBins;
 			}
 		
+		// Construct the full header
 		sb.setLength(0);
 		for(int colID=0; colID < names.length; colID++) 
 		{
@@ -306,7 +286,10 @@ public class DummycodeAgent extends TransformationAgent {
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException {
 		if ( _dcdList == null )
+		{
+			_dummycodedLength = numCols;
 			return;
+		}
 		
 		// sort to-be dummycoded column IDs in ascending order. This is the order in which the new dummycoded record is constructed in apply() function.
 		Arrays.sort(_dcdList);	
@@ -390,8 +373,7 @@ public class DummycodeAgent extends TransformationAgent {
 	 * Check if the given column ID is subjected to this transformation.
 	 * 
 	 */
-	@Override
-	public int isTransformed(int colID)
+	public int isDummyCoded(int colID)
 	{
 		if(_dcdList == null)
 			return -1;

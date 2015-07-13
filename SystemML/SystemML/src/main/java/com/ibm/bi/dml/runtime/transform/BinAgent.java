@@ -273,8 +273,7 @@ public class BinAgent extends TransformationAgent {
 	 * Check if the given column ID is subjected to this transformation.
 	 * 
 	 */
-	@Override
-	public int isTransformed(int colID)
+	public int isBinned(int colID)
 	{
 		if(_binList == null)
 			return -1;

@@ -799,7 +799,7 @@ public class DataTransform {
 				String header = br.readLine();
 				
 				String dcdHeader = _da.constructDummycodedHeader(header, prop.getDelim());
-				numColumnsTf = _da.generateDummycodeMaps(fs, txMtdPath, ncols, _ra, _ba);
+				numColumnsTf = _da.genDcdMapsAndColTypes(fs, txMtdPath, ncols, _ra, _ba);
 				DataTransform.generateHeaderFiles(fs, txMtdPath, header, dcdHeader);
 				
 				//if ( isCSV )

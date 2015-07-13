@@ -332,8 +332,7 @@ public class RecodeAgent extends TransformationAgent {
 	 * Check if the given column ID is subjected to this transformation.
 	 * 
 	 */
-	@Override
-	public int isTransformed(int colID)
+	public int isRecoded(int colID)
 	{
 		if(_rcdList == null)
 			return -1;

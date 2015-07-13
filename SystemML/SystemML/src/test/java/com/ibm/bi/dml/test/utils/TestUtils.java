@@ -698,7 +698,7 @@ public class TestUtils
 	 *            Tolerance
 	 * @return
 	 */
-	private static boolean compareCellValue(Double v1, Double v2, double t, boolean ignoreNaN) {
+	public static boolean compareCellValue(Double v1, Double v2, double t, boolean ignoreNaN) {
 		if (v1 == null)
 			v1 = 0.0;
 		if (v2 == null)
@@ -1408,6 +1408,43 @@ public class TestUtils
 			}
 		}
 		return n;
+	}
+
+	public static void writeCSVTestMatrix(String file, double[][] matrix) 
+	{
+		try 
+		{
+			//create outputstream to HDFS / FS and writer
+			DataOutputStream out = null;
+			FileSystem fs = FileSystem.get(conf);
+			out = fs.create(new Path(file), true);
+			
+			BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out));
+			
+			//writer actual matrix
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < matrix.length; i++) {
+				sb.setLength(0);
+				if ( matrix[i][0] != 0 )
+					sb.append(matrix[i][0]);
+				for (int j = 1; j < matrix[i].length; j++) {
+					sb.append(",");
+					if ( matrix[i][j] == 0 ) 
+						continue;
+					sb.append(matrix[i][j]);
+				}
+				sb.append('\n');
+				pw.append(sb.toString());
+			}
+			
+			//close writer and streams
+			pw.close();
+			out.close();
+		} 
+		catch (IOException e) 
+		{
+			fail("unable to write (csv) test matrix (" + file + "): " + e.getMessage());
+		}
 	}
 
 	/**

@@ -20,6 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class TransformTest extends AutomatedTestBase 
 {
@@ -178,8 +179,8 @@ public class TransformTest extends AutomatedTestBase
 							-1);
 				}
 				
-				assertTrue("Incorrect output from data transform.", equals(out,exp));
-				assertTrue("Incorrect output from apply transform.", equals(out2,exp));
+				assertTrue("Incorrect output from data transform.", equals(out,exp,  1e-10));
+				assertTrue("Incorrect output from apply transform.", equals(out2,exp,  1e-10));
 					
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -191,7 +192,7 @@ public class TransformTest extends AutomatedTestBase
 		}
 	}
 	
-	private static boolean equals(MatrixBlock mb1, MatrixBlock mb2)
+	public static boolean equals(MatrixBlock mb1, MatrixBlock mb2, double epsilon)
 	{
 		if(mb1.getNumRows() != mb2.getNumRows() || mb1.getNumColumns() != mb2.getNumColumns() || mb1.getNonZeros() != mb2.getNonZeros() )
 			return false;
@@ -199,8 +200,11 @@ public class TransformTest extends AutomatedTestBase
 		// TODO: this implementation is to be optimized for different block representations
 		for(int i=0; i < mb1.getNumRows(); i++) 
 			for(int j=0; j < mb1.getNumColumns(); j++ )
-				if(mb1.getValue(i, j) != mb2.getValue(i,j)) 
+				if(!TestUtils.compareCellValue(mb1.getValue(i, j), mb2.getValue(i,j), epsilon, false))
+				{
+					System.err.println("(i="+ (i+1) + ",j=" + (j+1) + ")  " + mb1.getValue(i, j) + " != " + mb2.getValue(i, j));
 					return false;
+				}
 		
 		return true;
 	}

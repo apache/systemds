@@ -62,6 +62,7 @@ public abstract class TransformationAgent {
 	protected static final String NDISTINCT_FILE_SUFFIX = ".ndistinct";
 	protected static final String MODE_FILE_SUFFIX 		= ".mode";
 	protected static final String BIN_FILE_SUFFIX 		= ".bin";
+	protected static final String SCALE_FILE_SUFFIX		= ".scale";
 	protected static final String DCD_FILE_NAME 		= "dummyCodeMaps.csv";
 	protected static final String COLTYPES_FILE_NAME 	= "coltypes.csv";
 	
@@ -76,8 +77,6 @@ public abstract class TransformationAgent {
 	
 	abstract public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException;
 	abstract public String[] apply(String[] words);
-	
-	abstract int isTransformed(int colID);
 	
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {
@@ -99,5 +98,15 @@ public abstract class TransformationAgent {
 	}
 	
 	protected enum ColumnTypes { SCALE, NOMINAL, ORDINAL, DUMMYCODED, INVALID }
-
+	protected byte columnTypeToID(ColumnTypes type) throws IOException { 
+		switch(type) 
+		{
+		case SCALE: return 1;
+		case NOMINAL: return 2;
+		case ORDINAL: return 3;
+		case DUMMYCODED: return 4;
+		default:
+			throw new IOException("Invalid Column Type: " + type);
+		}
+	}
 }

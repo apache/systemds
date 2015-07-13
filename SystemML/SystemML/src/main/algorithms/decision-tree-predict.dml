@@ -14,7 +14,6 @@
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
 # X             String   ---          Location to read test feature matrix X; note that X needs to be both recoded and dummy coded 
-# P				String   ---		  Location to store the label predictions for X
 # Y	 		    String   " "		  Location to read true label matrix Y if requested; note that Y needs to be both recoded and dummy coded
 # R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
 #										- R[,1]: column ids
@@ -22,18 +21,21 @@
 #										- R[,3]: end indices
 #									  If R is not provided by default all variables are assumed to be scale
 # M             String 	 ---	   	  Location to read matrix M containing the learnt tree i the following format
-#										- M[1,j]: id of node j (in a complete binary tree)
-#	 									- M[2,j]: Offset (no. of columns) to left child of j 
+#								 		- M[1,j]: id of node j (in a complete binary tree)
+#	 									- M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
 #	 									- M[3,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
-#	 									- M[4,j]: Type of the feature that node j looks at if j is an internal node: 
-#												  1 for scale and 2 for categorical features, otherwise the label that leaf node j is supposed to predict
-#	 									- M[5,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the size of the subset of values 
-#			 									  stored in rows 6,7,... if j is categorical
-#	 									- M[6:,j]: Only applicable for internal nodes. Threshold the example's feature value is compared to is stored at M[6,j] 
-#												   if the feature chosen for j is scale; If the feature chosen for j is categorical rows 6,7,... 
+#	 									- M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
+#		     									  otherwise the label that leaf node j is supposed to predict
+#	 									- M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
+#			 									  stored in rows 6,7,... if j is categorical 
+#						 						  If j is a leaf node: number of misclassified samples reaching at node j 
+#	 									- M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] 
+#							   					   if the feature chosen for j is scale, otherwise if the feature chosen for j is categorical rows 6,7,... 
 #												   depict the value subset chosen for j
-# accuracy     	String   " "          Location to write the test accuracy (%) for the prediction if requested
-# confusion     String   " "		  Location to write the confusion matrix if requested 
+#	          									   If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
+# P				String   ---		  Location to store the label predictions for X
+# A     		String   " "          Location to write the test accuracy (%) for the prediction if requested
+# C     		String   " "		  Location to write the confusion matrix if requested 
 # fmt     	    String   "text"       The output format of the output, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
@@ -42,17 +44,19 @@
 #   3- Confusion matrix C if requested
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f decision-tree-scoring.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y Y-test=INPUT_DIR/Y-test M=INPUT_DIR/M
-#														accuracy=OUTPUT_DIR/accuracy confusion=OUTPUT_DIR/confusion fmtO=csv
+# hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=INPUT_DIR/M P=OUTPUT_DIR/P
+#														accuracy=OUTPUT_DIR/accuracy confusion=OUTPUT_DIR/confusion fmt=csv
 
 fileX = $X;
+fileM = $M;
 fileP = $P;
 fileY = ifdef ($Y, " ");
 fileR = ifdef ($R, " ");
 fileC = ifdef ($C, " ");
-fileO = ifdef ($O, " ");
+fileA = ifdef ($A, " ");
 fmtO = ifdef ($fmt, "text");
 X_test = read (fileX);
+M = read (fileM);
 
 num_records = nrow (X_test);
 Y_predicted = matrix (0, rows = num_records, cols = 1);
@@ -61,6 +65,7 @@ R_cat = matrix (0, rows = 1, cols = 1);
 R_scale = matrix (0, rows = 1, cols = 1);
 
 if (fileR != " ") {
+	R = read (fileR);
 	dummy_coded = ppred (R[,2], R[,3], "!=");
 	R_scale = removeEmpty (target = R[,2] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
@@ -68,8 +73,7 @@ if (fileR != " ") {
 	R_scale = seq (1, ncol (X_test));
 }
 
-num_classified = 0;
-for (i in 1:num_records) {
+parfor (i in 1:num_records, check = 0) {
 	cur_sample = X_test[i,];
 	cur_node = 1;
 	label_found = FALSE;
@@ -79,7 +83,6 @@ for (i in 1:num_records) {
 			label_found = TRUE;
 			cur_label = as.scalar (M[4,cur_node]);
 			Y_predicted[i,] = cur_label;
-			num_classified = num_classified + 1;
 		} else {
 			# determine type: 1 for scale, 2 for categorical 
 			cur_type = as.scalar (M[4,cur_node]);
@@ -120,12 +123,13 @@ if (fileY != " ") {
 	result = sum (result);
 	accuracy = result / num_records * 100;
 	acc_str = "Accuracy (%): " + accuracy;
-	# print ("Test accuracy: " + accuracy + "%");
-	if (fileO != " ") {
-		write (acc_str, fileO);
+	if (fileA != " ") {
+		write (acc_str, fileA, format = fmtO);
+	} else {
+		print (acc_str);
 	}
 	if (fileC != " ") {
-		CONFUSION_MAT = table(Y_predicted, Y_test, num_classes, num_classes)
-        write(CONFUSION_MAT, fileC, format = fmtO)
+		confusion_mat = table(Y_predicted, Y_test, num_classes, num_classes)
+        write(confusion_mat, fileC, format = fmtO)
 	}
 }

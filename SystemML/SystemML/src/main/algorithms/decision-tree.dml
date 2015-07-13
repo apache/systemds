@@ -32,18 +32,20 @@
 # OUTPUT: 
 # Matrix M where each column corresponds to a node in the learnt tree and each row contains the following information:
 #	 M[1,j]: id of node j (in a complete binary tree)
-#	 M[2,j]: Offset (no. of columns) to left child of j 
+#	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
 #	 M[3,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
 #	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
 #		     otherwise the label that leaf node j is supposed to predict
-#	 M[5,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the size of the subset of values 
-#			 stored in rows 6,7,... if j is categorical
-#	 M[6:,j]: Only applicable for internal nodes. Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale;
-# 			  If the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j   
+#	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
+#			 stored in rows 6,7,... if j is categorical 
+#			 If j is a leaf node: number of misclassified samples reaching at node j 
+#	 M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
+#			  otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
+#	          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0  
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/M
-#     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 impurity=entropy fmtO=csv
+#     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 impurity=entropy fmt=csv
 
 
 # External function for binning
@@ -155,26 +157,35 @@ if (num_scale_features > 0) {
 
 
 ##### INITIALIZATION
-L = matrix (1, rows = num_records, cols = 1); # last visited
+L = matrix (1, rows = num_records, cols = 1); # last visited node id for each training sample
 
-# model
+# ---- model ----
 # leaf nodes
-NC_large = matrix (0, rows = 3, cols = 1); # ids, class labels and no. of misclassified points at LARGE leaf nodes 
-NC_small = matrix (0, rows = 3, cols = 1); # ids, class labels and no. of misclassified points at SMALL leaf nodes 
+# NC_large[,1]: node id
+# NC_large[,2]: class label
+# NC_large[,3]: no. of misclassified samples 
+# NC_large[,4]: 1 if special leaf (impure and # samples at that leaf > threshold) or 0 otherwise 
+NC_large = matrix (0, rows = 4, cols = 1); 
+NC_small = matrix (0, rows = 4, cols = 1); # same schema as NC_large 
 
 # internal nodes
-Q_large = matrix (1, rows = 1, cols = 1); # ids of LARGE internal nodes 
-Q_small = matrix (0, rows = 1, cols = 1); # ids of SMALL internal nodes
+# Q_large[,1]: node id
+Q_large = matrix (1, rows = 1, cols = 1);  
+Q_small = matrix (0, rows = 1, cols = 1); # same schema as Q_large 
 
-F_large = matrix (0, rows = 3, cols = 1); # features, types, offsets for LARGE internal nodes
-F_small = matrix (0, rows = 3, cols = 1); # features, types, offsets SMALL internal nodes
+# F_large[,1]: feature
+# F_large[,2]: type
+# F_large[,3]: offset 
+F_large = matrix (0, rows = 3, cols = 1); 
+F_small = matrix (0, rows = 3, cols = 1); # same schema as F_large 
+
 S_large = matrix (0, rows = 1, cols = 1); # split points for LARGE internal nodes
 S_small = matrix (0, rows = 1, cols = 1); # split points for SMALL internal nodes
 
-
-# temp matrices 
-cur_nodes_large = matrix (1, rows = 1, cols = 1);
-# cur_nodes_small_nonzero = matrix (0, rows = 2, cols = 2); # first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
+# temp matrix for tree traversal 
+# first row: ids of SMALL internal nodes
+# second row: no. of samples for these nodes
+cur_nodes_large = matrix (1, rows = 1, cols = 1); 
 
 
 num_cur_nodes_large = 1;
@@ -189,7 +200,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	##### PREPARE MODEL
 	if (num_cur_nodes_large > 0) { # LARGE nodes to process
 		cur_Q_large = matrix (0, rows = 1, cols = 2 * num_cur_nodes_large);
-		cur_NC_large = matrix (0, rows = 3, cols = 2 * num_cur_nodes_large); 
+		cur_NC_large = matrix (0, rows = 4, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
 		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
 		cur_nodes_small = matrix (0, rows = 2, cols = 2 * num_cur_nodes_large); 
@@ -402,39 +413,38 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_impurity_left = as.scalar(impurity_left_scale[max_I_gain_ind_scale,]);
 			cur_impurity_right = as.scalar(impurity_right_scale[max_I_gain_ind_scale,]);
 			if ( (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) & 
-			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) ) { # both left and right nodes are leaf	
+			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) |
+			   (left_child_size <= threshold & right_child_size <= threshold & (level == depth)) ) { # both left and right nodes are leaf	
 				
 				cur_label_counts_left = label_counts_left_scale[max_I_gain_ind_scale,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
 				cur_NC_large[2,(2 * (i6 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label
 				left_pure = TRUE;	
-				# compute number of misclassified points 
-				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left); 
-				
+				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
+								
 				cur_label_counts_right = label_counts_overall - cur_label_counts_left;
 				cur_NC_large[1,(2 * i6)] = right_child; 
 				cur_NC_large[2,(2 * i6)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 				right_pure = TRUE;	
-				# compute number of misclassified pints
-				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right); 
+				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 				
-			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {
+			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth) | 
+				      (left_child_size <= threshold & (level == depth))) {	
 				
 				cur_label_counts_left = label_counts_left_scale[max_I_gain_ind_scale,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
 				cur_NC_large[2,(2 * (i6 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label				
 				left_pure = TRUE;
-				# compute number of misclassified points 
-				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left);
+				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
 				
-			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
+			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth) | 
+					  (right_child_size <= threshold & (level == depth))) {
 			
 				cur_label_counts_right = label_counts_right_scale[max_I_gain_ind_scale,];
 				cur_NC_large[1,(2 * i6)] = right_child; 
 				cur_NC_large[2,(2 * i6)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 				right_pure = TRUE;
-				# compute number of misclassified pints
-				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);
+				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 				
 			}
 		
@@ -470,39 +480,38 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_impurity_left = as.scalar(impurities_left[,best_cat_feature]); 
 			cur_impurity_right = as.scalar(impurities_right[,best_cat_feature]); 
 			if ( (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) & 
-			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) ) { # both left and right nodes are leaf	
+			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) | 
+			   (left_child_size <= threshold & right_child_size <= threshold & (level == depth)) ) { # both left and right nodes are leaf	
 				
 				cur_label_counts_left = best_label_counts_left[best_cat_feature,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
 				cur_NC_large[2,(2 * (i6 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label
 				left_pure = TRUE;
-				# compute number of misclassified points 
-				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left); 
+				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
 				
 				cur_label_counts_right = label_counts_overall - cur_label_counts_left;
 				cur_NC_large[1,(2 * i6)] = right_child; 
 				cur_NC_large[2,(2 * i6)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 				right_pure = TRUE;
-				# compute number of misclassified pints
-				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);				
+				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);	# no. of misclassified samples			
 			
-			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {	
+			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth) | 
+					  (left_child_size <= threshold & (level == depth))) {		
 				
 				cur_label_counts_left = best_label_counts_left[best_cat_feature,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
 				cur_NC_large[2,(2 * (i6 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label				
 				left_pure = TRUE;
-				# compute number of misclassified points 
-				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left);				
+				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left);	# no. of misclassified samples			
 			
-			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
+			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth) | 
+					  (right_child_size <= threshold & (level == depth))) {
 				
 				cur_label_counts_right = best_label_counts_right[best_cat_feature,];
 				cur_NC_large[1,(2 * i6)] = right_child; 
 				cur_NC_large[2,(2 * i6)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 				right_pure = TRUE;
-				# compute number of misclassified pints
-				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);	
+				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);	# no. of misclassified samples
 			
 			}		
 		} else {
@@ -513,8 +522,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_NC_large[1,(2 * (i6 - 1) + 1)] = cur_node;
 			class_label = as.scalar (rowIndexMax (label_counts_overall));
 			cur_NC_large[2,(2 * (i6 - 1) + 1)] = class_label;
-			cur_NC_large[3,(2 * (i6 - 1) + 1)] = label_sum_overall - class_label;
-			
+			cur_NC_large[3,(2 * (i6 - 1) + 1)] = label_sum_overall - max (label_counts_overall);
+			cur_NC_large[4,(2 * (i6 - 1) + 1)] = 1; # special leaf
 		}
 		
 		# add nodes to Q
@@ -570,7 +579,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		reserve_len = sum (2 ^ (ceil (log (cur_nodes_small_nonzero[2,]) / log (2))));
 		# print ("	reserve_len " + reserve_len + " for " + num_cur_nodes_small + " SMALL nodes");
 		cur_Q_small =  matrix (0, rows = 1, cols = reserve_len);
-		cur_NC_small = matrix (0, rows = 3, cols = reserve_len); 
+		cur_NC_small = matrix (0, rows = 4, cols = reserve_len); 
 		cur_F_small = matrix (0, rows = 3, cols = reserve_len); 
 		cur_S_small = matrix (0, rows = 1, cols = reserve_len * distinct_values_max); # split values of the best feature	
 	}
@@ -601,19 +610,19 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		end_ind = as.scalar (offsets[i7,]);
 			
 		Q = matrix (cur_node_small, rows = 1, cols = 1); 
-		NC = matrix (0, rows = 3, cols = 1); 
+		NC = matrix (0, rows = 4, cols = 1); 
 		F = matrix (0, rows = 3, cols = 1); 
 		S = matrix (0, rows = 1, cols = 1); 
 
 		cur_nodes_ = matrix (cur_node_small, rows = 1, cols = 1);
 		
 		num_cur_nodes = 1;
-		level_ = level - 1;
+		level_ = level;
 		while (num_cur_nodes > 0 & level_ < depth) {
 			
 			level_ = level_ + 1;
 			cur_Q = matrix (0, rows = 1, cols = 2 * num_cur_nodes);
-			cur_NC = matrix (0, rows = 3, cols = 2 * num_cur_nodes); 
+			cur_NC = matrix (0, rows = 4, cols = 2 * num_cur_nodes); 
 			cur_F = matrix (0, rows = 3, cols = num_cur_nodes); 
 			cur_S = matrix (0, rows = 1, cols = num_cur_nodes * distinct_values_max);
 		
@@ -825,15 +834,13 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child; 
 						cur_NC[2,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label
 						left_pure = TRUE;	
-						# compute number of misclassified points 
-						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); 
+						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
 				
 						cur_label_counts_right = label_counts_overall - cur_label_counts_left;
 						cur_NC[1,(2 * i8)] = right_child; 
 						cur_NC[2,(2 * i8)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 						right_pure = TRUE;	
-						# compute number of misclassified points 
-						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); 
+						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 						
 					} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {
 						
@@ -841,8 +848,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child; 
 						cur_NC[2,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label				
 						left_pure = TRUE;	
-						# compute number of misclassified points 
-						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); 
+						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
 						
 					} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
 						
@@ -850,8 +856,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * i8)] = right_child; 
 						cur_NC[2,(2 * i8)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 						right_pure = TRUE;
-						# compute number of misclassified points 
-						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); 
+						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 						
 					}									
 														
@@ -895,15 +900,13 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child; 
 						cur_NC[2,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label
 						left_pure = TRUE;
-						# compute number of misclassified points 
-						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); 
+						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples 
 						
 						cur_label_counts_right = label_counts_overall - cur_label_counts_left;
 						cur_NC[1,(2 * i8)] = right_child; 
 						cur_NC[2,(2 * i8)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 						right_pure = TRUE;
-						# compute number of misclassified points 
-						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right);
+						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 						
 					} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {	
 					
@@ -911,8 +914,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child; 
 						cur_NC[2,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label				
 						left_pure = TRUE;
-						# compute number of misclassified points 
-						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left);
+						cur_NC[3,(2 * (i8 - 1) + 1)] = left_child_size - max (cur_label_counts_left); # no. of misclassified samples
 						
 					} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
 					
@@ -920,8 +922,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						cur_NC[1,(2 * i8)] = right_child; 
 						cur_NC[2,(2 * i8)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
 						right_pure = TRUE;
-						# compute number of misclassified points 
-						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right);
+						cur_NC[3,(2 * i8)] = right_child_size - max (cur_label_counts_right); # no. of misclassified samples
 						
 					}		
 				} else {
@@ -932,8 +933,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					cur_NC[1,(2 * (i8 - 1) + 1)] = cur_node;
 					class_label = as.scalar (rowIndexMax (label_counts_overall));
 					cur_NC[2,(2 * (i8 - 1) + 1)] = class_label;
-					cur_NC[3,(2 * (i8 - 1) + 1)] = label_sum_overall - class_label;
-			
+					cur_NC[3,(2 * (i8 - 1) + 1)] = label_sum_overall - max (label_counts_overall);
+					cur_NC[4,(2 * (i8 - 1) + 1)] = 1; # special leaf
 				}
 			
 				# add nodes to Q
@@ -992,13 +993,14 @@ accuracy = (1 - (num_misclassified / num_records)) * 100;
 str_o = "no. of misclassified " + num_misclassified + " training accuracy " + accuracy + " %";
 if (fileO != " ") {
 	ACCURACY = matrix (accuracy, rows = 1, cols = 1);
-	write (str_o, fileO, format = "text")
+	write (ACCURACY, fileO, format = fmtO)
 } else {
 	print (str_o);
 }
 
 
 #### prepare model
+print ("PREPARING MODEL...")
 # large nodes
 if (as.scalar (Q_large[1,1]) == 0 & ncol (Q_large) > 1) {
 	Q_large = Q_large[,2:ncol (Q_large)];
@@ -1027,11 +1029,11 @@ if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 }
 
 # model corresponding to large internal nodes
-num_large_internal_node = FALSE;
+max_offset = 1;
+no_large_internal_node = FALSE;
 if (as.scalar (Q_large[1,1]) != 0) {
 	num_large_internal = ncol (Q_large);
 	max_offset = max (max (F_large[3,]), max (F_small[3,]));
-	print ("max offset " + max_offset);
 	M1_large = matrix (0, rows = 5 + max_offset, cols = num_large_internal);
 	M1_large[1,] = Q_large;
 	M1_large[3:5,] = F_large;
@@ -1047,11 +1049,11 @@ if (as.scalar (Q_large[1,1]) != 0) {
 	}	
 } else {
 	print ("No LARGE internal nodes available");
-	num_large_internal_node = TRUE;
+	no_large_internal_node = TRUE;
 }
 
 # model corresponding to small internal nodes
-num_small_internal_node = FALSE;
+no_small_internal_node = FALSE;
 if (as.scalar (Q_small[1,1]) != 0) {
 	num_small_internal = ncol (Q_small);
 	M1_small = matrix (0, rows = 5 + max_offset, cols = num_small_internal);
@@ -1069,46 +1071,48 @@ if (as.scalar (Q_small[1,1]) != 0) {
 	}
 } else {
 	print ("No SMALL internal nodes available");	
-	num_small_internal_node = TRUE;
+	no_small_internal_node = TRUE;
 }
 
 # model corresponding to large leaf nodes
-num_large_leaf_node = FALSE;
+no_large_leaf_node = FALSE;
 if (as.scalar (NC_large[1,1]) != 0) {
 	num_large_leaf = ncol (NC_large);
 	M2_large = matrix (0, rows = 5 + max_offset, cols = num_large_leaf);
 	M2_large[1,] = NC_large[1,];
-	M2_large[4,] = NC_large[2,];
-	M2_large[5,] = NC_large[3,];
+	# M2_large[4,] = NC_large[2,];
+	# M2_large[5,] = NC_large[3,];
+	M2_large[4:6,] = NC_large[2:4,];	
 } else {
 	print ("No LARGE leaf nodes available");
-	num_large_leaf_node = TRUE;
+	no_large_leaf_node = TRUE;
 }
 
 # model corresponding to small leaf nodes
-num_small_leaf_node = FALSE;
+no_small_leaf_node = FALSE;
 if (as.scalar (NC_small[1,1]) != 0) {
 	num_small_leaf = ncol (NC_small);
 	M2_small = matrix (0, rows = 5 + max_offset, cols = num_small_leaf);
 	M2_small[1,] = NC_small[1,];
-	M2_small[4,] = NC_small[2,];
-	M2_small[5,] = NC_small[3,];
+	# M2_small[4,] = NC_small[2,];
+	# M2_small[5,] = NC_small[3,];
+	M2_small[4:6,] = NC_small[2:4,];
 } else {
 	print ("No SMALL leaf nodes available");
-	num_small_leaf_node = TRUE;
+	no_small_leaf_node = TRUE;
 }
 
-if (num_large_internal_node) {
+if (no_large_internal_node) {
 	M1 = M1_small;
-} else if (num_small_internal_node) {
+} else if (no_small_internal_node) {
 	M1 = M1_large;
 } else {
 	M1 = append (M1_large, M1_small);
 }
 
-if (num_large_leaf_node) {
+if (no_large_leaf_node) {
 	M2 = M2_small;
-} else if (num_small_internal_node) {
+} else if (no_small_internal_node) {
 	M2 = M2_large;
 } else {
 	M2 = append (M2_large, M2_small);
@@ -1117,22 +1121,26 @@ if (num_large_leaf_node) {
 M = append (M1, M2);
 M = t (order (target = t (M), by = 1));
 
-if (!num_large_internal_node) {
+if (!no_large_internal_node) {
 	parfor (it in 1:ncol (Q_large), check = 0) {
 		a1 = as.scalar (Q_large[1,it]);
-		pos_a1 = sum (ppred (M[1,], a1, "<="));
+		# pos_a1 = sum (ppred (M[1,], a1, "<="));
+		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==")));
 		a2 = 2 * a1;
-		pos_a2 = sum (ppred (M[1,], a2, "<="));
+		# pos_a2 = sum (ppred (M[1,], a2, "<="));
+		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")));
 		M[2,pos_a1] = pos_a2 - pos_a1;
 	}
 }
 
-if (!num_small_internal_node) {
+if (!no_small_internal_node) {
 	parfor (it2 in 1:ncol (Q_small), check = 0) {
 		b1 = as.scalar (Q_small[1,it2]);
-		pos_b1 = sum (ppred (M[1,], b1, "<="));
+		# pos_b1 = sum (ppred (M[1,], b1, "<="));
+		pos_b1 = as.scalar (rowIndexMax (ppred (M[1,], b1, "==")));
 		b2 = 2 * b1;
-		pos_b2 = sum (ppred (M[1,], b2, "<="));
+		# pos_b2 = sum (ppred (M[1,], b2, "<="));
+		pos_b2 = as.scalar (rowIndexMax ( ppred (M[1,], b2, "==")));
 		M[2,pos_b1] = pos_b2 - pos_b1;
 	}
 }
